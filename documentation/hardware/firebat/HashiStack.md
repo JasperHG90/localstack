@@ -208,6 +208,9 @@ vault operator init
 ```
 **CRITICAL:** Save the **Unseal Keys** and **Initial Root Token**. Unseal the Vault with 3 keys, then run `vault login <Your-Vault-Root-Token>`.
 
+> [!NOTE]
+> Follow the tutorial [here](https://developer.hashicorp.com/nomad/tutorials/archive/vault-acl) to enable workload identities from Nomad with vault. The example uses the `kv/data/default/...` path, which means that with the role they define, nomad can access secrets from the default namespace.
+
 ---
 
 ### **Part 5: Nomad Configuration & ACL Bootstrap**
