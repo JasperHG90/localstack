@@ -12,3 +12,5 @@ RUN sudo apt-get update && \
   sudo apt-get update && \
   sudo apt-get -y install nomad vault consul && \
   rm -rf /var/lib/apt/lists/*
+
+RUN uv tool install pre-commit

@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-ast
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--unsafe]
+      - id: debug-statements
+      - id: detect-private-key
+      - id: end-of-file-fixer
+  - repo: local
+    hooks:
+      - id: nomad-fmt
+        name: Nomad Format (fmt -recursive)
+        entry: nomad fmt -recursive
+        language: system
+        types: [hcl]
+        files: '\.hcl$'

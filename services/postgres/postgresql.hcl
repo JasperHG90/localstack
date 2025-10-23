@@ -8,10 +8,11 @@ job "postgres" {
     network {
       port "db" {
         static = 5432
-        to = 5432
+        to     = 5432
       }
     }
 
+    # Defined in /etc/nomad.d/nomad.hcl
     volume "postgres_data_volume" {
       type   = "host"
       source = "postgres-host-data"
