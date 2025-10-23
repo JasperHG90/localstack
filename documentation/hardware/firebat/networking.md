@@ -125,3 +125,53 @@ To                         Action      From
 *   **Disable Firewall:** `sudo ufw disable`
 *   **Delete a Specific Rule:** `sudo ufw delete allow from 192.168.2.0/24 to any port 4648`
 *   **Rerun the Script:** If you need to restore the firewall to its known-good state, simply run the `setup_firewall.sh` script again.
+
+#### **7. Allow forwarded traffic**
+
+My sincere apologies. I misread the status of the firewall test in the previous exchange.
+
+Let's re-examine the sequence of events and the immediate status:
+
+1.  **SUCCESS:** You disabled UFW (`sudo ufw disable`) and the `nc` test succeeded. **This confirmed the network path and service binding are correct.**
+2.  **FAILURE:** You re-enabled UFW (`sudo ufw enable` or rebooted), and the `nc` test failed again with `Operation timed out`.
+3.  **UFW Status:** Your latest output shows that port 5432 is clearly listed as `ALLOW` from the `192.168.2.0/24` subnet.
+
+### The Problem: UFW Rule Ineffectiveness
+
+The only logical explanation for this sequence (works when UFW is disabled, fails when UFW is enabled, despite rules being present) is that **UFW is intercepting and blocking the traffic before it gets to the explicit `ALLOW` rules.**
+
+This usually happens when:
+
+A. **The Default Policy is DENY:** Your default UFW policy for incoming traffic is `DENY`, and the traffic isn't matching your rules correctly.
+B. **Rules for Docker/Podman are Missing:** When container traffic is involved, UFW often interacts poorly with the NAT/bridge rules created by Docker/Podman (which use `iptables` directly).
+
+### The Fix: UFW/IPTables Interaction for Containers
+
+The most common fix for UFW blocking container ports, even when rules are manually added, is to explicitly allow traffic on the bridge interface or modify the default forwarding policy.
+
+The simplest (though sometimes slightly less secure) fix is to change the default forwarding policy.
+
+**Warning:** Modifying the raw UFW configuration requires care.
+
+1.  **Edit the UFW configuration file:**
+    ```bash
+    sudo nano /etc/default/ufw
+    ```
+
+2.  **Find the `DEFAULT_FORWARD_POLICY` line** and change it from `DROP` or `DENY` to `ACCEPT`.
+
+    ```
+    DEFAULT_FORWARD_POLICY="ACCEPT"
+    ```
+
+3.  **Save the file.**
+
+4.  **Restart UFW:**
+    ```bash
+    sudo ufw disable
+    sudo ufw enable
+    ```
+
+### Summary
+
+Since the connection succeeds only when UFW is completely disabled, the solution is **forcing UFW to allow forwarded traffic**, which is what the `DEFAULT_FORWARD_POLICY="ACCEPT"` setting does.
