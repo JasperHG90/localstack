@@ -40,6 +40,6 @@
       "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "mounts": [
-      "type=bind,source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud"
+      "type=bind,source=${localWorkspaceFolder}/.devcontainer/daemon.json,target=/etc/docker/daemon.json,consistency=cached"
     ]
 }
