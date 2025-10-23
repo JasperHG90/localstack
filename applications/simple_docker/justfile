@@ -1,0 +1,8 @@
+docker_login:
+    docker login -u "${DOCKER_USER}" -p "${DOCKER_PASSWORD}" "${DOCKER_REGISTRY}"
+
+build:
+    docker build -t "${DOCKER_REGISTRY}/test" .
+
+push: build
+    docker push "${DOCKER_REGISTRY}/test"
