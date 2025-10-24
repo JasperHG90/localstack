@@ -29,6 +29,7 @@
         }
       }
     },
+    "postCreateCommand": "chmod +x ${containerWorkspaceFolder}/.devcontainer/bootstrap.sh && ${containerWorkspaceFolder}/.devcontainer/bootstrap.sh",
     "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global --add credential.useHttpPath true",
     "runArgs": [
       "--env-file",
