@@ -15,8 +15,6 @@ terraform {
   }
 }
 
-provider "nomad" {
-  #secret_id = "<REDACTED_NOMAD_SECRET_ID>"
-}
+provider "nomad" {}
 
 provider "vault" {}
