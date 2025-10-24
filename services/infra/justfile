@@ -1,2 +1,22 @@
+set shell := ["bash", "-uc"]
+
+alias i := init
+alias a := apply
+alias d := destroy
+
 init:
     terraform init -backend-config=./vars/backend-config.hcl
+
+apply:
+    MINIO_ENDPOINT=${AWS_ENDPOINT_URL_S3/#http:\/\/} \
+    MINIO_USER=${AWS_ACCESS_KEY_ID} \
+    MINIO_PASSWORD=${AWS_SECRET_ACCESS_KEY} \
+    MINIO_ENABLE_HTTPS=false \
+    terraform apply -var-file=./vars/prod.tfvars
+
+destroy:
+    MINIO_ENDPOINT=${AWS_ENDPOINT_URL_S3/#http:\/\/} \
+    MINIO_USER=${AWS_ACCESS_KEY_ID} \
+    MINIO_PASSWORD=${AWS_SECRET_ACCESS_KEY} \
+    MINIO_ENABLE_HTTPS=false \
+    terraform destroy -var-file=./vars/prod.tfvars

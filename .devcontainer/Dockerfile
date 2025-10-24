@@ -14,6 +14,9 @@ RUN sudo apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN uv tool install pre-commit
+RUN uv tool install ansible
+RUN uv tool install ansible-lint
+RUN uv tool install alembic
 
 RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
   chmod +x mc && \
