@@ -3,5 +3,8 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"ansible.python.interpreterPath": "/home/vscode/workspace/.venv/bin/python"
+	}
 }

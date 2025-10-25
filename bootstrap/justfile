@@ -1,8 +1,14 @@
 set shell := ["bash", "-uc"]
 
+set dotenv-load
+
 alias b := bootstrap
 alias skg := ssh_keygen
 alias sa := ssh_add
+alias s := setup
+
+setup:
+    ansible-galaxy install -r requirements.yml
 
 ssh_keygen:
     #!/usr/bin/bash

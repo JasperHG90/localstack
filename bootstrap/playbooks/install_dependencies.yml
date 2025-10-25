@@ -9,6 +9,7 @@
       ansible.builtin.apt:
         update_cache: true
         upgrade: dist
+      notify: Reboot_server
 
     - name: Install required packages
       ansible.builtin.apt:
@@ -25,8 +26,26 @@
           - avahi-daemon
           - libnss-mdns
         state: present
-      notify: Reboot_server
 
+    - name: Install OrangePi-specific dependencies
+      ansible.builtin.apt:
+        name:
+          - uidmap
+          - fuse-overlayfs
+          - slirp4netns
+        state: present
+        update_cache: true
+      when:
+        - inventory_hostname in groups['orange_pi_rv2']
+
+- name: Configure Podman runtime
+  hosts: all
+  become: true
+
+  roles:
+    - role: docker_registry_conf
+
+  tasks:
     - name: Ensure lingering is enabled for {{ ansible_user }}
       ansible.builtin.command: loginctl enable-linger {{ ansible_user }}
       when: ansible_service_mgr == "systemd" # Only run on systemd systems
@@ -50,3 +69,15 @@
     - name: Reboot_server
       ansible.builtin.reboot:
         reboot_timeout: 600
+
+- name: Podman login local registry
+  hosts: all
+  become: false
+
+  tasks:
+    - name: Log in to private container registry
+      containers.podman.podman_login:
+        registry: "192.168.2.30:5000"
+        username: "localstack"
+        password: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
+      become: false 
