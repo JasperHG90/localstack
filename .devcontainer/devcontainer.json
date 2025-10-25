@@ -22,7 +22,8 @@
           "bierner.markdown-mermaid",
           "HashiCorp.HCL",
           "kokakiwi.vscode-just",
-          "cweijan.vscode-postgresql-client2"
+          "cweijan.vscode-postgresql-client2",
+          "redhat.ansible"
         ],
         "settings": {
           "python.pythonPath": "/home/vscode/workspace/.venv/bin/python"

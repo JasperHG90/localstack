@@ -1,5 +1,14 @@
 # Localstack server
 
+---
+
+Todo
+
+- Describe static IPS
+- Use ansible for setup
+  + Networking setup: default deny all but allow nodes to talk to each other
+- Use [consul template](https://github.com/hashicorp/consul-template) for updating UFW rules on nodes
+
 ## Core
 
 - [Nomad](https://developer.hashicorp.com/nomad)

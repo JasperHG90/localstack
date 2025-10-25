@@ -25,7 +25,7 @@ job "postgres" {
         name = "postgres-db"
         port = "db"
 
-        tags = ["database", "sql"]
+        tags = ["database", "sql", "urlprefix-localstack.local/postgres/"]
 
         check {
           type     = "tcp"
@@ -52,8 +52,8 @@ job "postgres" {
 
       template {
         data = <<EOF
-          POSTGRES_USER="{{ with secret "${ postgres_secret }" }}{{ .Data.data.username }}{{ end }}"
-          POSTGRES_PASSWORD="{{ with secret "${ postgres_secret }" }}{{ .Data.data.password }}{{ end }}"
+          POSTGRES_USER="{{ with secret "${postgres_secret}" }}{{ .Data.data.username }}{{ end }}"
+          POSTGRES_PASSWORD="{{ with secret "${postgres_secret}" }}{{ .Data.data.password }}{{ end }}"
         EOF
 
         destination = "secrets/file.env"

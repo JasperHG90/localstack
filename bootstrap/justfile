@@ -1,0 +1,35 @@
+set shell := ["bash", "-uc"]
+
+alias b := bootstrap
+alias skg := ssh_keygen
+alias sa := ssh_add
+
+ssh_keygen:
+    #!/usr/bin/bash
+    export SSH_DIR=${HOME}/workspace/.ssh
+    export SSH_KEY_PATH=${SSH_DIR}/id_rsa
+
+    if [ -f "${SSH_KEY_PATH}" ]; then
+        echo "ERROR: SSH private key already exists at ${SSH_KEY_PATH}"
+        echo "       Please move or delete the existing key before generating a new one to prevent data loss."
+        # Exit with an error code
+        exit 1
+    fi
+
+    echo "Creating SSH directory at ${SSH_DIR} ..."
+    mkdir -p ${SSH_DIR}
+    echo "Setting permissions on SSH directory ..."
+    chmod 700 ${SSH_DIR}
+    echo "Generating new SSH key pair at ${SSH_KEY_PATH} ..."
+    ssh-keygen -t rsa -b 4096 -C "localstack" -f "${SSH_KEY_PATH}" -N ''
+
+    echo "SSH key pair generated successfully. View the ./bootstrap/README.md for next steps ..."
+
+ssh_add:
+    #!/usr/bin/bash
+    export SSH_DIR=${HOME}/workspace/.ssh
+    eval "$(ssh-agent -s)"
+    ssh-add ${SSH_DIR}/id_rsa
+
+bootstrap: ssh_add
+    ansible-playbook playbooks/main.yml

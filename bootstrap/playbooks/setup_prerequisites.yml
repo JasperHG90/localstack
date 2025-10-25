@@ -1,0 +1,52 @@
+---
+- name: Configure Cluster Node Prerequisites
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Update apt cache and upgrade installed packages
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - ufw
+          - git
+          - curl
+          - wget
+          - gpg
+          - crun
+          - podman
+          - python3-pip
+          - podman-compose
+          - avahi-daemon
+          - libnss-mdns
+        state: present
+      notify: Reboot_server
+
+    - name: Ensure lingering is enabled for {{ ansible_user }}
+      ansible.builtin.command: loginctl enable-linger {{ ansible_user }}
+      when: ansible_service_mgr == "systemd" # Only run on systemd systems
+      changed_when: false
+      register: user_linger_status
+
+    - name: Configure rootless Podman (set crun runtime)
+      ansible.builtin.blockinfile:
+        path: "/home/{{ ansible_user }}/.config/containers/containers.conf"
+        create: true
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+        block: |
+          [engine]
+          runtime = "crun"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - PODMAN ROOTLESS CONFIG"
+
+  handlers:
+    # This task is defined but will only run when notified
+    - name: Reboot_server
+      ansible.builtin.reboot:
+        reboot_timeout: 600
