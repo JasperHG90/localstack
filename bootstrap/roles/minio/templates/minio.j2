@@ -12,15 +12,15 @@ After=network-online.target
 ContainerName=minio-server
 
 # The image to pull
-Image=localstack.local:5000/minio
+Image={{ minio_docker_registry_url }}/minio
 
 # Map the host's SSD mount point to the container's data directory
 # The :Z tells Podman to handle SELinux labels, which is good practice.
-Volume=/mnt/minio-data:/data:Z
+Volume=/mnt/minio_data:/data:Z
 
 # Set environment variables for credentials
 Environment=MINIO_ROOT_USER=minioadmin
-Environment=MINIO_ROOT_PASSWORD=<REDACTED_MINIO_ROOT_PASSWORD>
+Environment=MINIO_ROOT_PASSWORD={{ minio_root_password }}
 
 # Map the ports
 PublishPort=9000:9000

@@ -1,0 +1,38 @@
+---
+- name: Format drive partition with ext4
+  community.general.filesystem:
+    dev: "{{ format_drive_partition }}"
+    fstype: ext4
+    force: true
+  become: true
+  when: format_drive_force | default(false)
+
+- name: Get the UUID of the newly formatted partition
+  ansible.builtin.command: "blkid -o value -s UUID {{ format_drive_partition }}"
+  register: partition_uuid
+  changed_when: false
+  become: true
+
+- name: Create the MinIO mount point directory
+  ansible.builtin.file:
+    path: "{{ format_mount_point }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Configure fstab and mount the drive
+  ansible.posix.mount:
+    path: "{{ format_mount_point }}"
+    src: "UUID={{ partition_uuid.stdout }}"
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+  become: true
+  
+- name: Set ownership of the mount point for the rootless user
+  ansible.builtin.file:
+    path: "{{ format_mount_point }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    recurse: true
+  become: true

@@ -1,0 +1,13 @@
+---
+- name: Firewall settings
+  hosts: orange_pi_rv2
+  become: yes
+  
+  roles:
+    - role: firewall
+      vars:
+        firewall_ufw_ports:
+          - { port: 22 }
+          # Minio ports
+          - { port: 9000, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 9001, proto: tcp, from_ip: "192.168.2.0/24" }
