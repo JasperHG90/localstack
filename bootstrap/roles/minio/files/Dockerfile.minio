@@ -1,0 +1,68 @@
+FROM golang:1.24-alpine AS builder
+
+# Set the target architecture and OS for cross-compilation
+ENV GOOS=linux
+ENV GOARCH=riscv64
+ENV CGO_ENABLED=0
+ENV GO111MODULE=on
+
+WORKDIR /go/src/github.com/minio/minio
+
+# Copy all source files from the current build context
+COPY . .
+
+# Build the MinIO server binary (using official build flags)
+RUN go build -trimpath -tags kqueue -o /go/bin/minio .
+
+# (NOTE: If you also need 'mc', you must compile its source in this stage.)
+
+#----------------------------------------------------------------------
+# Stage 2: Create the final image, copying official structure
+#----------------------------------------------------------------------
+# The UBI-micro image is for x86-64 and might not be available for RISC-V.
+# We will use a general-purpose, small, multi-arch image (Alpine) as a substitute,
+# as it's highly likely to be available for riscv64.
+
+FROM alpine:latest
+
+# Define the build argument for labeling
+ARG RELEASE="riscv-build" 
+
+# Set Labels (as per official image)
+LABEL name="MinIO" \
+      vendor="MinIO Inc <dev@minio.io>" \
+      maintainer="MinIO Inc <dev@minio.io>" \
+      version="${RELEASE}" \
+      release="${RELEASE}" \
+      summary="MinIO is a High Performance Object Storage, API compatible with Amazon S3 cloud storage service." \
+      description="MinIO object storage is fundamentally different. Designed for performance and the S3 API, it is 100% open-source. MinIO is ideal for large, private cloud environments with stringent security requirements and delivers mission-critical availability across a diverse range of workloads."
+
+# Set Environment Variables (as per official image)
+ENV MINIO_ACCESS_KEY_FILE=access_key \
+    MINIO_SECRET_KEY_FILE=secret_key \
+    MINIO_ROOT_USER_FILE=access_key \
+    MINIO_ROOT_PASSWORD_FILE=secret_key \
+    MINIO_KMS_SECRET_KEY_FILE=kms_master_key \
+    MINIO_UPDATE_MINISIGN_PUBKEY="RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav" \
+    MINIO_CONFIG_ENV_FILE=config.env \
+    MC_CONFIG_DIR=/tmp/.mc
+
+# Create the standard /usr/bin directory and set permissions
+RUN mkdir -p /usr/bin
+RUN chmod -R 777 /usr/bin # This is a direct copy of the official file's command
+
+# Copy files from the builder stage
+COPY --from=builder /go/bin/minio /usr/bin/
+
+# Copy licenses and the entrypoint script
+# (Assuming these are present in your local minio source clone)
+COPY CREDITS /licenses/CREDITS
+COPY LICENSE /licenses/LICENSE
+COPY dockerscripts/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+
+EXPOSE 9000
+VOLUME ["/data"]
+
+# Set the entrypoint and default command
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+CMD ["minio"]

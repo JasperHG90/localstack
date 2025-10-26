@@ -15,16 +15,26 @@ sys.platform: linux
 ```
 An error has occurred: InvalidConfigError: 
 ==> File .pre-commit-config.yaml
-=====> Expected a Config map but got a NoneType
+==> At Config()
+==> At key: repos
+==> At Repository(repo='local')
+==> At key: hooks
+==> At Hook(id='ansible-lint')
+==> At key: types
+==> At index 1
+=====> Type tag 'yml' is not recognized.  Try upgrading identify and pre-commit?
 ```
 
 ```
 Traceback (most recent call last):
   File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/pre_commit/error_handler.py", line 73, in error_handler
     yield
-  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/pre_commit/main.py", line 417, in main
-    return run(args.config, store, args)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/pre_commit/main.py", line 389, in main
+    return hook_impl(
+           ^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/pre_commit/commands/hook_impl.py", line 271, in hook_impl
+    return retv | run(config, store, ns)
+                  ^^^^^^^^^^^^^^^^^^^^^^
   File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/pre_commit/commands/run.py", line 422, in run
     config = load_config(config_file)
              ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -50,9 +60,115 @@ Traceback (most recent call last):
     validate(data, schema)
   File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 378, in validate
     schema.check(v)
-  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 235, in check
-    raise ValidationError(
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 244, in check
+    with validate_context(context):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 246, in check
+    item.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 75, in _check_required
+    _check_optional(self, dct)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 55, in _check_optional
+    with validate_context(f'At key: {self.key}'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 56, in _check_optional
+    self.check_fn(dct[self.key])
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 81, in check_fn
+    validate(val, self.schema)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 378, in validate
+    schema.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 274, in check
+    validate(val, self.of)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 378, in validate
+    schema.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 244, in check
+    with validate_context(context):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 246, in check
+    item.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 108, in _check_conditional
+    inner(self, dct)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 75, in _check_required
+    _check_optional(self, dct)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 55, in _check_optional
+    with validate_context(f'At key: {self.key}'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 56, in _check_optional
+    self.check_fn(dct[self.key])
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 81, in check_fn
+    validate(val, self.schema)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 378, in validate
+    schema.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 274, in check
+    validate(val, self.of)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 378, in validate
+    schema.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 244, in check
+    with validate_context(context):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 246, in check
+    item.check(v)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 55, in _check_optional
+    with validate_context(f'At key: {self.key}'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 56, in _check_optional
+    self.check_fn(dct[self.key])
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 365, in check_array_fn
+    with validate_context(f'At index {i}'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vscode/.local/share/uv/python/cpython-3.12.11-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 36, in validate_context
+    raise ValidationError(e, ctx=msg).with_traceback(tb) from None
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 33, in validate_context
+    yield
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/cfgv.py", line 366, in check_array_fn
+    inner_check(val)
+  File "/home/vscode/.local/share/uv/tools/pre-commit/lib/python3.12/site-packages/pre_commit/clientlib.py", line 43, in check_type_tag
+    raise cfgv.ValidationError(
 pre_commit.clientlib.InvalidConfigError: 
 ==> File .pre-commit-config.yaml
-=====> Expected a Config map but got a NoneType
+==> At Config()
+==> At key: repos
+==> At Repository(repo='local')
+==> At key: hooks
+==> At Hook(id='ansible-lint')
+==> At key: types
+==> At index 1
+=====> Type tag 'yml' is not recognized.  Try upgrading identify and pre-commit?
 ```

@@ -1,0 +1,59 @@
+---
+- name: Firewall settings
+  hosts: orange_pi_rv2
+  become: yes
+  
+  roles:
+    - role: firewall
+      vars:
+        firewall_ufw_ports:
+          - { port: 22 }
+          # Minio ports
+          - { port: 9000, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 9001, proto: tcp, from_ip: "192.168.2.0/24" }
+
+- name: Configure Podman runtime
+  hosts: all
+  become: true
+
+  roles:
+    - role: docker_registry_conf
+
+  tasks:
+    - name: Ensure lingering is enabled for {{ ansible_user }}
+      ansible.builtin.command: loginctl enable-linger {{ ansible_user }}
+      when: ansible_service_mgr == "systemd" # Only run on systemd systems
+      changed_when: false
+      register: user_linger_status
+
+    - name: Configure rootless Podman (set crun runtime)
+      ansible.builtin.blockinfile:
+        path: "/home/{{ ansible_user }}/.config/containers/containers.conf"
+        create: true
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+        block: |
+          [engine]
+          runtime = "crun"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - PODMAN ROOTLESS CONFIG"
+
+- name: Set up docker registry
+  hosts: firebat
+  become: true
+
+  roles:
+    - role: docker_registry
+      vars:
+        docker_registry_password: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
+  
+- name: Podman login local registry
+  hosts: all
+  become: false
+
+  tasks:
+    - name: Log in to private container registry
+      containers.podman.podman_login:
+        registry: "localstack.local:5000"
+        username: "localstack"
+        password: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"

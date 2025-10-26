@@ -11,7 +11,7 @@ Type=oneshot
 RemainAfterExit=yes
 
 # IMPORTANT: Replace this with the full path to your project directory
-WorkingDirectory=/home/localstack/localstack-docker-registry
+WorkingDirectory=/opt/docker_registry
 
 # IMPORTANT: Replace this with the full path you found in Step 1
 ExecStart=/usr/bin/podman-compose up -d
