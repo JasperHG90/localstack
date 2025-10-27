@@ -26,7 +26,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK - PODMAN ROOTLESS CONFIG"
 
 - name: Set up docker registry
-  hosts: firebat
+  hosts: server
   become: true
 
   roles:

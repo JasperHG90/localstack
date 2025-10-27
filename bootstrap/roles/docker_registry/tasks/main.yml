@@ -53,6 +53,16 @@
     group: "{{ ansible_user }}"
     recurse: true
 
+- name: Create systemd user directory
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.config/systemd/user"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+    recurse: true
+  become: true
+
 - name: Copy systemd service file
   ansible.builtin.copy:
     src: docker_registry.service

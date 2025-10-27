@@ -1,18 +1,31 @@
 ---
-# - name: Configure Consul server
-#   hosts: raspberry_pi
-#   become: true
-#   roles:
-#     - role: consul_server
-#       vars:
-#         consul_server_ip: "192.168.2.31"
-#         consul_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
+- name: Configure Consul server
+  hosts: server
+  become: true
+  roles:
+    - role: consul_server
+      vars:
+        consul_server_ip: "192.168.2.30"
+        consul_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
 
 - name: Configure Vault server
-  hosts: raspberry_pi
+  hosts: server
   become: true
   roles:
     - role: vault_server
       vars:
-        vault_server_ip_address: "192.168.2.31"
+        vault_server_ip_address: "192.168.2.30"
         vault_server_consul_token_secret: "{{ lookup('env', 'VAULT_CONSUL_TOKEN_SECRET') }}"
+
+- name: Configure Nomad server
+  hosts: server
+  become: true
+  roles:
+    - role: nomad_server
+      vars:
+        nomad_server_ip_address: "192.168.2.30"
+        nomad_server_consul_token_secret: "{{ lookup('env', 'NOMAD_CONSUL_TOKEN_SECRET') }}"
+        nomad_server_host_volumes:
+          - name: postgres-host-data
+            path: /var/lib/postgres-nomad-data
+            read_only: false

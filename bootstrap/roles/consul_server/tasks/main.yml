@@ -23,7 +23,7 @@
 
 - name: Template Consul configuration
   ansible.builtin.template:
-    src: consul.hcl
+    src: consul.hcl.j2
     dest: /etc/consul.d/consul.hcl
     owner: root
     group: root
@@ -118,9 +118,23 @@
     state: present
   register: token_creation
 
+- name: Get agent configuration from API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8500/v1/agent/self"
+    method: GET
+    headers:
+      "X-Consul-Token": "{{ master_token }}"
+  register: agent_self_info
+  changed_when: false
+
+- name: Set current_agent_token fact
+  ansible.builtin.set_fact:
+    current_agent_token: "{{ agent_self_info.json.Config.Tokens.Agent | default('') }}"
+
 - name: Apply the Agent Token to the Consul Agent
   ansible.builtin.command:
     cmd: consul acl set-agent-token agent "{{ consul_server_agent_token_secret }}"
   environment:
     CONSUL_HTTP_TOKEN: "{{ master_token }}"
+  when: current_agent_token != consul_server_agent_token_secret
   changed_when: true

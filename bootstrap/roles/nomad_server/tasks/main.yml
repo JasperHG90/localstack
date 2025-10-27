@@ -1,0 +1,271 @@
+---
+- name: Wait for Consul to be running
+  ansible.builtin.wait_for:
+    port: 8500
+    host: 127.0.0.1
+    delay: 5
+    timeout: 30
+
+- name: Wait for Vault to be running
+  ansible.builtin.wait_for:
+    port: 8200
+    host: 127.0.0.1
+    delay: 5
+    timeout: 30
+
+- name: Read the stored Consul bootstrap token
+  ansible.builtin.slurp:
+    src: /opt/consul/bootstrap_token
+  register: stored_bootstrap_token
+
+- name: Set master_consul_token fact
+  ansible.builtin.set_fact:
+    master_consul_token: "{{ stored_bootstrap_token['content'] | b64decode }}"
+
+- name: Create Nomad policy for Consul
+  community.general.consul_policy:
+    name: "consul_nomad_policy"
+    rules: "{{ lookup('file', 'consul_nomad_policy.hcl') }}"
+    token: "{{ master_consul_token }}"
+
+- name: Get list of existing ACL tokens
+  ansible.builtin.command:
+    cmd: consul acl token list -format=json
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ master_consul_token }}"
+  register: existing_tokens
+  changed_when: false
+
+- name: Parse existing tokens
+  ansible.builtin.set_fact:
+    tokens_list: "{{ existing_tokens.stdout | from_json | default([]) }}"
+
+- name: Find the nomad token by description
+  ansible.builtin.set_fact:
+    nomad_token_accessor_id: ""
+
+- name: Set nomad_token_accessor_id if token is found
+  ansible.builtin.set_fact:
+    nomad_token_accessor_id: "{{ item.AccessorID }}"
+  loop: "{{ tokens_list }}"
+  when: item.Description == 'Nomad server token'
+  no_log: true
+
+- name: Create Nomad token for Consul backend
+  community.general.consul_token:
+    description: "Nomad server token"
+    secret_id: "{{ nomad_server_consul_token_secret }}"
+    accessor_id: "{{ nomad_token_accessor_id | default(omit) }}"
+    policies:
+      - name: "consul_nomad_policy"
+    token: "{{ master_consul_token }}"
+    state: present
+
+- name: Ensure /opt/nomad directory exists
+  ansible.builtin.file:
+    path: /opt/nomad
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+
+- name: Ensure Nomad data directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /opt/nomad/data
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+
+- name: Ensure Nomad plugins directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /opt/nomad/plugins
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+
+- name: Ensure host volume directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+  loop: "{{ nomad_server_host_volumes }}"
+
+- name: Store Nomad's Consul token
+  ansible.builtin.copy:
+    content: "{{ nomad_server_consul_token_secret }}"
+    dest: /opt/nomad/consul_token
+    owner: nomad
+    group: nomad
+    mode: '0600'
+
+- name: Ensure Nomad config directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /etc/nomad.d
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+
+- name: Ensure Nomad data directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /var/lib/nomad
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+
+- name: Template Nomad configuration
+  ansible.builtin.template:
+    src: nomad.hcl.j2
+    dest: /etc/nomad.d/nomad.hcl
+    owner: nomad
+    group: nomad
+    mode: '0644'
+  notify: Restart nomad
+
+- name: Ensure Nomad service is started and enabled
+  ansible.builtin.service:
+    name: nomad
+    state: started
+    enabled: true
+
+- name: Check if Nomad is initialized
+  ansible.builtin.stat:
+    path: /opt/nomad/init.json
+  register: nomad_init_stat
+
+- name: Initialize Nomad if not already done
+  ansible.builtin.command:
+    cmd: nomad acl bootstrap -json
+  register: nomad_init_output
+  when: not nomad_init_stat.stat.exists
+  changed_when: true
+
+- name: Store Nomad init keys
+  ansible.builtin.copy:
+    content: "{{ nomad_init_output.stdout }}"
+    dest: /opt/nomad/init.json
+    owner: nomad
+    group: nomad
+    mode: '0600'
+  when: nomad_init_output.changed
+
+- name: Read the stored Nomad bootstrap token
+  ansible.builtin.slurp:
+    src: /opt/nomad/init.json
+  register: stored_nomad_bootstrap_token
+
+- name: Set nomad_bootstrap_token fact
+  ansible.builtin.set_fact:
+    nomad_bootstrap_token: "{{ (stored_nomad_bootstrap_token['content'] | b64decode | from_json).SecretID }}"
+
+- name: Create policies directory
+  ansible.builtin.file:
+    path: /opt/nomad/policies
+    state: directory
+    owner: nomad
+    group: nomad
+    mode: '0755'
+
+- name: Copy Nomad developer policy to remote
+  ansible.builtin.copy:
+    src: nomad_developer_policy.hcl
+    dest: /opt/nomad/policies/nomad_developer_policy.hcl
+    owner: nomad
+    group: nomad
+    mode: '0644'
+
+- name: Create Nomad developer policy
+  ansible.builtin.command:
+    cmd: nomad acl policy apply -description "Developer policy" developer /opt/nomad/policies/nomad_developer_policy.hcl
+  environment:
+    NOMAD_TOKEN: "{{ nomad_bootstrap_token }}"
+  changed_when: true
+
+- name: Read the stored Vault bootstrap token
+  ansible.builtin.slurp:
+    src: /opt/vault/init.json
+  register: stored_vault_bootstrap_token
+
+- name: Set vault_bootstrap_token fact
+  ansible.builtin.set_fact:
+    vault_bootstrap_token: "{{ (stored_vault_bootstrap_token['content'] | b64decode | from_json).root_token }}"
+
+- name: Check if JWT auth method for Nomad is enabled
+  ansible.builtin.command:
+    cmd: vault auth list -format=json
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  register: vault_auth_list_for_check
+  changed_when: false
+
+- name: Enable JWT auth method for Nomad
+  ansible.builtin.command:
+    cmd: vault auth enable -path=jwt-nomad jwt
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  when: "'jwt-nomad/' not in (vault_auth_list_for_check.stdout | from_json)"
+  changed_when: true
+
+- name: Configure JWT auth method for Nomad
+  ansible.builtin.command:
+    cmd: >
+      vault write auth/jwt-nomad/config
+      jwks_url="http://127.0.0.1:4646/.well-known/jwks.json"
+      jwt_supported_algs="RS256,EdDSA"
+      default_role="nomad-workloads"
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  changed_when: true
+
+- name: Copy Vault role for Nomad workloads to remote
+  ansible.builtin.copy:
+    src: vault_role_nomad_workloads.json
+    dest: /opt/nomad/policies/vault_role_nomad_workloads.json
+    owner: nomad
+    group: nomad
+    mode: '0644'
+
+- name: Create Vault role for Nomad workloads
+  ansible.builtin.command:
+    cmd: vault write auth/jwt-nomad/role/nomad-workloads @/opt/nomad/policies/vault_role_nomad_workloads.json
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  changed_when: true
+
+- name: Get JWT auth method accessor
+  ansible.builtin.command:
+    cmd: vault auth list -format=json
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  register: vault_auth_list
+  changed_when: false
+
+- name: Set auth_method_accessor fact
+  ansible.builtin.set_fact:
+    auth_method_accessor: "{{ (vault_auth_list.stdout | from_json)['jwt-nomad/'].accessor }}"
+
+- name: Copy Vault policy for Nomad workloads to remote
+  ansible.builtin.copy:
+    src: vault_nomad_workloads.hcl
+    dest: /opt/nomad/policies/vault_nomad_workloads.hcl
+    owner: nomad
+    group: nomad
+    mode: '0644'
+
+- name: Create Vault policy for Nomad workloads
+  ansible.builtin.command:
+    cmd: vault policy write nomad-workloads /opt/nomad/policies/vault_nomad_workloads.hcl
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  changed_when: true

@@ -1,5 +1,5 @@
 ---
 - name: Restart consul
-  ansible.builtin.service:
-    name: consul
-    state: restarted
+  ansible.builtin.command:
+    cmd: systemctl restart consul
+  changed_when: true

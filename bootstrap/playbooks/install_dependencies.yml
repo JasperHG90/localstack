@@ -9,7 +9,10 @@
       ansible.builtin.apt:
         update_cache: true
         upgrade: dist
+        dpkg_options: "force-confdef,force-confold"
       notify: Reboot_server
+      environment:
+        DEBIAN_FRONTEND: noninteractive
 
     - name: Install required packages
       ansible.builtin.apt:
@@ -20,9 +23,13 @@
           - gpg
           - crun
           - podman
+          - avahi-daemon
+          - coreutils
           - python3-pip
           - podman-compose
         state: present
+      environment:
+        DEBIAN_FRONTEND: noninteractive
 
     - name: Install OrangePi-specific dependencies
       ansible.builtin.apt:
@@ -37,6 +44,14 @@
         update_cache: true
       when:
         - inventory_hostname in groups['orange_pi_rv2']
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+  handlers:
+    # This task is defined but will only run when notified
+    - name: Reboot_server
+      ansible.builtin.reboot:
+        reboot_timeout: 600
 
 - name: Install HashiStack Components
   hosts: server,client
@@ -44,7 +59,10 @@
   gather_facts: true
 
   vars:
-    hashicorp_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else ansible_architecture }}"
+    hashicorp_arch_map:
+      aarch64: arm64
+      x86_64: amd64
+    hashicorp_arch: "{{ hashicorp_arch_map[ansible_architecture] | default(ansible_architecture) }}"
 
   tasks:
     - name: Add HashiCorp GPG key
@@ -64,11 +82,8 @@
           - consul
           - vault
           - nomad
+          - nomad-driver-podman
         state: present
         update_cache: true
-
-  handlers:
-    # This task is defined but will only run when notified
-    - name: Reboot_server
-      ansible.builtin.reboot:
-        reboot_timeout: 600
+      environment:
+        DEBIAN_FRONTEND: noninteractive
