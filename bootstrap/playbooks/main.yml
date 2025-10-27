@@ -1,7 +1,0 @@
----
-- import_playbook: install_dependencies.yml
-- import_playbook: install_hashistack.yml
-- import_playbook: configure_network.yml
-- import_playbook: configure_podman.yml
-- import_playbook: configure_minio.yml
-- import_playbook: configure_hashistack_server.yml
