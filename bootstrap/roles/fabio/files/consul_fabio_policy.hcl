@@ -1,5 +1,0 @@
-service "fabio" { policy = "write" }
-service_prefix "" { policy = "read" }
-node_prefix "" { policy = "read" }
-agent_prefix "" { policy = "read" }
-session_prefix "" { policy = "write" }
