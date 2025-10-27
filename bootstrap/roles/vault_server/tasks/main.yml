@@ -1,0 +1,123 @@
+---
+- name: Wait for Consul to be running
+  ansible.builtin.wait_for:
+    port: 8500
+    host: 127.0.0.1
+    delay: 5
+    timeout: 30
+
+- name: Read the stored Consul bootstrap token
+  ansible.builtin.slurp:
+    src: /opt/consul/bootstrap_token
+  register: stored_bootstrap_token
+
+- name: Set master_consul_token fact
+  ansible.builtin.set_fact:
+    master_consul_token: "{{ stored_bootstrap_token['content'] | b64decode }}"
+
+- name: Create Vault policy for Consul
+  community.general.consul_policy:
+    name: "vault_policy"
+    rules: "{{ lookup('file', 'consul_vault_policy.hcl') }}"
+    token: "{{ master_consul_token }}"
+
+- name: Get list of existing ACL tokens
+  ansible.builtin.command:
+    cmd: consul acl token list -format=json
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ master_consul_token }}"
+  register: existing_tokens
+  changed_when: false
+
+- name: Parse existing tokens
+  ansible.builtin.set_fact:
+    tokens_list: "{{ existing_tokens.stdout | from_json | default([]) }}"
+
+- name: Find the vault token by description
+  ansible.builtin.set_fact:
+    vault_token_accessor_id: ""
+
+- name: Set vault_token_accessor_id if token is found
+  ansible.builtin.set_fact:
+    vault_token_accessor_id: "{{ item.AccessorID }}"
+  loop: "{{ tokens_list }}"
+  when: item.Description == 'Vault server token'
+  no_log: true
+
+- name: Create Vault token for Consul backend
+  community.general.consul_token:
+    description: "Vault server token"
+    secret_id: "{{ vault_server_consul_token_secret }}"
+    accessor_id: "{{ vault_token_accessor_id | default(omit) }}"
+    policies:
+      - name: "vault_policy"
+    token: "{{ master_consul_token }}"
+    state: present
+
+- name: Ensure /opt/vault directory exists
+  ansible.builtin.file:
+    path: /opt/vault
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: Store Vault's Consul token
+  ansible.builtin.copy:
+    content: "{{ vault_server_consul_token_secret }}"
+    dest: /opt/vault/consul_token
+    owner: vault
+    group: vault
+    mode: '0600'
+
+- name: Ensure Vault config directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /etc/vault.d
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: Ensure Vault data directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /var/lib/vault
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: Template Vault configuration
+  ansible.builtin.template:
+    src: vault.hcl
+    dest: /etc/vault.d/vault.hcl
+    owner: vault
+    group: vault
+    mode: '0644'
+  notify: Restart vault
+
+- name: Ensure Vault service is started and enabled
+  ansible.builtin.service:
+    name: vault
+    state: started
+    enabled: true
+
+- name: Check if Vault is initialized
+  ansible.builtin.stat:
+    path: /opt/vault/init.json
+  register: vault_init_stat
+
+- name: Initialize Vault if not already done
+  ansible.builtin.command:
+    cmd: vault operator init -format=json --address=http://127.0.0.1:8200
+  register: vault_init_output
+  when: not vault_init_stat.stat.exists
+  changed_when: true
+
+- name: Store Vault init keys
+  ansible.builtin.copy:
+    content: "{{ vault_init_output.stdout }}"
+    dest: /opt/vault/init.json
+    owner: vault
+    group: vault
+    mode: '0600'
+  when: vault_init_output.changed

@@ -1,0 +1,39 @@
+# /etc/consul.d/consul.hcl
+# Corrected configuration with the proper "tokens" block.
+
+datacenter = "localstack"
+data_dir   = "/var/lib/consul"
+
+bind_addr      = "0.0.0.0"
+client_addr    = "0.0.0.0"
+advertise_addr = "{{ consul_server_ip }}"
+
+# Use the modern, block-based syntax for server mode.
+server           = true
+bootstrap_expect = 1
+
+# Enable the Web UI.
+ui_config {
+  enabled = true
+}
+
+# Enable and configure the ACL system itself.
+acl {
+  enabled                  = true
+  default_policy           = "deny"
+  enable_token_persistence = true
+  tokens {
+    agent = "{{ consul_server_agent_token_secret }}"
+  }
+}
+
+telemetry {
+  # Disable HTTP API rate limiting. This is safe for a small, known cluster.
+  disable_hostname = true
+}
+
+limits {
+  # Increase the burst rate limit for the API. 
+  # Default is often 100-200. Setting it higher should help.
+  http_max_conns_per_client = 500
+}

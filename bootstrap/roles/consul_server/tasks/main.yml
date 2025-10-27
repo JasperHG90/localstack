@@ -1,0 +1,126 @@
+---
+- name: Create consul settings directory
+  ansible.builtin.file:
+    path: "/opt/consul"
+    state: directory
+    mode: '0755'
+
+- name: Ensure consul config directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /etc/consul.d
+    state: directory
+    owner: consul
+    group: consul
+    mode: '0755'
+
+- name: Ensure consul data directory exists and has correct permissions
+  ansible.builtin.file:
+    path: /var/lib/consul
+    state: directory
+    owner: consul
+    group: consul
+    mode: '0755'
+
+- name: Template Consul configuration
+  ansible.builtin.template:
+    src: consul.hcl
+    dest: /etc/consul.d/consul.hcl
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart consul
+
+- name: Ensure Consul service is started and enabled
+  ansible.builtin.service:
+    name: consul
+    state: started
+    enabled: true
+  ignore_errors: true
+
+- name: Check if ACL bootstrap has been performed
+  ansible.builtin.stat:
+    path: /opt/consul/bootstrap_token
+  register: bootstrap_token_stat
+
+- name: Bootstrap Consul ACLs if not already done
+  ansible.builtin.command:
+    cmd: consul acl bootstrap
+  register: consul_bootstrap_output
+  when: not bootstrap_token_stat.stat.exists
+  changed_when: true
+
+- name: Extract and store the bootstrap token
+  when: consul_bootstrap_output.changed
+  block:
+    - name: Extract SecretID from bootstrap output
+      ansible.builtin.set_fact:
+        bootstrap_secret_id: "{{ consul_bootstrap_output.stdout | regex_search('SecretID:\\s+(\\S+)', '\\1') | first }}"
+
+    - name: Store the bootstrap token on the server
+      ansible.builtin.copy:
+        content: "{{ bootstrap_secret_id }}"
+        dest: /opt/consul/bootstrap_token
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Display the bootstrap token (Master Token)
+      ansible.builtin.debug:
+        msg: "Consul Master Token: {{ bootstrap_secret_id }} --- Please save this token securely!"
+
+- name: Read the stored bootstrap token
+  ansible.builtin.slurp:
+    src: /opt/consul/bootstrap_token
+  register: stored_bootstrap_token
+
+- name: Set master_token fact
+  ansible.builtin.set_fact:
+    master_token: "{{ stored_bootstrap_token['content'] | b64decode }}"
+
+- name: Create or update the agent policy from local file
+  community.general.consul_policy:
+    name: "agent_policy"
+    rules: "{{ lookup('file', 'agent_policy.hcl') }}"
+    token: "{{ master_token }}"
+  register: policy_creation
+
+- name: Get list of existing ACL tokens
+  ansible.builtin.command:
+    cmd: consul acl token list -format=json
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ master_token }}"
+  register: existing_tokens
+  changed_when: false
+
+- name: Parse existing tokens
+  ansible.builtin.set_fact:
+    tokens_list: "{{ existing_tokens.stdout | from_json }}"
+
+- name: Find the agent token by description
+  ansible.builtin.set_fact:
+    agent_token_accessor_id: ""
+
+- name: Set agent_token_accessor_id if token is found
+  ansible.builtin.set_fact:
+    agent_token_accessor_id: "{{ item.AccessorID }}"
+  loop: "{{ tokens_list }}"
+  when: item.Description == 'Consul agent token'
+  no_log: true
+
+- name: Create or update the agent token
+  community.general.consul_token:
+    description: "Consul agent token"
+    secret_id: "{{ consul_server_agent_token_secret }}"
+    accessor_id: "{{ agent_token_accessor_id | default(omit) }}"
+    policies:
+      - name: "agent_policy"
+    token: "{{ master_token }}"
+    state: present
+  register: token_creation
+
+- name: Apply the Agent Token to the Consul Agent
+  ansible.builtin.command:
+    cmd: consul acl set-agent-token agent "{{ consul_server_agent_token_secret }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ master_token }}"
+  changed_when: true

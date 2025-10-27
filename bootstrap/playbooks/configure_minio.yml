@@ -19,4 +19,3 @@
         minio_root_password: "{{ lookup('env', 'MINIO_ROOT_PASSWORD') }}"
         # NB: requires that the minio image is pushed to this registry beforehand
         minio_docker_registry_url: "localstack.local:5000"
-        

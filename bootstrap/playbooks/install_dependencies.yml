@@ -38,6 +38,35 @@
       when:
         - inventory_hostname in groups['orange_pi_rv2']
 
+- name: Install HashiStack Components
+  hosts: server,client
+  become: true
+  gather_facts: true
+
+  vars:
+    hashicorp_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else ansible_architecture }}"
+
+  tasks:
+    - name: Add HashiCorp GPG key
+      ansible.builtin.shell:
+        cmd: wget -O - https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+    - name: Add HashiCorp repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ hashicorp_arch }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        state: present
+        filename: hashicorp
+
+    - name: Install Hashistack products
+      ansible.builtin.apt:
+        name:
+          - consul
+          - vault
+          - nomad
+        state: present
+        update_cache: true
+
   handlers:
     # This task is defined but will only run when notified
     - name: Reboot_server
