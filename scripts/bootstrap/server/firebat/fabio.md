@@ -1,5 +1,3 @@
-Understood. No router changes, no Pi-hole, just the absolute simplest way to make `myaddress.local` work on your main machine(s) and point to your single entry-point reverse proxy.
-
 The simplest way is to use the **Hosts File** on the computer(s) you use to access the services. You are going to manually hardcode the name-to-IP mapping.
 
 ### The Simplest F\*cking Way: Hosts File Configuration
@@ -47,7 +45,7 @@ You can now access all your services using the unified address and the path defi
 TODO
 
 - UFW ports (8080 and 9998)
-- Command: podman run -d --name fabio  --network host docker.io/fabiolb/fabio:latest   -registry.consul.addr=127.0.0.1:8500   -proxy.addr=:8080 -registry.consul.token="<REDACTED_CONSUL_TOKEN>"
+- Command: podman run -d --name fabio  --network host docker.io/fabiolb/fabio:latest   -registry.consul.addr=192.168.2.30:8500   -proxy.addr=:8080 -registry.consul.token="<REDACTED_CONSUL_TOKEN>"
 - Adding nomad / vault / consul UI etc.
 
 *   `consul`
@@ -68,6 +66,15 @@ Look at the `postgres-db` entry in your image:
 This `urlprefix-` tag is what tells Fabio: "Route traffic with this prefix to this service."
 
 Your existing `consul`, `vault`, and `nomad` services are likely registered *without* a generic public routing tag like `urlprefix-/consul` or `urlprefix-/vault`. They are registered to allow the cluster members to find each other.
+
+podman run \
+  --rm --name fabio --network=host \
+  docker.io/fabiolb/fabio:latest \
+  -registry.consul.addr=127.0.0.1:8500 \
+  -proxy.addr=:8080 \
+  -proxy.localip=127.0.0.1 \
+  -registry.consul.token="<REDACTED_CONSUL_TOKEN>" \
+  -registry.consul.register.checkType="tcp"
 
 ### The Solution: Adding a *Companion* Service Definition
 

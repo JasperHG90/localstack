@@ -1,5 +1,5 @@
 ---
-- name: Firewall settings
+- name: Firewall settings orange pi
   hosts: orange_pi_rv2
   become: yes
   
@@ -7,7 +7,40 @@
     - role: firewall
       vars:
         firewall_ufw_ports:
-          - { port: 22 }
+          - { port: 22, from_ip: "192.168.2.0/24" }
           # Minio ports
           - { port: 9000, proto: tcp, from_ip: "192.168.2.0/24" }
           - { port: 9001, proto: tcp, from_ip: "192.168.2.0/24" }
+
+- name: Firewall settings server
+  hosts: server
+  become: yes
+  
+  roles:
+    - role: firewall
+      vars:
+        firewall_ufw_ports:
+          - { port: 22, from_ip: "192.168.2.0/24" }
+          # Docker registry
+          - { port: 5000, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 5001, proto: tcp, from_ip: "192.168.2.0/24" }
+          # HashiStack
+          - { port: 8500, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 8300, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 8200, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 8201, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 4646, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 4647, proto: tcp, from_ip: "192.168.2.0/24" }
+          - { port: 8301, from_ip: "192.168.2.0/24" }
+          - { port: 8600, from_ip: "192.168.2.0/24" }
+          - { port: 4648, from_ip: "192.168.2.0/24" }
+
+- name: Firewall settings clients
+  hosts: client
+  become: yes
+  
+  roles:
+    - role: firewall
+      vars:
+        firewall_ufw_ports:
+          - { port: 22, from_ip: "192.168.2.0/24" }

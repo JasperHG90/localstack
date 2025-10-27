@@ -1,0 +1,10 @@
+{
+  "service": {
+    "id": "consul-ui",
+    "name": "consul",
+    "port": 8500,
+    "tags": [
+      "urlprefix-/consul"
+    ]
+  }
+}

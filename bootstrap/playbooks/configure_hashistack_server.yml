@@ -29,3 +29,9 @@
           - name: postgres-host-data
             path: /var/lib/postgres-nomad-data
             read_only: false
+
+# - name: Configure Fabio load balancer
+#   hosts: server
+#   become: true
+#   roles:
+#     - role: fabio

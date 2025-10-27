@@ -1,0 +1,10 @@
+{
+  "service": {
+    "id": "nomad-ui",
+    "name": "nomad",
+    "port": 4646,
+    "tags": [
+      "urlprefix-/nomad"
+    ]
+  }
+}

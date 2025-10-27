@@ -1,0 +1,10 @@
+{
+  "service": {
+    "id": "vault-ui",
+    "name": "vault",
+    "port": 8200,
+    "tags": [
+      "urlprefix-/vault"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+---
+- name: Restart fabio
+  ansible.builtin.systemd:
+    name: fabio.service
+    state: restarted
+    daemon_reload: true
