@@ -24,8 +24,8 @@
               interval: "10s"
               timeout: "5s"
 
-          - name: "docker registry"
-            id: "docker"
+          - name: "docker registry UI"
+            id: "docker-registry-ui"
             port: 5001
             address: "192.168.2.30"
             tags:
@@ -41,7 +41,7 @@
               url: "http://192.168.2.30:5001"
 
           - name: "docker registry v2"
-            id: "docker-v2"
+            id: "docker-registry-v2"
             port: 5000
             address: "192.168.2.30"
             tags:
