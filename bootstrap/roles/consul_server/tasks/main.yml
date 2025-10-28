@@ -25,8 +25,17 @@
   ansible.builtin.template:
     src: consul.hcl.j2
     dest: /etc/consul.d/consul.hcl
-    owner: root
-    group: root
+    owner: consul
+    group: consul
+    mode: '0644'
+  notify: Restart consul
+
+- name: Copy minio service definition
+  ansible.builtin.copy:
+    src: consul_service_minio.json
+    dest: /etc/consul.d/consul_service_minio.json
+    owner: consul
+    group: consul
     mode: '0644'
   notify: Restart consul
 

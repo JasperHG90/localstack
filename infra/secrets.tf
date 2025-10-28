@@ -1,8 +1,12 @@
-data "vault_kv_secret_v2" "postgres" {
-  mount = var.secret_mount
-  name  = "default/postgres/localstack"
+### Secret KV2 mount
+resource "vault_mount" "kvv2" {
+  path        = var.secret_mount
+  type        = "kv"
+  options     = { version = "2" }
+  description = "KV Version 2 secret engine mount"
 }
 
+### Postgres passwords
 resource "random_password" "postgres_root" {
   length           = 16
   special          = false
@@ -10,7 +14,7 @@ resource "random_password" "postgres_root" {
 }
 
 resource "vault_kv_secret_v2" "postgres_root_credentials" {
-  mount = var.secret_mount
+  mount = vault_mount.kvv2.path
   name  = "default/postgres/localstack"
   data_json = jsonencode({
     username = "localstack"
@@ -32,7 +36,7 @@ resource "random_password" "postgres_ducklake" {
 }
 
 resource "vault_kv_secret_v2" "postgres_ducklake_credentials" {
-  mount = var.secret_mount
+  mount = vault_mount.kvv2.path
   name  = "default/postgres/ducklake"
   data_json = jsonencode({
     username = "ducklake"
@@ -40,6 +44,7 @@ resource "vault_kv_secret_v2" "postgres_ducklake_credentials" {
   })
 }
 
+### MinIO access keys
 resource "vault_kv_secret_v2" "minio_ducklake_credentials" {
   mount = var.secret_mount
   name  = "default/minio/ducklake"

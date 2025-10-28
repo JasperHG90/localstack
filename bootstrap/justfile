@@ -41,5 +41,5 @@ bootstrap: ssh_add
     #ansible-playbook playbooks/install_dependencies.yml
     #ansible-playbook playbooks/configure_podman.yml
     #ansible-playbook playbooks/configure_hashistack_server.yml
-    ansible-playbook playbooks/configure_network.yml
     #ansible-playbook playbooks/configure_minio.yml
+    ansible-playbook playbooks/configure_network.yml

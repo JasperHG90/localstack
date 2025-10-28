@@ -25,7 +25,7 @@ job "postgres" {
         name = "postgres-db"
         port = "db"
 
-        tags = ["database", "sql", "urlprefix-localstack.local/postgres/"]
+        tags = ["database", "sql"]
 
         check {
           type     = "tcp"

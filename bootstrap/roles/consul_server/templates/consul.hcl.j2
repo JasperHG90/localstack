@@ -26,6 +26,7 @@ acl {
   enable_token_persistence = true
   tokens {
     agent = "{{ consul_server_agent_token_secret }}"
+    default = "{{ consul_server_agent_token_secret }}"
   }
 }
 

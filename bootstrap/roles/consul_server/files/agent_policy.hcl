@@ -2,11 +2,11 @@ node_prefix "" {
   policy = "write"
 }
 service_prefix "" {
-  policy = "read"
+  policy = "write"
 }
 agent_prefix "" {
   policy = "write"
 }
 session_prefix "" {
-  policy = "read"
+  policy = "write"
 }

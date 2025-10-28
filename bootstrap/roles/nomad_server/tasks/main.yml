@@ -254,9 +254,9 @@
   ansible.builtin.set_fact:
     auth_method_accessor: "{{ (vault_auth_list.stdout | from_json)['jwt-nomad/'].accessor }}"
 
-- name: Copy Vault policy for Nomad workloads to remote
-  ansible.builtin.copy:
-    src: vault_nomad_workloads.hcl
+- name: Template Vault policy for Nomad workloads to remote
+  ansible.builtin.template:
+    src: vault_nomad_workloads.hcl.j2
     dest: /opt/nomad/policies/vault_nomad_workloads.hcl
     owner: nomad
     group: nomad
