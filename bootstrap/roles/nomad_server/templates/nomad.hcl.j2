@@ -26,6 +26,10 @@ client {
     read_only = {{ volume.read_only | lower }}
   }
   {% endfor %}
+
+  options = {
+    "driver.denylist" = "docker"
+  }
 }
 
 consul {

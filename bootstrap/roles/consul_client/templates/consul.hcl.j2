@@ -1,0 +1,21 @@
+datacenter = "localstack"
+node_name = "raspberry"
+
+data_dir = "/opt/consul"
+client_addr = "0.0.0.0"
+bind_addr = "0.0.0.0"
+
+server = false
+
+retry_join = ["192.168.2.30"] 
+
+
+acl {
+  tokens {
+    agent = "{{ consul_server_agent_token_secret }}"
+    default = "{{ consul_server_agent_token_secret }}"
+  }
+  
+  default_policy = "deny" 
+  down_policy = "deny"
+}

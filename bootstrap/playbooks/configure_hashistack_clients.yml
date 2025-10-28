@@ -1,0 +1,16 @@
+---
+- name: Configure Consul client
+  hosts: client
+  become: true
+  roles:
+    - role: consul_client
+      vars:
+        consul_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
+
+- name: Configure Nomad client
+  hosts: client
+  become: true
+  roles:
+    - role: nomad_client
+      vars:
+        nomad_server_consul_token_secret: "{{ lookup('env', 'NOMAD_CONSUL_TOKEN_SECRET') }}"

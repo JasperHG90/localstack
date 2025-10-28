@@ -1,0 +1,47 @@
+datacenter = "localstack"
+data_dir   = "/opt/nomad/data"
+plugin_dir = "/usr/bin"
+bind_addr  = "0.0.0.0" 
+
+log_level = "DEBUG"
+
+# Used by the agent to find and join the cluster via Serf.
+retry_join = [
+  "192.168.2.30:4647"
+]
+
+acl {
+  enabled = true
+}
+
+consul {
+  address = "127.0.0.1:8500" # NB: Needs to be a local consul agent
+  token   = "{{ nomad_server_consul_token_secret }}"
+}
+
+client {
+  enabled = true
+
+  options = {
+    "driver.denylist" = "docker"
+  }
+
+  reserved {
+    cpu    = 500
+    memory = 512
+    disk   = 10240
+  }
+}
+
+server {
+  enabled = false
+}
+
+plugin "nomad-driver-podman" {
+  config {
+    volumes {
+       enabled = true
+       selinuxlabel = "z"
+    }
+  }
+}
