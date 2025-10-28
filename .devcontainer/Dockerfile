@@ -17,10 +17,12 @@ RUN uv tool install pre-commit
 RUN uv tool install ansible-core
 RUN uv tool install ansible-lint
 RUN uv tool install ansible
-RUN uv tool install alembic
 
 RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
   chmod +x mc && \
   sudo mv mc /usr/local/bin/
+
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.0/migrate.linux-arm64.tar.gz | tar xvz && \
+  sudo mv migrate /usr/local/bin/
 
 RUN export PATH="$HOME/.local/bin:$PATH"

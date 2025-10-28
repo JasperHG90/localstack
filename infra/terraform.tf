@@ -16,6 +16,10 @@ terraform {
       source  = "hashicorp/consul"
       version = "~>2.22.0"
     }
+    postgresql = {
+      source = "cyrilgdn/postgresql"
+      version = "~>1.26.0"
+    }
   }
 }
 
@@ -27,4 +31,8 @@ provider "consul" {
   # NB: provider does not read address from env var
   address    = "localstack.local:8500"
   datacenter = "localstack"
+}
+
+provider "postgresql" {
+  sslmode         = "disable"
 }

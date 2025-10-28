@@ -1,0 +1,11 @@
+set shell := ["bash", "-uc"]
+
+set dotenv-load
+
+alias s := setup
+
+up:
+    migrate -database ${POSTGRESQL_URL} -path ./migrations up
+
+down:
+    migrate -database ${POSTGRESQL_URL} -path ./migrations down
