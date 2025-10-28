@@ -30,13 +30,25 @@
     mode: '0644'
   notify: Restart consul
 
-- name: Copy minio service definition
-  ansible.builtin.copy:
-    src: consul_service_minio.json
-    dest: /etc/consul.d/consul_service_minio.json
+- name: Template health check scripts
+  ansible.builtin.template:
+    src: health_check.sh.j2
+    dest: "/opt/consul/{{ item.check.script_name }}"
+    owner: consul
+    group: consul
+    mode: '0755'
+  loop: "{{ consul_services }}"
+  when: item.check.type == "script"
+  notify: Restart consul
+
+- name: Template service definitions
+  ansible.builtin.template:
+    src: service.json.j2
+    dest: "/etc/consul.d/{{ item.id }}.json"
     owner: consul
     group: consul
     mode: '0644'
+  loop: "{{ consul_services }}"
   notify: Restart consul
 
 - name: Ensure Consul service is started and enabled

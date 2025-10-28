@@ -46,3 +46,11 @@
       vars:
         firewall_ufw_ports:
           - { port: 22, from_ip: "192.168.0.0/16" }
+          # HashiStack clients
+          - { port: 8301, from_ip: "192.168.0.0/16" }
+          - { port: 8300, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 8500, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 8600, from_ip: "192.168.0.0/16" }
+          - { port: 4646, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 4647, from_ip: "192.168.0.0/16" }
+          - { port: 4648, proto: tcp, from_ip: "192.168.0.0/16" }

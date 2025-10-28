@@ -7,6 +7,54 @@
       vars:
         consul_server_ip: "192.168.2.30"
         consul_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
+        consul_services:
+          - name: "minio"
+            id: "minio"
+            port: 9001
+            address: "192.168.2.32"
+            tags:
+              - "http"
+              - "s3"
+            check:
+              name: "minio health check (curl)"
+              type: "http"
+              http: "http://192.168.2.32:9000/minio/health/live"
+              method: "GET"
+              status: "passing"
+              interval: "10s"
+              timeout: "5s"
+
+          - name: "docker registry"
+            id: "docker"
+            port: 5001
+            address: "192.168.2.30"
+            tags:
+              - "http"
+            check:
+              name: "docker registry health check (curl)"
+              type: "script"
+              script_name: "docker_registry_health_check.sh"
+              interval: "10s"
+              timeout: "5s"
+              user: "localstack"
+              pass: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
+              url: "http://192.168.2.30:5001"
+
+          - name: "docker registry v2"
+            id: "docker-v2"
+            port: 5000
+            address: "192.168.2.30"
+            tags:
+              - "http"
+            check:
+              name: "docker registry v2 health check (curl)"
+              type: "script"
+              script_name: "docker_registry_v2_health_check.sh"
+              interval: "10s"
+              timeout: "5s"
+              user: "localstack"
+              pass: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
+              url: "http://192.168.2.30:5000/v2/"
 
 - name: Configure Vault server
   hosts: server

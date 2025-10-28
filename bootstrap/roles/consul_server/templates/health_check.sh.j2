@@ -1,0 +1,22 @@
+#!/bin/bash
+# check_auth_health.sh
+
+# **SECURITY NOTE:** Hardcoding credentials is not recommended.
+# In production, retrieve these from a secrets manager like HashiCorp Vault.
+SERVICE_USER="{{ item.check.user }}"
+SERVICE_PASS="{{ item.check.pass }}"
+SERVICE_URL="{{ item.check.url }}"
+
+# Use curl with the -u flag for Basic Authentication
+# -f: Fail silently on HTTP errors (4xx/5xx)
+# -s: Silent mode
+curl -f -s -u "${SERVICE_USER}:${SERVICE_PASS}" "${SERVICE_URL}"
+
+# $? holds the exit code of the last command (curl)
+if [ $? -eq 0 ]; then
+    echo "External Service is healthy and authenticated."
+    exit 0 # Consul Pass
+else
+    echo "External Service health check failed (authentication or connectivity issue)."
+    exit 2 # Consul Critical
+fi

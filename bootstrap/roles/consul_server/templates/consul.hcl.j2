@@ -10,6 +10,8 @@ advertise_addr = "{{ consul_server_ip }}"
 
 retry_join = ["127.0.0.1"]
 
+enable_local_script_checks = true
+
 # Use the modern, block-based syntax for server mode.
 server           = true
 bootstrap_expect = 1

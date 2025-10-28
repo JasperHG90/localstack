@@ -1,0 +1,21 @@
+{
+  "service": {
+    "name": "{{ item.name }}",
+    "id": "{{ item.id }}",
+    "port": {{ item.port }},
+    "address": "{{ item.address }}",
+    "tags": {{ item.tags | to_json }},
+    "check": {
+      "name": "{{ item.check.name }}",
+      {% if item.check.type == "http" %}
+      "http": "{{ item.check.http }}",
+      "method": "{{ item.check.method }}",
+      "status": "{{ item.check.status }}",
+      {% elif item.check.type == "script" %}
+      "args": ["/usr/bin/bash", "/opt/consul/{{ item.check.script_name }}"],
+      {% endif %}
+      "interval": "{{ item.check.interval }}",
+      "timeout": "{{ item.check.timeout }}"
+    }
+  }
+}
