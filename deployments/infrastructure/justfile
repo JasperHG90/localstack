@@ -1,0 +1,17 @@
+set shell := ["bash", "-uc"]
+
+alias i := init
+alias a := apply
+alias d := destroy
+
+init:
+    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    terraform init -backend-config=./vars/backend-config.hcl
+
+apply:
+    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    terraform apply -var-file=./vars/prod.tfvars
+
+destroy:
+    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    terraform destroy -var-file=./vars/prod.tfvars
