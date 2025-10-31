@@ -9,6 +9,10 @@ locals {
       "postgres" = {
         capacity_max = "100 GiB"
         capacity_min = "10 GiB"
+      },
+      "docker_registry" = {
+        capacity_max = "200 GiB"
+        capacity_min = "20 GiB"
       }
     }
     "orangepi4a" = {
