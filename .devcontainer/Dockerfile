@@ -18,6 +18,10 @@ RUN uv tool install pre-commit
 RUN uv tool install ansible-core
 RUN uv tool install ansible-lint
 RUN uv tool install ansible
+RUN curl https://install.duckdb.org | sh
+
+RUN mkdir -p $HOME/.duckdb
+RUN sudo chown -R vscode:vscode /home/vscode/.duckdb
 
 RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
   chmod +x mc && \
