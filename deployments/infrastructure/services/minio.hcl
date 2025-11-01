@@ -38,6 +38,22 @@ job "minio" {
         env         = true
       }
 
+      service {
+        name = "minio"
+        port = "http_console"
+
+        tags = ["http", "s3"]
+
+        check {
+          name     = "minio health check (curl)"
+          type     = "http"
+          path     = "/minio/health/live"
+          method   = "GET"
+          interval = "10s"
+          timeout  = "5s"
+        }
+      }
+
       config {
         image   = "docker.io/minio/minio:latest"
         command = "server"

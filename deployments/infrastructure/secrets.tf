@@ -29,6 +29,24 @@ resource "vault_kv_secret_v2" "docker_registry_credentials" {
   }
 }
 
+// NB: duplicating because of JWT claims that limit access to specific paths
+//   based on the job name. See ${HOME}/bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
+resource "vault_kv_secret_v2" "podman_config_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/podman_config/localstack"
+  data_json = jsonencode({
+    username = "localstack"
+    password = random_password.docker_registry_password.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Minio credentials
 resource "random_password" "minio_secret_key" {
   length           = 32

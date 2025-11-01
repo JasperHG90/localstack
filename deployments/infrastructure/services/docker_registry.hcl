@@ -73,6 +73,22 @@ job "docker_registry" {
     task "registry" {
       driver = "podman"
 
+      service {
+        name = "docker-registry"
+        port = "http_registry"
+        tags = ["docker", "registry"]
+
+        check {
+          type     = "http"
+          path     = "/"
+          interval = "10s"
+          timeout  = "2s"
+          header {
+            Authorization = ["Basic {{ with secret \"${docker_registry_secret}\" }}{{ printf \"%s:%s\" .Data.data.username .Data.data.password | base64Encode }}{{ end }}"]
+          }
+        }
+      }
+
       config {
         image = "registry:3"
         ports = ["http_registry"]
@@ -103,6 +119,22 @@ job "docker_registry" {
 
     task "registry_ui" {
       driver = "podman"
+
+      service {
+        name = "docker-registry-ui"
+        port = "http_ui"
+        tags = ["docker", "registry", "ui"]
+
+        check {
+          type     = "http"
+          path     = "/"
+          interval = "10s"
+          timeout  = "2s"
+          header {
+            Authorization = ["Basic {{ with secret \"${docker_registry_secret}\" }}{{ printf \"%s:%s\" .Data.data.username .Data.data.password | base64Encode }}{{ end }}"]
+          }
+        }
+      }
 
       config {
         image = "docker.io/joxit/docker-registry-ui:main"

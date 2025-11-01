@@ -80,3 +80,11 @@ resource "nomad_job" "minio" {
       { minio_secret = vault_kv_secret_v2.minio_credentials.path }
     )
 }
+
+### Podman config
+resource "nomad_job" "podman_config" {
+    jobspec = templatefile(
+      "${path.module}/services/podman_config.hcl",
+      { docker_registry_secret = vault_kv_secret_v2.podman_config_credentials.path }
+    )
+}
