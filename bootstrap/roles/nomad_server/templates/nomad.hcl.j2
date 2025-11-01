@@ -20,13 +20,6 @@ acl {
 client {
   enabled = true
 
-  {% for volume in nomad_server_host_volumes %}
-  host_volume "{{ volume.name }}" {
-    path = "{{ volume.path }}"
-    read_only = {{ volume.read_only | lower }}
-  }
-  {% endfor %}
-
   options = {
     "driver.denylist" = "docker"
   }

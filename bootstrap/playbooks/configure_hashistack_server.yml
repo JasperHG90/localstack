@@ -7,54 +7,23 @@
       vars:
         consul_server_ip: "192.168.2.30"
         consul_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
-        consul_services:
-          - name: "minio"
-            id: "minio"
-            port: 9001
-            address: "192.168.2.32"
-            tags:
-              - "http"
-              - "s3"
-            check:
-              name: "minio health check (curl)"
-              type: "http"
-              http: "http://192.168.2.32:9000/minio/health/live"
-              method: "GET"
-              status: "passing"
-              interval: "10s"
-              timeout: "5s"
-
-          - name: "docker registry UI"
-            id: "docker-registry-ui"
-            port: 5001
-            address: "192.168.2.30"
-            tags:
-              - "http"
-            check:
-              name: "docker registry health check (curl)"
-              type: "script"
-              script_name: "docker_registry_health_check.sh"
-              interval: "10s"
-              timeout: "5s"
-              user: "localstack"
-              pass: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
-              url: "http://192.168.2.30:5001"
-
-          - name: "docker registry v2"
-            id: "docker-registry-v2"
-            port: 5000
-            address: "192.168.2.30"
-            tags:
-              - "http"
-            check:
-              name: "docker registry v2 health check (curl)"
-              type: "script"
-              script_name: "docker_registry_v2_health_check.sh"
-              interval: "10s"
-              timeout: "5s"
-              user: "localstack"
-              pass: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
-              url: "http://192.168.2.30:5000/v2/"
+        # Uncomment to add custom services to Consul
+        # consul_services:
+        #   - name: "minio"
+        #     id: "minio"
+        #     port: 9001
+        #     address: "192.168.2.32"
+        #     tags:
+        #       - "http"
+        #       - "s3"
+        #     check:
+        #       name: "minio health check (curl)"
+        #       type: "http"
+        #       http: "http://192.168.2.32:9000/minio/health/live"
+        #       method: "GET"
+        #       status: "passing"
+        #       interval: "10s"
+        #       timeout: "5s"
 
 - name: Configure Vault server
   hosts: server
@@ -73,7 +42,3 @@
       vars:
         nomad_server_ip_address: "192.168.2.30"
         nomad_server_consul_token_secret: "{{ lookup('env', 'NOMAD_CONSUL_TOKEN_SECRET') }}"
-        nomad_server_host_volumes:
-          - name: postgres-host-data
-            path: /var/lib/postgres-nomad-data
-            read_only: false

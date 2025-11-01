@@ -38,9 +38,8 @@ ssh_add:
     ssh-add ${SSH_DIR}/id_rsa
 
 bootstrap: ssh_add setup
-    #ansible-playbook playbooks/install_dependencies.yml
-    #ansible-playbook playbooks/configure_podman.yml
-    ansible-playbook playbooks/configure_hashistack_server.yml
+    ansible-playbook playbooks/install_dependencies.yml
+    ansible-playbook playbooks/configure_podman.yml
+    #ansible-playbook playbooks/configure_hashistack_server.yml
     ansible-playbook playbooks/configure_hashistack_clients.yml
-    #ansible-playbook playbooks/configure_minio.yml
     #ansible-playbook playbooks/configure_network.yml

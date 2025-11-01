@@ -26,11 +26,36 @@
           - avahi-daemon
           - coreutils
           - python3-pip
+          - apache2-utils
+        state: present
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+  handlers:
+    # This task is defined but will only run when notified
+    - name: Reboot_server
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+
+- name: Install podman-compose (server)
+  hosts: server
+  become: true
+
+  tasks:
+    - name: Install podman-compose
+      ansible.builtin.apt:
+        name:
           - podman-compose
         state: present
       environment:
         DEBIAN_FRONTEND: noninteractive
 
+- name: Configure Cluster Node Prerequisites
+  hosts: orange_pi*
+  become: true
+  gather_facts: true
+
+  tasks:
     - name: Install OrangePi-specific dependencies
       ansible.builtin.apt:
         name:
@@ -42,8 +67,6 @@
           - libnss-mdns
         state: present
         update_cache: true
-      when:
-        - inventory_hostname in groups['orange_pi_rv2']
       environment:
         DEBIAN_FRONTEND: noninteractive
 
@@ -54,7 +77,7 @@
         reboot_timeout: 600
 
 - name: Install HashiStack Components
-  hosts: server,client
+  hosts: server, client
   become: true
   gather_facts: true
 

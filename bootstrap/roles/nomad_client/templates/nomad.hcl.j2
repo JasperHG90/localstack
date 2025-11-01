@@ -7,7 +7,7 @@ log_level = "DEBUG"
 
 # Used by the agent to find and join the cluster via Serf.
 retry_join = [
-  "192.168.2.30:4647"
+  "{{ nomad_client_server_address }}:4647"
 ]
 
 acl {
@@ -17,6 +17,11 @@ acl {
 consul {
   address = "127.0.0.1:8500" # NB: Needs to be a local consul agent
   token   = "{{ nomad_server_consul_token_secret }}"
+}
+
+vault {
+  enabled         = true
+  address        =  "http://{{ nomad_client_server_address }}:8200"
 }
 
 client {
