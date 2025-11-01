@@ -28,3 +28,9 @@ provider "consul" {
   address    = "localstack.local:8500"
   datacenter = "localstack"
 }
+
+provider "minio" {
+  minio_server = "${data.consul_service.minio.service[0].node_address}:9000"
+  minio_user = ephemeral.vault_kv_secret_v2.db_secret.data.access_key
+  minio_password = ephemeral.vault_kv_secret_v2.db_secret.data.secret_key
+}

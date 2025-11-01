@@ -3,7 +3,8 @@ node_name = "raspberry"
 
 data_dir = "/opt/consul"
 client_addr = "0.0.0.0"
-bind_addr = "0.0.0.0"
+bind_addr = "{{ ansible_default_ipv4.address }}"
+advertise_addr = "{{ ansible_default_ipv4.address }}"
 
 server = false
 

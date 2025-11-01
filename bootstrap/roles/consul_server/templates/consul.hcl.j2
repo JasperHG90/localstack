@@ -4,9 +4,9 @@
 datacenter = "localstack"
 data_dir   = "/var/lib/consul"
 
-bind_addr      = "0.0.0.0"
 client_addr    = "0.0.0.0"
 advertise_addr = "{{ consul_server_ip }}"
+bind_addr      = "{{ consul_server_ip }}"
 
 retry_join = ["127.0.0.1"]
 
