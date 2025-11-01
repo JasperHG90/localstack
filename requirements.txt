@@ -1,0 +1,4 @@
+duckdb[all] < 2.0.0
+pendulum
+httpx
+ipykernel

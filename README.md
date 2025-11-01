@@ -1,5 +1,12 @@
 # Localstack server
 
+TODO:
+
+- https://developer.hashicorp.com/nomad/docs/networking/cni # Use bridge networking on all devices set up with ansible
+- Podman permanent login
+- Add service tags to nomad docker registry
+- Deploy minio with service tags
+
 ---
 
 Todo
