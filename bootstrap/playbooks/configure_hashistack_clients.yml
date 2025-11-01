@@ -5,7 +5,8 @@
   roles:
     - role: consul_client
       vars:
-        consul_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
+        consul_client_server_address: "192.168.2.30"
+        consul_client_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
 
 - name: Configure Nomad client
   hosts: client
@@ -13,4 +14,5 @@
   roles:
     - role: nomad_client
       vars:
-        nomad_server_consul_token_secret: "{{ lookup('env', 'NOMAD_CONSUL_TOKEN_SECRET') }}"
+        nomad_client_server_address: "192.168.2.30"
+        nomad_client_server_consul_token_secret: "{{ lookup('env', 'NOMAD_CONSUL_TOKEN_SECRET') }}"

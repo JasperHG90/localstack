@@ -37,19 +37,6 @@
       ansible.builtin.reboot:
         reboot_timeout: 600
 
-- name: Install podman-compose (server)
-  hosts: server
-  become: true
-
-  tasks:
-    - name: Install podman-compose
-      ansible.builtin.apt:
-        name:
-          - podman-compose
-        state: present
-      environment:
-        DEBIAN_FRONTEND: noninteractive
-
 - name: Configure Cluster Node Prerequisites
   hosts: orange_pi*
   become: true
@@ -110,3 +97,53 @@
         update_cache: true
       environment:
         DEBIAN_FRONTEND: noninteractive
+
+- name: Install CNI plugins
+  hosts: all
+  become: true
+  vars:
+    hashicorp_arch_map:
+      aarch64: arm64
+      x86_64: amd64
+    hashicorp_arch: "{{ hashicorp_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+  tasks:
+    - name: Download CNI plugins
+      ansible.builtin.get_url:
+        url: "https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-{{ hashicorp_arch }}-v1.1.1.tgz"
+        dest: "/tmp/cni-plugins.tgz"
+        mode: '0644'
+
+    - name: Ensure CNI bin directory exists
+      ansible.builtin.file:
+        path: /opt/cni/bin
+        state: directory
+        mode: '0755'
+
+    - name: Extract CNI plugins
+      ansible.builtin.unarchive:
+        src: "/tmp/cni-plugins.tgz"
+        dest: "/opt/cni/bin/"
+        remote_src: yes
+
+- name: Configure bridge networking prerequisites
+  hosts: all
+  become: true
+  tasks:
+    - name: Load br_netfilter kernel module
+      community.general.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Create bridge.conf for sysctl
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/bridge.conf
+        content: |
+          net.bridge.bridge-nf-call-arptables = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+      notify: Apply sysctl
+
+  handlers:
+    - name: Apply sysctl
+      ansible.builtin.command:
+        cmd: sysctl --system

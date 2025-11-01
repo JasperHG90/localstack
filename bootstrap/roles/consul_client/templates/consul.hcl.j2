@@ -7,14 +7,14 @@ bind_addr = "0.0.0.0"
 
 server = false
 
-retry_join = ["192.168.2.30"] 
+retry_join = ["{{ consul_client_server_address }}"] 
 
 enable_local_script_checks = true
 
 acl {
   tokens {
-    agent = "{{ consul_server_agent_token_secret }}"
-    default = "{{ consul_server_agent_token_secret }}"
+    agent = "{{ consul_client_server_agent_token_secret }}"
+    default = "{{ consul_client_server_agent_token_secret }}"
   }
   
   default_policy = "deny" 

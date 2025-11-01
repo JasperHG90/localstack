@@ -16,7 +16,7 @@ acl {
 
 consul {
   address = "127.0.0.1:8500" # NB: Needs to be a local consul agent
-  token   = "{{ nomad_server_consul_token_secret }}"
+  token   = "{{ nomad_client_server_consul_token_secret }}"
 }
 
 vault {
@@ -36,6 +36,9 @@ client {
     memory = 512
     disk   = 10240
   }
+
+  cni_path = "/opt/cni/bin"
+  cni_config_dir = "/opt/cni/config"
 
 }
 

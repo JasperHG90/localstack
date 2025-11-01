@@ -3,9 +3,6 @@
   hosts: all
   become: true
 
-  roles:
-    - role: docker_registry_conf
-
   tasks:
     - name: Ensure lingering is enabled for {{ ansible_user }}
       ansible.builtin.command: loginctl enable-linger {{ ansible_user }}
@@ -24,23 +21,3 @@
           [engine]
           runtime = "crun"
         marker: "# {mark} ANSIBLE MANAGED BLOCK - PODMAN ROOTLESS CONFIG"
-
-- name: Set up docker registry
-  hosts: server
-  become: true
-
-  roles:
-    - role: docker_registry
-      vars:
-        docker_registry_password: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
-  
-- name: Podman login local registry
-  hosts: all
-  become: false
-
-  tasks:
-    - name: Log in to private container registry
-      containers.podman.podman_login:
-        registry: "localstack.local:5000"
-        username: "localstack"
-        password: "{{ lookup('env', 'DOCKER_REGISTRY_PASSWORD') }}"
