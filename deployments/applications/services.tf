@@ -1,10 +1,19 @@
 data "consul_service" "minio" {
     name = "minio"
-    # Optional parameter: implicitly uses the current datacenter of the agent
     datacenter = "localstack"
 }
 
-ephemeral "vault_kv_secret_v2" "db_secret" {
+data "consul_service" "postgres" {
+    name = "postgres-db"
+    datacenter = "localstack"
+}
+
+ephemeral "vault_kv_secret_v2" "minio_admin" {
   mount = "secret"
   name  = "default/minio/localstack"
+}
+
+ephemeral "vault_kv_secret_v2" "postgres_admin" {
+  mount = "secret"
+  name  = "default/postgres/localstack"
 }
