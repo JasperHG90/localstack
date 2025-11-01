@@ -10,9 +10,13 @@ locals {
         capacity_max = "100 GiB"
         capacity_min = "10 GiB"
       },
-      "docker_registry" = {
+      "docker_registry_data" = {
         capacity_max = "200 GiB"
         capacity_min = "20 GiB"
+      },
+      "docker_registry_auth" = {
+        capacity_max = "10 MiB"
+        capacity_min = "1 MiB"
       }
     }
     "orangepi4a" = {
@@ -55,7 +59,24 @@ resource "nomad_dynamic_host_volume" "volumes" {
 
 ### Postgres
 resource "nomad_job" "postgres" {
-    jobspec = templatefile("${path.module}/services/postgres.hcl", { postgres_secret = vault_kv_secret_v2.postgres_root_credentials.path })
+    jobspec = templatefile(
+      "${path.module}/services/postgres.hcl", 
+      { postgres_secret = vault_kv_secret_v2.postgres_root_credentials.path }
+    )
+}
+
+### Docker registry
+resource "nomad_job" "docker_registry" {
+    jobspec = templatefile(
+      "${path.module}/services/docker_registry.hcl", 
+      { docker_registry_secret = vault_kv_secret_v2.docker_registry_credentials.path }
+    )
 }
 
 ### Minio
+resource "nomad_job" "minio" {
+    jobspec = templatefile(
+      "${path.module}/services/minio.hcl", 
+      { minio_secret = vault_kv_secret_v2.minio_credentials.path }
+    )
+}
