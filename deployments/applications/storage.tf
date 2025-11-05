@@ -1,70 +1,48 @@
-resource "minio_s3_bucket" "data_lake" {
-  bucket = "datalake"
-  acl    = "private"
-}
-
-resource "minio_iam_user" "ducklake_writer" {
-    name = "ducklake"
-}
-
-resource "minio_iam_user" "ducklake_reader" {
-    name = "ducklake_reader"
-}
-
-// See: https://docs.min.io/enterprise/aistor-object-store/administration/iam/access/
-resource "minio_iam_policy" "data_lake_read_write" {
-  name = "data_lake_read_write"
-  policy= <<EOF
-{
-  "Version":"2012-10-17",
-  "Statement": [
-    {
-      "Sid":"DataLakeReadWrite",
-      "Effect": "Allow",
-      "Action": ["s3:*"],
-      "Principal":"*",
-      "Resource": "arn:aws:s3:::${minio_s3_bucket.data_lake.id}"
+locals {
+  buckets = {
+    datalake = {
+      writers = [
+        {"name" = "ducklake_writer", generate_access_key = true}
+      ],
+      readers = [
+        {"name" = "ducklake_reader", generate_access_key = true}
+      ]
     }
-  ]
-}
-EOF
+  }
+
+  all_minio_users = distinct(flatten([
+    for bucket in local.buckets : concat(
+      [for writer in bucket.writers : writer.name],
+      [for reader in bucket.readers : reader.name]
+    )
+  ]))
+
+  access_key_users = flatten([
+    for bucket in local.buckets : concat(
+      [for writer in bucket.writers : writer.name if writer.generate_access_key],
+      [for reader in bucket.readers : reader.name if reader.generate_access_key]
+    )
+  ])
 }
 
-# NB: may need /* after resource
-resource "minio_iam_policy" "data_lake_read_only" {
-  name = "data_lake_read_only"
-  policy= <<EOF
-{
-  "Version":"2012-10-17",
-  "Statement": [
-    {
-      "Sid":"DataLakeReadWrite",
-      "Effect": "Allow",
-      "Action": ["s3:GetBucketLocation", "s3:GetObject"],
-      "Principal":"*",
-      "Resource": "arn:aws:s3:::${minio_s3_bucket.data_lake.id}"
-    }
-  ]
-}
-EOF
+resource "minio_iam_user" "users" {
+  for_each = toset(local.all_minio_users)
+  name     = each.key
 }
 
-resource "minio_iam_user_policy_attachment" "data_lake_writer" {
-  user_name   = minio_iam_user.ducklake_writer.id
-  policy_name = minio_iam_policy.data_lake_read_write.id
+resource "minio_accesskey" "users" {
+  for_each = toset(local.access_key_users)
+  user     = each.key
+  status   = "enabled"
 }
 
-resource "minio_iam_user_policy_attachment" "data_lake_reader" {
-  user_name   = minio_iam_user.ducklake_reader.id
-  policy_name = minio_iam_policy.data_lake_read_only.id
-}
+module "buckets" {
+  for_each = local.buckets
+  source = "./modules/bucket"
 
-resource "minio_accesskey" "ducklake_writer" {
-  user = "${minio_iam_user.ducklake_writer.name}"
-  status = "enabled"
-}
-
-resource "minio_accesskey" "ducklake_reader" {
-  user = "${minio_iam_user.ducklake_reader.name}"
-  status = "enabled"
+  name = each.key
+  permissions = {
+    readers = [ for reader in each.value.readers : reader.name ]
+    writers = [ for writer in each.value.writers : writer.name ]
+  }
 }
