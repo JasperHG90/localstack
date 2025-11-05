@@ -5525,10 +5525,10 @@
     {
       "id": "pApxl1J1DctBFK22S4F3v",
       "type": "rectangle",
-      "x": 5604.163536055025,
-      "y": 46.22236860709472,
-      "width": 324.67595893848153,
-      "height": 110.42942157247364,
+      "x": 5688.657293714241,
+      "y": 310.11371291321416,
+      "width": 320.8413738419727,
+      "height": 131.02088841301895,
       "angle": 0,
       "strokeColor": "#000000",
       "backgroundColor": "#ffec99",
@@ -5544,8 +5544,8 @@
         "type": 3
       },
       "seed": 2002064046,
-      "version": 1259,
-      "versionNonce": 1925016260,
+      "version": 1464,
+      "versionNonce": 1928234849,
       "isDeleted": false,
       "boundElements": [
         {
@@ -5557,15 +5557,15 @@
           "type": "arrow"
         }
       ],
-      "updated": 1761687138842,
+      "updated": 1762026705926,
       "link": null,
       "locked": false
     },
     {
       "id": "VlA_amh4XTDIW2qeyOo3P",
       "type": "text",
-      "x": 5621.007573263524,
-      "y": 56.437079393331544,
+      "x": 5703.584038374485,
+      "y": 330.62415711972363,
       "width": 290.9878845214844,
       "height": 90,
       "angle": 0,
@@ -5581,11 +5581,11 @@
       "index": "b3DG",
       "roundness": null,
       "seed": 272170034,
-      "version": 210,
-      "versionNonce": 2125236676,
+      "version": 348,
+      "versionNonce": 355132193,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1761687138842,
+      "updated": 1762026705927,
       "link": null,
       "locked": false,
       "text": "Docker\nregistry V2 + UI",
@@ -5818,8 +5818,8 @@
     {
       "id": "rZgJIb61JuOTn8yRpvWK0",
       "type": "text",
-      "x": 5041.717886493827,
-      "y": 1807.2123053332934,
+      "x": 5082.500151691307,
+      "y": 1556.7453637345307,
       "width": 230.36390686035156,
       "height": 270,
       "angle": 0,
@@ -5835,11 +5835,11 @@
       "index": "b3P",
       "roundness": null,
       "seed": 1266505134,
-      "version": 409,
-      "versionNonce": 150488552,
+      "version": 455,
+      "versionNonce": 1808426177,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1761959593367,
+      "updated": 1762026718983,
       "link": null,
       "locked": false,
       "text": "{\n  arch: arm64\n  CPU: 8\n  RAM: 4GB\n  NPU: 2\n}",
@@ -5894,8 +5894,8 @@
       "type": "arrow",
       "x": 5615.9810014485,
       "y": -207.56955562300516,
-      "width": 92.9240155114112,
-      "height": 246.3625463772679,
+      "width": 173.96888874709293,
+      "height": 509.33282358890864,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "#ffd8a8",
@@ -5911,11 +5911,11 @@
         "type": 2
       },
       "seed": 534235320,
-      "version": 190,
-      "versionNonce": 550203972,
+      "version": 341,
+      "versionNonce": 1632170817,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1761687138842,
+      "updated": 1762026705927,
       "link": null,
       "locked": false,
       "points": [
@@ -5924,8 +5924,8 @@
           0
         ],
         [
-          92.9240155114112,
-          246.3625463772679
+          173.96888874709293,
+          509.33282358890864
         ]
       ],
       "lastCommittedPoint": null,
