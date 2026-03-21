@@ -1,0 +1,17 @@
+---
+- name: Configure Tailscale on server (subnet router)
+  hosts: server
+  become: true
+  roles:
+    - role: tailscale
+      vars:
+        tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+        tailscale_advertise_routes: "192.168.2.0/24"
+
+- name: Configure Tailscale on clients
+  hosts: client
+  become: true
+  roles:
+    - role: tailscale
+      vars:
+        tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"

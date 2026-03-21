@@ -1,22 +1,9 @@
 locals {
-  node_ids_by_hostname = {
-    "localstack" = "9ec2b8c5-69f4-3ad4-4868-b3d3ce414236"
-    "orangepi4a" = "0aaa7eaf-4c06-bfb3-eaba-ead6de3096f5"
-  }
-
   node_host_volumes = {
     "localstack" = {
       "postgres" = {
         capacity_max = "100 GiB"
         capacity_min = "10 GiB"
-      },
-      "docker_registry_data" = {
-        capacity_max = "200 GiB"
-        capacity_min = "20 GiB"
-      },
-      "docker_registry_auth" = {
-        capacity_max = "10 MiB"
-        capacity_min = "1 MiB"
       }
     }
     "orangepi4a" = {
@@ -32,7 +19,7 @@ locals {
       for volume_name, config in volumes : {
         host_name   = host_name
         volume_name = volume_name
-        node_id     = local.node_ids_by_hostname[host_name]
+        node_id     = var.node_ids[host_name]
         config      = config
       }
     ]
@@ -65,26 +52,10 @@ resource "nomad_job" "postgres" {
     )
 }
 
-### Docker registry
-resource "nomad_job" "docker_registry" {
-    jobspec = templatefile(
-      "${path.module}/services/docker_registry.hcl", 
-      { docker_registry_secret = vault_kv_secret_v2.docker_registry_credentials.path }
-    )
-}
-
 ### Minio
 resource "nomad_job" "minio" {
     jobspec = templatefile(
       "${path.module}/services/minio.hcl", 
       { minio_secret = vault_kv_secret_v2.minio_credentials.path }
-    )
-}
-
-### Podman config
-resource "nomad_job" "podman_config" {
-    jobspec = templatefile(
-      "${path.module}/services/podman_config.hcl",
-      { docker_registry_secret = vault_kv_secret_v2.podman_config_credentials.path }
     )
 }

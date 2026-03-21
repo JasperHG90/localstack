@@ -1,0 +1,31 @@
+---
+- name: Install Tailscale
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://tailscale.com/install.sh | sh
+    creates: /usr/bin/tailscale
+
+- name: Enable and start tailscaled
+  ansible.builtin.service:
+    name: tailscaled
+    state: started
+    enabled: true
+
+- name: Check if already authenticated
+  ansible.builtin.command:
+    cmd: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+- name: Authenticate with Tailscale
+  ansible.builtin.command:
+    cmd: >
+      tailscale up
+      --authkey={{ tailscale_auth_key }}
+      --hostname={{ tailscale_hostname | default(ansible_hostname) }}
+      {% if tailscale_advertise_routes is defined %}--advertise-routes={{ tailscale_advertise_routes }}{% endif %}
+      --accept-routes
+  when: >
+    tailscale_status.rc != 0 or
+    (tailscale_status.stdout | from_json).BackendState != "Running"
+  changed_when: true

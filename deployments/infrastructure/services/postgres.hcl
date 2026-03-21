@@ -36,6 +36,7 @@ job "postgres" {
 
       env {
         POSTGRES_DB = "localstack"
+        PGDATA      = "/var/lib/postgres-nomad-data"
       }
 
       config {

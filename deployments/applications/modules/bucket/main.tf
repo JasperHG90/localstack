@@ -34,7 +34,7 @@ resource "minio_iam_policy" "policy_read_only" {
   "Version":"2012-10-17",
   "Statement": [
     {
-      "Sid":"DataLakeReadWrite",
+      "Sid":"DataLakeReadOnly",
       "Effect": "Allow",
       "Action": ["s3:GetBucketLocation", "s3:GetObject"],
       "Principal":"*",

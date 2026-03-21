@@ -55,7 +55,7 @@ job "minio" {
       }
 
       config {
-        image   = "docker.io/minio/minio:latest"
+        image   = "docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z"
         command = "server"
         args    = ["/data", "--console-address", ":9001"]
         ports   = ["http_api", "http_console"]
