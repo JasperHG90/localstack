@@ -1,6 +1,6 @@
 ---
-- name: Configure Consul client
-  hosts: client
+- name: Configure Consul worker
+  hosts: worker
   become: true
   roles:
     - role: consul_client
@@ -8,8 +8,8 @@
         consul_client_server_address: "192.168.2.30"
         consul_client_server_agent_token_secret: "{{ lookup('env', 'CONSUL_AGENT_TOKEN_SECRET') }}"
 
-- name: Configure Nomad client
-  hosts: client
+- name: Configure Nomad worker
+  hosts: worker
   become: true
   roles:
     - role: nomad_client

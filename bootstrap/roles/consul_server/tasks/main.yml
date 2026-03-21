@@ -37,7 +37,7 @@
     owner: consul
     group: consul
     mode: '0755'
-  loop: "{{ consul_services }}"
+  loop: "{{ consul_services | default([]) }}"
   when: item.check.type == "script"
   notify: Restart consul
 
@@ -48,7 +48,7 @@
     owner: consul
     group: consul
     mode: '0644'
-  loop: "{{ consul_services }}"
+  loop: "{{ consul_services | default([]) }}"
   notify: Restart consul
 
 - name: Ensure Consul service is started and enabled

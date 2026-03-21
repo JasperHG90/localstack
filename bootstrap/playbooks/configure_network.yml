@@ -1,8 +1,8 @@
 ---
-- name: Firewall settings orange pi
+- name: Firewall settings orange pi rv2
   hosts: orange_pi_rv2
-  become: yes
-  
+  become: true
+
   roles:
     - role: firewall
       vars:
@@ -12,9 +12,9 @@
           - { port: 9000, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 9001, proto: tcp, from_ip: "192.168.0.0/16" }
 
-- name: Firewall settings server
-  hosts: server
-  become: yes
+- name: Firewall settings manager
+  hosts: manager
+  become: true
   
   roles:
     - role: firewall
@@ -37,9 +37,9 @@
           - { port: 8600, from_ip: "192.168.0.0/16" }
           - { port: 4648, from_ip: "192.168.0.0/16" }
 
-- name: Firewall settings clients
-  hosts: client
-  become: yes
+- name: Firewall settings worker
+  hosts: worker
+  become: true
   
   roles:
     - role: firewall

@@ -1,6 +1,6 @@
 ---
-- name: Configure Consul server
-  hosts: server
+- name: Configure Consul manager
+  hosts: manager
   become: true
   roles:
     - role: consul_server
@@ -25,8 +25,8 @@
         #       interval: "10s"
         #       timeout: "5s"
 
-- name: Configure Vault server
-  hosts: server
+- name: Configure Vault manager
+  hosts: manager
   become: true
   roles:
     - role: vault_server
@@ -34,8 +34,8 @@
         vault_server_ip_address: "192.168.2.30"
         vault_server_consul_token_secret: "{{ lookup('env', 'VAULT_CONSUL_TOKEN_SECRET') }}"
 
-- name: Configure Nomad server
-  hosts: server
+- name: Configure Nomad manager
+  hosts: manager
   become: true
   roles:
     - role: nomad_server

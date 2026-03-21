@@ -92,7 +92,7 @@
     owner: nomad
     group: nomad
     mode: '0755'
-  loop: "{{ nomad_server_host_volumes }}"
+  loop: "{{ nomad_server_host_volumes | default([]) }}"
 
 - name: Store Nomad's Consul token
   ansible.builtin.copy:

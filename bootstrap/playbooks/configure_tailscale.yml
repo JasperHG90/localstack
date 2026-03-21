@@ -1,6 +1,6 @@
 ---
 - name: Configure Tailscale on server (subnet router)
-  hosts: server
+  hosts: manager
   become: true
   roles:
     - role: tailscale
@@ -9,7 +9,7 @@
         tailscale_advertise_routes: "192.168.2.0/24"
 
 - name: Configure Tailscale on clients
-  hosts: client
+  hosts: worker
   become: true
   roles:
     - role: tailscale
