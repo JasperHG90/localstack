@@ -8,10 +8,13 @@
         tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
         tailscale_advertise_routes: "192.168.2.0/24"
 
-- name: Configure Tailscale on clients
+- name: Disable Tailscale on workers (traffic routed via manager subnet route)
   hosts: worker
   become: true
-  roles:
-    - role: tailscale
-      vars:
-        tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+  tasks:
+    - name: Stop and disable tailscaled
+      ansible.builtin.service:
+        name: tailscaled
+        state: stopped
+        enabled: false
+      failed_when: false

@@ -1,56 +1,61 @@
 ---
-- name: Firewall settings orange pi rv2
-  hosts: orange_pi_rv2
-  become: true
-
-  roles:
-    - role: firewall
-      vars:
-        firewall_ufw_ports:
-          - { port: 22, from_ip: "192.168.0.0/16" }
-          # Minio ports
-          - { port: 9000, proto: tcp, from_ip: "192.168.0.0/16" }
-          - { port: 9001, proto: tcp, from_ip: "192.168.0.0/16" }
-
 - name: Firewall settings manager
   hosts: manager
   become: true
-  
+
   roles:
     - role: firewall
       vars:
         firewall_ufw_ports:
           - { port: 22, from_ip: "192.168.0.0/16" }
+          - { port: 22, from_ip: "100.64.0.0/10" }
           # Docker registry
           - { port: 5000, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 5001, proto: tcp, from_ip: "192.168.0.0/16" }
           # Postgres
           - { port: 5432, from_ip: "192.168.0.0/16" }
-          # HashiStack
+          # Consul
           - { port: 8500, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 8500, proto: tcp, from_ip: "100.64.0.0/10" }
           - { port: 8300, proto: tcp, from_ip: "192.168.0.0/16" }
-          - { port: 8200, proto: tcp, from_ip: "192.168.0.0/16" }
-          - { port: 8201, proto: tcp, from_ip: "192.168.0.0/16" }
-          - { port: 4646, proto: tcp, from_ip: "192.168.0.0/16" }
-          - { port: 4647, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 8301, from_ip: "192.168.0.0/16" }
           - { port: 8600, from_ip: "192.168.0.0/16" }
+          # Vault
+          - { port: 8200, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 8200, proto: tcp, from_ip: "100.64.0.0/10" }
+          - { port: 8201, proto: tcp, from_ip: "192.168.0.0/16" }
+          # Nomad
+          - { port: 4646, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 4646, proto: tcp, from_ip: "100.64.0.0/10" }
+          - { port: 4647, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 4648, from_ip: "192.168.0.0/16" }
+          # HAProxy
+          - { port: 80, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 80, proto: tcp, from_ip: "100.64.0.0/10" }
+          - { port: 8404, proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: 8404, proto: tcp, from_ip: "100.64.0.0/10" }
+          # Nomad dynamic ports for services
+          - { port: "20000:32000", proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: "20000:32000", proto: tcp, from_ip: "100.64.0.0/10" }
 
 - name: Firewall settings worker
   hosts: worker
   become: true
-  
+
   roles:
     - role: firewall
       vars:
         firewall_ufw_ports:
           - { port: 22, from_ip: "192.168.0.0/16" }
-          # HashiStack clients
+          # Consul client
           - { port: 8301, from_ip: "192.168.0.0/16" }
           - { port: 8300, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 8500, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 8600, from_ip: "192.168.0.0/16" }
+          # Nomad client
           - { port: 4646, proto: tcp, from_ip: "192.168.0.0/16" }
           - { port: 4647, from_ip: "192.168.0.0/16" }
           - { port: 4648, proto: tcp, from_ip: "192.168.0.0/16" }
+          # Nomad dynamic ports for services
+          - { port: "20000:32000", proto: tcp, from_ip: "192.168.0.0/16" }
+          - { port: "20000:32000", proto: tcp, from_ip: "100.64.0.0/10" }

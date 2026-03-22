@@ -1,14 +1,51 @@
 ---
+- name: Enable IP forwarding for subnet routing
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_file: /etc/sysctl.d/99-tailscale.conf
+    reload: true
+  when: tailscale_advertise_routes is defined
+
 - name: Install Tailscale
   ansible.builtin.shell:
     cmd: curl -fsSL https://tailscale.com/install.sh | sh
     creates: /usr/bin/tailscale
+
+- name: Configure tailscaled for userspace networking
+  ansible.builtin.lineinfile:
+    path: /etc/default/tailscaled
+    regexp: '^FLAGS='
+    line: 'FLAGS="--tun=userspace-networking"'
+  when: tailscale_userspace_networking | default(false) | bool
+  notify: Restart tailscaled
+
+- name: Ensure default tailscaled flags when not using userspace networking
+  ansible.builtin.lineinfile:
+    path: /etc/default/tailscaled
+    regexp: '^FLAGS='
+    line: 'FLAGS=""'
+  when: not (tailscale_userspace_networking | default(false) | bool)
+  notify: Restart tailscaled
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Enable and start tailscaled
   ansible.builtin.service:
     name: tailscaled
     state: started
     enabled: true
+
+- name: Wait for tailscaled to be ready
+  ansible.builtin.command:
+    cmd: tailscale status --json
+  register: tailscaled_ready
+  until: tailscaled_ready.rc == 0
+  retries: 10
+  delay: 2
+  changed_when: false
+  failed_when: false
 
 - name: Check if already authenticated
   ansible.builtin.command:

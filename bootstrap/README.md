@@ -1,4 +1,36 @@
-# README
+# Bootstrap
+
+Ansible playbooks and roles for provisioning the cluster. Run `just bootstrap` to execute the full pipeline.
+
+## Prerequisites
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+```shell
+cp .env.example .env
+```
+
+| Variable | Description |
+|---|---|
+| `DOCKER_REGISTRY_PASSWORD` | Password for the private Docker registry |
+| `MINIO_ROOT_PASSWORD` | MinIO root password |
+| `CONSUL_AGENT_TOKEN_SECRET` | Consul agent ACL token |
+| `VAULT_CONSUL_TOKEN_SECRET` | Vault's Consul ACL token |
+| `NOMAD_CONSUL_TOKEN_SECRET` | Nomad's Consul ACL token |
+| `TAILSCALE_AUTH_KEY` | Tailscale auth key for subnet router |
+| `GITHUB_USER` | GitHub username for ghcr.io access |
+| `GITHUB_PAT` | GitHub classic PAT with `read:packages` scope (fine-grained tokens don't support packages) |
+
+### GitHub Container Registry
+
+A **classic** personal access token is required (not fine-grained):
+
+1. Go to https://github.com/settings/tokens
+2. Generate new token (classic)
+3. Select `read:packages` scope
+4. Add to `.env` as `GITHUB_PAT`
 
 ## Setup for *every node*
 

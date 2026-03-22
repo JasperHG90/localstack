@@ -21,3 +21,11 @@
           [engine]
           runtime = "crun"
         marker: "# {mark} ANSIBLE MANAGED BLOCK - PODMAN ROOTLESS CONFIG"
+
+    - name: Log in to GitHub Container Registry
+      become_user: "{{ ansible_user }}"
+      ansible.builtin.command:
+        cmd: podman login ghcr.io -u {{ github_user }} -p {{ github_pat }}
+      changed_when: true
+      no_log: true
+      when: github_user is defined and github_pat is defined

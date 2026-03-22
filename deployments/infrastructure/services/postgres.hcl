@@ -1,10 +1,14 @@
-# Run job using `nomad job run /home/vscode/workspace/services/postgres/postgresql.hcl`
 job "postgres" {
   datacenters = ["localstack"]
   type        = "service"
   namespace   = "default"
 
   group "postgres" {
+    constraint {
+      attribute = "$${attr.unique.hostname}"
+      value     = "firebat"
+    }
+
     network {
       port "db" {
         static = 5432
@@ -12,10 +16,11 @@ job "postgres" {
       }
     }
 
-    # Defined in /etc/nomad.d/nomad.hcl
     volume "postgres_data_volume" {
-      type   = "host"
-      source = "postgres-host-data"
+      type            = "host"
+      source          = "postgres"
+      access_mode     = "single-node-writer"
+      attachment_mode = "file-system"
     }
 
     task "postgres" {
@@ -62,8 +67,8 @@ job "postgres" {
       }
 
       resources {
-        cpu    = 1000
-        memory = 2048
+        cpu    = 2000
+        memory = 4096
       }
     }
   }

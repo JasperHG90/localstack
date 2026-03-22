@@ -4,23 +4,21 @@
 namespace "default" {
   policy = "write"
   capabilities = [
-    "submit-job"
+    "submit-job",
+    "read-job",
+    "list-jobs",
+    "dispatch-job",
+    "read-logs",
+    "read-fs",
+    "alloc-exec",
+    "alloc-lifecycle",
+    "alloc-node-exec"
   ]
 }
 
 # Grant full access to host volumes
 host_volume "*" {
   policy = "write"
-}
-
-# Grant full control over jobs (run, stop, read, etc.).
-job {
-  policy = "write"
-}
-
-# Grant ability to inspect allocations and read logs.
-allocation {
-  policy = "read"
 }
 
 # Grant read-only access to cluster-level information needed for debugging.
@@ -32,11 +30,4 @@ agent {
 }
 operator {
   policy = "read"
-}
-
-# --- CRITICAL SECURITY RULE ---
-# Explicitly DENY the ability to manage ACLs. This is what makes
-# this token safer than the bootstrap token.
-acl {
-  policy = "deny"
 }

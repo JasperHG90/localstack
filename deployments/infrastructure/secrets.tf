@@ -30,9 +30,8 @@ resource "vault_kv_secret_v2" "minio_credentials" {
 
 ### Postgres root password
 resource "random_password" "postgres_root" {
-  length           = 16
-  special          = false
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  length  = 16
+  special = false
 }
 
 resource "vault_kv_secret_v2" "postgres_root_credentials" {

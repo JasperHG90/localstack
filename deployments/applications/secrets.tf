@@ -3,8 +3,8 @@ resource "vault_kv_secret_v2" "postgres_credentials" {
   mount = var.secret_mount
   name  = "default/postgres/${each.key}"
   data_json = jsonencode({
-    access_key = each.key
-    secret_key = random_password.password[each.key].result
+    username = each.key
+    password = random_password.password[each.key].result
   })
 }
 

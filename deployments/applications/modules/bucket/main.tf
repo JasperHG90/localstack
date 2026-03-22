@@ -19,14 +19,13 @@ resource "minio_iam_policy" "policy_read_write" {
       "Effect": "Allow",
       "Action": ["s3:*"],
       "Principal":"*",
-      "Resource": "arn:aws:s3:::${minio_s3_bucket.bucket.id}"
+      "Resource": ["arn:aws:s3:::${minio_s3_bucket.bucket.id}", "arn:aws:s3:::${minio_s3_bucket.bucket.id}/*"]
     }
   ]
 }
 EOF
 }
 
-# NB: may need /* after resource
 resource "minio_iam_policy" "policy_read_only" {
   name = "${local.name_underscore}_read_only"
   policy= <<EOF
@@ -38,7 +37,7 @@ resource "minio_iam_policy" "policy_read_only" {
       "Effect": "Allow",
       "Action": ["s3:GetBucketLocation", "s3:GetObject"],
       "Principal":"*",
-      "Resource": "arn:aws:s3:::${minio_s3_bucket.bucket.id}"
+      "Resource": ["arn:aws:s3:::${minio_s3_bucket.bucket.id}", "arn:aws:s3:::${minio_s3_bucket.bucket.id}/*"]
     }
   ]
 }

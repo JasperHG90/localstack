@@ -1,12 +1,17 @@
 locals {
   roles = [
     "ducklake_owner",
-    "ducklake_reader"
+    "ducklake_reader",
+    "memex"
   ]
   databases = {
     ducklake = {
       owner = "ducklake_owner"
       readers = ["ducklake_reader"]
+    }
+    memex = {
+      owner   = "memex"
+      readers = []
     }
   }
 
@@ -27,9 +32,8 @@ locals {
 
 resource "random_password" "password" {
   for_each = toset(local.roles)
-  length           = 16
-  special          = false
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  length  = 16
+  special = false
 }
 
 resource "postgresql_role" "role" {
@@ -39,7 +43,7 @@ resource "postgresql_role" "role" {
   password = random_password.password[each.key].result
 }
 
-resource "postgresql_database" "ducklake" {
+resource "postgresql_database" "database" {
   for_each = local.databases
   name                   = each.key
   owner                  = postgresql_role.role[each.value.owner].name
@@ -53,7 +57,7 @@ resource "postgresql_database" "ducklake" {
 resource "postgresql_grant" "reader" {
   for_each    = local.database_reader_map
   
-  database    = each.value.database
+  database    = postgresql_database.database[each.value.database].name
   role        = postgresql_role.role[each.value.role].name
   schema      = "public"
   object_type = "table"

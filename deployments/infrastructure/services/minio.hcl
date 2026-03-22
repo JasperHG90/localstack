@@ -39,14 +39,21 @@ job "minio" {
       }
 
       service {
-        name = "minio"
+        name = "minio-console"
         port = "http_console"
+        tags = ["http"]
+      }
+
+      service {
+        name = "minio"
+        port = "http_api"
 
         tags = ["http", "s3"]
 
         check {
-          name     = "minio health check (curl)"
+          name     = "minio health check"
           type     = "http"
+          port     = "http_api"
           path     = "/minio/health/live"
           method   = "GET"
           interval = "10s"
@@ -67,8 +74,8 @@ job "minio" {
       }
 
       resources {
-        cpu    = 8000
-        memory = 3248
+        cpu    = 4000
+        memory = 2048
       }
     }
   }

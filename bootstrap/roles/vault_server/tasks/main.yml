@@ -121,3 +121,41 @@
     group: vault
     mode: '0600'
   when: vault_init_output.changed
+
+- name: Flush handlers to ensure Vault is restarted before unsealing
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Vault to be listening
+  ansible.builtin.wait_for:
+    port: 8200
+    host: 127.0.0.1
+    delay: 2
+    timeout: 30
+
+- name: Read Vault init keys
+  ansible.builtin.slurp:
+    src: /opt/vault/init.json
+  register: vault_init_keys
+
+- name: Parse Vault init keys
+  ansible.builtin.set_fact:
+    vault_init: "{{ vault_init_keys['content'] | b64decode | from_json }}"
+
+- name: Check Vault seal status
+  ansible.builtin.command:
+    cmd: vault status -format=json
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  register: vault_status
+  changed_when: false
+  failed_when: false
+
+- name: Unseal Vault
+  ansible.builtin.command:
+    cmd: "vault operator unseal {{ item }}"
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  loop: "{{ vault_init.unseal_keys_b64[:3] }}"
+  no_log: true
+  when: (vault_status.stdout | from_json).sealed | default(true)
+  changed_when: true
