@@ -45,7 +45,7 @@ job "postgres" {
       }
 
       config {
-        image = "docker.io/library/postgres:18"
+        image = "docker.io/pgvector/pgvector:pg18-trixie"
         ports = ["db"]
       }
 
