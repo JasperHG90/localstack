@@ -22,9 +22,9 @@ job "haproxy" {
       driver = "podman"
 
       config {
-        image = "docker.io/library/haproxy:3.1-alpine"
-        ports = ["http", "stats"]
-        args  = ["-f", "/local/haproxy.cfg"]
+        image        = "docker.io/library/haproxy:3.1-alpine"
+        args         = ["-f", "/local/haproxy.cfg"]
+        network_mode = "host"
       }
 
       template {
@@ -41,7 +41,7 @@ defaults
     timeout server  30s
 
 frontend http_in
-    bind *:8080
+    bind *:80
 
     acl is_minio   hdr(host) -i minio.localstack
     acl is_s3      hdr(host) -i s3.localstack
@@ -49,6 +49,7 @@ frontend http_in
     acl is_nomad   hdr(host) -i nomad.localstack
     acl is_consul  hdr(host) -i consul.localstack
     acl is_phoenix hdr(host) -i phoenix.localstack
+    acl is_memex   hdr(host) -i memex.localstack
 
     use_backend minio   if is_minio
     use_backend s3      if is_s3
@@ -56,6 +57,7 @@ frontend http_in
     use_backend nomad   if is_nomad
     use_backend consul  if is_consul
     use_backend phoenix if is_phoenix
+    use_backend memex   if is_memex
 
 frontend stats
     bind *:8404
@@ -80,6 +82,9 @@ backend consul
 
 backend phoenix
     server phoenix1 192.168.2.46:6006 check
+
+backend memex
+    server memex1 192.168.2.46:8000 check
         EOH
         destination = "local/haproxy.cfg"
       }
