@@ -143,6 +143,13 @@
           net.bridge.bridge-nf-call-iptables = 1
       notify: Apply sysctl
 
+    - name: Allow unprivileged ports from 80 (for HAProxy)
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/50-unprivileged-ports.conf
+        content: |
+          net.ipv4.ip_unprivileged_port_start=80
+      notify: Apply sysctl
+
   handlers:
     - name: Apply sysctl
       ansible.builtin.command:
