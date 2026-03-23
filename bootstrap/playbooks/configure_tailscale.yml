@@ -1,11 +1,49 @@
 ---
+- name: Gather Tailscale credentials
+  hosts: manager
+  become: true
+  tasks:
+    - name: Check if Vault is initialized
+      ansible.builtin.stat:
+        path: /opt/vault/init.json
+      register: vault_init_stat
+
+    # Day-2+: Vault exists, read from it (fail hard if can't — secrets may have been rotated)
+    - name: Read Vault root token
+      ansible.builtin.slurp:
+        src: /opt/vault/init.json
+      register: vault_init_keys
+      when: vault_init_stat.stat.exists
+
+    - name: Read Tailscale auth key from Vault
+      ansible.builtin.command:
+        cmd: vault kv get -format=json bootstrap/tailscale
+      environment:
+        VAULT_ADDR: "http://127.0.0.1:8200"
+        VAULT_TOKEN: "{{ (vault_init_keys['content'] | b64decode | from_json).root_token }}"
+      register: vault_tailscale_result
+      changed_when: false
+      no_log: true
+      when: vault_init_stat.stat.exists
+
+    - name: Set Tailscale fact from Vault
+      ansible.builtin.set_fact:
+        tailscale_auth_key_value: "{{ (vault_tailscale_result.stdout | from_json).data.data.auth_key }}"
+      when: vault_init_stat.stat.exists
+
+    # Day-0: Vault not initialized yet, use env vars
+    - name: Set Tailscale fact from environment (day-0 only)
+      ansible.builtin.set_fact:
+        tailscale_auth_key_value: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+      when: not vault_init_stat.stat.exists
+
 - name: Configure Tailscale on server (subnet router)
   hosts: manager
   become: true
   roles:
     - role: tailscale
       vars:
-        tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+        tailscale_auth_key: "{{ tailscale_auth_key_value }}"
         tailscale_advertise_routes: "192.168.2.0/24"
 
 - name: Disable Tailscale on workers (traffic routed via manager subnet route)

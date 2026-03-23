@@ -39,8 +39,9 @@ ssh_add:
 
 bootstrap: ssh_add setup
     ansible-playbook playbooks/install_dependencies.yml
-    ansible-playbook playbooks/configure_podman.yml -e "github_user=${GITHUB_USER}" -e "github_pat=${GITHUB_PAT}"
     ansible-playbook playbooks/configure_hashistack_server.yml
     ansible-playbook playbooks/configure_hashistack_clients.yml
+    ansible-playbook playbooks/seed_vault.yml
+    ansible-playbook playbooks/configure_podman.yml
     ansible-playbook playbooks/configure_tailscale.yml
     # ansible-playbook playbooks/configure_network.yml

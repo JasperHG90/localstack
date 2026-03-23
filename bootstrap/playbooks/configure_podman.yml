@@ -1,7 +1,50 @@
 ---
+- name: Gather GitHub credentials
+  hosts: manager
+  become: true
+  tasks:
+    - name: Check if Vault is initialized
+      ansible.builtin.stat:
+        path: /opt/vault/init.json
+      register: vault_init_stat
+
+    # Day-2+: Vault exists, read from it (fail hard if can't — secrets may have been rotated)
+    - name: Read Vault root token
+      ansible.builtin.slurp:
+        src: /opt/vault/init.json
+      register: vault_init_keys
+      when: vault_init_stat.stat.exists
+
+    - name: Read GitHub credentials from Vault
+      ansible.builtin.command:
+        cmd: vault kv get -format=json bootstrap/github
+      environment:
+        VAULT_ADDR: "http://127.0.0.1:8200"
+        VAULT_TOKEN: "{{ (vault_init_keys['content'] | b64decode | from_json).root_token }}"
+      register: vault_github_result
+      changed_when: false
+      no_log: true
+      when: vault_init_stat.stat.exists
+
+    - name: Set GitHub facts from Vault
+      ansible.builtin.set_fact:
+        github_user: "{{ (vault_github_result.stdout | from_json).data.data.user }}"
+        github_pat: "{{ (vault_github_result.stdout | from_json).data.data.pat }}"
+      when: vault_init_stat.stat.exists
+
+    # Day-0: Vault not initialized yet, use env vars
+    - name: Set GitHub facts from environment (day-0 only)
+      ansible.builtin.set_fact:
+        github_user: "{{ lookup('env', 'GITHUB_USER') }}"
+        github_pat: "{{ lookup('env', 'GITHUB_PAT') }}"
+      when: not vault_init_stat.stat.exists
+
 - name: Configure Podman runtime
   hosts: all
   become: true
+  vars:
+    _github_user: "{{ hostvars[groups['manager'][0]].github_user }}"
+    _github_pat: "{{ hostvars[groups['manager'][0]].github_pat }}"
 
   tasks:
     - name: Ensure lingering is enabled for {{ ansible_user }}
@@ -22,10 +65,27 @@
           runtime = "crun"
         marker: "# {mark} ANSIBLE MANAGED BLOCK - PODMAN ROOTLESS CONFIG"
 
-    - name: Log in to GitHub Container Registry
-      become_user: "{{ ansible_user }}"
-      ansible.builtin.command:
-        cmd: podman login ghcr.io -u {{ github_user }} -p {{ github_pat }}
-      changed_when: true
+    - name: Ensure containers config directory exists
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/.config/containers"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0700'
+
+    - name: Write GitHub Container Registry credentials
+      ansible.builtin.copy:
+        content: |
+          {
+            "auths": {
+              "ghcr.io": {
+                "auth": "{{ (_github_user + ':' + _github_pat) | b64encode }}"
+              }
+            }
+          }
+        dest: "/home/{{ ansible_user }}/.config/containers/auth.json"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
       no_log: true
-      when: github_user is defined and github_pat is defined
+      when: _github_user | default('') | length > 0

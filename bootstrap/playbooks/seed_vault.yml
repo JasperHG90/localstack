@@ -1,0 +1,46 @@
+---
+- name: Seed Vault with bootstrap secrets
+  hosts: manager
+  become: true
+  vars:
+    tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
+    github_user: "{{ lookup('env', 'GITHUB_USER') }}"
+    github_pat: "{{ lookup('env', 'GITHUB_PAT') }}"
+
+  tasks:
+    - name: Read Vault init keys
+      ansible.builtin.slurp:
+        src: /opt/vault/init.json
+      register: vault_init_keys
+
+    - name: Parse Vault root token
+      ansible.builtin.set_fact:
+        vault_root_token: "{{ (vault_init_keys['content'] | b64decode | from_json).root_token }}"
+
+    - name: Enable KV2 secret engine at bootstrap/ path
+      ansible.builtin.command:
+        cmd: vault secrets enable -path=bootstrap kv-v2
+      environment:
+        VAULT_ADDR: "http://127.0.0.1:8200"
+        VAULT_TOKEN: "{{ vault_root_token }}"
+      register: kv2_enable
+      changed_when: kv2_enable.rc == 0
+      failed_when: kv2_enable.rc != 0 and 'path is already in use' not in kv2_enable.stderr
+
+    - name: Store Tailscale auth key in Vault
+      ansible.builtin.command:
+        cmd: "vault kv put bootstrap/tailscale auth_key={{ tailscale_auth_key }}"
+      environment:
+        VAULT_ADDR: "http://127.0.0.1:8200"
+        VAULT_TOKEN: "{{ vault_root_token }}"
+      no_log: true
+      changed_when: true
+
+    - name: Store GitHub credentials in Vault
+      ansible.builtin.command:
+        cmd: "vault kv put bootstrap/github user={{ github_user }} pat={{ github_pat }}"
+      environment:
+        VAULT_ADDR: "http://127.0.0.1:8200"
+        VAULT_TOKEN: "{{ vault_root_token }}"
+      no_log: true
+      changed_when: true

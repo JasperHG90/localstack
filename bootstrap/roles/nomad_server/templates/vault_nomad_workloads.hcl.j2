@@ -13,3 +13,12 @@ path "secret/metadata/{{ '{{' }}identity.entity.aliases.{{ auth_method_accessor 
 path "secret/metadata/*" {
   capabilities = ["list"]
 }
+
+# Bootstrap secrets (for rotation jobs)
+path "bootstrap/data/*" {
+  capabilities = ["read", "create", "update"]
+}
+
+path "bootstrap/metadata/*" {
+  capabilities = ["list"]
+}
