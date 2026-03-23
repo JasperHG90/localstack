@@ -48,12 +48,14 @@ frontend http_in
     acl is_vault   hdr(host) -i vault.localstack
     acl is_nomad   hdr(host) -i nomad.localstack
     acl is_consul  hdr(host) -i consul.localstack
+    acl is_phoenix hdr(host) -i phoenix.localstack
 
     use_backend minio   if is_minio
     use_backend s3      if is_s3
     use_backend vault   if is_vault
     use_backend nomad   if is_nomad
     use_backend consul  if is_consul
+    use_backend phoenix if is_phoenix
 
 frontend stats
     bind *:8404
@@ -75,6 +77,9 @@ backend nomad
 
 backend consul
     server consul1 192.168.2.30:8500 check
+
+backend phoenix
+    server phoenix1 192.168.2.46:6006 check
         EOH
         destination = "local/haproxy.cfg"
       }

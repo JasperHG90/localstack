@@ -2,16 +2,24 @@ locals {
   roles = [
     "ducklake_owner",
     "ducklake_reader",
-    "memex"
+    "memex",
+    "phoenix"
   ]
   databases = {
     ducklake = {
-      owner = "ducklake_owner"
-      readers = ["ducklake_reader"]
+      owner      = "ducklake_owner"
+      readers    = ["ducklake_reader"]
+      extensions = []
     }
     memex = {
-      owner   = "memex"
-      readers = []
+      owner      = "memex"
+      readers    = []
+      extensions = ["vector"]
+    }
+    phoenix = {
+      owner      = "phoenix"
+      readers    = []
+      extensions = []
     }
   }
 
@@ -51,6 +59,23 @@ resource "postgresql_database" "database" {
   connection_limit       = -1
   allow_connections      = true
   alter_object_ownership = true
+}
+
+resource "postgresql_extension" "extension" {
+  for_each = {
+    for tuple in flatten([
+      for db_name, db_info in local.databases : [
+        for ext in db_info.extensions : {
+          key      = "${db_name}__${ext}"
+          database = db_name
+          name     = ext
+        }
+      ]
+    ]) : tuple.key => tuple
+  }
+
+  name     = each.value.name
+  database = postgresql_database.database[each.value.database].name
 }
 
 // See: https://ducklake.select/docs/stable/duckdb/guides/access_control

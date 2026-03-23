@@ -8,6 +8,15 @@ resource "vault_kv_secret_v2" "postgres_credentials" {
   })
 }
 
+resource "vault_kv_secret_v2" "phoenix_db_credentials" {
+  mount = var.secret_mount
+  name  = "default/phoenix/postgres"
+  data_json = jsonencode({
+    username = postgresql_role.role["phoenix"].name
+    password = random_password.password["phoenix"].result
+  })
+}
+
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users
   mount = var.secret_mount
