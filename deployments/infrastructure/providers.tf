@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/vault"
       version = "~>5.3.0"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~>3.2.0"
+    }
     # consul = {
     #   source  = "hashicorp/consul"
     #   version = "~>2.22.0"

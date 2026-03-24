@@ -25,6 +25,7 @@ job "haproxy" {
         image        = "docker.io/library/haproxy:3.1-alpine"
         args         = ["-f", "/local/haproxy.cfg"]
         network_mode = "host"
+        cap_add      = ["NET_BIND_SERVICE"]
       }
 
       template {
@@ -37,8 +38,12 @@ defaults
     mode    http
     option  httplog
     timeout connect 5s
-    timeout client  30s
-    timeout server  30s
+    timeout client  300s
+    timeout server  300s
+    timeout tunnel  3600s
+
+userlist openfang_users
+    user admin insecure-password ${openfang_password}
 
 frontend http_in
     bind *:80
@@ -49,15 +54,17 @@ frontend http_in
     acl is_nomad   hdr(host) -i nomad.localstack
     acl is_consul  hdr(host) -i consul.localstack
     acl is_phoenix hdr(host) -i phoenix.localstack
-    acl is_memex   hdr(host) -i memex.localstack
+    acl is_memex    hdr(host) -i memex.localstack
+    acl is_openfang hdr(host) -i openfang.localstack
 
-    use_backend minio   if is_minio
-    use_backend s3      if is_s3
-    use_backend vault   if is_vault
-    use_backend nomad   if is_nomad
-    use_backend consul  if is_consul
-    use_backend phoenix if is_phoenix
-    use_backend memex   if is_memex
+    use_backend minio    if is_minio
+    use_backend s3       if is_s3
+    use_backend vault    if is_vault
+    use_backend nomad    if is_nomad
+    use_backend consul   if is_consul
+    use_backend phoenix  if is_phoenix
+    use_backend memex    if is_memex
+    use_backend openfang if is_openfang
 
 frontend stats
     bind *:8404
@@ -85,6 +92,13 @@ backend phoenix
 
 backend memex
     server memex1 192.168.2.46:8000 check
+
+backend openfang
+    http-request auth unless { http_auth(openfang_users) }
+    option forwardfor
+    timeout tunnel 3600s
+    timeout server 3600s
+    server openfang1 192.168.2.47:50051 check
         EOH
         destination = "local/haproxy.cfg"
       }
