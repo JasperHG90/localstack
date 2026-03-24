@@ -90,9 +90,10 @@ EOF
       }
 
       resources {
-        cpu    = 4000
-        memory = 4096
+        cpu    = 3500
+        memory = 3800
       }
     }
+
   }
 }
