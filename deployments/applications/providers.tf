@@ -17,8 +17,12 @@ terraform {
       version = "~>2.22.0"
     }
     postgresql = {
-      source = "cyrilgdn/postgresql"
+      source  = "cyrilgdn/postgresql"
       version = "~>1.26.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~>3.2.0"
     }
   }
 }

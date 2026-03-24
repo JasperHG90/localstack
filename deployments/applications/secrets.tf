@@ -54,6 +54,14 @@ resource "vault_kv_secret_v2" "memex_auth_keys" {
   })
 }
 
+resource "vault_kv_secret_v2" "openfang_memex_auth" {
+  mount = var.secret_mount
+  name  = "default/openfang/memex_auth"
+  data_json = jsonencode({
+    admin_key = random_id.memex_admin_key.b64_url
+  })
+}
+
 
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users

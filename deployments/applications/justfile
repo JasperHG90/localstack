@@ -15,3 +15,11 @@ apply:
 destroy:
     CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
     terraform destroy -var-file=./vars/prod.tfvars
+
+# Build openfang from source and push to ghcr.io
+build_openfang version="0.5.1":
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    docker build --build-arg VERSION={{version}} --target server -t ghcr.io/jasperhg90/openfang:{{version}} services/openfang/
+    docker build --build-arg VERSION={{version}} --target whatsapp-gateway -t ghcr.io/jasperhg90/openfang-whatsapp-gateway:{{version}} services/openfang/
+    docker push ghcr.io/jasperhg90/openfang:{{version}}
+    docker push ghcr.io/jasperhg90/openfang-whatsapp-gateway:{{version}}

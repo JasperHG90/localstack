@@ -18,7 +18,57 @@ ephemeral "vault_kv_secret_v2" "postgres_admin" {
   name  = "default/postgres/localstack"
 }
 
-### Phoenix
+### Firewall rules for application services
+locals {
+  firewall_rules = {
+    # Phoenix on jetson_nano
+    phoenix = {
+      host     = "192.168.2.46"
+      ssh_user = "localstack"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 6006 proto tcp",
+        "allow from 192.168.0.0/16 to any port 4317 proto tcp",
+      ]
+    }
+    # Memex on jetson_nano
+    memex = {
+      host     = "192.168.2.46"
+      ssh_user = "localstack"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 8000 proto tcp",
+      ]
+    }
+    # OpenFang on raspberry_pi_4b (HAProxy + Memex MCP only)
+    openfang = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules = [
+        "allow from 192.168.2.30 to any port 50051 proto tcp",
+        "allow from 192.168.2.46 to any port 50051 proto tcp",
+      ]
+    }
+  }
+}
+
+resource "null_resource" "firewall" {
+  for_each = local.firewall_rules
+
+  triggers = {
+    rules = jsonencode(each.value.rules)
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      host        = each.value.host
+      user        = each.value.ssh_user
+      private_key = file("${path.root}/../../.ssh/id_rsa")
+    }
+
+    inline = [for rule in each.value.rules : "sudo ufw ${rule}"]
+  }
+}
+
+### Arize Phoenix
 resource "nomad_job" "phoenix" {
   jobspec = templatefile(
     "${path.module}/services/phoenix.hcl",
@@ -29,6 +79,21 @@ resource "nomad_job" "phoenix" {
     }
   )
   depends_on = [postgresql_database.database]
+}
+
+### OpenFang
+resource "nomad_job" "openfang" {
+  jobspec = templatefile(
+    "${path.module}/services/openfang.hcl",
+    {
+      openfang_hostname  = "ubuntu"
+      openfang_host      = "192.168.2.47"
+      openfang_version   = "0.5.1"
+      memex_host         = "192.168.2.46"
+      memex_auth_secret  = vault_kv_secret_v2.openfang_memex_auth.path
+      github_secret      = "${var.secret_mount}/data/default/openfang/github"
+    }
+  )
 }
 
 ### Memex
@@ -44,7 +109,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.46"
       memex_host            = "192.168.2.46"
-      memex_version         = "0.0.36a"
+      memex_version         = "0.0.38a"
     }
   )
   depends_on = [postgresql_database.database]
