@@ -46,6 +46,12 @@ server {
   enabled = false
 }
 
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
+
 plugin "nomad-driver-podman" {
   config {
     volumes {

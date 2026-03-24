@@ -29,6 +29,13 @@
     state: present
     create: yes
 
+- name: Disable IPv6 in UFW (kernel compat)
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^IPV6='
+    line: 'IPV6=no'
+    state: present
+
 - name: Enable UFW service
   community.general.ufw:
     state: enabled

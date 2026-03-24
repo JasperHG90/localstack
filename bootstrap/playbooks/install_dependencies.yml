@@ -57,6 +57,11 @@
       environment:
         DEBIAN_FRONTEND: noninteractive
 
+    - name: Install uv
+      ansible.builtin.shell:
+        cmd: curl -LsSf https://astral.sh/uv/install.sh | sh
+        creates: /root/.local/bin/uv
+
   handlers:
     # This task is defined but will only run when notified
     - name: Reboot_server
@@ -143,12 +148,6 @@
           net.bridge.bridge-nf-call-iptables = 1
       notify: Apply sysctl
 
-    - name: Allow unprivileged ports from 80 (for HAProxy)
-      ansible.builtin.copy:
-        dest: /etc/sysctl.d/50-unprivileged-ports.conf
-        content: |
-          net.ipv4.ip_unprivileged_port_start=80
-      notify: Apply sysctl
 
   handlers:
     - name: Apply sysctl
