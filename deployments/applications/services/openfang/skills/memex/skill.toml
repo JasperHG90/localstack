@@ -1,6 +1,6 @@
 [skill]
 name = "memex"
-version = "0.3.0"
+version = "0.4.0"
 description = "Full Memex knowledge management: search notes/memories/entities, add notes, read/browse notes, and store/retrieve structured facts via KV store. Use this skill for anything involving long-term memory, knowledge retrieval, fact storage, or entity exploration."
 author = "jasper"
 
@@ -30,12 +30,17 @@ input_schema = { type = "object", properties = { query = { type = "string", desc
 
 [[tools.provided]]
 name = "memex_entity_search"
-description = "List or search entities in the knowledge graph. Without a query, returns top entities by relevance. Entity exploration workflow: 1) memex_entity_search → browse/search 2) memex_entity_related → find co-occurring entities 3) memex_entity_mentions → find source facts."
+description = "List or search entities in the knowledge graph. Without a query, returns top entities by relevance. Entity exploration workflow: 1) memex_entity_search → browse/search 2) memex_entity_view → details 3) memex_entity_related → co-occurring entities 4) memex_entity_mentions → source facts."
 input_schema = { type = "object", properties = { query = { type = "string", description = "Search term to filter by name" }, type = { type = "string", description = "Filter: Person, Organization, Location, Concept, Technology, File, Misc" }, vault = { type = "string", description = "Vault name or UUID" }, limit = { type = "integer", description = "Max entities (default 20)" } }, required = [] }
 
 [[tools.provided]]
+name = "memex_entity_view"
+description = "View details (name, type, mention count, description) of one or more entities by name or UUID."
+input_schema = { type = "object", properties = { identifiers = { type = "array", items = { type = "string" }, description = "Entity names or UUIDs" } }, required = ["identifiers"] }
+
+[[tools.provided]]
 name = "memex_entity_related"
-description = "Find entities that frequently appear alongside a given entity — the fastest way to map relationships and discover connected concepts. Returns entity names, types, and co-occurrence counts inline (no follow-up calls needed). Use for 'what relates to X?' questions."
+description = "Find entities that frequently appear alongside a given entity — the fastest way to map relationships and discover connected concepts. Returns entity names, types, and co-occurrence counts inline."
 input_schema = { type = "object", properties = { identifier = { type = "string", description = "Entity name or UUID" }, limit = { type = "integer", description = "Max results (default 10)" } }, required = ["identifier"] }
 
 [[tools.provided]]
@@ -49,6 +54,16 @@ input_schema = { type = "object", properties = { identifier = { type = "string",
 name = "memex_note_add"
 description = "Add a note to Memex. Keep concise: 5-15 lines, key insight only. Use background=true unless you need the note ID immediately."
 input_schema = { type = "object", properties = { content = { type = "string", description = "Markdown content. Keep concise: 5-15 lines, key insight only." }, title = { type = "string", description = "Note title." }, description = { type = "string", description = "Summary, max 250 words." }, tags = { type = "array", items = { type = "string" }, description = "Tags for retrieval." }, vault = { type = "string", description = "Target vault name or UUID. Omit for default." }, background = { type = "boolean", description = "Queue ingestion in background (default true)." }, key = { type = "string", description = "Stable key for incremental updates." }, user_notes = { type = "string", description = "Your own context or commentary about this note." } }, required = ["content"] }
+
+[[tools.provided]]
+name = "memex_note_rename"
+description = "Rename a note. Updates title in metadata, page index, and doc_metadata."
+input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" }, new_title = { type = "string", description = "New title" } }, required = ["note_id", "new_title"] }
+
+[[tools.provided]]
+name = "memex_note_template"
+description = "Get a markdown template for structured note creation. Types: general_note, technical_brief, adr, rfc, quick_note."
+input_schema = { type = "object", properties = { template_type = { type = "string", description = "Template type: general_note, technical_brief, adr, rfc, quick_note" } }, required = ["template_type"] }
 
 # --- KV Store ---
 
@@ -86,28 +101,28 @@ input_schema = { type = "object", properties = { note_id = { type = "string", de
 
 [[tools.provided]]
 name = "memex_note_metadata"
-description = "Get metadata (title, tags, token count, has_assets) for a note. Use after memex_memory_search to filter results before reading. SKIP after memex_note_search (metadata already inline). Check total_tokens to decide read strategy and has_assets to check for images/files."
-input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
+description = "Get metadata (title, tags, token count, has_assets) for one or more notes. Use after memex_memory_search to filter before reading. SKIP after memex_note_search (metadata already inline)."
+input_schema = { type = "object", properties = { note_ids = { type = "array", items = { type = "string" }, description = "One or more Note UUIDs" } }, required = ["note_ids"] }
 
 [[tools.provided]]
 name = "memex_note_page_index"
-description = "Get note table of contents: section titles, summaries, node IDs, and subtree_tokens. Only call AFTER confirming relevance via metadata. Pass leaf node IDs to memex_note_node to read content."
-input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
+description = "Get TOC (section titles, summaries, node IDs, subtree_tokens) for one or more notes. Only call AFTER confirming relevance. Pass leaf node IDs to memex_note_node."
+input_schema = { type = "object", properties = { note_ids = { type = "array", items = { type = "string" }, description = "One or more Note UUIDs" } }, required = ["note_ids"] }
 
 [[tools.provided]]
 name = "memex_note_node"
-description = "Read note sections by node ID. Get node IDs from memex_note_page_index."
-input_schema = { type = "object", properties = { node_id = { type = "string", description = "Node UUID from page-index output" } }, required = ["node_id"] }
+description = "Read one or more note sections by node ID. Get IDs from memex_note_page_index. Batch multiple IDs in one call."
+input_schema = { type = "object", properties = { node_ids = { type = "array", items = { type = "string" }, description = "One or more Node UUIDs from page-index output" } }, required = ["node_ids"] }
 
 [[tools.provided]]
 name = "memex_note_list_assets"
-description = "List file assets (images, PDFs) attached to a note. REQUIRED when metadata shows has_assets: true. Feed paths to memex_get_resource to download. Check BEFORE reproducing diagrams."
+description = "List file assets (images, PDFs) attached to a note. REQUIRED when metadata shows has_assets: true. Feed paths to memex_get_resource. Check BEFORE reproducing diagrams."
 input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
 
 [[tools.provided]]
 name = "memex_get_resource"
-description = "Fetch a file asset (image, PDF) by path. Get paths from memex_note_list_assets. Returns the file saved to a local path for viewing."
-input_schema = { type = "object", properties = { path = { type = "string", description = "Asset path from memex_note_list_assets output (e.g. assets/global/{note_id}/filename.png)" }, output_dir = { type = "string", description = "Output directory (default /tmp/memex-assets)" } }, required = ["path"] }
+description = "Download one or more assets by path. Get paths from memex_note_list_assets. Saves to output_dir."
+input_schema = { type = "object", properties = { paths = { type = "array", items = { type = "string" }, description = "Asset paths from memex_note_list_assets" }, output_dir = { type = "string", description = "Output directory (default /tmp/memex-assets)" } }, required = ["paths"] }
 
 [[tools.provided]]
 name = "memex_note_recent"
@@ -118,3 +133,10 @@ input_schema = { type = "object", properties = { vault = { type = "string", desc
 name = "memex_list_vaults"
 description = "List all vaults with note counts and active status."
 input_schema = { type = "object", properties = {}, required = [] }
+
+# --- Memory Units ---
+
+[[tools.provided]]
+name = "memex_memory_view"
+description = "View one or more memory units by ID. Includes contradiction links and supersession info."
+input_schema = { type = "object", properties = { unit_ids = { type = "array", items = { type = "string" }, description = "One or more memory unit UUIDs" } }, required = ["unit_ids"] }

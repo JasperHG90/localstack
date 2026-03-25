@@ -33,7 +33,6 @@ def _run(*args):
     except json.JSONDecodeError:
         return {"result": r.stdout.strip()}
 
-# Map param keys to CLI flags. str values pass through; int values are stringified.
 OPT = {
     "vault": "--vault",
     "limit": "--limit",
@@ -49,7 +48,6 @@ OPT = {
 }
 
 def _opts(p, *keys):
-    """Build CLI flags from params. Only includes keys present and truthy."""
     args = []
     for k in keys:
         v = p.get(k)
@@ -58,7 +56,6 @@ def _opts(p, *keys):
     return args
 
 def _exclude_strategies(p, all_strategies):
-    """Build --no-X flags for strategies not in the provided list."""
     if not p.get("strategies"):
         return []
     return [f"--no-{s.replace('_', '-')}" for s in all_strategies - set(p["strategies"])]
@@ -83,13 +80,16 @@ def note_find(p):
 def entity_search(p):
     return _run("entity", "list", "--json", *_opts(p, "query", "type", "limit"))
 
+def entity_view(p):
+    return _run("entity", "view", *p["identifiers"], "--json")
+
 def entity_related(p):
     return _run("entity", "related", p["identifier"], "--json", *_opts(p, "limit"))
 
 def entity_mentions(p):
     return _run("entity", "mentions", p["identifier"], "--json", *_opts(p, "limit"))
 
-# --- Note Add ---
+# --- Note Add & Lifecycle ---
 
 def note_add(p):
     content = p["content"]
@@ -106,6 +106,12 @@ def note_add(p):
     if p.get("background", True): args.append("--background")
     return _run(*args)
 
+def note_rename(p):
+    return _run("note", "rename", p["note_id"], p["new_title"])
+
+def note_template(p):
+    return _run("note", "template", p["template_type"])
+
 # --- KV Store ---
 
 def kv_write(p):
@@ -120,7 +126,7 @@ def kv_list(p):
 def kv_search(p):
     return _run("kv", "search", p["query"], "--json", *_opts(p, "namespace", "limit"))
 
-# --- Note Reading ---
+# --- Note Reading (batch) ---
 
 def note_list(p):
     return _run("note", "list", "--json", *_opts(p, "vault", "limit", "after", "before"))
@@ -132,26 +138,29 @@ def note_view(p):
     return _run("note", "view", p["note_id"], "--json")
 
 def note_metadata(p):
-    return _run("note", "metadata", p["note_id"], "--json")
+    return _run("note", "metadata", *p["note_ids"], "--json")
 
 def note_page_index(p):
-    return _run("note", "page-index", p["note_id"], "--json")
+    return _run("note", "page-index", *p["note_ids"], "--json")
 
 def note_node(p):
-    return _run("note", "node", p["node_id"], "--json")
+    return _run("note", "node", *p["node_ids"], "--json")
 
 def note_list_assets(p):
     return _run("note", "list-assets", p["note_id"], "--json")
 
 def get_resource(p):
     out_dir = p.get("output_dir", "/tmp/memex-assets")
-    filename = os.path.basename(p["path"])
-    out_path = os.path.join(out_dir, filename)
     os.makedirs(out_dir, exist_ok=True)
-    return _run("note", "get-asset", p["path"], "-o", out_path)
+    return _run("note", "get-asset", *p["paths"], "-d", out_dir)
 
 def list_vaults(p):
     return _run("vault", "list", "--json")
+
+# --- Memory Units ---
+
+def memory_view(p):
+    return _run("memory", "view", *p["unit_ids"], "--json")
 
 # --- Dispatch ---
 
@@ -160,9 +169,12 @@ TOOLS = {
     "memex_memory_search": memory_search,
     "memex_note_find": note_find,
     "memex_entity_search": entity_search,
+    "memex_entity_view": entity_view,
     "memex_entity_related": entity_related,
     "memex_entity_mentions": entity_mentions,
     "memex_note_add": note_add,
+    "memex_note_rename": note_rename,
+    "memex_note_template": note_template,
     "memex_kv_write": kv_write,
     "memex_kv_get": kv_get,
     "memex_kv_list": kv_list,
@@ -176,6 +188,7 @@ TOOLS = {
     "memex_note_list_assets": note_list_assets,
     "memex_get_resource": get_resource,
     "memex_list_vaults": list_vaults,
+    "memex_memory_view": memory_view,
 }
 
 handler = TOOLS.get(payload["tool"])
