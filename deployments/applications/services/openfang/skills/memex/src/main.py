@@ -102,8 +102,9 @@ def note_add(p):
         if p.get("title"): parts.append(f"\n# {p['title']}\n")
         parts.append(content)
         content = "\n".join(parts)
-    args = ["note", "add", content, *_opts(p, "vault", "key", "user_notes")]
+    args = ["note", "add", *_opts(p, "vault", "key", "user_notes")]
     if p.get("background", True): args.append("--background")
+    args += ["--", content]
     return _run(*args)
 
 def note_rename(p):
