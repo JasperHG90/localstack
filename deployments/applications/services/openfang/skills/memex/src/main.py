@@ -33,56 +33,61 @@ def _run(*args):
     except json.JSONDecodeError:
         return {"result": r.stdout.strip()}
 
+# Map param keys to CLI flags. str values pass through; int values are stringified.
+OPT = {
+    "vault": "--vault",
+    "limit": "--limit",
+    "after": "--after",
+    "before": "--before",
+    "query": "--query",
+    "type": "--type",
+    "namespace": "--namespace",
+    "pattern": "--pattern",
+    "key": "--key",
+    "token_budget": "--token-budget",
+    "user_notes": "--user-notes",
+}
+
+def _opts(p, *keys):
+    """Build CLI flags from params. Only includes keys present and truthy."""
+    args = []
+    for k in keys:
+        v = p.get(k)
+        if v is not None and v != "":
+            args += [OPT[k], str(v)]
+    return args
+
+def _exclude_strategies(p, all_strategies):
+    """Build --no-X flags for strategies not in the provided list."""
+    if not p.get("strategies"):
+        return []
+    return [f"--no-{s.replace('_', '-')}" for s in all_strategies - set(p["strategies"])]
+
 # --- Search & Discovery ---
 
 def note_search(p):
-    args = ["note", "search", p["query"], "--json"]
-    if p.get("vault"): args += ["--vault", p["vault"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    if p.get("after"): args += ["--after", p["after"]]
-    if p.get("before"): args += ["--before", p["before"]]
-    if p.get("strategies"):
-        all_strategies = {"semantic", "keyword", "graph", "temporal"}
-        for s in all_strategies - set(p["strategies"]):
-            args.append(f"--no-{s}")
-    return _run(*args)
+    return _run("note", "search", p["query"], "--json",
+                *_opts(p, "vault", "limit", "after", "before"),
+                *_exclude_strategies(p, {"semantic", "keyword", "graph", "temporal"}))
 
 def memory_search(p):
-    args = ["memory", "search", p["query"], "--json"]
-    if p.get("vault"): args += ["--vault", p["vault"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    if p.get("token_budget"): args += ["--token-budget", str(p["token_budget"])]
-    if p.get("after"): args += ["--after", p["after"]]
-    if p.get("before"): args += ["--before", p["before"]]
+    args = ["memory", "search", p["query"], "--json",
+            *_opts(p, "vault", "limit", "after", "before", "token_budget"),
+            *_exclude_strategies(p, {"semantic", "keyword", "graph", "temporal", "mental_model"})]
     if p.get("include_superseded"): args.append("--include-stale")
-    if p.get("strategies"):
-        all_strategies = {"semantic", "keyword", "graph", "temporal", "mental_model"}
-        for s in all_strategies - set(p["strategies"]):
-            args.append(f"--no-{s.replace('_', '-')}")
     return _run(*args)
 
 def note_find(p):
-    args = ["note", "find", p["query"], "--json"]
-    if p.get("vault"): args += ["--vault", p["vault"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    return _run(*args)
+    return _run("note", "find", p["query"], "--json", *_opts(p, "vault", "limit"))
 
 def entity_search(p):
-    args = ["entity", "list", "--json"]
-    if p.get("query"): args += ["--query", p["query"]]
-    if p.get("type"): args += ["--type", p["type"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    return _run(*args)
+    return _run("entity", "list", "--json", *_opts(p, "query", "type", "limit"))
 
 def entity_related(p):
-    args = ["entity", "related", p["identifier"], "--json"]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    return _run(*args)
+    return _run("entity", "related", p["identifier"], "--json", *_opts(p, "limit"))
 
 def entity_mentions(p):
-    args = ["entity", "mentions", p["identifier"], "--json"]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    return _run(*args)
+    return _run("entity", "mentions", p["identifier"], "--json", *_opts(p, "limit"))
 
 # --- Note Add ---
 
@@ -97,11 +102,8 @@ def note_add(p):
         if p.get("title"): parts.append(f"\n# {p['title']}\n")
         parts.append(content)
         content = "\n".join(parts)
-    args = ["note", "add", content]
+    args = ["note", "add", content, *_opts(p, "vault", "key", "user_notes")]
     if p.get("background", True): args.append("--background")
-    if p.get("vault"): args += ["--vault", p["vault"]]
-    if p.get("key"): args += ["--key", p["key"]]
-    if p.get("user_notes"): args += ["--user-notes", p["user_notes"]]
     return _run(*args)
 
 # --- KV Store ---
@@ -113,34 +115,18 @@ def kv_get(p):
     return _run("kv", "get", p["key"], "--value-only")
 
 def kv_list(p):
-    args = ["kv", "list", "--json"]
-    if p.get("namespace"): args += ["--namespace", p["namespace"]]
-    if p.get("pattern"): args += ["--pattern", p["pattern"]]
-    return _run(*args)
+    return _run("kv", "list", "--json", *_opts(p, "namespace", "pattern"))
 
 def kv_search(p):
-    args = ["kv", "search", p["query"], "--json"]
-    if p.get("namespace"): args += ["--namespace", p["namespace"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    return _run(*args)
+    return _run("kv", "search", p["query"], "--json", *_opts(p, "namespace", "limit"))
 
 # --- Note Reading ---
 
 def note_list(p):
-    args = ["note", "list", "--json"]
-    if p.get("vault"): args += ["--vault", p["vault"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    if p.get("after"): args += ["--after", p["after"]]
-    if p.get("before"): args += ["--before", p["before"]]
-    return _run(*args)
+    return _run("note", "list", "--json", *_opts(p, "vault", "limit", "after", "before"))
 
 def note_recent(p):
-    args = ["note", "recent", "--json"]
-    if p.get("vault"): args += ["--vault", p["vault"]]
-    if p.get("limit"): args += ["--limit", str(p["limit"])]
-    if p.get("after"): args += ["--after", p["after"]]
-    if p.get("before"): args += ["--before", p["before"]]
-    return _run(*args)
+    return _run("note", "recent", "--json", *_opts(p, "vault", "limit", "after", "before"))
 
 def note_view(p):
     return _run("note", "view", p["note_id"], "--json")
@@ -158,13 +144,11 @@ def note_list_assets(p):
     return _run("note", "list-assets", p["note_id"], "--json")
 
 def get_resource(p):
-    import pathlib
-    asset_path = p["path"]
     out_dir = p.get("output_dir", "/tmp/memex-assets")
-    filename = pathlib.Path(asset_path).name
+    filename = os.path.basename(p["path"])
     out_path = os.path.join(out_dir, filename)
     os.makedirs(out_dir, exist_ok=True)
-    return _run("note", "get-asset", asset_path, "-o", out_path)
+    return _run("note", "get-asset", p["path"], "-o", out_path)
 
 def list_vaults(p):
     return _run("vault", "list", "--json")
