@@ -1,10 +1,13 @@
-FROM  jhginn/devcontainer:ubuntu2204-pyuv312-latest-terraform
+FROM  jhginn/devcontainer:ubuntu2404-pyuv312-latest-terraform
 
 ENV RUFF_CACHE_DIR=$HOME/workspace/.cache/ruff
 ENV PRE_COMMIT_HOME=$HOME/workspace/.cache/pre-commit
 ENV ANSIBLE_GALAXY_CACHE_DIR=$HOME/workspace/.cache/ansible-galaxy
 
 RUN pipx install --force uv==0.10.12
+
+USER vscode
+WORKDIR /home/vscode
 
 RUN sudo apt-get update && \
   sudo apt-get install -y wget gpg coreutils && \
@@ -18,6 +21,7 @@ RUN uv tool install pre-commit
 RUN uv tool install ansible-core
 RUN uv tool install ansible-lint
 RUN uv tool install ansible
+RUN sudo chown -R vscode:vscode /home/vscode/.local/share/uv/tools/
 RUN curl https://install.duckdb.org | sh
 
 RUN mkdir -p $HOME/.duckdb
