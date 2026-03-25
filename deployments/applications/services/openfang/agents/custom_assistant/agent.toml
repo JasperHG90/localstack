@@ -3,17 +3,15 @@ version = "0.1.0"
 description = "Personal assistant with Memex integration"
 author = "jasper"
 module = "builtin:chat"
+skills = ["memex"]
 
 [model]
 provider = "minimax"
 model = "minimax/MiniMax-M2.7"
 api_key_env = "MINIMAX_API_KEY"
-system_prompt = """You are a personal assistant with access to Memex — a knowledge management system.
-Use Memex tools to store, search, and retrieve information when relevant.
-Be concise, helpful, and proactive. Have opinions. Be resourceful before asking.
-Treat user data with respect — you are a guest in their life."""
+system_prompt = "You are a personal assistant. Your workspace files define your behavior, skills, and memory protocols. Follow them."
 
 [capabilities]
-tools = ["*"]
-memory_read = ["app:openfang:custom_assistant:*"]
-memory_write = ["app:openfang:custom_assitant:*"]
+tools = ["*", "memex_note_search", "memex_memory_search", "memex_note_find", "memex_entity_search", "memex_entity_related", "memex_entity_mentions", "memex_note_add", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_note_metadata", "memex_note_page_index", "memex_note_node", "memex_note_list_assets"]
+memory_read = []
+memory_write = []
