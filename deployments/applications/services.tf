@@ -91,6 +91,8 @@ resource "nomad_job" "openfang" {
       openfang_version   = "0.5.1"
       memex_host         = "192.168.2.46"
       memex_auth_secret  = vault_kv_secret_v2.openfang_memex_auth.path
+      openfang_minio_secret = vault_kv_secret_v2.openfang_minio_credentials.path
+      minio_host         = data.consul_service.minio.service[0].node_address
       github_secret      = "${var.secret_mount}/data/default/openfang/github"
       telegram_secret        = "${var.secret_mount}/data/default/openfang/telegram"
       telegram_allowed_users = ["<REDACTED_TELEGRAM_USER_ID>"]
@@ -112,7 +114,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.46"
       memex_host            = "192.168.2.46"
-      memex_version         = "0.0.38a"
+      memex_version         = "0.0.40a"
     }
   )
   depends_on = [postgresql_database.database]

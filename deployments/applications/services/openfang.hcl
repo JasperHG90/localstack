@@ -60,6 +60,10 @@ TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 {{- with secret "${minimax_secret}" }}
 MINIMAX_API_KEY={{ .Data.data.api_key }}
 {{- end }}
+{{- with secret "${openfang_minio_secret}" }}
+MEMEX_S3_ACCESS_KEY={{ .Data.data.access_key }}
+MEMEX_S3_SECRET_KEY={{ .Data.data.secret_key }}
+{{- end }}
 EOF
 
         destination = "secrets/file.env"
@@ -67,8 +71,11 @@ EOF
       }
 
       env {
-        OPENFANG_LISTEN  = "0.0.0.0:50051"
-        MEMEX_SERVER_URL = "http://${memex_host}:8000"
+        OPENFANG_LISTEN   = "0.0.0.0:50051"
+        MEMEX_SERVER_URL  = "http://${memex_host}:8000"
+        MEMEX_S3_ENDPOINT = "http://${minio_host}:9000"
+        MEMEX_S3_BUCKET   = "memex"
+        MEMEX_S3_REGION   = "us-east-1"
       }
 
       template {
@@ -82,15 +89,6 @@ api_key_env = "MINIMAX_API_KEY"
 bot_token_env = "TELEGRAM_BOT_TOKEN"
 allowed_users = [${join(", ", telegram_allowed_users)}]
 
-[[mcp_servers]]
-name = "memex"
-timeout_secs = 120
-env = ["MEMEX_SERVER_URL", "MEMEX_API_KEY", "GIT_AUTH_TOKEN", "HOME"]
-
-[mcp_servers.transport]
-type = "stdio"
-command = "/root/.local/bin/uvx"
-args = ["--from", "memex-cli[mcp] @ git+https://github.com/JasperHG90/memex.git@main#subdirectory=packages/cli", "memex", "mcp", "run"]
 EOF
 
         destination = "local/config.toml"
