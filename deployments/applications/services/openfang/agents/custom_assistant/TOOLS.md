@@ -11,17 +11,20 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 | `memex_memory_search` | Broad/exploratory queries across extracted facts. Run in parallel with `memex_note_search`. |
 | `memex_note_find` | Know (part of) the note title. Lightweight fuzzy match. |
 | `memex_entity_search` | "What relates to X?", relationship/landscape queries. |
+| `memex_entity_view` | Get details for specific entities (batch — pass array of names/UUIDs). |
 | `memex_entity_related` | Co-occurring entities — fastest relationship mapping. |
 | `memex_entity_mentions` | Source facts mentioning an entity. |
 
 ### Reading Notes
 | Tool | When to use |
 |------|------------|
-| `memex_note_metadata` | Check total_tokens and has_assets BEFORE reading. Skip after `memex_note_search`. |
+| `memex_note_metadata` | Check total_tokens and has_assets BEFORE reading. Batch — pass array of note IDs. Skip after `memex_note_search`. |
 | `memex_note_view` | Read full note — ONLY when total_tokens < 500. |
-| `memex_note_page_index` | Get TOC for large notes. Then drill into sections with `memex_note_node`. |
-| `memex_note_node` | Read specific sections by node ID from page-index. |
+| `memex_note_page_index` | Get TOC for large notes. Batch — pass array of note IDs. |
+| `memex_note_node` | Read sections by node ID. Batch — pass array of node IDs. |
 | `memex_note_list_assets` | Check when has_assets: true. ALWAYS check before reproducing diagrams. |
+| `memex_get_resource` | Download assets by path. Batch — pass array of paths. |
+| `memex_memory_view` | Inspect memory units by ID. Includes contradiction/supersession context. Batch. |
 
 ### Browsing
 | Tool | When to use |
@@ -30,10 +33,12 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 | `memex_note_recent` | Browse recent notes. NOT for discovery — use search. |
 | `memex_list_vaults` | List all vaults with note counts. |
 
-### Writing
+### Writing & Lifecycle
 | Tool | When to use |
 |------|------------|
 | `memex_note_add` | Save a note. Use background=true. Keep concise (300 token max). |
+| `memex_note_rename` | Rename a note (updates title everywhere). |
+| `memex_note_template` | Get markdown template (general_note, technical_brief, adr, rfc, quick_note). |
 | `memex_kv_write` | Store structured facts/preferences. Default to `app:openfang:custom_assistant:` namespace. |
 | `memex_kv_get` | Exact key lookup. |
 | `memex_kv_list` | List all KV entries. Use at session start. |

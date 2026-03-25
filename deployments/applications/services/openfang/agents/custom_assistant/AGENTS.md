@@ -47,17 +47,19 @@ IF you know (or roughly know) a note title:
 IF query asks about relationships, connections, "how X relates to Y", or landscape:
 → ENTITY EXPLORATION (can combine with SEARCH)
 1. `memex_entity_search(query="X")` → entity IDs, types, mention counts
-2. `memex_entity_related(identifier)` → related entities with names, types, counts
-3. `memex_entity_mentions(identifier)` → source facts linking back to notes
-4. Read source notes via SEARCH/READ below as needed
+2. `memex_entity_view(identifiers)` → details for specific entities (batch)
+3. `memex_entity_related(identifier)` → related entities with names, types, counts
+4. `memex_entity_mentions(identifier)` → source facts linking back to notes
+5. Read source notes via SEARCH/READ below as needed
 
 IF query asks about specific content, topics, or document lookup:
 → SEARCH (run BOTH in parallel, same tool-call batch)
 1. Call `memex_memory_search` AND `memex_note_search` simultaneously
 2. FILTER: after `memex_memory_search`, call `memex_note_metadata` with note IDs.
    After `memex_note_search`, metadata is inline — skip this step.
-3. READ: `memex_note_page_index` → `memex_note_node` (batch). `memex_note_view` only when total_tokens < 500.
-4. ASSETS: IF `has_assets: true` → call `memex_note_list_assets`. NEVER create diagrams without checking assets first.
+3. READ: `memex_note_page_index` → `memex_note_node` (both accept arrays — batch multiple IDs). `memex_note_view` only when total_tokens < 500.
+4. ASSETS: IF `has_assets: true` → `memex_note_list_assets` → `memex_get_resource` (batch paths). NEVER create diagrams without checking assets first.
+5. DEEP DIVE: Use `memex_memory_view` to inspect specific memory units by ID (includes contradiction/supersession context).
 
 IF query is broad (e.g. "explain X and how it fits"):
 → Run ENTITY EXPLORATION and SEARCH in parallel, then synthesize.
