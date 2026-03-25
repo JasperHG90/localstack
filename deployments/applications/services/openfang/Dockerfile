@@ -17,7 +17,7 @@ RUN printf '#!/bin/sh\necho "username=x-access-token"\necho "password=$GIT_AUTH_
 RUN git config --system credential.helper env
 ARG GIT_AUTH_TOKEN
 RUN GIT_AUTH_TOKEN=$GIT_AUTH_TOKEN uv tool install \
-    "memex-cli @ git+https://github.com/JasperHG90/memex.git@v0.0.41a#subdirectory=packages/cli"
+    "memex-cli @ git+https://github.com/JasperHG90/memex.git@v0.0.42a#subdirectory=packages/cli"
 VOLUME /data
 ENV OPENFANG_HOME=/data
 EXPOSE 50051

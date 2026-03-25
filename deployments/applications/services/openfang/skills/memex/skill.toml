@@ -52,7 +52,7 @@ input_schema = { type = "object", properties = { identifier = { type = "string",
 
 [[tools.provided]]
 name = "memex_note_add"
-description = "Add a note to Memex. Keep concise: 5-15 lines, key insight only. Use background=true unless you need the note ID immediately."
+description = "Add a note to Memex. ALWAYS provide title, description, and tags — these are essential for retrieval. Keep content concise: 5-15 lines, key insight only. Use background=true unless you need the note ID immediately. Use memex_note_template first to get the right structure for the note type."
 input_schema = { type = "object", properties = { content = { type = "string", description = "Markdown content. Keep concise: 5-15 lines, key insight only." }, title = { type = "string", description = "Note title." }, description = { type = "string", description = "Summary, max 250 words." }, tags = { type = "array", items = { type = "string" }, description = "Tags for retrieval." }, vault = { type = "string", description = "Target vault name or UUID. Omit for default." }, background = { type = "boolean", description = "Queue ingestion in background (default true)." }, key = { type = "string", description = "Stable key for incremental updates." }, user_notes = { type = "string", description = "Your own context or commentary about this note." } }, required = ["content"] }
 
 [[tools.provided]]
