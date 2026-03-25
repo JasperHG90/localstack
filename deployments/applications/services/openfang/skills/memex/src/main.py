@@ -63,19 +63,21 @@ def _exclude_strategies(p, all_strategies):
 # --- Search & Discovery ---
 
 def note_search(p):
-    return _run("note", "search", p["query"], "--json",
+    return _run("note", "search", "--json",
                 *_opts(p, "vault", "limit", "after", "before"),
-                *_exclude_strategies(p, {"semantic", "keyword", "graph", "temporal"}))
+                *_exclude_strategies(p, {"semantic", "keyword", "graph", "temporal"}),
+                "--", p["query"])
 
 def memory_search(p):
-    args = ["memory", "search", p["query"], "--json",
+    args = ["memory", "search", "--json",
             *_opts(p, "vault", "limit", "after", "before", "token_budget"),
             *_exclude_strategies(p, {"semantic", "keyword", "graph", "temporal", "mental_model"})]
     if p.get("include_superseded"): args.append("--include-stale")
+    args += ["--", p["query"]]
     return _run(*args)
 
 def note_find(p):
-    return _run("note", "find", p["query"], "--json", *_opts(p, "vault", "limit"))
+    return _run("note", "find", "--json", *_opts(p, "vault", "limit"), "--", p["query"])
 
 def entity_search(p):
     return _run("entity", "list", "--json", *_opts(p, "query", "type", "limit"))
@@ -108,7 +110,7 @@ def note_add(p):
     return _run(*args)
 
 def note_rename(p):
-    return _run("note", "rename", p["note_id"], p["new_title"])
+    return _run("note", "rename", p["note_id"], "--", p["new_title"])
 
 def note_template(p):
     return _run("note", "template", p["template_type"])
@@ -116,7 +118,7 @@ def note_template(p):
 # --- KV Store ---
 
 def kv_write(p):
-    return _run("kv", "write", p["value"], "--key", p["key"])
+    return _run("kv", "write", "--key", p["key"], "--", p["value"])
 
 def kv_get(p):
     return _run("kv", "get", p["key"], "--value-only")
@@ -125,7 +127,7 @@ def kv_list(p):
     return _run("kv", "list", "--json", *_opts(p, "namespace", "pattern"))
 
 def kv_search(p):
-    return _run("kv", "search", p["query"], "--json", *_opts(p, "namespace", "limit"))
+    return _run("kv", "search", "--json", *_opts(p, "namespace", "limit"), "--", p["query"])
 
 # --- Note Reading (batch) ---
 
