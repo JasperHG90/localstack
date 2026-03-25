@@ -54,6 +54,12 @@ MEMEX_API_KEY={{ .Data.data.admin_key }}
 {{- with secret "${github_secret}" }}
 GIT_AUTH_TOKEN={{ .Data.data.pat }}
 {{- end }}
+{{- with secret "${telegram_secret}" }}
+TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
+{{- end }}
+{{- with secret "${minimax_secret}" }}
+MINIMAX_API_KEY={{ .Data.data.api_key }}
+{{- end }}
 EOF
 
         destination = "secrets/file.env"
@@ -67,6 +73,15 @@ EOF
 
       template {
         data = <<EOF
+[default_model]
+provider = "minimax"
+model = "minimax/MiniMax-M2.5"
+api_key_env = "MINIMAX_API_KEY"
+
+[channels.telegram]
+bot_token_env = "TELEGRAM_BOT_TOKEN"
+allowed_users = [${join(", ", telegram_allowed_users)}]
+
 [[mcp_servers]]
 name = "memex"
 timeout_secs = 120
@@ -82,7 +97,9 @@ EOF
       }
 
       config {
-        volumes      = ["local/config.toml:/data/config.toml"]
+        volumes = [
+          "local/config.toml:/data/config.toml",
+        ]
         image        = "ghcr.io/jasperhg90/openfang:${openfang_version}"
         force_pull   = true
         network_mode = "host"

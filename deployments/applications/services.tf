@@ -92,6 +92,9 @@ resource "nomad_job" "openfang" {
       memex_host         = "192.168.2.46"
       memex_auth_secret  = vault_kv_secret_v2.openfang_memex_auth.path
       github_secret      = "${var.secret_mount}/data/default/openfang/github"
+      telegram_secret        = "${var.secret_mount}/data/default/openfang/telegram"
+      telegram_allowed_users = ["<REDACTED_TELEGRAM_USER_ID>"]
+      minimax_secret         = "${var.secret_mount}/data/default/openfang/minimax"
     }
   )
 }
