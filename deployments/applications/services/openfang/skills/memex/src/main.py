@@ -94,19 +94,8 @@ def entity_mentions(p):
 # --- Note Add & Lifecycle ---
 
 def note_add(p):
-    content = p["content"]
-    if p.get("title") or p.get("description") or p.get("tags"):
-        parts = ["---"]
-        if p.get("title"): parts.append(f"title: {p['title']}")
-        if p.get("description"): parts.append(f"description: {p['description']}")
-        if p.get("tags"): parts.append(f"tags: {json.dumps(p['tags'])}")
-        parts.append("---")
-        if p.get("title"): parts.append(f"\n# {p['title']}\n")
-        parts.append(content)
-        content = "\n".join(parts)
-    args = ["note", "add", *_opts(p, "vault", "key", "user_notes")]
-    if p.get("background", True): args.append("--background")
-    args += ["--", content]
+    args = ["note", "add", "--background", *_opts(p, "vault", "key", "user_notes"),
+            "--", p["content"]]
     return _run(*args)
 
 def note_rename(p):
