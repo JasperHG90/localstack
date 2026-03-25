@@ -16,10 +16,14 @@ destroy:
     CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
     terraform destroy -var-file=./vars/prod.tfvars
 
+# Sync openfang agents to the container and spawn them
+sync_agents host="192.168.2.47" user="raspberry":
+    ssh -i ../../.ssh/id_rsa {{user}}@{{host}} "mkdir -p /tmp/openfang-agents"
+    scp -r -i ../../.ssh/id_rsa services/openfang/agents/* {{user}}@{{host}}:/tmp/openfang-agents/
+    ssh -i ../../.ssh/id_rsa {{user}}@{{host}} "cid=\$(sudo podman ps -q -f name=openfang) && sudo podman cp /tmp/openfang-agents/. \$cid:/data/workspaces/ && sudo podman exec \$cid sh -c 'for f in /data/workspaces/*/agent.toml; do openfang agent spawn \"\$f\" || true; done' && rm -rf /tmp/openfang-agents"
+
 # Build openfang from source and push to ghcr.io
 build_openfang version="0.5.1":
     echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
-    docker build --build-arg VERSION={{version}} --target server -t ghcr.io/jasperhg90/openfang:{{version}} services/openfang/
-    docker build --build-arg VERSION={{version}} --target whatsapp-gateway -t ghcr.io/jasperhg90/openfang-whatsapp-gateway:{{version}} services/openfang/
+    docker build --build-arg VERSION={{version}} -t ghcr.io/jasperhg90/openfang:{{version}} services/openfang/
     docker push ghcr.io/jasperhg90/openfang:{{version}}
-    docker push ghcr.io/jasperhg90/openfang-whatsapp-gateway:{{version}}

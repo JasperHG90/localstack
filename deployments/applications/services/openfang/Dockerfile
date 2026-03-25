@@ -5,12 +5,9 @@ RUN git clone --depth 1 --branch "v${VERSION}" https://github.com/RightNow-AI/op
 WORKDIR /src
 RUN cargo build --release --bin openfang
 
-FROM debian:bookworm-slim AS base
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-
-FROM base AS server
+FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl git \
+    ca-certificates curl git \
     && rm -rf /var/lib/apt/lists/*
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
@@ -22,12 +19,3 @@ VOLUME /data
 ENV OPENFANG_HOME=/data
 EXPOSE 50051
 CMD ["openfang", "start"]
-
-FROM node:22-slim AS whatsapp-gateway
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /src/packages/whatsapp-gateway /opt/whatsapp-gateway
-WORKDIR /opt/whatsapp-gateway
-RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" && npm install --omit=dev
-RUN sed -i "s|^import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';|import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';|" index.js
-EXPOSE 3009
-CMD ["node", "index.js"]
