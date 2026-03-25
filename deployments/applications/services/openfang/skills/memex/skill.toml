@@ -1,0 +1,120 @@
+[skill]
+name = "memex"
+version = "0.3.0"
+description = "Full Memex knowledge management: search notes/memories/entities, add notes, read/browse notes, and store/retrieve structured facts via KV store. Use this skill for anything involving long-term memory, knowledge retrieval, fact storage, or entity exploration."
+author = "jasper"
+
+[runtime]
+type = "python"
+entry = "src/main.py"
+
+[requirements]
+capabilities = ["EnvRead(MEMEX_SERVER_URL)", "EnvRead(MEMEX_API_KEY)"]
+
+# --- Search & Discovery ---
+
+[[tools.provided]]
+name = "memex_note_search"
+description = "Search source notes by hybrid retrieval (semantic + keyword + graph + temporal). Returns ranked notes with summaries. IMPORTANT: When answering knowledge questions, ALWAYS call this AND memex_memory_search together in the same tool-call batch. Never call one without the other."
+input_schema = { type = "object", properties = { query = { type = "string", description = "Search query" }, vault = { type = "string", description = "Vault name or UUID. Omit for defaults." }, limit = { type = "integer", description = "Max notes (default 10)" }, strategies = { type = "array", items = { type = "string" }, description = "Retrieval strategies: semantic, keyword, graph, temporal. Default: all." }, after = { type = "string", description = "Only notes after this ISO 8601 date" }, before = { type = "string", description = "Only notes before this ISO 8601 date" }, tags = { type = "array", items = { type = "string" }, description = "Only notes with ALL of these tags" } }, required = ["query"] }
+
+[[tools.provided]]
+name = "memex_memory_search"
+description = "Search extracted facts, events, and observations across all notes. IMPORTANT: When answering knowledge questions, ALWAYS call this AND memex_note_search together in the same tool-call batch. Never call one without the other. Strategies: semantic (vector), keyword (BM25), graph (entity-centric), temporal (chronological), mental_model (synthesized). Default: all."
+input_schema = { type = "object", properties = { query = { type = "string", description = "Search query" }, vault = { type = "string", description = "Vault name or UUID. Omit for defaults." }, limit = { type = "integer", description = "Max results (default 10). Ignored when token_budget is set." }, token_budget = { type = "integer", description = "Token budget. Overrides limit — packs results greedily to budget." }, strategies = { type = "array", items = { type = "string" }, description = "Strategies: semantic, keyword, graph, temporal, mental_model. Default: all." }, after = { type = "string", description = "Only results after this ISO 8601 date" }, before = { type = "string", description = "Only results before this ISO 8601 date" }, tags = { type = "array", items = { type = "string" }, description = "Only results from notes with ALL of these tags" }, include_superseded = { type = "boolean", description = "Include superseded (low-confidence) memory units (default false)" } }, required = ["query"] }
+
+[[tools.provided]]
+name = "memex_note_find"
+description = "Lightweight fuzzy title search. Returns matching note titles, IDs, and scores. Use when you know (part of) the title. For content search, use memex_note_search."
+input_schema = { type = "object", properties = { query = { type = "string", description = "Title search query (partial or fuzzy match)" }, vault = { type = "string", description = "Vault name or UUID" }, limit = { type = "integer", description = "Max results (default 5)" } }, required = ["query"] }
+
+[[tools.provided]]
+name = "memex_entity_search"
+description = "List or search entities in the knowledge graph. Without a query, returns top entities by relevance. Entity exploration workflow: 1) memex_entity_search → browse/search 2) memex_entity_related → find co-occurring entities 3) memex_entity_mentions → find source facts."
+input_schema = { type = "object", properties = { query = { type = "string", description = "Search term to filter by name" }, type = { type = "string", description = "Filter: Person, Organization, Location, Concept, Technology, File, Misc" }, vault = { type = "string", description = "Vault name or UUID" }, limit = { type = "integer", description = "Max entities (default 20)" } }, required = [] }
+
+[[tools.provided]]
+name = "memex_entity_related"
+description = "Find entities that frequently appear alongside a given entity — the fastest way to map relationships and discover connected concepts. Returns entity names, types, and co-occurrence counts inline (no follow-up calls needed). Use for 'what relates to X?' questions."
+input_schema = { type = "object", properties = { identifier = { type = "string", description = "Entity name or UUID" }, limit = { type = "integer", description = "Max results (default 10)" } }, required = ["identifier"] }
+
+[[tools.provided]]
+name = "memex_entity_mentions"
+description = "Get facts, observations, and events that mention an entity. Each mention links to its source note, revealing cross-note connections."
+input_schema = { type = "object", properties = { identifier = { type = "string", description = "Entity name or UUID" }, limit = { type = "integer", description = "Max mentions (default 20)" } }, required = ["identifier"] }
+
+# --- Note Add ---
+
+[[tools.provided]]
+name = "memex_note_add"
+description = "Add a note to Memex. Keep concise: 5-15 lines, key insight only. Use background=true unless you need the note ID immediately."
+input_schema = { type = "object", properties = { content = { type = "string", description = "Markdown content. Keep concise: 5-15 lines, key insight only." }, title = { type = "string", description = "Note title." }, description = { type = "string", description = "Summary, max 250 words." }, tags = { type = "array", items = { type = "string" }, description = "Tags for retrieval." }, vault = { type = "string", description = "Target vault name or UUID. Omit for default." }, background = { type = "boolean", description = "Queue ingestion in background (default true)." }, key = { type = "string", description = "Stable key for incremental updates." }, user_notes = { type = "string", description = "Your own context or commentary about this note." } }, required = ["content"] }
+
+# --- KV Store ---
+
+[[tools.provided]]
+name = "memex_kv_write"
+description = "Write a fact to the KV store with semantic embedding. Key MUST start with app:openfang:custom_assistant: by default. Only use user: or global: if the user explicitly names that namespace."
+input_schema = { type = "object", properties = { key = { type = "string", description = "Namespaced key. Default to app:openfang:custom_assistant: prefix. Only use user: or global: if user explicitly requests it." }, value = { type = "string", description = "The fact or preference text to store." } }, required = ["key", "value"] }
+
+[[tools.provided]]
+name = "memex_kv_get"
+description = "Get a fact by exact key from the KV store."
+input_schema = { type = "object", properties = { key = { type = "string", description = "Exact key to look up." } }, required = ["key"] }
+
+[[tools.provided]]
+name = "memex_kv_list"
+description = "List all facts in the KV store. Optionally filter by namespace prefixes."
+input_schema = { type = "object", properties = { namespace = { type = "string", description = "Filter by namespace prefix (e.g. user:, global:, app:openfang:custom_assistant:)" }, pattern = { type = "string", description = "Wildcard filter (e.g. global:preferences:*). Only trailing * supported." } }, required = [] }
+
+[[tools.provided]]
+name = "memex_kv_search"
+description = "Fuzzy semantic search over stored facts. Returns closest matching entries."
+input_schema = { type = "object", properties = { query = { type = "string", description = "Search query text." }, namespace = { type = "string", description = "Namespace prefix to filter by." }, limit = { type = "integer", description = "Max results (default 5)." } }, required = ["query"] }
+
+# --- Note Reading ---
+
+[[tools.provided]]
+name = "memex_note_list"
+description = "List notes with optional date filters. Use after/before for temporal queries like 'documents from last week'."
+input_schema = { type = "object", properties = { vault = { type = "string", description = "Vault name or UUID. Omit for defaults." }, limit = { type = "integer", description = "Max notes (default 50)" }, after = { type = "string", description = "Only notes on/after this ISO 8601 date" }, before = { type = "string", description = "Only notes on/before this ISO 8601 date" } }, required = [] }
+
+[[tools.provided]]
+name = "memex_note_view"
+description = "Read full note content. ONLY when total_tokens < 500. For longer notes: use memex_note_page_index + memex_note_node instead."
+input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
+
+[[tools.provided]]
+name = "memex_note_metadata"
+description = "Get metadata (title, tags, token count, has_assets) for a note. Use after memex_memory_search to filter results before reading. SKIP after memex_note_search (metadata already inline). Check total_tokens to decide read strategy and has_assets to check for images/files."
+input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
+
+[[tools.provided]]
+name = "memex_note_page_index"
+description = "Get note table of contents: section titles, summaries, node IDs, and subtree_tokens. Only call AFTER confirming relevance via metadata. Pass leaf node IDs to memex_note_node to read content."
+input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
+
+[[tools.provided]]
+name = "memex_note_node"
+description = "Read note sections by node ID. Get node IDs from memex_note_page_index."
+input_schema = { type = "object", properties = { node_id = { type = "string", description = "Node UUID from page-index output" } }, required = ["node_id"] }
+
+[[tools.provided]]
+name = "memex_note_list_assets"
+description = "List file assets (images, PDFs) attached to a note. REQUIRED when metadata shows has_assets: true. Feed paths to memex_get_resource to download. Check BEFORE reproducing diagrams."
+input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" } }, required = ["note_id"] }
+
+[[tools.provided]]
+name = "memex_get_resource"
+description = "Fetch a file asset (image, PDF) by path. Get paths from memex_note_list_assets. Returns the file saved to a local path for viewing."
+input_schema = { type = "object", properties = { path = { type = "string", description = "Asset path from memex_note_list_assets output (e.g. assets/global/{note_id}/filename.png)" }, output_dir = { type = "string", description = "Output directory (default /tmp/memex-assets)" } }, required = ["path"] }
+
+[[tools.provided]]
+name = "memex_note_recent"
+description = "Browse recent notes. Use for browsing, NOT for discovery — use memex_note_search for discovery."
+input_schema = { type = "object", properties = { vault = { type = "string", description = "Vault name or UUID" }, limit = { type = "integer", description = "Max notes (default 10)" }, after = { type = "string", description = "Only notes on/after this ISO 8601 date" }, before = { type = "string", description = "Only notes on/before this ISO 8601 date" } }, required = [] }
+
+[[tools.provided]]
+name = "memex_list_vaults"
+description = "List all vaults with note counts and active status."
+input_schema = { type = "object", properties = {}, required = [] }
