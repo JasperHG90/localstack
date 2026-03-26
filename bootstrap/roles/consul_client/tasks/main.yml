@@ -21,6 +21,22 @@
     group: consul
     mode: '0755'
 
+- name: Create systemd override directory for Consul
+  ansible.builtin.file:
+    path: /etc/systemd/system/consul.service.d
+    state: directory
+    mode: '0755'
+
+- name: Ensure Consul waits for network to be online
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/consul.service.d/wait-for-network.conf
+    content: |
+      [Unit]
+      After=network-online.target
+      Wants=network-online.target
+    mode: '0644'
+  notify: Restart consul
+
 - name: Template Consul configuration
   ansible.builtin.template:
     src: consul.hcl.j2

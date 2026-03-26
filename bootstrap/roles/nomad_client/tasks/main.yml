@@ -39,6 +39,22 @@
     group: nomad
     mode: '0755'
 
+- name: Create systemd override directory for Nomad
+  ansible.builtin.file:
+    path: /etc/systemd/system/nomad.service.d
+    state: directory
+    mode: '0755'
+
+- name: Ensure Nomad waits for network to be online
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/nomad.service.d/wait-for-network.conf
+    content: |
+      [Unit]
+      After=network-online.target
+      Wants=network-online.target
+    mode: '0644'
+  notify: Restart nomad
+
 - name: Template Nomad configuration
   ansible.builtin.template:
     src: nomad.hcl.j2
