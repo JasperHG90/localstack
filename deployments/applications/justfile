@@ -27,5 +27,5 @@ sync_openfang host="192.168.2.47" user="raspberry":
 # Build openfang from source and push to ghcr.io
 build_openfang version="0.5.2":
     echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
-    docker build --build-arg VERSION={{version}} --build-arg GIT_AUTH_TOKEN="${GITHUB_WRITE_PAT}" -t ghcr.io/jasperhg90/openfang:{{version}} services/openfang/
+    docker build --build-arg VERSION={{version}} --secret id=git_token,env=GITHUB_WRITE_PAT -t ghcr.io/jasperhg90/openfang:{{version}} services/openfang/
     docker push ghcr.io/jasperhg90/openfang:{{version}}
