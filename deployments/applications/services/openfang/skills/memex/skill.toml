@@ -61,9 +61,14 @@ description = "Rename a note. Updates title in metadata, page index, and doc_met
 input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" }, new_title = { type = "string", description = "New title" } }, required = ["note_id", "new_title"] }
 
 [[tools.provided]]
-name = "memex_note_template"
-description = "Get a markdown template for structured note creation. Types: general_note, technical_brief, adr, rfc, quick_note."
-input_schema = { type = "object", properties = { template_type = { type = "string", description = "Template type: general_note, technical_brief, adr, rfc, quick_note" } }, required = ["template_type"] }
+name = "memex_note_template_get"
+description = "Get a markdown template by slug. Use memex_note_template_list first to see available templates. Use the template to structure your note content before calling memex_note_add."
+input_schema = { type = "object", properties = { slug = { type = "string", description = "Template slug (e.g. general_note, technical_brief, adr, rfc, quick_note)" } }, required = ["slug"] }
+
+[[tools.provided]]
+name = "memex_note_template_list"
+description = "List all available note templates with metadata."
+input_schema = { type = "object", properties = {}, required = [] }
 
 # --- KV Store ---
 
@@ -123,6 +128,11 @@ input_schema = { type = "object", properties = { note_id = { type = "string", de
 name = "memex_get_resource"
 description = "Download one or more assets by path. Get paths from memex_note_list_assets. Saves to output_dir."
 input_schema = { type = "object", properties = { paths = { type = "array", items = { type = "string" }, description = "Asset paths from memex_note_list_assets" }, output_dir = { type = "string", description = "Output directory (default /tmp/memex-assets)" } }, required = ["paths"] }
+
+[[tools.provided]]
+name = "memex_note_add_asset"
+description = "Attach one or more files to an existing note."
+input_schema = { type = "object", properties = { note_id = { type = "string", description = "Note UUID" }, asset_paths = { type = "array", items = { type = "string" }, description = "Local file paths to attach" } }, required = ["note_id", "asset_paths"] }
 
 [[tools.provided]]
 name = "memex_note_recent"

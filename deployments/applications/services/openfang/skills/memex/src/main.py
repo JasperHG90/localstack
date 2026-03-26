@@ -101,8 +101,11 @@ def note_add(p):
 def note_rename(p):
     return _run("note", "rename", p["note_id"], "--", p["new_title"])
 
-def note_template(p):
-    return _run("note", "template", p["template_type"])
+def note_template_get(p):
+    return _run("note", "template", "get", p["slug"])
+
+def note_template_list(p):
+    return _run("note", "template", "list")
 
 # --- KV Store ---
 
@@ -139,12 +142,18 @@ def note_node(p):
     return _run("note", "node", *p["node_ids"], "--json")
 
 def note_list_assets(p):
-    return _run("note", "list-assets", p["note_id"], "--json")
+    return _run("note", "assets", "list", p["note_id"], "--json")
 
 def get_resource(p):
     out_dir = p.get("output_dir", "/tmp/memex-assets")
     os.makedirs(out_dir, exist_ok=True)
-    return _run("note", "get-asset", *p["paths"], "-d", out_dir)
+    return _run("note", "assets", "get", *p["paths"], "-d", out_dir)
+
+def note_add_asset(p):
+    args = ["note", "assets", "add", p["note_id"]]
+    for path in p["asset_paths"]:
+        args += ["-a", path]
+    return _run(*args)
 
 def list_vaults(p):
     return _run("vault", "list", "--json")
@@ -166,7 +175,8 @@ TOOLS = {
     "memex_entity_mentions": entity_mentions,
     "memex_note_add": note_add,
     "memex_note_rename": note_rename,
-    "memex_note_template": note_template,
+    "memex_note_template_get": note_template_get,
+    "memex_note_template_list": note_template_list,
     "memex_kv_write": kv_write,
     "memex_kv_get": kv_get,
     "memex_kv_list": kv_list,
@@ -179,6 +189,7 @@ TOOLS = {
     "memex_note_node": note_node,
     "memex_note_list_assets": note_list_assets,
     "memex_get_resource": get_resource,
+    "memex_note_add_asset": note_add_asset,
     "memex_list_vaults": list_vaults,
     "memex_memory_view": memory_view,
 }

@@ -12,7 +12,7 @@ api_key_env = "MINIMAX_API_KEY"
 system_prompt = "You are a personal assistant. Your workspace files define your behavior, skills, and memory protocols. Follow them."
 
 [capabilities]
-tools = ["*", "memex_note_search", "memex_memory_search", "memex_note_find", "memex_entity_search", "memex_entity_view", "memex_entity_related", "memex_entity_mentions", "memex_note_add", "memex_note_rename", "memex_note_template", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_note_metadata", "memex_note_page_index", "memex_note_node", "memex_note_list_assets", "memex_get_resource", "memex_list_vaults", "memex_memory_view"]
+tools = ["*", "memex_note_search", "memex_memory_search", "memex_note_find", "memex_entity_search", "memex_entity_view", "memex_entity_related", "memex_entity_mentions", "memex_note_add", "memex_note_rename", "memex_note_template_get", "memex_note_template_list", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_note_metadata", "memex_note_page_index", "memex_note_node", "memex_note_list_assets", "memex_get_resource", "memex_note_add_asset", "memex_list_vaults", "memex_memory_view"]
 memory_read = []
 memory_write = []
 shell = ["*"]
