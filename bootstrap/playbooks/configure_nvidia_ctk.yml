@@ -1,0 +1,29 @@
+---
+- name: Configure NVIDIA GPU access for Podman on Jetson
+  hosts: jetson_nano
+  become: true
+
+  tasks:
+    - name: Remove broken OCI hook if present
+      ansible.builtin.file:
+        path: /usr/share/containers/oci/hooks.d/oci-nvidia-hook.json
+        state: absent
+
+    - name: Set nvidia-container-runtime as default Podman runtime for root (Nomad)
+      ansible.builtin.blockinfile:
+        path: /etc/containers/containers.conf
+        create: true
+        mode: '0644'
+        block: |
+          [engine]
+          runtime = "nvidia"
+
+          [engine.runtimes]
+          nvidia = ["/usr/bin/nvidia-container-runtime"]
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - NVIDIA RUNTIME"
+
+    - name: Disable cgroups in nvidia-container-runtime (required for Jetson/Tegra)
+      ansible.builtin.lineinfile:
+        path: /etc/nvidia-container-runtime/config.toml
+        regexp: '^#?no-cgroups'
+        line: 'no-cgroups = true'

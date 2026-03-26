@@ -45,9 +45,25 @@ job "memex" {
       }
 
       config {
-        image        = "ghcr.io/jasperhg90/memex:${memex_version}"
+        image        = "ghcr.io/jasperhg90/memex-jetson:${memex_version}"
         args         = ["server", "start"]
         network_mode = "host"
+
+        # GPU: seccomp blocks Jetson GPU ioctls on /dev/nvhost-* and /dev/nvmap
+        security_opt = ["seccomp=unconfined", "label=disable"]
+
+        # GPU: CUDA toolkit + cuDNN are on the host but not injected by nvidia-container-runtime
+        volumes = [
+          "/usr/local/cuda-12.6/lib64:/usr/local/cuda/lib64:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn.so.9:/usr/lib/aarch64-linux-gnu/libcudnn.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_graph.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_graph.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_engines_precompiled.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_engines_precompiled.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_engines_runtime_compiled.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_engines_runtime_compiled.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_heuristic.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_heuristic.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_ops.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_ops.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_adv.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_adv.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_cnn.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_cnn.so.9:ro",
+        ]
       }
 
       vault {}
@@ -75,14 +91,19 @@ MEMEX_SERVER__META_STORE__INSTANCE__PASSWORD={{ .Data.data.password }}
 MEMEX_SERVER__META_STORE__POOL_SIZE=20
 MEMEX_SERVER__META_STORE__MAX_OVERFLOW=30
 MEMEX_SERVER__AUTH__ENABLED=true
-{{- with secret "${memex_auth_secret}" }}                                                                                                                                                                                  
+{{- with secret "${memex_auth_secret}" }}
 MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin","description":"Admin key"},{"key":"{{ .Data.data.writer_key }}","policy":"writer","vault_ids":["global"],"description":"Scoped writer"}]'
-{{- end }}                                                                                                                                                                                                                 
+{{- end }}
 MEMEX_SERVER__TRACING__ENABLED=true
 MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 {{ with secret "${memex_gemini_secret}" }}
 GOOGLE_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
 {{ end }}
+MEMEX_WORKERS=1
+NVIDIA_VISIBLE_DEVICES=all
+NVIDIA_DRIVER_CAPABILITIES=compute,utility
+LD_LIBRARY_PATH=/usr/local/cuda/lib64
+MEMEX_ONNX_PROVIDERS=CUDAExecutionProvider,CPUExecutionProvider
 EOF
 
         destination = "secrets/file.env"
@@ -91,7 +112,7 @@ EOF
 
       resources {
         cpu    = 3500
-        memory = 3800
+        memory = 4500
       }
     }
 
