@@ -105,7 +105,19 @@ def note_template_get(p):
     return _run("note", "template", "get", p["slug"])
 
 def note_template_list(p):
-    return _run("note", "template", "list")
+    return _run("note", "template", "list", "--json")
+
+def note_template_register(p):
+    import tempfile
+    content = f'name = {json.dumps(p["name"])}\n'
+    content += f'description = {json.dumps(p["description"])}\n\n'
+    content += f"template = '''\n{p['template']}\n'''\n"
+    path = os.path.join(tempfile.gettempdir(), f"{p['slug']}.toml")
+    with open(path, "w") as f:
+        f.write(content)
+    result = _run("note", "template", "register", path)
+    os.unlink(path)
+    return result
 
 # --- KV Store ---
 
@@ -177,6 +189,7 @@ TOOLS = {
     "memex_note_rename": note_rename,
     "memex_note_template_get": note_template_get,
     "memex_note_template_list": note_template_list,
+    "memex_note_template_register": note_template_register,
     "memex_kv_write": kv_write,
     "memex_kv_get": kv_get,
     "memex_kv_list": kv_list,

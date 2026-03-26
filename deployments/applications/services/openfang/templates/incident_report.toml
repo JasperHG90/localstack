@@ -1,0 +1,50 @@
+name = "Incident Report"
+description = "Template for documenting incidents, outages, or security events with timeline, impact, root cause, and remediation."
+
+template = '''
+---
+date: YYYY-MM-DD
+created_by: [Author name]
+tags: [incident, postmortem]
+---
+
+# Incident Report: [Short Title]
+
+**Severity:** [P1 / P2 / P3 / P4]
+**Status:** [Open / Investigating / Resolved / Postmortem Complete]
+**Duration:** [e.g., 2h 15m]
+**Affected Services:** [List services]
+
+## Summary
+[1-2 sentences: what happened and what was the user-facing impact.]
+
+## Timeline
+| Time (UTC) | Event |
+|------------|-------|
+| HH:MM | [First sign of issue / alert fired] |
+| HH:MM | [Investigation began] |
+| HH:MM | [Root cause identified] |
+| HH:MM | [Mitigation applied] |
+| HH:MM | [Service restored] |
+
+## Impact
+- **Users affected:** [number or scope]
+- **Data loss:** [yes/no — details if yes]
+- **SLA breach:** [yes/no]
+
+## Root Cause
+[What underlying issue caused the incident. Be specific — name the component, config, or code path.]
+
+## Remediation
+[What was done to restore service. Include commands, config changes, or rollbacks.]
+
+## Action Items
+- [ ] [Preventive action 1]
+- [ ] [Preventive action 2]
+- [ ] [Monitoring/alerting improvement]
+
+## Lessons Learned
+- [What went well]
+- [What went poorly]
+- [What to change]
+'''

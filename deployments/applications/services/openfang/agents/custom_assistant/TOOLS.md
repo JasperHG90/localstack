@@ -38,6 +38,9 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 |------|------------|
 | `memex_note_add` | Save a note. Use `background: true`. Pass the vault from session bootstrap if one is configured. |
 | `memex_note_rename` | Rename a note (updates title everywhere). |
+| `memex_note_template_list` | List available templates with slugs and descriptions. |
+| `memex_note_template_get` | Get a template's markdown content by slug. Use it to structure `memex_note_add` content. |
+| `memex_note_template_register` | Register a new template. Pass slug, name, description, and template (markdown with YAML frontmatter). |
 | `memex_kv_write` | Store structured facts/preferences. Default to `app:openfang:custom_assistant:` namespace. |
 | `memex_kv_get` | Exact key lookup. |
 | `memex_kv_list` | List all KV entries. Use at session start. |
@@ -46,9 +49,11 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 ### Writing notes — protocol
 
 1. **Vault**: Use the vault resolved during session bootstrap. If none was configured, omit `vault_id` to use the default. Never guess vault names.
-2. **Content**: Write complete, well-structured markdown. Include YAML frontmatter (`title`, `description`, `tags`). For templates, structured reports, or reference docs — write the full content inline. There is no external template system.
-3. **Size**: Background notes (auto-capture) should be concise (~300 tokens). User-requested notes (templates, reports, guides) can be as long as needed.
-4. **Background**: Use `background: true` for auto-capture notes. Use `background: false` for user-requested notes so you can confirm success.
+2. **Using templates**: When the user asks for a structured note, call `memex_note_template_list` to find a matching template, then `memex_note_template_get` to get its markdown. Fill in the placeholders and pass it as `content` to `memex_note_add`.
+3. **Creating templates**: When the user asks to create a new template, call `memex_note_template_register` with a slug, name, description, and the template markdown body (must include YAML frontmatter with date, created_by, tags).
+4. **Content**: Write complete, well-structured markdown. Include YAML frontmatter (`title`, `description`, `tags`).
+4. **Size**: Background notes (auto-capture) should be concise (~300 tokens). User-requested notes (templates, reports, guides) can be as long as needed.
+5. **Background**: Use `background: true` for auto-capture notes. Use `background: false` for user-requested notes so you can confirm success.
 
 ## Other tool protocols
 

@@ -67,8 +67,28 @@ input_schema = { type = "object", properties = { slug = { type = "string", descr
 
 [[tools.provided]]
 name = "memex_note_template_list"
-description = "List all available note templates with metadata."
+description = "List all available note templates with metadata (slug, name, description, source)."
 input_schema = { type = "object", properties = {}, required = [] }
+
+[[tools.provided]]
+name = "memex_note_template_register"
+description = """Register a new note template. Write a TOML file with three fields: name (display name), description (one-line summary), and template (markdown string with YAML frontmatter). Example format:
+
+name = "My Template"
+description = "What this template is for."
+template = '''
+---
+date: YYYY-MM-DD
+created_by: [Author]
+tags: []
+---
+# Title
+## Section
+[Content]
+'''
+
+The file is saved to the workspace templates directory and registered with Memex."""
+input_schema = { type = "object", properties = { slug = { type = "string", description = "Template slug (lowercase, underscores). Used as filename and lookup key." }, name = { type = "string", description = "Human-readable template name." }, description = { type = "string", description = "One-line description of the template's purpose." }, template = { type = "string", description = "Markdown content with YAML frontmatter (---/date/created_by/tags/---). This is the template body." } }, required = ["slug", "name", "description", "template"] }
 
 # --- KV Store ---
 
