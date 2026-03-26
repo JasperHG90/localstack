@@ -2,18 +2,18 @@ locals {
   buckets = {
     datalake = {
       writers = [
-        {"name" = "ducklake_writer", generate_access_key = true}
+        { "name" = "ducklake_writer", generate_access_key = true }
       ],
       readers = [
-        {"name" = "ducklake_reader", generate_access_key = true}
+        { "name" = "ducklake_reader", generate_access_key = true }
       ]
     }
     memex = {
       writers = [
-        {"name" = "memex", generate_access_key = true}
+        { "name" = "memex", generate_access_key = true }
       ],
       readers = [
-        {"name" = "openfang", generate_access_key = true}
+        { "name" = "openfang", generate_access_key = true }
       ]
     }
   }
@@ -46,12 +46,12 @@ resource "minio_accesskey" "users" {
 
 module "buckets" {
   for_each = local.buckets
-  source = "./modules/bucket"
+  source   = "./modules/bucket"
 
   name = each.key
   permissions = {
-    readers = [ for reader in each.value.readers : reader.name ]
-    writers = [ for writer in each.value.writers : writer.name ]
+    readers = [for reader in each.value.readers : reader.name]
+    writers = [for writer in each.value.writers : writer.name]
   }
 
   depends_on = [minio_iam_user.users]

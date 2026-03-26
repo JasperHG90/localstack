@@ -1,5 +1,5 @@
 locals {
-    name_underscore = replace(var.name, "-", "_")
+  name_underscore = replace(var.name, "-", "_")
 }
 
 resource "minio_s3_bucket" "bucket" {
@@ -9,8 +9,8 @@ resource "minio_s3_bucket" "bucket" {
 
 // See: https://docs.min.io/enterprise/aistor-object-store/administration/iam/access/
 resource "minio_iam_policy" "policy_read_write" {
-  name = "${local.name_underscore}_read_write"
-  policy= <<EOF
+  name   = "${local.name_underscore}_read_write"
+  policy = <<EOF
 {
   "Version":"2012-10-17",
   "Statement": [
@@ -27,8 +27,8 @@ EOF
 }
 
 resource "minio_iam_policy" "policy_read_only" {
-  name = "${local.name_underscore}_read_only"
-  policy= <<EOF
+  name   = "${local.name_underscore}_read_only"
+  policy = <<EOF
 {
   "Version":"2012-10-17",
   "Statement": [

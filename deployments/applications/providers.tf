@@ -38,8 +38,8 @@ provider "consul" {
 }
 
 provider "minio" {
-  minio_server = "${data.consul_service.minio.service[0].node_address}:9000"
-  minio_user = ephemeral.vault_kv_secret_v2.minio_admin.data.access_key
+  minio_server   = "${data.consul_service.minio.service[0].node_address}:9000"
+  minio_user     = ephemeral.vault_kv_secret_v2.minio_admin.data.access_key
   minio_password = ephemeral.vault_kv_secret_v2.minio_admin.data.secret_key
 }
 

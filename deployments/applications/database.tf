@@ -40,8 +40,8 @@ locals {
 
 resource "random_password" "password" {
   for_each = toset(local.roles)
-  length  = 16
-  special = false
+  length   = 16
+  special  = false
 }
 
 resource "postgresql_role" "role" {
@@ -52,7 +52,7 @@ resource "postgresql_role" "role" {
 }
 
 resource "postgresql_database" "database" {
-  for_each = local.databases
+  for_each               = local.databases
   name                   = each.key
   owner                  = postgresql_role.role[each.value.owner].name
   lc_collate             = "C"
@@ -80,8 +80,8 @@ resource "postgresql_extension" "extension" {
 
 // See: https://ducklake.select/docs/stable/duckdb/guides/access_control
 resource "postgresql_grant" "reader" {
-  for_each    = local.database_reader_map
-  
+  for_each = local.database_reader_map
+
   database    = postgresql_database.database[each.value.database].name
   role        = postgresql_role.role[each.value.role].name
   schema      = "public"
