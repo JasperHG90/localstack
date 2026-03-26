@@ -36,13 +36,19 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 ### Writing & Lifecycle
 | Tool | When to use |
 |------|------------|
-| `memex_note_add` | Save a note. Use background=true. Keep concise (300 token max). |
+| `memex_note_add` | Save a note. Use `background: true`. Pass the vault from session bootstrap if one is configured. |
 | `memex_note_rename` | Rename a note (updates title everywhere). |
-| `memex_note_template` | Get markdown template (general_note, technical_brief, adr, rfc, quick_note). |
 | `memex_kv_write` | Store structured facts/preferences. Default to `app:openfang:custom_assistant:` namespace. |
 | `memex_kv_get` | Exact key lookup. |
 | `memex_kv_list` | List all KV entries. Use at session start. |
 | `memex_kv_search` | Fuzzy semantic search over stored facts. |
+
+### Writing notes — protocol
+
+1. **Vault**: Use the vault resolved during session bootstrap. If none was configured, omit `vault_id` to use the default. Never guess vault names.
+2. **Content**: Write complete, well-structured markdown. Include YAML frontmatter (`title`, `description`, `tags`). For templates, structured reports, or reference docs — write the full content inline. There is no external template system.
+3. **Size**: Background notes (auto-capture) should be concise (~300 tokens). User-requested notes (templates, reports, guides) can be as long as needed.
+4. **Background**: Use `background: true` for auto-capture notes. Use `background: false` for user-requested notes so you can confirm success.
 
 ## Other tool protocols
 
