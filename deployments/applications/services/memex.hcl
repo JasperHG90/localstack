@@ -21,6 +21,49 @@ job "memex" {
       }
     }
 
+    task "db-migrate" {
+      driver = "podman"
+
+      lifecycle {
+        hook    = "prestart"
+        sidecar = false
+      }
+
+      volume_mount {
+        volume      = "memex_data_volume"
+        destination = "/cache"
+      }
+
+      config {
+        image        = "ghcr.io/jasperhg90/memex-jetson:${memex_version}"
+        args         = ["database", "upgrade"]
+        network_mode = "host"
+      }
+
+      vault {}
+
+      template {
+        data = <<EOF
+MEMEX_SERVER__META_STORE__TYPE=postgres
+MEMEX_SERVER__META_STORE__INSTANCE__HOST=${postgres_host}
+MEMEX_SERVER__META_STORE__INSTANCE__PORT=5432
+MEMEX_SERVER__META_STORE__INSTANCE__DATABASE=memex
+{{ with secret "${memex_postgres_secret}" }}
+MEMEX_SERVER__META_STORE__INSTANCE__USER={{ .Data.data.username }}
+MEMEX_SERVER__META_STORE__INSTANCE__PASSWORD={{ .Data.data.password }}
+{{ end }}
+EOF
+
+        destination = "secrets/file.env"
+        env         = true
+      }
+
+      resources {
+        cpu    = 500
+        memory = 512
+      }
+    }
+
     task "memex" {
       driver = "podman"
 
