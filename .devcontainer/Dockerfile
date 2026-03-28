@@ -6,7 +6,6 @@ ENV ANSIBLE_GALAXY_CACHE_DIR=$HOME/workspace/.cache/ansible-galaxy
 
 RUN pipx install --force uv==0.10.12
 
-USER vscode
 WORKDIR /home/vscode
 
 RUN sudo apt-get update && \
@@ -17,15 +16,13 @@ RUN sudo apt-get update && \
   sudo apt-get -y install nomad vault consul && \
   rm -rf /var/lib/apt/lists/*
 
+USER vscode
+
 RUN uv tool install pre-commit
 RUN uv tool install ansible-core
 RUN uv tool install ansible-lint
 RUN uv tool install ansible
 RUN sudo chown -R vscode:vscode /home/vscode/.local/share/uv/tools/
-RUN curl https://install.duckdb.org | sh
-
-RUN mkdir -p $HOME/.duckdb
-RUN sudo chown -R vscode:vscode /home/vscode/.duckdb
 
 RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
   chmod +x mc && \
@@ -34,8 +31,9 @@ RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.0/migrate.linux-arm64.tar.gz | tar xvz && \
   sudo mv migrate /usr/local/bin/
 
-RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors https://claude.ai/install.sh | bash
 
 # Install rtk
 RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
 ENV PATH="$HOME/.local/bin:$PATH"
