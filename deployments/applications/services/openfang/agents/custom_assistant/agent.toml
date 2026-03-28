@@ -6,9 +6,9 @@ module = "builtin:chat"
 skills = ["memex"]
 
 [model]
-provider = "minimax"
-model = "minimax/MiniMax-M2.7"
-api_key_env = "MINIMAX_API_KEY"
+provider = "openrouter"
+model = "openrouter/google/gemini-3-flash-preview"
+api_key_env = "OPENROUTER_API_KEY"
 system_prompt = "You are a personal assistant. Your workspace files define your behavior, skills, and memory protocols. Follow them."
 
 [capabilities]

@@ -6,9 +6,9 @@ module = "builtin:chat"
 skills = ["memex"]
 
 [model]
-provider = "minimax"
-model = "minimax/MiniMax-M2.7"
-api_key_env = "MINIMAX_API_KEY"
+provider = "openrouter"
+model = "openrouter/mistralai/mistral-small-2603"
+api_key_env = "OPENROUTER_API_KEY"
 system_prompt = """You are a background scribe. You receive event descriptions and save them to Memex. You never respond to users directly. Be concise — max 300 tokens per note. Use memex_note_add with background: true, author: 'openfang-scribe'."""
 
 [capabilities]

@@ -21,10 +21,10 @@ ephemeral "vault_kv_secret_v2" "postgres_admin" {
 ### Firewall rules for application services
 locals {
   firewall_rules = {
-    # Phoenix on jetson_nano
+    # Phoenix on orange_pi_4a
     phoenix = {
-      host     = "192.168.2.46"
-      ssh_user = "localstack"
+      host     = "192.168.2.29"
+      ssh_user = "orangepi"
       rules = [
         "allow from 192.168.0.0/16 to any port 6006 proto tcp",
         "allow from 192.168.0.0/16 to any port 4317 proto tcp",
@@ -55,6 +55,7 @@ resource "null_resource" "firewall" {
 
   triggers = {
     rules = jsonencode(each.value.rules)
+    host  = each.value.host
   }
 
   provisioner "remote-exec" {
@@ -75,7 +76,7 @@ resource "nomad_job" "phoenix" {
     {
       phoenix_secret = vault_kv_secret_v2.phoenix_db_credentials.path
       postgres_host  = data.consul_service.postgres.service[0].node_address
-      phoenix_host   = "192.168.2.46"
+      phoenix_host   = "192.168.2.29"
     }
   )
   depends_on = [postgresql_database.database]
@@ -88,7 +89,7 @@ resource "nomad_job" "openfang" {
     {
       openfang_hostname      = "ubuntu"
       openfang_host          = "192.168.2.47"
-      openfang_version       = "0.5.2"
+      openfang_version       = "0.5.5"
       memex_host             = "192.168.2.46"
       memex_auth_secret      = vault_kv_secret_v2.openfang_memex_auth.path
       openfang_minio_secret  = vault_kv_secret_v2.openfang_minio_credentials.path
@@ -97,6 +98,7 @@ resource "nomad_job" "openfang" {
       telegram_secret        = "${var.secret_mount}/data/default/openfang/telegram"
       telegram_allowed_users = ["<REDACTED_TELEGRAM_USER_ID>"]
       minimax_secret         = "${var.secret_mount}/data/default/openfang/minimax"
+      openrouter_secret      = "${var.secret_mount}/data/default/openfang/openrouter"
     }
   )
 }
@@ -112,9 +114,9 @@ resource "nomad_job" "memex" {
       memex_gemini_secret   = "${var.secret_mount}/data/default/memex/gemini"
       postgres_host         = data.consul_service.postgres.service[0].node_address
       minio_host            = data.consul_service.minio.service[0].node_address
-      phoenix_host          = "192.168.2.46"
+      phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
-      memex_version         = "0.0.43a"
+      memex_version         = "0.0.50a"
     }
   )
   depends_on = [postgresql_database.database]

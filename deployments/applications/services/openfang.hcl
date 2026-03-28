@@ -60,6 +60,9 @@ TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 {{- with secret "${minimax_secret}" }}
 MINIMAX_API_KEY={{ .Data.data.api_key }}
 {{- end }}
+{{- with secret "${openrouter_secret}" }}
+OPENROUTER_API_KEY={{ .Data.data.api_key }}
+{{- end }}
 {{- with secret "${openfang_minio_secret}" }}
 MEMEX_S3_ACCESS_KEY={{ .Data.data.access_key }}
 MEMEX_S3_SECRET_KEY={{ .Data.data.secret_key }}
@@ -81,9 +84,9 @@ EOF
       template {
         data = <<EOF
 [default_model]
-provider = "minimax"
-model = "minimax/MiniMax-M2.5"
-api_key_env = "MINIMAX_API_KEY"
+provider = "openrouter"
+model = "openrouter/google/gemini-3-flash-preview"
+api_key_env = "OPENROUTER_API_KEY"
 
 [channels.telegram]
 bot_token_env = "TELEGRAM_BOT_TOKEN"
@@ -94,9 +97,47 @@ EOF
         destination = "local/config.toml"
       }
 
+      template {
+        data = <<EOF
+[
+  {
+    "id": "openrouter/google/gemini-3-flash-preview",
+    "display_name": "Gemini 3 Flash Preview (OpenRouter)",
+    "provider": "openrouter",
+    "tier": "Custom",
+    "context_window": 1000000,
+    "max_output_tokens": 65536,
+    "input_cost_per_m": 0.0,
+    "output_cost_per_m": 0.0,
+    "supports_tools": true,
+    "supports_vision": true,
+    "supports_streaming": true,
+    "aliases": []
+  },
+  {
+    "id": "openrouter/mistralai/mistral-small-2603",
+    "display_name": "Mistral Small 2603 (OpenRouter)",
+    "provider": "openrouter",
+    "tier": "Custom",
+    "context_window": 128000,
+    "max_output_tokens": 8192,
+    "input_cost_per_m": 0.0,
+    "output_cost_per_m": 0.0,
+    "supports_tools": true,
+    "supports_vision": false,
+    "supports_streaming": true,
+    "aliases": []
+  }
+]
+EOF
+
+        destination = "local/custom_models.json"
+      }
+
       config {
         volumes = [
           "local/config.toml:/data/config.toml",
+          "local/custom_models.json:/data/custom_models.json",
         ]
         image        = "ghcr.io/jasperhg90/openfang:${openfang_version}"
         force_pull   = true
