@@ -5,7 +5,7 @@ job "phoenix" {
   group "phoenix" {
     constraint {
       attribute = "$${attr.unique.hostname}"
-      value     = "jetson-orin-nano"
+      value     = "orangepi4a"
     }
 
     network {
@@ -66,8 +66,8 @@ job "phoenix" {
       }
 
       resources {
-        cpu    = 1000
-        memory = 2048
+        cpu    = 2000
+        memory = 1024
       }
     }
   }

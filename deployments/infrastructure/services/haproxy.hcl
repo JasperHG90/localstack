@@ -88,7 +88,8 @@ backend consul
     server consul1 192.168.2.30:8500 check
 
 backend phoenix
-    server phoenix1 192.168.2.46:6006 check
+    http-request auth unless { http_auth(openfang_users) }
+    server phoenix1 192.168.2.29:6006 check
 
 backend memex
     server memex1 192.168.2.46:8000 check
