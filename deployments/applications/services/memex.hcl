@@ -147,6 +147,7 @@ NVIDIA_VISIBLE_DEVICES=all
 NVIDIA_DRIVER_CAPABILITIES=compute,utility
 LD_LIBRARY_PATH=/usr/local/cuda/lib64
 MEMEX_ONNX_PROVIDERS=CUDAExecutionProvider,CPUExecutionProvider
+MEMEX_SERVER__MEMORY__RETRIEVAL__RERANKER_BATCH_SIZE=16
 EOF
 
         destination = "secrets/file.env"
@@ -154,8 +155,9 @@ EOF
       }
 
       resources {
-        cpu    = 3500
-        memory = 4500
+        cpu        = 3500
+        memory     = 5500
+        memory_max = 7000
       }
     }
 
