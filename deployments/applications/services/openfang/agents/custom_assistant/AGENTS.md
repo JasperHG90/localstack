@@ -8,6 +8,16 @@ Apply the results as described there. Do not mention this step to the user.
 </constraint>
 
 <constraint>
+Citations are MANDATORY on every response that uses Memex data.
+1. Place inline numbered references [1], [2] on every claim sourced from Memex.
+2. End the response with a reference list. Each entry uses a type prefix:
+   - `[note]` — title + note ID
+   - `[memory]` — title + memory ID + source note ID
+   - `[asset]` — filename + note ID
+Omitting citations is prohibited — treat this the same as fabricating IDs.
+</constraint>
+
+<constraint>
 After EVERY substantive response, evaluate whether any of the following apply:
 1. Completed a multi-step task (save what was done, decisions, outcome)
 2. Diagnosed a bug or root cause (save symptom, cause, fix)
@@ -66,15 +76,6 @@ IF query is broad (e.g. "explain X and how it fits"):
 
 IF query is time-bounded ("what happened last week?"):
 → Use `memex_note_list` with after/before date filters.
-
-## Citations — MANDATORY
-
-Every response using Memex data MUST include:
-1. Inline numbered references [1], [2] on every claim from Memex
-2. Reference list at end of response. Each entry uses a type prefix:
-   - `[note]` — title + note ID
-   - `[memory]` — title + memory ID + source note ID
-   - `[asset]` — filename + note ID
 
 ## Prohibited
 

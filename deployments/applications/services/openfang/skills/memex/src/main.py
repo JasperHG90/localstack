@@ -127,10 +127,17 @@ def kv_write(p):
 def kv_get(p):
     return _run("kv", "get", p["key"], "--value-only")
 
+def _sanitize_namespace(p):
+    ns = p.get("namespace")
+    if ns:
+        p["namespace"] = ns.rstrip(":")
+
 def kv_list(p):
+    _sanitize_namespace(p)
     return _run("kv", "list", "--json", *_opts(p, "namespace", "pattern"))
 
 def kv_search(p):
+    _sanitize_namespace(p)
     return _run("kv", "search", "--json", *_opts(p, "namespace", "limit"), "--", p["query"])
 
 # --- Note Reading (batch) ---

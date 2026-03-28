@@ -1,5 +1,5 @@
 FROM rust:1-slim-bookworm AS builder
-RUN apt-get update && apt-get install -y pkg-config libssl-dev git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y pkg-config libssl-dev git make perl && rm -rf /var/lib/apt/lists/*
 ARG VERSION=0.5.1
 RUN git clone --depth 1 --branch "v${VERSION}" https://github.com/RightNow-AI/openfang.git /src
 WORKDIR /src
@@ -17,7 +17,7 @@ RUN printf '#!/bin/sh\necho "username=x-access-token"\necho "password=$GIT_AUTH_
 RUN git config --system credential.helper env
 RUN --mount=type=secret,id=git_token \
     GIT_AUTH_TOKEN=$(cat /run/secrets/git_token) uv tool install \
-    "memex-cli @ git+https://github.com/JasperHG90/memex.git@v0.0.45a#subdirectory=packages/cli"
+    "memex-cli @ git+https://github.com/JasperHG90/memex.git@v0.0.50a#subdirectory=packages/cli"
 VOLUME /data
 ENV OPENFANG_HOME=/data
 EXPOSE 50051
