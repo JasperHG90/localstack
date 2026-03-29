@@ -1,0 +1,61 @@
+[hand]
+id = "cluster-watchdog"
+name = "Cluster Watchdog"
+description = "Monitors the Nomad cluster, triages issues, and sends a daily health report via Telegram"
+category = "DevOps"
+icon = "shield"
+version = "1.0.0"
+
+[hand.requires]
+tools = [
+  "web_fetch",
+  "telegram_send",
+  # Notes: create, search, browse history
+  "memex_note_add",
+  "memex_note_search",
+  "memex_note_list",
+  "memex_note_recent",
+  "memex_note_view",
+  "memex_note_find",
+  # KV: persist state between runs (last-run timestamp, known-issue tracking)
+  "memex_kv_write",
+  "memex_kv_get",
+  "memex_kv_list",
+  "memex_kv_search",
+  # Memory search: query extracted facts from past reports
+  "memex_memory_search",
+]
+
+[hand.settings]
+nomad_addr = { type = "string", default = "http://192.168.2.30:4646" }
+consul_addr = { type = "string", default = "http://192.168.2.30:8500" }
+report_style = { type = "string", default = "detailed", options = ["short", "detailed"] }
+include_resource_usage = { type = "bool", default = true }
+failed_alloc_lookback_hours = { type = "int", default = 24, min = 1, max = 168 }
+
+[hand.agent]
+model = "openrouter/google/gemini-3-flash-preview"
+temperature = 0.1
+max_iterations = 30
+
+[hand.schedule]
+cron = "0 8 * * *"
+
+[hand.dashboard]
+metrics = ["nodes_healthy", "nodes_down", "jobs_running", "jobs_degraded", "allocs_failed", "report_sent"]
+
+[[hand.dashboard.widgets]]
+type = "stat"
+metric = "nodes_down"
+alert_above = 0
+
+[[hand.dashboard.widgets]]
+type = "stat"
+metric = "jobs_degraded"
+alert_above = 0
+
+[[hand.dashboard.widgets]]
+type = "chart"
+metric = "allocs_failed"
+period = "7d"
+style = "bar"

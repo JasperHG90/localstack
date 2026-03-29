@@ -72,6 +72,35 @@ resource "vault_kv_secret_v2" "openfang_memex_auth" {
 }
 
 
+### Nomad read-only token for OpenFang cluster-watchdog hand
+
+resource "nomad_acl_policy" "openfang_readonly" {
+  name = "openfang-readonly"
+  description = "Read-only access to nodes, jobs, allocations, and evaluations"
+  rules_hcl = <<-EOT
+    namespace "*" {
+      policy = "read"
+    }
+    node {
+      policy = "read"
+    }
+  EOT
+}
+
+resource "nomad_acl_token" "openfang_readonly" {
+  name = "openfang-readonly"
+  type = "client"
+  policies = [nomad_acl_policy.openfang_readonly.name]
+}
+
+resource "vault_kv_secret_v2" "openfang_nomad_token" {
+  mount = var.secret_mount
+  name  = "default/openfang/nomad"
+  data_json = jsonencode({
+    token = nomad_acl_token.openfang_readonly.secret_id
+  })
+}
+
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users
   mount    = var.secret_mount

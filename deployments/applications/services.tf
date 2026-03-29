@@ -93,6 +93,7 @@ resource "nomad_job" "openfang" {
       memex_host             = "192.168.2.46"
       memex_auth_secret      = vault_kv_secret_v2.openfang_memex_auth.path
       openfang_minio_secret  = vault_kv_secret_v2.openfang_minio_credentials.path
+      nomad_secret           = vault_kv_secret_v2.openfang_nomad_token.path
       minio_host             = data.consul_service.minio.service[0].node_address
       github_secret          = "${var.secret_mount}/data/default/openfang/github"
       telegram_secret        = "${var.secret_mount}/data/default/openfang/telegram"

@@ -28,6 +28,11 @@ for f in /data/workspaces/*/agent.toml; do
     fi
 done
 
+# Hands — install from staging dir
+for d in /tmp/hands/*/; do
+    [ -d "$d" ] && openfang hand install "$d" 2>/dev/null || true
+done
+
 # Workflows
 for f in /data/workflows/*.json; do
     [ -f "$f" ] && openfang workflow create "$f" 2>/dev/null || true

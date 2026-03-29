@@ -63,6 +63,9 @@ MINIMAX_API_KEY={{ .Data.data.api_key }}
 {{- with secret "${openrouter_secret}" }}
 OPENROUTER_API_KEY={{ .Data.data.api_key }}
 {{- end }}
+{{- with secret "${nomad_secret}" }}
+NOMAD_TOKEN={{ .Data.data.token }}
+{{- end }}
 {{- with secret "${openfang_minio_secret}" }}
 MEMEX_S3_ACCESS_KEY={{ .Data.data.access_key }}
 MEMEX_S3_SECRET_KEY={{ .Data.data.secret_key }}
