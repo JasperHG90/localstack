@@ -25,6 +25,7 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 | `memex_note_list_assets` | Check when has_assets: true. ALWAYS check before reproducing diagrams. |
 | `memex_get_resource` | Download assets by path. Batch — pass array of paths. |
 | `memex_memory_view` | Inspect memory units by ID. Includes contradiction/supersession context. Batch. |
+| `memex_get_lineage` | Trace provenance of any memory entity. Pass entity_type + entity_id. Direction: upstream (source docs), downstream (derived knowledge), or both. |
 
 ### Browsing
 | Tool | When to use |

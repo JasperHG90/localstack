@@ -170,3 +170,8 @@ input_schema = { type = "object", properties = {}, required = [] }
 name = "memex_memory_view"
 description = "View one or more memory units by ID. Includes contradiction links and supersession info."
 input_schema = { type = "object", properties = { unit_ids = { type = "array", items = { type = "string" }, description = "One or more memory unit UUIDs" } }, required = ["unit_ids"] }
+
+[[tools.provided]]
+name = "memex_get_lineage"
+description = "Trace the provenance chain of a memory entity. UPSTREAM traces back to source documents (note → memory_unit → observation → mental_model). DOWNSTREAM traces forward to derived knowledge. BOTH returns the full tree."
+input_schema = { type = "object", properties = { entity_type = { type = "string", description = "Entity type: mental_model, observation, memory_unit, or note" }, entity_id = { type = "string", description = "UUID of the entity" }, direction = { type = "string", description = "Traversal direction: upstream (default), downstream, or both" }, depth = { type = "integer", description = "Max recursion depth (default 3)" }, limit = { type = "integer", description = "Max children per node (default 5)" } }, required = ["entity_type", "entity_id"] }

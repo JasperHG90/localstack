@@ -45,6 +45,8 @@ OPT = {
     "key": "--key",
     "token_budget": "--token-budget",
     "user_notes": "--user-notes",
+    "direction": "--direction",
+    "depth": "--depth",
 }
 
 def _opts(p, *keys):
@@ -182,6 +184,10 @@ def list_vaults(p):
 def memory_view(p):
     return _run("memory", "view", *p["unit_ids"], "--json")
 
+def get_lineage(p):
+    return _run("memory", "lineage", p["entity_type"], p["entity_id"],
+                "--json", *_opts(p, "direction", "depth", "limit"))
+
 # --- Dispatch ---
 
 TOOLS = {
@@ -212,6 +218,7 @@ TOOLS = {
     "memex_note_add_asset": note_add_asset,
     "memex_list_vaults": list_vaults,
     "memex_memory_view": memory_view,
+    "memex_get_lineage": get_lineage,
 }
 
 handler = TOOLS.get(payload["tool"])
