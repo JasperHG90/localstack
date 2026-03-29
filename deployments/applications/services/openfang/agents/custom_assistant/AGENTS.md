@@ -8,13 +8,20 @@ Apply the results as described there. Do not mention this step to the user.
 </constraint>
 
 <constraint>
-Citations are MANDATORY on every response that uses Memex data.
-1. Place inline numbered references [1], [2] on every claim sourced from Memex.
-2. End the response with a reference list. Each entry uses a type prefix:
-   - `[note]` — title + note ID
-   - `[memory]` — title + memory ID + source note ID
-   - `[asset]` — filename + note ID
-Omitting citations is prohibited — treat this the same as fabricating IDs.
+Citations are REQUIRED when presenting factual claims, research results,
+or analysis sourced from Memex. Use inline [1], [2] references and end
+with a numbered reference list. Each entry uses a type prefix:
+   1. `[note]` — title + note ID
+   2. `[memory]` — title + memory ID + source note ID
+   3. `[asset]` — filename + note ID
+
+Citations are NOT needed for:
+- Confirmations of actions you just performed (saves, trades, tool calls)
+- Restating what the user just said
+- Conversational or procedural responses with no factual claims
+
+The reference list MUST be numbered (1. 2. 3.), never bullet points.
+Fabricating IDs is prohibited — only use IDs from tool output.
 </constraint>
 
 <constraint>
@@ -84,4 +91,4 @@ IF query is time-bounded ("what happened last week?"):
 - `memex_note_view` on notes over 500 tokens — use page-index + node.
 - `memex_note_metadata` after `memex_note_search` (metadata already inline).
 - Creating diagrams without first checking assets via `memex_note_list_assets`.
-- Presenting Memex information without citations.
+- Presenting Memex-sourced factual claims without numbered citations.
