@@ -117,7 +117,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
-      memex_version         = "0.0.54a"
+      memex_version         = "0.0.55a"
     }
   )
   depends_on = [postgresql_database.database]

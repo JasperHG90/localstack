@@ -137,14 +137,58 @@ EOF
         destination = "local/custom_models.json"
       }
 
+      template {
+        data = <<EOF
+#!/bin/sh
+# Entrypoint: start OpenFang, wait for boot, push vault secrets.
+# Skills, agents, and hands auto-load from SQLite on boot.
+# Registration of new resources happens via sync_openfang (register.sh).
+
+openfang start &
+PID=$!
+
+# Wait for API to be ready
+attempts=0
+while [ $attempts -lt 30 ]; do
+  curl -sf http://127.0.0.1:50051/api/health > /dev/null 2>&1 && break
+  attempts=$((attempts + 1))
+  sleep 2
+done
+
+# Give SQLite auto-load time to finish
+sleep 3
+
+# Push secrets to OpenFang credential vault
+{{- with secret "${nomad_secret}" }}
+watchdog_id=`openfang agent list 2>/dev/null | grep "cluster-watchdog-hand" | awk '{print $1}' | head -1`
+if [ -n "$watchdog_id" ]; then
+  curl -sf -X PUT "http://127.0.0.1:50051/api/memory/agents/$watchdog_id/kv/NOMAD_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"value": "{{ .Data.data.token }}"}' || true
+  echo "entrypoint: pushed NOMAD_TOKEN to vault for agent $watchdog_id"
+else
+  echo "entrypoint: cluster-watchdog-hand not found, skipping vault push"
+fi
+{{- end }}
+
+wait $PID
+EOF
+
+        destination = "local/entrypoint.sh"
+        perms       = "0755"
+      }
+
       config {
         volumes = [
           "local/config.toml:/data/config.toml",
           "local/custom_models.json:/data/custom_models.json",
+          "local/entrypoint.sh:/tmp/entrypoint.sh",
         ]
         image        = "ghcr.io/jasperhg90/openfang:${openfang_version}"
         force_pull   = true
         network_mode = "host"
+        command      = "/bin/sh"
+        args         = ["/tmp/entrypoint.sh"]
       }
 
       resources {
