@@ -89,7 +89,7 @@ resource "nomad_job" "openfang" {
     {
       openfang_hostname      = "ubuntu"
       openfang_host          = "192.168.2.47"
-      openfang_version       = "0.5.5"
+      openfang_version       = "0.5.6"
       memex_host             = "192.168.2.46"
       memex_auth_secret      = vault_kv_secret_v2.openfang_memex_auth.path
       openfang_minio_secret  = vault_kv_secret_v2.openfang_minio_credentials.path
