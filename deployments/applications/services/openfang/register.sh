@@ -12,6 +12,13 @@ MEMEX_S3_ACCESS_KEY=${MEMEX_S3_ACCESS_KEY}
 MEMEX_S3_SECRET_KEY=${MEMEX_S3_SECRET_KEY}
 CONF
 
+# Write nomad config — used by the nomad skill for API access.
+cat > /data/nomad.env <<CONF
+NOMAD_ADDR=${NOMAD_ADDR:-http://192.168.2.30:4646}
+NOMAD_TOKEN=${NOMAD_TOKEN}
+CONSUL_ADDR=${CONSUL_ADDR:-http://192.168.2.30:8500}
+CONF
+
 # Skills — install from staging dir to avoid self-clobber
 # (skill install copies to $OPENFANG_HOME/skills/ which is /data/skills/)
 for d in /tmp/skills/*/; do
