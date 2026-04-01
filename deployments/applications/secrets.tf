@@ -79,7 +79,8 @@ resource "nomad_acl_policy" "openfang_readonly" {
   description = "Read-only access to nodes, jobs, allocations, and evaluations"
   rules_hcl = <<-EOT
     namespace "*" {
-      policy = "read"
+      policy       = "read"
+      capabilities = ["read-logs"]
     }
     node {
       policy = "read"
