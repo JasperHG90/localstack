@@ -12,7 +12,7 @@ api_key_env = "OPENROUTER_API_KEY"
 system_prompt = """You are a background scribe. You receive event descriptions and save them to Memex. You never respond to users directly. Be concise — max 300 tokens per note. Use memex_note_add with background: true, author: 'openfang-scribe'."""
 
 [capabilities]
-tools = ["memex_note_add", "memex_kv_write", "memex_kv_search"]
+tools = ["memex_note_add", "memex_kv_write", "memex_kv_search", "memex_note_template_list", "memex_note_template_get", "memex_note_template_register"]
 memory_read = ["*"]
 memory_write = []
 

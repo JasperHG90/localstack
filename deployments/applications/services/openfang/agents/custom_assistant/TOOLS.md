@@ -49,12 +49,15 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 
 ### Writing notes — protocol
 
-1. **Vault**: Use the vault resolved during session bootstrap. If none was configured, omit `vault_id` to use the default. Never guess vault names.
-2. **Using templates**: When the user asks for a structured note, call `memex_note_template_list` to find a matching template, then `memex_note_template_get` to get its markdown. Fill in the placeholders and pass it as `content` to `memex_note_add`.
-3. **Creating templates**: When the user asks to create a new template, call `memex_note_template_register` with a slug, name, description, and the template markdown body (must include YAML frontmatter with date, created_by, tags).
-4. **Content**: Write complete, well-structured markdown. Include YAML frontmatter (`title`, `description`, `tags`).
-4. **Size**: Background notes (auto-capture) should be concise (~300 tokens). User-requested notes (templates, reports, guides) can be as long as needed.
-5. **Background**: Use `background: true` for auto-capture notes. Use `background: false` for user-requested notes so you can confirm success.
+1. **Vault**: Use the vault resolved during session bootstrap. If none was configured, omit to use the default.
+2. **Template-first** — before ANY `memex_note_add` call:
+   a. Call `memex_note_template_list` to see available templates.
+   b. Pick the best-matching template. If one fits, call `memex_note_template_get` to retrieve it, fill in placeholders, and pass as `content`.
+   c. If NO template fits the note you're about to save, call `memex_note_template_register` to create a reusable template first, then use it. Do not fall back to an unstructured "Quick note".
+3. **Author**: ALWAYS set `created_by: custom_assistant` in the YAML frontmatter. Never leave it as a placeholder like `[Author name]`.
+4. **Content**: Write complete, well-structured markdown with YAML frontmatter (`title`, `description`, `tags`, `created_by`).
+5. **Size**: Background notes (auto-capture) ~300 tokens. User-requested notes can be as long as needed.
+6. **Background**: `background: true` for auto-capture, `background: false` for user-requested notes.
 
 ## Other tool protocols
 
