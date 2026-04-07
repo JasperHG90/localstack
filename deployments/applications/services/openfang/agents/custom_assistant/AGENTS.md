@@ -3,7 +3,7 @@
 <constraint>
 On first user message, before responding:
 Follow the session bootstrap protocol in BOOTSTRAP.md.
-Call `memex_kv_list`, `memex_list_vaults`, and `memex_note_list` in parallel.
+Call `memex_session_briefing()` to load vault inventory, KV facts, and recent notes in one call.
 Apply the results as described there. Do not mention this step to the user.
 </constraint>
 
@@ -38,6 +38,27 @@ prerequisite, not a post-hoc suggestion.
 
 Keep auto-capture notes concise (~300 tokens). Capture the key insight, not a report.
 This limit does NOT apply to user-requested notes — write those as long as needed.
+</constraint>
+
+<constraint>
+Do NOT capture to Memex:
+- Per-file changelogs or diffs (code changes are in git)
+- Information directly derivable from code, config files, or git history
+- Routine confirmations or status checks with no novel insight
+- Raw tool output or API responses
+- Duplicate information already stored in Memex (search first)
+
+Capture the INSIGHT, not the DATA. A good capture note answers "what did we learn?"
+not "what happened?"
+</constraint>
+
+<constraint>
+When capturing notes during a session, use a stable `key` parameter:
+- For session-scoped running notes: `key: "session:{date}:{topic}"`
+- For topic captures: `key: "openfang:{topic_slug}"`
+
+A stable key enables incremental updates — calling `memex_note_add` with the same key
+later updates the existing note rather than creating a duplicate.
 </constraint>
 
 <constraint>

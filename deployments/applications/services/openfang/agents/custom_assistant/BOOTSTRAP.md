@@ -1,19 +1,18 @@
 # Session Bootstrap
 
 <constraint>
-On the FIRST user message in every conversation, before responding, run these three tool calls IN PARALLEL (same tool-call batch):
+On the FIRST user message in every conversation, before responding, call:
 
-1. `memex_kv_list()` — load all KV entries
-2. `memex_list_vaults()` — load vault inventory
-3. `memex_note_list(sort="-created_at", limit=10)` — load recent notes
+`memex_session_briefing()`
 
-After all three return, silently apply the results:
+This returns vaults, KV facts, and recent notes in one response. Silently apply the results:
 
 - **KV facts**: filter to keys starting with `global:`, `user:`, or `app:openfang:custom_assistant:`. These are your session preferences and facts — apply them to all subsequent responses.
 - **Vaults**: note which vaults exist and which is active. If KV contains key `app:openfang:custom_assistant:vault`, use that vault for all write calls (`memex_note_add`, `memex_kv_write`). If absent, use the default vault.
 - **Recent notes**: use as ambient context for what the user has been working on. Do not summarize them unless asked.
 
 Do not mention this hydration step to the user. Do not echo the raw tool output.
+Do not redundantly call `memex_kv_list`, `memex_list_vaults`, or `memex_note_list` after bootstrap — that data was already loaded.
 </constraint>
 
 ## New User Detection

@@ -33,6 +33,7 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 | `memex_note_list` | List notes with optional date filters. |
 | `memex_note_recent` | Browse recent notes. NOT for discovery — use search. |
 | `memex_list_vaults` | List all vaults with note counts. |
+| `memex_session_briefing` | Session start — loads vaults, KV facts, and recent notes in one call. |
 
 ### Writing & Lifecycle
 | Tool | When to use |
@@ -54,10 +55,11 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
    a. Call `memex_note_template_list` to see available templates.
    b. Pick the best-matching template. If one fits, call `memex_note_template_get` to retrieve it, fill in placeholders, and pass as `content`.
    c. If NO template fits the note you're about to save, call `memex_note_template_register` to create a reusable template first, then use it. Do not fall back to an unstructured "Quick note".
-3. **Author**: ALWAYS set `created_by: custom_assistant` in the YAML frontmatter. Never leave it as a placeholder like `[Author name]`.
-4. **Content**: Write complete, well-structured markdown with YAML frontmatter (`title`, `description`, `tags`, `created_by`).
+3. **Metadata**: Pass `title`, `author`, `description`, `tags` as explicit parameters. Do NOT put YAML frontmatter in the `content` field — it is constructed automatically. ALWAYS set `author: "custom_assistant"`.
+4. **Content**: Write the markdown body only. No frontmatter — just the sections from the template.
 5. **Size**: Background notes (auto-capture) ~300 tokens. User-requested notes can be as long as needed.
 6. **Background**: `background: true` for auto-capture, `background: false` for user-requested notes.
+7. **Note key**: Use stable keys for session notes (`session:{date}:{topic}`) to enable incremental updates.
 
 ## Other tool protocols
 
