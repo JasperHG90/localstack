@@ -52,8 +52,8 @@ input_schema = { type = "object", properties = { identifier = { type = "string",
 
 [[tools.provided]]
 name = "memex_note_add"
-description = "Add a note to Memex. ALWAYS provide title, description, and tags — these are essential for retrieval. Content MUST use YAML frontmatter format (---/title/description/tags/---). Use memex_note_template first to get the right structure."
-input_schema = { type = "object", properties = { content = { type = "string", description = "Markdown content with YAML frontmatter. MUST start with --- block containing title, description, tags." }, vault = { type = "string", description = "Target vault name or UUID. Omit for default." }, key = { type = "string", description = "Stable key for incremental updates." }, user_notes = { type = "string", description = "Your own context or commentary about this note." } }, required = ["content"] }
+description = "Add a note to Memex. All metadata fields are required and used for retrieval. YAML frontmatter is constructed automatically — do NOT include it in content."
+input_schema = { type = "object", properties = { title = { type = "string", description = "Concise descriptive title (max 10 words)." }, author = { type = "string", description = "Author name (e.g. 'custom_assistant')." }, description = { type = "string", description = "One-sentence summary (max 250 words)." }, tags = { type = "array", items = { type = "string" }, description = "Tags for retrieval. Include author name and 1-3 topic tags." }, content = { type = "string", description = "Markdown body. Do NOT include YAML frontmatter — it is constructed automatically from the other fields." }, vault = { type = "string", description = "Target vault name or UUID. Omit for default." }, key = { type = "string", description = "Stable key for incremental updates (e.g. session:2026-04-06:topic)." }, user_notes = { type = "string", description = "Your own context or commentary about this note." }, background = { type = "boolean", description = "Queue ingestion in background (default true)." } }, required = ["title", "author", "description", "tags", "content"] }
 
 [[tools.provided]]
 name = "memex_note_rename"
@@ -163,6 +163,13 @@ input_schema = { type = "object", properties = { vault = { type = "string", desc
 name = "memex_list_vaults"
 description = "List all vaults with note counts and active status."
 input_schema = { type = "object", properties = {}, required = [] }
+
+# --- Session ---
+
+[[tools.provided]]
+name = "memex_session_briefing"
+description = "Load a session briefing: vault inventory, KV facts (preferences/conventions), and recent notes. Call ONCE at session start instead of separate kv_list/list_vaults/note_list calls."
+input_schema = { type = "object", properties = { note_limit = { type = "integer", description = "Max recent notes to include (default 10)." } }, required = [] }
 
 # --- Memory Units ---
 
