@@ -100,6 +100,7 @@ resource "nomad_job" "openfang" {
       telegram_allowed_users = ["<REDACTED_TELEGRAM_USER_ID>"]
       minimax_secret         = "${var.secret_mount}/data/default/openfang/minimax"
       openrouter_secret      = "${var.secret_mount}/data/default/openfang/openrouter"
+      email_secret           = "${var.secret_mount}/data/default/openfang/email"
     }
   )
 }
@@ -117,7 +118,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
-      memex_version         = "0.0.62a"
+      memex_version         = "0.1.7a"
     }
   )
   depends_on = [postgresql_database.database]

@@ -63,6 +63,9 @@ MINIMAX_API_KEY={{ .Data.data.api_key }}
 {{- with secret "${openrouter_secret}" }}
 OPENROUTER_API_KEY={{ .Data.data.api_key }}
 {{- end }}
+{{- with secret "${email_secret}" }}
+EMAIL_PASSWORD={{ .Data.data.EMAIL_PASSWORD }}
+{{- end }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
@@ -94,6 +97,16 @@ api_key_env = "OPENROUTER_API_KEY"
 [channels.telegram]
 bot_token_env = "TELEGRAM_BOT_TOKEN"
 allowed_users = [${join(", ", telegram_allowed_users)}]
+
+[channels.email]
+imap_host = "imap.gmail.com"
+imap_port = 993
+smtp_host = "smtp.gmail.com"
+smtp_port = 587
+username = "<REDACTED_EMAIL>"
+password_env = "EMAIL_PASSWORD"
+poll_interval = 30
+default_agent = "custom_assistant"
 
 EOF
 
