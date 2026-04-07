@@ -3,6 +3,12 @@
     "name": "cluster-watchdog-daily",
     "agent_name": "cluster-watchdog-hand",
     "cron": "0 6 * * *",
-    "description": "Daily cluster health check — inspect nodes, jobs, triage issues, send Telegram report"
+    "prompt": "Run your daily cluster health check"
+  },
+  {
+    "name": "blog-scraper-daily",
+    "agent_name": "blog_scraper",
+    "cron": "0 8 * * *",
+    "prompt": "Scrape all target engineering blogs for new articles published in the last 3 days. Save new articles to Memex vault 'agentic' with proper titles, tags, and assets."
   }
 ]
