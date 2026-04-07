@@ -25,14 +25,12 @@ for d in /tmp/skills/*/; do
     [ -d "$d" ] && openfang skill install "$d" 2>/dev/null || true
 done
 
-# Agents — stop existing before re-spawning
+# Agents — kill ALL existing, then spawn only what's in /data/workspaces
+for agent_id in $(openfang agent list 2>/dev/null | awk 'NR>1 {print $1}'); do
+    [ -n "$agent_id" ] && openfang agent kill "$agent_id" 2>/dev/null || true
+done
 for f in /data/workspaces/*/agent.toml; do
-    if [ -f "$f" ]; then
-        name=$(grep '^name' "$f" | head -1 | sed 's/.*= *"\(.*\)"/\1/')
-        agent_id=$(openfang agent list 2>/dev/null | grep "$name" | awk '{print $1}' | head -1)
-        [ -n "$agent_id" ] && openfang agent kill "$agent_id" 2>/dev/null || true
-        openfang agent spawn "$f" || true
-    fi
+    [ -f "$f" ] && openfang agent spawn "$f" || true
 done
 
 # Hands — deactivate running instance, upsert config, activate fresh
@@ -41,7 +39,7 @@ for d in /tmp/hands/*/; do
         hand_id=`basename "$d"`
         # Kill running instance if any
         instance_id=`curl -s "http://127.0.0.1:50051/api/hands/active" \
-            | jq -r ".[] | select(.hand_id == \"$hand_id\") | .id" 2>/dev/null` || true
+            | jq -r ".instances[] | select(.hand_id == \"$hand_id\") | .instance_id" 2>/dev/null` || true
         if [ -n "$instance_id" ]; then
             curl -s -X DELETE "http://127.0.0.1:50051/api/hands/instances/$instance_id" > /dev/null 2>&1 || true
             echo "Hand $hand_id: deactivated instance $instance_id"
@@ -56,42 +54,59 @@ for d in /tmp/hands/*/; do
                 '{toml_content: $t, skill_content: $s}')" > /dev/null 2>&1 || true
         # Activate fresh instance
         openfang hand activate "$hand_id" 2>/dev/null || true
+        echo "Hand $hand_id: activated"
     fi
 done
 
-# Push secrets to OpenFang credential vault
-if [ -n "$NOMAD_TOKEN" ]; then
-    watchdog_id=$(openfang agent list 2>/dev/null \
-        | grep "cluster-watchdog-hand" | awk '{print $1}' | head -1)
-    if [ -n "$watchdog_id" ]; then
-        curl -sf -X PUT "http://127.0.0.1:50051/api/memory/agents/${watchdog_id}/kv/NOMAD_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"value\": \"$NOMAD_TOKEN\"}" 2>/dev/null || true
-    fi
+# Wait for hand agents to register
+attempts=0
+watchdog_id=""
+while [ $attempts -lt 10 ]; do
+    watchdog_id=$(openfang agent list 2>/dev/null | grep "cluster-watchdog-hand" | awk '{print $1}' | head -1)
+    [ -n "$watchdog_id" ] && break
+    attempts=$((attempts + 1))
+    sleep 1
+done
+
+if [ -n "$watchdog_id" ]; then
+    echo "Watchdog agent registered: $watchdog_id"
+else
+    echo "WARNING: cluster-watchdog-hand not found after 10s"
 fi
 
-# Schedules — upsert from schedules.json
+# Push secrets to OpenFang credential vault
+if [ -n "$NOMAD_TOKEN" ] && [ -n "$watchdog_id" ]; then
+    curl -sf -X PUT "http://127.0.0.1:50051/api/memory/agents/${watchdog_id}/kv/NOMAD_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"value\": \"$NOMAD_TOKEN\"}" 2>/dev/null || true
+    echo "NOMAD_TOKEN pushed to vault for $watchdog_id"
+elif [ -z "$NOMAD_TOKEN" ]; then
+    echo "WARNING: NOMAD_TOKEN not set, skipping vault push"
+fi
+
+# Cron jobs — sync from schedules.json (delete + recreate to pick up new agent IDs)
 if [ -f /tmp/schedules.json ] && command -v jq >/dev/null 2>&1; then
-    # Get existing schedule names to avoid duplicates
-    existing=$(curl -s "http://127.0.0.1:50051/api/schedules" \
-        | jq -r '.schedules[].name' 2>/dev/null) || true
+    # Delete existing cron jobs that we manage
+    openfang cron list 2>/dev/null | jq -c '.jobs[]' 2>/dev/null \
+        | while read -r job; do
+            jid=$(echo "$job" | jq -r .id)
+            jname=$(echo "$job" | jq -r .name)
+            if jq -e --arg n "$jname" '.[] | select(.name == $n)' /tmp/schedules.json >/dev/null 2>&1; then
+                openfang cron delete "$jid" 2>/dev/null || true
+                echo "Cron $jname: deleted stale entry"
+            fi
+        done
+    # Recreate with current agent IDs
     jq -c '.[]' /tmp/schedules.json | while read -r s; do
         name=$(echo "$s" | jq -r .name)
-        if echo "$existing" | grep -qx "$name"; then
-            echo "Schedule $name: already exists, skipping"
+        agent_name=$(echo "$s" | jq -r .agent_name)
+        agent_id=$(openfang agent list 2>/dev/null | grep "$agent_name" | awk '{print $1}' | head -1)
+        if [ -n "$agent_id" ]; then
+            cron=$(echo "$s" | jq -r .cron)
+            prompt=$(echo "$s" | jq -r '.prompt // "Run your default task"')
+            openfang cron create "$agent_id" "$cron" "$prompt" --name "$name" 2>&1 || true
         else
-            agent_name=$(echo "$s" | jq -r .agent_name)
-            agent_id=$(openfang agent list 2>/dev/null | grep "$agent_name" | awk '{print $1}' | head -1)
-            if [ -n "$agent_id" ]; then
-                cron=$(echo "$s" | jq -r .cron)
-                desc=$(echo "$s" | jq -r .description)
-                curl -s -X POST "http://127.0.0.1:50051/api/schedules" \
-                    -H "Content-Type: application/json" \
-                    -d "$(jq -n --arg n "$name" --arg a "$agent_id" --arg c "$cron" --arg d "$desc" \
-                        '{name: $n, agent_id: $a, cron: $c, description: $d, enabled: true}')" \
-                    > /dev/null 2>&1 || true
-                echo "Schedule $name: created for agent $agent_name"
-            fi
+            echo "WARNING: Cron $name: agent '$agent_name' not found, skipping"
         fi
     done
 fi
@@ -100,16 +115,3 @@ fi
 for f in /data/workflows/*.json; do
     [ -f "$f" ] && openfang workflow create "$f" 2>/dev/null || true
 done
-
-# Triggers (requires jq)
-if [ -f /data/triggers.json ] && command -v jq >/dev/null 2>&1; then
-    jq -c '.[]' /data/triggers.json | while read -r t; do
-        name=$(echo "$t" | jq -r .agent_name)
-        pattern=$(echo "$t" | jq -r .pattern)
-        prompt=$(echo "$t" | jq -r .prompt)
-        max_fires=$(echo "$t" | jq -r .max_fires)
-        agent_id=$(openfang agent list 2>/dev/null | grep "$name" | awk '{print $1}' | head -1)
-        [ -n "$agent_id" ] && openfang trigger create "$agent_id" "$pattern" \
-            --prompt "$prompt" --max-fires "$max_fires" 2>/dev/null || true
-    done
-fi
