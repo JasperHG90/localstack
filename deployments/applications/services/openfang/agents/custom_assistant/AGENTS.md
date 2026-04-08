@@ -32,7 +32,7 @@ After EVERY substantive response, evaluate whether any of the following apply:
 4. Learned a user preference or workflow pattern
 5. Resolved a tricky configuration or environment issue
 
-If ANY apply, call `memex_note_add` (with background=true) in the SAME tool-call
+If ANY apply, call `memex_note_add` (with background=true, vault="inbox") in the SAME tool-call
 batch as your response tools. This is non-negotiable — treat it as a tool-call
 prerequisite, not a post-hoc suggestion.
 

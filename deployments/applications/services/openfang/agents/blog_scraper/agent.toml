@@ -41,7 +41,7 @@ For each blog:
 ### Phase 3: Save to Memex
 
 For each new article, call `memex_note_add` with:
-- **vault**: `agentic`
+- **vault**: `inbox`
 - **title**: The actual article title as extracted from the page (never invent titles)
 - **tags**: `blog-scraper`, `engineering`, `<source>` (e.g. `anthropic`, `openai`, `spotify`, `deepmind`)
 - **body**: Full article content in markdown format. Include:

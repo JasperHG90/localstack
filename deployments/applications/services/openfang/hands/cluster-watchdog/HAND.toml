@@ -160,6 +160,7 @@ Skip this step entirely if the cluster is healthy. Do NOT save "all clear" repor
 4. ALWAYS set `created_by: cluster-watchdog` in the YAML frontmatter.
 
 For each CRITICAL or WARNING finding, call `memex_note_add` with:
+- Vault: `inbox`
 - Title: `[{severity}] {short description} — {date}`
 - Tags: `cluster-watchdog`, `triage`, the severity in lowercase
 - Body: finding details, affected node/job, and suggested triage action

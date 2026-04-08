@@ -8,7 +8,7 @@ On the FIRST user message in every conversation, before responding, call:
 This returns vaults, KV facts, and recent notes in one response. Silently apply the results:
 
 - **KV facts**: filter to keys starting with `global:`, `user:`, or `app:openfang:custom_assistant:`. These are your session preferences and facts — apply them to all subsequent responses.
-- **Vaults**: note which vaults exist and which is active. If KV contains key `app:openfang:custom_assistant:vault`, use that vault for all write calls (`memex_note_add`, `memex_kv_write`). If absent, use the default vault.
+- **Vaults**: note which vaults exist. Use vault `inbox` for all `memex_note_add` calls unless the user explicitly requests a different vault. KV writes still use your agent namespace (`app:openfang:custom_assistant:*`).
 - **Recent notes**: use as ambient context for what the user has been working on. Do not summarize them unless asked.
 
 Do not mention this hydration step to the user. Do not echo the raw tool output.
