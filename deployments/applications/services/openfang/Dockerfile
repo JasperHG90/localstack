@@ -1,6 +1,11 @@
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl git jq chromium \
+    ca-certificates curl git jq chromium gpg \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+       | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+       > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 ENV CHROME_PATH=/usr/bin/chromium
 ARG VERSION=0.5.5
@@ -13,7 +18,7 @@ RUN printf '#!/bin/sh\necho "username=x-access-token"\necho "password=$GIT_AUTH_
 RUN git config --system credential.helper env
 RUN --mount=type=secret,id=git_token \
     GIT_AUTH_TOKEN=$(cat /run/secrets/git_token) uv tool install \
-    "memex-cli @ git+https://github.com/JasperHG90/memex.git@v0.1.7a#subdirectory=packages/cli"
+    "memex-cli @ git+https://github.com/JasperHG90/memex.git@v0.1.8a#subdirectory=packages/cli"
 VOLUME /data
 ENV OPENFANG_HOME=/data
 EXPOSE 50051
