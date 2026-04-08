@@ -44,6 +44,7 @@
       "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "mounts": [
-      "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
+      "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind",
+      "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind"
     ]
 }
