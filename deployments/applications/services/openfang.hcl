@@ -53,6 +53,7 @@ MEMEX_API_KEY={{ .Data.data.admin_key }}
 {{- end }}
 {{- with secret "${github_secret}" }}
 GIT_AUTH_TOKEN={{ .Data.data.pat }}
+GH_TOKEN={{ .Data.data.pat }}
 {{- end }}
 {{- with secret "${telegram_secret}" }}
 TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
