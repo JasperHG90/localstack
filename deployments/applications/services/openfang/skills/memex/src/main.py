@@ -150,6 +150,9 @@ def note_add(p):
     params = {"background": "true"} if background else None
     return _api_post("ingestions", data, params)
 
+def note_migrate(p):
+    return _run("note", "migrate", p["note_id"], "--vault", p["target_vault"])
+
 def note_rename(p):
     return _run("note", "rename", p["note_id"], "--", p["new_title"])
 
@@ -258,6 +261,7 @@ TOOLS = {
     "memex_entity_related": entity_related,
     "memex_entity_mentions": entity_mentions,
     "memex_note_add": note_add,
+    "memex_note_migrate": note_migrate,
     "memex_note_rename": note_rename,
     "memex_note_template_get": note_template_get,
     "memex_note_template_list": note_template_list,
