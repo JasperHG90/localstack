@@ -9,6 +9,18 @@
     "name": "blog-scraper-daily",
     "agent_name": "blog_scraper",
     "cron": "0 8 * * *",
-    "prompt": "Scrape all target engineering blogs for new articles published in the last 3 days. Save new articles to Memex vault 'agentic' with proper titles, tags, and assets."
+    "prompt": "Scrape all target engineering blogs for new articles published in the last 3 days. Save new articles to Memex vault 'inbox' with proper titles, tags, and assets."
+  },
+  {
+    "name": "sorting-hat-periodic",
+    "agent_name": "sorting-hat-hand",
+    "cron": "*/30 * * * *",
+    "prompt": "Check the inbox vault for unrouted notes. Route each to the appropriate vault based on its metadata."
+  },
+  {
+    "name": "insight-linker-daily",
+    "agent_name": "insight-linker-hand",
+    "cron": "0 10 * * *",
+    "prompt": "Search Memex for recent insights and open GitHub issues or PRs for applicable improvements to target repositories."
   }
 ]

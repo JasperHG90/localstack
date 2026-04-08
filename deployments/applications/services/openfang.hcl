@@ -109,6 +109,10 @@ password_env = "EMAIL_PASSWORD"
 poll_interval = 30
 default_agent = "custom_assistant"
 
+[[channels.email.routes]]
+from = "noreply@medium.com"
+agent = "medium_reader"
+
 EOF
 
         destination = "local/config.toml"
