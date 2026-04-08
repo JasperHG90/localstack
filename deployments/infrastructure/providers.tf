@@ -12,6 +12,10 @@ terraform {
       source  = "hashicorp/null"
       version = "~>3.2.0"
     }
+    google = {
+      source  = "hashicorp/google"
+      version = "~>7.27.0"
+    }
     # consul = {
     #   source  = "hashicorp/consul"
     #   version = "~>2.22.0"
@@ -22,3 +26,7 @@ terraform {
 provider "nomad" {}
 
 provider "vault" {}
+
+provider "google" {
+  project = var.gcp_project
+}
