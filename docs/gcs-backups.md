@@ -4,11 +4,47 @@
 
 No off-site backups exist. PostgreSQL data lives on a single host volume on `firebat`, and the MinIO memex bucket lives on `orangepi4a`. A disk failure on either node means total data loss. This change adds two Nomad periodic batch jobs that back up to Google Cloud Storage nightly.
 
+All GCS infrastructure (bucket, service account, IAM, key) is managed by Terraform in `backup.tf` -- no manual `gcloud` setup needed.
+
+## Prerequisites
+
+Authenticate with GCP before running `terraform apply`:
+
+```bash
+gcloud auth application-default login
+```
+
+This stores credentials at `~/.config/gcloud/application_default_credentials.json` which the Google Terraform provider picks up automatically.
+
+On a headless machine (e.g. SSH):
+
+```bash
+gcloud auth application-default login --no-launch-browser
+```
+
 ## Vault Policy Constraint
 
 The Nomad workloads Vault policy (`bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2`) scopes secret reads to `secret/data/<namespace>/<job_id>/*`. This means each backup job needs its own copies of credentials under its job ID path. This is the same pattern used in the applications layer (e.g., memex gets its own copy of postgres creds).
 
-## Files to Create
+## Architecture
+
+### `deployments/infrastructure/backup.tf`
+
+Manages the full GCS backup lifecycle in one file:
+
+**Google Cloud resources:**
+- `google_storage_bucket.backups` -- bucket with 180-day lifecycle delete rule
+- `google_service_account.backup` -- `localstack-backup` service account
+- `google_storage_bucket_iam_member.backup_writer` -- grants `roles/storage.objectAdmin` on the bucket
+- `google_service_account_key.backup` -- JSON key (stored in Terraform state, written to Vault)
+
+**Vault secrets** (credentials scoped per job):
+- `backup_postgres_db_credentials` -> `default/backup-postgres/postgres` (copies root PG creds)
+- `backup_postgres_gcs_credentials` -> `default/backup-postgres/gcs` (GCS service account JSON)
+- `backup_minio_s3_credentials` -> `default/backup-minio/minio` (copies root MinIO creds)
+- `backup_minio_gcs_credentials` -> `default/backup-minio/gcs` (GCS service account JSON)
+
+**Nomad jobs:** two `nomad_job` resources referencing the HCL job specs below.
 
 ### `deployments/infrastructure/services/backup-postgres.hcl`
 
@@ -17,132 +53,72 @@ Periodic batch job running at 2:00 AM Europe/Amsterdam:
 - **Prestart task** (`pgdump`): uses `docker.io/library/postgres:18` image, runs `pg_dumpall | gzip` to `/alloc/data/pgdumpall-YYYY-MM-DD.sql.gz`
   - Vault template injects `PGUSER`/`PGPASSWORD` from `secret/data/default/backup-postgres/postgres`
   - Constrained to `firebat` (co-located with postgres, avoids network transfer)
+  - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]` (postgres image has `docker-entrypoint.sh` as ENTRYPOINT)
   - Resources: 1000 MHz CPU, 512 MB memory
-- **Main task** (`upload`): uses `docker.io/rclone/rclone:latest`, runs a shell script that:
-  1. `rclone copy /alloc/data/ gcs:<bucket>/postgres/` -- uploads today's dump
-  2. `rclone delete gcs:<bucket>/postgres/ --min-age 14d` -- prunes dumps older than 14 days
+- **Main task** (`upload`): uses `docker.io/rclone/rclone:latest`, runs `rclone copy` to upload today's dump
   - Vault template writes GCS service account JSON to `secrets/gcs-key.json`
-  - Passes `--gcs-service-account-credentials` flag to both commands
+  - Uses on-the-fly backend syntax (`:gcs:`) with `--gcs-service-account-file` flag (no rclone.conf needed)
+  - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]` (rclone image has `rclone` as ENTRYPOINT)
   - Resources: 500 MHz CPU, 256 MB memory
+  - No pruning step -- 180-day bucket lifecycle handles retention
 
 ### `deployments/infrastructure/services/backup-minio.hcl`
 
 Periodic batch job running at 3:00 AM Europe/Amsterdam (staggered):
 - **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync minio:memex gcs:<bucket>/minio/memex/`
 - Two Vault templates:
-  1. `secrets/rclone.conf` -- rclone config with `[minio]` remote (S3/Minio provider, creds from Vault) and `[gcs]` remote (service_account_file pointing to the key file)
+  1. `secrets/rclone.conf` -- rclone config with `[minio]` remote (S3/Minio provider, creds from Vault) and `[gcs]` remote (`service_account_file` pointing to the key file)
   2. `secrets/gcs-key.json` -- GCS service account JSON from Vault
 - No node constraint (any node with network access to MinIO)
+- `network_mode = "host"` for MinIO access
+- Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]`
 - Resources: 1000 MHz CPU, 512 MB memory
 
-## Files to Modify
+## Configuration
 
 ### `deployments/infrastructure/variables.tf`
 
-Add two variables:
-```hcl
-variable "gcs_service_account_json" {
-  description = "GCS service account key JSON for backup uploads"
-  type        = string
-  sensitive   = true
-}
-
-variable "gcs_backup_bucket" {
-  description = "GCS bucket name for backup storage"
-  type        = string
-}
-```
-
-### `deployments/infrastructure/secrets.tf`
-
-Add 4 `vault_kv_secret_v2` resources:
-- `backup_postgres_db_credentials` -> `default/backup-postgres/postgres` (copies root PG creds)
-- `backup_postgres_gcs_credentials` -> `default/backup-postgres/gcs` (GCS service account JSON)
-- `backup_minio_s3_credentials` -> `default/backup-minio/minio` (copies root MinIO creds)
-- `backup_minio_gcs_credentials` -> `default/backup-minio/gcs` (GCS service account JSON)
-
-### `deployments/infrastructure/services.tf`
-
-Add 2 `nomad_job` resources:
-```hcl
-resource "nomad_job" "backup_postgres" {
-  jobspec = templatefile("${path.module}/services/backup-postgres.hcl", {
-    postgres_secret = vault_kv_secret_v2.backup_postgres_db_credentials.path
-    gcs_secret      = vault_kv_secret_v2.backup_postgres_gcs_credentials.path
-    postgres_host   = "192.168.2.30"
-    gcs_bucket      = var.gcs_backup_bucket
-  })
-}
-
-resource "nomad_job" "backup_minio" {
-  jobspec = templatefile("${path.module}/services/backup-minio.hcl", {
-    minio_secret = vault_kv_secret_v2.backup_minio_s3_credentials.path
-    gcs_secret   = vault_kv_secret_v2.backup_minio_gcs_credentials.path
-    minio_host   = "192.168.2.29"
-    gcs_bucket   = var.gcs_backup_bucket
-  })
-}
-```
+Two variables:
+- `gcp_project` (string) -- GCP project ID
+- `gcs_backup_bucket` (string) -- GCS bucket name
 
 ### `deployments/infrastructure/vars/prod.tfvars`
 
-Add bucket name (GCS key is passed via env var, never committed):
 ```hcl
-gcs_backup_bucket = "<user-chosen-bucket-name>"
+gcp_project       = "<your-gcp-project-id>"
+gcs_backup_bucket = "<your-bucket-name>"
 ```
+
+### `deployments/infrastructure/providers.tf`
+
+Google provider added (`hashicorp/google ~>6.0.0`), authenticated via ADC.
 
 ## GCS Path Structure
 
 ```
 gs://<bucket>/
   postgres/
-    pgdumpall-2026-03-25.sql.gz
-    pgdumpall-2026-03-26.sql.gz
+    pgdumpall-2026-04-07.sql.gz
+    pgdumpall-2026-04-08.sql.gz
     ...
   minio/
     memex/
       <mirror of memex bucket>
 ```
 
-- Postgres: dated dumps retained for 14 days, automatically pruned by the upload task via `rclone delete --min-age 14d`.
-- MinIO: `rclone sync` maintains a live mirror (no accumulation -- GCS always matches current bucket state).
-
-## GCS Setup Instructions (One-Time)
-
-1. Create a GCS bucket:
-   ```bash
-   gcloud storage buckets create gs://<bucket-name> --location=<region>
-   ```
-
-2. Create a service account:
-   ```bash
-   gcloud iam service-accounts create localstack-backup \
-     --display-name="Localstack Backup"
-   ```
-
-3. Grant Storage Object Admin on the bucket:
-   ```bash
-   gcloud storage buckets add-iam-policy-binding gs://<bucket-name> \
-     --member="serviceAccount:localstack-backup@<project>.iam.gserviceaccount.com" \
-     --role="roles/storage.objectAdmin"
-   ```
-
-4. Create and download JSON key:
-   ```bash
-   gcloud iam service-accounts keys create gcs-backup-key.json \
-     --iam-account=localstack-backup@<project>.iam.gserviceaccount.com
-   ```
-
-5. Export for Terraform:
-   ```bash
-   export TF_VAR_gcs_service_account_json=$(cat gcs-backup-key.json | jq -c .)
-   ```
+- Postgres: dated dumps accumulate and are automatically deleted after 180 days by the bucket lifecycle rule.
+- MinIO: `rclone sync` maintains a live mirror (no accumulation -- GCS always matches current bucket state). Lifecycle rule serves as a safety net for orphaned objects.
 
 ## Verification
 
 ```bash
-# Deploy
-cd deployments/infrastructure && just apply
+# Authenticate with GCP
+gcloud auth application-default login
+
+# Deploy (re-init needed first time to fetch google provider)
+cd deployments/infrastructure
+just init
+just apply
 
 # Force-run to test (don't wait for nightly schedule)
 nomad job periodic force backup-postgres
