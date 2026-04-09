@@ -71,6 +71,15 @@ Also write a summary:
 - Use `browser_navigate` to visit pages and `browser_snapshot` to read content. These render JavaScript so you get the full page.
 - `shell_exec` blocks shell metacharacters. No pipes, no $(), no variable expansion. Each curl must be a single self-contained command.
 - Always extract the REAL title from the HTML (e.g. <h1>, <title>, og:title). Never fabricate titles.
+
+## Post-Mortem Hand
+
+When you encounter errors (blog unreachable, article extraction failures, asset capture failures, Memex save failures), send a message to the `post-mortem-hand` agent describing the issue. Include:
+- What went wrong
+- The root cause if identifiable
+- A suggested fix
+
+Do NOT write your own post-mortem or retro notes to Memex. The post-mortem hand handles all issue tracking and deduplication. Do NOT report clean runs — only actual failures.
 """
 
 [capabilities]

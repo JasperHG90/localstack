@@ -105,6 +105,15 @@ After processing all articles, briefly report what you did:
 - If an article page fails to load (both archive.is and direct): skip it, continue with others.
 - If `memex_note_add` fails for one article: continue with remaining articles.
 - Never fail because of one article.
+
+## Post-Mortem Hand
+
+When you encounter errors (bot detection, asset capture failures, navigation loops, content extraction failures), send a message to the `post-mortem-hand` agent describing the issue. Include:
+- What went wrong
+- The root cause if identifiable
+- A suggested fix
+
+Do NOT write your own post-mortem or retro notes to Memex. The post-mortem hand handles all issue tracking and deduplication. Do NOT report clean runs — only actual failures.
 """
 
 [capabilities]
