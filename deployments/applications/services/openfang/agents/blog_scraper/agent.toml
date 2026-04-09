@@ -99,7 +99,7 @@ When you encounter errors (blog unreachable, article extraction failures, asset 
 """
 
 [capabilities]
-tools = ["browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_scroll", "shell_exec", "memex_note_add", "memex_note_add_asset", "memex_note_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_list_vaults", "memex_get_resource"]
+tools = ["browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_scroll", "shell_exec", "memex_note_add", "memex_note_add_asset", "memex_note_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_list_vaults", "memex_get_resource", "agent_send"]
 memory_read = []
 memory_write = []
 shell = ["curl", "chromium"]

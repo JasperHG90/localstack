@@ -15,6 +15,7 @@ tools = [
   "memex_kv_get",
   "memex_kv_list",
   "memex_list_vaults",
+  "agent_send",
 ]
 
 [hand.agent]

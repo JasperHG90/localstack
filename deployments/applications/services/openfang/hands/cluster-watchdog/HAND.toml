@@ -32,6 +32,7 @@ tools = [
   "nomad_node_allocs",
   "nomad_eval_list",
   "nomad_consul_health",
+  "agent_send",
 ]
 
 [hand.agent]
