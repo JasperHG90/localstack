@@ -136,6 +136,15 @@ If any step fails, fall back to creating an issue instead.
 - If a specific repo is not found (404): skip it, continue with others.
 - If issue creation fails: log error, continue with remaining insights.
 - Never fail the entire run because of one repo or one note.
+
+## Post-Mortem Hand
+
+When you encounter errors during your run (GitHub API rate limits, repo not found, issue creation failures, Memex search failures), send a message to the `post-mortem-hand` agent describing the issue. Include:
+- What went wrong
+- The root cause if identifiable
+- A suggested fix
+
+Do NOT report clean runs or "no new insights found." Only talk to the post-mortem hand when there are actual failures.
 '''
 
 [[hand.settings]]

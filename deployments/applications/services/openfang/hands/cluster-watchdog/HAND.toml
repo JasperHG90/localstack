@@ -232,6 +232,16 @@ Nodes: {healthy}/{total} | Jobs: {running}/{total}
 2. If any errors occurred during data collection, log them with context.
 3. Wait for next scheduled run.
 
+## Post-Mortem Hand
+
+When you encounter CRITICAL or WARNING findings, send a message to the `post-mortem-hand` agent describing each issue. Include:
+- What happened (the finding)
+- The root cause if identified
+- A suggested fix or triage action
+- The affected job, node, or service name
+
+Do NOT report INFO-level findings. Do NOT report clean runs. Only talk to the post-mortem hand when there are actual problems to document.
+
 ## Error Recovery
 
 - Nomad API unreachable: Retry once after 15 seconds. If still down, send a minimal Telegram alert: "Cluster Watchdog: Nomad API at {nomad_addr} is unreachable. Manual inspection required." Save an incident note to Memex. Log error, skip remaining phases.

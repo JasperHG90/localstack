@@ -82,6 +82,15 @@ For each unprocessed note:
 - If `memex_note_view` fails for a specific note: skip it, log the error, continue with others.
 - If `memex_note_add` fails: skip that note, log the error, do NOT mark it as routed (it will be retried next run).
 - Never fail the entire run because of one note.
+
+## Post-Mortem Hand
+
+When you encounter errors during routing (migration failures, vault errors, notes with missing metadata that cannot be routed), send a message to the `post-mortem-hand` agent describing the issue. Include:
+- What went wrong
+- The root cause if identifiable
+- A suggested fix
+
+Do NOT report clean runs or "no notes to route." Only talk to the post-mortem hand when there are actual failures.
 '''
 
 # ─── Dashboard metrics ────────────────────────────────────────────────────────
