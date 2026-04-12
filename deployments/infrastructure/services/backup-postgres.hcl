@@ -42,7 +42,7 @@ EOF
       }
 
       resources {
-        cpu    = 1000
+        cpu    = 500
         memory = 512
       }
     }
@@ -53,7 +53,7 @@ EOF
       config {
         image      = "docker.io/rclone/rclone:latest"
         entrypoint = ["/bin/sh", "-c"]
-        args       = ["rclone copy /alloc/data/ :gcs:${gcs_bucket}/postgres/ --gcs-service-account-file /secrets/gcs-key.json"]
+        args       = ["rclone copy /alloc/data/ :gcs:${gcs_bucket}/postgres/ --gcs-service-account-file /secrets/gcs-key.json --gcs-bucket-policy-only"]
       }
 
       vault {}
@@ -66,7 +66,7 @@ EOF
       }
 
       resources {
-        cpu    = 500
+        cpu    = 200
         memory = 256
       }
     }

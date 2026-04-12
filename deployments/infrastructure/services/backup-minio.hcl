@@ -34,6 +34,7 @@ endpoint = http://${minio_host}:9000
 [gcs]
 type = google cloud storage
 service_account_file = /secrets/gcs-key.json
+bucket_policy_only = true
 EOF
 
         destination = "secrets/rclone.conf"
