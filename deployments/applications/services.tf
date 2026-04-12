@@ -89,7 +89,7 @@ resource "nomad_job" "openfang" {
     {
       openfang_hostname      = "ubuntu"
       openfang_host          = "192.168.2.47"
-      openfang_version       = "0.5.6"
+      openfang_version       = "0.5.7"
       memex_host             = "192.168.2.46"
       memex_auth_secret      = vault_kv_secret_v2.openfang_memex_auth.path
       openfang_minio_secret  = vault_kv_secret_v2.openfang_minio_credentials.path
@@ -101,6 +101,7 @@ resource "nomad_job" "openfang" {
       minimax_secret         = "${var.secret_mount}/data/default/openfang/minimax"
       openrouter_secret      = "${var.secret_mount}/data/default/openfang/openrouter"
       email_secret           = "${var.secret_mount}/data/default/openfang/email"
+      ollama_secret          = "${var.secret_mount}/data/default/openfang/ollama"
     }
   )
 }
@@ -118,7 +119,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
-      memex_version         = "0.1.8a"
+      memex_version         = "0.1.11b"
     }
   )
   depends_on = [postgresql_database.database]

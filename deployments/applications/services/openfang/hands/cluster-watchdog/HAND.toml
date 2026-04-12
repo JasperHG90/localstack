@@ -7,19 +7,19 @@ icon = "🛡️"
 tools = [
   "shell_exec",
   "telegram_send",
-  "memex_note_add",
+  "memex_add_note",
   "memex_note_search",
-  "memex_note_list",
-  "memex_note_recent",
-  "memex_note_view",
-  "memex_note_find",
+  "memex_list_notes",
+  "memex_recent_notes",
+  "memex_read_note",
+  "memex_find_note",
   "memex_kv_write",
   "memex_kv_get",
   "memex_kv_list",
   "memex_kv_search",
-  "memex_note_template_list",
-  "memex_note_template_get",
-  "memex_note_template_register",
+  "memex_list_templates",
+  "memex_get_template",
+  "memex_register_template",
   "nomad_alloc_logs",
   "nomad_alloc_status",
   "nomad_alloc_stats",
@@ -37,8 +37,8 @@ tools = [
 
 [hand.agent]
 name = "cluster-watchdog-hand"
-model = "openrouter/google/gemini-3-flash-preview"
-provider = "openrouter"
+model = "ollama:glm-5.1"
+provider = "ollama"
 description = "Nomad cluster watchdog — inspects nodes, jobs, and allocations, triages issues, persists reports to Memex, and sends daily Telegram digests"
 system_prompt = '''
 # Cluster Watchdog — Operational Playbook
@@ -155,12 +155,12 @@ Call `memex_kv_write` for each of the following. You MUST see a successful respo
 Skip this step entirely if the cluster is healthy. Do NOT save "all clear" reports as notes.
 
 **Template-first**: Before saving any note:
-1. Call `memex_note_template_list` to check for a matching template (e.g. `incident_report`, `triage_finding`).
-2. If a template fits, call `memex_note_template_get` to retrieve it and fill in the placeholders.
-3. If NO template fits, call `memex_note_template_register` to create a reusable template first, then use it. Do not save unstructured "Quick note" content.
+1. Call `memex_list_templates` to check for a matching template (e.g. `incident_report`, `triage_finding`).
+2. If a template fits, call `memex_get_template` to retrieve it and fill in the placeholders.
+3. If NO template fits, call `memex_register_template` to create a reusable template first, then use it. Do not save unstructured "Quick note" content.
 4. ALWAYS set `created_by: cluster-watchdog` in the YAML frontmatter.
 
-For each CRITICAL or WARNING finding, call `memex_note_add` with:
+For each CRITICAL or WARNING finding, call `memex_add_note` with:
 - Vault: `inbox`
 - Title: `[{severity}] {short description} — {date}`
 - Tags: `cluster-watchdog`, `triage`, the severity in lowercase

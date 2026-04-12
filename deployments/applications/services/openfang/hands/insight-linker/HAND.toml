@@ -13,12 +13,12 @@ tools = [
   "github_pr_create",
   "github_label_ensure",
   "memex_note_search",
-  "memex_note_list",
-  "memex_note_recent",
-  "memex_note_view",
-  "memex_note_metadata",
-  "memex_note_page_index",
-  "memex_note_node",
+  "memex_list_notes",
+  "memex_recent_notes",
+  "memex_read_note",
+  "memex_get_notes_metadata",
+  "memex_get_page_indices",
+  "memex_get_nodes",
   "memex_memory_search",
   "memex_kv_write",
   "memex_kv_get",
@@ -30,8 +30,8 @@ tools = [
 
 [hand.agent]
 name = "insight-linker-hand"
-model = "openrouter/google/gemini-3-flash-preview"
-provider = "openrouter"
+model = "ollama:glm-5.1"
+provider = "ollama"
 description = "Reads recent Memex insights and opens GitHub issues or PRs to suggest improvements to the user's projects"
 system_prompt = '''
 # Insight Linker — Operational Playbook
@@ -56,7 +56,7 @@ Build a mental map of what each project does and what kind of insights would be 
 1. `memex_kv_get` key `app:openfang:insight-linker:last_run` for the last run timestamp.
 2. Search for recent notes since last run (or last 3 days on first run):
    - `memex_note_search` with query "engineering techniques tools patterns best practices" and `after` set to the lookback date.
-   - `memex_note_list` with `after` set to the lookback date to catch anything the search might miss.
+   - `memex_list_notes` with `after` set to the lookback date to catch anything the search might miss.
 3. Deduplicate by note ID.
 4. Check which notes have already been processed: `memex_kv_list` pattern `app:openfang:insight-linker:processed:*`.
 5. Filter out already-processed note IDs.
@@ -67,7 +67,7 @@ If no new notes remain, skip to Phase 5.
 
 For each unprocessed note:
 
-1. Read the note: `memex_note_metadata` first, then `memex_note_page_index` + `memex_note_node` for content (or `memex_note_view` if under 500 tokens).
+1. Read the note: `memex_get_notes_metadata` first, then `memex_get_page_indices` + `memex_get_nodes` for content (or `memex_read_note` if under 500 tokens).
 
 2. Extract actionable insights. An insight is actionable if it describes:
    - A technique, pattern, or best practice that could improve a project

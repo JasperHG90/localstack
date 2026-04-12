@@ -6,13 +6,13 @@ module = "builtin:chat"
 skills = ["memex", "nomad"]
 
 [model]
-provider = "openrouter"
-model = "openrouter/google/gemini-3-flash-preview"
-api_key_env = "OPENROUTER_API_KEY"
+provider = "ollama"
+model = "ollama:glm-5.1"
+api_key_env = "OLLAMA_API_KEY"
 system_prompt = "You are a personal assistant. Your workspace files define your behavior, skills, and memory protocols. Follow them."
 
 [capabilities]
-tools = ["*", "memex_note_search", "memex_memory_search", "memex_note_find", "memex_entity_search", "memex_entity_view", "memex_entity_related", "memex_entity_mentions", "memex_note_add", "memex_note_rename", "memex_note_template_get", "memex_note_template_list", "memex_note_template_register", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_note_metadata", "memex_note_page_index", "memex_note_node", "memex_note_list_assets", "memex_get_resource", "memex_note_add_asset", "memex_list_vaults", "memex_session_briefing", "memex_memory_view", "memex_get_lineage", "nomad_alloc_logs", "nomad_alloc_status", "nomad_alloc_stats", "nomad_job_list", "nomad_job_status", "nomad_job_summary", "nomad_job_allocs", "nomad_node_list", "nomad_node_status", "nomad_node_allocs", "nomad_eval_list", "nomad_consul_health"]
+tools = ["*", "memex_note_search", "memex_memory_search", "memex_find_note", "memex_list_entities", "memex_get_entities", "memex_get_entity_cooccurrences", "memex_get_entity_mentions", "memex_add_note", "memex_rename_note", "memex_get_template", "memex_list_templates", "memex_register_template", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_list_notes", "memex_recent_notes", "memex_read_note", "memex_get_notes_metadata", "memex_get_page_indices", "memex_get_nodes", "memex_list_assets", "memex_get_resources", "memex_add_assets", "memex_delete_assets", "memex_list_vaults", "memex_active_vault", "memex_survey", "memex_get_vault_summary", "memex_search_user_notes", "memex_set_note_status", "memex_update_user_notes", "memex_get_memory_units", "memex_get_lineage", "nomad_alloc_logs", "nomad_alloc_status", "nomad_alloc_stats", "nomad_job_list", "nomad_job_status", "nomad_job_summary", "nomad_job_allocs", "nomad_node_list", "nomad_node_status", "nomad_node_allocs", "nomad_eval_list", "nomad_consul_health"]
 memory_read = []
 memory_write = []
 shell = ["*"]

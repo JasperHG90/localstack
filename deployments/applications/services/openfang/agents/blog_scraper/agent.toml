@@ -6,9 +6,9 @@ module = "builtin:chat"
 skills = ["memex"]
 
 [model]
-provider = "openrouter"
-model = "openrouter/google/gemini-3-flash-preview"
-api_key_env = "OPENROUTER_API_KEY"
+provider = "ollama"
+model = "ollama:glm-5.1"
+api_key_env = "OLLAMA_API_KEY"
 system_prompt = """
 You are an engineering blog scraper. Your job is to visit engineering blogs, find new articles, and save them **verbatim** to Memex.
 
@@ -41,7 +41,7 @@ For each blog:
 4. For each new article:
    a. Use `browser_navigate` to visit the article page, then `browser_snapshot` to read its content.
    b. Extract: title, author (if available), date (if available), body text, and any image URLs.
-   c. For images: use `browser_screenshot` or download with `shell_exec` and `curl -sL -o /tmp/<filename> <image_url>`, then upload to Memex with `memex_note_add_asset`.
+   c. For images: use `browser_screenshot` or download with `shell_exec` and `curl -sL -o /tmp/<filename> <image_url>`, then upload to Memex with `memex_add_assets`.
 
 ### Phase 2b: Content Gate
 
@@ -52,13 +52,13 @@ Before saving, verify the extracted body is at least 1500 characters and does no
 For each successfully captured article, BEFORE saving to Memex:
 1. Parse the page for `<img>` tags. Skip avatars, tracking pixels, and decorative images. Keep diagrams, charts, code screenshots, and technical figures.
 2. For each image: `shell_exec` with `curl -sL -A "Mozilla/5.0 (X11; Linux x86_64)" -o /tmp/<uuid>.png <image_url>`
-3. After creating the note (Phase 3), attach each downloaded image: `memex_note_add_asset`
+3. After creating the note (Phase 3), attach each downloaded image: `memex_add_assets`
 
 If image download fails, continue — save the article text anyway.
 
 ### Phase 3: Save to Memex
 
-For each new article, call `memex_note_add` with:
+For each new article, call `memex_add_note` with:
 - **vault**: `inbox`
 - **title**: The actual article title as extracted from the page (never invent titles)
 - **tags**: `blog-scraper`, `engineering`, `<source>` (e.g. `anthropic`, `openai`, `spotify`, `deepmind`)
@@ -69,7 +69,7 @@ For each new article, call `memex_note_add` with:
   - Complete article body converted to clean markdown
   - Embedded asset references for any uploaded images
 
-Then attach any downloaded assets from Phase 2c via `memex_note_add_asset`.
+Then attach any downloaded assets from Phase 2c via `memex_add_assets`.
 
 ### Phase 4: Update State
 
@@ -99,7 +99,7 @@ When you encounter errors (blog unreachable, article extraction failures, asset 
 """
 
 [capabilities]
-tools = ["browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_scroll", "shell_exec", "memex_note_add", "memex_note_add_asset", "memex_note_search", "memex_note_list", "memex_note_recent", "memex_note_view", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_list_vaults", "memex_get_resource", "agent_send"]
+tools = ["browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_scroll", "shell_exec", "memex_add_note", "memex_add_assets", "memex_note_search", "memex_list_notes", "memex_recent_notes", "memex_read_note", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_kv_search", "memex_list_vaults", "memex_get_resources", "agent_send"]
 memory_read = []
 memory_write = []
 shell = ["curl", "chromium"]

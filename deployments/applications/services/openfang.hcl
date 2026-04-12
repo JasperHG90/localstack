@@ -64,6 +64,9 @@ MINIMAX_API_KEY={{ .Data.data.api_key }}
 {{- with secret "${openrouter_secret}" }}
 OPENROUTER_API_KEY={{ .Data.data.api_key }}
 {{- end }}
+{{- with secret "${ollama_secret}" }}
+OLLAMA_API_KEY={{ .Data.data.API_KEY }}
+{{- end }}
 {{- with secret "${email_secret}" }}
 EMAIL_PASSWORD={{ .Data.data.EMAIL_PASSWORD }}
 {{- end }}
@@ -91,9 +94,12 @@ EOF
       template {
         data = <<EOF
 [default_model]
-provider = "openrouter"
-model = "openrouter/google/gemini-3-flash-preview"
-api_key_env = "OPENROUTER_API_KEY"
+provider = "ollama"
+model = "ollama:glm-5.1"
+api_key_env = "OLLAMA_API_KEY"
+
+[provider_urls]
+ollama = "https://ollama.com/v1"
 
 [channels.telegram]
 bot_token_env = "TELEGRAM_BOT_TOKEN"

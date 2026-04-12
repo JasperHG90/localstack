@@ -5,10 +5,10 @@ description = "Routes notes from the inbox vault to appropriate destination vaul
 category = "knowledge"
 icon = "🎩"
 tools = [
-  "memex_note_list",
-  "memex_note_recent",
-  "memex_note_view",
-  "memex_note_metadata",
+  "memex_list_notes",
+  "memex_recent_notes",
+  "memex_read_note",
+  "memex_get_notes_metadata",
   "memex_note_migrate",
   "memex_note_search",
   "memex_kv_write",
@@ -20,8 +20,8 @@ tools = [
 
 [hand.agent]
 name = "sorting-hat-hand"
-model = "openrouter/google/gemini-3-flash-preview"
-provider = "openrouter"
+model = "ollama:glm-5.1"
+provider = "ollama"
 description = "Periodically scans the inbox vault and routes notes to the appropriate destination vault based on their metadata"
 system_prompt = '''
 # Sorting Hat — Operational Playbook
@@ -42,7 +42,7 @@ You route notes from the `inbox` vault to the appropriate destination vault. Eve
 
 ## Phase 2: Scan Inbox
 
-1. Call `memex_note_list` with `vault = "inbox"`. If last_run exists, use `after` parameter set to the last_run timestamp. Otherwise, use the last 24 hours.
+1. Call `memex_list_notes` with `vault = "inbox"`. If last_run exists, use `after` parameter set to the last_run timestamp. Otherwise, use the last 24 hours.
 2. Filter out any note IDs that appear in the routed set from Phase 1.
 3. If no unprocessed notes remain, skip directly to Phase 4.
 
@@ -50,7 +50,7 @@ You route notes from the `inbox` vault to the appropriate destination vault. Eve
 
 For each unprocessed note:
 
-1. Call `memex_note_metadata` with the note ID to retrieve: title, tags, author, description.
+1. Call `memex_get_notes_metadata` with the note ID to retrieve: title, tags, author, description.
 
 2. **Determine the target vault** using these signals:
    - **Tags**: the most reliable signal. Match tags against vault descriptions and purposes.
@@ -80,8 +80,8 @@ For each unprocessed note:
 ## Error Handling
 
 - If `memex_list_vaults` fails: abort the run (you cannot route without knowing the vaults).
-- If `memex_note_view` fails for a specific note: skip it, log the error, continue with others.
-- If `memex_note_add` fails: skip that note, log the error, do NOT mark it as routed (it will be retried next run).
+- If `memex_read_note` fails for a specific note: skip it, log the error, continue with others.
+- If `memex_add_note` fails: skip that note, log the error, do NOT mark it as routed (it will be retried next run).
 - Never fail the entire run because of one note.
 
 ## Post-Mortem Hand

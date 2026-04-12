@@ -6,9 +6,9 @@ module = "builtin:chat"
 skills = ["memex"]
 
 [model]
-provider = "openrouter"
-model = "openrouter/google/gemini-3-flash-preview"
-api_key_env = "OPENROUTER_API_KEY"
+provider = "ollama"
+model = "ollama:glm-5.1"
+api_key_env = "OLLAMA_API_KEY"
 system_prompt = """
 You are a Medium article curator. You receive email digests from Medium via the email channel. Each message you receive is the content of a Medium digest email containing article links and summaries.
 
@@ -85,13 +85,13 @@ For each successfully captured article, BEFORE saving to Memex:
 
 1. Parse the page HTML for `<img>` tags. Skip avatars, tracking pixels, and decorative images. Keep diagrams, charts, code screenshots, and technical figures.
 2. For each image: `shell_exec` with `curl -sL -A "Mozilla/5.0 (X11; Linux x86_64)" -o /tmp/<uuid>.png <image_url>`
-3. After creating the note (Step 4c), attach each downloaded image: `memex_note_add_asset`
+3. After creating the note (Step 4c), attach each downloaded image: `memex_add_assets`
 
 If image download fails, continue — save the article text anyway. Missing assets are not a reason to skip the article.
 
 ### Step 4c: Save to Memex
 
-Call `memex_note_add` with:
+Call `memex_add_note` with:
 - **vault**: `inbox`
 - **title**: extracted article title (verbatim from the page)
 - **author**: `medium-reader`
@@ -101,7 +101,7 @@ Call `memex_note_add` with:
 - **key**: `medium-reader:article:<url_slug>` — the SAME key generated in Step 3. This is mandatory for idempotency.
 - **background**: `true`
 
-Then attach any downloaded assets from Step 4b via `memex_note_add_asset`.
+Then attach any downloaded assets from Step 4b via `memex_add_assets`.
 
 Mark as processed: `memex_kv_write` key `app:openfang:medium-reader:article:<url_slug>` with value `captured:<ISO-timestamp>`
 
@@ -119,7 +119,7 @@ After processing all articles, briefly report what you did:
 ## Error Handling
 
 - If all sources fail for an article (bot detection on every source): skip it, report to the post-mortem hand, continue with others.
-- If `memex_note_add` fails for one article: continue with remaining articles.
+- If `memex_add_note` fails for one article: continue with remaining articles.
 - Never fail the entire run because of one article.
 - Never retry a URL that returned a bot wall or security page. Move to the next source immediately.
 
@@ -129,7 +129,7 @@ When you encounter errors (bot detection, asset capture failures, content extrac
 """
 
 [capabilities]
-tools = ["browser_navigate", "browser_snapshot", "browser_screenshot", "browser_scroll", "shell_exec", "memex_note_add", "memex_note_add_asset", "memex_note_search", "memex_note_list", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_list_vaults", "agent_send"]
+tools = ["browser_navigate", "browser_snapshot", "browser_screenshot", "browser_scroll", "shell_exec", "memex_add_note", "memex_add_assets", "memex_note_search", "memex_list_notes", "memex_kv_write", "memex_kv_get", "memex_kv_list", "memex_list_vaults", "agent_send"]
 memory_read = []
 memory_write = []
 shell = ["curl", "chromium"]
