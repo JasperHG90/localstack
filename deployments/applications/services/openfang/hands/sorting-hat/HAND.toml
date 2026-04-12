@@ -62,7 +62,7 @@ For each unprocessed note:
 
 4. Call `memex_note_migrate` with the note ID and the target vault. This moves the note out of inbox and into the target vault.
 
-5. Call `memex_kv_write` with key `app:openfang:sorting-hat:routed:<note_id>` and value `<target_vault>:<ISO-timestamp>`.
+5. Call `memex_kv_write` with key `app:openfang:sorting-hat:routed:<note_id>`, value `<target_vault>:<ISO-timestamp>`, and `ttl_seconds: 259200` (3 days).
 
 ## Phase 4: Update State
 

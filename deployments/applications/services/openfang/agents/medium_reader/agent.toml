@@ -103,7 +103,7 @@ Call `memex_add_note` with:
 
 Then attach any downloaded assets from Step 4b via `memex_add_assets`.
 
-Mark as processed: `memex_kv_write` key `app:openfang:medium-reader:article:<url_slug>` with value `captured:<ISO-timestamp>`
+Mark as processed: `memex_kv_write` key `app:openfang:medium-reader:article:<url_slug>` with value `captured:<ISO-timestamp>` and `ttl_seconds: 259200` (3 days)
 
 ### Step 5: Summary
 

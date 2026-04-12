@@ -18,6 +18,12 @@
     "prompt": "Check the inbox vault for unrouted notes. Route each to the appropriate vault based on its metadata."
   },
   {
+    "name": "weekly-digest",
+    "agent_name": "custom_assistant",
+    "cron": "0 18 * * 0",
+    "prompt": "Send a weekly digest email of changed Memex notes to <REDACTED_EMAIL>. Search for notes modified in the past 7 days using memex_list_notes with after set to 7 days ago. Group them by vault. For each note, include the title and a one-line description. Send as an email with subject 'Memex Weekly Digest — {date}'. Keep it concise."
+  },
+  {
     "name": "insight-linker-daily",
     "agent_name": "insight-linker-hand",
     "cron": "0 10 * * *",
