@@ -52,9 +52,9 @@ For each unprocessed note:
 
 1. Call `memex_get_notes_metadata` with the note ID to retrieve: title, tags, author, description.
 
-2. **Determine the target vault** using these signals:
-   - **Tags**: the most reliable signal. Match tags against vault descriptions and purposes.
-   - **Author**: certain authors always map to certain vaults (e.g. `blog_scraper` or `medium-reader` content may belong in an articles/research vault).
+2. **Determine the target vault.** First, check the **Routing Hints** table below. If any rule matches, use that vault immediately. If no rule matches, use these fallback signals:
+   - **Tags**: match tags against vault descriptions and purposes from Phase 0.
+   - **Author**: certain authors map to certain vaults.
    - **Description**: use the content summary to judge the topic and match to vault purpose.
    - **Title**: use as a secondary signal when tags and description are ambiguous.
 
@@ -76,6 +76,27 @@ For each unprocessed note:
 - **Default to `global`.** When uncertain, `global` is the catch-all.
 - **Never route to `inbox`.** That would create a loop.
 - **One copy per note.** Do not route the same note to multiple vaults.
+
+## Routing Hints
+
+When determining the target vault in Phase 3 step 2, apply these domain-specific rules BEFORE falling back to generic metadata matching. Check rules in order — first match wins.
+
+| Signal | Condition | Target Vault |
+|--------|-----------|--------------|
+| **Tags** | Any of: `trading`, `finance`, `market`, `briefing`, `session-log`, `trader-advisor`, `trend-scout`, `market-analyst` | `trading` |
+| **Tags** | Any of: `SEC`, `sec-filing`, `10-K`, `10-Q`, `8-K`, `annual-report` | `SEC` |
+| **Tags** | Any of: `cluster-watchdog`, `nomad`, `consul`, `infrastructure`, `triage`, `node-health` | `localstack` |
+| **Tags** | Any of: `openfang`, `post-mortem`, `hand-error`, `system` | `openfang` |
+| **Tags** | Any of: `memex`, `memex-plugin`, `vault`, `ingestion` | `memex` |
+| **Tags** | Any of: `blog-scraper`, `medium-reader`, `engineering`, `agentic`, `ai`, `machine-learning` | `agentic` |
+| **Author** | `trader-advisor` or `trend-scout-hand` or `market-analyst-hand` | `trading` |
+| **Author** | `cluster-watchdog-hand` | `localstack` |
+| **Author** | `blog-scraper` or `medium-reader` | `agentic` |
+| **Title** | Contains any of: `stock`, `price`, `market`, `trade`, `portfolio`, `DEGIRO`, `earnings`, `dividend` (case-insensitive) | `trading` |
+| **Title** | Contains any of: `SEC`, `10-K`, `10-Q`, `filing`, `annual report` (case-insensitive) | `SEC` |
+| **Title** | Contains any of: `cluster`, `node`, `Nomad`, `Consul`, `allocation`, `health report` (case-insensitive) | `localstack` |
+
+If no rule matches, fall back to the existing approach: match tags and description against vault descriptions from Phase 0. If that also produces no clear match, route to `global`.
 
 ## Error Handling
 

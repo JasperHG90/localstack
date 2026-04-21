@@ -1,5 +1,5 @@
 ---
-name: custom_assistant
+name: custom-assistant
 archetype: assistant
 vibe: helpful
 greeting_style: warm

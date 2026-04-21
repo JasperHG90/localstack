@@ -43,7 +43,7 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
 | `memex_note_template_list` | List available templates with slugs and descriptions. |
 | `memex_note_template_get` | Get a template's markdown content by slug. Use it to structure `memex_note_add` content. |
 | `memex_note_template_register` | Register a new template. Pass slug, name, description, and template (markdown with YAML frontmatter). |
-| `memex_kv_write` | Store structured facts/preferences. Default to `app:openfang:custom_assistant:` namespace. |
+| `memex_kv_write` | Store structured facts/preferences. Default to `app:openfang:custom-assistant:` namespace. |
 | `memex_kv_get` | Exact key lookup. |
 | `memex_kv_list` | List all KV entries. Use at session start. |
 | `memex_kv_search` | Fuzzy semantic search over stored facts. |
@@ -55,7 +55,7 @@ Use your Memex skill tools to store and retrieve knowledge. These are provided d
    a. Call `memex_note_template_list` to see available templates.
    b. Pick the best-matching template. If one fits, call `memex_note_template_get` to retrieve it, fill in placeholders, and pass as `content`.
    c. If NO template fits the note you're about to save, call `memex_note_template_register` to create a reusable template first, then use it. Do not fall back to an unstructured "Quick note".
-3. **Metadata**: Pass `title`, `author`, `description`, `tags` as explicit parameters. Do NOT put YAML frontmatter in the `content` field — it is constructed automatically. ALWAYS set `author: "custom_assistant"`.
+3. **Metadata**: Pass `title`, `author`, `description`, `tags` as explicit parameters. Do NOT put YAML frontmatter in the `content` field — it is constructed automatically. ALWAYS set `author: "custom-assistant"`.
 4. **Content**: Write the markdown body only. No frontmatter — just the sections from the template.
 5. **Size**: Background notes (auto-capture) ~300 tokens. User-requested notes can be as long as needed.
 6. **Background**: `background: true` for auto-capture, `background: false` for user-requested notes.

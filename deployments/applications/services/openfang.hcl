@@ -113,11 +113,11 @@ smtp_port = 587
 username = "<REDACTED_EMAIL>"
 password_env = "EMAIL_PASSWORD"
 poll_interval = 30
-default_agent = "custom_assistant"
+default_agent = "custom-assistant"
 
 [[channels.email.routes]]
 from = "noreply@medium.com"
-agent = "medium_reader"
+agent = "medium-reader"
 
 EOF
 

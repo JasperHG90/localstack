@@ -2,12 +2,12 @@
   {
     "name": "cluster-watchdog-daily",
     "agent_name": "cluster-watchdog-hand",
-    "cron": "0 6 * * *",
+    "cron": "0 7 * * *",
     "prompt": "Run your daily cluster health check"
   },
   {
-    "name": "blog-scraper-daily",
-    "agent_name": "blog_scraper",
+    "name": "daily-blog-scrape",
+    "agent_name": "blog-scraper",
     "cron": "0 8 * * *",
     "prompt": "Scrape all target engineering blogs for new articles published in the last 3 days. Save new articles to Memex vault 'inbox' with proper titles, tags, and assets."
   },
@@ -19,8 +19,8 @@
   },
   {
     "name": "weekly-digest",
-    "agent_name": "custom_assistant",
-    "cron": "0 18 * * 0",
+    "agent_name": "custom-assistant",
+    "cron": "0 8 * * 1",
     "prompt": "Send a weekly digest email of changed Memex notes to <REDACTED_EMAIL>. Search for notes modified in the past 7 days using memex_list_notes with after set to 7 days ago. Group them by vault. For each note, include the title and a one-line description. Send as an email with subject 'Memex Weekly Digest — {date}'. Keep it concise."
   },
   {
@@ -28,5 +28,29 @@
     "agent_name": "insight-linker-hand",
     "cron": "0 10 * * *",
     "prompt": "Search Memex for recent insights and open GitHub issues or PRs for applicable improvements to target repositories."
+  },
+  {
+    "name": "trader-advisor-briefing",
+    "agent_name": "trader-advisor-hand",
+    "cron": "0 6 * * 2,3,5",
+    "prompt": "Produce the daily pre-market briefing. Execute Phase 0 (bootstrap), Phase 1 (briefing with price fetch, news scan, and market-analyst adversarial analysis), and Phase 3 (persist dashboard metrics). Deliver via channel_send(channel='telegram', recipient='<REDACTED_TELEGRAM_USER_ID>'). Do NOT use telegram_send."
+  },
+  {
+    "name": "trader-advisor-trail-check",
+    "agent_name": "trader-advisor-hand",
+    "cron": "0 6 * * 1,4",
+    "prompt": "Today is a TRAILING STOP REVIEW day (Monday or Thursday). Execute Phase 0 (bootstrap), then Phase 1 (full briefing). CRITICAL ADDITION: after fetching prices, run the Trailing Stop Discipline check for EVERY open position. Compute new_stop = current_price * (1 - trail%). If new_stop > existing_stop, produce an updated Stop Limit BRIEF ticket. This is mandatory on Mon/Thu per Rule 8. Then complete the briefing as normal and deliver via channel_send(channel='telegram', recipient='<REDACTED_TELEGRAM_USER_ID>'). Do NOT use telegram_send."
+  },
+  {
+    "name": "trader-advisor-stop-alert",
+    "agent_name": "trader-advisor-hand",
+    "cron": "0 10,14,18 * * 1-5",
+    "prompt": "STOP PRESSURE CHECK — this is NOT a full briefing. Read MASTER from KV. Fetch current prices for all open positions using price_get_quotes. For each position: if the current price is within 2% of the stop price, send alert via channel_send(channel='telegram', recipient='<REDACTED_TELEGRAM_USER_ID>'): '⚠️ STOP PRESSURE: {instrument} at {price} — stop at {stop} ({distance}%). Review immediately.' If no position is under pressure, do nothing — do NOT send a Telegram message. Update KV key app:openfang:trader-advisor:positions_under_stop_pressure with the current count."
+  },
+  {
+    "name": "trend-scout-weekly",
+    "agent_name": "trend-scout-hand",
+    "cron": "0 7 * * 2,5",
+    "prompt": "Run your weekly opportunity scan. Execute Phase 0 (load current exposure), Phase 1 (broad scan across all categories), Phase 2 (filter for accessibility, overlap, catalyst clarity, risk/reward), Phase 3 (score each via market-analyst), Phase 4 (compose and deliver via channel_send to telegram, NOT telegram_send), Phase 5 (persist state). Only surface BUY or STRONG_BUY opportunities."
   }
 ]

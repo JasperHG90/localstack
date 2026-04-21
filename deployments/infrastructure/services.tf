@@ -79,6 +79,26 @@ resource "nomad_dynamic_host_volume" "memex_data" {
   }
 }
 
+resource "nomad_dynamic_host_volume" "hermes_data" {
+  name      = "hermes_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "5 GiB"
+  capacity_min = "1 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "radxa-dragon-q6a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 ### Firewall rules for services (applied via SSH)
 locals {
   firewall_rules = {

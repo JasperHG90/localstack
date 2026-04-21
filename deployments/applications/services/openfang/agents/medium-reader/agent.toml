@@ -1,4 +1,4 @@
-name = "medium_reader"
+name = "medium-reader"
 version = "0.1.0"
 description = "Receives Medium digest emails via the email channel, filters clickbait, and captures worthy articles via archive.is to Memex inbox"
 author = "jasper"

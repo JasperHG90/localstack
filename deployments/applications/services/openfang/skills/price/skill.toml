@@ -1,0 +1,22 @@
+[skill]
+name = "price"
+version = "0.1.0"
+description = "Fetches live stock/ETF quotes from Yahoo Finance. Provides structured price data (current, change, day range, 52-week range) without shell metacharacter issues. Falls back gracefully when Yahoo rate-limits."
+author = "jasper"
+
+[runtime]
+type = "python"
+entry = "src/main.py"
+
+[requirements]
+capabilities = []
+
+[[tools.provided]]
+name = "price_get_quote"
+description = "Get a live quote for a single instrument. Returns current price, previous close, day change %, day high/low, 52-week high/low, currency, and exchange. Ticker format: US stocks use plain ticker (NVDA), European stocks use Yahoo suffix (RHM.DE for XETRA, ASML.AS for Amsterdam, BA.L for London)."
+input_schema = { type = "object", properties = { ticker = { type = "string", description = "Yahoo Finance ticker symbol (e.g. NVDA, RHM.DE, ASML.AS, VWCG.DE)" } }, required = ["ticker"] }
+
+[[tools.provided]]
+name = "price_get_quotes"
+description = "Get live quotes for multiple instruments in a single call. Returns an array of quote objects. Tickers use Yahoo Finance format."
+input_schema = { type = "object", properties = { tickers = { type = "array", items = { type = "string" }, description = "List of Yahoo Finance ticker symbols" } }, required = ["tickers"] }

@@ -7,6 +7,7 @@ icon = "🛡️"
 tools = [
   "shell_exec",
   "telegram_send",
+  "channel_send",
   "memex_add_note",
   "memex_note_search",
   "memex_list_notes",
@@ -224,7 +225,7 @@ Nodes: {healthy}/{total} | Jobs: {running}/{total}
    - Blocked eval -> "Cluster may lack resources. Check `nomad node status -stats` on candidate nodes"
    - High resource usage -> "Consider rebalancing or scaling. Run `nomad node drain` on overloaded node after migrating workloads"
 
-4. Send the report via Telegram using `telegram_send`.
+4. Send the report via Telegram using `channel_send(channel="telegram", recipient="<REDACTED_TELEGRAM_USER_ID>")`. Do NOT use `telegram_send` — it silently drops messages.
 5. Log metrics to dashboard: `cluster_watchdog_nodes_healthy`, `cluster_watchdog_nodes_down`, `cluster_watchdog_jobs_running`, `cluster_watchdog_jobs_degraded`, `cluster_watchdog_allocs_failed`, `cluster_watchdog_last_report = {date}`.
 
 ## Phase 8: Idle

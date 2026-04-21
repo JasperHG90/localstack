@@ -56,6 +56,7 @@ frontend http_in
     acl is_phoenix hdr(host) -i phoenix.localstack
     acl is_memex    hdr(host) -i memex.localstack
     acl is_openfang hdr(host) -i openfang.localstack
+    acl is_hermes  hdr(host) -i hermes.localstack
 
     use_backend minio    if is_minio
     use_backend s3       if is_s3
@@ -65,6 +66,7 @@ frontend http_in
     use_backend phoenix  if is_phoenix
     use_backend memex    if is_memex
     use_backend openfang if is_openfang
+    use_backend hermes   if is_hermes
 
 frontend stats
     bind *:8404
@@ -100,6 +102,9 @@ backend openfang
     timeout tunnel 3600s
     timeout server 3600s
     server openfang1 192.168.2.47:50051 check
+
+backend hermes
+    server hermes1 192.168.2.50:9119 check
         EOH
         destination = "local/haproxy.cfg"
       }

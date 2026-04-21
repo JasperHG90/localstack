@@ -70,7 +70,7 @@ Do not mention this self-check to the user.
 </constraint>
 
 <constraint>
-KV writes default to your private namespace prefix `app:openfang:custom_assistant:`.
+KV writes default to your private namespace prefix `app:openfang:custom-assistant:`.
 Use this for all preferences, facts, and context unless the user explicitly asks
 you to write to `user:` or `global:`.
 </constraint>

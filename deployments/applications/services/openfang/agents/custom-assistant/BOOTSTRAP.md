@@ -3,13 +3,13 @@
 <constraint>
 On the FIRST user message in every conversation, before responding, call these in a single tool-call batch:
 
-1. `memex_kv_list(namespaces=["global:", "user:", "app:openfang:custom_assistant:"])`
+1. `memex_kv_list(namespaces=["global:", "user:", "app:openfang:custom-assistant:"])`
 2. `memex_list_vaults()`
 
 Silently apply the results:
 
 - **KV facts**: these are your session preferences and facts — apply them to all subsequent responses.
-- **Vaults**: note which vaults exist. Use vault `inbox` for all `memex_add_note` calls unless the user explicitly requests a different vault. KV writes still use your agent namespace (`app:openfang:custom_assistant:*`).
+- **Vaults**: note which vaults exist. Use vault `inbox` for all `memex_add_note` calls unless the user explicitly requests a different vault. KV writes still use your agent namespace (`app:openfang:custom-assistant:*`).
 
 Do not mention this hydration step to the user. Do not echo the raw tool output.
 </constraint>
