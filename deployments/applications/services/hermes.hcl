@@ -62,6 +62,7 @@ job "hermes" {
           "local/skills/productivity/medium-reader/SKILL.md:/tmp/hermes/skills/productivity/medium-reader/SKILL.md",
           "local/skills/productivity/researcher/SKILL.md:/tmp/hermes/skills/productivity/researcher/SKILL.md",
           "local/skills/productivity/collector/SKILL.md:/tmp/hermes/skills/productivity/collector/SKILL.md",
+          "local/skills/devops/hermes-watcher/SKILL.md:/tmp/hermes/skills/devops/hermes-watcher/SKILL.md",
         ]
       }
 
@@ -174,6 +175,17 @@ compression:
 
 approvals:
   mode: "off"
+
+auxiliary:
+  compression:
+    provider: "openrouter"
+    model: "google/gemini-3.1-flash-lite-preview"
+  session_search:
+    provider: "openrouter"
+    model: "google/gemini-3.1-flash-lite-preview"
+  flush_memories:
+    provider: "openrouter"
+    model: "google/gemini-3.1-flash-lite-preview"
 
 platform_toolsets:
   email:
@@ -290,6 +302,13 @@ EOT
         destination = "local/skills/productivity/collector/SKILL.md"
       }
 
+      template {
+        data        = <<-EOT
+${skill_hermes_watcher}
+EOT
+        destination = "local/skills/devops/hermes-watcher/SKILL.md"
+      }
+
       resources {
         cpu    = 200
         memory = 64
@@ -372,10 +391,10 @@ EOF
       }
 
       config {
-        image        = "docker.io/nousresearch/hermes-agent:latest"
+        image        = "ghcr.io/jasperhg90/hermes:${hermes_version}"
+        args         = ["gateway", "run"]
         network_mode = "host"
         shm_size     = "1g"
-        entrypoint   = ["/bin/bash", "-c", "uv pip install --quiet --no-deps --link-mode=copy --python /opt/hermes/.venv/bin/python /opt/data/plugins/*.whl 2>/dev/null; exec /opt/hermes/docker/entrypoint.sh gateway run"]
       }
 
       resources {
@@ -422,7 +441,7 @@ EOF
       }
 
       config {
-        image        = "docker.io/nousresearch/hermes-agent:latest"
+        image        = "ghcr.io/jasperhg90/hermes:${hermes_version}"
         args         = ["dashboard", "--host", "0.0.0.0", "--port", "9119", "--no-open", "--insecure"]
         network_mode = "host"
       }

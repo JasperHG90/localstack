@@ -123,6 +123,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname       = "radxa-dragon-q6a"
       hermes_host           = "192.168.2.50"
+      hermes_version        = "0.10.0-memex"
       memex_host            = "192.168.2.46"
       memex_auth_secret     = "${var.secret_mount}/data/default/hermes/memex_auth"
       github_secret         = "${var.secret_mount}/data/default/hermes/github"
@@ -145,6 +146,7 @@ resource "nomad_job" "hermes" {
       skill_medium_reader    = file("${path.module}/services/hermes/skills/productivity/medium-reader/SKILL.md")
       skill_researcher       = file("${path.module}/services/hermes/skills/productivity/researcher/SKILL.md")
       skill_collector        = file("${path.module}/services/hermes/skills/productivity/collector/SKILL.md")
+      skill_hermes_watcher   = file("${path.module}/services/hermes/skills/devops/hermes-watcher/SKILL.md")
     }
   )
 }
