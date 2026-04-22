@@ -85,8 +85,7 @@ wget -q -O /opt/data/plugins/memex_hermes_plugin-0.1.12-py3-none-any.whl \
   "https://github.com/JasperHG90/memex/releases/download/v0.1.12/memex_hermes_plugin-0.1.12-py3-none-any.whl" \
   2>/dev/null || echo "WARN: failed to download memex plugin"
 
-# Strip PLACEHOLDER telegram tokens
-grep -v 'PLACEHOLDER' /tmp/hermes/hermes.env > /opt/data/.env
+cp /tmp/hermes/hermes.env /opt/data/.env
 cp /tmp/hermes/config.yaml /opt/data/config.yaml
 cp /tmp/hermes/SOUL.md /opt/data/SOUL.md
 
@@ -332,6 +331,9 @@ OPENROUTER_API_KEY={{ .Data.data.api_key }}
 {{- end }}
 {{- with secret "${ollama_secret}" }}
 OLLAMA_API_KEY={{ .Data.data.API_KEY }}
+{{- end }}
+{{- with secret "${telegram_secret}" }}
+TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 {{- end }}
 {{- with secret "${email_secret}" }}
 EMAIL_PASSWORD={{ .Data.data.EMAIL_PASSWORD }}
