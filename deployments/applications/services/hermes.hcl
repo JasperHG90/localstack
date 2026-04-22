@@ -134,7 +134,7 @@ EOF
       template {
         data = <<EOF
 model:
-  provider: "ollama"
+  provider: "ollama-cloud"
   name: "glm-5.1"
 
 fallback_model:
