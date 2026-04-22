@@ -155,6 +155,7 @@ EOF
 model:
   provider: "ollama-cloud"
   default: "gemma4:31b-cloud"
+  context_length: 128000
 
 fallback_model:
   provider: "openrouter"
@@ -189,6 +190,9 @@ compression:
 
 approvals:
   mode: "off"
+
+dashboard:
+  theme: "mono"
 
 auxiliary:
   compression:

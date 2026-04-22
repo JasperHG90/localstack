@@ -123,7 +123,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname       = "radxa-dragon-q6a"
       hermes_host           = "192.168.2.50"
-      hermes_version        = "0.10.0-memex-v0.1.13"
+      hermes_version        = "0.10.0-memex-v0.1.13-r2"
       memex_host            = "192.168.2.46"
       memex_auth_secret     = "${var.secret_mount}/data/default/hermes/memex_auth"
       github_secret         = "${var.secret_mount}/data/default/hermes/github"
