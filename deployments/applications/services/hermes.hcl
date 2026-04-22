@@ -154,7 +154,7 @@ EOF
         data = <<EOF
 model:
   provider: "ollama-cloud"
-  name: "gemma4:31b-cloud"
+  default: "gemma4:31b-cloud"
 
 fallback_model:
   provider: "openrouter"
