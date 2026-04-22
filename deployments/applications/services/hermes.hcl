@@ -76,6 +76,16 @@ mkdir -p /opt/data/sessions /opt/data/memories /opt/data/cron \
 chmod -R 777 /opt/data
 
 # Strip TELEGRAM_BOT_TOKEN if it contains PLACEHOLDER (invalid token crashes gateway)
+# Download Memex Hermes plugin + dependency
+mkdir -p /opt/data/plugins
+wget -q -O /opt/data/plugins/memex_common-0.1.12-py3-none-any.whl \
+  "https://github.com/JasperHG90/memex/releases/download/v0.1.12/memex_common-0.1.12-py3-none-any.whl" \
+  2>/dev/null || echo "WARN: failed to download memex-common"
+wget -q -O /opt/data/plugins/memex_hermes_plugin-0.1.12-py3-none-any.whl \
+  "https://github.com/JasperHG90/memex/releases/download/v0.1.12/memex_hermes_plugin-0.1.12-py3-none-any.whl" \
+  2>/dev/null || echo "WARN: failed to download memex plugin"
+
+# Strip PLACEHOLDER telegram tokens
 grep -v 'PLACEHOLDER' /tmp/hermes/hermes.env > /opt/data/.env
 cp /tmp/hermes/config.yaml /opt/data/config.yaml
 cp /tmp/hermes/SOUL.md /opt/data/SOUL.md
@@ -150,6 +160,7 @@ memory:
   user_profile_enabled: true
   memory_char_limit: 2200
   user_char_limit: 1375
+  provider: "memex"
 
 terminal:
   backend: "local"
@@ -164,6 +175,22 @@ compression:
 
 approvals:
   mode: "off"
+
+platform_toolsets:
+  email:
+    - terminal
+    - web
+    - browser
+    - memory
+    - skills
+    - files
+  telegram:
+    - terminal
+    - web
+    - browser
+    - memory
+    - skills
+    - files
 
 mcp_servers:
   github:
@@ -344,9 +371,9 @@ EOF
 
       config {
         image        = "docker.io/nousresearch/hermes-agent:latest"
-        args         = ["gateway", "run"]
         network_mode = "host"
         shm_size     = "1g"
+        entrypoint   = ["/bin/bash", "-c", "uv pip install --quiet --no-deps --link-mode=copy --python /opt/hermes/.venv/bin/python /opt/data/plugins/*.whl 2>/dev/null; exec /opt/hermes/docker/entrypoint.sh gateway run"]
       }
 
       resources {
