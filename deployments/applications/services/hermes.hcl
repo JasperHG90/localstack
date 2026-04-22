@@ -138,6 +138,7 @@ NOMAD_TOKEN={{ .Data.data.token }}
 MEMEX_API_KEY={{ .Data.data.admin_key }}
 {{- end }}
 MEMEX_SERVER_URL=http://${memex_host}:8000
+MEMEX_VAULT=hermes
 NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
 HERMES_YOLO_MODE=true
@@ -153,7 +154,7 @@ EOF
         data = <<EOF
 model:
   provider: "ollama-cloud"
-  name: "glm-5.1"
+  name: "gemma4:31b-cloud"
 
 fallback_model:
   provider: "openrouter"
@@ -404,6 +405,7 @@ EOF
         HERMES_HOME            = "/opt/data"
         HERMES_YOLO_MODE       = "true"
         MEMEX_SERVER_URL       = "http://${memex_host}:8000"
+        MEMEX_VAULT            = "hermes"
         NOMAD_ADDR             = "http://192.168.2.30:4646"
         CONSUL_ADDR            = "http://192.168.2.30:8500"
         TELEGRAM_ALLOWED_USERS = "${telegram_allowed_users}"
