@@ -147,6 +147,8 @@ resource "nomad_job" "hermes" {
       skill_researcher       = file("${path.module}/services/hermes/skills/productivity/researcher/SKILL.md")
       skill_collector        = file("${path.module}/services/hermes/skills/productivity/collector/SKILL.md")
       skill_hermes_watcher   = file("${path.module}/services/hermes/skills/devops/hermes-watcher/SKILL.md")
+      skill_autoresearch_create   = file("${path.module}/services/hermes/skills/research/autoresearch-create/SKILL.md")
+      skill_autoresearch_finalize = file("${path.module}/services/hermes/skills/research/autoresearch-finalize/SKILL.md")
     }
   )
 }

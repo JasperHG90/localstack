@@ -42,9 +42,12 @@ job "hermes" {
 
       vault {}
 
+      user = "0"
+
       config {
-        image = "docker.io/library/alpine:latest"
-        args  = ["/tmp/setup.sh"]
+        image      = "ghcr.io/jasperhg90/hermes:${hermes_version}"
+        entrypoint = ["/bin/sh"]
+        args       = ["/tmp/setup.sh"]
 
         volumes = [
           "local/hermes.env:/tmp/hermes/hermes.env",
@@ -63,6 +66,8 @@ job "hermes" {
           "local/skills/productivity/researcher/SKILL.md:/tmp/hermes/skills/productivity/researcher/SKILL.md",
           "local/skills/productivity/collector/SKILL.md:/tmp/hermes/skills/productivity/collector/SKILL.md",
           "local/skills/devops/hermes-watcher/SKILL.md:/tmp/hermes/skills/devops/hermes-watcher/SKILL.md",
+          "local/skills/research/autoresearch-create/SKILL.md:/tmp/hermes/skills/research/autoresearch-create/SKILL.md",
+          "local/skills/research/autoresearch-finalize/SKILL.md:/tmp/hermes/skills/research/autoresearch-finalize/SKILL.md",
         ]
       }
 
@@ -72,19 +77,12 @@ job "hermes" {
 set -e
 
 mkdir -p /opt/data/sessions /opt/data/memories /opt/data/cron \
-         /opt/data/hooks /opt/data/logs /opt/data/skills
+         /opt/data/hooks /opt/data/logs /opt/data/skills /opt/data/plugins
 
-chmod -R 777 /opt/data
-
-# Strip TELEGRAM_BOT_TOKEN if it contains PLACEHOLDER (invalid token crashes gateway)
-# Download Memex Hermes plugin + dependency
-mkdir -p /opt/data/plugins
-wget -q -O /opt/data/plugins/memex_common-0.1.12-py3-none-any.whl \
-  "https://github.com/JasperHG90/memex/releases/download/v0.1.12/memex_common-0.1.12-py3-none-any.whl" \
-  2>/dev/null || echo "WARN: failed to download memex-common"
-wget -q -O /opt/data/plugins/memex_hermes_plugin-0.1.12-py3-none-any.whl \
-  "https://github.com/JasperHG90/memex/releases/download/v0.1.12/memex_hermes_plugin-0.1.12-py3-none-any.whl" \
-  2>/dev/null || echo "WARN: failed to download memex plugin"
+# Ensure ownership so subsequent hermes user processes can write
+HERMES_UID=$(id -u hermes 2>/dev/null || echo 1000)
+HERMES_GID=$(id -g hermes 2>/dev/null || echo 1000)
+chown -R $HERMES_UID:$HERMES_GID /opt/data 2>/dev/null || true
 
 cp /tmp/hermes/hermes.env /opt/data/.env
 cp /tmp/hermes/config.yaml /opt/data/config.yaml
@@ -93,6 +91,16 @@ cp /tmp/hermes/SOUL.md /opt/data/SOUL.md
 if [ -d /tmp/hermes/skills ]; then
   cp -r /tmp/hermes/skills/* /opt/data/skills/ 2>/dev/null || true
 fi
+
+# Copy Memex plugin from staged location in custom image
+if [ -d /opt/hermes/memex-plugin ]; then
+  mkdir -p /opt/data/plugins/memex
+  cp -r /opt/hermes/memex-plugin/* /opt/data/plugins/memex/
+  echo "hermes: memex plugin synced"
+fi
+
+# Final ownership pass — everything we just wrote
+chown -R $HERMES_UID:$HERMES_GID /opt/data 2>/dev/null || true
 
 echo "hermes: config sync complete"
 EOF
@@ -154,6 +162,11 @@ fallback_model:
 agent:
   max_turns: 90
   reasoning_effort: "medium"
+
+plugins:
+  enabled:
+    - memex
+  disabled: []
 
 memory:
   memory_enabled: true
@@ -307,6 +320,20 @@ EOT
 ${skill_hermes_watcher}
 EOT
         destination = "local/skills/devops/hermes-watcher/SKILL.md"
+      }
+
+      template {
+        data        = <<-EOT
+${skill_autoresearch_create}
+EOT
+        destination = "local/skills/research/autoresearch-create/SKILL.md"
+      }
+
+      template {
+        data        = <<-EOT
+${skill_autoresearch_finalize}
+EOT
+        destination = "local/skills/research/autoresearch-finalize/SKILL.md"
       }
 
       resources {
