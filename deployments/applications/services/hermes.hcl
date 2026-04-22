@@ -122,6 +122,7 @@ OLLAMA_API_KEY={{ .Data.data.API_KEY }}
 TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 {{- end }}
 TELEGRAM_ALLOWED_USERS=${telegram_allowed_users}
+TELEGRAM_HOME_CHANNEL=${telegram_allowed_users}
 {{- with secret "${email_secret}" }}
 EMAIL_ADDRESS=<REDACTED_EMAIL>
 EMAIL_PASSWORD={{ .Data.data.EMAIL_PASSWORD }}
@@ -413,6 +414,7 @@ EOF
         NOMAD_ADDR             = "http://192.168.2.30:4646"
         CONSUL_ADDR            = "http://192.168.2.30:8500"
         TELEGRAM_ALLOWED_USERS = "${telegram_allowed_users}"
+        TELEGRAM_HOME_CHANNEL  = "${telegram_allowed_users}"
         EMAIL_ADDRESS          = "<REDACTED_EMAIL>"
         EMAIL_IMAP_HOST        = "imap.gmail.com"
         EMAIL_SMTP_HOST        = "smtp.gmail.com"
