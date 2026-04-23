@@ -12,9 +12,7 @@ locals {
       writers = [
         { "name" = "memex", generate_access_key = true }
       ],
-      readers = [
-        { "name" = "openfang", generate_access_key = true }
-      ]
+      readers = []
     }
   }
 

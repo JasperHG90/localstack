@@ -1,24 +1,4 @@
 ### Dynamic Host Volumes
-resource "nomad_dynamic_host_volume" "openfang_data" {
-  name      = "openfang_data"
-  namespace = "default"
-  plugin_id = "mkdir"
-  node_pool = "default"
-
-  capacity_max = "10 GiB"
-  capacity_min = "1 GiB"
-
-  constraint {
-    attribute = "$${attr.unique.hostname}"
-    value     = "ubuntu"
-  }
-
-  capability {
-    access_mode     = "single-node-writer"
-    attachment_mode = "file-system"
-  }
-}
-
 resource "nomad_dynamic_host_volume" "postgres" {
   name      = "postgres"
   namespace = "default"

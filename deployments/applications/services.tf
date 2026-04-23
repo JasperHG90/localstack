@@ -38,15 +38,6 @@ locals {
         "allow from 192.168.0.0/16 to any port 8000 proto tcp",
       ]
     }
-    # OpenFang on raspberry_pi_4b (HAProxy + Memex MCP only)
-    openfang = {
-      host     = "192.168.2.47"
-      ssh_user = "raspberry"
-      rules = [
-        "allow from 192.168.2.30 to any port 50051 proto tcp",
-        "allow from 192.168.2.46 to any port 50051 proto tcp",
-      ]
-    }
     # Hermes on radxa (only HAProxy + Memex can reach it)
     hermes = {
       host     = "192.168.2.50"
@@ -90,30 +81,6 @@ resource "nomad_job" "phoenix" {
     }
   )
   depends_on = [postgresql_database.database]
-}
-
-### OpenFang
-resource "nomad_job" "openfang" {
-  jobspec = templatefile(
-    "${path.module}/services/openfang.hcl",
-    {
-      openfang_hostname      = "ubuntu"
-      openfang_host          = "192.168.2.47"
-      openfang_version       = "0.5.7"
-      memex_host             = "192.168.2.46"
-      memex_auth_secret      = vault_kv_secret_v2.openfang_memex_auth.path
-      openfang_minio_secret  = vault_kv_secret_v2.openfang_minio_credentials.path
-      nomad_secret           = vault_kv_secret_v2.openfang_nomad_token.path
-      minio_host             = data.consul_service.minio.service[0].node_address
-      github_secret          = "${var.secret_mount}/data/default/openfang/github"
-      telegram_secret        = "${var.secret_mount}/data/default/openfang/telegram"
-      telegram_allowed_users = ["<REDACTED_TELEGRAM_USER_ID>"]
-      minimax_secret         = "${var.secret_mount}/data/default/openfang/minimax"
-      openrouter_secret      = "${var.secret_mount}/data/default/openfang/openrouter"
-      email_secret           = "${var.secret_mount}/data/default/openfang/email"
-      ollama_secret          = "${var.secret_mount}/data/default/openfang/ollama"
-    }
-  )
 }
 
 ### Hermes

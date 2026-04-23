@@ -17,15 +17,3 @@ apply:
 destroy:
     CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
     terraform destroy -var-file=./vars/prod.tfvars
-
-# Sync all OpenFang resources (skills, agents, hands, workflows, triggers) and register them
-sync_openfang host="192.168.2.47" user="raspberry":
-    ssh -i ../../.ssh/id_rsa {{user}}@{{host}} "mkdir -p /tmp/openfang-sync"
-    scp -r -i ../../.ssh/id_rsa services/openfang/agents services/openfang/skills services/openfang/hands services/openfang/workflows services/openfang/schedules.json services/openfang/register.sh {{user}}@{{host}}:/tmp/openfang-sync/
-    ssh -i ../../.ssh/id_rsa {{user}}@{{host}} 'cid=$(sudo podman ps -q -f name=openfang) && sudo podman exec $cid sh -c "rm -rf /data/workspaces /data/workflows && mkdir -p /data/workspaces /data/workflows /tmp/skills /tmp/hands" && sudo podman cp /tmp/openfang-sync/agents/. $cid:/data/workspaces/ && sudo podman cp /tmp/openfang-sync/skills/. $cid:/tmp/skills/ && sudo podman cp /tmp/openfang-sync/hands/. $cid:/tmp/hands/ && sudo podman cp /tmp/openfang-sync/workflows/. $cid:/data/workflows/ && sudo podman cp /tmp/openfang-sync/schedules.json $cid:/tmp/schedules.json && sudo podman cp /tmp/openfang-sync/register.sh $cid:/tmp/register.sh && sudo podman exec $cid sh /tmp/register.sh && rm -rf /tmp/openfang-sync'
-
-# Build openfang from source and push to ghcr.io
-build_openfang version="0.5.9":
-    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
-    docker build --build-arg VERSION={{version}} --secret id=git_token,env=GITHUB_WRITE_PAT -t ghcr.io/jasperhg90/openfang:{{version}} services/openfang/
-    docker push ghcr.io/jasperhg90/openfang:{{version}}
