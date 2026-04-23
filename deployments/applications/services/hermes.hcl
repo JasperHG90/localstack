@@ -88,8 +88,15 @@ cp /tmp/hermes/hermes.env /opt/data/.env
 cp /tmp/hermes/config.yaml /opt/data/config.yaml
 cp /tmp/hermes/SOUL.md /opt/data/SOUL.md
 
+# IaC-managed read-only skill library. Refreshed from scratch every deploy
+# so removed skills are pruned. Wired into config.yaml via
+# skills.external_dirs; the agent cannot modify files here (enforced by
+# Hermes: skill_manage refuses writes outside HERMES_HOME/skills).
+# Writable agent skills live in /opt/data/skills/ and are never touched here.
 if [ -d /tmp/hermes/skills ]; then
-  cp -r /tmp/hermes/skills/* /opt/data/skills/ 2>/dev/null || true
+  rm -rf /opt/data/skills-library
+  mkdir -p /opt/data/skills-library
+  cp -r /tmp/hermes/skills/* /opt/data/skills-library/ 2>/dev/null || true
 fi
 
 # Copy Memex plugin from staged location in custom image
@@ -171,6 +178,10 @@ plugins:
     - memex
   disabled: []
 
+skills:
+  external_dirs:
+    - /opt/data/skills-library
+
 memory:
   memory_enabled: true
   user_profile_enabled: true
@@ -223,6 +234,9 @@ auxiliary:
     provider: "openrouter"
     model: "google/gemini-3.1-flash-lite-preview"
   flush_memories:
+    provider: "openrouter"
+    model: "google/gemini-3.1-flash-lite-preview"
+  title_generation:
     provider: "openrouter"
     model: "google/gemini-3.1-flash-lite-preview"
 

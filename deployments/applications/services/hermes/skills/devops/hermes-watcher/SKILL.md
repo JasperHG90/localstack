@@ -15,13 +15,20 @@ Scheduled every 30 minutes to scan gateway logs for errors. Also invoke manually
 
 ### Phase 1: Collect Recent Logs
 
-Use the terminal to read the Hermes log files:
+**CRITICAL**: Only consider log entries from the **last 35 minutes**. Older errors are stale — they were either already reported in a prior watcher run, or fixed before this run started. Reporting them again creates noise.
 
+Compute the cutoff:
 ```
-cat /opt/data/logs/*.log | tail -500
+CUTOFF=$(date -u -d '35 minutes ago' '+%Y-%m-%d %H:%M:%S')
 ```
 
-Also check stderr output if available. Focus on the last 30 minutes of log entries.
+Then filter logs by timestamp. Hermes log lines start with `YYYY-MM-DD HH:MM:SS,nnn`:
+```
+awk -v c="$CUTOFF" '$1" "$2 >= c' /opt/data/logs/errors.log
+awk -v c="$CUTOFF" '$1" "$2 >= c' /opt/data/logs/agent.log | tail -200
+```
+
+If both filters return empty, respond with `[SILENT]` and exit. Nothing new to report.
 
 ### Phase 2: Classify Issues
 

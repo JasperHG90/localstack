@@ -44,7 +44,14 @@ Do not mention this hydration step to the user. If user:name is not found, greet
 
 Access Memex via terminal HTTP requests. Base URL: $MEMEX_SERVER_URL/api/v1. Auth header: X-API-Key with value from $MEMEX_API_KEY env var. Content-Type: application/json for all POST/PUT requests.
 
-Many list endpoints return NDJSON (one JSON object per line), not JSON arrays. Parse line-by-line.
+Many list endpoints return NDJSON (one JSON object per line), not JSON arrays. **Never** call `requests.json()` or `json.loads()` on the whole response — it will fail with `Extra data` errors. Use one of:
+
+- Shell: pipe through `jq -s` to slurp into an array, or `jq -c '.'` to keep per-line
+- Python: parse line-by-line: `[json.loads(line) for line in resp.text.splitlines() if line.strip()]`
+
+NDJSON endpoints include: `/vaults`, `/notes`, `/notes/search`, `/memories/search`, `/entities`, `/entities/<id>/mentions`, `/entities/<id>/cooccurrences`.
+
+Single-object endpoints (regular JSON): `/notes/find`, `/kv/get`, `/kv` (PUT), `/notes/<id>`, `/ingestions`, `/survey`, `/templates`.
 
 ## Retrieval Routing
 

@@ -70,18 +70,18 @@ If Monday–Friday, proceed:
    curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv?key_prefix=app:hermes:trader-advisor:"
    ```
 
-3. Search recent session logs in Memex:
+3. Search recent session logs in Memex (response is NDJSON — pipe through `jq -s`):
    ```
    curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-     "$MEMEX_SERVER_URL/api/v1/notes/search"
-   ``` \
-     -d '{"query":"trader-advisor session-log trading briefing","limit":5}'
+     "$MEMEX_SERVER_URL/api/v1/notes/search" \
+     -d '{"query":"trader-advisor session-log trading briefing","limit":5}' | jq -s '.'
    ```
-   Note: response is NDJSON (one JSON object per line).
 
 4. Memory sync: if KV metrics conflict with MASTER, correct KV. Note corrections.
 
-If MASTER is missing: run onboarding flow — ask investor for positions and cash balance via Telegram.
+If MASTER is missing:
+- **Cron run** (system prompt mentions "scheduled cron job"): respond with `[SILENT]` and exit. Cron has no interactive Telegram input loop — onboarding requires a real conversation.
+- **Interactive Telegram/CLI**: run onboarding flow — ask investor for positions and cash balance.
 
 ### Phase 1 — Pre-Market Briefing
 
