@@ -121,34 +121,36 @@ resource "nomad_job" "hermes" {
   jobspec = templatefile(
     "${path.module}/services/hermes.hcl",
     {
-      hermes_hostname       = "radxa-dragon-q6a"
-      hermes_host           = "192.168.2.50"
-      hermes_version        = "0.10.0-memex-v0.1.13-r4"
-      memex_host            = "192.168.2.46"
-      memex_auth_secret     = "${var.secret_mount}/data/default/hermes/memex_auth"
-      github_secret         = "${var.secret_mount}/data/default/hermes/github"
-      telegram_secret       = "${var.secret_mount}/data/default/hermes/telegram"
-      openrouter_secret     = "${var.secret_mount}/data/default/hermes/openrouter"
-      ollama_secret         = "${var.secret_mount}/data/default/hermes/ollama"
-      email_secret          = "${var.secret_mount}/data/default/hermes/email"
-      nomad_secret          = "${var.secret_mount}/data/default/hermes/nomad"
-      api_server_key        = "<REDACTED_HERMES_API_SERVER_KEY>"
-      telegram_allowed_users = "<REDACTED_TELEGRAM_USER_ID>"
-      soul_md                = file("${path.module}/services/hermes/SOUL.md")
-      skill_cluster_watchdog = file("${path.module}/services/hermes/skills/devops/cluster-watchdog/SKILL.md")
-      skill_post_mortem      = file("${path.module}/services/hermes/skills/devops/post-mortem/SKILL.md")
-      skill_sorting_hat      = file("${path.module}/services/hermes/skills/knowledge/sorting-hat/SKILL.md")
-      skill_insight_linker   = file("${path.module}/services/hermes/skills/knowledge/insight-linker/SKILL.md")
-      skill_trader_advisor   = file("${path.module}/services/hermes/skills/finance/trader-advisor/SKILL.md")
-      skill_market_analyst   = file("${path.module}/services/hermes/skills/finance/market-analyst/SKILL.md")
-      skill_trend_scout      = file("${path.module}/services/hermes/skills/finance/trend-scout/SKILL.md")
-      skill_blog_scraper     = file("${path.module}/services/hermes/skills/productivity/blog-scraper/SKILL.md")
-      skill_medium_reader    = file("${path.module}/services/hermes/skills/productivity/medium-reader/SKILL.md")
-      skill_researcher       = file("${path.module}/services/hermes/skills/productivity/researcher/SKILL.md")
-      skill_collector        = file("${path.module}/services/hermes/skills/productivity/collector/SKILL.md")
-      skill_hermes_watcher   = file("${path.module}/services/hermes/skills/devops/hermes-watcher/SKILL.md")
-      skill_autoresearch_create   = file("${path.module}/services/hermes/skills/research/autoresearch-create/SKILL.md")
-      skill_autoresearch_finalize = file("${path.module}/services/hermes/skills/research/autoresearch-finalize/SKILL.md")
+      hermes_hostname = "radxa-dragon-q6a"
+      hermes_host     = "192.168.2.50"
+      hermes_version  = "0.10.0-memex-v0.1.13-r4"
+      # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
+      external_skills_jasperhg90_ref = "main"
+      memex_host                     = "192.168.2.46"
+      memex_auth_secret              = "${var.secret_mount}/data/default/hermes/memex_auth"
+      github_secret                  = "${var.secret_mount}/data/default/hermes/github"
+      telegram_secret                = "${var.secret_mount}/data/default/hermes/telegram"
+      openrouter_secret              = "${var.secret_mount}/data/default/hermes/openrouter"
+      ollama_secret                  = "${var.secret_mount}/data/default/hermes/ollama"
+      email_secret                   = "${var.secret_mount}/data/default/hermes/email"
+      nomad_secret                   = "${var.secret_mount}/data/default/hermes/nomad"
+      api_server_key                 = "<REDACTED_HERMES_API_SERVER_KEY>"
+      telegram_allowed_users         = "<REDACTED_TELEGRAM_USER_ID>"
+      soul_md                        = file("${path.module}/services/hermes/SOUL.md")
+      skill_cluster_watchdog         = file("${path.module}/services/hermes/skills/devops/cluster-watchdog/SKILL.md")
+      skill_post_mortem              = file("${path.module}/services/hermes/skills/devops/post-mortem/SKILL.md")
+      skill_sorting_hat              = file("${path.module}/services/hermes/skills/knowledge/sorting-hat/SKILL.md")
+      skill_insight_linker           = file("${path.module}/services/hermes/skills/knowledge/insight-linker/SKILL.md")
+      skill_trader_advisor           = file("${path.module}/services/hermes/skills/finance/trader-advisor/SKILL.md")
+      skill_market_analyst           = file("${path.module}/services/hermes/skills/finance/market-analyst/SKILL.md")
+      skill_trend_scout              = file("${path.module}/services/hermes/skills/finance/trend-scout/SKILL.md")
+      skill_blog_scraper             = file("${path.module}/services/hermes/skills/productivity/blog-scraper/SKILL.md")
+      skill_medium_reader            = file("${path.module}/services/hermes/skills/productivity/medium-reader/SKILL.md")
+      skill_researcher               = file("${path.module}/services/hermes/skills/productivity/researcher/SKILL.md")
+      skill_collector                = file("${path.module}/services/hermes/skills/productivity/collector/SKILL.md")
+      skill_hermes_watcher           = file("${path.module}/services/hermes/skills/devops/hermes-watcher/SKILL.md")
+      skill_autoresearch_create      = file("${path.module}/services/hermes/skills/research/autoresearch-create/SKILL.md")
+      skill_autoresearch_finalize    = file("${path.module}/services/hermes/skills/research/autoresearch-finalize/SKILL.md")
     }
   )
 }

@@ -99,6 +99,19 @@ if [ -d /tmp/hermes/skills ]; then
   cp -r /tmp/hermes/skills/* /opt/data/skills-library/ 2>/dev/null || true
 fi
 
+# External read-only library: JasperHG90/skills (public, refresh per deploy).
+# Tarball avoids needing git in the image. Failure here is non-fatal: the
+# agent loses access to those skills but the deploy continues.
+EXT_JG_REF="${external_skills_jasperhg90_ref}"
+rm -rf /opt/data/skills-library-jasperhg90
+mkdir -p /opt/data/skills-library-jasperhg90
+if curl -fsSL "https://github.com/JasperHG90/skills/archive/$EXT_JG_REF.tar.gz" \
+   | tar xz -C /opt/data/skills-library-jasperhg90 --strip-components=1 2>/dev/null; then
+  echo "hermes: external skills jasperhg90@$EXT_JG_REF synced"
+else
+  echo "hermes: WARN failed to fetch external skills jasperhg90@$EXT_JG_REF (continuing)"
+fi
+
 # Copy Memex plugin from staged location in custom image
 if [ -d /opt/hermes/memex-plugin ]; then
   mkdir -p /opt/data/plugins/memex
@@ -181,6 +194,7 @@ plugins:
 skills:
   external_dirs:
     - /opt/data/skills-library
+    - /opt/data/skills-library-jasperhg90/skills
 
 memory:
   memory_enabled: true
@@ -248,6 +262,7 @@ platform_toolsets:
     - memory
     - skills
     - files
+    - cronjob
   telegram:
     - terminal
     - web
@@ -255,6 +270,7 @@ platform_toolsets:
     - memory
     - skills
     - files
+    - cronjob
 
 mcp_servers:
   github:
