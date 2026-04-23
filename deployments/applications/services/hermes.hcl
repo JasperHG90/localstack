@@ -182,6 +182,26 @@ terminal:
   backend: "local"
   cwd: "/opt/data"
   timeout: 180
+  env_passthrough:
+    - MEMEX_API_KEY
+    - MEMEX_SERVER_URL
+    - MEMEX_VAULT
+    - NOMAD_TOKEN
+    - NOMAD_ADDR
+    - CONSUL_ADDR
+    - GH_TOKEN
+    - GITHUB_PERSONAL_ACCESS_TOKEN
+
+code_execution:
+  env_passthrough:
+    - MEMEX_API_KEY
+    - MEMEX_SERVER_URL
+    - MEMEX_VAULT
+    - NOMAD_TOKEN
+    - NOMAD_ADDR
+    - CONSUL_ADDR
+    - GH_TOKEN
+    - GITHUB_PERSONAL_ACCESS_TOKEN
 
 compression:
   enabled: true
