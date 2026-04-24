@@ -458,6 +458,9 @@ NOMAD_TOKEN={{ .Data.data.token }}
 {{- with secret "${memex_auth_secret}" }}
 MEMEX_API_KEY={{ .Data.data.admin_key }}
 {{- end }}
+{{- with secret "${api_server_secret}" }}
+API_SERVER_KEY={{ .Data.data.key }}
+{{- end }}
 EOF
 
         destination = "secrets/file.env"
@@ -479,7 +482,6 @@ EOF
         OLLAMA_BASE_URL        = "https://ollama.com/v1"
         API_SERVER_ENABLED     = "true"
         API_SERVER_HOST        = "0.0.0.0"
-        API_SERVER_KEY         = "${api_server_key}"
         GATEWAY_HEALTH_TIMEOUT = "5"
       }
 

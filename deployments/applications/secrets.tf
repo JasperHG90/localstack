@@ -54,6 +54,20 @@ resource "vault_kv_secret_v2" "memex_auth_keys" {
   })
 }
 
+### Hermes
+
+resource "random_id" "hermes_api_server_key" {
+  byte_length = 32
+}
+
+resource "vault_kv_secret_v2" "hermes_api_server" {
+  mount = var.secret_mount
+  name  = "default/hermes/api_server"
+  data_json = jsonencode({
+    key = random_id.hermes_api_server_key.b64_url
+  })
+}
+
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users
   mount    = var.secret_mount

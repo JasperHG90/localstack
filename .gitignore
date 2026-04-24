@@ -4,5 +4,6 @@ tmp
 .cache
 .ssh
 .graveyard
+.claude/settings.local.json
 
 .DS_Store
