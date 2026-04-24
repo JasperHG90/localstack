@@ -108,6 +108,7 @@ resource "nomad_job" "hermes" {
       skill_post_mortem              = file("${path.module}/services/hermes/skills/devops/post-mortem/SKILL.md")
       skill_sorting_hat              = file("${path.module}/services/hermes/skills/knowledge/sorting-hat/SKILL.md")
       skill_insight_linker           = file("${path.module}/services/hermes/skills/knowledge/insight-linker/SKILL.md")
+      skill_daily_reflect            = file("${path.module}/services/hermes/skills/knowledge/daily-reflect/SKILL.md")
       skill_trader_advisor           = file("${path.module}/services/hermes/skills/finance/trader-advisor/SKILL.md")
       skill_market_analyst           = file("${path.module}/services/hermes/skills/finance/market-analyst/SKILL.md")
       skill_trend_scout              = file("${path.module}/services/hermes/skills/finance/trend-scout/SKILL.md")

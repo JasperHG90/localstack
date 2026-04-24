@@ -49,6 +49,8 @@ send_cron '/cron add "0 10,14,18 * * 1-5" "STOP PRESSURE CHECK — NOT a full br
 
 send_cron '/cron add "0 7 * * 2,5" "Weekly opportunity scan. Phase 0 (load exposure), Phase 1 (broad scan), Phase 2 (filter), Phase 3 (score via market-analyst), Phase 4 (compose digest), Phase 5 (persist). Only surface BUY or STRONG_BUY." --skill trend-scout --deliver '"$TELEGRAM"' --name "trend-scout-weekly"'
 
+send_cron '/cron add "0 0 * * *" "Run the daily-reflect skill for today. Persistence is mandatory." --skill daily-reflect --deliver '"$TELEGRAM"' --name "Daily reflect"'
+
 echo "hermes: cron registration complete"
 echo ""
 echo "Verify with: send '/cron list' via the dashboard or Telegram"

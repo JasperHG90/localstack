@@ -58,6 +58,7 @@ job "hermes" {
           "local/skills/devops/post-mortem/SKILL.md:/tmp/hermes/skills/devops/post-mortem/SKILL.md",
           "local/skills/knowledge/sorting-hat/SKILL.md:/tmp/hermes/skills/knowledge/sorting-hat/SKILL.md",
           "local/skills/knowledge/insight-linker/SKILL.md:/tmp/hermes/skills/knowledge/insight-linker/SKILL.md",
+          "local/skills/knowledge/daily-reflect/SKILL.md:/tmp/hermes/skills/knowledge/daily-reflect/SKILL.md",
           "local/skills/finance/trader-advisor/SKILL.md:/tmp/hermes/skills/finance/trader-advisor/SKILL.md",
           "local/skills/finance/market-analyst/SKILL.md:/tmp/hermes/skills/finance/market-analyst/SKILL.md",
           "local/skills/finance/trend-scout/SKILL.md:/tmp/hermes/skills/finance/trend-scout/SKILL.md",
@@ -320,6 +321,13 @@ EOT
 ${skill_insight_linker}
 EOT
         destination = "local/skills/knowledge/insight-linker/SKILL.md"
+      }
+
+      template {
+        data        = <<-EOT
+${skill_daily_reflect}
+EOT
+        destination = "local/skills/knowledge/daily-reflect/SKILL.md"
       }
 
       template {
