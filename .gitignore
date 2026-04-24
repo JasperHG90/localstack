@@ -5,6 +5,8 @@ tmp
 .ssh
 .graveyard
 .claude/settings.local.json
+**/.claude/settings.local.json
+**/.claude/scheduled_tasks.lock
 
 # Keep prod.tfvars local — real values go in git-ignored files; ship .example copies.
 **/vars/prod.tfvars
