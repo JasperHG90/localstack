@@ -140,6 +140,7 @@ MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin",
 MEMEX_SERVER__TRACING__ENABLED=true
 MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8
+MEMEX_SERVER__DEFAULT_MODEL__MODEL=gemini/gemini-3-flash-lite-preview
 {{ with secret "${memex_gemini_secret}" }}
 GOOGLE_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
 {{ end }}
