@@ -102,7 +102,9 @@ resource "nomad_job" "hermes" {
       email_secret                   = "${var.secret_mount}/data/default/hermes/email"
       nomad_secret                   = "${var.secret_mount}/data/default/hermes/nomad"
       api_server_secret              = vault_kv_secret_v2.hermes_api_server.path
-      telegram_allowed_users         = "<REDACTED_TELEGRAM_USER_ID>"
+      telegram_allowed_users         = var.telegram_allowed_users
+      hermes_email_address           = var.hermes_email_address
+      hermes_digest_email            = var.hermes_digest_email
       soul_md                        = file("${path.module}/services/hermes/SOUL.md")
       skill_cluster_watchdog         = file("${path.module}/services/hermes/skills/devops/cluster-watchdog/SKILL.md")
       skill_post_mortem              = file("${path.module}/services/hermes/skills/devops/post-mortem/SKILL.md")

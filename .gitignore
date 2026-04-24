@@ -6,4 +6,7 @@ tmp
 .graveyard
 .claude/settings.local.json
 
+# Keep prod.tfvars local — real values go in git-ignored files; ship .example copies.
+**/vars/prod.tfvars
+
 .DS_Store

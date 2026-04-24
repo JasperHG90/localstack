@@ -1,0 +1,3 @@
+secret_mount      = "secret"
+gcp_project       = "your-gcp-project-id"
+gcs_backup_bucket = "your-cluster-backup-bucket"

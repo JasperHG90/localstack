@@ -1,0 +1,6 @@
+secret_mount = "secret"
+
+# Hermes bot identity
+hermes_email_address   = "you@example.com"
+hermes_digest_email    = "you@example.com"
+telegram_allowed_users = "0000000000"

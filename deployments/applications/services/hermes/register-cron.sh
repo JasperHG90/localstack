@@ -14,7 +14,9 @@
 set -e
 
 GATEWAY="http://127.0.0.1:8642"
-TELEGRAM="telegram:<REDACTED_TELEGRAM_USER_ID>"
+: "${TELEGRAM_HOME_CHANNEL:?TELEGRAM_HOME_CHANNEL must be set}"
+: "${DIGEST_EMAIL:?DIGEST_EMAIL must be set}"
+TELEGRAM="telegram:${TELEGRAM_HOME_CHANNEL}"
 
 send_cron() {
   local cmd="$1"
@@ -37,7 +39,7 @@ send_cron '/cron add "0 8 * * *" "Scrape all target engineering blogs for new ar
 
 send_cron '/cron add "*/30 * * * *" "Check the inbox vault for unrouted notes. Route each to the appropriate vault based on its metadata, tags, and author." --skill sorting-hat --name "sorting-hat-periodic"'
 
-send_cron '/cron add "0 8 * * 1" "Send a weekly digest email of changed Memex notes to <REDACTED_EMAIL>. Search for notes modified in the past 7 days. Group by vault. Include title and one-line description per note. Subject: Memex Weekly Digest." --deliver email:<REDACTED_EMAIL> --name "weekly-digest"'
+send_cron '/cron add "0 8 * * 1" "Send a weekly digest email of changed Memex notes to ${DIGEST_EMAIL}. Search for notes modified in the past 7 days. Group by vault. Include title and one-line description per note. Subject: Memex Weekly Digest." --deliver email:${DIGEST_EMAIL} --name "weekly-digest"'
 
 send_cron '/cron add "0 10 * * *" "Search Memex for recent insights (last 48 hours) and open GitHub issues or PRs for applicable improvements to target repositories." --skill insight-linker --name "insight-linker-daily"'
 

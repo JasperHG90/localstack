@@ -145,7 +145,7 @@ TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 TELEGRAM_ALLOWED_USERS=${telegram_allowed_users}
 TELEGRAM_HOME_CHANNEL=${telegram_allowed_users}
 {{- with secret "${email_secret}" }}
-EMAIL_ADDRESS=<REDACTED_EMAIL>
+EMAIL_ADDRESS=${hermes_email_address}
 EMAIL_PASSWORD={{ .Data.data.EMAIL_PASSWORD }}
 EMAIL_IMAP_HOST=imap.gmail.com
 EMAIL_SMTP_HOST=smtp.gmail.com
@@ -476,9 +476,10 @@ EOF
         CONSUL_ADDR            = "http://192.168.2.30:8500"
         TELEGRAM_ALLOWED_USERS = "${telegram_allowed_users}"
         TELEGRAM_HOME_CHANNEL  = "${telegram_allowed_users}"
-        EMAIL_ADDRESS          = "<REDACTED_EMAIL>"
+        EMAIL_ADDRESS          = "${hermes_email_address}"
         EMAIL_IMAP_HOST        = "imap.gmail.com"
         EMAIL_SMTP_HOST        = "smtp.gmail.com"
+        DIGEST_EMAIL           = "${hermes_digest_email}"
         OLLAMA_BASE_URL        = "https://ollama.com/v1"
         API_SERVER_ENABLED     = "true"
         API_SERVER_HOST        = "0.0.0.0"
