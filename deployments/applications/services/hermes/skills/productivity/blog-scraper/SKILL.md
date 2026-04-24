@@ -1,7 +1,7 @@
 ---
 name: blog-scraper
 description: Daily engineering blog scraper — visits top AI/eng blogs, extracts new articles verbatim, stores in Memex
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [productivity, scraping, engineering, blogs, memex]
@@ -14,7 +14,7 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 ## Configuration
 
 - KV namespace: `app:hermes:blog-scraper:*`
-- Memex API: `$MEMEX_SERVER_URL/api/v1`, auth `-H "X-API-Key: $MEMEX_API_KEY"`
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
 
 ## Critical Rules
 
@@ -33,9 +33,11 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 ### Phase 1: Load State
 
 For each blog, check previously scraped URLs:
+
 ```
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:blog-scraper:scraped:{site_key}"
+memex_kv_get(key="app:hermes:blog-scraper:scraped:{site_key}")
 ```
+
 Site keys: `anthropic`, `openai`, `spotify`, `deepmind`. Value is JSON array of URLs. Missing key = first run.
 
 ### Phase 2: Scrape Each Blog
@@ -63,43 +65,50 @@ If failed: skip article, report to subagent with `/post-mortem` skill.
 For successfully captured articles:
 1. Parse for meaningful images (diagrams, charts, code screenshots)
 2. Download via terminal: `curl -sL -A "Mozilla/5.0" -o /tmp/{uuid}.png {image_url}`
-3. After creating the Memex note, attach images
+3. After creating the Memex note, attach images via `memex_add_assets(note_id=$NOTE_ID, ...)`
 
 If image download fails, continue — save article text anyway.
 
 ### Phase 3: Save to Memex
 
-For each new article (content must be base64-encoded):
+For each new article:
+
 ```
-CONTENT=$(echo -n "{full verbatim article as markdown}" | base64)
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/ingestions?background=true" \
-  -d "{
-    \"name\": \"{actual article title from page}\",
-    \"author\": \"blog-scraper\",
-    \"description\": \"{first sentence of article}\",
-    \"tags\": [\"blog-scraper\", \"engineering\", \"{source}\"],
-    \"content\": \"$CONTENT\",
-    \"vault_id\": \"inbox\",
-    \"note_key\": \"blog-scraper:article:{url_slug}\"
-  }"
+memex_retain(
+  title="{actual article title from page}",
+  author="blog-scraper",
+  description="{first sentence of article}",
+  tags=["blog-scraper", "engineering", "{source}"],
+  markdown_content=$FULL_VERBATIM_ARTICLE_MARKDOWN,
+  vault_id="inbox",
+  note_key="blog-scraper:article:{url_slug}",
+  background=True
+)
 ```
 
-Note key ensures idempotency. Body must include: source URL, author, date, complete article.
+Capture the returned note id into `NOTE_ID` so downstream steps (asset attach) can reference it.
+
+`markdown_content` is raw markdown (no base64 encoding). The `note_key` ensures idempotency. The body must include: source URL, author, date, complete article.
 
 ### Phase 4: Update State
 
 Update KV for each blog:
+
 ```
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key":"app:hermes:blog-scraper:scraped:{site_key}","value":"{updated JSON array}"}'
+memex_kv_write(
+  key="app:hermes:blog-scraper:scraped:{site_key}",
+  value="{updated JSON array}"
+)
 ```
+
 Only keep URLs from last 3 days. Remove older entries.
 
 Also write:
-- `app:hermes:blog-scraper:last_run` → ISO timestamp
-- `app:hermes:blog-scraper:last_count` → new articles found
+
+```
+memex_kv_write(key="app:hermes:blog-scraper:last_run", value="{ISO-timestamp}")
+memex_kv_write(key="app:hermes:blog-scraper:last_count", value="{new articles found}")
+```
 
 ## Error Handling
 

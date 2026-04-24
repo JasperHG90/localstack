@@ -1,7 +1,7 @@
 ---
 name: trader-advisor
 description: Advisory investing partner — catalyst-recognition framework, session protocols, daily pre-market briefing via Telegram. DEGIRO only. Never places orders.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [finance, trading, degiro, briefing, investing]
@@ -26,7 +26,7 @@ When asked to produce pre-market briefings, manage position state, analyse inves
 - Verbose research: enabled
 - KV namespace: `app:hermes:trader-advisor:*`
 - MASTER key: `app:hermes:trader-advisor:master`
-- Memex API: `$MEMEX_SERVER_URL/api/v1`, auth `-H "X-API-Key: $MEMEX_API_KEY"`
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl for Memex calls.
 - Price data: Yahoo Finance API via terminal curl
 
 ## Style
@@ -61,21 +61,20 @@ If Monday–Friday, proceed:
 
 1. Read MASTER state via Memex KV:
    ```
-   curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:trader-advisor:master"
+   memex_kv_get(key="app:hermes:trader-advisor:master")
    ```
    This markdown string contains the full position table, cash, open questions.
 
-2. Read all KV state:
+2. Read all KV state for this skill:
    ```
-   curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv?key_prefix=app:hermes:trader-advisor:"
+   memex_kv_list(prefix="app:hermes:trader-advisor:")
    ```
 
-3. Search recent session logs in Memex (response is NDJSON — pipe through `jq -s`):
+3. Search recent session logs in Memex:
    ```
-   curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-     "$MEMEX_SERVER_URL/api/v1/notes/search" \
-     -d '{"query":"trader-advisor session-log trading briefing","limit":5}' | jq -s '.'
+   memex_retrieve_notes(query="trader-advisor session-log trading briefing", limit=5)
    ```
+   (Fall back to `memex_note_search(query=..., limit=5)` if `memex_retrieve_notes` is unavailable.)
 
 4. Memory sync: if KV metrics conflict with MASTER, correct KV. Note corrections.
 
@@ -125,12 +124,12 @@ Include composite score and verdict in ANALYSIS section. Surface conflicts promi
 
 **Step 2d — Paper trading (if enabled):**
 
-Read paper state from KV key `app:hermes:trader-advisor:paper_portfolio` (JSON).
+Read paper state from KV key `app:hermes:trader-advisor:paper_portfolio` (JSON) via `memex_kv_get`.
 - Simulate fills: check pending orders against current prices
 - Simulate exits: check stops, targets, trailing ratchets
-- Log trades to `app:hermes:trader-advisor:paper_journal`
+- Log trades to `app:hermes:trader-advisor:paper_journal` via `memex_kv_write`
 - Compute metrics: portfolio value, P&L, win rate, trade count
-- Write updated state back to KV
+- Write updated state back via `memex_kv_write`
 
 **Step 3 — Compose and deliver briefing:**
 
@@ -154,10 +153,10 @@ Send via Telegram. Split at 4096 chars if needed.
 ### Phase 2 — Interactive Mode
 
 When investor replies via Telegram:
-1. Re-read MASTER before offering position-specific advice
+1. Re-read MASTER (`memex_kv_get(key="app:hermes:trader-advisor:master")`) before offering position-specific advice
 2. Check proposals against CORE TRADING RULES. Call out violations.
 3. Produce BRIEF tickets as appropriate
-4. Mid-session MASTER updates: when investor confirms state change, update KV immediately
+4. Mid-session MASTER updates: when investor confirms state change, update KV immediately via `memex_kv_write(key="app:hermes:trader-advisor:master", value=<new_master>)`.
 
 **Position sizing for new entries:**
 ```
@@ -169,7 +168,7 @@ Warn if cost > cash or weight > 20%.
 
 ### Phase 3 — Persist Dashboard Metrics
 
-After briefing or session close, write to KV:
+After briefing or session close, write to KV (each via `memex_kv_write(key=..., value=...)`):
 - `app:hermes:trader-advisor:last_briefing_ts`
 - `app:hermes:trader-advisor:portfolio_value_eur`
 - `app:hermes:trader-advisor:cash_eur_total`
@@ -181,8 +180,19 @@ After briefing or session close, write to KV:
 
 When investor says "wrap up" or "end session":
 1. Produce session close summary with all tagged items
-2. Write session log to Memex (vault: `trading`, tags: `trader-advisor`, `session-log`)
-3. Overwrite MASTER key with current verified state
+2. Write session log to Memex via:
+   ```
+   memex_retain(
+     title="Trader-Advisor Session — <DD Month YYYY>",
+     author="trader-advisor",
+     description="Session log covering briefing, decisions, open questions.",
+     tags=["trader-advisor", "session-log", "trading"],
+     markdown_content=<session_markdown>,
+     vault_id="trading",
+     background=True
+   )
+   ```
+3. Overwrite MASTER key with current verified state via `memex_kv_write(key="app:hermes:trader-advisor:master", value=<new_master>)`.
 4. Confirm: "Session log written. MASTER state updated."
 
 ## Investment Framework
@@ -222,7 +232,7 @@ DEGIRO has no native trailing stops. Manual implementation:
 - KV unreachable: abort, alert via Telegram
 - MASTER missing: briefing without position-specific advice, flag OPEN Q
 - Price/news fetch fails: note in briefing, continue
-- Telegram fails: persist briefing as Memex note
+- Telegram fails: persist briefing as Memex note via `memex_retain` (vault `trading`, tags include `trader-advisor`, `telegram-failed`)
 - Structural failure: delegate to subagent with `/post-mortem` skill
 
 ## Pitfalls

@@ -1,7 +1,7 @@
 ---
 name: cluster-watchdog
 description: Monitors the Nomad cluster, triages issues, sends daily health reports via Telegram
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [devops, monitoring, nomad, consul, cluster]
@@ -19,7 +19,7 @@ When asked to check cluster health, when running scheduled watchdog reports, or 
 - Report style: `detailed` (full breakdown) or `short` (critical/warning only)
 - Failure lookback: 24 hours
 - Resource usage: enabled
-- Memex API: `$MEMEX_SERVER_URL/api/v1`, auth `-H "X-API-Key: $MEMEX_API_KEY"`
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
 
 ## Procedure
 
@@ -27,20 +27,18 @@ When asked to check cluster health, when running scheduled watchdog reports, or 
 
 1. Check last-run timestamp via Memex KV:
    ```
-   curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:cluster-watchdog:last_run"
+   memex_kv_get(key="app:hermes:cluster-watchdog:last_run")
    ```
-   If found, use it to scope "recent" failures. If 404 (first run), use 24h lookback.
+   If found, use it to scope "recent" failures. If missing (first run), use 24h lookback.
 
 2. List tracked issues:
    ```
-   curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv?key_prefix=app:hermes:cluster-watchdog:issue:"
+   memex_kv_list(prefix="app:hermes:cluster-watchdog:issue:")
    ```
 
 3. Search past reports in Memex:
    ```
-   curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-     "$MEMEX_SERVER_URL/api/v1/notes/search" \
-     -d '{"query":"cluster health report","tags":["cluster-watchdog","daily-report"],"limit":5}'
+   memex_retrieve_notes(query="cluster health report", tags=["cluster-watchdog", "daily-report"], limit=5)
    ```
 
 ### Phase 1: Node Discovery
@@ -85,21 +83,25 @@ When asked to check cluster health, when running scheduled watchdog reports, or 
 
 ### Phase 6: Persist State & Findings
 
-**Always**: Update run state in Memex KV (note: KV write uses PUT):
+**Always**: Update run state in Memex KV:
 ```
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key":"app:hermes:cluster-watchdog:last_run","value":"<ISO timestamp>"}'
+memex_kv_write(key="app:hermes:cluster-watchdog:last_run", value="<ISO timestamp>")
 ```
-Also update: `status`, `nodes_healthy`, `nodes_total`, `jobs_running`, `jobs_total`.
+Also update: `status`, `nodes_healthy`, `nodes_total`, `jobs_running`, `jobs_total` as separate KV entries under `app:hermes:cluster-watchdog:`.
 
-**Only if CRITICAL/WARNING**: Save findings to Memex notes (content must be base64-encoded):
+**Only if CRITICAL/WARNING**: Save findings to Memex via the native plugin tool:
 ```
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/ingestions?background=true" \
-  -d '{"name":"[SEVERITY] description — date","author":"hermes-watchdog","description":"...","tags":["cluster-watchdog","triage","severity"],"content":"<base64-encoded markdown>","vault_id":"inbox"}'
+memex_retain(
+  title="[SEVERITY] description — date",
+  author="hermes-watchdog",
+  description="...",
+  tags=["cluster-watchdog", "triage", "<severity>"],
+  markdown_content=<raw markdown body>,
+  vault_id="inbox",
+  background=True
+)
 ```
-Encode content: `echo -n "markdown text" | base64`
+`markdown_content` takes the raw markdown body — no base64 encoding.
 
 Track issues in KV: `app:hermes:cluster-watchdog:issue:{name}` → description + date.
 

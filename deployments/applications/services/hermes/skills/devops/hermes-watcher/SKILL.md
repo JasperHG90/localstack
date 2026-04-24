@@ -1,7 +1,7 @@
 ---
 name: hermes-watcher
 description: Monitors Hermes gateway logs for errors and failures, writes structured post-mortems to Memex for later triage
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [devops, monitoring, self-healing, hermes]
@@ -10,6 +10,10 @@ metadata:
 ## When to Use
 
 Scheduled every 30 minutes to scan gateway logs for errors. Also invoke manually when investigating Hermes operational issues.
+
+## Configuration
+
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
 
 ## Procedure
 
@@ -50,26 +54,50 @@ Scan logs for these patterns:
 
 For each issue found:
 1. Generate a slug from the error type and message
-2. Check Memex KV for prior occurrence: GET /kv/get?key=app:hermes:hermes-watcher:issue:{slug}
+2. Check Memex KV for prior occurrence:
+   ```
+   memex_kv_get(key="app:hermes:hermes-watcher:issue:{slug}")
+   ```
 3. If seen in the last 6 hours, skip (already reported)
 4. If new or recurred after resolution, proceed to Phase 4
 
 ### Phase 4: Write Post-Mortem
 
-For each new issue, write a structured note to Memex:
-- vault: inbox (sorting-hat will route it)
-- author: hermes-watcher
-- tags: hermes-watcher, post-mortem, {severity}, {category}
-- note_key: hermes-watcher:issue:{slug}
-- Content: what happened, log excerpt, probable cause, suggested fix
+For each new issue, write a structured note to Memex via the native plugin tool:
 
-Also update KV tracker: PUT /kv with key app:hermes:hermes-watcher:issue:{slug} and value containing timestamp + description. Set ttl_seconds to 21600 (6 hours).
+```
+memex_retain(
+  title="<short issue title>",
+  author="hermes-watcher",
+  description="<one-sentence summary>",
+  tags=["hermes-watcher", "post-mortem", "<severity>", "<category>"],
+  markdown_content=<raw markdown: what happened, log excerpt, probable cause, suggested fix>,
+  vault_id="inbox",
+  note_key="hermes-watcher:issue:{slug}",
+  background=True
+)
+```
+
+`markdown_content` takes the raw markdown body — no base64 encoding. `sorting-hat` will route the note from `inbox`.
+
+Also update the KV tracker with a 6-hour TTL so the same issue is deduplicated for that window:
+
+```
+memex_kv_write(
+  key="app:hermes:hermes-watcher:issue:{slug}",
+  value="<ISO timestamp + short description>",
+  ttl_seconds=21600
+)
+```
 
 ### Phase 5: Summary
 
 If any HIGH or CRITICAL issues were found, produce a brief summary. Otherwise respond with [SILENT].
 
-Update KV: app:hermes:hermes-watcher:last_run with current timestamp.
+Update the last-run timestamp:
+```
+memex_kv_write(key="app:hermes:hermes-watcher:last_run", value="<ISO timestamp now>")
+```
 
 ## Pitfalls
 

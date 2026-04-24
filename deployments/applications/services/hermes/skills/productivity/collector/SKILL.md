@@ -1,7 +1,7 @@
 ---
 name: collector
 description: Autonomous intelligence monitor -- continuous web monitoring, change detection, knowledge graph updates, and event alerts
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [productivity, intelligence, monitoring, alerts]
@@ -20,6 +20,7 @@ Activate on a schedule to track targets (companies, sectors, instruments, people
 - **alert_on_changes**: Send a Telegram alert when significant changes are detected. Default: `true`.
 - **max_sources_per_cycle**: How many sources to process each collection sweep (10, 30, 50, or 100). Default: `30`.
 - **track_sentiment**: Analyse sentiment trends over time. Default: `true`.
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
 
 ## Procedure
 
@@ -27,36 +28,25 @@ Activate on a schedule to track targets (companies, sectors, instruments, people
 
 Use Memex for state and persistence (namespace: `app:hermes:collector:*`):
 
-```bash
-# Read state
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:collector:{key}"
-
-# Write state
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:{key}", "value": "..."}'
-
-# Search existing knowledge
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/notes/search" \
-  -d '{"query": "..."}'
-
-# Entity exploration
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/entities?q={topic}"
+```
+memex_kv_get(key="app:hermes:collector:{key}")
+memex_kv_write(key="app:hermes:collector:{key}", value="...")
+memex_retrieve_notes(query="...")   # search existing knowledge
+memex_list_entities(query="{topic}") # entity exploration
 ```
 
 ### Phase 0: Load State
 
 1. Get last run timestamp:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:collector:last_run"
+```
+memex_kv_get(key="app:hermes:collector:last_run")
 ```
 
 2. Get previous known state snapshot:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:collector:known_state"
+```
+memex_kv_get(key="app:hermes:collector:known_state")
 ```
 
 3. Read `target_subject` and `focus_area` from configuration.
@@ -100,36 +90,30 @@ Score each change:
 
 1. Update `known_state` in KV with the latest facts:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:known_state", "value": "{...updated facts...}"}'
+```
+memex_kv_write(key="app:hermes:collector:known_state", value="{...updated facts...}")
 ```
 
 2. Save a collection report to Memex:
 
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/ingestions?background=true" \
-  -d '{
-    "name": "Collector Report: {target_subject} - {date}",
-    "content": "<base64-encoded markdown>",
-    "tags": ["collector", "intelligence", "{target_subject}"],
-    "vault_id": "inbox",
-    "description": "...",
-    "author": "collector"
-  }'
+```
+memex_retain(
+  title="Collector Report: {target_subject} - {date}",
+  author="collector",
+  description="...",
+  tags=["collector", "intelligence", "{target_subject}"],
+  markdown_content=$REPORT_MARKDOWN,
+  vault_id="inbox",
+  background=True
+)
 ```
 
-> **Note:** The `content` field must be base64-encoded: `echo -n "markdown content" | base64`
-```
+Capture the returned note id into `NOTE_ID` if you need it later.
 
 3. Update last run:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:last_run", "value": "{ISO-timestamp}"}'
+```
+memex_kv_write(key="app:hermes:collector:last_run", value="{ISO-timestamp}")
 ```
 
 4. If `alert_on_changes` is enabled AND any CRITICAL or IMPORTANT changes were detected, send via Telegram with the format:
@@ -142,22 +126,11 @@ If no significant changes, do nothing (no Telegram spam on quiet days).
 
 Update KV counters:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:data_points", "value": "{total}"}'
-
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:entities_tracked", "value": "{count}"}'
-
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:reports_generated", "value": "{count}"}'
-
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:collector:last_update", "value": "{ISO-timestamp}"}'
+```
+memex_kv_write(key="app:hermes:collector:data_points", value="{total}")
+memex_kv_write(key="app:hermes:collector:entities_tracked", value="{count}")
+memex_kv_write(key="app:hermes:collector:reports_generated", value="{count}")
+memex_kv_write(key="app:hermes:collector:last_update", value="{ISO-timestamp}")
 ```
 
 ### Guidelines

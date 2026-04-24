@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Autonomous deep researcher -- exhaustive investigation, cross-referencing, fact-checking, and structured reports
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [productivity, research, fact-checking, reports]
@@ -19,6 +19,7 @@ Activate when asked to investigate a topic, answer a complex question, or produc
 - **source_verification**: Cross-check claims across multiple sources before including. Default: `true`.
 - **max_sources**: Maximum number of sources to consult per investigation. Default: `30`.
 - **citation_style**: `inline_url`, `footnotes`, or `numbered`. Default: `inline_url`.
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
 
 ## Procedure
 
@@ -28,25 +29,24 @@ Use Memex for state and persistence -- not in-memory storage:
 
 - KV store for state (namespace: `app:hermes:researcher:*`):
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:researcher:{key}"
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:researcher:{key}", "value": "..."}'
+```
+memex_kv_get(key="app:hermes:researcher:{key}")
+memex_kv_write(key="app:hermes:researcher:{key}", value="...")
 ```
 
-- Note search to check existing knowledge before researching from scratch:
+- Note search to check existing knowledge before researching from scratch. Run both in parallel for best coverage:
 
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/notes/search" \
-  -d '{"query": "..."}'
+```
+memex_memory_search(query="...")   # individual facts/observations across notes
+memex_note_search(query="...")     # whole notes ranked by relevance
 ```
 
 - Entity exploration for knowledge graph:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/entities?q={topic}"
+```
+memex_list_entities(query="{topic}")
+memex_get_entity_cooccurrences(entity_id="...")
+memex_get_entity_mentions(entity_id="...")
 ```
 
 **Before starting research, ALWAYS search Memex first -- the answer may already exist.**
@@ -107,43 +107,30 @@ Format based on `output_style`. Always include:
 - Source list with quality ratings
 - Open questions / gaps identified
 
-Save report to Memex with tags `researcher`, `report`, plus topic tags. Use `vault = "inbox"` -- the sorting-hat will route it to the correct vault:
+Save report to Memex with tags `researcher`, `report`, plus topic tags. Use `vault_id="inbox"` -- the sorting-hat will route it to the correct vault:
 
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/ingestions?background=true" \
-  -d '{
-    "name": "Research Report: {topic}",
-    "content": "<base64-encoded markdown>",
-    "tags": ["researcher", "report", ...topic_tags],
-    "vault_id": "inbox",
-    "description": "...",
-    "author": "researcher"
-  }'
+```
+memex_retain(
+  title="Research Report: {topic}",
+  author="researcher",
+  description="...",
+  tags=["researcher", "report", ...topic_tags],
+  markdown_content=$REPORT_MARKDOWN,
+  vault_id="inbox",
+  background=True
+)
 ```
 
-> **Note:** The `content` field must be base64-encoded: `echo -n "markdown content" | base64`
-```
+Capture the returned note id into `NOTE_ID` for reference.
 
 ### Phase 7: Stats
 
-Update KV counters via the terminal tool:
+Update KV counters:
 
-```bash
-# Increment queries solved
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:researcher:queries_solved", "value": "..."}'
-
-# Update sources cited
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:researcher:sources_cited", "value": "..."}'
-
-# Increment reports generated
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:researcher:reports_generated", "value": "..."}'
+```
+memex_kv_write(key="app:hermes:researcher:queries_solved", value="...")
+memex_kv_write(key="app:hermes:researcher:sources_cited", value="...")
+memex_kv_write(key="app:hermes:researcher:reports_generated", value="...")
 ```
 
 ### Guidelines

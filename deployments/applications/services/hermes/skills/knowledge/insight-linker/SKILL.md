@@ -1,7 +1,7 @@
 ---
 name: insight-linker
 description: Connects recent Memex insights to GitHub projects by opening issues or PRs with actionable suggestions
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [knowledge, github, insights, automation]
@@ -16,6 +16,7 @@ Activate on a schedule to scan recent Memex notes (blog posts, articles, researc
 
 - **github_user**: GitHub username for API access (default: `JasperHG90`)
 - **github_repos**: Comma-separated list of `owner/repo` pairs to suggest improvements for (default: `JasperHG90/skills`)
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl for Memex calls. (GitHub API access still uses `gh`/curl.)
 
 ## Procedure
 
@@ -25,8 +26,8 @@ For each repo in the `github_repos` list:
 
 1. Check KV for cached repo context:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:insight-linker:repo:{owner}/{repo}:context"
+```
+memex_kv_get(key="app:hermes:insight-linker:repo:<owner>/<repo>:context")
 ```
 
 2. If cached and less than 7 days old, use the cached description. Otherwise, use `gh` CLI or GitHub API to get:
@@ -35,10 +36,11 @@ curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:
    - Summarize the repo's purpose, tech stack, and areas where improvements could apply.
    - Cache in KV:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:insight-linker:repo:{owner}/{repo}:context", "value": "{summary + ISO timestamp}"}'
+```
+memex_kv_write(
+  key="app:hermes:insight-linker:repo:<owner>/<repo>:context",
+  value="<summary + ISO timestamp>"
+)
 ```
 
 Build a mental map of what each project does and what kind of insights would be relevant.
@@ -47,23 +49,26 @@ Build a mental map of what each project does and what kind of insights would be 
 
 1. Get the last run timestamp:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:insight-linker:last_run"
+```
+memex_kv_get(key="app:hermes:insight-linker:last_run")
 ```
 
 2. Search for recent notes since last run (or last 3 days on first run):
 
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/notes/search" \
-  -d '{"query": "engineering techniques tools patterns best practices", "after": "{lookback_date}"}'
 ```
+memex_retrieve_notes(
+  query="engineering techniques tools patterns best practices",
+  after="<lookback_date>"
+)
+```
+
+(If `memex_retrieve_notes` is not present in the current plugin build, fall back to `memex_note_search(query=..., after=...)`.)
 
 3. Deduplicate by note ID.
 4. Check which notes have already been processed:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv?key_prefix=app:hermes:insight-linker:processed:"
+```
+memex_kv_list(prefix="app:hermes:insight-linker:processed:")
 ```
 
 5. Filter out already-processed note IDs.
@@ -74,13 +79,11 @@ If no new notes remain, skip to Phase 5.
 
 For each unprocessed note:
 
-1. Read the note content. First get page indices, then read nodes:
+1. Read the note content. For small notes use `memex_read_note(note_id=<id>)` (only when total_tokens < 500). Otherwise get page indices first, then batch-fetch nodes:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/notes/{note_id}/page-index"
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/nodes/batch" \
-  -d '{"node_ids": ["{node_id_1}", "{node_id_2}"]}'
+```
+memex_get_page_indices(note_ids=["<note_id>"])
+memex_get_nodes(node_ids=["<node_id_1>", "<node_id_2>"])
 ```
 
 2. Extract actionable insights. An insight is actionable if it describes:
@@ -147,24 +150,20 @@ Only create a PR when the change is:
 
 1. For each processed note:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:insight-linker:processed:{note_id}", "value": "{action}:{ISO-timestamp}"}'
+```
+memex_kv_write(
+  key="app:hermes:insight-linker:processed:<note_id>",
+  value="<action>:<ISO-timestamp>"
+)
 ```
 
 Where `action` is `issue`, `pr`, or `skipped`.
 
 2. Update last run and issue count:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:insight-linker:last_run", "value": "{ISO-timestamp}"}'
-
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:insight-linker:last_issues", "value": "{count}"}'
+```
+memex_kv_write(key="app:hermes:insight-linker:last_run", value="<ISO-timestamp>")
+memex_kv_write(key="app:hermes:insight-linker:last_issues", value="<count>")
 ```
 
 ### Quality Guidelines

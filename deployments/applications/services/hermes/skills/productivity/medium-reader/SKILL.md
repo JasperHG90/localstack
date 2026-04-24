@@ -1,7 +1,7 @@
 ---
 name: medium-reader
 description: Receives Medium digest emails, filters clickbait, and captures worthy articles verbatim to Memex inbox via archive sources
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [productivity, medium, curation, articles, memex]
@@ -11,6 +11,11 @@ metadata:
 ## When to Use
 
 Activate when you receive a Medium digest email containing article links and summaries. The skill evaluates each article, filters out clickbait, and captures worthy articles **verbatim** to the Memex inbox vault.
+
+## Configuration
+
+- KV namespace: `app:hermes:medium-reader:*`
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
 
 ## Procedure
 
@@ -61,8 +66,8 @@ For each article that passes the filter:
 
 2. Check if already captured:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:medium-reader:article:{url_slug}"
+```
+memex_kv_get(key="app:hermes:medium-reader:article:{url_slug}")
 ```
 
 If it exists, skip this article.
@@ -104,33 +109,33 @@ If image download fails, continue -- save the article text anyway. Missing asset
 
 Create the note:
 
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/ingestions?background=true" \
-  -d '{
-    "name": "{extracted article title, verbatim from the page}",
-    "content": "<base64-encoded markdown>",
-    "tags": ["medium-reader", "medium", "{publication-slug}"],
-    "vault_id": "inbox",
-    "description": "One-sentence summary of the article",
-    "note_key": "medium-reader:article:{url_slug}",
-    "author": "medium-reader"
-  }'
+```
+memex_retain(
+  title="{extracted article title, verbatim from the page}",
+  author="medium-reader",
+  description="One-sentence summary of the article",
+  tags=["medium-reader", "medium", "{publication-slug}"],
+  markdown_content=$FULL_VERBATIM_MARKDOWN,
+  vault_id="inbox",
+  note_key="medium-reader:article:{url_slug}",
+  background=True
+)
 ```
 
-> **Note:** The `content` field must be base64-encoded: `echo -n "{full verbatim markdown with source URL, author, date, and complete body text}" | base64`
-```
+Capture the returned note id into `NOTE_ID`. The `markdown_content` must include the source URL, author, date, and complete body text as raw markdown (no base64 encoding).
 
-The `key` field MUST match the idempotency key generated in Step 3. This is mandatory for deduplication.
+The `note_key` MUST match the idempotency key generated in Step 3. This is mandatory for deduplication.
 
-After creating the note, attach any downloaded assets from Step 4b.
+After creating the note, attach any downloaded assets from Step 4b via `memex_add_assets(note_id=$NOTE_ID, ...)`.
 
 Mark as processed:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:medium-reader:article:{url_slug}", "value": "captured:{ISO-timestamp}", "ttl_seconds": 259200}'
+```
+memex_kv_write(
+  key="app:hermes:medium-reader:article:{url_slug}",
+  value="captured:{ISO-timestamp}",
+  ttl_seconds=259200
+)
 ```
 
 ### Step 5: Summary

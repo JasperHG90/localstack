@@ -1,7 +1,7 @@
 ---
 name: trend-scout
 description: Proactive opportunity scanner. Discovers investment themes, sector rotations, and catalyst-driven opportunities. Weekly digest via Telegram.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [finance, scanning, opportunities, themes, investing]
@@ -14,7 +14,7 @@ When running scheduled weekly opportunity scans, or when asked to find new inves
 ## Configuration
 
 - KV namespace: `app:hermes:trend-scout:*`
-- Memex API: `$MEMEX_SERVER_URL/api/v1`, auth `-H "X-API-Key: $MEMEX_API_KEY"`
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl for Memex calls.
 
 ## Procedure
 
@@ -22,16 +22,16 @@ When running scheduled weekly opportunity scans, or when asked to find new inves
 
 1. Read current exposure:
    ```
-   curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:trader-advisor:master"
+   memex_kv_get(key="app:hermes:trader-advisor:master")
    ```
    Note which instruments, sectors, themes are already held.
 
 2. Read tactical watchlist:
    ```
-   curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:trader-advisor:tactical_watchlist"
+   memex_kv_get(key="app:hermes:trader-advisor:tactical_watchlist")
    ```
 
-3. Read own state (`last_run`, `last_themes`, `last_opportunities`) to avoid repeating ideas.
+3. Read own state (`last_run`, `last_themes`, `last_opportunities`) via `memex_kv_list(prefix="app:hermes:trend-scout:")` or individual `memex_kv_get` calls — to avoid repeating ideas.
 
 ### Phase 1 — Broad Scan
 
@@ -107,7 +107,7 @@ Send via Telegram. Split at 4096 chars if needed.
 
 ### Phase 5 — Persist State
 
-Write to Memex KV:
+Write to Memex KV via `memex_kv_write(key=..., value=...)`:
 - `app:hermes:trend-scout:last_run` → ISO timestamp
 - `app:hermes:trend-scout:last_themes` → themes scanned
 - `app:hermes:trend-scout:last_opportunities` → tickers surfaced
@@ -124,7 +124,7 @@ Write to Memex KV:
 
 - web_search fails: skip category, note in digest
 - market-analyst unavailable: present filtered without scores
-- Telegram fails: persist as Memex note (vault: `trading`, tags: `trend-scout`, `digest`, `telegram-failed`)
+- Telegram fails: persist as Memex note via `memex_retain(title=..., author="trend-scout", tags=["trend-scout","digest","telegram-failed"], markdown_content=<digest>, vault_id="trading", background=True)`
 - MASTER missing: scan without overlap filtering, note caveat
 
 ## Pitfalls

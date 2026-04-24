@@ -1,7 +1,7 @@
 ---
 name: sorting-hat
 description: Routes notes from the Memex inbox vault to appropriate destination vaults based on metadata
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [knowledge, routing, memex, inbox]
@@ -12,16 +12,16 @@ metadata:
 
 Activate on a schedule to scan the `inbox` vault and route notes to their correct destination vaults. Every note that lands in inbox is a candidate for sorting.
 
+## Configuration
+
+- KV namespace: `app:hermes:sorting-hat:*`
+- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
+
 ## Procedure
 
 ### Phase 0: Discover Vaults
 
-1. List all available vaults:
-
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/vaults"
-```
-
+1. List all available vaults via `memex_list_vaults()`.
 2. For each vault, note its name and description. These descriptions define what kind of content belongs in each vault.
 3. The `inbox` vault is NEVER a valid destination -- it is the source you are sorting FROM.
 4. If the only non-inbox vault is `global`, route everything there.
@@ -30,28 +30,26 @@ curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/vaults"
 
 1. Get the last run timestamp:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv/get?key=app:hermes:sorting-hat:last_run"
+```
+memex_kv_get(key="app:hermes:sorting-hat:last_run")
 ```
 
 If not found, this is the first run (use last 24 hours as the lookback window).
 
 2. List already-routed note IDs:
 
-```bash
-curl -s -H "X-API-Key: $MEMEX_API_KEY" "$MEMEX_SERVER_URL/api/v1/kv?key_prefix=app:hermes:sorting-hat:routed:"
+```
+memex_kv_list(prefix="app:hermes:sorting-hat:routed:")
 ```
 
 Collect these into a set for filtering.
 
 ### Phase 2: Scan Inbox
 
-1. Search for notes in the inbox vault. If `last_run` exists, use it as the `after` parameter. Otherwise, use the last 24 hours.
+1. List notes in the inbox vault. If `last_run` exists, use it as the `since` parameter. Otherwise, use the last 24 hours.
 
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/notes/search" \
-  -d '{"query": "*", "vault_ids": ["inbox"], "after": "..."}'
+```
+memex_list_notes(vault_ids=["inbox"], since=<last_run_or_24h_ago>)
 ```
 
 2. Filter out any note IDs that appear in the routed set from Phase 1.
@@ -61,7 +59,7 @@ curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/jso
 
 For each unprocessed note:
 
-1. Get note metadata (title, tags, author, description) using the note ID from search results.
+1. Get note metadata (title, tags, author, description) using `memex_get_notes_metadata(note_ids=[<note_id>])`.
 
 2. **Determine the target vault.** First, check the Routing Hints table below. If any rule matches, use that vault immediately. If no rule matches, use these fallback signals:
    - **Tags**: match tags against vault descriptions and purposes from Phase 0.
@@ -71,38 +69,34 @@ For each unprocessed note:
 
 3. **If no vault clearly fits, route to `global`.** Do not leave notes unrouted. Do not create new vaults.
 
-4. Migrate the note to the target vault:
-
-```bash
-curl -s -X POST -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/notes/{note_id}/migrate" \
-  -d '{"target_vault_id": "target-vault-name"}'
-```
+4. Migrate the note to the target vault via the `memex` CLI (the plugin does not expose a vault-migration tool; the CLI does). Shell out:
+   ```bash
+   memex note migrate <note_id> <target_vault> --force
+   ```
+   The CLI inherits `MEMEX_SERVER_URL` and `MEMEX_API_KEY` from the environment. `--force` skips the interactive confirmation prompt. If the migrate call fails, do NOT mark the note routed — it will be retried on the next run.
 
 5. Record the routing in KV (3-day TTL):
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:sorting-hat:routed:{note_id}", "value": "{target_vault}:{ISO-timestamp}", "ttl_seconds": 259200}'
+```
+memex_kv_write(
+  key="app:hermes:sorting-hat:routed:<note_id>",
+  value="<target_vault>:<ISO-timestamp>",
+  ttl_seconds=259200
+)
 ```
 
 ### Phase 4: Update State
 
 1. Write the current timestamp:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:sorting-hat:last_run", "value": "{ISO-timestamp}"}'
+```
+memex_kv_write(key="app:hermes:sorting-hat:last_run", value="<ISO-timestamp>")
 ```
 
 2. Write the count of notes routed this run:
 
-```bash
-curl -s -X PUT -H "X-API-Key: $MEMEX_API_KEY" -H "Content-Type: application/json" \
-  "$MEMEX_SERVER_URL/api/v1/kv" \
-  -d '{"key": "app:hermes:sorting-hat:last_count", "value": "{count}"}'
+```
+memex_kv_write(key="app:hermes:sorting-hat:last_count", value="<count>")
 ```
 
 ### Routing Hints
@@ -133,6 +127,10 @@ If no rule matches, fall back to matching tags and description against vault des
 - **Default to `global`.** When uncertain, `global` is the catch-all.
 - **Never route to `inbox`.** That would create a loop.
 - **One copy per note.** Do not route the same note to multiple vaults.
+
+### Note Lifecycle Helpers
+
+When a note needs a title correction before routing (e.g., generic "Untitled" names that would hurt downstream retrieval), use `memex_rename_note(note_id=..., new_title=...)`. When a note is obsolete or superseded and should be excluded from future routing passes, use `memex_set_note_status(note_id=..., status=...)` with the appropriate status value (e.g. `archived`).
 
 ### Error Handling
 
