@@ -7,9 +7,9 @@ USER hermes
 
 # Install Memex common, Hermes plugin, and CLI into the venv
 RUN uv pip install --no-deps --link-mode=copy --python /opt/hermes/.venv/bin/python \
-  "https://github.com/JasperHG90/memex/releases/download/v0.2.0/memex_common-0.2.0-py3-none-any.whl" \
-  "https://github.com/JasperHG90/memex/releases/download/v0.2.0/memex_hermes_plugin-0.2.0-py3-none-any.whl" \
-  "https://github.com/JasperHG90/memex/releases/download/v0.2.0/memex_cli-0.2.0-py3-none-any.whl"
+  "https://github.com/JasperHG90/memex/releases/download/v0.3.0/memex_common-0.3.0-py3-none-any.whl" \
+  "https://github.com/JasperHG90/memex/releases/download/v0.3.0/memex_hermes_plugin-0.3.0-py3-none-any.whl" \
+  "https://github.com/JasperHG90/memex/releases/download/v0.3.0/memex_cli-0.3.0-py3-none-any.whl"
 
 # Stage plugin files for prestart to copy into user plugins dir ($HERMES_HOME/plugins/memex/)
 RUN mkdir -p /opt/hermes/memex-plugin && \
