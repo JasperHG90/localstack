@@ -21,7 +21,7 @@ on:
       max_turns:
         description: Max tool-use turns before the action aborts.
         required: true
-        default: '15'
+        default: '25'
   pull_request:
     types: [opened]
   issues:
@@ -127,7 +127,7 @@ jobs:
           prompt: ${{ steps.build_prompt.outputs.value }}
           claude_args: |
             --model ${{ inputs.model || 'glm-5.1' }}
-            --max-turns ${{ inputs.max_turns || '15' }}
+            --max-turns ${{ inputs.max_turns || '25' }}
             --verbose
 
       - name: Upload execution log
