@@ -128,6 +128,7 @@ jobs:
           claude_args: |
             --model ${{ inputs.model || 'glm-5.1' }}
             --max-turns ${{ inputs.max_turns || '25' }}
+            --append-system-prompt "Stop the moment you post a review/comment via the gh CLI. Do not call any more tools to verify, re-read, or recheck. Posting once is the task; further tool calls are wasteful."
             --verbose
 
       - name: Upload execution log
