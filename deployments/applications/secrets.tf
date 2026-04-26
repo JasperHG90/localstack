@@ -37,6 +37,17 @@ resource "vault_kv_secret_v2" "memex_minio_credentials" {
   })
 }
 
+### Loki
+
+resource "vault_kv_secret_v2" "loki_minio_credentials" {
+  mount = var.secret_mount
+  name  = "default/loki/minio"
+  data_json = jsonencode({
+    access_key = minio_accesskey.users["loki"].access_key
+    secret_key = minio_accesskey.users["loki"].secret_key
+  })
+}
+
 resource "random_id" "memex_admin_key" {
   byte_length = 32
 }

@@ -14,6 +14,12 @@ locals {
       ],
       readers = []
     }
+    loki = {
+      writers = [
+        { "name" = "loki", generate_access_key = true }
+      ],
+      readers = []
+    }
   }
 
   all_minio_users = distinct(flatten([

@@ -79,6 +79,66 @@ resource "nomad_dynamic_host_volume" "hermes_data" {
   }
 }
 
+resource "nomad_dynamic_host_volume" "prometheus_data" {
+  name      = "prometheus_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "50 GiB"
+  capacity_min = "5 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "ubuntu"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
+resource "nomad_dynamic_host_volume" "grafana_data" {
+  name      = "grafana_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "5 GiB"
+  capacity_min = "1 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "ubuntu"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
+resource "nomad_dynamic_host_volume" "loki_data" {
+  name      = "loki_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "10 GiB"
+  capacity_min = "2 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "ubuntu"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 ### Firewall rules for services (applied via SSH)
 locals {
   firewall_rules = {
@@ -118,6 +178,56 @@ locals {
         "allow from 192.168.0.0/16 to any port 5000 proto tcp",
         "allow from 192.168.0.0/16 to any port 5001 proto tcp",
       ]
+    }
+    # Prometheus on ubuntu (rpi4b) — LAN + Tailscale
+    prometheus = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 9090 proto tcp",
+        "allow from 100.64.0.0/10 to any port 9090 proto tcp",
+      ]
+    }
+    # Grafana on ubuntu (rpi4b) — LAN + Tailscale
+    grafana = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 3000 proto tcp",
+        "allow from 100.64.0.0/10 to any port 3000 proto tcp",
+      ]
+    }
+    # node-exporter — one rule per node, scraped by Prometheus on 192.168.2.47
+    node_exporter_firebat = {
+      host     = "192.168.2.30"
+      ssh_user = "firebat"
+      rules    = ["allow from 192.168.2.47 to any port 9100 proto tcp"]
+    }
+    node_exporter_orangepi4a = {
+      host     = "192.168.2.29"
+      ssh_user = "orangepi"
+      rules    = ["allow from 192.168.2.47 to any port 9100 proto tcp"]
+    }
+    node_exporter_jetson = {
+      host     = "192.168.2.46"
+      ssh_user = "localstack"
+      rules    = ["allow from 192.168.2.47 to any port 9100 proto tcp"]
+    }
+    node_exporter_ubuntu = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules    = ["allow from 192.168.2.47 to any port 9100 proto tcp"]
+    }
+    node_exporter_radxa = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules    = ["allow from 192.168.2.47 to any port 9100 proto tcp"]
+    }
+    # postgres_exporter sidecar on firebat
+    postgres_exporter = {
+      host     = "192.168.2.30"
+      ssh_user = "firebat"
+      rules    = ["allow from 192.168.2.47 to any port 9187 proto tcp"]
     }
   }
 }
@@ -164,4 +274,36 @@ resource "nomad_job" "haproxy" {
       openfang_password = random_password.openfang_basic_auth.result
     }
   )
+}
+
+### Node exporter (system job, all nodes)
+resource "nomad_job" "node_exporter" {
+  jobspec = templatefile("${path.module}/services/node-exporter.hcl", {})
+}
+
+### Prometheus
+resource "nomad_job" "prometheus" {
+  jobspec = templatefile(
+    "${path.module}/services/prometheus.hcl",
+    { consul_address = "192.168.2.30:8500" }
+  )
+  depends_on = [nomad_dynamic_host_volume.prometheus_data]
+}
+
+### Grafana
+resource "nomad_job" "grafana" {
+  jobspec = templatefile(
+    "${path.module}/services/grafana.hcl",
+    {
+      grafana_secret             = vault_kv_secret_v2.grafana_admin_credentials.path
+      cluster_overview_dashboard = file("${path.module}/services/grafana/cluster-overview.json")
+    }
+  )
+  depends_on = [nomad_dynamic_host_volume.grafana_data]
+}
+
+### Promtail (system job, all nodes) — Loki itself lives in the applications layer
+### because it depends on the Loki MinIO bucket creds (provisioned there).
+resource "nomad_job" "promtail" {
+  jobspec = templatefile("${path.module}/services/promtail.hcl", {})
 }

@@ -43,6 +43,28 @@ resource "vault_kv_secret_v2" "openfang_basic_auth" {
   })
 }
 
+### Grafana admin password
+resource "random_password" "grafana_admin" {
+  length  = 24
+  special = false
+}
+
+resource "vault_kv_secret_v2" "grafana_admin_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/grafana/admin"
+  data_json = jsonencode({
+    username = "admin"
+    password = random_password.grafana_admin.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Postgres root password
 resource "random_password" "postgres_root" {
   length  = 16

@@ -48,6 +48,14 @@ locals {
         "allow from 192.168.2.46 to any port 8642 proto tcp",
       ]
     }
+    # Loki on ubuntu (rpi4b) — LAN only (Promtail clients across the cluster)
+    loki = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 3100 proto tcp",
+      ]
+    }
   }
 }
 
@@ -111,6 +119,14 @@ resource "nomad_job" "hermes" {
         trimsuffix(f, "/SKILL.md") => file("${path.module}/services/hermes/skills/${f}")
       }
     }
+  )
+}
+
+### Loki — central log aggregator on ubuntu (rpi4b), MinIO-backed
+resource "nomad_job" "loki" {
+  jobspec = templatefile(
+    "${path.module}/services/loki.hcl",
+    { loki_minio_secret = vault_kv_secret_v2.loki_minio_credentials.path }
   )
 }
 

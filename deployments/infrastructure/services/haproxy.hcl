@@ -48,26 +48,33 @@ userlist openfang_users
 frontend http_in
     bind *:80
 
-    acl is_minio   hdr(host) -i minio.localstack
-    acl is_s3      hdr(host) -i s3.localstack
-    acl is_vault   hdr(host) -i vault.localstack
-    acl is_nomad   hdr(host) -i nomad.localstack
-    acl is_consul  hdr(host) -i consul.localstack
-    acl is_phoenix hdr(host) -i phoenix.localstack
-    acl is_memex    hdr(host) -i memex.localstack
-    acl is_hermes  hdr(host) -i hermes.localstack
+    acl is_minio      hdr(host) -i minio.localstack
+    acl is_s3         hdr(host) -i s3.localstack
+    acl is_vault      hdr(host) -i vault.localstack
+    acl is_nomad      hdr(host) -i nomad.localstack
+    acl is_consul     hdr(host) -i consul.localstack
+    acl is_phoenix    hdr(host) -i phoenix.localstack
+    acl is_memex      hdr(host) -i memex.localstack
+    acl is_hermes     hdr(host) -i hermes.localstack
+    acl is_prometheus hdr(host) -i prometheus.localstack
+    acl is_grafana    hdr(host) -i grafana.localstack
+    acl is_loki       hdr(host) -i loki.localstack
 
-    use_backend minio    if is_minio
-    use_backend s3       if is_s3
-    use_backend vault    if is_vault
-    use_backend nomad    if is_nomad
-    use_backend consul   if is_consul
-    use_backend phoenix  if is_phoenix
-    use_backend memex    if is_memex
-    use_backend hermes   if is_hermes
+    use_backend minio      if is_minio
+    use_backend s3         if is_s3
+    use_backend vault      if is_vault
+    use_backend nomad      if is_nomad
+    use_backend consul     if is_consul
+    use_backend phoenix    if is_phoenix
+    use_backend memex      if is_memex
+    use_backend hermes     if is_hermes
+    use_backend prometheus if is_prometheus
+    use_backend grafana    if is_grafana
+    use_backend loki       if is_loki
 
 frontend stats
     bind *:8404
+    http-request use-service prometheus-exporter if { path /metrics }
     stats enable
     stats uri /
     stats refresh 10s
@@ -96,6 +103,15 @@ backend memex
 
 backend hermes
     server hermes1 192.168.2.50:9119 check
+
+backend prometheus
+    server prometheus1 192.168.2.47:9090 check
+
+backend grafana
+    server grafana1 192.168.2.47:3000 check
+
+backend loki
+    server loki1 192.168.2.47:3100 check
         EOH
         destination = "local/haproxy.cfg"
       }

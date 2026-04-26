@@ -14,6 +14,10 @@ job "postgres" {
         static = 5432
         to     = 5432
       }
+      port "exporter" {
+        static = 9187
+        to     = 9187
+      }
     }
 
     volume "postgres_data_volume" {
@@ -69,6 +73,55 @@ job "postgres" {
       resources {
         cpu    = 2000
         memory = 4096
+      }
+    }
+
+    task "postgres-exporter" {
+      driver = "podman"
+
+      lifecycle {
+        hook    = "poststart"
+        sidecar = true
+      }
+
+      vault {}
+
+      service {
+        name         = "postgres-exporter"
+        port         = "exporter"
+        address_mode = "host"
+        tags         = ["prometheus", "monitoring"]
+
+        check {
+          name         = "postgres-exporter metrics"
+          type         = "http"
+          port         = "exporter"
+          address_mode = "host"
+          path         = "/metrics"
+          method       = "GET"
+          interval     = "30s"
+          timeout      = "3s"
+        }
+      }
+
+      config {
+        image = "docker.io/prometheuscommunity/postgres-exporter:v0.16.0"
+        ports = ["exporter"]
+      }
+
+      template {
+        data = <<EOF
+          DATA_SOURCE_NAME="postgresql://{{ with secret "${postgres_secret}" }}{{ .Data.data.username }}:{{ .Data.data.password }}{{ end }}@127.0.0.1:5432/localstack?sslmode=disable"
+          PG_EXPORTER_WEB_LISTEN_ADDRESS=":9187"
+        EOF
+
+        destination = "secrets/file.env"
+        env         = true
+      }
+
+      resources {
+        cpu    = 200
+        memory = 64
       }
     }
   }

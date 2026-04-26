@@ -33,6 +33,7 @@ job "minio" {
         data        = <<-EOH
         MINIO_ROOT_USER="{{ with secret "${minio_secret}" }}{{ .Data.data.access_key }}{{ end }}"
         MINIO_ROOT_PASSWORD="{{ with secret "${minio_secret}" }}{{ .Data.data.secret_key }}{{ end }}"
+        MINIO_PROMETHEUS_AUTH_TYPE="public"
         EOH
         destination = "secrets/file.env"
         env         = true
