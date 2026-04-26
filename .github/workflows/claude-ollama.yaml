@@ -1,8 +1,11 @@
-name: Test Claude Code Action via Ollama Cloud
+name: Claude Code via Ollama Cloud
 
-# Experimental: routes anthropics/claude-code-action through Ollama Cloud's
-# Anthropic-compatible API. Run manually only; do NOT add PR/comment triggers
-# until tool-use fidelity is verified.
+# Routes anthropics/claude-code-action through Ollama Cloud's Anthropic-
+# compatible API. Triggers:
+# - workflow_dispatch: ad-hoc testing with a custom prompt.
+# - pull_request opened: auto-review the PR.
+# - issues opened: auto-triage the issue.
+# - issue_comment / pull_request_review_comment: respond when @claude is mentioned.
 
 on:
   workflow_dispatch:
@@ -18,7 +21,15 @@ on:
       max_turns:
         description: Max tool-use turns before the action aborts.
         required: true
-        default: '5'
+        default: '15'
+  pull_request:
+    types: [opened]
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -27,11 +38,18 @@ permissions:
   id-token: write
 
 concurrency:
-  group: test-claude-ollama-${{ github.ref }}
-  cancel-in-progress: true
+  group: claude-ollama-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   run:
+    # Run on dispatch / PR-open / issue-open unconditionally; on comments only when @claude is mentioned.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'issues' ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -45,8 +63,23 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.OLLAMA_API_KEY }}
-          prompt: ${{ inputs.prompt }}
+          # Comment events: leave prompt empty so the action reads the comment.
+          # Other events: provide an explicit prompt.
+          prompt: >-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.prompt
+            || github.event_name == 'pull_request' && 'Review this pull request. Focus on correctness, security, and obvious bugs. Post a concise review with severity-tagged findings.'
+            || github.event_name == 'issues' && 'Triage this issue: summarize the request, suggest a priority and area labels, and ask any clarifying questions.'
+            || '' }}
           claude_args: |
-            --model ${{ inputs.model }}
-            --max-turns ${{ inputs.max_turns }}
+            --model ${{ inputs.model || 'glm-4.6:cloud' }}
+            --max-turns ${{ inputs.max_turns || '15' }}
             --verbose
+
+      - name: Upload execution log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-output-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /home/runner/work/_temp/claude-execution-output.json
+          if-no-files-found: warn
+          retention-days: 14
