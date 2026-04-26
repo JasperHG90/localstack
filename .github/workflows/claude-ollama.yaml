@@ -15,9 +15,9 @@ on:
         required: true
         default: 'Summarize the top-level structure of this repository in 5 bullets.'
       model:
-        description: Ollama Cloud model tag (e.g. glm-4.6:cloud, qwen3-coder:480b-cloud, kimi-k2:cloud).
+        description: Ollama Cloud model tag (e.g. glm-5.1, glm-4.6:cloud, qwen3-coder:480b-cloud, kimi-k2:cloud).
         required: true
-        default: 'glm-4.6:cloud'
+        default: 'glm-5.1'
       max_turns:
         description: Max tool-use turns before the action aborts.
         required: true
@@ -74,7 +74,7 @@ jobs:
             || github.event_name == 'issues' && 'Triage this issue: summarize the request, suggest a priority and area labels, and ask any clarifying questions.'
             || '' }}
           claude_args: |
-            --model ${{ inputs.model || 'glm-4.6:cloud' }}
+            --model ${{ inputs.model || 'glm-5.1' }}
             --max-turns ${{ inputs.max_turns || '15' }}
             --verbose
 
