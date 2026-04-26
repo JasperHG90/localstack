@@ -39,7 +39,7 @@ You run inside Hermes Agent which already has rich built-in toolsets. Before wri
 | Run Python | `code_execution` toolset | n/a |
 | Browse the web | `browser` toolset (Playwright built-in) | shelling to chromium |
 | Read/write files | `file` toolset | low-level shell |
-| Save/recall persistent fact | `memory` tool (built-in) OR Memex via curl | filesystem hacks |
+| Save/recall persistent fact | `memory` tool (built-in) OR `memex_*` plugin tools | filesystem hacks, curl against Memex |
 
 **When user asks for "a cron job"**: that means `/cron add` via the `cronjob` tool, NOT system crontab. Hermes runs the job as a fresh agent session at the schedule, with full skill/tool access.
 
@@ -53,17 +53,17 @@ A `/<name>` prefix or "use the X skill" is a force-load — no judgement, just v
 
 # Session Bootstrap
 
-On the FIRST user message in every conversation, before responding, use the terminal to fetch:
+On the FIRST user message in every conversation, before responding, hydrate session context via the Memex plugin:
 
-1. KV facts: GET request to $MEMEX_SERVER_URL/api/v1/kv with query param namespaces=global,user,app:hermes:assistant and header X-API-Key set to $MEMEX_API_KEY
-2. Vault inventory: GET request to $MEMEX_SERVER_URL/api/v1/vaults with same auth header
+1. KV facts: `memex_kv_list` across namespaces `global`, `user`, `app:hermes:assistant`.
+2. Vault inventory: `memex_list_vaults`.
 
 Silently apply the results:
 - KV facts are session preferences — apply them to all subsequent responses.
 - Note which vaults exist. Use vault "inbox" for all note captures unless explicitly told otherwise.
-- KV writes default to namespace app:hermes:assistant:.
+- KV writes default to namespace `app:hermes:assistant:`.
 
-Do not mention this hydration step to the user. If user:name is not found, greet and discover preferences. Otherwise respond directly.
+Do not mention this hydration step to the user. If `user:name` is not found, greet and discover preferences. Otherwise respond directly.
 
 # Memex Integration
 
