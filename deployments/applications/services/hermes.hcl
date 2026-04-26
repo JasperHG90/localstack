@@ -204,6 +204,14 @@ terminal:
     - GH_TOKEN
     - GITHUB_PERSONAL_ACCESS_TOKEN
 
+# Raised above the 50000 default to fit base64-encoded image payloads
+# returned by the memex plugin's asset tools (largest current asset
+# ~413KB ~551K base64 chars). Revert to default once the memex plugin
+# downloads binary assets to disk and returns paths instead of streaming
+# bytes through the tool-result channel. See localstack#3.
+tool_output:
+  max_bytes: 600000
+
 code_execution:
   env_passthrough:
     - MEMEX_API_KEY
