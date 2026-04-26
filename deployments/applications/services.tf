@@ -106,21 +106,10 @@ resource "nomad_job" "hermes" {
       hermes_email_address           = var.hermes_email_address
       hermes_digest_email            = var.hermes_digest_email
       soul_md                        = file("${path.module}/services/hermes/SOUL.md")
-      skill_cluster_watchdog         = file("${path.module}/services/hermes/skills/devops/cluster-watchdog/SKILL.md")
-      skill_post_mortem              = file("${path.module}/services/hermes/skills/devops/post-mortem/SKILL.md")
-      skill_sorting_hat              = file("${path.module}/services/hermes/skills/knowledge/sorting-hat/SKILL.md")
-      skill_insight_linker           = file("${path.module}/services/hermes/skills/knowledge/insight-linker/SKILL.md")
-      skill_daily_reflect            = file("${path.module}/services/hermes/skills/knowledge/daily-reflect/SKILL.md")
-      skill_trader_advisor           = file("${path.module}/services/hermes/skills/finance/trader-advisor/SKILL.md")
-      skill_market_analyst           = file("${path.module}/services/hermes/skills/finance/market-analyst/SKILL.md")
-      skill_trend_scout              = file("${path.module}/services/hermes/skills/finance/trend-scout/SKILL.md")
-      skill_blog_scraper             = file("${path.module}/services/hermes/skills/productivity/blog-scraper/SKILL.md")
-      skill_medium_reader            = file("${path.module}/services/hermes/skills/productivity/medium-reader/SKILL.md")
-      skill_researcher               = file("${path.module}/services/hermes/skills/productivity/researcher/SKILL.md")
-      skill_collector                = file("${path.module}/services/hermes/skills/productivity/collector/SKILL.md")
-      skill_hermes_watcher           = file("${path.module}/services/hermes/skills/devops/hermes-watcher/SKILL.md")
-      skill_autoresearch_create      = file("${path.module}/services/hermes/skills/research/autoresearch-create/SKILL.md")
-      skill_autoresearch_finalize    = file("${path.module}/services/hermes/skills/research/autoresearch-finalize/SKILL.md")
+      skills = {
+        for f in fileset("${path.module}/services/hermes/skills", "**/SKILL.md") :
+        trimsuffix(f, "/SKILL.md") => file("${path.module}/services/hermes/skills/${f}")
+      }
     }
   )
 }

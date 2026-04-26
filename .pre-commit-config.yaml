@@ -18,3 +18,6 @@ repos:
         language: system
         types: [hcl]
         files: '\.hcl$'
+        # hermes.hcl uses templatefile() control directives (%{ for }) at
+        # top level, which aren't valid HCL — nomad fmt can't parse it.
+        exclude: '^deployments/applications/services/hermes\.hcl$'

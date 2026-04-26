@@ -54,21 +54,7 @@ job "hermes" {
           "local/config.yaml:/tmp/hermes/config.yaml",
           "local/SOUL.md:/tmp/hermes/SOUL.md",
           "local/setup.sh:/tmp/setup.sh",
-          "local/skills/devops/cluster-watchdog/SKILL.md:/tmp/hermes/skills/devops/cluster-watchdog/SKILL.md",
-          "local/skills/devops/post-mortem/SKILL.md:/tmp/hermes/skills/devops/post-mortem/SKILL.md",
-          "local/skills/knowledge/sorting-hat/SKILL.md:/tmp/hermes/skills/knowledge/sorting-hat/SKILL.md",
-          "local/skills/knowledge/insight-linker/SKILL.md:/tmp/hermes/skills/knowledge/insight-linker/SKILL.md",
-          "local/skills/knowledge/daily-reflect/SKILL.md:/tmp/hermes/skills/knowledge/daily-reflect/SKILL.md",
-          "local/skills/finance/trader-advisor/SKILL.md:/tmp/hermes/skills/finance/trader-advisor/SKILL.md",
-          "local/skills/finance/market-analyst/SKILL.md:/tmp/hermes/skills/finance/market-analyst/SKILL.md",
-          "local/skills/finance/trend-scout/SKILL.md:/tmp/hermes/skills/finance/trend-scout/SKILL.md",
-          "local/skills/productivity/blog-scraper/SKILL.md:/tmp/hermes/skills/productivity/blog-scraper/SKILL.md",
-          "local/skills/productivity/medium-reader/SKILL.md:/tmp/hermes/skills/productivity/medium-reader/SKILL.md",
-          "local/skills/productivity/researcher/SKILL.md:/tmp/hermes/skills/productivity/researcher/SKILL.md",
-          "local/skills/productivity/collector/SKILL.md:/tmp/hermes/skills/productivity/collector/SKILL.md",
-          "local/skills/devops/hermes-watcher/SKILL.md:/tmp/hermes/skills/devops/hermes-watcher/SKILL.md",
-          "local/skills/research/autoresearch-create/SKILL.md:/tmp/hermes/skills/research/autoresearch-create/SKILL.md",
-          "local/skills/research/autoresearch-finalize/SKILL.md:/tmp/hermes/skills/research/autoresearch-finalize/SKILL.md",
+          "local/skills:/tmp/hermes/skills:ro",
         ]
       }
 
@@ -295,110 +281,14 @@ EOT
         destination = "local/SOUL.md"
       }
 
+%{ for path, body in skills ~}
       template {
         data        = <<-EOT
-${skill_cluster_watchdog}
+${body}
 EOT
-        destination = "local/skills/devops/cluster-watchdog/SKILL.md"
+        destination = "local/skills/${path}/SKILL.md"
       }
-
-      template {
-        data        = <<-EOT
-${skill_post_mortem}
-EOT
-        destination = "local/skills/devops/post-mortem/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_sorting_hat}
-EOT
-        destination = "local/skills/knowledge/sorting-hat/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_insight_linker}
-EOT
-        destination = "local/skills/knowledge/insight-linker/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_daily_reflect}
-EOT
-        destination = "local/skills/knowledge/daily-reflect/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_trader_advisor}
-EOT
-        destination = "local/skills/finance/trader-advisor/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_market_analyst}
-EOT
-        destination = "local/skills/finance/market-analyst/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_trend_scout}
-EOT
-        destination = "local/skills/finance/trend-scout/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_blog_scraper}
-EOT
-        destination = "local/skills/productivity/blog-scraper/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_medium_reader}
-EOT
-        destination = "local/skills/productivity/medium-reader/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_researcher}
-EOT
-        destination = "local/skills/productivity/researcher/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_collector}
-EOT
-        destination = "local/skills/productivity/collector/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_hermes_watcher}
-EOT
-        destination = "local/skills/devops/hermes-watcher/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_autoresearch_create}
-EOT
-        destination = "local/skills/research/autoresearch-create/SKILL.md"
-      }
-
-      template {
-        data        = <<-EOT
-${skill_autoresearch_finalize}
-EOT
-        destination = "local/skills/research/autoresearch-finalize/SKILL.md"
-      }
+%{ endfor ~}
 
       resources {
         cpu    = 200
