@@ -63,16 +63,68 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Build the prompt with event context interpolated. Comment events get
+      # an empty prompt — the action's interactive mode reads the comment itself.
+      - id: build_prompt
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_PROMPT: ${{ inputs.prompt }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          out=$(mktemp)
+          case "$EVENT" in
+            workflow_dispatch)
+              printf '%s' "$DISPATCH_PROMPT" > "$out"
+              ;;
+            pull_request)
+              {
+                echo "Review pull request #${PR_NUM}. Focus on correctness, security, and obvious bugs."
+                echo "Read the diff with \`gh pr diff ${PR_NUM}\` (or \`git diff origin/${PR_BASE}...HEAD\`)."
+                echo "Post a single concise review with severity-tagged findings (Critical/High/Medium/Low)"
+                echo "via \`gh pr review ${PR_NUM} --comment -F <file>\`. Do not run additional tools after posting."
+                echo
+                echo "## Title"
+                echo "${PR_TITLE}"
+                echo
+                echo "## Body"
+                echo "${PR_BODY:-(empty)}"
+              } > "$out"
+              ;;
+            issues)
+              {
+                echo "Triage issue #${ISSUE_NUM}. Summarize the request, suggest a priority"
+                echo "(critical/high/medium/low) and area labels, and ask any clarifying questions."
+                echo "Post a single comment via \`gh issue comment ${ISSUE_NUM} -F <file>\`."
+                echo "Do not run additional tools after posting."
+                echo
+                echo "## Title"
+                echo "${ISSUE_TITLE}"
+                echo
+                echo "## Body"
+                echo "${ISSUE_BODY:-(empty)}"
+              } > "$out"
+              ;;
+            *)
+              : > "$out"
+              ;;
+          esac
+          {
+            echo 'value<<__EOF__'
+            cat "$out"
+            echo '__EOF__'
+          } >> "$GITHUB_OUTPUT"
+
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.OLLAMA_API_KEY }}
-          # Comment events: leave prompt empty so the action reads the comment.
-          # Other events: provide an explicit prompt.
-          prompt: >-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.prompt
-            || github.event_name == 'pull_request' && 'Review this pull request. Focus on correctness, security, and obvious bugs. Post a concise review with severity-tagged findings.'
-            || github.event_name == 'issues' && 'Triage this issue: summarize the request, suggest a priority and area labels, and ask any clarifying questions.'
-            || '' }}
+          prompt: ${{ steps.build_prompt.outputs.value }}
           claude_args: |
             --model ${{ inputs.model || 'glm-5.1' }}
             --max-turns ${{ inputs.max_turns || '15' }}
