@@ -297,6 +297,10 @@ resource "nomad_job" "grafana" {
     {
       grafana_secret             = vault_kv_secret_v2.grafana_admin_credentials.path
       cluster_overview_dashboard = file("${path.module}/services/grafana/cluster-overview.json")
+      alert_rules                = file("${path.module}/services/grafana/alert-rules.yaml")
+      telegram_secret            = "${var.secret_mount}/data/default/grafana/telegram"
+      telegram_alert_chat_id     = var.telegram_alert_chat_id
+      grafana_external_url       = "http://192.168.2.47:3000"
     }
   )
   depends_on = [nomad_dynamic_host_volume.grafana_data]

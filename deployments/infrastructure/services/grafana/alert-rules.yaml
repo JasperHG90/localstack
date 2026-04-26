@@ -1,0 +1,401 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: cluster-health
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: alert-node-down
+        title: NodeDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job="node"} == 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: node }
+        annotations:
+          summary: "Node {{ $labels.instance }} is DOWN"
+          description: "node-exporter on {{ $labels.instance }} unreachable for 5m. Check power, network, ufw, systemd unit."
+
+      - uid: alert-nomad-blocked-evals
+        title: NomadBlockedEvaluations
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'nomad_nomad_blocked_evals_total_blocked'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: nomad }
+        annotations:
+          summary: "Nomad has {{ $value }} blocked evaluations"
+          description: "Scheduler can't place allocs (resource exhaustion, constraints, missing host volumes). Run `nomad eval list -status=blocked`."
+
+      - uid: alert-nomad-server-down
+        title: NomadServerDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job="nomad"} == 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: nomad }
+        annotations:
+          summary: "Nomad server on firebat unreachable"
+          description: "Cluster control plane is down. Inspect `systemctl status nomad` on firebat."
+
+      - uid: alert-consul-down
+        title: ConsulDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job="consul"} == 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: consul }
+        annotations:
+          summary: "Consul on firebat unreachable"
+          description: "Service discovery + Vault auth depend on this. Check the consul agent."
+
+      - uid: alert-postgres-down
+        title: PostgresDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'pg_up == 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: postgres }
+        annotations:
+          summary: "Postgres on firebat is unreachable"
+          description: "postgres_exporter pg_up=0 for 5m. Check postgres alloc, port 5432, disk on firebat."
+
+      - uid: alert-minio-degraded
+        title: MinIOClusterDegraded
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'minio_cluster_nodes_offline_total > 0 or absent(minio_cluster_nodes_online_total)'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: minio }
+        annotations:
+          summary: "MinIO degraded on orangepi4a"
+          description: "Offline nodes reported or metrics absent. Check MinIO alloc + minio_data host volume."
+
+      - uid: alert-haproxy-down
+        title: HAProxyDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'absent(haproxy_process_start_time_seconds)'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: haproxy }
+        annotations:
+          summary: "HAProxy on firebat appears down"
+          description: "Stats endpoint (8404) unreachable for 5m — ingress is broken."
+
+      - uid: alert-prometheus-down
+        title: PrometheusDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job="prometheus"} == 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: Alerting
+        execErrState: Error
+        for: 3m
+        labels: { severity: critical, component: prometheus }
+        annotations:
+          summary: "Prometheus is not scraping itself"
+          description: "If you see this, alerting is also at risk. Check Prometheus alloc on ubuntu."
+
+      - uid: alert-node-cpu-high
+        title: NodeCPUHigh
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle",job="node"}[5m]))) > 90'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        labels: { severity: warning, component: node }
+        annotations:
+          summary: "{{ $labels.instance }} CPU > 90% (sustained)"
+          description: "5m avg CPU on {{ $labels.instance }} = {{ printf \"%.1f\" $values.A.Value }}% for 15m."
+
+      - uid: alert-node-mem-high
+        title: NodeMemoryHigh
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '100 * (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"}) > 90'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: node }
+        annotations:
+          summary: "{{ $labels.instance }} memory > 90%"
+          description: "Available memory below 10% on {{ $labels.instance }} for 10m. Usage: {{ printf \"%.1f\" $values.A.Value }}%."
+
+      - uid: alert-node-disk-low
+        title: NodeDiskLow
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '100 * (node_filesystem_avail_bytes{job="node",fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{job="node",fstype!~"tmpfs|overlay|squashfs"}) < 10'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        labels: { severity: warning, component: node }
+        annotations:
+          summary: "{{ $labels.instance }} {{ $labels.mountpoint }} < 10% free"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has {{ printf \"%.1f\" $values.A.Value }}% free."
+
+      - uid: alert-memex-log-errors
+        title: MemexLogErrorBurst
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: loki
+            model:
+              expr: 'sum(count_over_time({job="nomad", task="memex"} |~ "(?i)\\b(error|exception|traceback|panic)\\b" [5m]))'
+              queryType: instant
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [20] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels: { severity: warning, component: memex }
+        annotations:
+          summary: "Memex log error burst"
+          description: ">20 error-like log lines in 5m, sustained 10m. Inspect Memex alloc logs."
