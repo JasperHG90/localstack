@@ -59,6 +59,7 @@ frontend http_in
     acl is_prometheus hdr(host) -i prometheus.localstack
     acl is_grafana    hdr(host) -i grafana.localstack
     acl is_loki       hdr(host) -i loki.localstack
+    acl is_mlflow     hdr(host) -i mlflow.localstack
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -71,6 +72,7 @@ frontend http_in
     use_backend prometheus if is_prometheus
     use_backend grafana    if is_grafana
     use_backend loki       if is_loki
+    use_backend mlflow     if is_mlflow
 
 frontend stats
     bind *:8404
@@ -112,6 +114,10 @@ backend grafana
 
 backend loki
     server loki1 192.168.2.47:3100 check
+
+backend mlflow
+    http-request auth unless { http_auth(openfang_users) }
+    server mlflow1 192.168.2.50:5050 check
         EOH
         destination = "local/haproxy.cfg"
       }
