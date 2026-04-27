@@ -399,3 +399,36 @@ groups:
         annotations:
           summary: "Memex log error burst"
           description: ">20 error-like log lines in 5m, sustained 10m. Inspect Memex alloc logs."
+
+      - uid: alert-scrape-job-missing
+        title: ScrapeJobMissing
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="prometheus"})'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: critical, component: prometheus }
+        annotations:
+          summary: "Scrape job '{{ $labels.job }}' has zero targets"
+          description: "The '{{ $labels.job }}' Prometheus scrape job is missing entirely (no targets, or all dropped before scrape). This silently disables all per-target down-alerts for that job. Inspect http://192.168.2.47:9090/targets."
