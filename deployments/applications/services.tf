@@ -56,10 +56,10 @@ locals {
         "allow from 192.168.0.0/16 to any port 3100 proto tcp",
       ]
     }
-    # MLflow on firebat (port 5050 — 5000/5001 reserved for Docker registry)
+    # MLflow on radxa-dragon-q6a (firebat CPU is fully reserved; port 5050 since 5000/5001 are reserved for the Docker registry on firebat)
     mlflow = {
-      host     = "192.168.2.30"
-      ssh_user = "firebat"
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
       rules = [
         "allow from 192.168.0.0/16 to any port 5050 proto tcp",
       ]
@@ -166,7 +166,7 @@ resource "nomad_job" "mlflow" {
       mlflow_minio_secret    = vault_kv_secret_v2.mlflow_minio_credentials.path
       postgres_host          = data.consul_service.postgres.service[0].node_address
       minio_host             = data.consul_service.minio.service[0].node_address
-      mlflow_host            = "192.168.2.30"
+      mlflow_host            = "192.168.2.50"
       mlflow_version         = "2.20.0"
     }
   )

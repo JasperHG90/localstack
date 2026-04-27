@@ -5,7 +5,7 @@ job "mlflow" {
   group "mlflow" {
     constraint {
       attribute = "$${attr.unique.hostname}"
-      value     = "firebat"
+      value     = "radxa-dragon-q6a"
     }
 
     network {
