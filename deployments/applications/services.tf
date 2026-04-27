@@ -56,6 +56,14 @@ locals {
         "allow from 192.168.0.0/16 to any port 3100 proto tcp",
       ]
     }
+    # MLflow on firebat (port 5050 — 5000/5001 reserved for Docker registry)
+    mlflow = {
+      host     = "192.168.2.30"
+      ssh_user = "firebat"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 5050 proto tcp",
+      ]
+    }
   }
 }
 
@@ -147,4 +155,20 @@ resource "nomad_job" "memex" {
     }
   )
   depends_on = [postgresql_database.database]
+}
+
+### MLflow — experiment + model tracking, Postgres backend + MinIO artifacts
+resource "nomad_job" "mlflow" {
+  jobspec = templatefile(
+    "${path.module}/services/mlflow.hcl",
+    {
+      mlflow_postgres_secret = vault_kv_secret_v2.mlflow_db_credentials.path
+      mlflow_minio_secret    = vault_kv_secret_v2.mlflow_minio_credentials.path
+      postgres_host          = data.consul_service.postgres.service[0].node_address
+      minio_host             = data.consul_service.minio.service[0].node_address
+      mlflow_host            = "192.168.2.30"
+      mlflow_version         = "2.20.0"
+    }
+  )
+  depends_on = [postgresql_database.database, module.buckets]
 }
