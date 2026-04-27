@@ -30,7 +30,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: Alerting
+        noDataState: OK
         execErrState: Error
         for: 5m
         labels: { severity: critical, component: node }
@@ -47,7 +47,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'nomad_nomad_blocked_evals_total_blocked'
+              expr: 'sum(nomad_client_allocations_blocked)'
               instant: true
               refId: A
           - refId: C
@@ -63,7 +63,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Error
         for: 10m
         labels: { severity: warning, component: nomad }
@@ -96,7 +96,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: Alerting
+        noDataState: OK
         execErrState: Error
         for: 5m
         labels: { severity: critical, component: nomad }
@@ -129,7 +129,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: Alerting
+        noDataState: OK
         execErrState: Error
         for: 5m
         labels: { severity: critical, component: consul }
@@ -162,7 +162,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Error
         for: 5m
         labels: { severity: critical, component: postgres }
@@ -195,7 +195,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Error
         for: 5m
         labels: { severity: critical, component: minio }
@@ -228,7 +228,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: Alerting
+        noDataState: OK
         execErrState: Error
         for: 5m
         labels: { severity: critical, component: haproxy }
@@ -261,7 +261,7 @@ groups:
                   query: { params: [C] }
                   reducer: { type: last, params: [] }
                   type: query
-        noDataState: Alerting
+        noDataState: OK
         execErrState: Error
         for: 3m
         labels: { severity: critical, component: prometheus }
@@ -311,7 +311,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: '100 * (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"}) > 90'
+              expr: '100 * (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"}) > 95'
               instant: true
               refId: A
           - refId: C
@@ -332,8 +332,8 @@ groups:
         for: 10m
         labels: { severity: warning, component: node }
         annotations:
-          summary: "{{ $labels.instance }} memory > 90%"
-          description: "Available memory below 10% on {{ $labels.instance }} for 10m. Usage: {{ printf \"%.1f\" $values.A.Value }}%."
+          summary: "{{ $labels.instance }} memory > 95%"
+          description: "Available memory below 5% on {{ $labels.instance }} for 10m. Usage: {{ printf \"%.1f\" $values.A.Value }}%. (Jetson runs at 90% by design — only fire above 95.)"
 
       - uid: alert-node-disk-low
         title: NodeDiskLow
