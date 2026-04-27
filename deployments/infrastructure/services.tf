@@ -139,6 +139,26 @@ resource "nomad_dynamic_host_volume" "loki_data" {
   }
 }
 
+resource "nomad_dynamic_host_volume" "nats_data" {
+  name      = "nats_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "20 GiB"
+  capacity_min = "2 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "radxa-dragon-q6a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 ### Firewall rules for services (applied via SSH)
 locals {
   firewall_rules = {
@@ -229,6 +249,15 @@ locals {
       ssh_user = "firebat"
       rules    = ["allow from 192.168.2.47 to any port 9187 proto tcp"]
     }
+    # NATS+JetStream on radxa-dragon-q6a (LAN-only; no auth in v1)
+    nats = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 4222 proto tcp",
+        "allow from 192.168.0.0/16 to any port 8222 proto tcp",
+      ]
+    }
   }
 }
 
@@ -310,4 +339,10 @@ resource "nomad_job" "grafana" {
 ### because it depends on the Loki MinIO bucket creds (provisioned there).
 resource "nomad_job" "promtail" {
   jobspec = templatefile("${path.module}/services/promtail.hcl", {})
+}
+
+### NATS+JetStream
+resource "nomad_job" "nats" {
+  jobspec    = templatefile("${path.module}/services/nats.hcl", {})
+  depends_on = [nomad_dynamic_host_volume.nats_data]
 }

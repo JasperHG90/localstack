@@ -48,6 +48,26 @@ resource "vault_kv_secret_v2" "loki_minio_credentials" {
   })
 }
 
+### MLflow
+
+resource "vault_kv_secret_v2" "mlflow_db_credentials" {
+  mount = var.secret_mount
+  name  = "default/mlflow/postgres"
+  data_json = jsonencode({
+    username = postgresql_role.role["mlflow"].name
+    password = random_password.password["mlflow"].result
+  })
+}
+
+resource "vault_kv_secret_v2" "mlflow_minio_credentials" {
+  mount = var.secret_mount
+  name  = "default/mlflow/minio"
+  data_json = jsonencode({
+    access_key = minio_accesskey.users["mlflow"].access_key
+    secret_key = minio_accesskey.users["mlflow"].secret_key
+  })
+}
+
 resource "random_id" "memex_admin_key" {
   byte_length = 32
 }

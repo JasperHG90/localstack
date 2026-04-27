@@ -51,6 +51,15 @@ job "postgres" {
       config {
         image = "docker.io/pgvector/pgvector:pg18-trixie"
         ports = ["db"]
+        args = [
+          "postgres",
+          "-c", "max_connections=200",
+          "-c", "shared_buffers=1536MB",
+          "-c", "effective_cache_size=4GB",
+          "-c", "work_mem=8MB",
+          "-c", "maintenance_work_mem=256MB",
+          "-c", "wal_buffers=16MB",
+        ]
       }
 
       volume_mount {
@@ -72,7 +81,7 @@ job "postgres" {
 
       resources {
         cpu    = 2000
-        memory = 4096
+        memory = 6144
       }
     }
 

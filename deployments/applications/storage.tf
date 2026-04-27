@@ -20,6 +20,12 @@ locals {
       ],
       readers = []
     }
+    "mlflow-artifacts" = {
+      writers = [
+        { "name" = "mlflow", generate_access_key = true }
+      ],
+      readers = []
+    }
   }
 
   all_minio_users = distinct(flatten([
