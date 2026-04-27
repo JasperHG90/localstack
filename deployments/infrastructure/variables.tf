@@ -12,3 +12,9 @@ variable "gcs_backup_bucket" {
   description = "GCS bucket name for off-site backups"
   type        = string
 }
+
+variable "telegram_alert_chat_id" {
+  description = "Telegram chat ID that receives Grafana alerts (reuses Hermes bot token from Vault)."
+  type        = string
+  default     = "10650075"
+}
