@@ -30,6 +30,6 @@ jobs:
 
       - uses: JasperHG90/toiminnot/actions/hermes-interactive@main
         with:
-          api-key: ${{ secrets.OLLAMA_API_KEY }}
-          github-token: ${{ github.token }}
-          # push-changes: 'pr'
+          api_key: ${{ secrets.OLLAMA_API_KEY }}
+          github_token: ${{ github.token }}
+          # push_changes: 'pr'
