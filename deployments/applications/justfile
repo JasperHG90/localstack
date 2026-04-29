@@ -17,3 +17,15 @@ apply:
 destroy:
     CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
     terraform destroy -var-file=./vars/prod.tfvars
+
+# Rebuild and push the custom Hermes image (Hermes base + Memex wheels).
+# Tag is read from services.tf so the Dockerfile and Terraform stay in lockstep.
+rebuild_hermes:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tag=$(grep -E '^\s*hermes_version\s*=' services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    image="ghcr.io/jasperhg90/hermes:${tag}"
+    echo ">> building ${image}"
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    docker build --pull --platform linux/arm64 -t "${image}" -f services/hermes/Dockerfile services/hermes
+    docker push "${image}"
