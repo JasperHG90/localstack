@@ -1,0 +1,205 @@
+{
+  "uid": "localstack-logs",
+  "title": "Logs Explorer",
+  "tags": ["localstack", "logs"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-1h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "annotations": {"list": []},
+  "templating": {
+    "list": [
+      {
+        "name": "source",
+        "label": "Source",
+        "type": "custom",
+        "query": "nomad,journald",
+        "current": {"text": "All", "value": "$__all"},
+        "options": [
+          {"text": "All", "value": "$__all", "selected": true},
+          {"text": "nomad", "value": "nomad", "selected": false},
+          {"text": "journald", "value": "journald", "selected": false}
+        ],
+        "includeAll": true,
+        "multi": true,
+        "allValue": "nomad|journald"
+      },
+      {
+        "name": "host",
+        "label": "Host",
+        "type": "query",
+        "datasource": {"type": "loki", "uid": "loki"},
+        "query": "label_values({job=~\"$source\"}, host)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      },
+      {
+        "name": "task",
+        "label": "Task",
+        "type": "query",
+        "datasource": {"type": "loki", "uid": "loki"},
+        "query": "label_values({job=\"nomad\", host=~\"$host\"}, task)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      },
+      {
+        "name": "pattern",
+        "label": "Pattern (regex)",
+        "type": "textbox",
+        "query": ".",
+        "current": {"text": ".", "value": "."}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Log volume (overall, per minute)",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum(rate({job=~\"$source\", host=~\"$host\"} |~ \"$pattern\" [1m]))", "refId": "A", "legendFormat": "lines/sec"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 20, "drawStyle": "bars"}}
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Errors per task (5m windows)",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum by (task) (count_over_time({job=\"nomad\", host=~\"$host\", task=~\"$task\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A", "legendFormat": "{{task}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 20, "drawStyle": "bars", "stacking": {"mode": "normal"}}}
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Log volume by task",
+      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 6},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum by (task) (rate({job=\"nomad\", host=~\"$host\", task=~\"$task\"} |~ \"$pattern\" [1m]))", "refId": "A", "legendFormat": "{{task}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Log volume by host",
+      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 6},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum by (host) (rate({job=~\"$source\", host=~\"$host\"} |~ \"$pattern\" [1m]))", "refId": "A", "legendFormat": "{{host}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Top noisy journald units (1h)",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 13},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "topk(20, sum by (unit, host) (count_over_time({job=\"journald\", host=~\"$host\"} [1h])))", "refId": "A", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true}, "indexByName": {"unit": 0, "host": 1, "Value": 2}}}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "left"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1000}, {"color": "red", "value": 10000}]}
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Value"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "custom.align", "value": "right"}]}
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Top noisy nomad tasks (1h)",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 13},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "topk(20, sum by (task, host) (count_over_time({job=\"nomad\", host=~\"$host\", task=~\"$task\"} [1h])))", "refId": "A", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true}, "indexByName": {"task": 0, "host": 1, "Value": 2}}}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "left"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1000}, {"color": "red", "value": 10000}]}
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Value"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-background"}}, {"id": "custom.align", "value": "right"}]}
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "logs",
+      "title": "Live tail",
+      "gridPos": {"h": 14, "w": 24, "x": 0, "y": 22},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "{job=~\"$source\", host=~\"$host\", task=~\"$task\"} |~ \"$pattern\"", "refId": "A"}
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 8,
+      "type": "logs",
+      "title": "Error tail",
+      "gridPos": {"h": 14, "w": 24, "x": 0, "y": 36},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "{job=~\"$source\", host=~\"$host\", task=~\"$task\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\"", "refId": "A"}
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    }
+  ],
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ]
+}

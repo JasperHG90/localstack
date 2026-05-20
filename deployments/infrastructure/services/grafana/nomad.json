@@ -1,0 +1,257 @@
+{
+  "uid": "localstack-nomad",
+  "title": "Nomad",
+  "tags": ["localstack", "nomad"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-1h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "annotations": {"list": []},
+  "templating": {
+    "list": [
+      {
+        "name": "exported_job",
+        "label": "Job",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(nomad_client_allocs_running, exported_job)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      },
+      {
+        "name": "task_group",
+        "label": "Task group",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(nomad_client_allocs_running{exported_job=~\"$exported_job\"}, task_group)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      },
+      {
+        "name": "node_class",
+        "label": "Node",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(nomad_client_allocs_running, node_class)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      }
+    ]
+  },
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Server up",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "up{job=\"nomad\"}", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Raft leader last contact",
+      "gridPos": {"h": 4, "w": 5, "x": 4, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max(nomad_raft_leader_lastContact)", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 100}, {"color": "red", "value": 200}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Blocked evals",
+      "gridPos": {"h": 4, "w": 5, "x": 9, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(nomad_nomad_blocked_evals_total_blocked)", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Running allocs",
+      "gridPos": {"h": 4, "w": 5, "x": 14, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(nomad_client_allocs_running{exported_job=~\"$exported_job\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Failed allocs (last)",
+      "gridPos": {"h": 4, "w": 5, "x": 19, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(nomad_client_allocs_failed{exported_job=~\"$exported_job\"})", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Allocations by status",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(nomad_client_allocs_running{exported_job=~\"$exported_job\"})", "legendFormat": "running", "refId": "A"},
+        {"expr": "sum(nomad_client_allocs_pending{exported_job=~\"$exported_job\"})", "legendFormat": "pending", "refId": "B"},
+        {"expr": "sum(nomad_client_allocs_failed{exported_job=~\"$exported_job\"})", "legendFormat": "failed", "refId": "C"},
+        {"expr": "sum(nomad_client_allocs_terminal{exported_job=~\"$exported_job\"})", "legendFormat": "terminal", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Pending evaluations",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(nomad_nomad_eval_waiting)", "legendFormat": "waiting", "refId": "A"},
+        {"expr": "sum(nomad_nomad_blocked_evals_total_blocked)", "legendFormat": "blocked", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Allocations per node",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (node_class) (nomad_client_allocs_running{node_class=~\"$node_class\"})", "legendFormat": "{{node_class}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "CPU % per task",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "topk(20, nomad_client_allocs_cpu_total_percent_value{exported_job=~\"$exported_job\",task_group=~\"$task_group\"})", "legendFormat": "{{exported_job}}/{{task}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percent", "custom": {"lineWidth": 1, "fillOpacity": 5}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Memory RSS per task",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "topk(20, nomad_client_allocs_memory_rss_value{exported_job=~\"$exported_job\",task_group=~\"$task_group\"})", "legendFormat": "{{exported_job}}/{{task}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 5}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Memory cache per task",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "topk(20, nomad_client_allocs_memory_cache_value{exported_job=~\"$exported_job\",task_group=~\"$task_group\"})", "legendFormat": "{{exported_job}}/{{task}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 5}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Restarts (top 15, 6h)",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 28},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "topk(15, sum by (exported_job, task) (increase(nomad_client_allocs_restart{exported_job=~\"$exported_job\"}[6h])))", "refId": "A", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true}, "indexByName": {"exported_job": 0, "task": 1, "Value": 2}, "renameByName": {"exported_job": "Job", "task": "Task", "Value": "Restarts"}}}
+      ],
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "left"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Restarts"}, "properties": [
+            {"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "basic"}},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}}
+          ]}
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "OOM kills (1h)",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 28},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "topk(15, sum by (exported_job, task) (increase(nomad_client_allocs_oom_killed{exported_job=~\"$exported_job\"}[1h])))", "refId": "A", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"exported_job": "Job", "task": "Task", "Value": "OOM kills"}}}
+      ],
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "left"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "OOM kills"}, "properties": [
+            {"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "basic"}},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}
+          ]}
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "type": "logs",
+      "title": "Recent allocation logs",
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 37},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"$task_group\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    }
+  ]
+}

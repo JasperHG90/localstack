@@ -114,13 +114,14 @@ job "postgres" {
       }
 
       config {
-        image = "docker.io/prometheuscommunity/postgres-exporter:v0.16.0"
-        ports = ["exporter"]
+        image        = "docker.io/prometheuscommunity/postgres-exporter:v0.16.0"
+        ports        = ["exporter"]
+        network_mode = "host"
       }
 
       template {
         data = <<EOF
-          DATA_SOURCE_NAME="postgresql://{{ with secret "${postgres_secret}" }}{{ .Data.data.username }}:{{ .Data.data.password }}{{ end }}@127.0.0.1:5432/localstack?sslmode=disable"
+          DATA_SOURCE_NAME="postgresql://{{ with secret "${postgres_secret}" }}{{ .Data.data.username }}:{{ .Data.data.password }}{{ end }}@192.168.2.30:5432/localstack?sslmode=disable"
           PG_EXPORTER_WEB_LISTEN_ADDRESS=":9187"
         EOF
 

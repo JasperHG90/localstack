@@ -1,0 +1,295 @@
+{
+  "uid": "localstack-services",
+  "title": "Application Services",
+  "tags": ["localstack", "services"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-1h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 100,
+      "type": "table",
+      "title": "Service health summary",
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"})", "refId": "A", "instant": true, "format": "table", "legendFormat": "running"},
+        {"expr": "max by (exported_job) (increase(nomad_client_allocs_restart{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"}[24h]))", "refId": "B", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_memory_rss_value{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"})", "refId": "C", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_cpu_total_percent_value{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"})", "refId": "D", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "joinByField", "options": {"byField": "exported_job", "mode": "outer"}},
+        {"id": "organize", "options": {
+          "renameByName": {
+            "exported_job": "Service",
+            "Value #A": "Running",
+            "Value #B": "Restarts (24h)",
+            "Value #C": "Memory",
+            "Value #D": "CPU %"
+          },
+          "indexByName": {"exported_job": 0, "Value #A": 1, "Value #B": 2, "Value #C": 3, "Value #D": 4},
+          "excludeByName": {"Time": true, "Time 1": true, "Time 2": true, "Time 3": true, "Time 4": true}
+        }}
+      ],
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "left"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Memory"}, "properties": [{"id": "unit", "value": "bytes"}]},
+          {"matcher": {"id": "byName", "options": "CPU %"}, "properties": [{"id": "unit", "value": "percent"}]},
+          {"matcher": {"id": "byName", "options": "Running"}, "properties": [
+            {"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "basic"}},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}
+          ]},
+          {"matcher": {"id": "byName", "options": "Restarts (24h)"}, "properties": [
+            {"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "basic"}},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}}
+          ]}
+        ]
+      }
+    },
+    {
+      "id": 101,
+      "type": "timeseries",
+      "title": "Log rate per service (1m)",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|mlflow.*|hermes.*|memex.*\"}[1m]))", "legendFormat": "{{task}}", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 102,
+      "type": "timeseries",
+      "title": "Error rate per service (5m)",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|mlflow.*|hermes.*|memex.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "legendFormat": "{{task}}", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 200,
+      "type": "row",
+      "title": "Memex",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 201,
+      "type": "logs",
+      "title": "memex logs",
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 19},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"memex.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=memex&${__url_time_range}", "targetBlank": false}]
+    },
+    {
+      "id": 202,
+      "type": "stat",
+      "title": "memex error rate (5m)",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 19},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"memex.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 203,
+      "type": "stat",
+      "title": "memex memory RSS",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 24},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"memex\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 300,
+      "type": "row",
+      "title": "Hermes",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 29},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 301,
+      "type": "logs",
+      "title": "hermes logs",
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 30},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"hermes.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=hermes&${__url_time_range}", "targetBlank": false}]
+    },
+    {
+      "id": 302,
+      "type": "stat",
+      "title": "hermes error rate (5m)",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 30},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"hermes.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 303,
+      "type": "stat",
+      "title": "hermes memory RSS",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 35},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"hermes\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 400,
+      "type": "row",
+      "title": "MLflow",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 40},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 401,
+      "type": "logs",
+      "title": "mlflow logs",
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 41},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"mlflow.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=mlflow&${__url_time_range}", "targetBlank": false}]
+    },
+    {
+      "id": 402,
+      "type": "stat",
+      "title": "mlflow error rate (5m)",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 41},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"mlflow.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 403,
+      "type": "stat",
+      "title": "mlflow memory RSS",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 46},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"mlflow\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 500,
+      "type": "row",
+      "title": "Phoenix (LLM tracing)",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 501,
+      "type": "logs",
+      "title": "phoenix logs",
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 52},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"phoenix.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=phoenix&${__url_time_range}", "targetBlank": false}]
+    },
+    {
+      "id": 502,
+      "type": "stat",
+      "title": "phoenix error rate (5m)",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 52},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"phoenix.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 503,
+      "type": "stat",
+      "title": "phoenix memory RSS",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 57},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"phoenix\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 600,
+      "type": "row",
+      "title": "Vault",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 62},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 601,
+      "type": "logs",
+      "title": "vault logs",
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 63},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"journald\", unit=~\"vault.*\"} or {job=\"nomad\", task=~\"vault.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "id": 602,
+      "type": "stat",
+      "title": "vault error rate (5m)",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 63},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "sum(rate({job=\"journald\", unit=~\"vault.*\"} |~ \"(?i)\\\\b(error|exception|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 700,
+      "type": "row",
+      "title": "Docker Registry",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 73},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 701,
+      "type": "logs",
+      "title": "registry logs",
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 74},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"registry.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "id": 702,
+      "type": "stat",
+      "title": "registry error rate (5m)",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 74},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"registry.*\"} |~ \"(?i)\\\\b(error|exception|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    }
+  ]
+}

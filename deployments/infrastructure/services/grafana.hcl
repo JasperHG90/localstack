@@ -136,6 +136,86 @@ job "grafana" {
         destination = "local/dashboards/cluster-overview.json"
       }
 
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${logs_dashboard}
+        EOF
+
+        destination = "local/dashboards/logs.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${services_dashboard}
+        EOF
+
+        destination = "local/dashboards/services.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${node_dashboard}
+        EOF
+
+        destination = "local/dashboards/node-detail.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${nomad_dashboard}
+        EOF
+
+        destination = "local/dashboards/nomad.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${postgres_dashboard}
+        EOF
+
+        destination = "local/dashboards/postgres.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${minio_dashboard}
+        EOF
+
+        destination = "local/dashboards/minio.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${ingress_dashboard}
+        EOF
+
+        destination = "local/dashboards/ingress.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${nats_dashboard}
+        EOF
+
+        destination = "local/dashboards/nats.json"
+      }
+
       # ---- Unified alerting: contact point (Telegram) ----
       template {
         data = <<-EOF

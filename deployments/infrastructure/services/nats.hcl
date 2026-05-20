@@ -18,6 +18,10 @@ job "nats" {
         static = 8222
         to     = 8222
       }
+      port "metrics" {
+        static = 7777
+        to     = 7777
+      }
     }
 
     volume "nats_data_volume" {
@@ -92,6 +96,49 @@ EOH
       resources {
         cpu    = 500
         memory = 512
+      }
+    }
+
+    task "nats-exporter" {
+      driver = "podman"
+
+      service {
+        name         = "nats-exporter"
+        port         = "metrics"
+        address_mode = "host"
+        tags         = ["http", "monitoring", "prometheus"]
+
+        check {
+          name         = "nats-exporter ready"
+          type         = "http"
+          port         = "metrics"
+          address_mode = "host"
+          path         = "/metrics"
+          method       = "GET"
+          interval     = "30s"
+          timeout      = "3s"
+        }
+      }
+
+      config {
+        image = "docker.io/natsio/prometheus-nats-exporter:0.17.3"
+        args = [
+          "-port=7777",
+          "-addr=0.0.0.0",
+          "-varz",
+          "-connz",
+          "-routez",
+          "-subz",
+          "-jsz=all",
+          "http://192.168.2.50:8222",
+        ]
+        ports        = ["metrics"]
+        network_mode = "host"
+      }
+
+      resources {
+        cpu    = 50
+        memory = 64
       }
     }
   }

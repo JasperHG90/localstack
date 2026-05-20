@@ -1,0 +1,300 @@
+{
+  "uid": "localstack-node",
+  "title": "Node Detail",
+  "tags": ["localstack", "node"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-1h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "annotations": {"list": []},
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "label": "Instance",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(node_uname_info, instance)",
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false
+      },
+      {
+        "name": "nodename",
+        "label": "Nodename",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(node_uname_info{instance=\"$instance\"}, nodename)",
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false,
+        "hide": 2
+      },
+      {
+        "name": "mountpoint",
+        "label": "Mountpoint",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(node_filesystem_size_bytes{instance=\"$instance\",fstype!~\"tmpfs|overlay|squashfs|fuse.*\"}, mountpoint)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      },
+      {
+        "name": "device",
+        "label": "Device",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(node_disk_io_time_seconds_total{instance=\"$instance\"}, device)",
+        "regex": "/^(?!loop|ram|dm-|sr).+/",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      },
+      {
+        "name": "netdev",
+        "label": "Network device",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(node_network_receive_bytes_total{instance=\"$instance\"}, device)",
+        "regex": "/^(?!lo|veth|docker|cni|nomad|podman|tailscale|tun).+/",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+"
+      }
+    ]
+  },
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer (this host)", "url": "/d/localstack-logs/?var-host=${nodename}&${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Up",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "up{job=\"node\",instance=\"$instance\"}", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Uptime",
+      "gridPos": {"h": 4, "w": 5, "x": 4, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "time() - node_boot_time_seconds{instance=\"$instance\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "value"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Load (1m)",
+      "gridPos": {"h": 4, "w": 5, "x": 9, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "node_load1{instance=\"$instance\"}", "refId": "A"},
+        {"expr": "count(node_cpu_seconds_total{instance=\"$instance\",mode=\"idle\"})", "refId": "B"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 2}, {"color": "red", "value": 4}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^A$/"}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "CPU cores",
+      "gridPos": {"h": 4, "w": 5, "x": 14, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "count(node_cpu_seconds_total{instance=\"$instance\",mode=\"idle\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "value"}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Total memory",
+      "gridPos": {"h": 4, "w": 5, "x": 19, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "node_memory_MemTotal_bytes{instance=\"$instance\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "value"}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "CPU by mode",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (mode) (rate(node_cpu_seconds_total{instance=\"$instance\",mode!=\"idle\"}[1m]))", "legendFormat": "{{mode}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "custom": {"lineWidth": 1, "fillOpacity": 20, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Load average",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "node_load1{instance=\"$instance\"}", "legendFormat": "1m", "refId": "A"},
+        {"expr": "node_load5{instance=\"$instance\"}", "legendFormat": "5m", "refId": "B"},
+        {"expr": "node_load15{instance=\"$instance\"}", "legendFormat": "15m", "refId": "C"},
+        {"expr": "count(node_cpu_seconds_total{instance=\"$instance\",mode=\"idle\"})", "legendFormat": "cores", "refId": "D"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 5}},
+        "overrides": [{"matcher": {"id": "byName", "options": "cores"}, "properties": [{"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [10, 10]}}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Memory breakdown",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "node_memory_MemTotal_bytes{instance=\"$instance\"} - node_memory_MemFree_bytes{instance=\"$instance\"} - node_memory_Buffers_bytes{instance=\"$instance\"} - node_memory_Cached_bytes{instance=\"$instance\"} - node_memory_SReclaimable_bytes{instance=\"$instance\"}", "legendFormat": "used", "refId": "A"},
+        {"expr": "node_memory_Buffers_bytes{instance=\"$instance\"}", "legendFormat": "buffers", "refId": "B"},
+        {"expr": "node_memory_Cached_bytes{instance=\"$instance\"} + node_memory_SReclaimable_bytes{instance=\"$instance\"}", "legendFormat": "cached", "refId": "C"},
+        {"expr": "node_memory_MemFree_bytes{instance=\"$instance\"}", "legendFormat": "free", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 30, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Swap",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "node_memory_SwapTotal_bytes{instance=\"$instance\"} - node_memory_SwapFree_bytes{instance=\"$instance\"}", "legendFormat": "used", "refId": "A"},
+        {"expr": "node_memory_SwapTotal_bytes{instance=\"$instance\"}", "legendFormat": "total", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 10,
+      "type": "bargauge",
+      "title": "Disk usage by mountpoint",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "100 * (1 - node_filesystem_avail_bytes{instance=\"$instance\",mountpoint=~\"$mountpoint\",fstype!~\"tmpfs|overlay|squashfs|fuse.*\"} / node_filesystem_size_bytes{instance=\"$instance\",mountpoint=~\"$mountpoint\",fstype!~\"tmpfs|overlay|squashfs|fuse.*\"})", "legendFormat": "{{mountpoint}}", "refId": "A", "instant": true}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]}
+        }
+      },
+      "options": {"orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true}
+    },
+    {
+      "id": 11,
+      "type": "bargauge",
+      "title": "Inode usage by mountpoint",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "100 * (1 - node_filesystem_files_free{instance=\"$instance\",mountpoint=~\"$mountpoint\",fstype!~\"tmpfs|overlay|squashfs|fuse.*\"} / node_filesystem_files{instance=\"$instance\",mountpoint=~\"$mountpoint\",fstype!~\"tmpfs|overlay|squashfs|fuse.*\"})", "legendFormat": "{{mountpoint}}", "refId": "A", "instant": true}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]}
+        }
+      },
+      "options": {"orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true}
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Disk I/O bytes",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "rate(node_disk_read_bytes_total{instance=\"$instance\",device=~\"$device\"}[1m])", "legendFormat": "read {{device}}", "refId": "A"},
+        {"expr": "-rate(node_disk_written_bytes_total{instance=\"$instance\",device=~\"$device\"}[1m])", "legendFormat": "write {{device}}", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "Bps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Disk I/O latency (await)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "rate(node_disk_io_time_weighted_seconds_total{instance=\"$instance\",device=~\"$device\"}[1m])", "legendFormat": "{{device}}", "refId": "A"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Network traffic",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "rate(node_network_receive_bytes_total{instance=\"$instance\",device=~\"$netdev\"}[1m])", "legendFormat": "rx {{device}}", "refId": "A"},
+        {"expr": "-rate(node_network_transmit_bytes_total{instance=\"$instance\",device=~\"$netdev\"}[1m])", "legendFormat": "tx {{device}}", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "Bps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}}
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Network errors / drops",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "rate(node_network_receive_errs_total{instance=\"$instance\",device=~\"$netdev\"}[5m])", "legendFormat": "rx errs {{device}}", "refId": "A"},
+        {"expr": "rate(node_network_transmit_errs_total{instance=\"$instance\",device=~\"$netdev\"}[5m])", "legendFormat": "tx errs {{device}}", "refId": "B"},
+        {"expr": "rate(node_network_receive_drop_total{instance=\"$instance\",device=~\"$netdev\"}[5m])", "legendFormat": "rx drop {{device}}", "refId": "C"},
+        {"expr": "rate(node_network_transmit_drop_total{instance=\"$instance\",device=~\"$netdev\"}[5m])", "legendFormat": "tx drop {{device}}", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 16,
+      "type": "logs",
+      "title": "Host journal tail",
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 44},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"journald\", host=\"$nodename\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    }
+  ]
+}

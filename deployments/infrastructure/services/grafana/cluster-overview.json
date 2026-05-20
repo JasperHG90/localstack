@@ -1,24 +1,34 @@
 {
   "uid": "localstack-overview",
   "title": "Localstack Cluster Overview",
-  "tags": ["localstack"],
+  "tags": ["localstack", "overview"],
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "time": {"from": "now-1h", "to": "now"},
   "refresh": "30s",
   "timepicker": {},
   "templating": {"list": []},
   "annotations": {"list": []},
+  "links": [
+    {"title": "Node detail", "url": "/d/localstack-node/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Nomad", "url": "/d/localstack-nomad/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "PostgreSQL", "url": "/d/localstack-postgres/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "MinIO", "url": "/d/localstack-minio/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Ingress (HAProxy + Consul)", "url": "/d/localstack-ingress/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "NATS / JetStream", "url": "/d/localstack-nats/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Application services", "url": "/d/localstack-services/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
   "panels": [
     {
       "id": 1,
       "type": "stat",
       "title": "Nodes Up",
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "count(up{job=\"node\",instance!~\".+:.+\"} == 1)", "refId": "A"}
+        {"expr": "count(up{job=\"node\"} == 1)", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {
@@ -37,7 +47,7 @@
         }
       },
       "options": {
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": ""},
+        "reduceOptions": {"calcs": ["lastNotNull"]},
         "graphMode": "none",
         "textMode": "auto",
         "colorMode": "background"
@@ -46,11 +56,11 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Avg CPU %",
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "title": "Scrape jobs healthy",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "avg(100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100))", "refId": "A"}
+        {"expr": "100 * count(count by (job) (up == 1)) / count(count by (job) (up))", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {
@@ -60,69 +70,9 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 60},
-              {"color": "red", "value": 85}
-            ]
-          },
-          "color": {"mode": "thresholds"}
-        }
-      },
-      "options": {
-        "reduceOptions": {"calcs": ["lastNotNull"]},
-        "graphMode": "area",
-        "colorMode": "value"
-      }
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Avg Memory %",
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [
-        {"expr": "avg(100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)))", "refId": "A"}
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 70},
-              {"color": "red", "value": 90}
-            ]
-          },
-          "color": {"mode": "thresholds"}
-        }
-      },
-      "options": {
-        "reduceOptions": {"calcs": ["lastNotNull"]},
-        "graphMode": "area",
-        "colorMode": "value"
-      }
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "Memex errors (1h)",
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
-      "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [
-        {"expr": "sum(count_over_time({task=\"memex\"} |~ \"(?i)error|exception|traceback\" [1h]))", "refId": "A"}
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 1},
-              {"color": "red", "value": 10}
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 90},
+              {"color": "green", "value": 100}
             ]
           },
           "color": {"mode": "thresholds"}
@@ -135,73 +85,169 @@
       }
     },
     {
+      "id": 3,
+      "type": "stat",
+      "title": "Avg CPU %",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "avg(100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\",job=\"node\"}[5m])) * 100))", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 60}, {"color": "red", "value": 85}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Avg Memory %",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "avg(100 * (1 - (node_memory_MemAvailable_bytes{job=\"node\"} / node_memory_MemTotal_bytes{job=\"node\"})))", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
       "id": 5,
+      "type": "stat",
+      "title": "Lowest disk free %",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "min(100 * node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|fuse.*\",job=\"node\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|fuse.*\",job=\"node\"})", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 10}, {"color": "green", "value": 25}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Errors in logs (1h)",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "sum(count_over_time({job=\"nomad\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [1h]))", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 100}]},
+          "color": {"mode": "thresholds"}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 7,
       "type": "timeseries",
       "title": "CPU per node",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "100 - (avg by (node) (rate(node_cpu_seconds_total{mode=\"idle\"}[1m])) * 100)", "legendFormat": "{{node}}", "refId": "A"}
+        {"expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\",job=\"node\"}[1m])) * 100)", "legendFormat": "{{instance}}", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {"unit": "percent", "min": 0, "max": 100, "custom": {"lineWidth": 1, "fillOpacity": 10}}
       },
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}},
+      "links": [
+        {"title": "Open Node detail", "url": "/d/localstack-node/?var-instance=${__field.labels.instance}&${__url_time_range}", "targetBlank": false}
+      ]
     },
     {
-      "id": 6,
+      "id": 8,
       "type": "timeseries",
       "title": "Memory used per node",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes", "legendFormat": "{{node}}", "refId": "A"}
+        {"expr": "node_memory_MemTotal_bytes{job=\"node\"} - node_memory_MemAvailable_bytes{job=\"node\"}", "legendFormat": "{{instance}}", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 10}}
       },
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
-    },
-    {
-      "id": 7,
-      "type": "timeseries",
-      "title": "Node uptime",
-      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 12},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [
-        {"expr": "time() - node_boot_time_seconds", "legendFormat": "{{node}}", "refId": "A"}
-      ],
-      "fieldConfig": {
-        "defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 5}}
-      },
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
-    },
-    {
-      "id": 8,
-      "type": "timeseries",
-      "title": "Log volume by task (per minute)",
-      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 12},
-      "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [
-        {"expr": "sum by (task) (rate({job=\"nomad\"}[1m]))", "legendFormat": "{{task}}", "refId": "A"}
-      ],
-      "fieldConfig": {
-        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "drawStyle": "bars"}}
-      },
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi"}},
+      "links": [
+        {"title": "Open Node detail", "url": "/d/localstack-node/?var-instance=${__field.labels.instance}&${__url_time_range}", "targetBlank": false}
+      ]
     },
     {
       "id": 9,
-      "type": "logs",
-      "title": "Memex tail",
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 18},
+      "type": "table",
+      "title": "Service health",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 12},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "up{job=~\"nomad|consul|haproxy|postgres|minio|prometheus|nats\"}", "refId": "A", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex|loki|grafana|promtail\"})", "refId": "B", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "filterFieldsByName", "options": {"include": {"names": ["job", "instance", "Value", "exported_job", "Value #A", "Value #B"]}}}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "left", "cellOptions": {"type": "auto"}},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "DOWN", "color": "red", "index": 0}, "1": {"text": "UP", "color": "green", "index": 1}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        },
+        "overrides": [
+          {"matcher": {"id": "byRegexp", "options": "Value.*"}, "properties": [{"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "basic"}}, {"id": "custom.align", "value": "center"}, {"id": "custom.width", "value": 100}]}
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Log volume by task (per minute)",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 12},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [
-        {"expr": "{task=\"memex\"}", "refId": "A"}
+        {"expr": "topk(15, sum by (task) (rate({job=\"nomad\"}[1m])))", "legendFormat": "{{task}}", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "drawStyle": "bars", "stacking": {"mode": "normal"}}}
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 11,
+      "type": "logs",
+      "title": "Recent error logs (all tasks)",
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 21},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"expr": "{job=\"nomad\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\"", "refId": "A"}
       ],
       "options": {
         "showTime": true,
-        "showLabels": false,
+        "showLabels": true,
         "showCommonLabels": false,
         "wrapLogMessage": true,
         "prettifyLogMessage": false,

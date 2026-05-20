@@ -256,6 +256,7 @@ locals {
       rules = [
         "allow from 192.168.0.0/16 to any port 4222 proto tcp",
         "allow from 192.168.0.0/16 to any port 8222 proto tcp",
+        "allow from 192.168.2.47 to any port 7777 proto tcp",
       ]
     }
   }
@@ -326,6 +327,14 @@ resource "nomad_job" "grafana" {
     {
       grafana_secret             = vault_kv_secret_v2.grafana_admin_credentials.path
       cluster_overview_dashboard = file("${path.module}/services/grafana/cluster-overview.json")
+      logs_dashboard             = file("${path.module}/services/grafana/logs.json")
+      services_dashboard         = file("${path.module}/services/grafana/services.json")
+      node_dashboard             = file("${path.module}/services/grafana/node-detail.json")
+      nomad_dashboard            = file("${path.module}/services/grafana/nomad.json")
+      postgres_dashboard         = file("${path.module}/services/grafana/postgres.json")
+      minio_dashboard            = file("${path.module}/services/grafana/minio.json")
+      ingress_dashboard          = file("${path.module}/services/grafana/ingress.json")
+      nats_dashboard             = file("${path.module}/services/grafana/nats.json")
       alert_rules                = file("${path.module}/services/grafana/alert-rules.yaml")
       telegram_secret            = "${var.secret_mount}/data/default/grafana/telegram"
       telegram_alert_chat_id     = var.telegram_alert_chat_id
