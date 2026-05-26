@@ -247,6 +247,7 @@ platform_toolsets:
     - web
     - browser
     - memory
+    - memex
     - skills
     - files
     - cronjob
@@ -255,6 +256,7 @@ platform_toolsets:
     - web
     - browser
     - memory
+    - memex
     - skills
     - files
     - cronjob
