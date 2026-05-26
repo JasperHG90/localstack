@@ -106,7 +106,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
-      hermes_version  = "0.10.0-memex-v1.0.0rc7-r1"
+      hermes_version  = "0.10.0-memex-v1.0.0rc7-r2"
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       memex_host                     = "192.168.2.46"

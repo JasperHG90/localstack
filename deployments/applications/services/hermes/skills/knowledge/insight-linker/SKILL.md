@@ -62,7 +62,6 @@ memex_retrieve_notes(
 )
 ```
 
-(If `memex_retrieve_notes` is not present in the current plugin build, fall back to `memex_note_search(query=..., after=...)`.)
 
 3. Deduplicate by note ID.
 4. Check which notes have already been processed:

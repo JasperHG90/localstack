@@ -12,6 +12,7 @@ RUN set -euo pipefail; \
     sp=/opt/hermes/.venv/lib/python3.13/site-packages; \
     ls -1 "$sp" | sort > /tmp/sp-before; \
     uv pip install --link-mode=copy --python /opt/hermes/.venv/bin/python \
+      pip setuptools wheel \
       "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc7/memex_common-1.0.0rc7-py3-none-any.whl" \
       "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc7/memex_hermes_plugin-1.0.0rc7-py3-none-any.whl" \
       "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc7/memex_cli-1.0.0rc7-py3-none-any.whl"; \

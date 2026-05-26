@@ -74,7 +74,6 @@ If Monday–Friday, proceed:
    ```
    memex_retrieve_notes(query="trader-advisor session-log trading briefing", limit=5)
    ```
-   (Fall back to `memex_note_search(query=..., limit=5)` if `memex_retrieve_notes` is unavailable.)
 
 4. Memory sync: if KV metrics conflict with MASTER, correct KV. Note corrections.
 

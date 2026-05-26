@@ -4,7 +4,7 @@ ENV RUFF_CACHE_DIR=$HOME/workspace/.cache/ruff
 ENV PRE_COMMIT_HOME=$HOME/workspace/.cache/pre-commit
 ENV ANSIBLE_GALAXY_CACHE_DIR=$HOME/workspace/.cache/ansible-galaxy
 
-RUN pipx install --force uv==0.10.12
+RUN pipx install --force uv==0.11.16
 
 WORKDIR /home/vscode
 

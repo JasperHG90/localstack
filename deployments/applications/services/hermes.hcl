@@ -230,16 +230,16 @@ dashboard:
 auxiliary:
   compression:
     provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite-preview"
+    model: "google/gemini-3.1-flash-lite"
   session_search:
     provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite-preview"
+    model: "google/gemini-3.1-flash-lite"
   flush_memories:
     provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite-preview"
+    model: "google/gemini-3.1-flash-lite"
   title_generation:
     provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite-preview"
+    model: "google/gemini-3.1-flash-lite"
 
 platform_toolsets:
   email:
@@ -357,6 +357,33 @@ EOF
         env         = true
       }
 
+      # Prune bundled skills overridden by IaC skills-library, then run gateway.
+      # The base image's entrypoint runs skills_sync.py which copies bundled
+      # skills into /opt/data/skills/. Several of those collide with skills we
+      # ship via skills-library, and Hermes refuses to load ambiguous names —
+      # silently breaking cron jobs like hermes-watcher and cluster-watchdog.
+      # We invoke the prune AFTER entrypoint setup (entrypoint execs $@ if $1
+      # is on PATH) so the venv is active and skills_sync.py has already run.
+      template {
+        data        = <<-EOT
+          #!/bin/sh
+          set -e
+          if [ -d /opt/data/skills-library ]; then
+            find /opt/data/skills-library -name SKILL.md \
+              | sed -e 's|^/opt/data/skills-library/||' -e 's|/SKILL.md$||' \
+              | while IFS= read -r rel; do
+                  if [ -e "/opt/data/skills/$rel" ]; then
+                    echo "prune: /opt/data/skills/$rel (overridden by IaC)"
+                    rm -rf "/opt/data/skills/$rel"
+                  fi
+                done
+          fi
+          exec hermes gateway run
+        EOT
+        destination = "local/start-hermes.sh"
+        perms       = "0755"
+      }
+
       env {
         HERMES_HOME            = "/opt/data"
         HERMES_YOLO_MODE       = "true"
@@ -378,9 +405,13 @@ EOF
 
       config {
         image        = "ghcr.io/jasperhg90/hermes:${hermes_version}"
-        args         = ["gateway", "run"]
+        args         = ["sh", "/local/start-hermes.sh"]
         network_mode = "host"
         shm_size     = "1g"
+
+        volumes = [
+          "local/start-hermes.sh:/local/start-hermes.sh:ro",
+        ]
       }
 
       resources {

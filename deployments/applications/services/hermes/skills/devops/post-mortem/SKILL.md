@@ -20,7 +20,7 @@ Activate when another skill or agent reports an error, failure, or operational i
 
 ### Forbidden Actions
 
-Do NOT use the memory search endpoint (`memex_recall` / `memex_memory_search`) for deduplication. Use note search with specific tags (`memex_retrieve_notes` / `memex_find_note`) instead.
+Do NOT use the memory search endpoint (`memex_recall`) for deduplication. Use note search with specific tags (`memex_retrieve_notes` / `memex_find_note`) instead.
 
 ### Step 1: Verify the Vault
 
