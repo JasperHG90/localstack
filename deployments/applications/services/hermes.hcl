@@ -162,7 +162,7 @@ EOF
         data = <<EOF
 model:
   provider: "ollama-cloud"
-  default: "gemma4:31b-cloud"
+  default: "glm-5.1:cloud"
   context_length: 128000
 
 fallback_model:
@@ -410,6 +410,7 @@ EOF
         args         = ["sh", "/local/start-hermes.sh"]
         network_mode = "host"
         shm_size     = "1g"
+        force_pull   = true
 
         volumes = [
           "local/start-hermes.sh:/local/start-hermes.sh:ro",
@@ -463,6 +464,7 @@ EOF
         image        = "ghcr.io/jasperhg90/hermes:${hermes_version}"
         args         = ["dashboard", "--host", "0.0.0.0", "--port", "9119", "--no-open", "--insecure"]
         network_mode = "host"
+        force_pull   = true
       }
 
       resources {

@@ -1,8 +1,17 @@
-FROM nousresearch/hermes-agent:latest
+# Pinned to v2026.5.7 — the last tini-based hermes-agent tag. Upstream switched
+# to s6-overlay (cont-init.d + s6-applyuidgid) starting v2026.5.16, and
+# s6-applyuidgid needs CAP_SETGID which rootless podman on the radxa node
+# cannot grant (cap_add is a no-op for caps the host user doesn't itself hold).
+# TODO: revisit when base image / Nomad podman config supports s6-overlay.
+FROM nousresearch/hermes-agent:v2026.5.7
 
-# Install curl + jq for skill-based HTTP/JSON manipulation
+# Install curl + jq for skill-based HTTP/JSON manipulation, plus chromium so the
+# agent-browser fallback chain finds a system Chrome for browser_vision /
+# screenshot workflows (see issue #8).
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends curl jq && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl jq chromium \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Memex common, Hermes plugin, and CLI into the venv (with deps).
 # Snapshot site-packages before/after so only NEW package dirs are chowned to
@@ -13,9 +22,9 @@ RUN set -euo pipefail; \
     ls -1 "$sp" | sort > /tmp/sp-before; \
     uv pip install --link-mode=copy --python /opt/hermes/.venv/bin/python \
       pip setuptools wheel \
-      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc10/memex_common-1.0.0rc10-py3-none-any.whl" \
-      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc10/memex_hermes_plugin-1.0.0rc10-py3-none-any.whl" \
-      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc10/memex_cli-1.0.0rc10-py3-none-any.whl"; \
+      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc21/memex_common-1.0.0rc21-py3-none-any.whl" \
+      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc21/memex_hermes_plugin-1.0.0rc21-py3-none-any.whl" \
+      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc21/memex_cli-1.0.0rc21-py3-none-any.whl"; \
     ls -1 "$sp" | sort > /tmp/sp-after; \
     comm -13 /tmp/sp-before /tmp/sp-after | while IFS= read -r d; do \
       chown -R hermes:hermes "$sp/$d"; \
