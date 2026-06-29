@@ -27,6 +27,9 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 2. https://openai.com/news/engineering/
 3. https://engineering.atspotify.com/
 4. https://deepmind.google/
+5. https://www.uber.com/nl/en/blog/engineering/
+6. https://mistral.ai/fr/news/
+7. https://ollama.com/blog
 
 ## Procedure
 

@@ -12,3 +12,7 @@ tmp
 **/vars/prod.tfvars
 
 .DS_Store
+
+
+# APM dependencies
+apm_modules/

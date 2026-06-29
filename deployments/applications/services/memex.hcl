@@ -38,6 +38,7 @@ job "memex" {
         image        = "ghcr.io/jasperhg90/memex-jetson:${memex_version}"
         args         = ["database", "upgrade"]
         network_mode = "host"
+        force_pull   = true
       }
 
       vault {}
@@ -91,6 +92,7 @@ EOF
         image        = "ghcr.io/jasperhg90/memex-jetson:${memex_version}"
         args         = ["--debug", "server", "start"]
         network_mode = "host"
+        force_pull   = true
 
         # GPU: seccomp blocks Jetson GPU ioctls on /dev/nvhost-* and /dev/nvmap
         security_opt = ["seccomp=unconfined", "label=disable"]
