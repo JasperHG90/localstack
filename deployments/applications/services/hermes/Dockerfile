@@ -22,9 +22,9 @@ RUN set -euo pipefail; \
     ls -1 "$sp" | sort > /tmp/sp-before; \
     uv pip install --link-mode=copy --python /opt/hermes/.venv/bin/python \
       pip setuptools wheel \
-      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc6/memex_common-1.0.0rc6-py3-none-any.whl" \
-      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc6/memex_hermes_plugin-1.0.0rc6-py3-none-any.whl" \
-      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc6/memex_cli-1.0.0rc6-py3-none-any.whl"; \
+      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc7/memex_common-1.0.0rc7-py3-none-any.whl" \
+      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc7/memex_hermes_plugin-1.0.0rc7-py3-none-any.whl" \
+      "https://github.com/JasperHG90/memex/releases/download/v1.0.0rc7/memex_cli-1.0.0rc7-py3-none-any.whl"; \
     ls -1 "$sp" | sort > /tmp/sp-after; \
     comm -13 /tmp/sp-before /tmp/sp-after | while IFS= read -r d; do \
       chown -R hermes:hermes "$sp/$d"; \

@@ -41,7 +41,7 @@ For each blog, check previously scraped URLs:
 memex_kv_get(key="app:hermes:blog-scraper:scraped:{site_key}")
 ```
 
-Site keys: `anthropic`, `openai`, `spotify`, `deepmind`. Value is JSON array of URLs. Missing key = first run.
+Site keys: `anthropic`, `openai`, `spotify`, `deepmind`, `uber`, `mistral`, `ollama`. Value is JSON array of URLs. Missing key = first run.
 
 ### Phase 2: Scrape Each Blog
 
