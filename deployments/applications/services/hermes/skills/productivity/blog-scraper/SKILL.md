@@ -30,6 +30,7 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 5. https://www.uber.com/nl/en/blog/engineering/
 6. https://mistral.ai/fr/news/
 7. https://ollama.com/blog
+8. https://addyosmani.com/blog/
 
 ## Procedure
 
