@@ -64,6 +64,14 @@ locals {
         "allow from 192.168.0.0/16 to any port 5050 proto tcp",
       ]
     }
+    # Bifrost LLM gateway on radxa-dragon-q6a — single OpenAI-compatible endpoint for all agent consumers (ADR-001)
+    bifrost = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 8080 proto tcp",
+      ]
+    }
   }
 }
 
@@ -155,6 +163,23 @@ resource "nomad_job" "memex" {
     }
   )
   depends_on = [postgresql_database.database]
+}
+
+### Bifrost — LLM gateway: load-balances two Ollama Cloud keys, falls back to Gemini (ADR-001)
+resource "nomad_job" "bifrost" {
+  jobspec = templatefile(
+    "${path.module}/services/bifrost.hcl",
+    {
+      bifrost_hostname = "radxa-dragon-q6a"
+      bifrost_host     = "192.168.2.50"
+      bifrost_version  = "1.6.2"
+      # Externally seeded in Vault (not Terraform-managed):
+      #   vault kv put secret/default/bifrost/ollama api_key_1=... api_key_2=...
+      #   vault kv put secret/default/bifrost/gemini api_key=...
+      ollama_secret = "${var.secret_mount}/data/default/bifrost/ollama"
+      gemini_secret = "${var.secret_mount}/data/default/bifrost/gemini"
+    }
+  )
 }
 
 ### MLflow — experiment + model tracking, Postgres backend + MinIO artifacts

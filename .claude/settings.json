@@ -237,5 +237,16 @@
   "enableAllProjectMcpServers": true,
   "env": {
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"
+  },
+  "extraKnownMarketplaces": {
+    "memex-8b8de8ec": {
+      "source": {
+        "source": "directory",
+        "path": ".claude/plugins/aim-8b8de8ec329cb5d5"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "memex@memex-8b8de8ec": true
   }
 }
