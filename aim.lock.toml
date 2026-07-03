@@ -1,5 +1,4 @@
 manifest_version = 17
-mcp_servers = []
 targets = []
 managed_files = [
     "AGENTS.md",
@@ -130,6 +129,82 @@ risk_acknowledged = false
 tag = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 sha = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 installed_at = "2026-07-02T08:28:51.003468Z"
+
+[[mcp_server]]
+alias = "drawio-mcp"
+registry_name = "io.github.yohasacura/drawio-mcp"
+entry_hash = "928b476325e3b65395467ff7778cfd7935ce2d7cb5a4be59f3ea39a5d4bda6e0"
+history = []
+
+[mcp_server.entry]
+type = "stdio"
+command = "uvx"
+args = [
+    "drawio-mcp",
+]
+
+[mcp_server.entry.env]
+
+[mcp_server.entry.headers]
+
+[mcp_server.current]
+definition_hash = "c10e19bb75a101d0cf5610c55029658aa62a8aad3130746daba99d5c941cb2f2"
+registry_version = "1.0.2"
+installed_at = "2026-07-02T20:21:25.099286Z"
+
+[mcp_server.current.entry]
+type = "stdio"
+command = "uvx"
+args = [
+    "drawio-mcp",
+]
+
+[mcp_server.current.entry.env]
+
+[mcp_server.current.entry.headers]
+
+[mcp_server.current.overrides]
+
+[mcp_server.overrides]
+
+[[mcp_server]]
+alias = "excalidraw-mcp"
+registry_name = "io.github.cmd8/excalidraw-mcp"
+entry_hash = "0ffe6cea8609c7a4f4bbe564c019e888bea603792010bbbfd1d302d03efc2e8d"
+history = []
+
+[mcp_server.entry]
+type = "stdio"
+command = "npx"
+args = [
+    "-y",
+    "@cmd8/excalidraw-mcp",
+]
+
+[mcp_server.entry.env]
+
+[mcp_server.entry.headers]
+
+[mcp_server.current]
+definition_hash = "0fa794f05d7c2f12f6e4cea97aa93da38f8e513e2569f633a8e78749f8e528ff"
+registry_version = "1.2.0"
+installed_at = "2026-07-03T05:29:45.238179Z"
+
+[mcp_server.current.entry]
+type = "stdio"
+command = "npx"
+args = [
+    "-y",
+    "@cmd8/excalidraw-mcp",
+]
+
+[mcp_server.current.entry.env]
+
+[mcp_server.current.entry.headers]
+
+[mcp_server.current.overrides]
+
+[mcp_server.overrides]
 
 [[rule]]
 qualified_name = "1385a5f1be8c889c/slop-scan-for-docs"

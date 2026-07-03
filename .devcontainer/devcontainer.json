@@ -45,6 +45,7 @@
     },
     "mounts": [
       "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind",
+      "source=homelab-claude-plugins,target=/home/vscode/.claude/plugins,type=volume",
       "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind"
     ]
 }

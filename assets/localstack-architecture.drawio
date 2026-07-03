@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio-mcp" modified="2026-07-02T20:41:52.000Z" agent="drawio-mcp/1.0" version="24.7.17" type="device" compressed="false">
+  <diagram name="localstack-architecture" id="d30411317f95">
+    <mxGraphModel dx="1354" dy="981" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="Nomad cluster — firebat (manager) · orange_pi_4a · jetson_nano · raspberry_pi_4b · radxa · Podman runtime" style="swimlane;startSize=30;fontStyle=1;html=1;container=1;collapsible=0;fillColor=none;strokeColor=#666666;dashed=1;rounded=1;arcSize=6;swimlaneLine=0;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="300" y="60" width="840.0" height="620.0" />
+        </mxCell>
+        <mxCell id="ansible" value="&lt;b&gt;Ansible&lt;/b&gt;&lt;br&gt;&lt;i&gt;bootstrap/&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="40" y="170" width="180" height="60" />
+        </mxCell>
+        <mxCell id="tf_infra" value="&lt;b&gt;Terraform&lt;/b&gt;&lt;br&gt;&lt;i&gt;deployments/infrastructure&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="40" y="300" width="180" height="60" />
+        </mxCell>
+        <mxCell id="tf_apps" value="&lt;b&gt;Terraform&lt;/b&gt;&lt;br&gt;&lt;i&gt;deployments/applications&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="40" y="430" width="180" height="60" />
+        </mxCell>
+        <mxCell id="consul" value="&lt;b&gt;Consul&lt;/b&gt;&lt;br&gt;&lt;i&gt;service discovery · TF state&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="150" width="160" height="60" />
+        </mxCell>
+        <mxCell id="vault" value="&lt;b&gt;Vault&lt;/b&gt;&lt;br&gt;&lt;i&gt;secrets (KV2)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="540" y="150" width="160" height="60" />
+        </mxCell>
+        <mxCell id="nomad" value="&lt;b&gt;Nomad&lt;/b&gt;&lt;br&gt;&lt;i&gt;job scheduler&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="740" y="150" width="160" height="60" />
+        </mxCell>
+        <mxCell id="postgres" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="280" width="140" height="70" />
+        </mxCell>
+        <mxCell id="minio" value="&lt;b&gt;MinIO&lt;/b&gt;&lt;br&gt;&lt;i&gt;S3&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="530" y="280" width="140" height="70" />
+        </mxCell>
+        <mxCell id="registry" value="&lt;b&gt;Docker Registry&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="720" y="280" width="140" height="70" />
+        </mxCell>
+        <mxCell id="ducklake" value="&lt;b&gt;DuckLake&lt;/b&gt;&lt;br&gt;&lt;i&gt;lakehouse (DuckDB)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;dashed=1;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="910" y="280" width="140" height="70" />
+        </mxCell>
+        <mxCell id="prometheus" value="&lt;b&gt;Prometheus&lt;/b&gt;&lt;br&gt;&lt;i&gt;metrics&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="420" width="150" height="60" />
+        </mxCell>
+        <mxCell id="loki" value="&lt;b&gt;Loki&lt;/b&gt;&lt;br&gt;&lt;i&gt;logs&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="530" y="420" width="150" height="60" />
+        </mxCell>
+        <mxCell id="grafana" value="&lt;b&gt;Grafana&lt;/b&gt;&lt;br&gt;&lt;i&gt;dashboards&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="720" y="420" width="150" height="60" />
+        </mxCell>
+        <mxCell id="haproxy" value="&lt;b&gt;HAProxy&lt;/b&gt;&lt;br&gt;&lt;i&gt;reverse proxy&lt;/i&gt;" style="shape=hexagon;perimeter=hexagonPerimeter;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="910" y="420" width="160" height="70" />
+        </mxCell>
+        <mxCell id="hermes" value="&lt;b&gt;Hermes&lt;/b&gt;&lt;br&gt;&lt;i&gt;AI gateway + agent&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="560" width="140" height="60" />
+        </mxCell>
+        <mxCell id="memex" value="&lt;b&gt;Memex&lt;/b&gt;&lt;br&gt;&lt;i&gt;notes / memory&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="500" y="560" width="140" height="60" />
+        </mxCell>
+        <mxCell id="phoenix" value="&lt;b&gt;Phoenix&lt;/b&gt;&lt;br&gt;&lt;i&gt;LLM tracing&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="660" y="560" width="140" height="60" />
+        </mxCell>
+        <mxCell id="nats" value="&lt;b&gt;NATS&lt;/b&gt;&lt;br&gt;&lt;i&gt;messaging&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="940" y="150" width="160" height="60" />
+        </mxCell>
+        <mxCell id="gcs" value="&lt;b&gt;Google Cloud Storage&lt;/b&gt;&lt;br&gt;&lt;i&gt;nightly off-site backups&lt;/i&gt;" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="1220" y="270" width="200" height="90" />
+        </mxCell>
+        <mxCell id="lan" value="LAN clients" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="1280" y="420" width="60" height="70" />
+        </mxCell>
+        <mxCell id="3" value="installs core stack + Podman/CNI" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="ansible" target="2">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="130" y="260" />
+              <mxPoint x="700" y="260" />
+              <mxPoint x="700" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4" value="secret mounts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="tf_infra" target="vault">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="130" y="-40" />
+              <mxPoint x="620" y="-40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="5" value="core service jobs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="tf_infra" target="postgres">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6" value="app jobs · DBs · buckets" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="tf_apps" target="hermes">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="130" y="540" />
+              <mxPoint x="280" y="540" />
+              <mxPoint x="280" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="7" value="metrics" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="grafana" target="prometheus">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" value="logs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="grafana" target="loki">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="9" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="lan" target="haproxy">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1310" y="780" />
+              <mxPoint x="990" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" value="nightly backup" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.15;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="postgres" target="gcs">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="700" />
+              <mxPoint x="1260" y="700" />
+              <mxPoint x="1260" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" value="nightly backup" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.85;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="minio" target="gcs">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="600" y="-40" />
+              <mxPoint x="1320" y="-40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" value="catalog" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="ducklake" target="postgres">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="980" y="-40" />
+              <mxPoint x="410" y="-40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" value="table data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="ducklake" target="minio">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="980" y="-40" />
+              <mxPoint x="600" y="-40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" value="localstack — Home Lab Architecture" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="50" y="0" width="400" height="30" />
+        </mxCell>
+        <mxCell id="17" value="HashiCorp stack on 5 nodes (firebat x86 manager + 4 SBC workers) · Ansible + Terraform" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#666666;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="50" y="30" width="400" height="20" />
+        </mxCell>
+        <mxCell id="18" value="Legend" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#ffffff;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;strokeColor=#666666;html=1;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="40.0" y="560.0" width="200" height="182" />
+        </mxCell>
+        <mxCell id="19" value="Provisioning (IaC)" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fillColor=#d5e8d4;strokeColor=#82b366;html=1;" parent="18" vertex="1">
+          <mxGeometry as="geometry" x="0" y="26" width="200" height="26" />
+        </mxCell>
+        <mxCell id="20" value="Core infra (HashiCorp · NATS)" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fillColor=#ffe6cc;strokeColor=#d79b00;html=1;" parent="18" vertex="1">
+          <mxGeometry as="geometry" x="0" y="52" width="200" height="26" />
+        </mxCell>
+        <mxCell id="21" value="Data services" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fillColor=#dae8fc;strokeColor=#6c8ebf;html=1;" parent="18" vertex="1">
+          <mxGeometry as="geometry" x="0" y="78" width="200" height="26" />
+        </mxCell>
+        <mxCell id="22" value="Observability" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fillColor=#fff2cc;strokeColor=#d6b656;html=1;" parent="18" vertex="1">
+          <mxGeometry as="geometry" x="0" y="104" width="200" height="26" />
+        </mxCell>
+        <mxCell id="23" value="Applications" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fillColor=#e1d5e7;strokeColor=#9673a6;html=1;" parent="18" vertex="1">
+          <mxGeometry as="geometry" x="0" y="130" width="200" height="26" />
+        </mxCell>
+        <mxCell id="24" value="External" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fillColor=#f5f5f5;strokeColor=#666666;html=1;" parent="18" vertex="1">
+          <mxGeometry as="geometry" x="0" y="156" width="200" height="26" />
+        </mxCell>
+        <mxCell id="bifrost" value="&lt;b&gt;Bifrost&lt;/b&gt;&lt;br&gt;&lt;i&gt;LLM gateway&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="820" y="560" width="140" height="60" />
+        </mxCell>
+        <mxCell id="mlflow" value="&lt;b&gt;MLflow&lt;/b&gt;&lt;br&gt;&lt;i&gt;experiments&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="980" y="560" width="140" height="60" />
+        </mxCell>
+        <mxCell id="haproxy_note" value="&lt;i&gt;ingress for all web UIs/APIs:&lt;br&gt;Vault · Nomad · Consul · MinIO · Prometheus · Grafana · Loki · Hermes · Memex · Phoenix · MLflow&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;fontColor=#666666;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="850" y="490" width="280" height="55" />
+        </mxCell>
+        <mxCell id="25" value="memory API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="hermes" target="memex">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="C4-1 System Context" id="05e093998c9f">
+    <mxGraphModel dx="1354" dy="981" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c1_operator" value="&lt;b&gt;Operator&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Person]&lt;/i&gt;&lt;br&gt;provisions &amp; administers the cluster" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#08427B;fontColor=#ffffff;strokeColor=none;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="120" y="120" width="150" height="120" />
+        </mxCell>
+        <mxCell id="c1_lan" value="&lt;b&gt;LAN users&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Person]&lt;/i&gt;&lt;br&gt;use dashboards, AI agent &amp; APIs" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#08427B;fontColor=#ffffff;strokeColor=none;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="120" y="420" width="150" height="120" />
+        </mxCell>
+        <mxCell id="c1_system" value="&lt;b&gt;localstack&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Software System]&lt;/i&gt;&lt;br&gt;&lt;br&gt;Homelab platform: Nomad / Vault / Consul cluster on 5 nodes running data, observability and AI services" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="440" y="250" width="320" height="160" />
+        </mxCell>
+        <mxCell id="c1_gcs" value="&lt;b&gt;Google Cloud Storage&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External System]&lt;/i&gt;&lt;br&gt;off-site backup target" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="960" y="100" width="230" height="100" />
+        </mxCell>
+        <mxCell id="c1_llm" value="&lt;b&gt;LLM providers&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External Systems]&lt;/i&gt;&lt;br&gt;OpenRouter · Ollama Cloud · Gemini" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="960" y="280" width="230" height="100" />
+        </mxCell>
+        <mxCell id="c1_telegram" value="&lt;b&gt;Telegram&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External System]&lt;/i&gt;&lt;br&gt;bot chat interface" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="440" y="560" width="200" height="90" />
+        </mxCell>
+        <mxCell id="c1_gmail" value="&lt;b&gt;Gmail&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External System]&lt;/i&gt;&lt;br&gt;email in/out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="690" y="560" width="200" height="90" />
+        </mxCell>
+        <mxCell id="c1_github" value="&lt;b&gt;GitHub&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External System]&lt;/i&gt;&lt;br&gt;skills &amp; releases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="940" y="560" width="200" height="90" />
+        </mxCell>
+        <mxCell id="2" value="provisions [Ansible + Terraform]· administers via web UIs [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.15;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_operator" target="c1_system">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="3" value="uses services via HAProxy ingress [HTTP]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.85;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_lan" target="c1_system">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="4" value="nightly pg_dumpall + memex bucket mirror [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_system" target="c1_gcs">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="5" value="chat / completions [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_system" target="c1_llm">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="6" value="Hermes bot messages [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.15;exitY=1.0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_system" target="c1_telegram">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="7" value="IMAP / SMTP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.85;exitY=1.0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_system" target="c1_gmail">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="8" value="fetches skills &amp; releases [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c1_system" target="c1_github">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="9" value="C4 Level 1 — System Context" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="50" y="10" width="400" height="30" />
+        </mxCell>
+        <mxCell id="10" value="localstack homelab platform and the people/systems around it" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#666666;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="50" y="42" width="400" height="20" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="C4-2 Containers" id="a772800d88c8">
+    <mxGraphModel dx="1354" dy="981" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="localstack [Software System] — Nomad cluster: firebat (manager) + 4 SBC workers · Podman runtime" style="swimlane;startSize=30;fontStyle=1;html=1;container=1;collapsible=0;fillColor=none;strokeColor=#666666;dashed=1;rounded=1;arcSize=6;swimlaneLine=0;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="300" y="60" width="900.0" height="660.0" />
+        </mxCell>
+        <mxCell id="c2_consul" value="&lt;b&gt;Consul&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;discovery · TF state" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="150" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_vault" value="&lt;b&gt;Vault&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;secrets (KV2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="510" y="150" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_nomad" value="&lt;b&gt;Nomad&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;job scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="680" y="150" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_nats" value="&lt;b&gt;NATS&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;messaging" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="850" y="150" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_prometheus" value="&lt;b&gt;Prometheus&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="270" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_loki" value="&lt;b&gt;Loki&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;logs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="510" y="270" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_grafana" value="&lt;b&gt;Grafana&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;dashboards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="680" y="270" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_haproxy" value="&lt;b&gt;HAProxy&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;ingress for all web UIs / APIs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="850" y="270" width="150" height="70" />
+        </mxCell>
+        <mxCell id="c2_postgres" value="&lt;b&gt;PostgreSQL&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container: DB]&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#438DD5;fontColor=#ffffff;strokeColor=none;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="400" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_minio" value="&lt;b&gt;MinIO&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container: S3]&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#438DD5;fontColor=#ffffff;strokeColor=none;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="510" y="400" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_registry" value="&lt;b&gt;Docker Registry&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container: OCI]&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#438DD5;fontColor=#ffffff;strokeColor=none;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="680" y="400" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_backup" value="&lt;b&gt;Backup jobs&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container: Nomad periodic]&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="850" y="400" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_hermes" value="&lt;b&gt;Hermes&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;AI gateway + agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="540" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_memex" value="&lt;b&gt;Memex&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;notes / memory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="510" y="540" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_phoenix" value="&lt;b&gt;Phoenix&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;LLM tracing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="680" y="540" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_bifrost" value="&lt;b&gt;Bifrost&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;LLM gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="850" y="540" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_mlflow" value="&lt;b&gt;MLflow&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Container]&lt;/i&gt;&lt;br&gt;experiment tracking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="1020" y="540" width="150" height="80" />
+        </mxCell>
+        <mxCell id="c2_note" value="&lt;i&gt;Platform relationships (not drawn to avoid clutter): Nomad schedules every container · Vault injects secrets into all jobs · Consul provides service discovery · Podman pulls images from the Docker Registry · Prometheus scrapes all services · Promtail ships logs to Loki&lt;/i&gt;" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;fontColor=#666666;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="340" y="640" width="830" height="60" />
+        </mxCell>
+        <mxCell id="c2_lan" value="&lt;b&gt;LAN users&lt;/b&gt;&lt;br&gt;&lt;i&gt;[Person]&lt;/i&gt;" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#08427B;fontColor=#ffffff;strokeColor=none;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="1300" y="260" width="130" height="100" />
+        </mxCell>
+        <mxCell id="c2_gcs" value="&lt;b&gt;Google Cloud Storage&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External]&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="1280" y="410" width="190" height="70" />
+        </mxCell>
+        <mxCell id="c2_llm" value="&lt;b&gt;LLM providers&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External]&lt;/i&gt;&lt;br&gt;OpenRouter · Ollama Cloud · Gemini" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="940" y="780" width="240" height="80" />
+        </mxCell>
+        <mxCell id="c2_telegram" value="&lt;b&gt;Telegram&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External]&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="240" y="780" width="160" height="70" />
+        </mxCell>
+        <mxCell id="c2_gmail" value="&lt;b&gt;Gmail&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External]&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="430" y="780" width="160" height="70" />
+        </mxCell>
+        <mxCell id="c2_github" value="&lt;b&gt;GitHub&lt;/b&gt;&lt;br&gt;&lt;i&gt;[External]&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=none;fontSize=14;arcSize=6;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="620" y="780" width="160" height="70" />
+        </mxCell>
+        <mxCell id="3" value="SQL · db memex" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.3833333333333333;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_memex" target="c2_postgres">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4" value="S3 · bucket memex" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.5;exitY=0.0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1.0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_memex" target="c2_minio">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="5" value="SQL · db phoenix" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.6166666666666666;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_phoenix" target="c2_postgres">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6" value="SQL · db mlflow" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.8499999999999999;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_mlflow" target="c2_postgres">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1220" y="740" />
+              <mxPoint x="280" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="7" value="S3 · mlflow-artifacts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.85;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_mlflow" target="c2_minio">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1220" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" value="HTTP :8000 · memory API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_hermes" target="c2_memex">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" value="PromQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_grafana" target="c2_prometheus">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="470" y="40" />
+              <mxPoint x="470" y="-10" />
+              <mxPoint x="30" y="-10" />
+              <mxPoint x="30" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" value="LogQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_grafana" target="c2_loki">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="11" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_lan" target="c2_haproxy">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1220" y="310" />
+              <mxPoint x="1220" y="40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" value="pg_dumpall" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.15;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_backup" target="c2_postgres">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1220" y="740" />
+              <mxPoint x="280" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="13" value="mirror (memex bucket only)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.0;entryY=0.15;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_backup" target="c2_minio">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1220" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" value="nightly upload [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_backup" target="c2_gcs">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1380" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" value="bot [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.15;exitY=1.0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_hermes" target="c2_telegram">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="820" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" value="IMAP / SMTP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.85;exitY=1.0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_hermes" target="c2_gmail">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="760" />
+              <mxPoint x="510" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" value="fetch skills [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_hermes" target="c2_github">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="760" />
+              <mxPoint x="700" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="18" value="OpenRouter · Ollama Cloud [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_hermes" target="c2_llm">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="280" y="760" />
+              <mxPoint x="1060" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="19" value="OpenAI-compatible · weighted keys [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_bifrost" target="c2_llm">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="920" y="820" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" value="C4 Level 2 — Containers" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="50" y="10" width="400" height="30" />
+        </mxCell>
+        <mxCell id="21" value="running services inside the localstack system boundary · relationships verified against Nomad jobspecs" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#666666;" parent="1" vertex="1">
+          <mxGeometry as="geometry" x="50" y="42" width="400" height="20" />
+        </mxCell>
+        <mxCell id="22" value="OTLP traces :6006" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.15;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_memex" target="c2_phoenix">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="23" value="Gemini direct [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;exitX=1.0;exitY=0.85;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" source="c2_memex" target="c2_llm">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1060" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
