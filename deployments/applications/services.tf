@@ -121,8 +121,6 @@ resource "nomad_job" "hermes" {
       memex_auth_secret              = "${var.secret_mount}/data/default/hermes/memex_auth"
       github_secret                  = "${var.secret_mount}/data/default/hermes/github"
       telegram_secret                = "${var.secret_mount}/data/default/hermes/telegram"
-      openrouter_secret              = "${var.secret_mount}/data/default/hermes/openrouter"
-      ollama_secret                  = "${var.secret_mount}/data/default/hermes/ollama"
       email_secret                   = "${var.secret_mount}/data/default/hermes/email"
       nomad_secret                   = "${var.secret_mount}/data/default/hermes/nomad"
       api_server_secret              = vault_kv_secret_v2.hermes_api_server.path
@@ -174,10 +172,12 @@ resource "nomad_job" "bifrost" {
       bifrost_host     = "192.168.2.50"
       bifrost_version  = "1.6.2"
       # Externally seeded in Vault (not Terraform-managed):
-      #   vault kv put secret/default/bifrost/ollama api_key_1=... api_key_2=...
-      #   vault kv put secret/default/bifrost/gemini api_key=...
-      ollama_secret = "${var.secret_mount}/data/default/bifrost/ollama"
-      gemini_secret = "${var.secret_mount}/data/default/bifrost/gemini"
+      #   vault kv put secret/default/bifrost/ollama-personal API_KEY=...
+      #   vault kv put secret/default/bifrost/ollama-xebia    API_KEY=...
+      #   vault kv put secret/default/bifrost/gemini          GOOGLE_API_KEY=...
+      ollama_personal_secret = "${var.secret_mount}/data/default/bifrost/ollama-personal"
+      ollama_xebia_secret    = "${var.secret_mount}/data/default/bifrost/ollama-xebia"
+      gemini_secret          = "${var.secret_mount}/data/default/bifrost/gemini"
     }
   )
 }

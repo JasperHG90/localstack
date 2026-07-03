@@ -54,20 +54,23 @@ job "bifrost" {
       # --- provider API keys (resolved by Bifrost via env. references) ---
       template {
         data        = <<EOF
-{{- with secret "${ollama_secret}" }}
-OLLAMA_KEY_1={{ .Data.data.api_key_1 }}
-OLLAMA_KEY_2={{ .Data.data.api_key_2 }}
+{{- with secret "${ollama_personal_secret}" }}
+OLLAMA_KEY_PERSONAL={{ .Data.data.API_KEY }}
+{{- end }}
+{{- with secret "${ollama_xebia_secret}" }}
+OLLAMA_KEY_XEBIA={{ .Data.data.API_KEY }}
 {{- end }}
 {{- with secret "${gemini_secret}" }}
-GEMINI_API_KEY={{ .Data.data.api_key }}
+GEMINI_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
 {{- end }}
 EOF
         destination = "secrets/bifrost.env"
         env         = true
       }
 
-      # --- gateway routing policy: two weighted Ollama Cloud keys,
-      #     Gemini engaged only via per-request fallback chains ---
+      # --- gateway routing policy: two weighted Ollama Cloud keys
+      #     (personal + xebia accounts). Gemini is addressed directly by
+      #     consumers via the "gemini/" model prefix ---
       template {
         data = <<EOF
 {
@@ -79,8 +82,8 @@ EOF
   "providers": {
     "ollama": {
       "keys": [
-        { "name": "ollama-a", "value": "env.OLLAMA_KEY_1", "models": ["*"], "weight": 0.5 },
-        { "name": "ollama-b", "value": "env.OLLAMA_KEY_2", "models": ["*"], "weight": 0.5 }
+        { "name": "ollama-personal", "value": "env.OLLAMA_KEY_PERSONAL", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
+        { "name": "ollama-xebia", "value": "env.OLLAMA_KEY_XEBIA", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } }
       ],
       "network_config": {
         "base_url": "https://ollama.com",

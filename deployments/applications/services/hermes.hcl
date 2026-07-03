@@ -55,6 +55,7 @@ job "hermes" {
           "local/SOUL.md:/tmp/hermes/SOUL.md",
           "local/setup.sh:/tmp/setup.sh",
           "local/skills:/tmp/hermes/skills:ro",
+          "local/model-providers:/tmp/hermes/model-providers:ro",
         ]
       }
 
@@ -106,6 +107,16 @@ if [ -d /opt/hermes/memex-plugin ]; then
   echo "hermes: memex plugin synced"
 fi
 
+# IaC-managed model-provider profiles (e.g. bifrost gateway). Auto-discovered
+# by the provider registry from $HERMES_HOME/plugins/model-providers/. Refreshed
+# each deploy so the profile stays in lockstep with config.yaml.
+if [ -d /tmp/hermes/model-providers ]; then
+  rm -rf /opt/data/plugins/model-providers
+  mkdir -p /opt/data/plugins/model-providers
+  cp -r /tmp/hermes/model-providers/* /opt/data/plugins/model-providers/
+  echo "hermes: model-provider plugins synced"
+fi
+
 # Final ownership pass — everything we just wrote
 chown -R $HERMES_UID:$HERMES_GID /opt/data 2>/dev/null || true
 
@@ -116,15 +127,57 @@ EOF
         perms       = "0755"
       }
 
+      # --- bifrost model-provider profile (drop-in user plugin) ---
+      # Routes all hermes model traffic through the co-located Bifrost gateway
+      # over loopback. Bifrost holds the upstream keys (Ollama Cloud, Gemini)
+      # and load-balances the two Ollama keys. Model names select the provider
+      # via Bifrost's "<provider>/<model>" prefix (e.g. ollama/glm-5.1:cloud,
+      # gemini/gemini-flash-latest); hermes handles fallback via fallback_model.
+      template {
+        data        = <<EOF
+"""Bifrost gateway provider profile.
+
+Points hermes at the self-hosted Bifrost LLM gateway running on this node.
+Bifrost owns the upstream provider credentials; hermes only needs to reach
+the gateway's OpenAI-compatible endpoint. Model names carry Bifrost's
+"<provider>/<model>" prefix, e.g. "ollama/glm-5.1:cloud" or
+"gemini/gemini-flash-latest".
+"""
+
+from providers import register_provider
+from providers.base import ProviderProfile
+
+bifrost = ProviderProfile(
+    name="bifrost",
+    aliases=("bifrost-gateway",),
+    display_name="Bifrost Gateway",
+    description="Self-hosted Bifrost LLM gateway (Ollama Cloud + Gemini)",
+    env_vars=("BIFROST_API_KEY",),
+    base_url="http://127.0.0.1:8080/v1",
+    default_aux_model="gemini/gemini-flash-lite-latest",
+)
+
+register_provider(bifrost)
+EOF
+
+        destination = "local/model-providers/bifrost/__init__.py"
+      }
+
+      template {
+        data        = <<EOF
+name: bifrost-provider
+kind: model-provider
+version: 1.0.0
+description: Self-hosted Bifrost LLM gateway (Ollama Cloud + Gemini)
+author: JasperHG90
+EOF
+
+        destination = "local/model-providers/bifrost/plugin.yaml"
+      }
+
       # --- .env (secrets from Vault) ---
       template {
         data = <<EOF
-{{- with secret "${openrouter_secret}" }}
-OPENROUTER_API_KEY={{ .Data.data.api_key }}
-{{- end }}
-{{- with secret "${ollama_secret}" }}
-OLLAMA_API_KEY={{ .Data.data.API_KEY }}
-{{- end }}
 {{- with secret "${telegram_secret}" }}
 TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 {{- end }}
@@ -151,7 +204,7 @@ NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
 HERMES_YOLO_MODE=true
 HERMES_HOME=/opt/data
-OLLAMA_BASE_URL=https://ollama.com/v1
+BIFROST_API_KEY=hermes-local
 EOF
 
         destination = "local/hermes.env"
@@ -161,13 +214,13 @@ EOF
       template {
         data = <<EOF
 model:
-  provider: "ollama-cloud"
-  default: "glm-5.1:cloud"
+  provider: "bifrost"
+  default: "ollama/glm-5.1:cloud"
   context_length: 128000
 
 fallback_model:
-  provider: "openrouter"
-  model: "google/gemini-3-flash-preview"
+  provider: "bifrost"
+  model: "gemini/gemini-flash-latest"
 
 agent:
   max_turns: 90
@@ -229,17 +282,17 @@ dashboard:
 
 auxiliary:
   compression:
-    provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite"
+    provider: "bifrost"
+    model: "gemini/gemini-flash-lite-latest"
   session_search:
-    provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite"
+    provider: "bifrost"
+    model: "gemini/gemini-flash-lite-latest"
   flush_memories:
-    provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite"
+    provider: "bifrost"
+    model: "gemini/gemini-flash-lite-latest"
   title_generation:
-    provider: "openrouter"
-    model: "google/gemini-3.1-flash-lite"
+    provider: "bifrost"
+    model: "gemini/gemini-flash-lite-latest"
 
 platform_toolsets:
   email:
@@ -328,12 +381,6 @@ EOT
 
       template {
         data = <<EOF
-{{- with secret "${openrouter_secret}" }}
-OPENROUTER_API_KEY={{ .Data.data.api_key }}
-{{- end }}
-{{- with secret "${ollama_secret}" }}
-OLLAMA_API_KEY={{ .Data.data.API_KEY }}
-{{- end }}
 {{- with secret "${telegram_secret}" }}
 TELEGRAM_BOT_TOKEN={{ .Data.data.bot_token }}
 {{- end }}
@@ -399,7 +446,7 @@ EOF
         EMAIL_IMAP_HOST        = "imap.gmail.com"
         EMAIL_SMTP_HOST        = "smtp.gmail.com"
         DIGEST_EMAIL           = "${hermes_digest_email}"
-        OLLAMA_BASE_URL        = "https://ollama.com/v1"
+        BIFROST_API_KEY        = "hermes-local"
         API_SERVER_ENABLED     = "true"
         API_SERVER_HOST        = "0.0.0.0"
         GATEWAY_HEALTH_TIMEOUT = "5"

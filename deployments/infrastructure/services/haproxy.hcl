@@ -60,6 +60,7 @@ frontend http_in
     acl is_grafana    hdr(host) -i grafana.localstack
     acl is_loki       hdr(host) -i loki.localstack
     acl is_mlflow     hdr(host) -i mlflow.localstack
+    acl is_bifrost    hdr(host) -i bifrost.localstack
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -73,6 +74,7 @@ frontend http_in
     use_backend grafana    if is_grafana
     use_backend loki       if is_loki
     use_backend mlflow     if is_mlflow
+    use_backend bifrost    if is_bifrost
 
 frontend stats
     bind *:8404
@@ -118,6 +120,10 @@ backend loki
 backend mlflow
     http-request auth unless { http_auth(openfang_users) }
     server mlflow1 192.168.2.50:5050 check
+
+backend bifrost
+    http-request auth unless { http_auth(openfang_users) }
+    server bifrost1 192.168.2.50:8080 check
         EOH
         destination = "local/haproxy.cfg"
       }
