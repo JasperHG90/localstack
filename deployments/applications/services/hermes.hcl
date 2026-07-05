@@ -19,9 +19,6 @@ job "hermes" {
       port "gateway" {
         static = 8642
       }
-      port "dashboard" {
-        static = 9119
-      }
     }
 
     # ── Prestart: sync IaC config files to the persistent volume ──
@@ -277,9 +274,6 @@ compression:
 approvals:
   mode: "off"
 
-dashboard:
-  theme: "mono"
-
 auxiliary:
   compression:
     provider: "bifrost"
@@ -468,55 +462,6 @@ EOF
         cpu        = 2000
         memory     = 2048
         memory_max = 2560
-      }
-    }
-
-    # ── Dashboard: web UI for sessions, config, cron, analytics ──
-    # Separate process sharing the same data volume.
-    task "dashboard" {
-      driver = "podman"
-
-      lifecycle {
-        hook    = "poststart"
-        sidecar = true
-      }
-
-      volume_mount {
-        volume      = "hermes_data_volume"
-        destination = "/opt/data"
-      }
-
-      service {
-        name    = "hermes-dashboard"
-        port    = "dashboard"
-        address = "${hermes_host}"
-
-        tags = ["http", "hermes", "dashboard"]
-
-        check {
-          type     = "http"
-          path     = "/api/status"
-          port     = "dashboard"
-          interval = "15s"
-          timeout  = "5s"
-        }
-      }
-
-      env {
-        HERMES_HOME        = "/opt/data"
-        GATEWAY_HEALTH_URL = "http://127.0.0.1:8642"
-      }
-
-      config {
-        image        = "ghcr.io/jasperhg90/hermes:${hermes_version}"
-        args         = ["dashboard", "--host", "0.0.0.0", "--port", "9119", "--no-open", "--insecure"]
-        network_mode = "host"
-        force_pull   = true
-      }
-
-      resources {
-        cpu    = 500
-        memory = 256
       }
     }
   }

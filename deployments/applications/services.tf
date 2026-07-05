@@ -44,7 +44,6 @@ locals {
       ssh_user = "radxa"
       rules = [
         "allow from 192.168.2.30 to any port 8642 proto tcp",
-        "allow from 192.168.2.30 to any port 9119 proto tcp",
         "allow from 192.168.2.46 to any port 8642 proto tcp",
       ]
     }
@@ -114,7 +113,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
-      hermes_version  = "0.11.0-memex-v1.0.0rc7"
+      hermes_version  = "0.12.0-memex-v1.0.1"
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       memex_host                     = "192.168.2.46"
@@ -157,7 +156,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
-      memex_version         = "1.0.0rc7"
+      memex_version         = "1.0.1"
     }
   )
   depends_on = [postgresql_database.database]

@@ -55,7 +55,6 @@ frontend http_in
     acl is_consul     hdr(host) -i consul.localstack
     acl is_phoenix    hdr(host) -i phoenix.localstack
     acl is_memex      hdr(host) -i memex.localstack
-    acl is_hermes     hdr(host) -i hermes.localstack
     acl is_prometheus hdr(host) -i prometheus.localstack
     acl is_grafana    hdr(host) -i grafana.localstack
     acl is_loki       hdr(host) -i loki.localstack
@@ -69,7 +68,6 @@ frontend http_in
     use_backend consul     if is_consul
     use_backend phoenix    if is_phoenix
     use_backend memex      if is_memex
-    use_backend hermes     if is_hermes
     use_backend prometheus if is_prometheus
     use_backend grafana    if is_grafana
     use_backend loki       if is_loki
@@ -104,9 +102,6 @@ backend phoenix
 
 backend memex
     server memex1 192.168.2.46:8000 check
-
-backend hermes
-    server hermes1 192.168.2.50:9119 check
 
 backend prometheus
     server prometheus1 192.168.2.47:9090 check
