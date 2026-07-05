@@ -289,12 +289,21 @@ flavor = "claude"
 source_path = "packages/claude-code-plugin"
 target_dir = ".claude/plugins/aim-8b8de8ec329cb5d5/memex"
 marketplace_name = "aim-8b8de8ec329cb5d5"
-history = []
 content_hash = "ce04ff99dabf7494c6e3b504257f1cf9dbc1de3e945dc5bbd31d6159bdf4a6d8"
 pin = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
+sha = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
+installed_at = "2026-07-05T17:26:48.010659Z"
+
+[[plugin.history]]
+tag = "latest"
+sha = "3233f4123b44d4746967e1ff867b770efd006498"
+installed_at = "2026-07-05T17:25:25.294014Z"
+
+[[plugin.history]]
 tag = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
 sha = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
 installed_at = "2026-07-02T08:28:51.322365Z"
