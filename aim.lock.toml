@@ -150,7 +150,7 @@ args = [
 [mcp_server.current]
 definition_hash = "c10e19bb75a101d0cf5610c55029658aa62a8aad3130746daba99d5c941cb2f2"
 registry_version = "1.0.2"
-installed_at = "2026-07-02T20:21:25.099286Z"
+installed_at = "2026-07-04T21:25:49.914548Z"
 
 [mcp_server.current.entry]
 type = "stdio"
@@ -162,10 +162,6 @@ args = [
 [mcp_server.current.entry.env]
 
 [mcp_server.current.entry.headers]
-
-[mcp_server.current.overrides]
-
-[mcp_server.overrides]
 
 [[mcp_server]]
 alias = "excalidraw-mcp"
@@ -188,7 +184,7 @@ args = [
 [mcp_server.current]
 definition_hash = "0fa794f05d7c2f12f6e4cea97aa93da38f8e513e2569f633a8e78749f8e528ff"
 registry_version = "1.2.0"
-installed_at = "2026-07-03T05:29:45.238179Z"
+installed_at = "2026-07-04T21:25:49.915083Z"
 
 [mcp_server.current.entry]
 type = "stdio"
@@ -201,10 +197,6 @@ args = [
 [mcp_server.current.entry.env]
 
 [mcp_server.current.entry.headers]
-
-[mcp_server.current.overrides]
-
-[mcp_server.overrides]
 
 [[rule]]
 qualified_name = "1385a5f1be8c889c/slop-scan-for-docs"
