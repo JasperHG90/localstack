@@ -1,4 +1,6 @@
-# localstack
+<p align="center">
+  <img src="assets/logos/localstack-logo.png" alt="localstack" width="440">
+</p>
 
 Infrastructure-as-code for a personal homelab cluster running on Orange Pi and Radxa single-board computers. Built on the HashiCorp stack (Nomad, Vault, Consul) with Podman as the container runtime.
 
