@@ -143,5 +143,4 @@ repo_alias = "8b8de8ec329cb5d5"
 flavor = "claude"
 source_path = "packages/claude-code-plugin"
 marketplace_name = "memex"
-pin = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
 risk_acknowledged = false

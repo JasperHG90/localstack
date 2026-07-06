@@ -28,10 +28,7 @@ _session_note_key=""
 
 if [ -z "$_session_note_key" ]; then
     jq -n '{
-        hookSpecificOutput: {
-            hookEventName: "PreCompact",
-            additionalContext: "Memex pre-compact capture skipped — session note key is missing. The plugin will recover on the next session."
-        }
+        systemMessage: "Memex pre-compact capture skipped — session note key is missing. The plugin will recover on the next session."
     }'
     exit 0
 fi
@@ -69,7 +66,7 @@ _capture_status="skipped"
 _capture_reason=""
 
 # Opt-out: MEMEX_CC_TRANSCRIPT_CAPTURE=off|0|false|no|disabled bypasses the capture
-# but still emits the existing skipped-path output shape (additionalContext + stats
+# but still emits the existing skipped-path output shape (systemMessage + stats
 # appendix). Offset file is NOT advanced — re-enabling resumes from prior offset.
 case "${MEMEX_CC_TRANSCRIPT_CAPTURE:-on}" in
     off|0|false|no|disabled)
@@ -122,7 +119,17 @@ else
             )
             [ -n "$_project_id" ] && _tags+=("project:$_project_id")
 
-            _title="Session transcript: ${_session_note_key}"
+            # Friendly title from Claude Code's own session title (shown in the
+            # `--resume` picker): user-set `custom-title` wins over the
+            # generated `ai-title`; take the latest of each. Raw mode
+            # (`fromjson?`) so one malformed transcript line can't abort the
+            # scan. Title is set only on note CREATION (append never retitles).
+            # `// empty` drops null/absent title values so they don't become a
+            # literal "null" title (fromjson? guards parse errors, not nulls).
+            _cc_title=$(jq -Rrc 'fromjson? | select(.type=="custom-title") | .customTitle // empty' "$_transcript_path" 2>/dev/null | tail -1)
+            [ -z "$_cc_title" ] && _cc_title=$(jq -Rrc 'fromjson? | select(.type=="ai-title") | .aiTitle // empty' "$_transcript_path" 2>/dev/null | tail -1)
+            _title_ts=$(date -u +'%Y-%m-%d %H:%M UTC' 2>/dev/null || printf '%s' "$_timestamp")
+            _title="Session: ${_cc_title:-transcript — ${_title_ts}}"
             _description="Auto-captured CC session transcript (pre-compact + final)."
 
             if memex_persist_session_delta \
@@ -156,8 +163,5 @@ if [ "$writes" -gt 5 ] || [ "$commits" -gt 0 ]; then
 fi
 
 jq -n --arg ctx "$msg" '{
-    hookSpecificOutput: {
-        hookEventName: "PreCompact",
-        additionalContext: $ctx
-    }
+    systemMessage: $ctx
 }'
