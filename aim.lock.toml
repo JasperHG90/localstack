@@ -100,6 +100,32 @@ tag = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 sha = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 installed_at = "2026-07-02T08:28:50.816937Z"
 
+[[skill]]
+qualified_name = "4290899e4697f267/generate-art"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/generate-art"
+target_dir = ".claude/skills/generate-art"
+history = []
+content_hash = "832c53b5164ae39bf7c0329e263f2fb55a00141f21774a90084e695e4954f73f"
+risk_acknowledged = false
+
+[skill.current]
+sha = "516c105a9d8260c80a9d1fd8cb4004fe22a74225"
+installed_at = "2026-07-06T20:27:09.522986Z"
+
+[[skill]]
+qualified_name = "4290899e4697f267/remove-image-background"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/remove-image-background"
+target_dir = ".claude/skills/remove-image-background"
+history = []
+content_hash = "5153810b9f203e830e290f8d5dc90c66bc259e3afa2548c9e07f4e03cc9da4fb"
+risk_acknowledged = false
+
+[skill.current]
+sha = "8618a2dea8b1997e94bab553b436054ab7fec9c3"
+installed_at = "2026-07-06T20:27:11.145289Z"
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"

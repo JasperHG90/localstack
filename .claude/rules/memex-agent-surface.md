@@ -26,37 +26,37 @@ Reflection produces per-entity mental models (read-only — surface via `memex_m
 
 ## Retrieval routing
 
+Match the query shape; call the listed tool(s):
+
 - **Title fragment** → `memex_find_note` → `memex_get_page_indices` + `memex_get_nodes`.
 - **Relationships** → `memex_list_entities` → `memex_get_entity_cooccurrences` → `memex_get_entity_mentions`.
-- **Content lookup** (specific fact, single question) → `memex_memory_search` AND `memex_note_search` in parallel. Retry `expand_query=true` if insufficient.
-- **Comprehensive view of a topic/entity**. Triggers: "give me everything about X", "comprehensive picture of X", "overview of X", "everything you know about Y", "tell me all about Z". REQUIRED: call `memex_survey(query)` FIRST, OR run ≥3 targeted `memex_memory_search` calls (one per facet). A single search result is NEVER enough. <example>User: "Tell me everything about Topic-X" → WRONG: one `memex_memory_search("Topic-X")` + answer. RIGHT: `memex_survey("Topic-X")` → synthesise. Or: three `memex_memory_search` calls scoped to different aspects → consolidate.</example>
-- **Broad/panoramic** (vault-wide, no specific topic) → `memex_get_vault_summary` first; escalate to `memex_survey(query)` if too coarse.
-- **KV** — "what's our X?" / "what convention?" / "what do I prefer?" / "what setting?" → call `memex_kv_get(key)` / `memex_kv_search(query)` / `memex_kv_list()` FIRST. DO NOT `ls`, `Glob`, `Read`, `Bash`, or otherwise inspect the local filesystem before checking KV — preferences/conventions/settings live in KV, not on disk. Wake words that force this route unconditionally: `KV: get <key>`, `KV: search <query>`, `Store in KV: <key>=<value>` → execute the matching `memex_kv_*` call verbatim, no other routing.
+- **Specific fact / single question** → `memex_memory_search` AND `memex_note_search` in parallel. Retry `expand_query=true` if insufficient.
+- **Comprehensive view of a topic/entity** ("everything/overview/tell me all about X") → `memex_survey(query)` FIRST, OR ≥3 facet-scoped `memex_memory_search` calls. One search result is NEVER enough. <example>"Tell me everything about Topic-X" → WRONG: one `memex_memory_search("Topic-X")`. RIGHT: `memex_survey("Topic-X")`, or 3 facet-scoped `memex_memory_search` → consolidate.</example>
+- **Broad/panoramic** (vault-wide, no topic) → `memex_get_vault_summary` first; escalate to `memex_survey(query)` if too coarse.
+- **KV** ("what's our X?" / "what convention?" / "what do I prefer?" / "what setting?") → `memex_kv_get(key)` / `memex_kv_search(query)` / `memex_kv_list()`. Preferences/conventions/settings live in KV, not on disk — answer from `memex_kv_get`/`memex_kv_search` before inspecting local files (`ls`/`Glob`/`Read`/`Bash`). Wake words route verbatim: `KV: get <key>`, `KV: search <query>`, `Store in KV: <key>=<value>`. (How-to procedures are NOT KV → procedural plane.)
 
-After `memory_search`: call `memex_get_notes_metadata`. After `note_search`: metadata inline — do NOT call `memex_get_notes_metadata` again. `memex_read_note` only when `total_tokens < 500`.
+After `memory_search`: call `memex_get_notes_metadata`. After `note_search`: metadata is inline — do NOT call `memex_get_notes_metadata`. `memex_read_note` only when `total_tokens < 500`.
 
-For list-shape browse tools (`memex_recent_notes`, `memex_list_notes`, `memex_list_entities`), pass `slim=True` when you only need IDs + titles + timestamps. Drops per-note summaries and entity descriptions so the response fits under tool-output caps on realistic vaults. Default is `slim=False` (full shape).
+For list-shape browse tools (`memex_recent_notes`, `memex_list_notes`, `memex_list_entities`), pass `slim=True` when you need only IDs/titles/timestamps — drops summaries + descriptions to fit tool-output caps. Default `slim=False`.
 
 ## Search query formulation
 
-<critical_constraint name="search-queries">
-ALWAYS formulate search queries as natural language, NEVER as keyword lists.
-ALWAYS preserve proper nouns, amounts, dates, qualifiers from the original question.
-ALWAYS search for the subject/activity, NOT the answer type.
-</critical_constraint>
+Formulate search queries as natural language, not as keyword lists (NEVER as keyword lists). Preserve proper nouns, amounts, dates, and qualifiers from the original question, and search for the subject/activity rather than the answer type.
+
+<example>"When did we last rotate the prod DB credentials?" → WRONG: `memex_memory_search("prod DB credentials rotation date")` (keywords + answer-type). RIGHT: `memex_memory_search("When did we last rotate the prod database credentials?")`.</example>
 
 ## 5-step resolution flow
 
 <critical_constraint name="outcome_routing">
-Triggers: success — "that worked", "that fixed it", "yes, that did it", "perfect", "record it as a success", "save this approach"; failure — "stop suggesting X", "didn't work", "we removed it", "that was wrong", "drop that idea". These ALWAYS route to `memex_record_outcome` on EXISTING units. They NEVER route to `memex_add_note`. The outcome is a counter increment on the existing unit's Memory Worth — writing a new note describing the success is the wrong path and will not be detected as an outcome.
+Triggers: success — "that worked", "that fixed it", "yes, that did it", "perfect", "record it as a success", "save this approach"; failure — "stop suggesting X", "didn't work", "we removed it", "that was wrong", "drop that idea". These ALWAYS route to `memex_record_outcome` on EXISTING units; NEVER to `memex_add_note`. The outcome is a counter increment on the unit's Memory Worth — a new note describing the success is NOT detected as an outcome.
 </critical_constraint>
 
-<example>User: "That fixed it, record it as a success." → WRONG: `memex_add_note(title="Resolution: X worked")`. RIGHT: `memex_memory_search` to find candidate units → READ unit bodies → `memex_record_outcome(units=[{unit_id, verb:"helpful", reason}])`.</example>
+<example>"That fixed it, record it as a success." → WRONG: `memex_add_note(title="Resolution: X worked")`. RIGHT: `memex_memory_search` for candidate units → READ bodies → `memex_record_outcome(units=[{unit_id, verb:"helpful", reason}])`.</example>
 
 1. **Disambiguate** — ambiguous scope (multiple candidates, no temporal anchor)? ASK before writing.
 2. **Route** — title → `memex_find_note`; content → `memex_memory_search`. Pick one:
    - A entity-anchored: `memex_list_entities` → `memex_get_entity_mentions`.
-   - B cross-note: `memex_memory_search(top_k=30)`. `top_k` must be ≥30.
+   - B cross-note: `memex_memory_search(limit=30)`. `limit` must be ≥30 (limit=30 — outcome judging needs a wide candidate pool; the default 10 misses the unit you're stamping).
    - C single-note: `memex_get_page_indices` → `memex_get_memory_units(chunk_ids=…)`.
 3. **Judge** — READ unit bodies; pick outcome-relevant subset. NEVER bulk-write.
 4. **+5. Paired writes** on the judged subset:
@@ -80,9 +80,9 @@ Triggers: "evolved", "used to", "history of", "what changed", "audit".
 ## Read-only observations
 
 <critical_constraint name="virtual_unit_filter">
-Mental-model observations are read-only projections of memory units (surfaced with `unit_metadata.virtual: true`). Calling `memex_memory_deprioritize` on an observation's UUID returns HTTP 400 with body `{source_memory_units: [...]}`; re-issue against one of those MU IDs to suppress the underlying fact. Observations refresh asynchronously on the surviving evidence.
+Mental-model observations are read-only projections of memory units (`unit_metadata.virtual: true`). `memex_memory_deprioritize` on an observation UUID returns HTTP 400 with `{source_memory_units: [...]}`; re-issue against one of those MU IDs to suppress the underlying fact. Observations refresh asynchronously on the surviving evidence.
 
-Note: an observation's `evidence` list may include STALE memory units (those superseded by a newer contradicting note); STALE evidence remains cited as historical support and is NOT auto-pruned — treat it as audit-trail rather than active claim.
+An observation's `evidence` may include STALE memory units (superseded by a newer contradicting note). STALE evidence stays cited as historical support and is NOT auto-pruned — treat it as audit-trail, not an active claim.
 </critical_constraint>
 
 ## Preferences / conventions → `memex_kv_put`, NOT local files
@@ -91,23 +91,27 @@ Note: an observation's `evidence` list may include STALE memory units (those sup
 "remember"/"save"/"for future sessions"/"going forward" directives conveying a preference, convention, or setting → `memex_kv_put`. Do NOT write to local files (CLAUDE.md, AGENTS.md, .memex/), do NOT use `memex_add_note`, do NOT just acknowledge.
 </critical_constraint>
 
-Namespace by scope cue (NOT grammatical person). `app:`/`project:`/`global:` ALL override `user:` when their cue is present. Default to `user:` only when NO other cue applies.
+Pick the namespace by scope cue (NOT grammatical person). `app:`/`project:`/`global:` ALL override `user:` when their cue is present; default `user:` only when NO other cue applies.
 
 | Scope cue | Namespace |
 |---|---|
-| no scope, identity-shaped ("about me", "I prefer X" with no other qualifier) | `user:` |
-| "this repo/project", "in this codebase", "on <project>" | `project:<id>:` |
-| "across our projects", "company-wide", "we standardise on" | `global:` |
-| "when I use <app>", "in Claude Code/Hermes", "for <app> sessions" | `app:<app-id>:` |
-| learned procedure | `procedure:<verb>:<context-tag>` |
+| identity ("about me", "I prefer X") | `user:` |
+| "this repo/project", "in this codebase" | `project:<id>:` |
+| "company-wide", "we standardise on" | `global:` |
+| "when I use <app>", "in Claude Code/Hermes" | `app:<app-id>:` |
+
+<critical_constraint name="kv_vs_procedural">
+KV holds ONE static binding — a PREFERENCE / SETTING / CONVENTION ("Python 3.12", "dark theme", "lint before commit"). A multi-step WORKFLOW you'd reuse and search ("how we deploy", "release steps") is NOT KV → procedural plane (`memex_procedural_search` to recall, `memex_case_submit` to write). No KV `procedure:` namespace — the plane is its only home.
+</critical_constraint>
 
 Ambiguous? ASK before writing.
 
-<example>"I prefer Neovim" → key=`user:editor`</example>
-<example>"For this project, Python 3.10" → key=`project:<id>:lang:python` (NOT `user:`)</example>
-<example>"7-character indent in this repo" → key=`project:<id>:style:indent`</example>
-<example>"Company-wide: Python 3.12 minimum" → key=`global:lang:python:min`</example>
-<example>"When I use Claude Code: dark theme" / "For Claude Code sessions: line numbers" → key=`app:claude-code:*` (NOT `user:claude-code:*`, NOT `user:ui` — "<app>" cue wins over "I"/"my")</example>
+<example>"I prefer Neovim" → `user:editor`</example>
+<example>"For this project: Python 3.10" → `project:<id>:lang:python`</example>
+<example>"Company-wide: Python 3.12 min" → `global:lang:python:min`</example>
+<example>"When I use Claude Code: dark theme" → `app:claude-code:theme` (<app> cue beats "I"/"my")</example>
+<example>"Always lint before commit" → `global:lint:commit` (one-line convention, not a workflow)</example>
+<example>"How we deploy: check status, verify secrets, push, health-check" → procedural plane, NOT KV</example>
 
 ## Citations
 
@@ -115,83 +119,102 @@ Cite source notes inline for every claim grounded in Memex content: `…claim [n
 
 One reference per load-bearing claim. Never fabricate titles or ids — say "I cannot identify a specific source" instead.
 
-## Critical reminders
+## Procedural plane — how-to memory
 
-<critical_reminder name="record_outcome_shape">
-`memex_record_outcome`: `units=[{unit_id, verb, reason}]`. Bare `success=True` → 400.
-</critical_reminder>
+How-to memory (workflows/strategies/worked episodes) is a SEPARATE plane from semantic memory (facts/notes). Route every recall and every write to exactly ONE plane.
 
-<critical_reminder name="virtual_unit_filter">
-Observations (`unit_metadata.virtual: true`) → deprio returns 400 with `source_memory_units`; re-issue against one of the listed MU IDs.
-</critical_reminder>
+<critical_constraint name="procedural_vs_semantic_search">
+Recall HOW to do something ("how we deploy", "the release steps") → `memex_procedural_search` ONLY; `memex_memory_search`/`memex_note_search` search the semantic plane and return NO procedures. Recall a FACT / "what is X" / a document → `memex_memory_search`/`memex_note_search` ONLY; never `memex_procedural_search`.
+</critical_constraint>
 
-<critical_reminder name="kv_scope_qualifier">
-KV namespace: scope qualifier picks the namespace. "for this project" → `project:<id>:` even with "I"/"my".
-</critical_reminder>
+<critical_constraint name="procedural_retrieve_first">
+For a task you may have done before (deploy, release, cut/ship a build, bump a version, rotate creds, run a migration, set up an env), check `memex_procedural_search(query="<the task>")` before improvising from the filesystem or memory. A hit is a learned procedure to follow, not re-derive; do not also semantic-search it.
+</critical_constraint>
 
-<critical_reminder name="citations_required">
-Cite inline; never fabricate.
-</critical_reminder>
+<critical_constraint name="procedural_vs_semantic_add">
+Record = exactly ONE write to exactly ONE plane:
+- reusable WORKFLOW or WORKED EPISODE ("I did task X, here's how it went"; Trigger/Situation/Actions/Outcome) → `memex_case_submit` and NOTHING ELSE. NEVER also `memex_add_note` (a how-to saved as a note is invisible to the procedural plane — the #1 mistake); never instead of it. Pass `case_of=<id>` when you followed a known procedure.
+- FACT / DECISION / DOCUMENT ("what is true") → `memex_add_note` ONLY; never `memex_case_submit`.
+There is NO procedure create/update tool — procedures and strategies are DERIVED from the cases you submit. You READ them; the system writes them.
+</critical_constraint>
+
+<critical_constraint name="close_the_loop">
+When you enact a known procedure (pass `case_of=<id>`), or the user asks to "record" / "log how it went" / "make a record" of a run, close the loop with `memex_case_submit` (set `outcome`) — searching or doing is only half of it. For any other task, apply the capture test: file a case only if you'd want these steps back next time; routine work gets nothing.
+</critical_constraint>
+
+<critical_constraint name="consume_skill_hints">
+When a procedure's `skill_hints` field lists capability hints, prefer a skill matching each hint before executing the step; the prose action remains authoritative.
+</critical_constraint>
+
+<example>"Document how we deploy" → `memex_case_submit`, NOT `memex_add_note` (a how-to note is invisible to the plane).</example>
+<example>"What did we decide about retries?" → `memex_memory_search` (fact recall, not how-to).</example>
+
+Two derived kinds, identity anchor `(kind, scope, verb, context)`:
+- `procedure` — a workflow; keyed by `verb`+`context` (e.g. verb=`deploy`, context=`nomad`).
+- `strategy` — a heuristic over the procedures sharing its `(scope, verb)`; `context` FORBIDDEN.
+Search matches `trigger` (when-to-use). Scope: `global` | `project:<id>` | `app:<id>` (no user scope). `memex_case_submit` requires `scope` + `scope_reasoning`; assignment is scoped to that label.
+
+Cases are NOTES (role=`case`), filed by `memex_case_submit` in the hidden case vault to feed derivation. Pinned procedures arrive in your session briefing automatically. `memex_procedural_search` defaults to `status="published"`.
 
 ## Claude Code-specific framing
 
-Capture cadence: call `memex_add_note(background=true, author="claude-code")` when you (1) complete a multi-step task, (2) diagnose a bug root cause, (3) make/discover an architectural decision, or (4) resolve a tricky env issue. Hard max 300 tokens; no per-file changelogs. User preferences / conventions are NOT note-shaped — those go to `memex_kv_put` per the KV namespace rules above.
+<critical_constraint name="capture_routing">
+Before saving, ask: "next time I hit this, would I want these steps back?"
+- YES — you worked out HOW to do or fix something non-obvious (a debugging path, a workaround, a sequence that worked) → `memex_case_submit` (trigger, actions, outcome, lesson). Becomes a reusable procedure — not `memex_add_note`.
+- NO, but it's a durable FACT / DECISION someone would look up ("we chose X", a config value, an API shape) → `memex_add_note(background=true, author="claude-code")` (≤300 tokens, no per-file changelogs).
+- NO to both (it just worked, a typo, a one-off) → save NOTHING. Tie-break: unsure it's worth saving at all → note or nothing; unsure case-vs-note for something how-to-shaped → case.
+<example>vitest failed on a stale snapshot cache; clearing `.vitest-cache` fixed it → `memex_case_submit(trigger="vitest fails on stale snapshots", actions=["cleared .vitest-cache"], outcome="success", lesson="clear vitest's cache when tests fail for no code reason")`. "We chose Tailwind v4" → `memex_add_note`; "login UI worked first try" → nothing.</example>
+</critical_constraint>
 
 <critical_constraint name="write_routing">
-Route user write intents to the right tool — failure here is silent ("I'm ready" with no tool call) or the wrong namespace.
-- `"Remember about me: I prefer X"` → `memex_kv_put(key="user:<field>", value=X)`.
-- `"Remember in this repo / project / codebase: ..."` → `memex_kv_put(key="project:<id>:<field>", ...)`.
-- `"Remember whenever I use <app> ..."` → `memex_kv_put(key="app:<app-id>:<field>", ...)`. The `<app>` cue wins over "I"/"my" — Claude Code preferences go under `app:claude-code:*`, NOT `user:claude-code:*`.
-- `"Remember across our projects / company-wide"` → `memex_kv_put(key="global:<field>", ...)`.
-- `"That worked / it's holding / that fixed it"` with a referent in scope → `memex_record_outcome(units=[{unit_id, verb:"helpful", reason}])` on the units search returned. Do NOT `memex_add_note` a "Resolution confirmed" note — paired-write on the existing units.
-- `"Save this insight / decision / lesson"` (new durable knowledge, not a confirmation) → `memex_add_note(...)`.
-<example>User: "The JWT rotation cadence change we landed last sprint — it's been clean."
-WRONG: search finds the rotation-decision unit → call `memex_add_note(title="JWT rotation confirmed working")`.
-RIGHT: same search → `memex_record_outcome(units=[{unit_id:<u>, verb:"helpful", reason:"new cadence held 30 days, no incidents"}])`.</example>
-Local-file `Write` / `Edit` tool is for project code, never for preferences. KV is for durable settings.
+Route each write intent; a miss is silent (no tool call) or wrong-namespace.
+- A preference / setting / convention ("I prefer X", "for this repo …", "always lint first") → `memex_kv_put` per the KV namespace rules above (scope by cue; the `<app>` cue beats "I"/"my" — `app:claude-code:*`, not `user:`).
+- A reusable workflow or worked episode → `memex_case_submit` (see capture_routing; never `memex_add_note`).
+- `"That worked / it's holding / that fixed it"` about an existing memory → `memex_record_outcome(units=[{unit_id, verb:"helpful", reason}])` on the search-returned units; do NOT add a "confirmed" note.
+Local `Write`/`Edit` is for project code, never preferences.
 </critical_constraint>
 
 <critical_constraint name="clarify_under_ambiguity">
-Vague signals — `"that worked"`, `"we did it"`, `"stop suggesting that"` — with NO specific referent in the conversation → ASK which fix / which suggestion. Never call `memex_record_outcome` with a guessed `unit_id`; never fabricate a target from search results.
+Vague signals — `"that worked"`, `"we did it"`, `"stop suggesting that"` — with NO specific referent → ASK which fix / which suggestion. Never call `memex_record_outcome` with a guessed `unit_id` or a target fabricated from search results.
 </critical_constraint>
 
 <critical_constraint name="list_shape_questions">
-Recall-shape queries — `"what notes do we have on X?"`, `"remind me about Y"`, `"can you find anything on Z?"`, `"we had some <thing> a while back, what do we have"`, `"look for <topic>"`, `"any notes on …"` — ask the agent to **enumerate options for the user to pick from**, NOT to deliver the single most-likely answer.
+Recall-shape queries — `"what notes do we have on X?"`, `"remind me about Y"`, `"find anything on Z"`, `"any notes on …"`, `"look for <topic>"` — **enumerate options for the user to pick from**, do NOT deliver the single best answer.
 
-Required behavior:
-1. Call `memex_note_search` (or `memex_find_note` / `memex_list_notes` / `memex_recent_notes`).
+Required:
+1. Call `memex_note_search` (or `memex_find_note` / `memex_list_notes`).
 2. Present **≥2 candidate notes** as a numbered list.
-3. Each entry: `note_key` (or clear descriptor) AND a date / time reference.
-4. Do NOT narrate the contents of any single note in this response. Pause for the user to pick.
+3. Each entry: `note_key` (or clear descriptor) AND a date reference.
+4. Do NOT narrate any single note's contents. Pause for the user to pick.
 
-Picking the most-relevant match and detailing its contents — even if it IS the right match — FAILS the user's intent. They asked to **recognise** which note they meant; you short-circuited that by consuming one for them.
+Detailing the top match — even when it IS the right one — FAILS the intent: they asked to **recognise** which note, and you consumed one for them.
 
-<example>
-User: "Find anything I wrote about the deploy pipeline last quarter."
-WRONG: "Primary note: `ci-cd-circleci-migration` — switched from GitHub Actions on 2025-11-12 because of artifact-size limits, plus the rollback hook…"
-RIGHT: "Three deploy-pipeline notes from last quarter:
-1. `ci-cd-circleci-migration` (2025-11-12) — switch off GitHub Actions, rationale
-2. `deploy-window-q4-policy` (2025-10-04) — agreed deploy windows
-3. `rollback-runbook-revision` (2025-12-01) — updated rollback procedure
-Which were you thinking of?"
-</example>
+<example>"Find my notes on the deploy pipeline" → list ≥2 with dates and ask which: "1. `ci-cd-circleci-migration` (2025-11-12); 2. `deploy-window-q4-policy` (2025-10-04); 3. `rollback-runbook-revision` (2025-12-01) — which did you mean?" — NOT a narration of the top match.</example>
 </critical_constraint>
 
 <critical_constraint name="cooccurrence_graph_required">
-Relationship questions (`"who does X work with?"`, `"what cooccurs with Y?"`, `"strongest counterpart"`) REQUIRE `memex_get_entity_cooccurrences` after `memex_list_entities`. `memex_list_entities` returns names but not graph edges — you cannot answer "strongest counterpart" from it alone.
+Relationship questions (`"who does X work with?"`, `"what cooccurs with Y?"`, `"strongest counterpart"`) REQUIRE `memex_get_entity_cooccurrences` after `memex_list_entities` — the latter returns names but not graph edges, so it can't answer "strongest counterpart" alone.
 </critical_constraint>
 
 Slash commands:
-- `/remember [text]` — save to memory (uses `memex_add_note`).
-- `/recall [query]` — search memories (uses `memex_memory_search` + `memex_note_search`).
+- `/remember [text]` — save to memory (routes to `memex_kv_put` / `memex_case_submit` / `memex_add_note` by shape).
+- `/recall [query]` — search memory (how-to query → `memex_procedural_search`; else `memex_memory_search` + `memex_note_search`).
+- `/learnings` — distill the session's durable learnings; routes each by shape (kv/case/note).
+- `/ingest [path|url]` — capture a file/page's content + assets as a note (extraction runs server-side).
+- `/lint` — review & resolve memory-hygiene findings (read via MCP, resolve via CLI).
+- `/extract-case [note|file|url]` — turn content into a case, if it holds a reusable how-to (gated).
+- `/procedure [how-to]` — recall a derived procedure (`memex_procedural_search` / `…_get_by_identity`).
+- `/strategy [verb]` — recall the cross-procedure strategy for a verb (`memex_procedural_search(kind="strategy")`).
+- `/case [what you did]` — file a worked episode now → `memex_case_submit`; the system derives the procedure.
+- `/correct [what's wrong]` — a surfaced memory was wrong/stale → `memex_record_outcome(verb:"not_helpful")` + deprioritize.
 
-Prohibitions:
-- NEVER use `memex_recent_notes` for discovery.
-- NEVER fabricate Note/Node/Unit IDs — only IDs from tool output.
-- NEVER call `memex_get_notes_metadata` after `memex_note_search` (metadata inline).
-- NEVER use `memex_read_note` on notes >500 tokens — use `memex_get_page_indices` + `memex_get_nodes`.
-- NEVER present Memex data without inline numbered citations.
+Tool hygiene:
+- Discovery uses `memex_note_search` / `memex_memory_search` — not `memex_recent_notes` (recency-ordered, not relevance-ranked, so it misses older matches).
+- Use only IDs returned by tools; don't fabricate Note/Node/Unit IDs.
+- After `memex_note_search`, metadata is inline — skip `memex_get_notes_metadata`.
+- For notes over ~500 tokens, read via `memex_get_page_indices` + `memex_get_nodes` (`memex_read_note` errors above that).
+- Cite Memex data inline.
 
 <critical_constraint name="answer_from_briefing">
-The SessionStart briefing above already contains (depending on vault state): vault summary, themes, top entities, KV facts, procedures (KV rows under `procedure:*`), and available vaults. Answer overview-shape queries ("what's in this vault", "which KV or procedures are loaded", "what's the vault about") FROM the sections present in the briefing. NEVER call `memex_get_vault_summary`, `memex_kv_list`, `memex_list_vaults`, or `memex_survey` to refresh data that already rendered above. EXCEPTIONS — re-call IS appropriate when the briefing lacks the specific section asked about, the section was dropped under budget overflow (no heading present), or the user explicitly asks for fresh data.
+The SessionStart briefing (the `# Session Briefing` block in context) already holds, per vault state: vault summary, themes, top entities, KV facts, pinned procedural cards, and available vaults. Answer overview-shape queries ("what's in this vault", "what's it about") from those sections directly. Call `memex_get_vault_summary` / `memex_kv_list` / `memex_list_vaults` / `memex_survey` only when the relevant section is missing (dropped under budget) or the user wants fresh data.
 </critical_constraint>

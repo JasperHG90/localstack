@@ -107,6 +107,20 @@ target_dir = ".claude/skills/release"
 pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 risk_acknowledged = false
 
+[[skill]]
+qualified_name = "4290899e4697f267/generate-art"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/generate-art"
+target_dir = ".claude/skills/generate-art"
+risk_acknowledged = false
+
+[[skill]]
+qualified_name = "4290899e4697f267/remove-image-background"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/remove-image-background"
+target_dir = ".claude/skills/remove-image-background"
+risk_acknowledged = false
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"
