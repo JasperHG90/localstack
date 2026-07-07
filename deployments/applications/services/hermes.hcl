@@ -51,7 +51,7 @@ job "hermes" {
           "local/config.yaml:/tmp/hermes/config.yaml",
           "local/SOUL.md:/tmp/hermes/SOUL.md",
           "local/setup.sh:/tmp/setup.sh",
-          "local/skills:/tmp/hermes/skills:ro",
+          "local/skills-bundle.tsv:/tmp/hermes/skills-bundle.tsv:ro",
           "local/model-providers:/tmp/hermes/model-providers:ro",
         ]
       }
@@ -78,10 +78,15 @@ cp /tmp/hermes/SOUL.md /opt/data/SOUL.md
 # skills.external_dirs; the agent cannot modify files here (enforced by
 # Hermes: skill_manage refuses writes outside HERMES_HOME/skills).
 # Writable agent skills live in /opt/data/skills/ and are never touched here.
-if [ -d /tmp/hermes/skills ]; then
+if [ -f /tmp/hermes/skills-bundle.tsv ]; then
   rm -rf /opt/data/skills-library
   mkdir -p /opt/data/skills-library
-  cp -r /tmp/hermes/skills/* /opt/data/skills-library/ 2>/dev/null || true
+  while IFS='|' read -r path_b64 body_b64; do
+    [ -n "$path_b64" ] || continue
+    skill_path=$(printf '%s' "$path_b64" | base64 -d)
+    mkdir -p "/opt/data/skills-library/$skill_path"
+    printf '%s' "$body_b64" | base64 -d > "/opt/data/skills-library/$skill_path/SKILL.md"
+  done < /tmp/hermes/skills-bundle.tsv
 fi
 
 # External read-only library: JasperHG90/skills (public, refresh per deploy).
@@ -131,7 +136,7 @@ EOF
       # via Bifrost's "<provider>/<model>" prefix (e.g. ollama/glm-5.1:cloud,
       # gemini/gemini-flash-latest); hermes handles fallback via fallback_model.
       template {
-        data        = <<EOF
+        data = <<EOF
 """Bifrost gateway provider profile.
 
 Points hermes at the self-hosted Bifrost LLM gateway running on this node.
@@ -161,7 +166,7 @@ EOF
       }
 
       template {
-        data        = <<EOF
+        data = <<EOF
 name: bifrost-provider
 kind: model-provider
 version: 1.0.0
@@ -330,14 +335,20 @@ EOT
         destination = "local/SOUL.md"
       }
 
-%{ for path, body in skills ~}
+      # One line per skill: "<base64 path>|<base64 SKILL.md body>". Both columns
+      # are base64 so the "|" separator can never collide with path or markdown
+      # content, and each skill stays on a single line; setup.sh reconstructs the
+      # tree. Kept as a single template (the loop lives inside the heredoc) so the
+      # jobspec stays valid HCL — a top-level for-directive emitting blocks is
+      # unparseable by nomad fmt.
       template {
         data        = <<-EOT
-${body}
+%{for path, body in skills~}
+${base64encode(path)}|${base64encode(body)}
+%{endfor~}
 EOT
-        destination = "local/skills/${path}/SKILL.md"
+        destination = "local/skills-bundle.tsv"
       }
-%{ endfor ~}
 
       resources {
         cpu    = 200
