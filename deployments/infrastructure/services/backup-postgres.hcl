@@ -12,7 +12,7 @@ job "backup-postgres" {
   group "backup" {
     constraint {
       attribute = "$${attr.unique.hostname}"
-      value     = "firebat"
+      value     = "radxa-dragon-q6a"
     }
 
     task "pgdump" {

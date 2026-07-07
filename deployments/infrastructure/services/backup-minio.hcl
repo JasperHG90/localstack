@@ -10,6 +10,11 @@ job "backup-minio" {
   }
 
   group "backup" {
+    constraint {
+      attribute = "$${attr.unique.hostname}"
+      value     = "radxa-dragon-q6a"
+    }
+
     task "sync" {
       driver = "podman"
 
