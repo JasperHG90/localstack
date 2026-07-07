@@ -151,11 +151,11 @@ resource "nomad_job" "memex" {
       memex_postgres_secret = vault_kv_secret_v2.memex_db_credentials.path
       memex_minio_secret    = vault_kv_secret_v2.memex_minio_credentials.path
       memex_auth_secret     = vault_kv_secret_v2.memex_auth_keys.path
-      memex_gemini_secret   = "${var.secret_mount}/data/default/memex/gemini"
       postgres_host         = data.consul_service.postgres.service[0].node_address
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
+      bifrost_host          = "192.168.2.50"
       memex_version         = "1.0.1"
     }
   )

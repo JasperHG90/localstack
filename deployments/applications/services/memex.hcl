@@ -144,10 +144,19 @@ MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8
 MEMEX_SERVER__MEMORY__INBOX_ROUTER__ENABLED=true
 MEMEX_SERVER__MEMORY__INBOX_ROUTER__MIN_DECISIONS_BEFORE_AUTO_APPLY=30
-MEMEX_SERVER__DEFAULT_MODEL__MODEL=gemini/gemini-3.1-flash-lite
-{{ with secret "${memex_gemini_secret}" }}
-GOOGLE_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
-{{ end }}
+MEMEX_SERVER__DEFAULT_MODEL__MODEL=openai/ollama/deepseek-v4-flash:cloud
+MEMEX_SERVER__DEFAULT_MODEL__BASE_URL=http://${bifrost_host}:8080/v1
+MEMEX_SERVER__DEFAULT_MODEL__API_KEY=memex-local
+# Per-stage model routing, both via the Bifrost gateway. Extraction (~20% of
+# token volume, wants strong structured output) runs on fast Gemini flash-lite;
+# reflection (~71% of token volume) stays on flat-rate Ollama. Other stages
+# (contradiction, document, vault_summary) inherit DEFAULT_MODEL (Ollama).
+MEMEX_SERVER__MEMORY__EXTRACTION__MODEL__MODEL=openai/gemini/gemini-3.1-flash-lite
+MEMEX_SERVER__MEMORY__EXTRACTION__MODEL__BASE_URL=http://${bifrost_host}:8080/v1
+MEMEX_SERVER__MEMORY__EXTRACTION__MODEL__API_KEY=memex-local
+MEMEX_SERVER__MEMORY__REFLECTION__MODEL__MODEL=openai/ollama/deepseek-v4-flash:cloud
+MEMEX_SERVER__MEMORY__REFLECTION__MODEL__BASE_URL=http://${bifrost_host}:8080/v1
+MEMEX_SERVER__MEMORY__REFLECTION__MODEL__API_KEY=memex-local
 MEMEX_WORKERS=1
 NVIDIA_VISIBLE_DEVICES=all
 NVIDIA_DRIVER_CAPABILITIES=compute,utility
