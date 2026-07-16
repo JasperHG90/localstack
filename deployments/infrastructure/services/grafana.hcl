@@ -216,6 +216,16 @@ job "grafana" {
         destination = "local/dashboards/nats.json"
       }
 
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${bifrost_dashboard}
+        EOF
+
+        destination = "local/dashboards/bifrost.json"
+      }
+
       # ---- Unified alerting: contact point (Telegram) ----
       template {
         data = <<-EOF

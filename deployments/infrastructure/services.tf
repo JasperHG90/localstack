@@ -335,6 +335,7 @@ resource "nomad_job" "grafana" {
       minio_dashboard            = file("${path.module}/services/grafana/minio.json")
       ingress_dashboard          = file("${path.module}/services/grafana/ingress.json")
       nats_dashboard             = file("${path.module}/services/grafana/nats.json")
+      bifrost_dashboard          = file("${path.module}/services/grafana/bifrost.json")
       alert_rules                = file("${path.module}/services/grafana/alert-rules.yaml")
       telegram_secret            = "${var.secret_mount}/data/default/grafana/telegram"
       telegram_alert_chat_id     = var.telegram_alert_chat_id

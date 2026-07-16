@@ -1,0 +1,325 @@
+{
+  "uid": "localstack-bifrost",
+  "title": "Bifrost (LLM Gateway)",
+  "tags": ["localstack", "bifrost", "llm"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-6h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Application Services", "url": "/d/localstack-services/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Overview",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Request rate (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(bifrost_upstream_requests_total[5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Success ratio (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(bifrost_success_requests_total[5m])) / clamp_min(sum(rate(bifrost_success_requests_total[5m])) + sum(rate(bifrost_error_requests_total[5m])), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.9}, {"color": "green", "value": 0.99}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Error rate (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(bifrost_error_requests_total[5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.05}, {"color": "red", "value": 0.5}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Active requests",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(bifrost_active_requests)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Upstream p95 (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 30}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Cost (24h)",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(increase(bifrost_cost_total[24h]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Requests & latency",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Request rate: success vs error (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(rate(bifrost_success_requests_total[5m]))", "legendFormat": "success", "refId": "A"},
+        {"expr": "sum(rate(bifrost_error_requests_total[5m]))", "legendFormat": "error", "refId": "B"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "error"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "success"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Upstream latency quantiles (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "legendFormat": "p50", "refId": "A"},
+        {"expr": "histogram_quantile(0.90, sum by (le) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "legendFormat": "p90", "refId": "B"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "C"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "legendFormat": "p99", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Active requests by method",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (method) (bifrost_active_requests)", "legendFormat": "{{method}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Per provider",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "Request rate by provider (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (provider) (rate(bifrost_upstream_requests_total[5m]))", "legendFormat": "{{provider}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Error rate by provider (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (provider) (rate(bifrost_error_requests_total[5m]))", "legendFormat": "{{provider}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Upstream p95 latency by provider (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, provider) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "legendFormat": "{{provider}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 33,
+      "type": "timeseries",
+      "title": "Token throughput by provider (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (provider) (rate(bifrost_input_tokens_total[5m]))", "legendFormat": "{{provider}} in", "refId": "A"},
+        {"expr": "sum by (provider) (rate(bifrost_output_tokens_total[5m]))", "legendFormat": "{{provider}} out", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 34,
+      "type": "table",
+      "title": "Provider key health",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "bifrost_provider_key_up", "refId": "A", "instant": true, "format": "table"}],
+      "transformations": [
+        {"id": "organize", "options": {
+          "renameByName": {"provider": "Provider", "key_name": "Key", "Value": "Up"},
+          "indexByName": {"provider": 0, "key_name": 1, "Value": 2},
+          "excludeByName": {"Time": true, "key_id": true, "__name__": true, "job": true, "instance": true}
+        }}
+      ],
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "left"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Up"}, "properties": [
+            {"id": "custom.cellOptions", "value": {"type": "color-background", "mode": "basic"}},
+            {"id": "mappings", "value": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "up", "color": "green"}}}]},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}
+          ]}
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Per model",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 31},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Request rate by model (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (model) (rate(bifrost_upstream_requests_total[5m]))", "legendFormat": "{{model}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Upstream p95 latency by model (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, model) (rate(bifrost_upstream_latency_seconds_bucket[5m])))", "legendFormat": "{{model}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 42,
+      "type": "table",
+      "title": "Cost & tokens by model (24h)",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 40},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (model, provider) (increase(bifrost_cost_total[24h]))", "refId": "A", "instant": true, "format": "table"},
+        {"expr": "sum by (model, provider) (increase(bifrost_input_tokens_total[24h]))", "refId": "B", "instant": true, "format": "table"},
+        {"expr": "sum by (model, provider) (increase(bifrost_output_tokens_total[24h]))", "refId": "C", "instant": true, "format": "table"}
+      ],
+      "transformations": [
+        {"id": "joinByField", "options": {"byField": "model", "mode": "outer"}},
+        {"id": "organize", "options": {
+          "renameByName": {
+            "model": "Model",
+            "provider 1": "Provider",
+            "Value #A": "Cost (USD)",
+            "Value #B": "Input tokens",
+            "Value #C": "Output tokens"
+          },
+          "indexByName": {"model": 0, "provider 1": 1, "Value #A": 2, "Value #B": 3, "Value #C": 4},
+          "excludeByName": {"Time 1": true, "Time 2": true, "Time 3": true, "provider 2": true, "provider 3": true}
+        }},
+        {"id": "sortBy", "options": {"fields": "", "sort": [{"field": "Cost (USD)", "desc": true}]}}
+      ],
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "left"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Cost (USD)"}, "properties": [{"id": "unit", "value": "currencyUSD"}, {"id": "decimals", "value": 4}]},
+          {"matcher": {"id": "byName", "options": "Input tokens"}, "properties": [{"id": "unit", "value": "short"}]},
+          {"matcher": {"id": "byName", "options": "Output tokens"}, "properties": [{"id": "unit", "value": "short"}]}
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Streaming",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 50},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 50,
+      "type": "timeseries",
+      "title": "Stream first-token p95 by provider (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 51},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, provider) (rate(bifrost_stream_first_token_latency_seconds_bucket[5m])))", "legendFormat": "{{provider}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 51,
+      "type": "timeseries",
+      "title": "Stream inter-token p95 by provider (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 51},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, provider) (rate(bifrost_stream_inter_token_latency_seconds_bucket[5m])))", "legendFormat": "{{provider}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Logs",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 59},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 60,
+      "type": "logs",
+      "title": "bifrost logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 60},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"bifrost.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=bifrost&${__url_time_range}", "targetBlank": false}]
+    }
+  ]
+}

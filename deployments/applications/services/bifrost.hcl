@@ -22,7 +22,11 @@ job "bifrost" {
         port    = "http"
         address = "${bifrost_host}"
 
-        tags = ["http", "llm", "gateway"]
+        # "prometheus" opts this service into the consul_services scrape job
+        # (see prometheus.hcl). Bifrost serves /metrics on the API port with no
+        # auth; if auth_config.is_enabled is ever set, the scrape job needs
+        # basic_auth to keep reaching /metrics.
+        tags = ["http", "llm", "gateway", "prometheus"]
 
         check {
           type     = "http"
