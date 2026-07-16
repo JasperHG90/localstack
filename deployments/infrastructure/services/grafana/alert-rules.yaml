@@ -14,7 +14,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'up{job="node"} == 0'
+              expr: 'up{job="node"} == bool 0'
               instant: true
               refId: A
           - refId: C
@@ -80,7 +80,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'up{job="nomad"} == 0'
+              expr: 'up{job="nomad"} == bool 0'
               instant: true
               refId: A
           - refId: C
@@ -113,7 +113,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'up{job="consul"} == 0'
+              expr: 'up{job="consul"} == bool 0'
               instant: true
               refId: A
           - refId: C
@@ -146,7 +146,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'pg_up == 0'
+              expr: 'pg_up == bool 0'
               instant: true
               refId: A
           - refId: C
@@ -245,7 +245,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'up{job="prometheus"} == 0'
+              expr: 'up{job="prometheus"} == bool 0'
               instant: true
               refId: A
           - refId: C
@@ -400,6 +400,109 @@ groups:
           summary: "Memex log error burst"
           description: ">20 error-like log lines in 5m, sustained 10m. Inspect Memex alloc logs."
 
+      - uid: alert-bifrost-gateway-down
+        title: BifrostGatewayDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              # == bool 0 yields 1 when the target is down (a plain `== 0`
+              # returns value 0, which never trips the `gt 0` threshold).
+              expr: 'up{job="bifrost"} == bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: bifrost }
+        annotations:
+          summary: "Bifrost LLM gateway is unreachable"
+          description: "Prometheus can't scrape Bifrost on 192.168.2.50:8080 for 5m. All LLM traffic routed through the gateway (e.g. memex) is failing. Check the bifrost alloc on radxa-dragon-q6a."
+
+      - uid: alert-bifrost-provider-down
+        title: BifrostProviderDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              # Every key of a provider reporting down => that provider is
+              # fully unavailable (no in-provider fallback left).
+              expr: 'sum by (provider) (bifrost_provider_key_up) == bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: bifrost }
+        annotations:
+          summary: "Bifrost provider {{ $labels.provider }} has no healthy keys"
+          description: "Every API key for provider {{ $labels.provider }} reports down for 5m — that provider is fully unavailable and requests to it will fail. Check the upstream provider status and the account keys."
+
+      - uid: alert-bifrost-provider-key-down
+        title: BifrostProviderKeyDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'bifrost_provider_key_up == bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: bifrost }
+        annotations:
+          summary: "Bifrost key {{ $labels.key_name }} ({{ $labels.provider }}) is down"
+          description: "Bifrost reports key {{ $labels.key_name }} for provider {{ $labels.provider }} unhealthy for 10m. Weighted fallback keys still cover traffic, so this is degraded-not-down. Check the upstream account/API key."
+
       - uid: alert-scrape-job-missing
         title: ScrapeJobMissing
         condition: C
@@ -409,7 +512,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="prometheus"})'
+              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"})'
               instant: true
               refId: A
           - refId: C
