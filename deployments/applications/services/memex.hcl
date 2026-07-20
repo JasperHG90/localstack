@@ -137,7 +137,7 @@ MEMEX_SERVER__META_STORE__POOL_SIZE=20
 MEMEX_SERVER__META_STORE__MAX_OVERFLOW=30
 MEMEX_SERVER__AUTH__ENABLED=true
 {{- with secret "${memex_auth_secret}" }}
-MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin","description":"Admin key"},{"key":"{{ .Data.data.writer_key }}","policy":"writer","vault_ids":["global"],"description":"Scoped writer"}]'
+MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin","description":"Admin key"},{"key":"{{ .Data.data.writer_key }}","policy":"writer","vault_ids":["global"],"description":"Scoped writer"},{"key":"{{ .Data.data.writer_key_vault_meetings }}","policy":"writer","vault_ids":["meetings"],"description":"Meetings writer"}]'
 {{- end }}
 MEMEX_SERVER__TRACING__ENABLED=true
 MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
