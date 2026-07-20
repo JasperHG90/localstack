@@ -324,6 +324,22 @@ tag = "1.1.1"
 sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
 installed_at = "2026-07-06T18:25:45.137931Z"
 
+[[plugin]]
+qualified_name = "ef9f6a17bd3105b7/loop-harness"
+repo_alias = "ef9f6a17bd3105b7"
+flavor = "claude"
+source_path = ""
+target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
+marketplace_name = "aim-ef9f6a17bd3105b7"
+history = []
+content_hash = "581f8c13bce37b737e6b81bd102d162c570ae5760567b314f761052bcec3227a"
+risk_acknowledged = false
+
+[plugin.current]
+tag = "0.1.0"
+sha = "6d3b80eaed69dee86cdd3e09d12a2c269cb35003"
+installed_at = "2026-07-16T15:56:43.463202Z"
+
 [managed_region_hashes]
 header = "8209ab5f5a7c8f642c374946c62b4af4bc0abcf6b44bc22fc745ebc94105a7bc"
 guidelines = "9f2811d5c944f66b8dd93552c313b774b0bb2ecc1796783b476131e17e808f69"
@@ -332,3 +348,4 @@ guidelines = "9f2811d5c944f66b8dd93552c313b774b0bb2ecc1796783b476131e17e808f69"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
+ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"

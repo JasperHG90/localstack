@@ -244,9 +244,16 @@
         "source": "directory",
         "path": ".claude/plugins/aim-8b8de8ec329cb5d5"
       }
+    },
+    "loop-harness-ef9f6a17": {
+      "source": {
+        "source": "directory",
+        "path": ".claude/plugins/aim-ef9f6a17bd3105b7"
+      }
     }
   },
   "enabledPlugins": {
-    "memex@memex-8b8de8ec": true
+    "memex@memex-8b8de8ec": true,
+    "loop-harness@loop-harness-ef9f6a17": true
   }
 }

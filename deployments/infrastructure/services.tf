@@ -217,6 +217,15 @@ locals {
         "allow from 100.64.0.0/10 to any port 3000 proto tcp",
       ]
     }
+    # NOMAD PACK applications
+    nomad_pack_applications_ubuntu = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 8080 proto tcp",
+        "allow from 100.64.0.0/10 to any port 8080 proto tcp",
+      ]
+    }
     # node-exporter — one rule per node, scraped by Prometheus on 192.168.2.47
     node_exporter_firebat = {
       host     = "192.168.2.30"

@@ -1,0 +1,58 @@
+{
+  "entries": {
+    "reflection": {
+      "slug": "reflection",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/reflection.md"
+    },
+    "loop-config-review-passes": {
+      "slug": "loop-config-review-passes",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/loop-config-review-passes.md"
+    },
+    "loop-commit-gate-n-verdicts": {
+      "slug": "loop-commit-gate-n-verdicts",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 1,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/loop-commit-gate-n-verdicts.adversarial.md"
+    },
+    "loop-review-agents": {
+      "slug": "loop-review-agents",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/loop-review-agents.adversarial.md"
+    },
+    "loop-config-action-stages": {
+      "slug": "loop-config-action-stages",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/loop-config-action-stages.adversarial.md"
+    },
+    "loop-doc-writer-and-custom-stages": {
+      "slug": "loop-doc-writer-and-custom-stages",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/loop-doc-writer-and-custom-stages.adversarial.md"
+    }
+  }
+}

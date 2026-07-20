@@ -3,6 +3,7 @@ layout_profile = "claude"
 symlinks = [
     "CLAUDE.md",
 ]
+mcp_servers = []
 targets = []
 
 [archetype]
@@ -16,141 +17,135 @@ scope = "local"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
-ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"
 
 [[rule]]
 qualified_name = "1385a5f1be8c889c/slop-scan-for-docs"
 repo_alias = "1385a5f1be8c889c"
 source_path = ".claude/rules/slop-scan-for-docs.md"
-pin = "b226e39776d69a4b16faebd78d5d2973679df198"
-risk_acknowledged = false
+pin = "fabd49074610031ddfce41e6c132d786f6d0b60c"
+risk_acknowledged = true
 
 [[rule]]
 qualified_name = "4290899e4697f267/adversarial-reviews"
 repo_alias = "4290899e4697f267"
 source_path = "rules/adversarial-reviews.md"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "801250ade7cf35f7d39764e3d4528ada7f6db6db"
+risk_acknowledged = true
 
 [[rule]]
 qualified_name = "4290899e4697f267/pre-existing-issues"
 repo_alias = "4290899e4697f267"
 source_path = "rules/pre-existing-issues.md"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "1d92f60fed5599f0f04bbcfe72733b0aa60be7c8"
+risk_acknowledged = true
 
 [[rule]]
 qualified_name = "4290899e4697f267/prek-code-quality"
 repo_alias = "4290899e4697f267"
 source_path = "rules/prek-code-quality.md"
 pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+risk_acknowledged = true
 
 [[rule]]
 qualified_name = "4290899e4697f267/python-testing"
 repo_alias = "4290899e4697f267"
 source_path = "rules/python-testing.md"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "8d619fc26fbdc64773a398798dd451875eec92bb"
+risk_acknowledged = true
 
 [[rule]]
 qualified_name = "4290899e4697f267/uv-installer"
 repo_alias = "4290899e4697f267"
 source_path = "rules/uv-installer.md"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "801250ade7cf35f7d39764e3d4528ada7f6db6db"
+risk_acknowledged = true
+
+[[rule]]
+qualified_name = "4290899e4697f267/python-docstrings"
+repo_alias = "4290899e4697f267"
+source_path = "rules/python-docstrings.md"
+pin = "8d619fc26fbdc64773a398798dd451875eec92bb"
+risk_acknowledged = true
+
+[[skill]]
+qualified_name = "1385a5f1be8c889c/architecture-diagram"
+repo_alias = "1385a5f1be8c889c"
+source_path = "plugins/cartograph/skills/architecture-diagram"
+target_dir = ".claude/skills/architecture-diagram"
+pin = "b226e39776d69a4b16faebd78d5d2973679df198"
+risk_acknowledged = true
+
+[[skill]]
+qualified_name = "1385a5f1be8c889c/architecture-review"
+repo_alias = "1385a5f1be8c889c"
+source_path = "plugins/pensive/skills/architecture-review"
+target_dir = ".claude/skills/architecture-review"
+pin = "b226e39776d69a4b16faebd78d5d2973679df198"
+risk_acknowledged = true
 
 [[skill]]
 qualified_name = "4290899e4697f267/manifesto"
 repo_alias = "4290899e4697f267"
 source_path = "skills/architecture/manifesto"
 target_dir = ".claude/skills/manifesto"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "516c105a9d8260c80a9d1fd8cb4004fe22a74225"
+risk_acknowledged = true
 
 [[skill]]
 qualified_name = "4290899e4697f267/deep-explain"
 repo_alias = "4290899e4697f267"
 source_path = "skills/learning/deep-explain"
 target_dir = ".claude/skills/deep-explain"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "f28bad03a9712094322b47bf2ca3b02c2c3004aa"
+risk_acknowledged = true
 
 [[skill]]
 qualified_name = "4290899e4697f267/doc-write"
 repo_alias = "4290899e4697f267"
 source_path = "skills/documentation/doc-write"
 target_dir = ".claude/skills/doc-write"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "1d92f60fed5599f0f04bbcfe72733b0aa60be7c8"
+risk_acknowledged = true
 
 [[skill]]
 qualified_name = "4290899e4697f267/python-review"
 repo_alias = "4290899e4697f267"
 source_path = "skills/development/python-review"
 target_dir = ".claude/skills/python-review"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "6ff5b0fcb970e0f83e61ad5d9e48f0324eee7894"
+risk_acknowledged = true
 
 [[skill]]
 qualified_name = "4290899e4697f267/readme-creator"
 repo_alias = "4290899e4697f267"
 source_path = "skills/documentation/readme-creator"
 target_dir = ".claude/skills/readme-creator"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "1d92f60fed5599f0f04bbcfe72733b0aa60be7c8"
+risk_acknowledged = true
 
 [[skill]]
 qualified_name = "4290899e4697f267/release"
 repo_alias = "4290899e4697f267"
 source_path = "skills/ops/release"
 target_dir = ".claude/skills/release"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
-
-[[skill]]
-qualified_name = "4290899e4697f267/generate-art"
-repo_alias = "4290899e4697f267"
-source_path = "skills/tools/generate-art"
-target_dir = ".claude/skills/generate-art"
-risk_acknowledged = false
-
-[[skill]]
-qualified_name = "4290899e4697f267/remove-image-background"
-repo_alias = "4290899e4697f267"
-source_path = "skills/tools/remove-image-background"
-target_dir = ".claude/skills/remove-image-background"
-risk_acknowledged = false
+pin = "1d92f60fed5599f0f04bbcfe72733b0aa60be7c8"
+risk_acknowledged = true
 
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"
 source_path = "agents/adversarial-reviewer.md"
 target_path = ".claude/agents/adversarial-reviewer.md"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
+pin = "5ff872624d18f224aef87f4655e0ae5f78a4d034"
+risk_acknowledged = true
 
 [[subagent]]
 qualified_name = "4290899e4697f267/feature-planner"
 repo_alias = "4290899e4697f267"
 source_path = "agents/feature-planner.md"
 target_path = ".claude/agents/feature-planner.md"
-pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
-risk_acknowledged = false
-
-[[mcp_server]]
-alias = "drawio-mcp"
-registry_name = "io.github.yohasacura/drawio-mcp"
-preferred_transport = "stdio"
-
-[mcp_server.overrides]
-
-[[mcp_server]]
-alias = "excalidraw-mcp"
-registry_name = "io.github.cmd8/excalidraw-mcp"
-preferred_transport = "stdio"
-
-[mcp_server.overrides]
+pin = "61396ac48f47680ef28c5d845ae76c047e0ffb6f"
+risk_acknowledged = true
 
 [[plugin]]
 qualified_name = "8b8de8ec329cb5d5/memex"
@@ -158,12 +153,5 @@ repo_alias = "8b8de8ec329cb5d5"
 flavor = "claude"
 source_path = "packages/claude-code-plugin"
 marketplace_name = "memex"
-risk_acknowledged = false
-
-[[plugin]]
-qualified_name = "ef9f6a17bd3105b7/loop-harness"
-repo_alias = "ef9f6a17bd3105b7"
-flavor = "claude"
-source_path = ""
-marketplace_name = "loop-harness"
-risk_acknowledged = false
+pin = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
+risk_acknowledged = true

@@ -1,0 +1,24 @@
+{
+  "name": "loop-harness",
+  "description": "An evidence-verified ticket loop for Claude Code: ledger, lifecycle gates, tree-bound evidence stamps, adversarial-review verdicts, and a kill switch. The model proposes; the harness verifies; git is ground truth.",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "keywords": [
+    "loop",
+    "harness",
+    "tickets",
+    "gates",
+    "adversarial-review"
+  ],
+  "skills": "./skills/",
+  "agents": [
+    "./agents/loop-reviewer.md",
+    "./agents/loop-architect.md",
+    "./agents/loop-doc-reviewer.md",
+    "./agents/loop-doc-writer.md",
+    "./agents/ticket-planner.md"
+  ],
+  "author": {
+    "name": "Jasper Ginn"
+  }
+}

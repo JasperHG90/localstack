@@ -1,0 +1,11 @@
+# Dev recipes for the plugin repo itself. Consumers use loopctl directly.
+
+# Run the plugin's own gates.
+check:
+    git add --intent-to-add -A .
+    uv run pytest
+    uvx prek run --all-files
+
+# Run gates and record the evidence stamp (dogfoods the CLI).
+stamp:
+    uv run loopctl stamp

@@ -1,0 +1,9 @@
+{
+  "gates": [
+    "git add --intent-to-add -A . && uv run pytest",
+    "uvx prek run --all-files"
+  ],
+  "plans_dir": "~/.claude/plans",
+  "notify_title": "loop harness",
+  "max_review_cycles": 3
+}

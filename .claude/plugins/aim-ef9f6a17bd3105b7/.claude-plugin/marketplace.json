@@ -1,0 +1,12 @@
+{
+  "name": "loop-harness-ef9f6a17",
+  "owner": {
+    "name": "aim"
+  },
+  "plugins": [
+    {
+      "name": "loop-harness",
+      "source": "./loop-harness"
+    }
+  ]
+}
