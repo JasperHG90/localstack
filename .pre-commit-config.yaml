@@ -19,3 +19,15 @@ repos:
         language: system
         types: [hcl]
         files: '\.hcl$'
+      - id: terraform-fmt
+        name: Terraform Format (fmt -check -recursive)
+        entry: terraform fmt -check -recursive
+        language: system
+        types: [terraform]
+        pass_filenames: false
+      - id: terraform-validate
+        name: Terraform Validate (per root)
+        entry: scripts/tf_validate.sh
+        language: system
+        types: [terraform]
+        pass_filenames: false

@@ -1,0 +1,18 @@
+eval: F1-foundation-nomad-wi-jwt-trust
+
+**Definition of Done:** The Nomad Workload Identity to Vault JWT trust chain
+is documented in `docs/workload-identity.md` (JWKS URL, `jwt-nomad` backend,
+`nomad-workloads` role/policy, fixed-claims constraint, audience convention),
+and a scratch Nomad job proves keyless, job-id-scoped Vault KV reads on the
+live cluster while the existing `vault.io` audience is left intact so every
+running workload keeps authenticating.
+
+| Behavior | Input | Expected | Scorer | Threshold |
+| --- | --- | --- | --- | --- |
+| Operator can discover the JWKS/OIDC endpoint M1 will point MinIO at | `curl -s "$NOMAD_ADDR/.well-known/jwks.json" \| jq '.keys \| length'` | Prints an integer >= 1 (at least one signing key exposed); same URL is cited in `docs/workload-identity.md` | deterministic check (`curl $NOMAD_ADDR/.well-known/jwks.json` + `jq '.keys \| length'`) | 100% |
+| Operator confirms Vault trusts the Nomad `nomad-workloads` role on the expected audience | `vault read -format=json auth/jwt-nomad/role/nomad-workloads` | Exit 0; `.data.bound_audiences` contains `vault.io` and `.data.token_policies` contains `nomad-workloads` | deterministic check (`vault read auth/jwt-nomad/role/nomad-workloads`) | 100% |
+| A workload authenticates to Vault with its WI JWT and reads its own scoped secret keylessly | Deploy `tests/wi-vault-probe.nomad.hcl`, then capture the alloc WI JWT and run `vault write -format=json auth/jwt-nomad/login role=nomad-workloads jwt=<wi-jwt>`; separately `vault kv get -mount=secret default/wi-test/probe` | Login exits 0 and returns a client token whose `token_policies` include `nomad-workloads`; the scratch job renders `secret/data/default/wi-test/probe` non-empty in its alloc | deterministic check (`vault write auth/jwt-nomad/login` + scratch job reads scoped secret) | 100% |
+| Reader understands the trust config and audience convention without reverse-engineering Ansible | Read `docs/workload-identity.md`: JWKS URL, `jwt-nomad` backend, role/policy, fixed-claims constraint, `secret/data/<namespace>/<job_id>/<entry>` convention, and the `identity`-stanza / per-consumer audience rule (keep `vault.io`, add distinct audiences for new consumers) | Doc is thesis-first, cites real paths/URLs, and an M1 implementer could point MinIO `identity_openid` at the stated JWKS URL from the doc alone | model + rubric (adversarial review agent) | 4/5 |
+| Fixed-claims constraint holds: no custom claims are relied on | `vault read -format=json auth/jwt-nomad/role/nomad-workloads \| jq '.data.claim_mappings'` | `claim_mappings` maps exactly `nomad_namespace`, `nomad_job_id`, `nomad_task` and no others; policy scoping keys only on `nomad_job_id`/`nomad_namespace` | deterministic check (`vault read auth/jwt-nomad/role/nomad-workloads`, claim_mappings assertion) | 100% |
+| Out-of-scope secret read is denied for a valid but wrong-job token | Using the client token minted in row 3, `VAULT_TOKEN=<wi-token> vault kv get -mount=secret default/other-job/probe` | HTTP 403 / permission denied; the policy scopes reads to the caller's own `nomad_job_id` path | deterministic check (`vault kv get default/other-job/probe` returns 403) | 100% |
+| Existing `vault.io` audience is not renamed, so live workloads keep working | `vault read -format=json auth/jwt-nomad/role/nomad-workloads \| jq -c '.data.bound_audiences'` and confirm an existing workload (e.g. memex) still reads its secret | `bound_audiences` still equals `["vault.io"]` (unchanged, no rename); the existing `default_identity { aud = ["vault.io"] }` in `nomad.hcl.j2` is untouched | deterministic check (`vault read auth/jwt-nomad/role/nomad-workloads`, bound_audiences unchanged) | 100% |

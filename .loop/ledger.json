@@ -1,0 +1,154 @@
+{
+  "entries": {
+    "C1-cicd-tailscale-github-actions-deploy": {
+      "slug": "C1-cicd-tailscale-github-actions-deploy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "F1-foundation-nomad-wi-jwt-trust": {
+      "slug": "F1-foundation-nomad-wi-jwt-trust",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "F2-foundation-vault-oidc-provider": {
+      "slug": "F2-foundation-vault-oidc-provider",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "F3-foundation-haproxy-tls-vault-pki": {
+      "slug": "F3-foundation-haproxy-tls-vault-pki",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "L1-landing-oauth2-proxy": {
+      "slug": "L1-landing-oauth2-proxy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "L2-landing-homepage": {
+      "slug": "L2-landing-homepage",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "M1-minio-poc-service-account": {
+      "slug": "M1-minio-poc-service-account",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "M2-minio-poc-human-tiers": {
+      "slug": "M2-minio-poc-human-tiers",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "R1-rollout-mlflow-oauth2-proxy": {
+      "slug": "R1-rollout-mlflow-oauth2-proxy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "R2-rollout-nats-auth-callout": {
+      "slug": "R2-rollout-nats-auth-callout",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "R3-rollout-postgres-vault-db-creds": {
+      "slug": "R3-rollout-postgres-vault-db-creds",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "R4-rollout-phoenix-oauth2-proxy": {
+      "slug": "R4-rollout-phoenix-oauth2-proxy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "S1-spike-boundary-evaluation": {
+      "slug": "S1-spike-boundary-evaluation",
+      "stage": "ready",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "S2-spike-postgres-vault-creds": {
+      "slug": "S2-spike-postgres-vault-creds",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "S3-spike-oidc-version-claims": {
+      "slug": "S3-spike-oidc-version-claims",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    }
+  }
+}

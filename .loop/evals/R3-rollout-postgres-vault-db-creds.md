@@ -1,0 +1,22 @@
+eval: R3-rollout-postgres-vault-db-creds
+
+Definition of Done: One real service (recommended phoenix, Q1) is converted
+to short-lived Vault-minted Postgres credentials delivered through Nomad
+Workload-Identity and proven live: the database engine/connection/role
+exist, a dynamic user mints and connects to PG18 with exactly the static
+role's grants, the converted job is healthy on the dynamic cred, it survives
+a full lease rotation with no pool errors, the old cred is revoked, and the
+extended `nomad-workloads` policy is load-bearing.
+
+Depends on: F1 (Nomad-WI-to-Vault trust deployed) and S2 (Path A design).
+
+| Behavior | Input | Expected | Scorer | Threshold |
+| --- | --- | --- | --- | --- |
+| Operator confirms the database engine is mounted and its connection targets firebat PG18 | `vault read database/config/<name>` | Exit 0; config prints `plugin_name` = `postgresql-database-plugin`, a `connection_url` targeting `firebat:5432`, and an `allowed_roles` list containing `<role>` | deterministic check (`vault read database/config/<name>`) | 100% |
+| Operator confirms the least-privilege DB role is defined with creation/revocation statements and a chosen TTL | `vault read database/roles/<role>` | Exit 0; role prints non-empty `creation_statements` and `revocation_statements` and the chosen `default_ttl` / `max_ttl` (Q5) | deterministic check (`vault read database/roles/<role>`) | 100% |
+| A dynamic short-lived Postgres user mints on demand and actually connects to PG18 | `vault read -format=json database/creds/<role>` to capture `data.username`/`data.password`, then `psql "postgres://<user>:<pw>@firebat:5432/<db>" -c 'select 1'` | Mint returns a fresh `username`/`password` with a non-zero `lease_id` and a `lease_duration` matching the role TTL; the `psql select 1` returns `1` with exit code 0 | deterministic check (`vault read database/creds/<role>` + `psql ... -c 'select 1'`) | 100% |
+| The minted user is confined to the static role's grants: a forbidden action is denied (least privilege) | For a reader role, `psql "postgres://<user>:<pw>@firebat:5432/<db>" -c 'create table r3_probe(x int)'`; for an owner role, a cross-schema/forbidden object instead | Command fails with `ERROR: permission denied`; the dynamic user holds no grant beyond `database.tf:60-68` (owner) / `database.tf:88-96` (reader) | deterministic check (`psql ... -c 'create table r3_probe(x int)'` returns permission denied) | 100% |
+| The converted service is healthy while running on the dynamic credential | `nomad job status <job>` and its health endpoint (`phoenix` `/healthz`, `mlflow` `/health`, `memex` `/api/v1/health`) | Alloc is `running` and the health check passes, proving the job reads `database/creds/<role>` and the app connects | deterministic check (`nomad job status <job>` + health endpoint) | 100% |
+| The pooled service reconnects cleanly across a full credential rotation (the S2 pool wrinkle) | Force a lease cycle with `vault lease revoke -prefix database/creds/<role>` (or wait past `max_ttl`), then `nomad job status <job>`, re-check health, and read `nomad alloc logs <alloc>` | Service reconnects on a new lease with no connection errors in the alloc logs; the `max_ttl` vs `pool_recycle` / `change_mode` strategy holds under a real rotation, per requirement 5 | model + rubric (adversarial review agent) | 4/5 |
+| After rotation the OLD credential captured pre-rotation is revoked, not still valid | `psql "postgres://<old-user>:<old-pw>@firebat:5432/<db>" -c 'select 1'` using the username/password captured before the lease cycle | Command fails with an authentication / `role does not exist` error; the expired user no longer authenticates | deterministic check (`psql` with the old cred returns auth failure) | 100% |
+| The extended `nomad-workloads` policy permits the creds path for the converted job and denies it under the old policy | Positive: mint a WI token for `<job>` and `vault read database/creds/<role>` under it (or rely on the healthy alloc). Negative: with a token carrying the old, un-extended `nomad-workloads` policy, `vault read database/creds/<role>` | Positive read succeeds (creds returned); negative read is denied with 403 / `permission denied`, proving the `vault_nomad_workloads.hcl.j2` edit is load-bearing and scoped per `nomad_job_id` (requirement 3, the F1 gap) | deterministic check (`vault read database/creds/<role>` succeeds under new policy, 403 under old) | 100% |

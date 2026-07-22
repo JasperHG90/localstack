@@ -2,6 +2,8 @@
   "gates": [
     "just pre_commit"
   ],
+  "require_review": true,
+  "require_eval": true,
   "plans_dir": ".loop/plans",
   "notify_title": "loop harness",
   "max_review_cycles": 3,
