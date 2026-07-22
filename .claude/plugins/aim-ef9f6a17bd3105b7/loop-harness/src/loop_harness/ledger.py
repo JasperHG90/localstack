@@ -41,6 +41,7 @@ class BlockerCode(StrEnum):
     DISPUTED_REVIEWER_FINDING = "disputed-reviewer-finding"
     ENVIRONMENT_BREAKAGE = "environment-breakage"
     CAP_EXCEEDED = "cap-exceeded"
+    EVAL_MISSING = "eval-missing"
 
 
 @dataclass
@@ -62,6 +63,7 @@ class TicketEntry:
     blocker: Blocker | None = None
     commit_sha: str | None = None
     review_verdict: str | None = None  # path to the reviewer-verdict file
+    dropped: bool = False  # retired (reversible); orthogonal to stage
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the entry to a JSON-compatible dict."""
@@ -77,6 +79,7 @@ class TicketEntry:
             ),
             "commit_sha": self.commit_sha,
             "review_verdict": self.review_verdict,
+            "dropped": self.dropped,
         }
 
     @classmethod
@@ -96,6 +99,7 @@ class TicketEntry:
             blocker=blocker,
             commit_sha=raw.get("commit_sha"),
             review_verdict=raw.get("review_verdict"),
+            dropped=bool(raw.get("dropped", False)),
         )
 
 

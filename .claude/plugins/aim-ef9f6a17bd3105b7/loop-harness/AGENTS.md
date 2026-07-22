@@ -75,4 +75,22 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project conventions
 
-<!-- Add code-style notes, testing expectations, deploy steps, etc. Not managed. -->
+### Decision prompts in skills
+
+When a skill reaches a discrete operator decision (a choice among a small,
+enumerable set of options), surface it with the Claude Q&A feature
+(`AskUserQuestion`), recommended option first, rather than a soft prose
+question the operator can skim past. The point is to make it unmistakable that
+a decision is required, so it cannot slip by unnoticed.
+
+Convert only genuine discrete forks. Open-ended, free-form, or iterative
+authoring (drafting prose, eliciting requirements, co-writing a document) stays
+prose: forcing open-ended work into multiple-choice is the failure mode to
+avoid. A useful test: if the good answers are a short list you could name up
+front, it is a fork for `AskUserQuestion`; if the answer is written, not
+chosen, keep it prose.
+
+A skill that may run unattended (no operator present to answer) routes its forks
+through an asynchronous mechanism instead, since `AskUserQuestion` needs a live
+operator. In the loop harness, an unresolved design fork becomes a coded
+`loopctl block` on the ticket that the operator resolves later.

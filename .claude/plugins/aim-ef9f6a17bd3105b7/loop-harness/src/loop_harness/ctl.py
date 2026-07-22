@@ -19,6 +19,7 @@ from pathlib import Path
 
 from loop_harness import halt as halt_mod
 from loop_harness.config import load_config
+from loop_harness.evals import eval_marker_present
 from loop_harness.hooks import VERDICTS_DIR, pass_verdict_tree
 from loop_harness.ledger import (
     Blocker,
@@ -35,13 +36,44 @@ from loop_harness.stamp import tree_fingerprint, verify_stamp
 
 
 def register(repo: Path, slug: str) -> str:
-    """Register a ticket as ready; a no-op message when already present."""
+    """Register a ticket as ready; a no-op message when already present.
+
+    Re-registering a ``dropped`` slug clears the dropped flag (the un-drop /
+    restore path), preserving its stage. A present, non-dropped slug keeps the
+    exact no-op so reconcile's idempotent auto-registration never disturbs it.
+    """
     ledger = load_ledger(repo)
-    if slug in ledger.entries:
-        return f"{slug}: already registered ({ledger.entries[slug].stage.value})"
+    existing = ledger.entries.get(slug)
+    if existing is not None:
+        if existing.dropped:
+            existing.dropped = False
+            save_ledger(repo, ledger)
+            return f"{slug}: re-registered (un-dropped, {existing.stage.value})"
+        return f"{slug}: already registered ({existing.stage.value})"
     ledger.entries[slug] = TicketEntry(slug=slug)
     save_ledger(repo, ledger)
     return f"{slug}: registered (ready)"
+
+
+def drop(repo: Path, slug: str) -> str:
+    """Retire a registered ticket: mark it dropped without deleting the entry.
+
+    Drop is a reversible retirement, orthogonal to the lifecycle stage. The
+    entry stays in the ledger (with its stage preserved), which is exactly what
+    stops reconcile from resurrecting a dropped ticket off its surviving plan
+    file. ``loopctl register <slug>`` restores it.
+
+    Raises
+    ------
+    SystemExit
+        If the slug is not registered (nothing to drop).
+    """
+    ledger = load_ledger(repo)
+    if slug not in ledger.entries:
+        raise SystemExit(f"{slug}: not registered - nothing to drop")
+    ledger.entries[slug].dropped = True
+    save_ledger(repo, ledger)
+    return f"{slug}: dropped (reversible; `loopctl register {slug}` to restore)"
 
 
 def advance(repo: Path, slug: str, target: Stage) -> str:
@@ -66,11 +98,15 @@ def advance(repo: Path, slug: str, target: Stage) -> str:
     validate_transition(
         entry.stage,
         target,
-        stamp=verify_stamp(repo),
+        stamp=verify_stamp(repo, config.fingerprint_ignore),
         pass_verdict_trees=[(p.id, pass_verdict_tree(repo, slug, p)) for p in passes],
-        current_tree=tree_fingerprint(repo),
+        current_tree=tree_fingerprint(repo, config.fingerprint_ignore),
         review_cycles=entry.review_cycles,
         max_review_cycles=config.max_review_cycles,
+        require_eval=config.require_eval,
+        eval_marker_present=(
+            eval_marker_present(repo, slug) if target is Stage.IMPLEMENTING else False
+        ),
     )
     before = entry.stage
     if target is Stage.IMPLEMENTING:

@@ -245,6 +245,25 @@ def test_require_review_non_bool_raises(repo: Path) -> None:
         load_config(repo)
 
 
+def test_require_eval_defaults_false(repo: Path) -> None:
+    """The eval gate is opt-in: absent from config means off."""
+    _write(repo, {"gates": ["true"]})
+    assert load_config(repo).require_eval is False
+
+
+def test_require_eval_round_trips(repo: Path) -> None:
+    """An authored require_eval:true is loaded as true."""
+    _write(repo, {"gates": ["true"], "require_eval": True})
+    assert load_config(repo).require_eval is True
+
+
+def test_require_eval_non_bool_raises(repo: Path) -> None:
+    """require_eval is a flag; a non-bool is a config error."""
+    _write(repo, {"gates": ["true"], "require_eval": "yes"})
+    with pytest.raises(ConfigError, match="require_eval"):
+        load_config(repo)
+
+
 def test_example_config_carries_enabled_adversarial(repo: Path) -> None:
     """The scaffolded config ships review on (adversarial), extras opt-in."""
     write_example_config(repo)
@@ -252,6 +271,7 @@ def test_example_config_carries_enabled_adversarial(repo: Path) -> None:
     ids = [p.id for p in config.review_passes]
     assert "adversarial" in ids
     assert config.enabled_review_passes()  # adversarial is enabled by default
+    assert config.require_eval is False  # eval gate ships off, discoverable
 
 
 def test_action_stages_round_trip(repo: Path) -> None:
@@ -395,3 +415,46 @@ def test_example_config_carries_action_stages(repo: Path) -> None:
     ids = {s.id for s in config.action_stages}
     assert "update-documentation" in ids
     assert config.enabled_action_stages() == ()  # extras ship disabled
+
+
+def test_fingerprint_ignore_round_trip(repo: Path) -> None:
+    """An authored fingerprint_ignore loads exactly as a tuple of patterns."""
+    _write(repo, {"gates": ["true"], "fingerprint_ignore": ["docs/assets/", "*.lock"]})
+    assert load_config(repo).fingerprint_ignore == ("docs/assets/", "*.lock")
+
+
+def test_absent_fingerprint_ignore_is_empty(repo: Path) -> None:
+    """No fingerprint_ignore key yields an empty tuple (whole-tree behavior)."""
+    _write(repo, {"gates": ["true"]})
+    assert load_config(repo).fingerprint_ignore == ()
+
+
+def test_bare_string_fingerprint_ignore_raises(repo: Path) -> None:
+    """A bare string would char-split into per-character patterns; reject it,
+    exactly as 'gates' does."""
+    _write(repo, {"gates": ["true"], "fingerprint_ignore": "docs/"})
+    with pytest.raises(ConfigError, match="LIST"):
+        load_config(repo)
+
+
+def test_non_string_fingerprint_ignore_elements_raise(repo: Path) -> None:
+    """Pattern elements must be strings, never coerced from other types."""
+    _write(repo, {"gates": ["true"], "fingerprint_ignore": ["docs/", 123]})
+    with pytest.raises(ConfigError):
+        load_config(repo)
+
+
+def test_example_config_ships_fingerprint_ignore_inert(repo: Path) -> None:
+    """The scaffold ships the key for discoverability but ignores nothing, so
+    no consumer silently drops paths they did not choose."""
+    write_example_config(repo)
+    assert load_config(repo).fingerprint_ignore == ()
+
+
+def test_empty_fingerprint_ignore_pattern_raises(repo: Path) -> None:
+    """An empty pattern makes ``git rm -- ''`` fatal; the commit hook's
+    fail-open would swallow that and silently disable the gate, so the loader
+    rejects it (whitespace-only counts as empty)."""
+    _write(repo, {"gates": ["true"], "fingerprint_ignore": ["docs/", ""]})
+    with pytest.raises(ConfigError, match="empty pattern"):
+        load_config(repo)

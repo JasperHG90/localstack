@@ -37,6 +37,15 @@ same commands.
    `ready` and whose dependencies (per the repo's roadmap document,
    when one exists) are `done`. Then `loopctl register <slug>` and
    `loopctl advance <slug> implementing`.
+   - **Eval precondition (when `require_eval` is set).** The advance into
+     `implementing` is refused unless a schema-valid eval marker exists at
+     `.loop/evals/<slug>.md`. Recover by run mode. Supervised (an operator
+     is present): run the `create-eval` skill to co-author the marker, then
+     retry the advance. Unattended (a recurring loop, no operator to
+     co-author with): do NOT retry - run `loopctl block <slug> eval-missing
+     "no eval marker; author with create-eval"` and notify the operator,
+     then stop on this ticket. Retrying only re-registers and re-fails every
+     wake.
 2. **Implement, tests first.** The ticket file (in the configured
    plans directory, default `~/.claude/plans/`) is the contract. Every
    behavior change starts with a failing test. Touch only what the
@@ -47,30 +56,47 @@ same commands.
    NOW, before the stamp, so its edits are stamped, reviewed, and
    committed with the code. A tree-mutating stage run after the stamp
    stales it and forces a re-gate.
-3. **Gate.** Run `loopctl stamp` (executes the repo's configured gate
-   commands and records the evidence). Red gates: fix and re-stamp.
-   Then `loopctl advance <slug> gates` (refused without a fresh
+3. **Gate.** First clear the cheap, deterministic checks so a lint-only
+   defect does not cost a full re-stamp. Run the repo's configured
+   lint/format/type hooks over the changed files through the blessed
+   invocation (here, `uvx prek run --files <changed>`), let any rewrites
+   land in the tree, and fix any failure rather than silence it. This pass is a
+   convenience, not a substitute for the stamp: the type hook still runs
+   over its whole configured target inside it, and `loopctl stamp`
+   re-runs every gate. Then run `loopctl stamp` (executes the repo's
+   configured gate commands and records the evidence). Red gates: fix and
+   re-stamp. Then `loopctl advance <slug> gates` (refused without a fresh
    stamp).
 4. **Self-review.** Re-read the diff against the ticket. Every changed
    line must trace to the ticket. `loopctl advance <slug> self-review`
    (requires a green stamp).
 5. **Review.** `loopctl advance <slug> adversarial-review` (the review
-   stage). Read `.loop/config.json`; for each ENABLED entry in
-   `review_passes`, in list order, dispatch its `agent` sub-agent IN THE
-   FOREGROUND with the ticket path, the diff scope, the repo's gate
-   commands, the current tree fingerprint (`loopctl verify` must be OK at
-   dispatch), the verdict path `.loop/verdicts/<slug>.<id>.md`, and any
-   pass input (the architectural pass also gets its `baseline` doc). Each
-   agent writes its OWN verdict file, including the `tree:` line the commit
-   gate parses. The reviewers are the sole parties that can pass review,
-   and the commit gate requires a passing, tree-bound verdict from EVERY
-   enabled pass. With review deliberately disabled (`require_review:
-   false`, no enabled pass), skip this dispatch; the stamp alone gates the
-   commit.
-   - Findings confirmed (from any pass): fix, then `loopctl advance <slug>
-     gates` (this counts the review cycle; at the configured cap the
-     advance is refused - block with `cap-exceeded`). Re-stamp, then re-run
-     ALL enabled passes against the new tree.
+   stage). First capture ONE tree fingerprint and reuse it for every
+   pass: confirm `loopctl verify` is OK, then read the `tree` field from
+   `.loop/stamp.json` (the exact tree the gates certified). Read
+   `.loop/config.json` and dispatch EVERY enabled `review_passes` entry
+   CONCURRENTLY, as a single fan-out batch rather than one at a time. Give
+   each pass the ticket path, the diff scope, the repo's gate commands,
+   that one shared tree fingerprint, the verdict path
+   `.loop/verdicts/<slug>.<id>.md`, and any pass input (the architectural
+   pass also gets its `baseline` doc). Every pass binds its verdict to the
+   SAME captured fingerprint. Then JOIN: wait for all dispatched passes to
+   finish before deciding anything. The passes are independent (they read
+   the same frozen tree and each writes its own verdict file under
+   `.loop/`, which is excluded from the fingerprint, so they cannot
+   collide or drift the tree), so order does not matter. Each agent writes
+   its OWN verdict file, including the `tree:` line the commit gate parses.
+   The reviewers are the sole parties that can pass review, and the commit
+   gate requires a passing, tree-bound verdict from EVERY enabled pass.
+   With review deliberately disabled (`require_review: false`, no enabled
+   pass), skip this dispatch; the stamp alone gates the commit.
+   - Findings confirmed (from ANY pass, judged once all have reported at
+     the join): fix, then `loopctl advance <slug> gates` (this counts the
+     review cycle; at the configured cap the advance is refused - block
+     with `cap-exceeded`). Re-stamp, capture the new fingerprint, then
+     re-run ALL enabled passes as one fresh concurrent batch against the
+     new tree. It is all-or-nothing: the gate needs every pass bound to
+     the same new tree, so a single pass is never re-run alone.
    - Finding disputed: `loopctl block <slug>
      disputed-reviewer-finding "<reason>"` and escalate to the
      operator. Never argue indefinitely.
@@ -115,13 +141,15 @@ ticket and stops; whoever wants more tickets invokes it again. The
 supported drivers are the operator saying "implement the next ticket"
 (supervised) and a recurring loop command (unattended; the operator
 clears the loop to rest it). Goal-condition hooks make poor drivers -
-their judges cannot see the one-ticket contract. Stopping while a
-dispatched reviewer runs is permitted (stage `adversarial-review` does
-not block the stop-check), but foreground review is the default.
+their judges cannot see the one-ticket contract. The enabled review
+passes run concurrently as one fan-out batch and the driver awaits the
+join before deciding; stopping while they run is permitted (stage
+`adversarial-review` does not block the stop-check).
 
 ## Blocker codes
 
 `unresolved-design-fork`, `out-of-scope-fix-needed`, `gate-flake`,
-`disputed-reviewer-finding`, `environment-breakage`, `cap-exceeded`.
+`disputed-reviewer-finding`, `environment-breakage`, `cap-exceeded`,
+`eval-missing`.
 Every `blocked` entry carries a code plus a one-line reason the
 operator can act on (`loopctl block <slug> <code> "<reason>"`).

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from loop_harness.history import count_gate_failures
 from loop_harness.ledger import BlockerCode, load_ledger
 
 REFLECTIONS_DIR = Path(".loop") / "reflections"
@@ -40,7 +41,7 @@ FRICTION_VOCAB = frozenset(
 )
 OTHER_PREFIX = "other:"
 
-_REQUIRED_FIELDS = ("slug", "cycles", "gates_red", "blockers", "friction", "worked")
+_REQUIRED_FIELDS = ("slug", "friction", "worked")
 _VALID_BLOCKERS = frozenset(c.value for c in BlockerCode)
 
 
@@ -54,18 +55,18 @@ class ReflectionStatus(StrEnum):
 
 @dataclass(frozen=True)
 class Reflection:
-    """The machine-aggregatable frontmatter of a reflection artifact.
+    """The judgment-only frontmatter of a reflection artifact.
+
+    The mechanical numbers (``cycles``, ``gates_red``) are no longer carried
+    here: ``distill`` derives them from the ledger and the gate-failure history,
+    so the schema asks the agent only for what it alone can supply.
 
     Attributes
     ----------
     slug : str
         The ticket this reflection belongs to.
-    cycles : int
-        Review cycles the ticket used before it passed.
-    gates_red : int
-        Number of red evidence stamps seen during the ticket.
     blockers : tuple[str, ...]
-        Blocker codes hit (values from ``ledger.BlockerCode``).
+        Blocker codes hit (values from ``ledger.BlockerCode``); agent-supplied.
     friction : tuple[str, ...]
         Friction tags from ``FRICTION_VOCAB`` or the ``other:`` escape hatch.
     worked : tuple[str, ...]
@@ -75,8 +76,6 @@ class Reflection:
     """
 
     slug: str
-    cycles: int
-    gates_red: int
     blockers: tuple[str, ...]
     friction: tuple[str, ...]
     worked: tuple[str, ...]
@@ -111,6 +110,14 @@ class DistillSummary:
         ``(code, count)`` pairs, most frequent first.
     worked : tuple[tuple[str, int], ...]
         ``(tag, count)`` pairs, most frequent first.
+    cycles : tuple[tuple[str, int], ...]
+        ``(slug, review_cycles)`` pairs derived from the ledger, one per
+        aggregated reflection, ordered by slug. Authoritative over any number
+        the reflection body carries.
+    gates_red : tuple[tuple[str, int], ...]
+        ``(slug, red-stamp count)`` pairs derived from the gate-failure history,
+        one per aggregated reflection, ordered by slug. Authoritative over any
+        number the reflection body carries.
     harness_changes : tuple[str, ...]
         The one-line suggestions collected across reflections.
     skipped : tuple[str, ...]
@@ -121,6 +128,8 @@ class DistillSummary:
     friction: tuple[tuple[str, int], ...]
     blockers: tuple[tuple[str, int], ...]
     worked: tuple[tuple[str, int], ...]
+    cycles: tuple[tuple[str, int], ...]
+    gates_red: tuple[tuple[str, int], ...]
     harness_changes: tuple[str, ...]
     skipped: tuple[str, ...]
 
@@ -189,35 +198,6 @@ def _parse_list(raw: str) -> list[str]:
     return [item.strip() for item in inner.split(",") if item.strip()]
 
 
-def _parse_int(field: str, raw: str) -> int:
-    """Parse a non-negative integer frontmatter value.
-
-    Parameters
-    ----------
-    field :
-        Field name, for the error message.
-    raw :
-        The raw frontmatter value.
-
-    Returns
-    -------
-    int
-        The parsed value.
-
-    Raises
-    ------
-    ValueError
-        If ``raw`` is not a non-negative integer.
-    """
-    try:
-        value = int(raw.strip())
-    except ValueError as exc:
-        raise ValueError(f"'{field}' must be an integer, got {raw!r}") from exc
-    if value < 0:
-        raise ValueError(f"'{field}' must be non-negative, got {value}")
-    return value
-
-
 def _valid_friction(tag: str) -> bool:
     """Whether a friction tag is a known vocabulary term or a valid escape."""
     if tag in FRICTION_VOCAB:
@@ -246,8 +226,8 @@ def parse_reflection(text: str, slug: str) -> Reflection:
     Raises
     ------
     ValueError
-        On any schema violation: a missing field, a slug mismatch, a bad
-        integer, or an out-of-vocabulary friction tag or blocker code.
+        On any schema violation: a missing field, a slug mismatch, or an
+        out-of-vocabulary friction tag or blocker code.
     """
     fields = _parse_frontmatter(text)
     missing = [f for f in _REQUIRED_FIELDS if f not in fields]
@@ -256,7 +236,7 @@ def parse_reflection(text: str, slug: str) -> Reflection:
     if fields["slug"] != slug:
         raise ValueError(f"slug mismatch: frontmatter says {fields['slug']!r}, expected {slug!r}")
 
-    blockers = _parse_list(fields["blockers"])
+    blockers = _parse_list(fields.get("blockers", ""))
     bad_blockers = [b for b in blockers if b not in _VALID_BLOCKERS]
     if bad_blockers:
         raise ValueError(f"unknown blocker code(s): {', '.join(bad_blockers)}")
@@ -272,8 +252,6 @@ def parse_reflection(text: str, slug: str) -> Reflection:
     harness_change = fields.get("harness_change", "").strip() or None
     return Reflection(
         slug=slug,
-        cycles=_parse_int("cycles", fields["cycles"]),
-        gates_red=_parse_int("gates_red", fields["gates_red"]),
         blockers=tuple(blockers),
         friction=tuple(friction),
         worked=tuple(_parse_list(fields["worked"])),
@@ -312,8 +290,8 @@ def verify_reflection(repo: Path, slug: str) -> ReflectionVerdict:
 def scaffold_reflection(repo: Path, slug: str) -> Path:
     """Write a schema-valid reflection template for ``slug`` and return its path.
 
-    ``cycles`` is prefilled from the ledger when the ticket is registered; the
-    remaining fields start empty for the author to fill. Refuses to overwrite
+    Every field starts empty for the author to fill; the mechanical numbers are
+    no longer templated because ``distill`` derives them. Refuses to overwrite
     an existing reflection so a partly-authored artifact is never clobbered.
 
     Raises
@@ -324,14 +302,10 @@ def scaffold_reflection(repo: Path, slug: str) -> Path:
     path = repo / REFLECTIONS_DIR / f"{slug}.md"
     if path.exists():
         raise FileExistsError(f"{path} already exists; edit it instead")
-    entry = load_ledger(repo).entries.get(slug)
-    cycles = entry.review_cycles if entry is not None else 0
     vocab = ", ".join(sorted(FRICTION_VOCAB))
     template = (
         "---\n"
         f"slug: {slug}\n"
-        f"cycles: {cycles}\n"
-        "gates_red: 0\n"
         "blockers: []\n"
         "friction: []\n"
         "worked: []\n"
@@ -362,9 +336,12 @@ def distill(repo: Path) -> DistillSummary:
 
     Reads ``.loop/reflections/*.md``, counting friction tags, blocker codes,
     and ``worked`` tags across all schema-valid reflections and collecting the
-    ``harness_change`` one-liners. Schema-invalid files are skipped (their
-    slugs are reported), never silently dropped, so distillation cannot hide a
-    broken artifact.
+    ``harness_change`` one-liners. For each aggregated reflection it derives the
+    mechanical numbers from evidence: ``cycles`` from the ledger's
+    ``review_cycles`` and ``gates_red`` from the gate-failure history. The
+    derived numbers are authoritative; any number the reflection body carries is
+    ignored. Schema-invalid files are skipped (their slugs are reported), never
+    silently dropped, so distillation cannot hide a broken artifact.
 
     Parameters
     ----------
@@ -377,9 +354,12 @@ def distill(repo: Path) -> DistillSummary:
         The aggregated, frequency-ranked view for the ``ticket-planner`` agent.
     """
     directory = repo / REFLECTIONS_DIR
+    ledger = load_ledger(repo)
     friction: Counter[str] = Counter()
     blockers: Counter[str] = Counter()
     worked: Counter[str] = Counter()
+    cycles: list[tuple[str, int]] = []
+    gates_red: list[tuple[str, int]] = []
     harness_changes: list[str] = []
     skipped: list[str] = []
     count = 0
@@ -395,12 +375,17 @@ def distill(repo: Path) -> DistillSummary:
         worked.update(reflection.worked)
         if reflection.harness_change:
             harness_changes.append(reflection.harness_change)
+        entry = ledger.entries.get(slug)
+        cycles.append((slug, entry.review_cycles if entry is not None else 0))
+        gates_red.append((slug, count_gate_failures(repo, slug)))
         count += 1
     return DistillSummary(
         reflections=count,
         friction=_ranked(friction),
         blockers=_ranked(blockers),
         worked=_ranked(worked),
+        cycles=tuple(sorted(cycles)),
+        gates_red=tuple(sorted(gates_red)),
         harness_changes=tuple(harness_changes),
         skipped=tuple(skipped),
     )
@@ -432,6 +417,13 @@ def format_distill(summary: DistillSummary) -> str:
     lines += _section("recurring friction", summary.friction)
     lines += ["", *_section("blockers hit", summary.blockers)]
     lines += ["", *_section("what worked", summary.worked)]
+    if summary.cycles or summary.gates_red:
+        red = dict(summary.gates_red)
+        lines += ["", "per-ticket mechanical facts (derived):"]
+        lines += [
+            f"  {slug}: {n} review cycle(s), {red.get(slug, 0)} red gate run(s)"
+            for slug, n in summary.cycles
+        ]
     if summary.harness_changes:
         lines += ["", "suggested harness changes:"]
         lines += [f"  - {s}" for s in summary.harness_changes]

@@ -14,6 +14,7 @@ risk_acknowledged = false
 scope = "local"
 
 [repos]
+02eab667df448997 = "https://github.com/anthropics/claude-plugins-official"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
@@ -66,6 +67,12 @@ repo_alias = "4290899e4697f267"
 source_path = "rules/python-docstrings.md"
 pin = "8d619fc26fbdc64773a398798dd451875eec92bb"
 risk_acknowledged = true
+
+[[rule]]
+qualified_name = "4290899e4697f267/python-type-hints"
+repo_alias = "4290899e4697f267"
+source_path = "rules/python-type-hints.md"
+risk_acknowledged = false
 
 [[skill]]
 qualified_name = "1385a5f1be8c889c/architecture-diagram"
@@ -124,6 +131,34 @@ pin = "1d92f60fed5599f0f04bbcfe72733b0aa60be7c8"
 risk_acknowledged = true
 
 [[skill]]
+qualified_name = "4290899e4697f267/generate-art"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/generate-art"
+target_dir = ".claude/skills/generate-art"
+risk_acknowledged = false
+
+[[skill]]
+qualified_name = "4290899e4697f267/terminal-gif"
+repo_alias = "4290899e4697f267"
+source_path = "skills/documentation/terminal-gif"
+target_dir = ".claude/skills/terminal-gif"
+risk_acknowledged = false
+
+[[skill]]
+qualified_name = "02eab667df448997/skill-creator"
+repo_alias = "02eab667df448997"
+source_path = "plugins/skill-creator/skills/skill-creator"
+target_dir = ".claude/skills/skill-creator"
+risk_acknowledged = false
+
+[[skill]]
+qualified_name = "4290899e4697f267/release-claude-code-plugin"
+repo_alias = "4290899e4697f267"
+source_path = "skills/ops/release-claude-code-plugin"
+target_dir = ".claude/skills/release-claude-code-plugin"
+risk_acknowledged = false
+
+[[skill]]
 qualified_name = "4290899e4697f267/release"
 repo_alias = "4290899e4697f267"
 source_path = "skills/ops/release"
@@ -153,5 +188,4 @@ repo_alias = "8b8de8ec329cb5d5"
 flavor = "claude"
 source_path = "packages/claude-code-plugin"
 marketplace_name = "memex"
-pin = "df13d6b1a7ae5e6f4bcd8b7b0e6c7268dc937494"
-risk_acknowledged = true
+risk_acknowledged = false

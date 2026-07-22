@@ -10,6 +10,7 @@ import pytest
 
 from loop_harness.cli import main
 from loop_harness.config import CONFIG_FILE
+from loop_harness.evals import EVALS_DIR
 from loop_harness.hooks import VERDICTS_DIR
 from loop_harness.ledger import Stage, load_ledger
 from loop_harness.reflection import REFLECTIONS_DIR
@@ -131,6 +132,21 @@ def test_reflect_scaffolds_then_validates(repo: Path, monkeypatch: pytest.Monkey
         f"---\nslug: {slug}\ncycles: 0\n---\n", encoding="utf-8"
     )
     assert _run(repo, "reflect", slug, monkeypatch=monkeypatch) == 1  # now schema-invalid
+
+
+def test_eval_checks_marker_and_never_scaffolds(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`loopctl eval` reports absent/invalid/valid and never writes a scaffold."""
+    slug = "some-ticket"
+    path = repo / EVALS_DIR / f"{slug}.md"
+    assert _run(repo, "eval", slug, monkeypatch=monkeypatch) == 1  # absent
+    assert not path.exists()  # check-only: no scaffold written
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"eval: {slug}\n", encoding="utf-8")  # header only, no row
+    assert _run(repo, "eval", slug, monkeypatch=monkeypatch) == 1  # invalid
+    path.write_text(f"eval: {slug}\n\n- given X, expect Y\n", encoding="utf-8")
+    assert _run(repo, "eval", slug, monkeypatch=monkeypatch) == 0  # valid
 
 
 def test_distill_runs_over_reflections(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:

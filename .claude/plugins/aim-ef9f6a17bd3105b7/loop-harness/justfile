@@ -9,3 +9,11 @@ check:
 # Run gates and record the evidence stamp (dogfoods the CLI).
 stamp:
     uv run loopctl stamp
+
+# Install loopctl as a standalone CLI on PATH (optional; the plugin path needs no install).
+install:
+    uv tool install --force .
+
+# Same, but editable — picks up local src changes without reinstalling.
+install-editable:
+    uv tool install --force --editable .

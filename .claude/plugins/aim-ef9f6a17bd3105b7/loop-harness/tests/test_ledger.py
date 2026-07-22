@@ -44,6 +44,23 @@ def test_roundtrip_preserves_all_fields(tmp_path: Path) -> None:
     assert loaded == ledger
 
 
+def test_eval_missing_blocker_round_trips(tmp_path: Path) -> None:
+    """The eval-missing blocker code survives save/load like every other."""
+    ledger = Ledger(
+        entries={
+            "t": TicketEntry(
+                slug="t",
+                stage=Stage.BLOCKED,
+                blocker=Blocker(code=BlockerCode.EVAL_MISSING, reason="no eval marker"),
+            )
+        }
+    )
+    save_ledger(tmp_path, ledger)
+    loaded = load_ledger(tmp_path).entries["t"]
+    assert loaded.blocker is not None
+    assert loaded.blocker.code is BlockerCode.EVAL_MISSING
+
+
 def test_save_creates_parent_and_is_readable(tmp_path: Path) -> None:
     """Save creates parent and is readable."""
     save_ledger(tmp_path, Ledger(entries={"t": TicketEntry(slug="t")}))

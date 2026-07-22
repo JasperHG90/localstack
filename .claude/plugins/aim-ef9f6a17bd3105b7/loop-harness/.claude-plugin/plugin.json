@@ -1,7 +1,7 @@
 {
   "name": "loop-harness",
   "description": "An evidence-verified ticket loop for Claude Code: ledger, lifecycle gates, tree-bound evidence stamps, adversarial-review verdicts, and a kill switch. The model proposes; the harness verifies; git is ground truth.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "keywords": [
     "loop",

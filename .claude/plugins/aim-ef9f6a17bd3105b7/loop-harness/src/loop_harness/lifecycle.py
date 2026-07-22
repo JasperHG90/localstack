@@ -44,6 +44,8 @@ def validate_transition(
     current_tree: str | None = None,
     review_cycles: int = 0,
     max_review_cycles: int = MAX_REVIEW_CYCLES,
+    require_eval: bool = False,
+    eval_marker_present: bool = False,
 ) -> None:
     """Raise ``LifecycleError`` unless ``current -> target`` is permitted.
 
@@ -58,6 +60,13 @@ def validate_transition(
         other target.
     current_tree :
         Fingerprint of the tree being committed, checked against each pass.
+    require_eval :
+        Whether the consumer's config gates pickup on an eval marker.
+        Consulted only for the ``implementing`` target; ignored otherwise.
+    eval_marker_present :
+        Whether a schema-valid eval marker exists for the ticket, resolved by
+        the caller. Consulted only for the ``implementing`` target; ignored
+        otherwise.
     """
     if target is Stage.BLOCKED:
         return  # always reachable; the blocker code is recorded on the entry
@@ -74,7 +83,13 @@ def validate_transition(
     if _ORDER.index(target) != _ORDER.index(current) + 1:
         raise LifecycleError(f"cannot jump {current.value} -> {target.value}")
 
-    if target is Stage.GATES:
+    if target is Stage.IMPLEMENTING:
+        if require_eval and not eval_marker_present:
+            raise LifecycleError(
+                "implementing entry needs an eval marker: author or fix "
+                ".loop/evals/<slug>.md before picking up the ticket"
+            )
+    elif target is Stage.GATES:
         if stamp is None or stamp.status not in _FRESH:
             detail = stamp.status.value if stamp is not None else "absent"
             raise LifecycleError(f"gates entry needs a fresh stamp (got: {detail})")

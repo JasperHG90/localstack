@@ -9,9 +9,17 @@ from pathlib import Path
 import pytest
 
 from loop_harness.config import CONFIG_FILE
-from loop_harness.ctl import advance, block, done, register
+from loop_harness.ctl import advance, block, done, drop, register
+from loop_harness.evals import EVALS_DIR
 from loop_harness.hooks import VERDICTS_DIR
-from loop_harness.ledger import BlockerCode, Stage, load_ledger
+from loop_harness.ledger import (
+    BlockerCode,
+    Ledger,
+    Stage,
+    TicketEntry,
+    load_ledger,
+    save_ledger,
+)
 from loop_harness.lifecycle import LifecycleError
 from loop_harness.reflection import REFLECTIONS_DIR
 from loop_harness.stamp import (
@@ -67,6 +75,62 @@ def test_advance_to_implementing_bumps_attempts(repo: Path) -> None:
     register(repo, SLUG)
     advance(repo, SLUG, Stage.IMPLEMENTING)
     assert load_ledger(repo).entries[SLUG].attempts == 1
+
+
+def _require_eval_config(repo: Path) -> None:
+    """Write a config that gates pickup on an eval marker."""
+    cfg = repo / CONFIG_FILE
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(json.dumps({"gates": ["true"], "require_eval": True}), encoding="utf-8")
+
+
+def _write_eval_marker(repo: Path, body: str) -> None:
+    """Write an eval marker for the ticket under test."""
+    path = repo / EVALS_DIR / f"{SLUG}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+
+
+def test_pickup_blocked_without_eval_marker_and_no_attempt_bump(repo: Path) -> None:
+    """With require_eval on, pickup is refused and a blocked attempt does not bump attempts."""
+    _require_eval_config(repo)
+    register(repo, SLUG)
+    with pytest.raises(LifecycleError, match="eval"):
+        advance(repo, SLUG, Stage.IMPLEMENTING)
+    assert load_ledger(repo).entries[SLUG].attempts == 0
+
+
+def test_pickup_allowed_once_valid_marker_exists(repo: Path) -> None:
+    """A schema-valid marker clears the gate and pickup proceeds."""
+    _require_eval_config(repo)
+    register(repo, SLUG)
+    _write_eval_marker(repo, f"eval: {SLUG}\n\n- given X, expect Y\n")
+    advance(repo, SLUG, Stage.IMPLEMENTING)
+    assert load_ledger(repo).entries[SLUG].attempts == 1
+
+
+def test_pickup_blocked_by_schema_invalid_marker(repo: Path) -> None:
+    """A header-only (invalid) marker does not clear the gate."""
+    _require_eval_config(repo)
+    register(repo, SLUG)
+    _write_eval_marker(repo, f"eval: {SLUG}\n")  # no scenario row
+    with pytest.raises(LifecycleError, match="eval"):
+        advance(repo, SLUG, Stage.IMPLEMENTING)
+
+
+def test_eval_gate_does_not_refire_on_later_stages(repo: Path) -> None:
+    """The gate fires only at pickup: the rest of the lifecycle is unaffected."""
+    _require_eval_config(repo)
+    register(repo, SLUG)
+    _write_eval_marker(repo, f"eval: {SLUG}\n\n- given X, expect Y\n")
+    advance(repo, SLUG, Stage.IMPLEMENTING)
+    write_stamp(repo, [GateResult("true", 0)])
+    advance(repo, SLUG, Stage.GATES)
+    advance(repo, SLUG, Stage.SELF_REVIEW)
+    advance(repo, SLUG, Stage.ADVERSARIAL_REVIEW)
+    _write_verdict(repo)
+    advance(repo, SLUG, Stage.COMMIT)
+    assert load_ledger(repo).entries[SLUG].stage is Stage.COMMIT
 
 
 def test_advance_to_gates_refused_without_stamp(repo: Path) -> None:
@@ -276,3 +340,45 @@ def test_commit_refused_when_verdict_tree_is_stale(repo: Path) -> None:
     )  # re-stamped, but verdict is stale
     with pytest.raises(LifecycleError, match="verdict"):
         advance(repo, SLUG, Stage.COMMIT)
+
+
+def test_drop_marks_entry_dropped(repo: Path) -> None:
+    """`drop` retires a registered ticket by marking it dropped, in place."""
+    register(repo, SLUG)
+    msg = drop(repo, SLUG)
+    assert "dropped" in msg
+    assert load_ledger(repo).entries[SLUG].dropped is True
+
+
+def test_drop_absent_slug_raises(repo: Path) -> None:
+    """Dropping an unregistered slug fails loudly (nothing to drop)."""
+    with pytest.raises(SystemExit):
+        drop(repo, "never-registered")
+
+
+def test_register_undrops_a_dropped_ticket(repo: Path) -> None:
+    """Re-registering a dropped slug clears the flag (the restore path)."""
+    register(repo, SLUG)
+    drop(repo, SLUG)
+    msg = register(repo, SLUG)
+    assert "un-dropped" in msg
+    assert load_ledger(repo).entries[SLUG].dropped is False
+
+
+def test_register_present_non_dropped_is_noop(repo: Path) -> None:
+    """Re-registering a present, non-dropped slug is the exact existing no-op."""
+    register(repo, SLUG)
+    msg = register(repo, SLUG)
+    assert "already registered" in msg
+    assert load_ledger(repo).entries[SLUG].dropped is False
+
+
+def test_drop_undrop_preserves_stage(repo: Path) -> None:
+    """Drop preserves the pre-drop stage; un-drop restores the ticket exactly."""
+    save_ledger(repo, Ledger(entries={SLUG: TicketEntry(slug=SLUG, stage=Stage.IMPLEMENTING)}))
+    drop(repo, SLUG)
+    assert load_ledger(repo).entries[SLUG].stage is Stage.IMPLEMENTING  # stage preserved
+    register(repo, SLUG)  # un-drop
+    entry = load_ledger(repo).entries[SLUG]
+    assert entry.dropped is False
+    assert entry.stage is Stage.IMPLEMENTING

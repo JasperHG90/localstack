@@ -31,7 +31,17 @@ SLUG = "some-ticket"
 
 @pytest.mark.parametrize(
     "command",
-    ["ls -la", "git status", "git log --oneline", "uv run pytest", "git commitish"],
+    [
+        "ls -la",
+        "git status",
+        "git log --oneline",
+        "uv run pytest",
+        "git commitish",
+        # "git commit" as string data must never trip the gate (the bug)
+        'echo "=== all git commit subjects ==="',
+        'git log --grep="git commit"',
+        "# git commit here later",
+    ],
 )
 def test_non_commit_commands_pass_untouched(command: str) -> None:
     """Only `git commit` is gated; everything else passes silently."""
@@ -41,8 +51,48 @@ def test_non_commit_commands_pass_untouched(command: str) -> None:
 
 
 @pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        # "git commit" as string data — never a real invocation
+        ('echo "=== all git commit subjects ==="', False),
+        ('git log --grep="git commit"', False),
+        ("# git commit here later", False),
+        ("ls && # git commit", False),
+        ("git commitish", False),
+        ("git -C other commit -m x", True),  # B: the `-C` form is now detected and gated
+        ("git --git-dir /x commit", True),  # detected as a commit; target is undeterminable
+        # real invocations in command position
+        ("git commit", True),
+        ("git commit -m 'x'", True),
+        ("git add -A && git commit -m 'y'", True),
+        ("cd /repo && git commit", True),
+        ("git add&&git commit -m 'z'", True),  # Q2: no whitespace around &&
+        ('git commit -m "fix #42"', True),  # Q3: # inside the message is data
+        ('git commit -m "oops', True),  # Q1: shlex parse failure falls back, still gates
+        # F1: a real commit behind an env-assignment or wrapper must still gate
+        ("GIT_COMMITTER_DATE=2020 git commit --amend", True),
+        ("FOO=bar git commit", True),
+        ("sudo git commit", True),
+        ("env GIT_AUTHOR_NAME=x git commit", True),
+        ("echo git commit", True),  # unquoted: over-gates toward safety (documented)
+    ],
+)
+def test_invokes_git_commit(command: str, expected: bool) -> None:
+    """The detector fires only on a real `git commit`, never on string data."""
+    assert hooks._invokes_git_commit(command) is expected
+
+
+@pytest.mark.parametrize(
     "command",
-    ["git commit -m 'x'", "git add -A && git commit -m 'y'", "cd /repo && git commit"],
+    [
+        "git commit -m 'x'",
+        "git add -A && git commit -m 'y'",
+        "cd /repo && git commit",
+        "git add&&git commit -m 'z'",  # Q2: no whitespace around the operator
+        'git commit -m "fix #42"',  # Q3: a `#` in the message is data, not a comment
+        'git commit -m "oops',  # Q1: shlex failure falls back to the regex, still gates
+        "GIT_COMMITTER_DATE=2020 git commit",  # F1: env-prefixed real commit still gates
+    ],
 )
 def test_commit_without_stamp_is_blocked(command: str) -> None:
     """No stamp means no commit, in plain and compound commands."""
@@ -328,3 +378,199 @@ def test_session_start_flags_broken_config_but_still_prints_ledger(
     out = capsys.readouterr().out
     assert "config ERROR" in out
     assert "[loop] ledger:" in out  # the bad config must not blank the ledger display
+
+
+# --- commit-gate-targets-the-committed-repo: resolve the committed repo ---
+
+
+def test_resolve_commit_repo(tmp_path: Path) -> None:
+    """The resolver points at the repo a `git commit` actually runs in, or None."""
+    cwd = tmp_path
+    sib = tmp_path / "sibling"
+    sib.mkdir()
+    # a bare commit runs in cwd
+    assert hooks._resolve_commit_repo("git commit -m x", cwd) == cwd
+    # a leading `cd <path> &&` prefix, absolute and relative
+    assert hooks._resolve_commit_repo(f"cd {sib} && git commit", cwd) == sib
+    assert hooks._resolve_commit_repo("cd sibling && git commit", cwd) == sib
+    # the `git -C <path> commit` form, absolute and relative
+    assert hooks._resolve_commit_repo(f"git -C {sib} commit -m x", cwd) == sib
+    assert hooks._resolve_commit_repo("git -C sibling commit", cwd) == sib
+    # undeterminable targets fail closed (None): out-of-scope opts, a variable
+    # path, an unhandled `cd`, and an unparseable segment
+    assert hooks._resolve_commit_repo("git --git-dir /x commit", cwd) is None
+    assert hooks._resolve_commit_repo("cd $DIR && git commit", cwd) is None
+    assert hooks._resolve_commit_repo("cd a b && git commit", cwd) is None
+    assert hooks._resolve_commit_repo('git commit -m "oops', cwd) is None
+
+
+def _loop_repo(path: Path, *, green: bool) -> None:
+    """Make ``path`` a loop-active git repo, with a green stamp iff ``green``.
+
+    Uses ``require_review: false`` so a green stamp alone authorizes a commit
+    (no verdict files needed), keeping these gate tests focused on which repo's
+    evidence is consulted.
+    """
+    from loop_harness.stamp import GateResult, write_stamp
+
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q"], cwd=path, check=True)
+    (path / ".loop").mkdir(exist_ok=True)
+    (path / CONFIG_FILE).write_text(
+        json.dumps({"gates": ["true"], "require_review": False, "review_passes": []}),
+        encoding="utf-8",
+    )
+    if green:
+        write_stamp(path, [GateResult("true", 0)])
+
+
+def _feed(monkeypatch: pytest.MonkeyPatch, command: str) -> None:
+    """Point the hook's stdin at a PreToolUse payload carrying ``command``."""
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_input": {"command": command}})))
+
+
+def test_gate_cd_prefix_gates_the_target_not_the_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`cd other && git commit` is gated on the TARGET's evidence, not the session's."""
+    session, target = tmp_path / "session", tmp_path / "target"
+    _loop_repo(session, green=True)  # session is green ...
+    _loop_repo(target, green=False)  # ... but the target has no stamp
+    monkeypatch.chdir(session)
+    _feed(monkeypatch, f"cd {target} && git commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 2  # blocks on the target's missing stamp
+
+
+def test_gate_dash_C_form_is_detected_and_gated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`git -C other commit` no longer bypasses the gate; it gates the target."""
+    session, target = tmp_path / "session", tmp_path / "target"
+    _loop_repo(session, green=True)
+    _loop_repo(target, green=False)
+    monkeypatch.chdir(session)
+    _feed(monkeypatch, f"git -C {target} commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 2
+
+
+def test_gate_uses_the_resolved_target_on_the_happy_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A green target is allowed even when the session repo is NOT green."""
+    session, target = tmp_path / "session", tmp_path / "target"
+    _loop_repo(session, green=False)  # session is red ...
+    _loop_repo(target, green=True)  # ... but the commit lands in the green target
+    monkeypatch.chdir(session)
+    _feed(monkeypatch, f"git -C {target} commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 0
+
+
+def test_gate_undeterminable_target_fails_safe_from_a_consumer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unresolvable target BLOCKS when the session cwd is itself loop-active."""
+    session = tmp_path / "session"
+    _loop_repo(session, green=True)
+    monkeypatch.chdir(session)
+    _feed(monkeypatch, "git --git-dir /elsewhere commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 2
+
+
+def test_gate_undeterminable_target_noops_from_a_dormant_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unresolvable target no-ops when the session cwd is not a consumer."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # no .loop
+    monkeypatch.chdir(tmp_path)
+    _feed(monkeypatch, "git --git-dir /elsewhere commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 0
+
+
+def test_gate_dormant_target_is_not_gated_from_a_consumer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A commit into a non-consumer target no-ops, even from a consumer session."""
+    session, target = tmp_path / "session", tmp_path / "target"
+    _loop_repo(session, green=True)
+    target.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=target, check=True)  # no .loop → dormant
+    monkeypatch.chdir(session)
+    _feed(monkeypatch, f"cd {target} && git commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 0
+
+
+def test_gate_undeterminable_target_bypassed_by_halt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An engaged HALT bypasses even the undeterminable-target fail-safe block."""
+    from loop_harness import halt as halt_mod
+
+    session = tmp_path / "session"
+    _loop_repo(session, green=True)
+    halt_mod.engage(session, "operator in control")
+    monkeypatch.chdir(session)
+    _feed(monkeypatch, "git --git-dir /elsewhere commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 0
+
+
+def test_gate_internal_error_still_fails_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unexpected exception in target resolution fails OPEN (distinct from fail-safe)."""
+    session = tmp_path / "session"
+    _loop_repo(session, green=True)
+    monkeypatch.chdir(session)
+
+    def boom(_command: str, _cwd: Path) -> Path | None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(hooks, "_resolve_commit_repo", boom)
+    _feed(monkeypatch, "git commit -m x")
+    assert hooks.main(["pre-commit-gate"]) == 0  # fail OPEN on internal error
+
+
+def test_session_start_registers_orphan_plan(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """SessionStart reconciles: an orphan plan under a repo-local plans_dir is
+    auto-registered into the ledger and surfaced as a row (R8)."""
+    from loop_harness.ledger import load_ledger
+
+    cfg = repo / CONFIG_FILE
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(json.dumps({"gates": ["true"], "plans_dir": ".loop/plans"}), encoding="utf-8")
+    plan = repo / ".loop" / "plans" / "orphan-x.md"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text("# orphan-x\n", encoding="utf-8")
+
+    monkeypatch.chdir(repo)
+    assert hooks._session_start() == 0
+    assert "orphan-x" in load_ledger(repo).entries
+    assert "orphan-x" in capsys.readouterr().out
+
+
+def test_session_start_hints_git_hook_when_absent(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """SessionStart surfaces the install command while the backstop is absent (G1)."""
+    cfg = repo / CONFIG_FILE
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(json.dumps({"gates": ["true"]}), encoding="utf-8")
+    monkeypatch.chdir(repo)
+    hooks._session_start()
+    assert "install-git-hook" in capsys.readouterr().out
+
+
+def test_session_start_no_git_hook_hint_once_installed(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Once the managed hook is installed, the SessionStart hint disappears."""
+    from loop_harness import githook
+
+    cfg = repo / CONFIG_FILE
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(json.dumps({"gates": ["true"]}), encoding="utf-8")
+    assert githook.install(repo).ok
+    monkeypatch.chdir(repo)
+    hooks._session_start()
+    assert "install-git-hook" not in capsys.readouterr().out

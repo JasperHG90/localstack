@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from loop_harness.ctl import advance, register
-from loop_harness.ledger import Stage
+from loop_harness.ctl import register
+from loop_harness.history import append_gate_failure
+from loop_harness.ledger import load_ledger, save_ledger
 from loop_harness.reflection import (
     REFLECTIONS_DIR,
     ReflectionStatus,
@@ -17,14 +18,28 @@ from loop_harness.reflection import (
     scaffold_reflection,
     verify_reflection,
 )
-from loop_harness.stamp import GateResult, write_stamp
+from loop_harness.stamp import GateResult
 
 VALID = """---
+slug: some-ticket
+blockers: [cap-exceeded]
+friction: [prek-first-pass-rewrite, other:flaky-network]
+worked: [tests-first]
+harness_change: add a reflect scaffold command
+---
+
+## What worked
+tests-first kept the diff small.
+"""
+
+# The pre-shrink format still carries the mechanical numbers; the parser must
+# tolerate them as now-unknown keys (R-D: old reflections still parse).
+OLD_SCHEMA = """---
 slug: some-ticket
 cycles: 2
 gates_red: 1
 blockers: [cap-exceeded]
-friction: [prek-first-pass-rewrite, other:flaky-network]
+friction: [prek-first-pass-rewrite]
 worked: [tests-first]
 harness_change: add a reflect scaffold command
 ---
@@ -44,20 +59,33 @@ def _write(repo: Path, slug: str, body: str) -> None:
 def test_parse_valid_reflection() -> None:
     """A well-formed reflection parses into its typed frontmatter."""
     reflection = parse_reflection(VALID, "some-ticket")
-    assert reflection.cycles == 2
-    assert reflection.gates_red == 1
     assert reflection.blockers == ("cap-exceeded",)
     assert reflection.friction == ("prek-first-pass-rewrite", "other:flaky-network")
     assert reflection.worked == ("tests-first",)
     assert reflection.harness_change == "add a reflect scaffold command"
 
 
+def test_shrunk_schema_validates_with_judgment_only() -> None:
+    """A reflection with only judgment fields (no cycles/gates_red) is valid."""
+    body = "---\nslug: t\nfriction: [prek-first-pass-rewrite]\nworked: [small-diff]\n---\n"
+    reflection = parse_reflection(body, "t")
+    assert reflection.friction == ("prek-first-pass-rewrite",)
+    assert reflection.worked == ("small-diff",)
+    assert reflection.blockers == ()  # optional, defaults empty
+    assert reflection.harness_change is None
+
+
+def test_old_schema_reflection_still_parses() -> None:
+    """The pre-shrink format still parses; its stale numbers are ignored (R-D)."""
+    reflection = parse_reflection(OLD_SCHEMA, "some-ticket")
+    assert reflection.friction == ("prek-first-pass-rewrite",)
+    assert not hasattr(reflection, "cycles")
+    assert not hasattr(reflection, "gates_red")
+
+
 def test_empty_lists_and_absent_harness_change_are_valid() -> None:
     """Presence and type are enough; empty lists and no suggestion pass."""
-    body = (
-        "---\nslug: t\ncycles: 0\ngates_red: 0\n"
-        "blockers: []\nfriction: []\nworked: []\nharness_change:\n---\n"
-    )
+    body = "---\nslug: t\nblockers: []\nfriction: []\nworked: []\nharness_change:\n---\n"
     reflection = parse_reflection(body, "t")
     assert reflection.friction == ()
     assert reflection.harness_change is None
@@ -67,30 +95,21 @@ def test_empty_lists_and_absent_harness_change_are_valid() -> None:
     ("body", "match"),
     [
         ("no frontmatter here\n", "opening '---'"),
-        ("---\nslug: t\ncycles: 1\n---\n", "missing required field"),
+        ("---\nslug: t\n---\n", "missing required field"),
         (
-            "---\nslug: other\ncycles: 1\ngates_red: 0\n"
-            "blockers: []\nfriction: []\nworked: []\n---\n",
+            "---\nslug: other\nfriction: []\nworked: []\n---\n",
             "slug mismatch",
         ),
         (
-            "---\nslug: t\ncycles: two\ngates_red: 0\n"
-            "blockers: []\nfriction: []\nworked: []\n---\n",
-            "must be an integer",
-        ),
-        (
-            "---\nslug: t\ncycles: 1\ngates_red: 0\n"
-            "blockers: [nope]\nfriction: []\nworked: []\n---\n",
+            "---\nslug: t\nblockers: [nope]\nfriction: []\nworked: []\n---\n",
             "unknown blocker code",
         ),
         (
-            "---\nslug: t\ncycles: 1\ngates_red: 0\n"
-            "blockers: []\nfriction: [made-up]\nworked: []\n---\n",
+            "---\nslug: t\nblockers: []\nfriction: [made-up]\nworked: []\n---\n",
             "controlled vocabulary",
         ),
         (
-            "---\nslug: t\ncycles: 1\ngates_red: 0\n"
-            "blockers: []\nfriction: [other:]\nworked: []\n---\n",
+            "---\nslug: t\nblockers: []\nfriction: [other:]\nworked: []\n---\n",
             "controlled vocabulary",
         ),
     ],
@@ -125,21 +144,15 @@ def test_verify_valid(repo: Path) -> None:
     assert verdict.reflection.slug == "some-ticket"
 
 
-def test_scaffold_is_valid_and_prefills_cycles(repo: Path) -> None:
-    """The scaffold is schema-valid and seeds cycles from the ledger."""
+def test_scaffold_is_valid_and_emits_no_numeric_fields(repo: Path) -> None:
+    """The scaffold is schema-valid and templates no derived numeric fields."""
     register(repo, "some-ticket")
-    advance(repo, "some-ticket", Stage.IMPLEMENTING)
-    write_stamp(repo, [GateResult("pytest", 0)])
-    advance(repo, "some-ticket", Stage.GATES)
-    advance(repo, "some-ticket", Stage.SELF_REVIEW)
-    advance(repo, "some-ticket", Stage.ADVERSARIAL_REVIEW)
-    advance(repo, "some-ticket", Stage.GATES)  # one findings loop -> review_cycles == 1
-
     path = scaffold_reflection(repo, "some-ticket")
+    text = path.read_text(encoding="utf-8")
+    assert "cycles:" not in text
+    assert "gates_red:" not in text
     verdict = verify_reflection(repo, "some-ticket")
     assert verdict.ok
-    assert verdict.reflection is not None
-    assert verdict.reflection.cycles == 1
     with pytest.raises(FileExistsError):
         scaffold_reflection(repo, "some-ticket")
     assert path.exists()
@@ -165,6 +178,43 @@ def test_distill_aggregates_and_ranks(repo: Path) -> None:
     assert summary.blockers == (("cap-exceeded", 2),)
     assert set(summary.harness_changes) == {"add a reflect scaffold command", "cache prek"}
     assert summary.skipped == ("broken",)
+
+
+def test_distill_derives_numbers_ignoring_body(repo: Path) -> None:
+    """Derived cycles/gates_red come from evidence, not the reflection body.
+
+    The ledger records C review cycles and the history log holds N failure
+    events; the body states contradictory numbers (old schema). Distill reports
+    the derived C and N, not the self-reported ones.
+    """
+    slug = "derived"
+    register(repo, slug)
+    ledger = load_ledger(repo)
+    ledger.entries[slug].review_cycles = 3  # C
+    save_ledger(repo, ledger)
+    for _ in range(2):  # N red gate runs
+        append_gate_failure(repo, slug, [GateResult("uv run pytest", 1)], "deadbeef")
+    # The body carries contradictory (stale) numbers that must be ignored.
+    _write(
+        repo,
+        slug,
+        f"---\nslug: {slug}\ncycles: 99\ngates_red: 99\n"
+        "blockers: []\nfriction: []\nworked: []\n---\n",
+    )
+
+    summary = distill(repo)
+    assert (slug, 3) in summary.cycles
+    assert (slug, 2) in summary.gates_red
+    text = format_distill(summary)
+    assert f"{slug}: 3 review cycle(s), 2 red gate run(s)" in text
+
+
+def test_distill_derives_zero_when_no_evidence(repo: Path) -> None:
+    """A slug with no ledger entry and no history derives zero for both."""
+    _write(repo, "some-ticket", VALID)
+    summary = distill(repo)
+    assert ("some-ticket", 0) in summary.cycles
+    assert ("some-ticket", 0) in summary.gates_red
 
 
 def test_distill_empty(repo: Path) -> None:

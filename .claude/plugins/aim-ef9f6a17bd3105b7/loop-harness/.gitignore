@@ -16,3 +16,6 @@ tickets
 
 # Claude Code machine-local state (vendored plugins, global agents/skills)
 .claude/
+
+# manifesto tooling per-run hook markers (ephemeral, machine-local)
+.manifesto/.hook-seen-*

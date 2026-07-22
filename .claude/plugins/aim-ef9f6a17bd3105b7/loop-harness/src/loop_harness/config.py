@@ -33,6 +33,8 @@ EXAMPLE_CONFIG = {
     "plans_dir": "~/.claude/plans",
     "notify_title": "loop harness",
     "max_review_cycles": 3,
+    "require_eval": False,
+    "fingerprint_ignore": [],
     "review_passes": [
         {"id": "adversarial", "agent": "loop-reviewer", "enabled": True},
         {
@@ -165,9 +167,23 @@ class LoopConfig:
         When true (default), at least one review pass must be enabled;
         an empty or all-disabled set is a loud error. Set false to commit
         on a green stamp alone (no independent review).
+    require_eval : bool
+        When true, a ticket cannot enter ``implementing`` until a
+        schema-valid eval marker (``.loop/evals/<slug>.md``) exists for its
+        slug. Default false (off), so consumers that do not opt in see no
+        behavior change.
     action_stages : tuple[ActionStage, ...]
         Advisory stages the skill dispatches at a lifecycle anchor; they
         write no verdict and never gate the commit.
+    fingerprint_ignore : tuple[str, ...]
+        git pathspecs (NOT ``.gitignore`` globs) that the tree fingerprint
+        removes from the hashed tree, so generated working-tree files stop
+        staling an otherwise-unchanged evidence stamp. It only ever
+        SUBTRACTS named paths: a change to any non-ignored file still
+        changes the fingerprint. Scope each pattern to a generated path:
+        an over-broad pathspec (``.``, ``src``) shadows real source and
+        silently defeats the whole-tree guarantee. Empty by default, so an
+        absent key preserves the whole-tree behavior.
     """
 
     gates: tuple[str, ...] = ()
@@ -176,7 +192,9 @@ class LoopConfig:
     max_review_cycles: int = 3
     review_passes: tuple[ReviewPass, ...] = _DEFAULT_REVIEW_PASSES
     require_review: bool = True
+    require_eval: bool = False
     action_stages: tuple[ActionStage, ...] = ()
+    fingerprint_ignore: tuple[str, ...] = ()
 
     def enabled_review_passes(self) -> tuple[ReviewPass, ...]:
         """Return the review passes that run and whose verdicts gate the commit."""
@@ -208,6 +226,19 @@ def load_config(repo: Path) -> LoopConfig:
                 "would char-split into nonsense gates"
             )
         gates = tuple(raw_gates)
+        raw_ignore = raw.get("fingerprint_ignore", [])
+        if not isinstance(raw_ignore, list) or not all(isinstance(p, str) for p in raw_ignore):
+            raise ConfigError(
+                f"'fingerprint_ignore' in {path} must be a LIST of git pathspec strings; "
+                "a bare string would char-split into per-character patterns"
+            )
+        if not all(p.strip() for p in raw_ignore):
+            raise ConfigError(
+                f"'fingerprint_ignore' in {path} has an empty pattern; an empty git "
+                "pathspec makes `git rm` fatal, which the commit hook's fail-open would "
+                "swallow and silently disable the gate"
+            )
+        fingerprint_ignore = tuple(raw_ignore)
         review_passes = _parse_review_passes(raw, path)
         require_review = raw.get("require_review", True)
         if not isinstance(require_review, bool):
@@ -217,6 +248,9 @@ def load_config(repo: Path) -> LoopConfig:
                 f"no review pass is enabled in {path} but 'require_review' is true; "
                 'set "require_review": false to commit on a green stamp alone'
             )
+        require_eval = raw.get("require_eval", False)
+        if not isinstance(require_eval, bool):
+            raise ConfigError(f"'require_eval' in {path} must be true or false")
         action_stages = _parse_action_stages(raw, path, {p.id for p in review_passes})
         return LoopConfig(
             gates=gates,
@@ -225,7 +259,9 @@ def load_config(repo: Path) -> LoopConfig:
             max_review_cycles=int(raw.get("max_review_cycles", LoopConfig.max_review_cycles)),
             review_passes=review_passes,
             require_review=require_review,
+            require_eval=require_eval,
             action_stages=action_stages,
+            fingerprint_ignore=fingerprint_ignore,
         )
     except ConfigError:
         raise

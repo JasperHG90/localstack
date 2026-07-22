@@ -1,4 +1,6 @@
-# loop-harness
+<p align="center">
+  <img src="docs/assets/banner.png" alt="loop harness" width="640">
+</p>
 
 An evidence-verified ticket loop for Claude Code, packaged as a
 plugin: the model proposes, the harness verifies, and git is ground
@@ -52,14 +54,29 @@ Or via aim, or any mechanism that places this directory under
 `loop-reviewer` agent register automatically. The harness is
 stdlib-only: the system `python3` (3.11+) is the only requirement.
 
-## Configure the consumer repo
+### Optional: `loopctl` on your PATH
+
+The plugin path above needs no install. To also run `loopctl` as a
+standalone command outside a session, install it as a tool:
 
 ```bash
-python3 <plugin-root>/scripts/loopctl.py init
+uv tool install .            # from a clone (or: just install)
+uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.git
 ```
 
-writes a starter `.loop/config.json`; edit it to the repo's blessed
-gate invocations:
+This is purely additive: the SessionStart hook still injects the
+zero-install invocation path, so a consumer repo never depends on it.
+
+## Configure the consumer repo
+
+Run the `init-loop` skill to set up a fresh repo: it scaffolds
+`.loop/config.json`, proposes real gate commands from the repo's own
+manifests, applies the gitignore contract below, verifies with a dry
+stamp, and stops at ready-to-commit. The skill is the setup path, so you
+never need to locate the plugin-internal CLI by hand.
+
+It writes a starter `.loop/config.json`, which you then edit to the
+repo's blessed gate invocations:
 
 ```json
 {
@@ -78,11 +95,31 @@ loudly instead of certifying untested trees. Commit `.loop/config.json`
 and `.loop/ledger.json`; gitignore `.loop/stamp.json`, `.loop/HALT`,
 and `.loop/handoff.log`.
 
+To stop generated working-tree files (build output, install lockfiles,
+committed logo assets) from staling an otherwise-unchanged stamp, add a
+`fingerprint_ignore` list of git pathspecs the fingerprint subtracts:
+
+```json
+{
+  "fingerprint_ignore": ["docs/assets/", "*.lock"]
+}
+```
+
+These are git pathspecs, not `.gitignore` globs, so `*` crosses
+directory boundaries (`*.lock` matches paths ending in `.lock`, not
+`aim.lock.toml`). The list only ever subtracts, so any change outside it
+still stales the stamp. Scope each pattern to a generated path: an
+over-broad pathspec like `.` or `src` shadows real source and silently
+disables the guarantee. An empty pattern is rejected.
+
 ## What ships
 
 - `loopctl` — the CLI over every harness operation, including
   `reflect` (author/validate a ticket reflection) and `distill`
   (aggregate reflections for the planner).
+- **skill `init-loop`** — bootstraps the harness into a fresh repo:
+  scaffolds the config, proposes real gates from the repo's manifests,
+  and stops at ready-to-commit.
 - **skill `create-ticket`** — authors one ticket in the loop's
   contract; the single source of truth for the ticket format.
 - **agent `ticket-planner`** — a repo-aware subagent that explores,
@@ -130,6 +167,14 @@ uvx prek run --all-files
 
 The harness is deliberately dependency-free (`src/loop_harness/`,
 stdlib only) so consumers need no install step; keep it that way.
+
+### Releasing
+
+Bump the plugin version with the `release-claude-code-plugin` skill: it
+edits the `version` in `.claude-plugin/plugin.json`, commits, and
+pushes. `pyproject.toml` derives its version from that same file (via
+`[tool.hatch.version]`), so `uv tool install` reads the new number with
+no second edit: one place to change.
 
 ## Extending the loop
 
@@ -204,6 +249,10 @@ implementing`, so its doc edits are stamped, reviewed, and committed with
 the code. Because the harness cannot prove an advisory stage ran, docs are
 kept honest by the enforced `documentation` review pass, not by the writer
 action. Stage ids are unique across both lists.
+
+For a hands-on walkthrough that builds a custom review pass and a custom
+action stage from scratch, see
+[docs/tutorials/custom-reviews-and-actions.md](docs/tutorials/custom-reviews-and-actions.md).
 
 Lifecycle transitions carry their own checks beyond the gates: `finish`
 enforces a schema-valid `.loop/reflections/<slug>.md` (see the reflection

@@ -36,7 +36,9 @@ and the `create-ticket` skill is its full source of truth.
    change touches, each with the change in a clause.
 8. **Tests & validation gates.** The repo's actual gates (test
    command, lint/type config, review rule) and the tests to add. A bug
-   fix names a reproducing test first.
+   fix names a reproducing test first. Every test named here must have
+   its file listed in §7's code surface — a named test with no declared
+   home forces the implementer to guess where it lives.
 9. **Risk assessment.** Blast radius, reversibility, likeliest failure
    modes.
 10. **Subtickets.** An ordered, dependency-aware decomposition.
@@ -61,10 +63,18 @@ and the `create-ticket` skill is its full source of truth.
    Open Questions with a recommendation. Picking silently is the
    failure the loop's `unresolved-design-fork` block exists to
    prevent.
-5. **Write the file and stop.** Your final message is the ticket path
-   and a one-paragraph summary of what it scopes and which forks the
-   operator must settle first. Do not paste the ticket body into the
-   conversation. The file is the deliverable.
+5. **Write the file, then hand back the eval step.** Your final message
+   is the ticket path, a one-paragraph summary of what it scopes and
+   which forks the operator must settle first, AND an explicit next-step
+   line recommending the caller co-author the ticket's eval with the
+   `create-eval` skill before implementation (the "eval is the spec"
+   step). Always surface this step so the caller cannot skip it silently;
+   whether to author the eval is the operator's call, unless the consumer
+   sets `require_eval`, in which case the loop refuses pickup until the
+   marker exists. The interactive prompt for that decision fires in the
+   DRIVER (the `create-ticket` skill), not here: you return a path and
+   recommend the step, you do not call `AskUserQuestion`. Do not paste the
+   ticket body into the conversation. The file is the deliverable.
 
 ## Boundaries
 

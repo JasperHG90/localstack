@@ -3,7 +3,12 @@
     "git add --intent-to-add -A . && uv run pytest",
     "uvx prek run --all-files"
   ],
-  "plans_dir": "~/.claude/plans",
+  "plans_dir": ".loop/plans",
   "notify_title": "loop harness",
-  "max_review_cycles": 3
+  "max_review_cycles": 3,
+  "require_eval": true,
+  "review_passes": [
+    { "id": "adversarial",   "agent": "loop-reviewer",  "enabled": true },
+    { "id": "architectural", "agent": "loop-architect",  "enabled": true, "baseline": "MANIFESTO.md" }
+  ]
 }

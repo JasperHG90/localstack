@@ -9,6 +9,8 @@ skill/agent added to the tree but never wired into the manifest.
 from __future__ import annotations
 
 import json
+import re
+import tomllib
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +50,18 @@ def test_ticket_authoring_pair_is_present() -> None:
     assert "./agents/ticket-planner.md" in MANIFEST.get("agents", [])
 
 
+def test_create_eval_skill_is_present() -> None:
+    """The create-eval skill ships (auto-registered via the skills glob):
+    it is the interactive producer of the eval marker the require_eval gate checks."""
+    assert (PLUGIN_ROOT / "skills" / "create-eval" / "SKILL.md").is_file()
+
+
+def test_init_loop_skill_is_present() -> None:
+    """The init-loop skill ships (auto-registered via the skills glob):
+    it is the guided path that bootstraps the harness into a consumer repo."""
+    assert (PLUGIN_ROOT / "skills" / "init-loop" / "SKILL.md").is_file()
+
+
 def test_review_pass_agents_are_present_and_declared() -> None:
     """The built-in review-pass agents ship and are wired into the manifest.
 
@@ -68,3 +82,28 @@ def test_doc_writer_action_agent_is_present_and_declared() -> None:
     """
     assert (PLUGIN_ROOT / "agents" / "loop-doc-writer.md").is_file()
     assert "./agents/loop-doc-writer.md" in MANIFEST.get("agents", [])
+
+
+def test_pyproject_version_derives_from_plugin_json() -> None:
+    """The package version is single-sourced from the plugin manifest.
+
+    The release-claude-code-plugin skill bumps only plugin.json; pyproject
+    derives its version from it via hatchling's regex source. This reproduces
+    that resolution so the wiring fails loudly if it drifts or the numbers
+    diverge — no build required.
+    """
+    pyproject = tomllib.loads((PLUGIN_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    # The version must be dynamic, not restated — a static value would drift.
+    assert "version" in pyproject["project"].get("dynamic", []), "version must be dynamic"
+    assert "version" not in pyproject["project"], "no static version alongside the dynamic one"
+
+    hatch_version = pyproject["tool"]["hatch"]["version"]
+    assert hatch_version["path"] == ".claude-plugin/plugin.json"
+
+    source = (PLUGIN_ROOT / hatch_version["path"]).read_text(encoding="utf-8")
+    match = re.search(hatch_version["pattern"], source)
+    assert match is not None, "hatch version pattern does not match plugin.json"
+    assert match.group("version") == MANIFEST["version"], (
+        "derived version diverges from plugin.json"
+    )

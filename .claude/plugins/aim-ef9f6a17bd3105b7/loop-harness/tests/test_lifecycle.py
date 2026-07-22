@@ -15,8 +15,42 @@ MISSING = StampVerdict(StampStatus.MISSING)
 
 
 def test_ready_to_implementing_needs_nothing() -> None:
-    """Ready to implementing needs nothing."""
+    """Ready to implementing needs nothing when the eval gate is off (default)."""
     validate_transition(Stage.READY, Stage.IMPLEMENTING)
+    validate_transition(
+        Stage.READY, Stage.IMPLEMENTING, require_eval=False, eval_marker_present=False
+    )
+
+
+def test_implementing_requires_eval_marker_when_gated() -> None:
+    """With require_eval on, pickup needs a present marker and is refused without one."""
+    validate_transition(
+        Stage.READY, Stage.IMPLEMENTING, require_eval=True, eval_marker_present=True
+    )
+    with pytest.raises(LifecycleError, match="eval"):
+        validate_transition(
+            Stage.READY, Stage.IMPLEMENTING, require_eval=True, eval_marker_present=False
+        )
+
+
+def test_require_eval_ignored_for_non_implementing_target() -> None:
+    """The eval flag never leaks into other transitions: gates still fails on its own rule."""
+    with pytest.raises(LifecycleError, match="fresh stamp"):
+        validate_transition(
+            Stage.IMPLEMENTING,
+            Stage.GATES,
+            stamp=MISSING,
+            require_eval=True,
+            eval_marker_present=False,
+        )
+
+
+def test_jump_into_implementing_caught_before_eval_check() -> None:
+    """A stage jump into implementing is rejected by adjacency first, not the eval branch."""
+    with pytest.raises(LifecycleError, match="jump"):
+        validate_transition(
+            Stage.GATES, Stage.IMPLEMENTING, require_eval=True, eval_marker_present=False
+        )
 
 
 @pytest.mark.parametrize("stamp", [OK, RED])

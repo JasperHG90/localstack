@@ -66,7 +66,9 @@ genuinely empty, and say so rather than dropping it silently.
 8. **Tests & validation gates.** The exact gates this change must pass,
    discovered from the repo (its test command, its lint/type config,
    its review rule), and the specific tests to add. A bug fix names a
-   reproducing test first.
+   reproducing test first. Every test named here must have its file
+   listed in §7's code surface — a named test with no declared home
+   forces the implementer to guess where it lives.
 9. **Risk assessment.** Blast radius, reversibility, and the likeliest
    failure modes. What breaks if this is wrong.
 10. **Subtickets.** The change decomposed into an ordered,
@@ -95,3 +97,32 @@ genuinely empty, and say so rather than dropping it silently.
   loop's `unresolved-design-fork` block exists to prevent.
 - **One ticket, one slug, one file.** Split unrelated changes into
   separate tickets the loop runs independently.
+
+## After the ticket: register it
+
+Registering the ticket is a MANDATORY step, not a question: run `loopctl
+register <slug>` as soon as the plan file is written, so the ticket is a
+visible ledger row from birth rather than an invisible orphan. Reconcile is
+the backstop (it auto-registers any plan whose slug is absent from the ledger
+on the next run), but do not lean on it: register here. If a `ticket-planner`
+sub-agent authored the plan, it returns only the path; you, the driver,
+register.
+
+## After the ticket: ask about the eval
+
+Once the ticket is written, put the eval decision to the operator with
+`AskUserQuestion` before moving on, recommended option first (author the
+eval now / defer it / skip it). Co-authoring the eval with the
+`create-eval` skill builds a small scenario set in the five-column
+Behavior/Input/Expected/Scorer/Threshold template that makes the
+Definition of Done concrete before implementation. This is the "eval is
+the spec" step, and surfacing it as a real decision is not optional: a
+ticket handed off without it is an incomplete handoff. When the change
+carries a guardrail (a behavior it must refuse, or an invariant it must
+not weaken), say so and recommend authoring the eval, since prose alone
+leaves that wobbly.
+
+If the consumer sets `require_eval` in `.loop/config.json`, the eval is
+REQUIRED, not a choice: the loop refuses to pick the ticket up until the
+marker exists, so state that it is mandatory and author it rather than
+asking whether to.
