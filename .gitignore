@@ -13,6 +13,7 @@ tmp
 
 .DS_Store
 
+.claude
 
 # APM dependencies
 apm_modules/
