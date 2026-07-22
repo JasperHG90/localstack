@@ -156,7 +156,7 @@ resource "nomad_job" "memex" {
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
       bifrost_host          = "192.168.2.50"
-      memex_version         = "1.0.1"
+      memex_version         = "1.1.0"
     }
   )
   depends_on = [postgresql_database.database]
