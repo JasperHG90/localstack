@@ -1,0 +1,35 @@
+{
+  "gates": [
+    "just pre_commit"
+  ],
+  "plans_dir": ".loop/plans",
+  "notify_title": "loop harness",
+  "max_review_cycles": 3,
+  "review_passes": [
+    {
+      "id": "adversarial",
+      "agent": "loop-reviewer",
+      "enabled": true
+    },
+    {
+      "id": "architectural",
+      "agent": "loop-architect",
+      "enabled": false,
+      "baseline": "MANIFESTO.md"
+    },
+    {
+      "id": "documentation",
+      "agent": "loop-doc-reviewer",
+      "enabled": false
+    }
+  ],
+  "action_stages": [
+    {
+      "id": "update-documentation",
+      "type": "agent",
+      "ref": "loop-doc-writer",
+      "after": "implementing",
+      "enabled": false
+    }
+  ]
+}
