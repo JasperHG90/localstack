@@ -159,6 +159,46 @@
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false
+    },
+    "F5-foundation-vault-nomad-secrets-engine": {
+      "slug": "F5-foundation-vault-nomad-secrets-engine",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "F6-foundation-vault-consul-secrets-engine": {
+      "slug": "F6-foundation-vault-consul-secrets-engine",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "F7-foundation-deployer-vault-oidc-login": {
+      "slug": "F7-foundation-deployer-vault-oidc-login",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
+    },
+    "F8-foundation-deployer-provider-cutover": {
+      "slug": "F8-foundation-deployer-provider-cutover",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
     }
   }
 }
