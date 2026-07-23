@@ -319,3 +319,39 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
   cookie-secure=true and hard-block merge/apply until F3 is in, rather than
   shipping a cleartext-cookie interim. Confirm the operator wants the hard
   dependency (vs a temporary cookie-secure=false, which is discouraged).
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → Auth gate only (revised).** L1 is the oauth2-proxy gate; it does
+  NOT build the landing app. L2 (Homepage/gethomepage) owns the landing
+  app at `dash.localstack`. In reverse-proxy mode, L1's `--upstream`
+  points at L2's Homepage service. (Operator initially said "include the
+  app," then confirmed keeping L1/L2 split.)
+- **Q2 → Reverse-proxy mode.** oauth2-proxy runs as the `dash` backend
+  with `--upstream=<L2 Homepage>`; HAProxy just routes `dash.localstack`
+  to it. No SPOE/Lua forward-auth. NOTE: L2's ticket text says
+  "forward-auth" and must be reconciled to this reverse-proxy wiring.
+- **Q3 → `random_password { length = 32, special = false }`, raw.** Pass
+  the 32 ASCII chars directly to `OAUTH2_PROXY_COOKIE_SECRET` (no base64).
+- **Q4 → `secret/data/default/oauth2-proxy/oidc`.** F2 writes
+  `client_id`/`client_secret` there; L1 reads that path. Block apply
+  until F2 confirms the path/keys. (Depends on F2.)
+- **Q5 → Terraform variable, defaulted.** Issuer threaded via
+  `variables.tf`, defaulted to
+  `https://vault.localstack/v1/identity/oidc/provider/<provider>`, set
+  once F2 names the provider.
+- **Q6 → firebat + static port — PENDING A LIVE CAPACITY CHECK.**
+  Default is to colocate on `firebat` (HAProxy edge host) with a static
+  port. BUT firebat may be compute-constrained. **Action before apply:**
+  query the live Nomad cluster for firebat's allocatable vs committed
+  CPU/memory and confirm oauth2-proxy fits (it is lightweight, ~50MB).
+  Entry: set `NOMAD_ADDR` + `NOMAD_TOKEN` (token in `.devcontainer/.env`,
+  not reproduced here), then `nomad node status -self` /
+  `nomad node status <firebat-id>`. Pick the free port from that check.
+  If firebat is full, place oauth2-proxy on another node (accepting the
+  extra HAProxy→gate hop).
+- **Q7 → cookie-secure=true, hard-block on F3.** No cleartext-cookie
+  interim. (Depends on F3.)
+
+**Dependencies:** L1 depends on **F2** (OIDC client creds/issuer) and
+**F3** (TLS for `--cookie-secure`). **L2 depends on L1.**

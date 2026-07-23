@@ -149,6 +149,16 @@
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false
+    },
+    "F4-foundation-dnsmasq-localstack-dns": {
+      "slug": "F4-foundation-dnsmasq-localstack-dns",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false
     }
   }
 }

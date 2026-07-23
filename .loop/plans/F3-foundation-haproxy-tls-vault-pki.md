@@ -323,3 +323,31 @@ with the `create-eval` skill before implementation).
   (`haproxy.hcl:51-62`). *Recommendation:* the wildcard from Q3 already
   covers them, so add no new ACLs in this ticket (they arrive with
   L1/L2). Confirm no new routing is expected here.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → Dedicated scoped policy + role, in Terraform.** PKI-for-TLS is
+  not needed at bootstrap (cluster comes up over HTTP; TLS is a later
+  hardening step), and the epic puts PKI in Terraform. Create a
+  dedicated `vault_policy` granting only `pki/issue/<role>` plus a
+  dedicated `vault_jwt_auth_backend_role` against the existing (Ansible-
+  created) `jwt-nomad` mount; set `vault { role = "haproxy" }` on the
+  job. Do NOT widen the shared `nomad-workloads` policy.
+- **Q2 → Self-signed root CA at mount `pki`.** Single root for the home
+  lab; no intermediate until there is a reason. Confirm CA CN/TTL.
+- **Q3 → Wildcard `*.localstack` leaf.** Role
+  `allowed_domains=["localstack"]`, `allow_subdomains=true`. Blast-radius
+  downside is moot here: haproxy terminates TLS centrally, so all keys
+  live in one alloc regardless of wildcard-vs-per-host. One cert, one
+  template, covers future subdomains.
+- **Q4 → `change_mode="restart"`.** haproxy:3.1-alpine has no confirmed
+  hitless USR2 reload under podman; a brief restart on the long renewal
+  interval is acceptable. Revisit only if disruptive.
+- **Q5 → `max_ttl` ~72h, renew at ~2/3 life (~48h).** Balances renewal
+  churn (and restart blips) against exposure window.
+- **Q6 → No new ACLs.** The Q3 wildcard already covers `dash.localstack`
+  and future console hosts; routing for them arrives with L1/L2.
+
+**Note:** F2 is blocked on F3 (F2-Q2 requires an https OIDC issuer, which
+needs this ticket's TLS termination for `vault.localstack`). Build order:
+F1 → F3 → F2.

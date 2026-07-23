@@ -346,3 +346,32 @@ execute at ticket close.
 **Eval marker.** These scenarios are encoded as the loop's Definition of
 Done in `.loop/evals/F2-foundation-vault-oidc-provider.md` (validated by
 `loopctl eval F2-foundation-vault-oidc-provider`).
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → userpass in this Terraform root.** Enable a `userpass` auth
+  backend managed in this same root; create `vault_identity_entity` per
+  human + `vault_identity_entity_alias`, add to groups via
+  `member_entity_ids`. Self-contained, no external IdP. (Google OIDC
+  federation deferred as a future option, not chosen.)
+- **Q2 → Require HTTPS now. DEPENDENCY: F2 is blocked on F3.** The OIDC
+  issuer must be `https://vault.localstack/...` from day one — no
+  plaintext OIDC. This requires TLS termination for `vault.localstack`
+  at haproxy, which is F3's deliverable. **Build order becomes
+  F1 → F3 → F2**; F2's eval cannot pass until F3 is merged. Set
+  `https_enabled = true`.
+- **Q3 → `vault.localstack` hostname.** Issuer uses the haproxy
+  hostname (exposed as a variable with that default) so it stays stable
+  across backend IP changes.
+- **Q4 → Terraform variables + placeholders.** Every `redirect_uris` is
+  a variable in `variables.tf`/`prod.tfvars` with best-known
+  placeholders; L1/M2 set exact values without editing `oidc.tf`.
+- **Q5 → `groups` array — as a service-agnostic contract.** Emit a
+  single canonical `groups` claim (Vault group names) via the scope
+  template. CONSTRAINT: this claim must generalize to every RP on
+  localstack (oauth2-proxy for L1/R1/R4, MinIO M2, NATS R2, …), read
+  identically by all — not a per-service shape. Confirm template syntax
+  against the 5.3.0 provider.
+- **Q6 → `oidc.tf` + `secrets.tf`.** Identity/OIDC resources in a single
+  `oidc.tf`; `vault_kv_secret_v2` client-secret writes in `secrets.tf`
+  beside the existing credential blocks.

@@ -305,3 +305,15 @@ silently.
   Boundary SSH brokering against the Tailscale access already in place,
   since overlap weakens the SSH-access justification. This comparison is
   part of the spike's cost/benefit, not a fork to settle up front.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → `docs/rfcs/boundary-evaluation.md`.** Operator chose an RFC
+  location rather than `docs/notes/`. The `docs/rfcs/` directory does not
+  exist yet — create it as part of this spike.
+- **Q2 → Hard blocker: S2 first.** S1 waits on S2 so the Boundary
+  evaluation can test the real "keep" path (Vault credential engines)
+  end-to-end. **Spike order: S2 → S1.** (S3 remains independent.)
+- **Q3–Q5** are for the spike itself to answer in the doc (backing
+  Postgres, controller/worker collocation, Boundary-SSH vs Tailscale-SSH)
+  — surfaced as tradeoffs, not settled up front.

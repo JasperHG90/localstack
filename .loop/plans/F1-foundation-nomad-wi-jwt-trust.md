@@ -385,3 +385,28 @@ pre_commit` on every added/changed file.
   document env delivery as the default for Vault-templated secrets and
   file delivery for consumers that read a raw JWT (flag MinIO as
   file-based, to be confirmed by M1). Do not implement M1's choice here.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → (a) Keep in Ansible.** The JWT trust is the bootstrap-time root
+  of trust that must exist before any Nomad job (including
+  Terraform-deployed ones) can authenticate to Vault, and it already
+  lives and works in Ansible. F1 stays additive: document, test, add new
+  audiences only. No Terraform migration.
+- **Q2 → Keep `vault.io`, add per-consumer audiences.** Retain
+  `vault.io` for the existing Vault path (renaming breaks every running
+  workload). Introduce a distinct audience per new consumer class as it
+  arrives — `minio` for MinIO, `memex` for memex, etc. Document both.
+- **Q3 → Fit the existing policy path.** Name the test job so its
+  `nomad_job_id` yields a path already covered by `nomad-workloads`
+  (e.g. `secret/data/default/wi-test/probe`). No policy change.
+- **Q4 → Standalone `tests/wi-vault-probe.nomad.hcl`.** Mirror the
+  `rescue-ssh.nomad.hcl` pattern; run via operator verification, then
+  stop it. No standing test job, no Terraform state entanglement.
+- **Q5 → Explicit `identity` stanza.** Declare
+  `identity { aud = ["vault.io"], ... }` explicitly so the test doubles
+  as the worked example the doc references for M1's non-Vault consumers.
+- **Q6 → Env default, file for raw-JWT consumers.** Document env
+  delivery (`template env=true`) as the default; file delivery for
+  consumers that read a raw JWT (flag MinIO as file-based, confirm in
+  M1). Both carry ephemeral credentials — no static secret reintroduced.
