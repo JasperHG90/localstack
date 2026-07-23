@@ -375,3 +375,10 @@ Done in `.loop/evals/F2-foundation-vault-oidc-provider.md` (validated by
 - **Q6 → `oidc.tf` + `secrets.tf`.** Identity/OIDC resources in a single
   `oidc.tf`; `vault_kv_secret_v2` client-secret writes in `secrets.tf`
   beside the existing credential blocks.
+
+**Cross-cutting (fed back from R1/R4, 2026-07-23):** the oauth2-proxy
+architecture is **dedicated per service**, so F2 must provision one
+`vault_identity_oidc_client` PER fronted service — `dash` (L1), `mlflow`
+(R1), `phoenix` (R4) — each with its own `redirect_uris` variable and
+KV2 secret, in addition to the MinIO-tier clients. Not a single shared
+oauth2-proxy client.

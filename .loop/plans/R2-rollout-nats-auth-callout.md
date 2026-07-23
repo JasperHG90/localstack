@@ -393,3 +393,33 @@ mechanical follow-on.
   both are deployed before the loop starts; otherwise Subticket 2 has no
   Vault-side issuer to validate against and the integration gate cannot
   pass.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → Go, `applications/nats-auth-callout/`** (revised from the
+  planner's Python). Go is the native NATS ecosystem language
+  (`nats.go`, official auth-callout examples). CONSEQUENCE: this
+  introduces a Go toolchain to a Python/HCL repo — add Go gates
+  (`go test`, `gofmt`/`golangci-lint`) to the justfile/pre-commit; the
+  "every change ships a test" rule applies via `go test`.
+- **Q2 → Colocate on radxa-dragon-q6a with the `nats` server** (same
+  constraint as `nats.hcl:8-10`). On-host callout↔NATS hop; no new
+  inbound LAN firewall rule.
+- **Q3 → Dedicated NATS audience** (per F1-Q2 per-consumer convention).
+  Clients declare an additional WI `identity` block with a dedicated
+  audience; the callout requires it, so a `vault.io` token is not
+  silently accepted by NATS. The exact string follows F1's naming
+  convention (e.g. `nats`) — settle it before build; it is a contract
+  across every NATS client.
+- **Q4 → Fail closed, plain-TCP LAN (no mTLS).** No token = reject,
+  explicitly. NATS listener stays plain-TCP on the trusted LAN per
+  Non-goals; NATS TLS is out of scope for R2 (distinct from the web-tier
+  HTTPS-everywhere decision).
+- **Q5 → Minimal `docs/nats.md` edit** (mechanical). Update the
+  `**Auth:**` TL;DR line and the "no auth" wording to a short callout
+  description pointing at this rollout; do not rewrite the how-to.
+- **Q6 → Depends on F1 + F2 landed** (gate). Confirm both deployed
+  before the loop starts, or the integration gate cannot pass.
+
+**Dependencies:** R2 depends on **F1** (Nomad WI trust) and **F2** (Vault
+OIDC JWKS).

@@ -365,3 +365,28 @@ default.
   config-on-disk, but if implementation shows Homepage needs no writable
   state, drop the volume and mount config read-only only — surface the
   simplification rather than carrying an unused volume.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → Hard-block on merged L1.** L2's gated route waits until L1
+  exists. Integration is **reverse-proxy**, not forward-auth (per L1-Q2):
+  HAProxy routes `dash.localstack` → oauth2-proxy (L1) →
+  `--upstream` Homepage (L2). **Reconcile all "forward-auth" wording in
+  this ticket to reverse-proxy.** Never ship an unauthenticated page or a
+  basic-auth stand-in.
+- **Q2 → Pin a specific released `ghcr.io/gethomepage/homepage` tag**
+  (verify arm64 in the manifest during implementation); never `latest`.
+- **Q3 → ubuntu (192.168.2.47).** Place Homepage on ubuntu, which has
+  spare capacity, to relieve firebat (flagged as compute-constrained).
+  Consequence: the `dash` backend is a cross-host hop — add the matching
+  `local.firewall_rules` entry (`services.tf:163-272`) so HAProxy on
+  firebat can reach Homepage on ubuntu. Pick a non-conflicting port.
+- **Q4 → Small host volume for parity (default).** Keep a small writable
+  host volume; if implementation shows Homepage needs no writable state,
+  drop it and mount config read-only — surface the simplification rather
+  than carrying an unused volume.
+
+**Dependencies:** L2 depends on **L1** (which depends on F2 + F3) and on
+**F4** (network-wide `.localstack` DNS) — L2 must not be marked done until
+F4 lands, so `dash.localstack` resolves from non-Mac LAN devices, not just
+via the operator's `/etc/hosts`.

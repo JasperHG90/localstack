@@ -428,3 +428,39 @@ Settle Q1-Q4 before the loop runs; Q5-Q6 can be settled during.
   `docs/mlflow_oauth2_proxy.md` at the `docs/` root, matching the
   existing `docs/haproxy_reverse_proxy.md` topic-doc convention. Operator
   confirm.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → L1 hard blocker.** R1 consumes the L1 oauth2-proxy pattern; if
+  L1 is not merged, stop and surface.
+- **Q2 → Dedicated oauth2-proxy sidecar in `mlflow.hcl`** (revised).
+  Operator initially picked "shared," but the cross-ticket
+  reconciliation (see below) settled on **dedicated per service +
+  reverse-proxy** across L1/R1/R4. So R1 runs its own oauth2-proxy
+  sidecar (same group, `network_mode=host` on 192.168.2.50, applications
+  layer), proxying to MLflow.
+- **Q3 → Prototype a single instance trusting both issuers.** Try
+  `--skip-jwt-bearer-tokens` with Nomad's JWKS as an additional trusted
+  issuer and login bound to Vault-OIDC. If one instance cannot trust
+  both, fall back to a dedicated bearer-validation path or accept
+  Nomad-WI tokens minted with the Vault-OIDC audience. The keyless-machine
+  path is a REQUIRED success criterion — do not narrow to humans-only.
+- **Q4 → TLS-consistent: depend on F3, `--cookie-secure=true`** (revised
+  from the planner's HTTP-interim). Aligns with the HTTPS-everywhere
+  decision (F2-Q2, L1-Q7). R1 depends on L1, which depends on F3, so TLS
+  exists by the time R1 rolls out. No unencrypted-cookie interim.
+- **Q5 → Tighten port 5050 NOW, within R1** (revised from follow-up).
+  Close direct LAN access to MLflow:5050 so all access goes through the
+  proxy. CAVEAT: this removes the direct-port fallback — if the proxy
+  misconfigures, debug MLflow via the Nomad alloc / node (Tailscale SSH),
+  not the port. Verify the proxy works in the same apply.
+- **Q6 → `docs/rfcs/`** (revised from `docs/` root), consistent with the
+  S1 doc location.
+
+**Architecture reconciliation (operator, 2026-07-23):** oauth2-proxy is
+**dedicated per service + reverse-proxy mode** across L1 (dash), R1
+(mlflow), and R4 (phoenix) — one small inline proxy per app, no shared
+instance, no HAProxy SPOE/Lua forward-auth. Chosen over shared+forward-auth
+for the lighter wiring and per-service blast radius.
+
+**Dependencies:** R1 depends on **L1** (pattern) → **F2** + **F3**.

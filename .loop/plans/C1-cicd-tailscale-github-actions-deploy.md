@@ -475,3 +475,33 @@ implementation fork the loop must not resolve silently.
   `submit-job`/`read-job` (not `write`), unless the operator wants a
   dedicated namespace for blast-radius isolation. Surface, do not
   pre-decide.
+
+## Resolved forks (operator, 2026-07-23)
+
+**RESCOPE (operator, 2026-07-23): C1 is now a connectivity smoke test,
+not a talat deploy.** talat-webhook-exporter has moved to its own repo, so
+C1 no longer deploys it. C1's purpose is to **stand up the Tailscale
+CI→cluster connection and prove it from GitHub Actions by reaching one
+service over the tailnet** (a ping/curl reachability check). No deploy, no
+`terraform plan`, no Nomad job submission.
+
+- **Q1 → Neither deploy option; a reachability ping.** GHA joins the
+  tailnet (`tag:ci`) and pings/curls one cluster service to prove it can
+  get through. That's the whole deliverable.
+- **Q2 → N/A (skipped).** No talat tag-trigger needed. Trigger the proof
+  via `workflow_dispatch` (and/or on PR). The service-repo-tag question
+  is moot under the rescope.
+- **Q3 → Tailnet ACL primary + minimal UFW.** Least privilege via the
+  tailnet ACL (`tag:ci` → firebat only); minimum UFW rule to admit
+  tailnet traffic to the target port (mirroring the port-22 precedent).
+  Tight boundary = ACL; UFW = coarse gate.
+- **Q4 → Console-authoritative ACL + docs reference copy.** Keep the
+  authoritative tailnet ACL in the Tailscale console; add a read-only
+  reference copy + the OAuth/`tag:ci` setup steps to a `docs/` runbook so
+  the CI grant is reviewable.
+- **Q5 → N/A.** A reachability ping needs no Nomad ACL policy/token and
+  no provider creds. Drop the scoped-token work.
+- **Q6 → N/A.** No job is submitted, so namespace scoping does not apply.
+
+**Dependencies:** C1 is independent of the auth epic (F/S/L/M/R tickets).
+It needs only the Tailscale tailnet + a reachable service endpoint.

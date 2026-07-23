@@ -404,3 +404,36 @@ reviewer-judged authenticated-render check).
   allowed-group setting; if the operator wants Phoenix access decoupled
   from Grafana/other dashboards, add a dedicated `phoenix-users` group in
   F2 instead. Confirm before wiring the assignment.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → Blocked on L1; per-service dedicated proxy.** Per the locked
+  architecture (dedicated + reverse-proxy across L1/R1/R4), R4 is a
+  dedicated `phoenix` oauth2-proxy fronting `localhost:6006` on
+  `orangepi4a`. Author against that shape; do not implement until L1
+  lands.
+- **Q2 → Sequence after F2 apply.** R4's OIDC client depends on F2's
+  issuer/scope/key. Reference F2 resource names as the contract if
+  authored earlier.
+- **Q3 → Dedicated `phoenix` OIDC client in F2's `oidc.tf`** (+ a
+  `vault_kv_secret_v2` for its secret), redirect
+  `https://phoenix.localstack/oauth2/callback` (https per Q5).
+  CROSS-CUTTING: because the architecture is dedicated-per-service, F2
+  must provision one oauth2-proxy OIDC client PER fronted service —
+  `dash` (L1), `mlflow` (R1), `phoenix` (R4) — not just the
+  landing-page + MinIO-tier clients originally scoped. See the note fed
+  back into F2.
+- **Q4 → UI-only gate; ingest unauthenticated on the LAN.** Exempt
+  `/v1/traces` (+ OTLP HTTP paths) from oauth2-proxy at HAProxy so
+  `memex.hcl:143` keeps working; leave gRPC 4317 off the HAProxy path.
+  Bearer/mTLS on ingest is a documented follow-up, not R4.
+- **Q5 → TLS-consistent: F3 + `--cookie-secure=true`** (revised from the
+  planner's http/insecure v1). Aligns with HTTPS-everywhere
+  (F2/F3/L1/R1). https issuer, depend on F3 for `phoenix.localstack`
+  TLS; no cleartext-cookie interim.
+- **Q6 → Reuse `dashboard-users`.** Gate Phoenix on F2's existing
+  `dashboard-users` group via oauth2-proxy's allowed-group. No dedicated
+  `phoenix-users` group.
+
+**Dependencies:** R4 depends on **L1** (pattern) → **F2** (OIDC client,
+`dashboard-users` group) + **F3** (TLS).

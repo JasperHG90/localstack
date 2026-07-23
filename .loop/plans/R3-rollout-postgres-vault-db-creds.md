@@ -484,3 +484,37 @@ resolve and are listed so the loop does not decide them silently.
   the doc (requirement 7). *Leaning:* stay static for now (it runs
   outside Nomad/WI, from `applications/migrations/.env`), and note it
   as a known remaining static consumer.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → memex** (informed choice AGAINST the planner's phoenix
+  recommendation). memex is the hard case: `POOL_SIZE=20`/
+  `MAX_OVERFLOW=30` (`memex.hcl:136-137`), a prestart `db-migrate`, and
+  GPU constraints. Converting it first front-loads BOTH wrinkles Q5 and
+  Q6 describe (pooled connections outliving the credential TTL; the
+  migrate step) onto the first conversion, with a high-value service as
+  the blast radius. Deliberate "prove the hardest case first" call —
+  implementer must treat the pool/TTL reconnect strategy and the prestart
+  migrate as first-class from the start, not deferred.
+- **Q2 → Engine in `infrastructure`, per-service roles in
+  `applications`.** DB secrets-engine mount + connection in
+  `infrastructure` (alongside the KV2 mount + root secret it
+  authenticates with); per-service roles in `applications` (next to the
+  databases/grants they mirror). Cross-root dependency noted.
+- **Q3 → No rotate-root; dedicated Vault management user.** Give Vault
+  its own Postgres management user to mint dynamic roles; leave the
+  `localstack` superuser untouched so the TF provider, exporter, and
+  migrations runner keep working. Document rotate-root as a follow-up.
+- **Q4 → `docs/rfcs/`** (revised from `docs/notes/`), consistent with the
+  S1 and R1 doc placements this session.
+- **Q5 → (implementation) TTL + pool reconnect strategy.** Record the
+  `max_ttl`/`default_ttl` and the reconnect choice in the doc. NOTE: with
+  memex-first (Q1), the pooled-service path (`pool_recycle` below
+  `max_ttl`) is in play immediately, not deferred.
+- **Q6 → (implementation) golang-migrate runner stays static for now.**
+  It runs outside Nomad/WI from `applications/migrations/.env`; record it
+  as a known remaining static consumer. NOTE: memex's prestart
+  `db-migrate` interacts with this — resolve explicitly in the doc.
+
+**Dependencies:** R3 builds on the **S2** spike (proves the Postgres+Vault
+dynamic-creds pattern). First target: **memex**.

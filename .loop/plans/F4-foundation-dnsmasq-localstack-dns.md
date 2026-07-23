@@ -281,3 +281,20 @@ exists.
   its stub listener (`DNSStubListener=no`) or bind dnsmasq to the LAN IP
   explicitly. This is a host-state fact the repo cannot see; it gates the
   deploy (§Requirement 6, eval 1), not the coding.
+
+## Dependency-graph placement (operator, 2026-07-23)
+
+- **No design fork.** Q2 is a pre-deploy host-state check
+  (`sudo ss -ulpn 'sport = :53'` on firebat), not an operator decision.
+- **Position: foundation tier, parallel.** F4 has no dependency on the
+  Vault foundations (F1/F2/F3) and blocks none of them — the epic resolves
+  `*.localstack` on the operator's Mac via `/etc/hosts` today. F4 can be
+  built in parallel with F1/F3.
+- **Hard blocker for L2 and M2.** L2 (`dash.localstack` homepage) and M2
+  (MinIO console login) are meant to be reached from any LAN device;
+  those devices cannot resolve `*.localstack` without this job. **L2 and
+  M2 must not be marked done until F4 provides network-wide DNS** — no
+  `/etc/hosts`-only "done" state for the human-facing tickets.
+- **Runs on firebat (port 53).** Another firebat-pinned job; dnsmasq is
+  tiny, but fold it into the same firebat capacity check flagged for L1
+  (query the live cluster before apply).

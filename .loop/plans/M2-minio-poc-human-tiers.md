@@ -343,3 +343,31 @@ redeployed.
    **Recommendation:** include the multipart actions required for
    console uploads to actually work, but exclude `s3:DeleteObject`
    unless the operator wants writers to delete. Flag for the operator.
+
+## Resolved forks (operator, 2026-07-23)
+
+- **Q1 → KV path `default/minio/oidc/<tier>`.** F2 writes each tier's
+  client creds there; the job reads them with `{{ with secret ... }}`.
+  Flag as an F2 interface requirement.
+- **Q2 → Rely on the existing infra→applications apply order (documented).**
+  The three tier policies (`admin`/`writer`/`reader`) are MinIO IAM
+  policies created by the MinIO provider in the applications layer; the
+  MinIO server job is in the infrastructure layer. MinIO IAM policies can
+  only be created against a running MinIO, and the repo already applies
+  infrastructure before applications — so server-up-then-policies is the
+  natural, existing order. No cross-state `depends_on`, no moving
+  policies, no duplicating the MinIO provider for the POC. Document the
+  order in the runbook.
+- **Q3 → Issuer/config URL is an F2-provided input.** Consume F2's
+  `.well-known/openid-configuration` issuer (TF output or KV entry); do
+  not hardcode it.
+- **Q4 → HAProxy hostname `https://minio.localstack/oauth_callback`.**
+  Must match F2's registered `redirect_uris` exactly; consistent with
+  F2's https issuer.
+- **Q5 → writer = put/get/list + multipart + delete.** Full write
+  including `s3:DeleteObject`. (reader = get/list; admin = full.)
+
+**Dependencies:** M2 depends on **F2** (OIDC provider/clients) and on
+**F4** (network-wide `.localstack` DNS) — M2 must not be marked done until
+F4 lands, so the MinIO console resolves from non-Mac LAN devices, not just
+via the operator's `/etc/hosts`.
