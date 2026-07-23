@@ -1,3 +1,9 @@
++++
+epic = "minio"
+depends_on = ["F2-foundation-vault-oidc-provider"]
+priority = 10
++++
+
 # M2 — MinIO OIDC POC, human path (console login by tier)
 
 ## Title

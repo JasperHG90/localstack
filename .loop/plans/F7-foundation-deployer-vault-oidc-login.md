@@ -1,7 +1,8 @@
----
-depends_on:
-  - F2-foundation-vault-oidc-provider
----
++++
+epic = "foundation"
+depends_on = ["F2-foundation-vault-oidc-provider"]
+priority = 45
++++
 
 # F7 — Deployer Vault OIDC login + scoped `deployer` policy (foundation)
 

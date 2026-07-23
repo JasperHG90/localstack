@@ -1,9 +1,8 @@
----
-depends_on:
-  - F5-foundation-vault-nomad-secrets-engine
-  - F6-foundation-vault-consul-secrets-engine
-  - F7-foundation-deployer-vault-oidc-login
----
++++
+epic = "foundation"
+depends_on = ["F5-foundation-vault-nomad-secrets-engine", "F6-foundation-vault-consul-secrets-engine", "F7-foundation-deployer-vault-oidc-login"]
+priority = 40
++++
 
 # F8 — Deployer Terraform provider cutover: static god-mode tokens → Vault-brokered dynamic tokens (foundation)
 

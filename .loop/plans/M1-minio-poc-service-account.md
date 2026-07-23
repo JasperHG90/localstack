@@ -1,3 +1,9 @@
++++
+epic = "minio"
+depends_on = ["F1-foundation-nomad-wi-jwt-trust"]
+priority = 10
++++
+
 # M1: MinIO OIDC POC — keyless machine access via Nomad Workload Identity
 
 ## 1. Title

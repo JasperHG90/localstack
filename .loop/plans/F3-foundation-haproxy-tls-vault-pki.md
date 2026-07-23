@@ -1,3 +1,9 @@
++++
+epic = "foundation"
+depends_on = []
+priority = 55
++++
+
 # F3 — TLS at the HAProxy edge via Vault PKI (foundation)
 
 ## Title

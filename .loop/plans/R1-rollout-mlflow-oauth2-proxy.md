@@ -1,3 +1,9 @@
++++
+epic = "rollout"
+depends_on = ["L1-landing-oauth2-proxy"]
+priority = 5
++++
+
 # R1: Front MLflow with oauth2-proxy (Vault OIDC for humans, Nomad WI bearer for machines)
 
 ## 1. Title

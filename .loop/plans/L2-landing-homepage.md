@@ -1,3 +1,9 @@
++++
+epic = "landing"
+depends_on = ["L1-landing-oauth2-proxy"]
+priority = 5
++++
+
 # L2: OAuth-gated Homepage (gethomepage) landing page at dash.localstack
 
 ## 1. Title

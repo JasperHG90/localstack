@@ -8,7 +8,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "cicd",
+      "dependencies": [],
+      "priority": 0
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
@@ -18,7 +21,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 40
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
@@ -28,7 +34,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [
+        "F3-foundation-haproxy-tls-vault-pki"
+      ],
+      "priority": 50
     },
     "F3-foundation-haproxy-tls-vault-pki": {
       "slug": "F3-foundation-haproxy-tls-vault-pki",
@@ -38,7 +49,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 55
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
@@ -48,7 +62,13 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "landing",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider",
+        "F3-foundation-haproxy-tls-vault-pki"
+      ],
+      "priority": 30
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
@@ -58,7 +78,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "landing",
+      "dependencies": [
+        "L1-landing-oauth2-proxy"
+      ],
+      "priority": 5
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
@@ -68,7 +93,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "minio",
+      "dependencies": [
+        "F1-foundation-nomad-wi-jwt-trust"
+      ],
+      "priority": 10
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
@@ -78,7 +108,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "minio",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 10
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
@@ -88,7 +123,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "rollout",
+      "dependencies": [
+        "L1-landing-oauth2-proxy"
+      ],
+      "priority": 5
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
@@ -98,7 +138,13 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "rollout",
+      "dependencies": [
+        "F1-foundation-nomad-wi-jwt-trust",
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 5
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
@@ -108,7 +154,13 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "rollout",
+      "dependencies": [
+        "F1-foundation-nomad-wi-jwt-trust",
+        "S2-spike-postgres-vault-creds"
+      ],
+      "priority": 5
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
@@ -118,7 +170,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "rollout",
+      "dependencies": [
+        "L1-landing-oauth2-proxy"
+      ],
+      "priority": 5
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
@@ -128,7 +185,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "spike",
+      "dependencies": [
+        "S2-spike-postgres-vault-creds"
+      ],
+      "priority": 15
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
@@ -138,7 +200,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "spike",
+      "dependencies": [],
+      "priority": 35
     },
     "S3-spike-oidc-version-claims": {
       "slug": "S3-spike-oidc-version-claims",
@@ -148,7 +213,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "spike",
+      "dependencies": [],
+      "priority": 15
     },
     "F4-foundation-dnsmasq-localstack-dns": {
       "slug": "F4-foundation-dnsmasq-localstack-dns",
@@ -158,7 +226,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 20
     },
     "F5-foundation-vault-nomad-secrets-engine": {
       "slug": "F5-foundation-vault-nomad-secrets-engine",
@@ -168,7 +239,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 60
     },
     "F6-foundation-vault-consul-secrets-engine": {
       "slug": "F6-foundation-vault-consul-secrets-engine",
@@ -178,7 +252,10 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 59
     },
     "F7-foundation-deployer-vault-oidc-login": {
       "slug": "F7-foundation-deployer-vault-oidc-login",
@@ -188,7 +265,12 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 45
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
@@ -198,7 +280,14 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [
+        "F5-foundation-vault-nomad-secrets-engine",
+        "F6-foundation-vault-consul-secrets-engine",
+        "F7-foundation-deployer-vault-oidc-login"
+      ],
+      "priority": 40
     }
   }
 }

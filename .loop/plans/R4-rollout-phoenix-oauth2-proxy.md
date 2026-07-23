@@ -1,3 +1,9 @@
++++
+epic = "rollout"
+depends_on = ["L1-landing-oauth2-proxy"]
+priority = 5
++++
+
 R4-rollout-phoenix-oauth2-proxy: front the Phoenix web UI with oauth2-proxy against Vault OIDC while leaving OTLP trace ingest working
 
 ## 1. Title

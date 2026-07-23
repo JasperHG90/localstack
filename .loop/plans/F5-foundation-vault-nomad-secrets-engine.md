@@ -1,6 +1,8 @@
----
-depends_on: []
----
++++
+epic = "foundation"
+depends_on = []
+priority = 60
++++
 
 # F5: Broker the Terraform deployer's Nomad token through Vault's Nomad secrets engine (foundation)
 

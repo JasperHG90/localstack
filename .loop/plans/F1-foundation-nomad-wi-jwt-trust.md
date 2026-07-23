@@ -1,3 +1,9 @@
++++
+epic = "foundation"
+depends_on = []
+priority = 40
++++
+
 # F1: Establish Nomad Workload Identity as a trusted JWT issuer (foundation)
 
 ## Title
