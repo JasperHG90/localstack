@@ -13,6 +13,9 @@ job "haproxy" {
         static = 80
         to     = 8080
       }
+      port "https" {
+        static = 443
+      }
       port "stats" {
         static = 8404
       }
@@ -26,6 +29,45 @@ job "haproxy" {
         args         = ["-f", "/local/haproxy.cfg"]
         network_mode = "host"
         cap_add      = ["NET_BIND_SERVICE"]
+      }
+
+      ### Workload Identity login against the dedicated `haproxy` JWT role,
+      ### whose only grant is issuing a leaf from the PKI role (see pki.tf).
+      ### Without `role` the job would land on the default `nomad-workloads`
+      ### role, which carries no pki/ capability and would leave the cert
+      ### template blocked forever.
+      vault {
+        role = "${vault_role}"
+      }
+
+      ### Leaf cert + key + issuing CA concatenated into the single PEM
+      ### HAProxy's `crt` argument expects. Re-rendering issues a fresh leaf;
+      ### `change_mode = "restart"` reloads HAProxy with it, because
+      ### haproxy:3.1-alpine has no confirmed hitless reload under podman and
+      ### a brief restart on a 72h renewal cycle is acceptable here.
+      ###
+      ### A PKI issue response carries no Vault lease (generate_lease is off),
+      ### so consul-template falls back to the cert's own `expiration` field and
+      ### re-renders at ~85-95% of its life — ~61-68h for this 72h leaf, not the
+      ### ~48h (2/3) the ticket's Q5 estimated. Renewal still lands well before
+      ### expiry; the difference is only how much slack precedes it.
+      ###
+      ### perms 0644, not 0600: this image runs as USER haproxy (uid 99), while
+      ### Nomad renders template files as the agent user. A 0600 file would be
+      ### unreadable to the process that must load it and the alloc would fail
+      ### to start. The key's protection is the per-alloc secrets/ tmpfs, which
+      ### is private to this task and torn down with the alloc — not the mode.
+      template {
+        data        = <<-EOH
+{{ with secret "${pki_issue_path}" "common_name=*.localstack" "ttl=72h" }}
+{{ .Data.certificate }}
+{{ .Data.private_key }}
+{{ .Data.issuing_ca }}
+{{ end }}
+        EOH
+        destination = "secrets/haproxy.pem"
+        perms       = "0644"
+        change_mode = "restart"
       }
 
       template {
@@ -47,6 +89,10 @@ userlist openfang_users
 
 frontend http_in
     bind *:80
+    http-request redirect scheme https code 301 unless { ssl_fc }
+
+frontend https_in
+    bind *:443 ssl crt /secrets/haproxy.pem
 
     acl is_minio      hdr(host) -i minio.localstack
     acl is_s3         hdr(host) -i s3.localstack

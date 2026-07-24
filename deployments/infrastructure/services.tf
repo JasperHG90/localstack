@@ -186,6 +186,8 @@ locals {
       rules = [
         "allow from 192.168.0.0/16 to any port 80 proto tcp",
         "allow from 100.64.0.0/10 to any port 80 proto tcp",
+        "allow from 192.168.0.0/16 to any port 443 proto tcp",
+        "allow from 100.64.0.0/10 to any port 443 proto tcp",
         "allow from 192.168.0.0/16 to any port 8404 proto tcp",
         "allow from 100.64.0.0/10 to any port 8404 proto tcp",
       ]
@@ -306,13 +308,25 @@ resource "nomad_job" "minio" {
 }
 
 ### HAProxy
+### The pki_* / vault_role references are load-bearing beyond string
+### substitution: they order the PKI mount, role, policy and JWT role ahead of
+### the job, so the cert template can never be rendered before the grant that
+### authorizes it exists.
 resource "nomad_job" "haproxy" {
   jobspec = templatefile(
     "${path.module}/services/haproxy.hcl",
     {
       openfang_password = random_password.openfang_basic_auth.result
+      pki_issue_path    = "${vault_mount.pki.path}/issue/${vault_pki_secret_backend_role.haproxy.name}"
+      vault_role        = vault_jwt_auth_backend_role.haproxy.role_name
     }
   )
+
+  ### The var references above order the mount, role, policy and JWT role ahead
+  ### of the job, but NOT the root CA: a mount accepts role/URL writes while its
+  ### root is still generating, yet rejects `issue`. Without this the job can be
+  ### submitted mid-generation on the first apply and sit retrying its template.
+  depends_on = [vault_pki_secret_backend_root_cert.root]
 }
 
 ### Node exporter (system job, all nodes)
