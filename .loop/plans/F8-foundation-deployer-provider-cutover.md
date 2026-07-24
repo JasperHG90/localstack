@@ -213,6 +213,24 @@ providers; F8 extends it to the remaining two and removes the static path.
    review before done (`.claude/rules/adversarial-reviews.md`). If any
    markdown doc is edited, the doc slop gates apply
    (`.claude/rules/slop-scan-for-docs.md`).
+8. **Prove a FULL `terraform apply` of the infrastructure root under the
+   minted `deploy` token (relayed from F5).** F5 only proved that a
+   `nomad/creds/deploy` token can `nomad job plan` (submit-job) and *read*
+   the 8 `nomad_dynamic_host_volume` resources (`nomad volume status -type
+   host` lists them) — it never ran a full apply. When Requirement 1 rewires
+   `deployments/infrastructure/providers.tf`'s `nomad` provider to
+   `nomad/creds/deploy`, the acceptance for that root MUST include a real
+   `terraform apply` (or at minimum a `plan` that touches every resource
+   kind, then an apply of a no-op change) that exercises the
+   `nomad_dynamic_host_volume` create/update/delete path, not just job
+   submission. The `deploy` policy grants the namespace caps
+   `host-volume-create/register/read/write/delete`; two of them
+   (`host-volume-register`, `host-volume-write`) are granted but NOT
+   exercised by the current create-only volume resources. If this apply
+   proof passes without them, a least-privilege follow-up may trim
+   `register`/`write` from the F5 policy — but confirm against a real apply
+   first, and do not trim if the apply needs them. Do not widen the policy
+   beyond what the apply actually requires.
 
 ## Code surface
 - **`deployments/applications/providers.tf`** — rework `provider "nomad" {}`
