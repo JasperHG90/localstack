@@ -115,6 +115,32 @@ and R4 (Phoenix) will copy.
    pattern is copyable without editing the job body. Respect `CLAUDE.md`
    Simplicity/Surgical rules: no speculative multi-app config now.
 9. Match existing HCL style; the gate reformats via `nomad fmt` (see below).
+10. **Refresh the edge docs that F3 made false.** *(Relayed from
+    F3-foundation-haproxy-tls-vault-pki, 2026-07-24. Constraint, not a fork —
+    no decision to settle.)* F3 made the edge HTTPS-only: `:443` serves a
+    Vault-PKI wildcard `*.localstack` leaf and `:80` now 301-redirects. Two
+    docs still describe the old cleartext edge and are wrong as written:
+    - `docs/haproxy_reverse_proxy.md:24-37` — the `/etc/hosts` + access
+      section presents the edge as plain HTTP.
+    - `docs/monitoring.md:206-207` — "Visit `prometheus.localstack` /
+      `grafana.localstack`" implies an HTTP visit.
+    F3 left these alone deliberately: `docs/` was outside its declared Code
+    surface and the documentation review pass is disabled in
+    `.loop/config.json`. L1 is the natural owner because it is the next
+    ticket to touch the edge and it adds `dash.localstack` to the same
+    frontend. While editing, also note that browsers warn until the
+    `localstack Root CA` is installed on the client
+    (`vault read -field=certificate pki/cert/ca`), since distributing that
+    root was out of scope for F3 and readers will otherwise read the warning
+    as a broken deployment.
+    Add both docs to this ticket's Code surface when implementing, so every
+    changed line still traces to this plan.
+11. **Add the `dash.localstack` ACL to `https_in`, not `http_in`.** *(Relayed
+    from F3, same root cause as #10.)* F3 split the single frontend: `:80`
+    now only 301-redirects and every ACL lives on the `:443 ssl` frontend
+    `https_in`. The Code surface bullet below is corrected accordingly. No
+    new cert work is needed — F3's leaf is a wildcard `*.localstack`, so it
+    already covers `dash.localstack` with no PKI change.
 
 ## Code surface
 - `deployments/infrastructure/services/oauth2-proxy.hcl` **(new)** — the
@@ -132,12 +158,20 @@ and R4 (Phoenix) will copy.
   `default/oauth2-proxy/<entry>`) pair, mirroring the Grafana admin block.
   If F2 does not already store the OIDC client secret in Vault, this file is
   also where a placeholder/reference for it is surfaced (see Q4).
-- `deployments/infrastructure/services/haproxy.hcl:48-75` — add
+- `deployments/infrastructure/services/haproxy.hcl` — add
   `acl is_dash hdr(host) -i dash.localstack` and
-  `use_backend dash if is_dash` in the `http_in` frontend.
-- `deployments/infrastructure/services/haproxy.hcl:84-121` — add a `backend
+  `use_backend dash if is_dash` **in the `https_in` frontend**.
+  *(Anchor corrected 2026-07-24, relayed from F3: this bullet used to read
+  ":48-75 ... in the `http_in` frontend". F3 split the single frontend in
+  two. `http_in` now binds only `:80` and does nothing but
+  `http-request redirect scheme https code 301`; every ACL and `use_backend`
+  moved to `frontend https_in`, which binds `:443 ssl`. Adding the dash ACL
+  to `http_in` would put it on the redirect-only frontend, where it can
+  never route. Re-read the file for current line numbers — F3 shifted them.)*
+- `deployments/infrastructure/services/haproxy.hcl` — add a `backend
   dash` pointing at the oauth2-proxy service address:port (static
-  `server` line, matching existing backend style).
+  `server` line, matching existing backend style). The backend block is
+  unchanged by F3 and still ends the file.
 - `deployments/infrastructure/variables.tf:1-21` — if the OIDC
   issuer/provider name or oauth2-proxy host is operator-supplied, add a
   `variable` here and thread it through `prod.tfvars`
