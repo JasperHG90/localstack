@@ -269,3 +269,45 @@
     VAULT_TOKEN: "{{ vault_bootstrap_token }}"
     VAULT_ADDR: "http://127.0.0.1:8200"
   changed_when: true
+
+- name: Check if Nomad secrets engine is enabled
+  ansible.builtin.command:
+    cmd: vault secrets list -format=json
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  register: vault_secrets_list_for_check
+  changed_when: false
+
+- name: Enable Nomad secrets engine
+  ansible.builtin.command:
+    cmd: vault secrets enable nomad
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  when: "'nomad/' not in (vault_secrets_list_for_check.stdout | from_json)"
+  changed_when: true
+
+# Vault holds the Nomad management token so it can mint scoped child tokens
+# on demand; the token itself is never readable back out of the engine.
+- name: Configure Nomad secrets engine access
+  ansible.builtin.command:
+    cmd: >
+      vault write nomad/config/access
+      address="http://127.0.0.1:4646"
+      token="{{ nomad_bootstrap_token }}"
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  changed_when: true
+  no_log: true
+
+# Lease TTL is a property of the mount, not of a role, so it is configured
+# here alongside the engine access rather than on the Terraform role.
+- name: Configure Nomad secrets engine lease
+  ansible.builtin.command:
+    cmd: vault write nomad/config/lease ttl=30m max_ttl=1h
+  environment:
+    VAULT_TOKEN: "{{ vault_bootstrap_token }}"
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  changed_when: true

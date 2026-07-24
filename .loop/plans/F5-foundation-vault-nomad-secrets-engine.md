@@ -6,6 +6,42 @@ priority = 60
 
 # F5: Broker the Terraform deployer's Nomad token through Vault's Nomad secrets engine (foundation)
 
+## Amendment (post-review, 2026-07-24)
+
+The first implementation passed its Definition of Done but the adversarial
+review proved a Major gap: the `deploy` policy as originally scoped
+(`submit-job` + `read-job` only) cannot manage the 8
+`nomad_dynamic_host_volume` resources co-located in the
+`deployments/infrastructure` root — the minted token could not even read
+them — so F8's cutover of that root would fail. The operator resolved the
+fork: a single `deploy` policy, widened to also manage dynamic host
+volumes, shared by both roots.
+
+Mechanism note (discovered empirically on the live Nomad v2.0.3 cluster):
+managing dynamic host volumes is governed by **namespace-level**
+`host-volume-*` capabilities (`host-volume-create`, `-register`, `-read`,
+`-write`, `-delete`), NOT by a `host_volume "*" { policy = "write" }`
+block. That block's only valid capabilities are `mount-readonly` /
+`mount-readwrite`, which govern a *job* mounting a volume — irrelevant to a
+deployer that creates volumes but never mounts them. The `deploy` policy
+therefore adds the five namespace `host-volume-*` capabilities and no
+`host_volume` mount block.
+
+Consequence for the "narrower than `developer`" framing: `developer`'s
+namespace block uses the coarse `policy = "write"`
+(`nomad_developer_policy.hcl:5`), which on Nomad v2.0.3 expands to include
+the `host-volume-*` management capabilities — so `developer` itself *can*
+manage dynamic host volumes (verified live: a `developer`-only token lists
+all 8). `deploy` grants those five capabilities explicitly (rather than via
+a coarse `policy` alias) and remains effectively a strict subset of
+`developer`: strictly narrower on `alloc-exec` / `alloc-node-exec` /
+`list-jobs` / `dispatch-job` / `read-logs` / `read-fs` / `node` / `agent` /
+`operator` (all absent), and no broader on host-volume management. The
+original `deploy` failed on host volumes not because `developer` lacked the
+caps, but because that first `deploy` granted neither `policy = "write"`
+nor the explicit `host-volume-*` caps. Requirement 3 and the eval marker
+are amended accordingly below.
+
 ## Title
 
 Make Vault mint the deployer's Nomad ACL token instead of a static
@@ -117,7 +153,8 @@ Vault has no Nomad secrets engine at all. Concretely:
   applied by Ansible and may be used by humans; note its future removal as
   downstream cleanup only.
 - **Do not** widen the `deploy` role/policy beyond what a
-  `terraform apply` of this repo's `nomad_job` resources actually needs.
+  `terraform apply` of this repo's `nomad_job` **and**
+  `nomad_dynamic_host_volume` resources actually needs (see Amendment).
   No speculative capabilities.
 
 ## Requirements & restrictions
@@ -140,14 +177,21 @@ Vault has no Nomad secrets engine at all. Concretely:
    returns a token carrying only that policy. The role sets the short
    lease (see TTL below). This is the part the deployer legitimately owns,
    alongside the existing `vault_*` resources in `secrets.tf`.
-3. **The `deploy` Nomad ACL policy must be provably narrower than
-   `developer`.** On namespace `default` it grants `submit-job` and
-   `read-job` (enough to `terraform apply` this repo's `nomad_job`s) and
-   nothing more. It must NOT grant: `alloc-exec` / `alloc-node-exec`,
-   `host_volume` write, or any `node` / `agent` / `operator` capability.
-   Contrast this against every capability in
-   `nomad_developer_policy.hcl:6-33` and confirm each excluded one is
-   absent.
+3. **The `deploy` Nomad ACL policy must be purpose-scoped (see Amendment
+   for the revised framing).** On namespace `default` it grants `submit-job`
+   and `read-job` (enough to `terraform apply` this repo's `nomad_job`s),
+   plus the five namespace `host-volume-*` capabilities
+   (`host-volume-create`, `-register`, `-read`, `-write`, `-delete`)
+   required to manage the 8 `nomad_dynamic_host_volume` resources in the
+   `deployments/infrastructure` root. It must NOT grant: `alloc-exec` /
+   `alloc-node-exec`, `list-jobs`, `dispatch-job`, `read-logs`, `read-fs`,
+   or any `node` / `agent` / `operator` capability. Contrast this against
+   every capability in `nomad_developer_policy.hcl:6-33` and confirm each
+   excluded one is absent; `deploy` is strictly narrower than `developer`
+   on all of those axes. On host-volume management `deploy` is no broader
+   than `developer` — `developer`'s coarse `policy = "write"` already
+   expands to the `host-volume-*` caps on Nomad v2.0.3, so `deploy`
+   (granting them explicitly) is effectively a subset of `developer`.
 4. **TTL:** a short lease (~30-60 min) that auto-renews during a run. Set
    `ttl` / `max_ttl` on the `vault_nomad_secret_role` accordingly; the
    auto-renew during a `terraform apply` run is Vault lease renewal
