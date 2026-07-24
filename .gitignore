@@ -11,6 +11,9 @@ tmp
 # Keep prod.tfvars local — real values go in git-ignored files; ship .example copies.
 **/vars/prod.tfvars
 
+# Per-ticket loop worktrees are linked checkouts, not content to track.
+.loop/worktrees/
+
 .DS_Store
 
 .claude
