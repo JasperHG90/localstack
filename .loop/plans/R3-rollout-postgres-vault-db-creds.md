@@ -1,8 +1,8 @@
-+++
+---
 epic = "rollout"
 depends_on = ["F1-foundation-nomad-wi-jwt-trust", "S2-spike-postgres-vault-creds"]
 priority = 5
-+++
+---
 
 # R3-rollout-postgres-vault-db-creds: roll out short-lived Vault-minted Postgres credentials (Path A)
 

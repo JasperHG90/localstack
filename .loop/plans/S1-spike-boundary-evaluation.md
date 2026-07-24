@@ -1,8 +1,8 @@
-+++
+---
 epic = "spike"
 depends_on = ["S2-spike-postgres-vault-creds"]
 priority = 15
-+++
+---
 
 # S1: Spike — evaluate HashiCorp Boundary for the localstack home lab
 

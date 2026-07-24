@@ -1,8 +1,8 @@
-+++
+---
 epic = "rollout"
 depends_on = ["F1-foundation-nomad-wi-jwt-trust", "F2-foundation-vault-oidc-provider"]
 priority = 5
-+++
+---
 
 # R2: Rollout — NATS auth-callout bridge for OIDC/WI identity
 

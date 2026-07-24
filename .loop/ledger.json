@@ -11,7 +11,8 @@
       "dropped": false,
       "epic": "cicd",
       "dependencies": [],
-      "priority": 0
+      "priority": 0,
+      "relay_block_nonfork": null
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
@@ -24,7 +25,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
-      "priority": 40
+      "priority": 40,
+      "relay_block_nonfork": null
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
@@ -39,7 +41,8 @@
       "dependencies": [
         "F3-foundation-haproxy-tls-vault-pki"
       ],
-      "priority": 50
+      "priority": 50,
+      "relay_block_nonfork": null
     },
     "F3-foundation-haproxy-tls-vault-pki": {
       "slug": "F3-foundation-haproxy-tls-vault-pki",
@@ -52,7 +55,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
-      "priority": 55
+      "priority": 55,
+      "relay_block_nonfork": null
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
@@ -68,7 +72,8 @@
         "F2-foundation-vault-oidc-provider",
         "F3-foundation-haproxy-tls-vault-pki"
       ],
-      "priority": 30
+      "priority": 30,
+      "relay_block_nonfork": null
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
@@ -83,7 +88,8 @@
       "dependencies": [
         "L1-landing-oauth2-proxy"
       ],
-      "priority": 5
+      "priority": 5,
+      "relay_block_nonfork": null
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
@@ -98,7 +104,8 @@
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust"
       ],
-      "priority": 10
+      "priority": 10,
+      "relay_block_nonfork": null
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
@@ -113,7 +120,8 @@
       "dependencies": [
         "F2-foundation-vault-oidc-provider"
       ],
-      "priority": 10
+      "priority": 10,
+      "relay_block_nonfork": null
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
@@ -128,7 +136,8 @@
       "dependencies": [
         "L1-landing-oauth2-proxy"
       ],
-      "priority": 5
+      "priority": 5,
+      "relay_block_nonfork": null
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
@@ -144,7 +153,8 @@
         "F1-foundation-nomad-wi-jwt-trust",
         "F2-foundation-vault-oidc-provider"
       ],
-      "priority": 5
+      "priority": 5,
+      "relay_block_nonfork": null
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
@@ -160,7 +170,8 @@
         "F1-foundation-nomad-wi-jwt-trust",
         "S2-spike-postgres-vault-creds"
       ],
-      "priority": 5
+      "priority": 5,
+      "relay_block_nonfork": null
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
@@ -175,7 +186,8 @@
       "dependencies": [
         "L1-landing-oauth2-proxy"
       ],
-      "priority": 5
+      "priority": 5,
+      "relay_block_nonfork": null
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
@@ -190,7 +202,8 @@
       "dependencies": [
         "S2-spike-postgres-vault-creds"
       ],
-      "priority": 15
+      "priority": 15,
+      "relay_block_nonfork": null
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
@@ -203,7 +216,8 @@
       "dropped": false,
       "epic": "spike",
       "dependencies": [],
-      "priority": 35
+      "priority": 35,
+      "relay_block_nonfork": null
     },
     "S3-spike-oidc-version-claims": {
       "slug": "S3-spike-oidc-version-claims",
@@ -216,7 +230,8 @@
       "dropped": false,
       "epic": "spike",
       "dependencies": [],
-      "priority": 15
+      "priority": 15,
+      "relay_block_nonfork": null
     },
     "F4-foundation-dnsmasq-localstack-dns": {
       "slug": "F4-foundation-dnsmasq-localstack-dns",
@@ -229,7 +244,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
-      "priority": 20
+      "priority": 20,
+      "relay_block_nonfork": null
     },
     "F5-foundation-vault-nomad-secrets-engine": {
       "slug": "F5-foundation-vault-nomad-secrets-engine",
@@ -242,7 +258,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
-      "priority": 60
+      "priority": 60,
+      "relay_block_nonfork": null
     },
     "F6-foundation-vault-consul-secrets-engine": {
       "slug": "F6-foundation-vault-consul-secrets-engine",
@@ -255,7 +272,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
-      "priority": 59
+      "priority": 59,
+      "relay_block_nonfork": null
     },
     "F7-foundation-deployer-vault-oidc-login": {
       "slug": "F7-foundation-deployer-vault-oidc-login",
@@ -270,7 +288,8 @@
       "dependencies": [
         "F2-foundation-vault-oidc-provider"
       ],
-      "priority": 45
+      "priority": 45,
+      "relay_block_nonfork": null
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
@@ -287,7 +306,8 @@
         "F6-foundation-vault-consul-secrets-engine",
         "F7-foundation-deployer-vault-oidc-login"
       ],
-      "priority": 40
+      "priority": 40,
+      "relay_block_nonfork": null
     }
   }
 }

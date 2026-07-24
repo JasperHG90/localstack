@@ -1,8 +1,8 @@
-+++
+---
 epic = "foundation"
 depends_on = ["F3-foundation-haproxy-tls-vault-pki"]
 priority = 50
-+++
+---
 
 # F2 — Vault OIDC provider scaffolding (foundation)
 

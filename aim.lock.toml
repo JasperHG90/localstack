@@ -331,10 +331,15 @@ flavor = "claude"
 source_path = ""
 target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
 marketplace_name = "aim-ef9f6a17bd3105b7"
-content_hash = "845c22169681ff7633d7bd778498ea8ce6c4b08dfbdd842e1229a6647e2c0717"
+content_hash = "5232129e9ff2a02030f38f3c25b2dab1ace9ba5475ac870b08962c0d8e280d87"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "0.6.0"
+sha = "5ad86c8acc8ac4f01d07ea647593546c15679f3b"
+installed_at = "2026-07-24T08:17:36.632750Z"
+
+[[plugin.history]]
 tag = "0.5.0"
 sha = "d23b34a1d8b0f3eedee82fe64a1ef53de18c797d"
 installed_at = "2026-07-23T22:09:30.197645Z"

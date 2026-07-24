@@ -1,8 +1,8 @@
-+++
+---
 epic = "spike"
 depends_on = []
 priority = 15
-+++
+---
 
 S3-spike-oidc-version-claims: verify version-dependent OIDC/auth behavior for MinIO, MLflow, NATS, Postgres against deployed image pins
 

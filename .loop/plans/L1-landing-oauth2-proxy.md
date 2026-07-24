@@ -1,8 +1,8 @@
-+++
+---
 epic = "landing"
 depends_on = ["F2-foundation-vault-oidc-provider", "F3-foundation-haproxy-tls-vault-pki"]
 priority = 30
-+++
+---
 
 # L1 — oauth2-proxy forward-auth gate for the cluster landing page
 

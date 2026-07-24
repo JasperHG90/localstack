@@ -1,8 +1,8 @@
-+++
+---
 epic = "foundation"
 depends_on = []
 priority = 20
-+++
+---
 
 # F4 — Network-wide `.localstack` DNS via a dnsmasq Nomad job (foundation)
 

@@ -1,8 +1,8 @@
-+++
+---
 epic = "foundation"
 depends_on = []
 priority = 59
-+++
+---
 
 # F6: Broker short-lived scoped Consul ACL tokens for the deployer via Vault's Consul secrets engine (foundation)
 

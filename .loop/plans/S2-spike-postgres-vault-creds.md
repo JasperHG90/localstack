@@ -1,8 +1,8 @@
-+++
+---
 epic = "spike"
 depends_on = []
 priority = 35
-+++
+---
 
 # S2 — Spike: Vault database secrets engine for short-lived Postgres creds
 
