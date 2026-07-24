@@ -42,6 +42,7 @@ bootstrap: ssh_add setup
     ansible-playbook playbooks/configure_hashistack_server.yml
     ansible-playbook playbooks/configure_hashistack_clients.yml
     ansible-playbook playbooks/seed_vault.yml
+    ansible-playbook playbooks/enable_consul_secrets.yml
     ansible-playbook playbooks/configure_podman.yml
     ansible-playbook playbooks/configure_nvidia_ctk.yml
     ansible-playbook playbooks/configure_tailscale.yml

@@ -231,6 +231,23 @@ providers; F8 extends it to the remaining two and removes the static path.
    `register`/`write` from the F5 policy — but confirm against a real apply
    first, and do not trim if the apply needs them. Do not widen the policy
    beyond what the apply actually requires.
+9. **Fix the inert Consul state-lock session grant before running the
+   deployer against the brokered Consul token (relayed from F6).** F6's
+   `deploy` Consul ACL policy (`bootstrap/playbooks/enable_consul_secrets.yml`)
+   grants `session_prefix "terraform/" { policy = "write" }`, which is INERT:
+   Consul session ACLs match on the NODE NAME a session binds to, not a KV
+   path prefix (see `bootstrap/roles/consul_server/files/agent_policy.hcl`,
+   which pairs `session_prefix ""` with `node_prefix ""`). Terraform's Consul
+   state backend acquires a lock SESSION bound to the local Consul agent node,
+   so under the current rule the brokered `deploy` token cannot create that
+   session and state locking will silently fail the moment this ticket points
+   the provider/backend at `vault read consul/creds/deploy`. Change the grant
+   to `session_prefix "" { policy = "write" }` (minimal working form, matching
+   `agent_policy.hcl`) and VERIFY it live: F6 eval 5 is a raw `consul kv
+   put/get` with no `-lock`, so it never exercised locking — run an actual
+   state-locking cycle (a real `terraform apply`, or `consul kv put -lock`
+   under the brokered token) as part of this ticket's acceptance. This is a
+   mis-formed F6 Q6 assumption, not an F6 defect; F6's own DoD was met.
 
 ## Code surface
 - **`deployments/applications/providers.tf`** — rework `provider "nomad" {}`
