@@ -1,6 +1,6 @@
 ---
 epic = "spike"
-depends_on = ["S2-spike-postgres-vault-creds"]
+depends_on = ["S2-spike-postgres-vault-creds", "A1-audit-plan-premise-sweep"]
 priority = 15
 ---
 

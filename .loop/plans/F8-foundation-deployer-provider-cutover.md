@@ -1,6 +1,6 @@
 ---
 epic = "foundation"
-depends_on = ["F5-foundation-vault-nomad-secrets-engine", "F6-foundation-vault-consul-secrets-engine", "F7-foundation-deployer-vault-oidc-login"]
+depends_on = ["F5-foundation-vault-nomad-secrets-engine", "F6-foundation-vault-consul-secrets-engine", "F7-foundation-deployer-vault-oidc-login", "A1-audit-plan-premise-sweep"]
 priority = 40
 ---
 

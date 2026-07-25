@@ -1,6 +1,6 @@
 ---
 epic = "minio"
-depends_on = ["F1-foundation-nomad-wi-jwt-trust"]
+depends_on = ["F1-foundation-nomad-wi-jwt-trust", "A1-audit-plan-premise-sweep"]
 priority = 10
 ---
 

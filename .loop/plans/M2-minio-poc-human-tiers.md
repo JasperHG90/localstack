@@ -1,6 +1,6 @@
 ---
 epic = "minio"
-depends_on = ["F2-foundation-vault-oidc-provider"]
+depends_on = ["F2-foundation-vault-oidc-provider", "A1-audit-plan-premise-sweep"]
 priority = 10
 ---
 

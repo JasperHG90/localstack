@@ -1,6 +1,6 @@
 ---
 epic = "landing"
-depends_on = ["F2-foundation-vault-oidc-provider", "T3-tls-edge-cutover-lab-domain"]
+depends_on = ["F2-foundation-vault-oidc-provider", "T3-tls-edge-cutover-lab-domain", "A1-audit-plan-premise-sweep"]
 priority = 30
 ---
 

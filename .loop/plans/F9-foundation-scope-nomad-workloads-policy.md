@@ -1,6 +1,6 @@
 ---
 epic = "foundation"
-depends_on = []
+depends_on = ["A1-audit-plan-premise-sweep"]
 priority = 48
 ---
 

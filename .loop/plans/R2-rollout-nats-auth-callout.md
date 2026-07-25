@@ -1,6 +1,6 @@
 ---
 epic = "rollout"
-depends_on = ["F1-foundation-nomad-wi-jwt-trust", "F2-foundation-vault-oidc-provider"]
+depends_on = ["F1-foundation-nomad-wi-jwt-trust", "F2-foundation-vault-oidc-provider", "A1-audit-plan-premise-sweep"]
 priority = 5
 ---
 

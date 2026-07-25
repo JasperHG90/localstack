@@ -1,6 +1,6 @@
 ---
 epic = "foundation"
-depends_on = ["T3-tls-edge-cutover-lab-domain"]
+depends_on = ["T3-tls-edge-cutover-lab-domain", "A1-audit-plan-premise-sweep"]
 priority = 50
 ---
 

@@ -1,6 +1,6 @@
 ---
 epic = "landing"
-depends_on = ["L1-landing-oauth2-proxy"]
+depends_on = ["L1-landing-oauth2-proxy", "A1-audit-plan-premise-sweep"]
 priority = 5
 ---
 

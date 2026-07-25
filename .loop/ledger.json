@@ -39,7 +39,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [
-        "T3-tls-edge-cutover-lab-domain"
+        "T3-tls-edge-cutover-lab-domain",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 50,
       "relay_block_nonfork": null
@@ -70,7 +71,8 @@
       "epic": "landing",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
-        "T3-tls-edge-cutover-lab-domain"
+        "T3-tls-edge-cutover-lab-domain",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 30,
       "relay_block_nonfork": null
@@ -86,7 +88,8 @@
       "dropped": false,
       "epic": "landing",
       "dependencies": [
-        "L1-landing-oauth2-proxy"
+        "L1-landing-oauth2-proxy",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
       "relay_block_nonfork": null
@@ -102,7 +105,8 @@
       "dropped": false,
       "epic": "minio",
       "dependencies": [
-        "F1-foundation-nomad-wi-jwt-trust"
+        "F1-foundation-nomad-wi-jwt-trust",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
       "relay_block_nonfork": null
@@ -118,7 +122,8 @@
       "dropped": false,
       "epic": "minio",
       "dependencies": [
-        "F2-foundation-vault-oidc-provider"
+        "F2-foundation-vault-oidc-provider",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
       "relay_block_nonfork": null
@@ -134,7 +139,8 @@
       "dropped": false,
       "epic": "rollout",
       "dependencies": [
-        "L1-landing-oauth2-proxy"
+        "L1-landing-oauth2-proxy",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
       "relay_block_nonfork": null
@@ -151,7 +157,8 @@
       "epic": "rollout",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
-        "F2-foundation-vault-oidc-provider"
+        "F2-foundation-vault-oidc-provider",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
       "relay_block_nonfork": null
@@ -168,7 +175,8 @@
       "epic": "rollout",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
-        "S2-spike-postgres-vault-creds"
+        "S2-spike-postgres-vault-creds",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
       "relay_block_nonfork": null
@@ -184,7 +192,8 @@
       "dropped": false,
       "epic": "rollout",
       "dependencies": [
-        "L1-landing-oauth2-proxy"
+        "L1-landing-oauth2-proxy",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
       "relay_block_nonfork": null
@@ -200,7 +209,8 @@
       "dropped": false,
       "epic": "spike",
       "dependencies": [
-        "S2-spike-postgres-vault-creds"
+        "S2-spike-postgres-vault-creds",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 15,
       "relay_block_nonfork": null
@@ -286,7 +296,8 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [
-        "F2-foundation-vault-oidc-provider"
+        "F2-foundation-vault-oidc-provider",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 45,
       "relay_block_nonfork": null
@@ -304,7 +315,8 @@
       "dependencies": [
         "F5-foundation-vault-nomad-secrets-engine",
         "F6-foundation-vault-consul-secrets-engine",
-        "F7-foundation-deployer-vault-oidc-login"
+        "F7-foundation-deployer-vault-oidc-login",
+        "A1-audit-plan-premise-sweep"
       ],
       "priority": 40,
       "relay_block_nonfork": null
@@ -364,8 +376,24 @@
       "review_verdict": null,
       "dropped": false,
       "epic": "foundation",
-      "dependencies": [],
+      "dependencies": [
+        "A1-audit-plan-premise-sweep"
+      ],
       "priority": 48,
+      "relay_block_nonfork": null
+    },
+    "A1-audit-plan-premise-sweep": {
+      "slug": "A1-audit-plan-premise-sweep",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "audit",
+      "dependencies": [],
+      "priority": 52,
       "relay_block_nonfork": null
     }
   }
