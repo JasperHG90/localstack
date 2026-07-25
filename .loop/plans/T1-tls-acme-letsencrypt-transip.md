@@ -151,7 +151,11 @@ set in this environment.
 - **Command:** `terraform -chdir=deployments/infrastructure plan` -> adds the
   volume, policy, JWT role, and job. Destroys nothing.
 
-### Evals (live, after apply) — encoded in `.loop/evals/<slug>.md`
+### Evals — the authoritative set is `.loop/evals/T1-tls-acme-letsencrypt-transip.md`
+The marker is the acceptance contract; the rows below are its narrative form.
+Note the marker's rate-limit guard: **production issuance is blocked until
+idempotency passes against the staging endpoint** (operator decision,
+2026-07-25).
 1. Job completes: `nomad job status acme` -> latest batch alloc `complete`,
    exit 0.
 2. Cert in Vault: `vault kv get secret/default/haproxy/tls` returns the agreed

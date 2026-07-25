@@ -1,0 +1,31 @@
+eval: T3-tls-edge-cutover-lab-domain
+
+**Definition of Done:** HAProxy serves the Let's Encrypt certificate from
+Vault KV2, all twelve routed hostnames are renamed to
+`<svc>.lab.orangecluster.nl` in a single apply, every backend still routes
+with basic-auth intact, F3's `pki.tf` is deleted in full, the docs match
+reality, and a phone shows a valid padlock with nothing installed.
+
+**Row 9 is the requirement this epic exists for** (operator decision,
+2026-07-25: human-scored at 100%). F3 shipped a certificate that passed every
+check available at the time and was still unusable by every client, so this
+ticket does not close on machine checks alone.
+
+**Flag-day, per operator decision:** old `.localstack` names stop working at
+the moment of apply. Row 8 asserts that as intended behavior, not a
+regression.
+
+| Behavior | Input | Expected | Scorer | Threshold |
+| --- | --- | --- | --- | --- |
+| The edge comes back healthy after the cutover | `nomad job status haproxy` | Deployment `successful`, one healthy alloc, no restart loop. A crash-looping alloc after a template change is the signature of the `.Data.data` nesting trap — KV2 nests the payload, so `{{ .Data.certificate }}` renders blank where `{{ .Data.data.certificate }}` is required | deterministic check (`nomad job status haproxy` successful, 1 healthy) | 100% |
+| **The certificate is trusted with no flags — the exact failure F3 shipped** | `curl -sS -o /dev/null -w '%{http_code}' https://grafana.lab.orangecluster.nl/` with NO `-k` and NO `--cacert` | 200 or 302, exit 0. **Any need for `-k` is a FAIL.** F3's `*.localstack` leaf chained correctly but could never match a hostname, and every check that only tested issuance or chain validity passed anyway | deterministic check (`curl` without `-k` exits 0) | 100% |
+| Hostname matching holds across the zone, not just for one host | `openssl s_client -connect 192.168.2.30:443 -servername mlflow.lab.orangecluster.nl -verify_hostname mlflow.lab.orangecluster.nl </dev/null` | `Verify return code: 0 (ok)`. Verifying a second, different hostname is what catches a wildcard that is syntactically present but not usable — the precise defect that made F3 unusable | deterministic check (`Verify return code: 0`) | 100% |
+| Plain HTTP still redirects, preserving path and query | `curl -sI 'http://grafana.lab.orangecluster.nl/d/abc?x=1'` | `301` with `Location: https://grafana.lab.orangecluster.nl/d/abc?x=1`. Bookmarks with paths must survive the hop | deterministic check (`301` and the Location preserves path and query) | 100% |
+| **Guardrail: every backend still routes and basic-auth is still enforced** | For each of grafana, minio, mlflow, phoenix, bifrost, vault, consul, nomad, s3, memex, prometheus, loki: `curl -s -o /dev/null -w '%{http_code}' https://<svc>.lab.orangecluster.nl/` | Every host answers from its own backend, and mlflow, phoenix and bifrost return `401` from the `openfang_users` userlist. A 503 means an ACL was renamed but its `use_backend` was not, or vice versa | deterministic check (all twelve answer, the three auth'd ones return 401) | 100% |
+| **Guardrail: the backends themselves were not touched** | `git diff deployments/infrastructure/services/haproxy.hcl` | The diff shows renamed `acl` lines only. Every `backend` block and its `server <ip>:<port>` line is byte-identical, and no consul-template dependency was introduced. The static backend model is an explicit non-goal to change | deterministic check (`git diff` shows no change below the first `backend` line) | 100% |
+| F3's PKI apparatus is gone, not merely unused | `git diff --stat` and `terraform -chdir=deployments/infrastructure plan` | `pki.tf` is deleted, and `services.tf` no longer passes `pki_issue_path` / `vault_role` or carries the `depends_on`. The plan destroys the six PKI resources and nothing else. Leaving a dedicated JWT role that nothing uses is a least-privilege regression, not harmless residue | deterministic check (`pki.tf` absent, plan destroys only the 6 PKI resources) | 100% |
+| Old hostnames stop working, as the flag-day decision intends | `curl -sk -o /dev/null -w '%{http_code}' --resolve grafana.localstack:443:192.168.2.30 https://grafana.localstack/` | `503` or no matching backend. This confirms the cutover is complete rather than half-applied. It is the accepted cost of the single-apply decision | deterministic check (old name returns 503) | 100% |
+| **The requirement this epic exists for: a phone shows a valid padlock with nothing installed** | On a phone that has never had a certificate or profile installed for this lab, joined to the wifi, open `https://grafana.lab.orangecluster.nl` | The page loads with a valid padlock and no interstitial, no warning, no "advanced / proceed anyway". This is what a private CA could never deliver and what the whole re-plan was for | human + rubric (operator observes from a phone) | 100% |
+| The docs describe the edge that now exists | Read `docs/haproxy_reverse_proxy.md`, `docs/monitoring.md`, `docs/tls-certificates.md` | The hostname table lists `.lab.orangecluster.nl`, the `/etc/hosts` section is gone or marked obsolete (T2 resolves network-wide), the "visit prometheus.localstack" steps are updated, and the TLS doc covers both halves — how the cert is obtained and how HAProxy consumes it. F3 shipped stale docs and had to relay them to L1; this discharges that | model + rubric (documentation review pass) | 4/5 |
+| Downstream tickets are not left holding dead hostnames | `grep -rln '\.localstack' .loop/plans .loop/evals` | Only the historical records `F3-*` and `F4-*` match. R1, R4, L1, L2, M2 and F2 are renamed — their eval rows are literal acceptance commands that would otherwise hit a 503 and fail their own scorers for reasons unrelated to their work | deterministic check (`grep` matches only F3 and F4 files) | 100% |
+| A certificate-expiry alert exists before the edge depends on a 90-day cert | Inspect `services/grafana/alert-rules.yaml` and trigger the alert condition | An alert fires on days-to-expiry, not on job success, so it catches a renewal failure regardless of which link broke. Before this ticket a silent non-renewal cost nothing; after it, one takes down all twelve services at once with no warning | deterministic check (alert rule present and fires on the expiry condition) | 100% |

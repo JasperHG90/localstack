@@ -173,7 +173,13 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
   talat-shim.
 - Vault KV scan for `.localstack` in any value -> zero matches.
 
-### Evals (live, after apply) — encoded in `.loop/evals/<slug>.md`
+### Evals — the authoritative set is `.loop/evals/T3-tls-edge-cutover-lab-domain.md`
+The marker is the acceptance contract; the rows below are its narrative form.
+Its row 9 (a phone shows a valid padlock with nothing installed) is
+**human-scored at 100%** by operator decision, 2026-07-25. F3 shipped a
+certificate that passed every machine check available at the time and was
+still unusable by every client, so this ticket does not close on machine
+checks alone.
 1. Alloc healthy: `nomad job status haproxy` -> deployment successful, 1
    healthy.
 2. **Cert is publicly trusted with NO `-k` and NO `--cacert`** — the failure

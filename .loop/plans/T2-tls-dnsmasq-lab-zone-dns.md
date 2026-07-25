@@ -123,7 +123,11 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
   job and firewall entry; destroys nothing but the replaced
   `null_resource.firewall` instance whose triggers changed.
 
-### Evals (live, after apply) — encoded in `.loop/evals/<slug>.md`
+### Evals — the authoritative set is `.loop/evals/T2-tls-dnsmasq-lab-zone-dns.md`
+The marker is the acceptance contract; the rows below are its narrative form.
+Its row 8 (a phone on the wifi resolves the lab zone with nothing installed)
+is **human-scored at 100%** by operator decision, 2026-07-25 — this ticket
+does not close until the operator confirms it.
 1. Job healthy: `nomad job status dnsmasq` -> running, deployment successful.
    A crash-looping alloc is the signature of the port-53 conflict.
 2. Lab zone resolves: `dig +short @192.168.2.30 grafana.lab.orangecluster.nl`
