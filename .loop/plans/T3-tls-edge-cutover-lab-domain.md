@@ -129,8 +129,20 @@ the trusted cert, T2 the resolution; this ticket flips the edge.
   add-a-service example. **Relayed from F3 as L1 requirement 10.**
 - `docs/monitoring.md:170-171,206-207` — ACL example and the "Visit
   prometheus.localstack / grafana.localstack" steps. **Relayed from F3.**
-- `docs/tls-certificates.md` (created in T1) — add the serving half: how
+- `docs/tls-certificates.md` (already exists) — add the serving half: how
   HAProxy consumes the cert and what a renewal looks like from the edge.
+  **Also correct the statements that describe this cutover in the present
+  tense**, written when the file was authored and true only once this ticket
+  lands: "The edge proxy templates these into a single PEM file", "Names
+  resolve on the LAN only, from the local resolver", and the verification
+  `curl https://grafana.lab.orangecluster.nl/`. Until the flip that hostname
+  does not resolve, so an operator following the doc debugs a certificate
+  that is fine. Re-read the file for current line numbers.
+  While editing, note the field shape the doc already records: `certificate`
+  holds the leaf AND its issuing chain, and `issuer_chain` repeats that
+  intermediate separately. The HAProxy PEM therefore needs only `certificate`
+  plus `private_key`; appending `issuer_chain` sends the intermediate twice,
+  which is harmless but pointless.
 - `.loop/plans/L1-landing-oauth2-proxy.md` — update requirements 10 and 11,
   which currently name `.localstack` and tell the implementer no PKI work
   follows. Plan files are excluded from the tree fingerprint.
