@@ -1,6 +1,6 @@
 ---
 epic = "foundation"
-depends_on = ["F3-foundation-haproxy-tls-vault-pki"]
+depends_on = ["T3-tls-edge-cutover-lab-domain"]
 priority = 50
 ---
 
@@ -53,6 +53,16 @@ backend, applied with `just apply`):
   `jwt-nomad/`). There is no `userpass`, `oidc`, or `ldap` auth method
   for humans, and no `vault_identity_entity` / group resources. This is
   the central prerequisite fork (see Open Questions Q1).
+- **HOSTNAME CHANGE, 2026-07-25.** Every `vault.localstack` reference below is
+  stale. F3's TLS shipped an unusable wildcard (`*.localstack` cannot match a
+  hostname), so the edge is moving to `*.lab.orangecluster.nl` with a
+  publicly-trusted Let's Encrypt cert. This ticket's `depends_on` was
+  retargeted from F3 to T3 for that reason: an OIDC **issuer URL** is baked
+  into client configs and issued tokens, so committing to
+  `https://vault.localstack` before the rename would mean re-issuing it.
+  Read every `vault.localstack` below as `vault.lab.orangecluster.nl`, and
+  the issuer as `https://vault.lab.orangecluster.nl` over a cert clients
+  already trust — which also removes F2-Q2's https-issuer obstacle entirely.
 - Vault is reachable at `http://vault.localstack` (haproxy host ACL
   `deployments/infrastructure/services/haproxy.hcl:53`, routed by
   `:66` to backend `vault1 192.168.2.30:8200` at `:91`). The Vault

@@ -39,7 +39,7 @@
       "dropped": false,
       "epic": "foundation",
       "dependencies": [
-        "F3-foundation-haproxy-tls-vault-pki"
+        "T3-tls-edge-cutover-lab-domain"
       ],
       "priority": 50,
       "relay_block_nonfork": null
@@ -70,7 +70,7 @@
       "epic": "landing",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
-        "F3-foundation-haproxy-tls-vault-pki"
+        "T3-tls-edge-cutover-lab-domain"
       ],
       "priority": 30,
       "relay_block_nonfork": null
@@ -241,7 +241,7 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false,
+      "dropped": true,
       "epic": "foundation",
       "dependencies": [],
       "priority": 20,
@@ -308,6 +308,51 @@
       ],
       "priority": 40,
       "relay_block_nonfork": null
+    },
+    "T1-tls-acme-letsencrypt-transip": {
+      "slug": "T1-tls-acme-letsencrypt-transip",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "tls",
+      "dependencies": [],
+      "priority": 70,
+      "relay_block_nonfork": null
+    },
+    "T2-tls-dnsmasq-lab-zone-dns": {
+      "slug": "T2-tls-dnsmasq-lab-zone-dns",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "tls",
+      "dependencies": [],
+      "priority": 65,
+      "relay_block_nonfork": null
+    },
+    "T3-tls-edge-cutover-lab-domain": {
+      "slug": "T3-tls-edge-cutover-lab-domain",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "tls",
+      "dependencies": [
+        "T1-tls-acme-letsencrypt-transip",
+        "T2-tls-dnsmasq-lab-zone-dns"
+      ],
+      "priority": 60,
+      "relay_block_nonfork": true
     }
   }
 }

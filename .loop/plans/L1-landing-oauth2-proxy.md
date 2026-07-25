@@ -1,6 +1,6 @@
 ---
 epic = "landing"
-depends_on = ["F2-foundation-vault-oidc-provider", "F3-foundation-haproxy-tls-vault-pki"]
+depends_on = ["F2-foundation-vault-oidc-provider", "T3-tls-edge-cutover-lab-domain"]
 priority = 30
 ---
 
@@ -135,12 +135,20 @@ and R4 (Phoenix) will copy.
     as a broken deployment.
     Add both docs to this ticket's Code surface when implementing, so every
     changed line still traces to this plan.
-11. **Add the `dash.localstack` ACL to `https_in`, not `http_in`.** *(Relayed
-    from F3, same root cause as #10.)* F3 split the single frontend: `:80`
-    now only 301-redirects and every ACL lives on the `:443 ssl` frontend
-    `https_in`. The Code surface bullet below is corrected accordingly. No
-    new cert work is needed — F3's leaf is a wildcard `*.localstack`, so it
-    already covers `dash.localstack` with no PKI change.
+11. **The host is `dash.lab.orangecluster.nl`, and its ACL goes on
+    `https_in`, not `http_in`.** *(Rewritten 2026-07-25. Supersedes the
+    earlier F3-era text, which named `dash.localstack` and is now wrong.)*
+    - F3 split the single frontend: `:80` only 301-redirects, and every ACL
+      lives on the `:443 ssl` frontend `https_in`. An ACL added to `http_in`
+      sits on the redirect-only frontend and can never route.
+    - T3 renames the whole edge to `<svc>.lab.orangecluster.nl` and replaces
+      the unusable Vault-PKI leaf with a publicly-trusted Let's Encrypt
+      wildcard. **L1 now depends on T3, not F3** (front-matter updated), so
+      by the time L1 runs the old names are gone.
+    - No cert work follows: the wildcard `*.lab.orangecluster.nl` already
+      covers `dash`. No PKI change, no SAN edit, no new firewall rule.
+    - `dash.lab.orangecluster.nl` resolves via the dnsmasq wildcard from T2
+      with no DNS record to add.
 
 ## Code surface
 - `deployments/infrastructure/services/oauth2-proxy.hcl` **(new)** — the
@@ -159,15 +167,13 @@ and R4 (Phoenix) will copy.
   If F2 does not already store the OIDC client secret in Vault, this file is
   also where a placeholder/reference for it is surfaced (see Q4).
 - `deployments/infrastructure/services/haproxy.hcl` — add
-  `acl is_dash hdr(host) -i dash.localstack` and
+  `acl is_dash hdr(host) -i dash.lab.orangecluster.nl` and
   `use_backend dash if is_dash` **in the `https_in` frontend**.
-  *(Anchor corrected 2026-07-24, relayed from F3: this bullet used to read
-  ":48-75 ... in the `http_in` frontend". F3 split the single frontend in
-  two. `http_in` now binds only `:80` and does nothing but
-  `http-request redirect scheme https code 301`; every ACL and `use_backend`
-  moved to `frontend https_in`, which binds `:443 ssl`. Adding the dash ACL
-  to `http_in` would put it on the redirect-only frontend, where it can
-  never route. Re-read the file for current line numbers — F3 shifted them.)*
+  *(Rewritten 2026-07-25. This bullet originally read ":48-75 ... in the
+  `http_in` frontend" with host `dash.localstack`; both were wrong. F3 split
+  the frontend so `http_in` only 301-redirects, and T3 renames the edge to
+  `.lab.orangecluster.nl`. Re-read the file for line numbers — F3 shifted
+  them and T3 shifts them again.)*
 - `deployments/infrastructure/services/haproxy.hcl` — add a `backend
   dash` pointing at the oauth2-proxy service address:port (static
   `server` line, matching existing backend style). The backend block is
