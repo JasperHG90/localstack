@@ -194,9 +194,19 @@ does not close until the operator confirms it.
   `docs/nats-postgres-cdc-bridge.md:20,183,255,288` true for the first time —
   they advertise `nats://nats.service.localstack.consul:4222` as a client URL,
   which today only works for a client explicitly pointed at port 8600.
-  *Recommendation:* include it; it is one line, regresses nothing (nothing
-  resolves `.consul` on the LAN today), and fixes a live documentation lie.
-  Operator to confirm, since it slightly widens scope.
+  *Recommendation WITHDRAWN 2026-07-26 — the premise was measured and is
+  false, so the line is NOT included.* Consul answers with the container
+  bridge address for bridge-networked services: `nats` resolves to
+  `10.88.0.83` and `minio` to `10.88.0.4`, neither routable from the LAN, and
+  `10.88.0.83:4222` is unreachable even from firebat while `192.168.2.50:4222`
+  is open. Forwarding therefore does NOT make the advertised URLs work. It
+  replaces an honest NXDOMAIN with an answer that connects to nothing and
+  times out, which is harder to diagnose than a name that does not resolve.
+  The operator approved this on the "fixes a live documentation lie"
+  rationale, which does not hold, so it is theirs to re-decide rather than
+  mine to keep on a disproved justification. The real fix is to correct
+  `docs/nats.md` and `docs/nats-postgres-cdc-bridge.md`, or to make Consul
+  advertise routable addresses, and belongs to whichever ticket owns NATS.
 - **Q5 — DNS rebinding protection.** Some dnsmasq builds ship
   `stop-dns-rebind`, which refuses UPSTREAM answers pointing into private
   ranges. Our records are local (`address=`), so they are unaffected — but
