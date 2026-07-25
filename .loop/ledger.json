@@ -227,7 +227,7 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false,
+      "dropped": true,
       "epic": "spike",
       "dependencies": [],
       "priority": 15,
@@ -353,6 +353,20 @@
       ],
       "priority": 60,
       "relay_block_nonfork": true
+    },
+    "F9-foundation-scope-nomad-workloads-policy": {
+      "slug": "F9-foundation-scope-nomad-workloads-policy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 48,
+      "relay_block_nonfork": null
     }
   }
 }

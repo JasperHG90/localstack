@@ -66,17 +66,58 @@ single audience. Concretely:
   `claim_mappings` for exactly `nomad_namespace`, `nomad_job_id`,
   `nomad_task` (lines 6-10), with `token_policies: ["nomad-workloads"]`.
 - The policy keyed on those claims:
-  `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`
-  grants `read` on
-  `secret/data/{{nomad_namespace}}/{{nomad_job_id}}/*` (via the auth
-  alias metadata), which is exactly the
-  `secret/data/<namespace>/<job_id>/<entry>` convention.
+  `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-24`
+  (the WHOLE file — 24 lines, not the 11 an earlier draft of this plan
+  cited). It grants:
+  - `read` on `secret/data/{{nomad_namespace}}/{{nomad_job_id}}/*` and the
+    bare path (`:1-7`), matching the
+    `secret/data/<namespace>/<job_id>/<entry>` convention; **and**
+  - `list` on `secret/metadata/{{nomad_namespace}}/*` and on
+    `secret/metadata/*` (`:9-15`); **and**
+  - **`read`, `create`, and `update` on `bootstrap/data/*`** (`:17-20`) plus
+    `list` on `bootstrap/metadata/*` (`:22-24`).
+- **THE POLICY IS NOT JOB-SCOPED, and the doc must say so.** Verified live
+  2026-07-25 (`vault policy read nomad-workloads`, `vault list
+  bootstrap/metadata`): the `bootstrap` mount holds `github` and `tailscale`
+  — the GitHub PAT and the Tailscale auth key
+  (`docs/credential-rotation.md:20,29`). Every workload on the cluster
+  (minio, memex, hermes, grafana, postgres, and any probe job this ticket
+  adds) can read AND overwrite both, and can enumerate every secret path in
+  every namespace. Describing this policy as per-job scoped would ship a
+  false claim about the cluster's blast radius in the one document
+  downstream tickets are meant to trust. Narrowing it is NOT this ticket's
+  job (see Non-goals); documenting it accurately is.
 - Jobs consume it keylessly today with a bare `vault {}` block plus a
   `template { ... env = true }` using `{{ with secret "<path>" }}`:
   see `deployments/infrastructure/services/minio.hcl:30-40` and
   `deployments/applications/services/memex.hcl:44,46-60,114-141`. No job
   in the repo declares an explicit `identity` stanza; they all ride the
   implicit `default_identity` (aud `vault.io`).
+- **A SECOND JWT role now exists, created in Terraform, and it changes the
+  ownership story this ticket was written to settle.** F3 shipped after this
+  plan was drafted. Verified live: `vault list auth/jwt-nomad/role` returns
+  `haproxy` and `nomad-workloads`. `deployments/infrastructure/pki.tf:69-116`
+  declares `vault_policy.haproxy_pki` and
+  `vault_jwt_auth_backend_role.haproxy` on the Ansible-created `jwt-nomad`
+  mount, and `services/haproxy.hcl:39-41` selects it with
+  `vault { role = "${vault_role}" }`. The real model is therefore a SPLIT:
+  bootstrap-time root of trust (mount, config, default role, shared policy)
+  in Ansible; per-job roles and policies in Terraform, alongside the engine
+  they grant access to.
+- **One task holds exactly one Vault token.** A task has a single `vault`
+  block and performs a single JWT login, so naming a dedicated role
+  REPLACES `nomad-workloads` rather than adding to it — `pki.tf:113` sets
+  `token_policies` to the dedicated policy alone. Any future job needing
+  both a scoped grant and ordinary KV reads must list both policies on its
+  own role. This is the single most useful sentence this document can
+  contain, and every consumer (M1, S2/R3, F5/F6) will need it.
+- **Nomad's OIDC discovery endpoint is DISABLED.**
+  `curl http://192.168.2.30:4646/.well-known/openid-configuration` returns
+  `OIDC Discovery endpoint disabled`; `/v1/agent/self` shows
+  `oidc_issuer: ""`, and `grep -rn oidc_issuer bootstrap/ deployments/`
+  finds nothing. `/.well-known/jwks.json` works (6 keys). This matters
+  because MinIO's `identity_openid` consumes a discovery document, not a
+  bare JWKS — see requirement 1 and Q6.
 - The secret-path convention is already live and consistent: secrets
   are written at `default/<job>/<entry>` in
   `deployments/infrastructure/secrets.tf:16,38,53,74` and read back at
@@ -111,44 +152,66 @@ single audience. Concretely:
 - **Do not** re-key or rename the existing `vault.io` audience unless
   Open Question Q2 is resolved to do so; a silent rename breaks memex,
   minio, hermes, grafana, and every current workload at once.
-- **Do not** add custom JWT claims. They are impossible with Nomad WI
-  (see the fixed-claims constraint below); any policy scoping must key
-  on `nomad_job_id` / `nomad_namespace`.
+- **Do not** add custom JWT claims. Nomad 1.11.3 rejects `extra_claims` in a
+  task `identity` block (verified via `/v1/jobs/parse`: *"An argument named
+  extra_claims is not expected here"*), so per-job custom claims are
+  unavailable and scoping must key on `nomad_job_id` / `nomad_namespace`.
+  Note the earlier draft justified this via `claim_mappings`, which is a
+  Vault-side selector and cannot constrain what Nomad puts in the JWT — the
+  conclusion holds, the reasoning did not.
 - **Do not** widen the `nomad-workloads` Vault policy
   (`vault_nomad_workloads.hcl.j2`) beyond what the test job needs.
+- **Do not narrow it either.** The `bootstrap/data/*` write grant documented
+  in Context is a real over-grant, but fixing it is its own ticket with its
+  own blast radius (every workload's token changes). F1 documents it and
+  stops.
 
 ## Requirements & restrictions
 
 **Must achieve:**
 
 1. A single authoritative doc (suggest `docs/workload-identity.md`)
-   describing: the JWKS/OIDC discovery endpoint and its cluster-internal
-   URL, the `jwt-nomad` Vault backend, the `nomad-workloads` role and
-   policy, the fixed-claims constraint, the
-   `secret/data/<namespace>/<job_id>/<entry>` convention, and the
-   `identity`-stanza / audience convention for future consumers. It must
-   state the JWKS URL M1 will point MinIO at.
-2. A documented `identity`-stanza convention: one audience value per
-   consumer class (the actual strings depend on Q2), and the
-   file-vs-env token-delivery choice per consumer class, with a rule for
-   when a job needs an explicit `identity` stanza versus riding the
-   implicit Vault `default_identity`.
-3. A test Nomad job with an `identity` stanza (or the implicit Vault
-   identity, per Q4) that authenticates to Vault through `jwt-nomad`
-   and reads a scoped KV secret at
-   `secret/data/<namespace>/<job_id>/<entry>`, plus a written,
-   repeatable operator verification proving it succeeds on the live
-   cluster.
+   describing: the JWKS endpoint and its cluster-internal URL, the
+   `jwt-nomad` Vault backend, the `nomad-workloads` role and policy **as it
+   actually is** (including the `bootstrap/data/*` write grant and the
+   cluster-wide `secret/metadata/*` list — see Context), the fixed-claims
+   constraint, the `secret/data/<namespace>/<job_id>/<entry>` convention,
+   and the `identity`-stanza / audience convention for future consumers.
+   The doc carries a threat-model section stating the real blast radius,
+   not the intended one.
+2. **The doc must document the Ansible/Terraform split and the one-token
+   rule.** Specifically: per-job roles and policies go in Terraform beside
+   the engine they grant (pattern `pki.tf:69-116`), are selected with
+   `vault { role = "<name>" }`, and REPLACE `nomad-workloads` rather than
+   adding to it — so a job needing both a scoped grant and KV reads must
+   list both policies on its own role. Lead the convention section with the
+   `name` field of the `identity` block; it is the load-bearing one.
+3. A documented `identity`-stanza convention: one audience per **verifying
+   service** (never per job — per-job distinction comes from
+   `nomad_job_id`), and the file-vs-env token-delivery choice per consumer
+   class, with a rule for when a job needs an explicit `identity` stanza
+   versus riding the implicit Vault `default_identity`.
+4. A test Nomad job that authenticates to Vault through `jwt-nomad` and
+   reads a scoped KV secret, plus a written, repeatable operator
+   verification proving it succeeds live. **The stanza must be
+   `identity { name = "vault_default" ... }`** — see the Q5 resolution;
+   a bare `identity {}` configures the task's default Nomad-API identity,
+   not the Vault one, and proves nothing.
+5. **State plainly what F1 does and does not deliver for M1.** It delivers
+   the JWKS URL. It does NOT deliver an OIDC discovery document, because
+   that endpoint is disabled (Context). Either resolve Q6 to enable it here
+   or record in the doc and in M1's dependency that M1 owns enabling it.
 
 **Fixed-claims constraint (call out prominently in the doc):** Nomad WI
-JWTs carry only three usable claims — `nomad_namespace`, `nomad_job_id`,
-`nomad_task` — as enforced by the `claim_mappings` in
+JWTs carry three usable claims — `nomad_namespace`, `nomad_job_id`,
+`nomad_task` — mapped into Vault alias metadata by the `claim_mappings` in
 `bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json:6-10`.
-Custom claims are impossible. All Vault role/policy scoping must key on
-`nomad_job_id` (and `nomad_namespace`); this is exactly why the existing
-policy templates the secret path from those two claims
-(`vault_nomad_workloads.hcl.j2:1-11`) and why the secret convention is
-`secret/data/<namespace>/<job_id>/<entry>`.
+Nomad 1.11.3 rejects `extra_claims` in a task `identity` block, so per-job
+custom claims are unavailable (see Non-goals for the verification). All
+Vault role/policy scoping must therefore key on `nomad_job_id` and
+`nomad_namespace`; this is why the existing policy templates the secret path
+from those two claims (`vault_nomad_workloads.hcl.j2:1-7`) and why the
+secret convention is `secret/data/<namespace>/<job_id>/<entry>`.
 
 **Repo principles to respect (cited):**
 
@@ -185,14 +248,22 @@ policy templates the secret path from those two claims
 - `bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json` —
   role: `bound_audiences` (3), `user_claim` (4), fixed `claim_mappings`
   (6-10), `token_policies` (12). Edit only if Q1/Q2 resolve to.
-- `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`
-  — the job-id/namespace-scoped read policy. The test job's secret path
-  must fall under `secret/data/<namespace>/<job_id>/*` for this policy
-  to grant it, or the ticket must add a narrowly scoped policy path.
-- `deployments/infrastructure/providers.tf:7-10,28` — Vault provider
-  `~>5.3.0`, `provider "vault" {}`; where any `vault_jwt_auth_backend`
-  / `vault_jwt_auth_backend_role` / `vault_policy` resources would land
-  if Q1 resolves to Terraform.
+- `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-24`
+  — the shared policy IN FULL: the job-scoped read (`:1-7`), the
+  cluster-wide metadata list (`:9-15`), and the `bootstrap/data/*`
+  read/create/update (`:17-24`). Read-only reference; the doc describes all
+  three. The test job's secret path must fall under
+  `secret/data/<namespace>/<job_id>/*` for the first grant to cover it.
+- `deployments/infrastructure/pki.tf:69-116` — **the live example of the
+  Terraform half of the split**: `vault_policy.haproxy_pki` plus
+  `vault_jwt_auth_backend_role.haproxy` on the Ansible-created `jwt-nomad`
+  mount, with `claim_mappings` replicated and `token_policies` set to the
+  dedicated policy alone. Read-only reference; this is what the doc's
+  convention section describes. (An earlier draft pointed at
+  `providers.tf:7-10,28` as where such resources "would" land — they
+  already landed, here.)
+- `deployments/infrastructure/services/haproxy.hcl:39-41` — the consuming
+  side: `vault { role = "${vault_role}" }`. Read-only reference.
 - `deployments/infrastructure/secrets.tf:1-29` — KV2 mount and the
   `default/<job>/<entry>` secret pattern; the test job's scoped secret
   should be added here (or a sibling file) following this shape.
@@ -209,8 +280,16 @@ policy templates the secret path from those two claims
 
 ## Tests & validation gates
 
+**Prerequisite in a worktree:** run `just worktree_setup <path>`
+(`justfile:30-32`, added in `3c12c7a`) BEFORE the first gate. The
+`terraform-validate` hook has `pass_filenames: false`, so it runs on every
+gate invocation regardless of what F1 touched, and it evaluates
+`file("${path.root}/../../.ssh/id_rsa")` (`services.tf:287`), which is
+gitignored and absent from a fresh worktree. Skip this and the gate red-fails
+for a reason unrelated to the ticket.
+
 **Repo gate:** `just pre_commit`, which runs `pre-commit run --all-files`
-(`justfile:17-18`). Hooks (`.pre-commit-config.yaml`): `check-json`,
+(`justfile:18-19`). Hooks (`.pre-commit-config.yaml`): `check-json`,
 `check-ast`, `check-merge-conflict`, `check-yaml --unsafe`,
 `debug-statements`, `detect-private-key`, `end-of-file-fixer`, local
 `nomad-fmt` (`nomad fmt -recursive`) on `*.hcl` (lines 16-21), and local
@@ -257,12 +336,14 @@ Pre-apply (trust chain exists before F1 touches anything):
 
 At-close (after the scratch test job is deployed):
 
-5. **Scoped probe secret in place.** Write a probe secret under the path
-   the policy already grants, then read it back:
+5. **Operator precondition, NOT a WI proof.** Write the probe secret by
+   hand (`vault kv put`, per Q4 — no Terraform state), then read it back:
    `vault kv get -mount=secret default/wi-test/probe`
-   -> exit 0, non-empty value. Per Q3 the job id `wi-test` yields
-   `secret/data/default/wi-test/*`, already covered by
-   `vault_nomad_workloads.hcl.j2:1-11`, so no policy widening.
+   -> exit 0, non-empty value. This runs under the OPERATOR's token, so it
+   proves only that the secret exists; it says nothing about the keyless
+   path. Per Q3 the job id `wi-test` yields `secret/data/default/wi-test/*`,
+   already covered by `vault_nomad_workloads.hcl.j2:1-7`, so no policy
+   widening. Purge it at teardown.
 6. **Scratch job runs.** `nomad job run tests/wi-vault-probe.nomad.hcl`,
    then `nomad job status -short wi-test`
    -> status `running` (service) or `complete` (batch); the alloc does
@@ -271,16 +352,29 @@ At-close (after the scratch test job is deployed):
    task's `template { ... }` block renders the probe secret via
    `{{ with secret "secret/data/default/wi-test/probe" }}`; confirm the
    rendered file/env is non-empty in the alloc (`nomad alloc logs
-   <alloc-id>` or `nomad alloc fs <alloc-id> <path>`). Equivalently,
-   prove the login leg directly: capture the alloc's WI JWT and run
-   `vault write -format=json auth/jwt-nomad/login role=nomad-workloads jwt=<wi-jwt>`
-   -> exit 0, returns a client token whose `token_policies` include
+   <alloc-id>` or `nomad alloc fs <alloc-id> <path>`).
+   To prove the login leg directly, read the JWT the job renders at
+   `secrets/nomad_vault_default.jwt` — which requires
+   `identity { name = "vault_default" ... file = true }` on the task (Q5).
+   The server-side `default_identity` has `File: null` and `Env: null`
+   (`/v1/agent/self`), so with a bare `vault {}` there is NO JWT on disk to
+   capture and this leg is unexecutable.
+   Then `vault write -format=json auth/jwt-nomad/login role=nomad-workloads jwt=<wi-jwt>`
+   -> exit 0, returning a client token whose `token_policies` include
    `nomad-workloads`.
-8. **Negative case: out-of-scope read denied.** Using the token from
+8. **Negative case: another job's path is denied.** Using the token from
    eval 7, `vault kv get -mount=secret default/other-job/probe`
-   -> HTTP 403 / permission denied, confirming the policy scopes reads
-   to the caller's own `nomad_job_id` path
-   (`vault_nomad_workloads.hcl.j2:1-11`).
+   -> HTTP 403 / permission denied.
+   **Assert only what this proves:** reads under a DIFFERENT job's
+   `secret/data/` prefix are denied. It does NOT prove the token is
+   job-scoped generally — it is not (Context). Pair it with the companion
+   below so the doc records reality.
+9. **Companion: the over-grant is real.** Using the same token,
+   `vault kv get -mount=bootstrap github`
+   -> **succeeds**, demonstrating that every workload can read (and per the
+   policy, overwrite) the bootstrap credentials. Record this in the doc's
+   threat-model section. A green eval 8 without this one licenses a false
+   conclusion.
 
 Record the eval commands and their observed results in
 `docs/workload-identity.md` so the acceptance stays repeatable. Then
@@ -288,10 +382,20 @@ stop the scratch job (`nomad job stop -purge wi-test`) per Q4 so no
 standing test job is left behind.
 
 **Required artifacts:** the scratch job spec
-`tests/wi-vault-probe.nomad.hcl` (formatted by `nomad fmt`, with an
-explicit `identity { aud = ["vault.io"], ... }` stanza per Q5), the
-scoped probe secret, the eval transcript in the doc, and a green `just
-pre_commit` on every added/changed file.
+`tests/wi-vault-probe.nomad.hcl` (formatted by `nomad fmt`), carrying
+
+```
+identity {
+  name        = "vault_default"
+  aud         = ["vault.io"]
+  file        = true
+  change_mode = "restart"
+}
+```
+
+per the corrected Q5 — the `name` is load-bearing, see that resolution. Plus
+the hand-written probe secret, the eval transcript in the doc, and a green
+`just pre_commit` on every added/changed file.
 
 **Eval marker (Definition of Done, five-column scenarios):**
 `.loop/evals/F1-foundation-nomad-wi-jwt-trust.md`.
@@ -333,10 +437,13 @@ pre_commit` on every added/changed file.
    convention, the `identity`-stanza + audience + file-vs-env
    convention, and the explicit "M1 points MinIO `identity_openid` at
    `<JWKS URL>`" line. Passes the slop scan.
-4. **Add the scoped test secret + test job.** Following
-   `secrets.tf` and either `services.tf` (Terraform-managed) or a
-   standalone `*.hcl` (per Q4). Ensure the secret path is covered by
-   `vault_nomad_workloads.hcl.j2` or add a narrow policy path.
+4. **Add the probe secret + test job.** Per Q4 the secret is written by
+   hand with `vault kv put` and purged at teardown — NOT added to
+   `secrets.tf`. Terraform-managing a throwaway probe would leave permanent
+   state and require an apply against `deployments/infrastructure`, which
+   would also re-evaluate F3's PKI and haproxy resources. The job is the
+   standalone `tests/wi-vault-probe.nomad.hcl` with the named identity
+   stanza from Q5.
 5. **Write and run the operator verification.** Execute on the live
    cluster, capture the positive and negative results in the doc.
 6. **Run `just pre_commit` and the adversarial review.**
@@ -394,25 +501,83 @@ pre_commit` on every added/changed file.
 
 ## Resolved forks (operator, 2026-07-23)
 
-- **Q1 → (a) Keep in Ansible.** The JWT trust is the bootstrap-time root
-  of trust that must exist before any Nomad job (including
-  Terraform-deployed ones) can authenticate to Vault, and it already
-  lives and works in Ansible. F1 stays additive: document, test, add new
-  audiences only. No Terraform migration.
-- **Q2 → Keep `vault.io`, add per-consumer audiences.** Retain
+- **Q1 → Ansible keeps the ROOT of trust; Terraform owns per-job roles.**
+  *(Amended 2026-07-25: the original resolution said "no Terraform
+  migration" and was overtaken by F3 the same evening.)* The mount,
+  `config`, the `nomad-workloads` default role, and the shared policy stay
+  in Ansible — they must exist before Terraform can authenticate to Vault at
+  all. But per-job `vault_jwt_auth_backend_role` + `vault_policy` resources
+  now live in Terraform beside the engine they grant, as shipped in
+  `pki.tf:69-116` and consumed via `vault { role = ... }`
+  (`haproxy.hcl:39-41`). F1 documents this split; it migrates nothing.
+- **Q2 → Keep `vault.io`; one audience per VERIFYING SERVICE.** Retain
   `vault.io` for the existing Vault path (renaming breaks every running
-  workload). Introduce a distinct audience per new consumer class as it
-  arrives — `minio` for MinIO, `memex` for memex, etc. Document both.
+  workload). Add a distinct audience only per new consumer class that
+  verifies tokens — `minio` for MinIO, and so on.
+  *(Amended 2026-07-25: the original wording gave `memex` its own audience.
+  That confuses the audience with the client. `minio` is a verifier; memex
+  is a client job. Giving memex its own `aud` would force MinIO to run a
+  second `identity_openid` provider with `client_id = memex`, contradicting
+  M1's single-provider design. Per-job distinction comes from
+  `nomad_job_id`, which is exactly what M1's R4 keys on — never from
+  `aud`.)*
 - **Q3 → Fit the existing policy path.** Name the test job so its
   `nomad_job_id` yields a path already covered by `nomad-workloads`
   (e.g. `secret/data/default/wi-test/probe`). No policy change.
 - **Q4 → Standalone `tests/wi-vault-probe.nomad.hcl`.** Mirror the
   `rescue-ssh.nomad.hcl` pattern; run via operator verification, then
   stop it. No standing test job, no Terraform state entanglement.
-- **Q5 → Explicit `identity` stanza.** Declare
-  `identity { aud = ["vault.io"], ... }` explicitly so the test doubles
-  as the worked example the doc references for M1's non-Vault consumers.
+- **Q5 → Explicit `identity` stanza, NAMED `vault_default`.**
+  *(Corrected 2026-07-25.)* The original resolution said
+  `identity { aud = ["vault.io"], ... }`. Verified against live Nomad
+  1.11.3 via `/v1/jobs/parse`: an UNNAMED `identity` block configures the
+  task's **default** workload identity — the one used against Nomad's own
+  API — not the Vault identity, which is named `vault_<cluster>`.
+  `/v1/agent/self` confirms the cluster is `default`, so the correct
+  override is:
+
+  ```
+  identity {
+    name        = "vault_default"
+    aud         = ["vault.io"]
+    file        = true
+    change_mode = "restart"
+  }
+  ```
+
+  The original form was wrong three ways: it is a no-op for Vault (the job
+  would still log in via the server-side `default_identity`, proving nothing
+  a bare `vault {}` does not); it silently retargets the task's Nomad-API
+  identity audience, which is semantically wrong; and since the server
+  default has `File: null`, no JWT is written to the alloc, making eval 7
+  unexecutable. It would also have handed M1 a template that cannot work —
+  M1's own R2/E2 depend on the named form
+  (`identity { name = "minio" aud = ["minio"] file = true }`, confirmed to
+  parse).
 - **Q6 → Env default, file for raw-JWT consumers.** Document env
   delivery (`template env=true`) as the default; file delivery for
   consumers that read a raw JWT (flag MinIO as file-based, confirm in
   M1). Both carry ephemeral credentials — no static secret reintroduced.
+
+## Open question added 2026-07-25 (operator must settle before pickup)
+
+- **Q7 — Does F1 enable Nomad's OIDC discovery endpoint, or does M1?**
+  F1's requirement 1 promises "the JWKS URL M1 will point MinIO at", and
+  eval 1 checks `/.well-known/jwks.json`, which works. But MinIO's
+  `identity_openid` consumes an OIDC **discovery document**
+  (`MINIO_IDENTITY_OPENID_CONFIG_URL`), and
+  `/.well-known/openid-configuration` returns `OIDC Discovery endpoint
+  disabled` — `oidc_issuer` is unset cluster-wide. Enabling it means adding
+  `server { oidc_issuer = ... }` to
+  `bootstrap/roles/nomad_server/templates/nomad.hcl.j2` and restarting the
+  single Nomad server (`bootstrap_expect = 1`) — a file F1 currently marks
+  read-only. As written, F1 closes green and M1 opens to discover its stated
+  dependency was never delivered.
+  *Recommendation:* add it as a subticket here, since F1 is the ticket that
+  owns the trust chain and the restart is a one-time cost better paid before
+  M1 depends on it. **Safety note, verified:** `auth/jwt-nomad/config` has
+  `bound_issuer: ""`, so setting `oidc_issuer` — which changes the `iss`
+  claim on newly minted WI JWTs — will NOT invalidate existing Vault logins.
+  The risk is the server restart, not the claim change. If the operator
+  prefers to defer, amend F1's non-goals and M1's dependency edge to say
+  explicitly that F1 delivers JWKS only.

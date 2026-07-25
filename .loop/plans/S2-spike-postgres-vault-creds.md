@@ -110,27 +110,79 @@ connection pool when its lease expires.
 
 Must achieve:
 
-1. A decision doc that recommends Path A, records why Path B is rejected
-   (validator-library availability for Vault/Nomad issuers is the gate,
-   plus role mapping), and captures the rotation-in-pools findings.
+1. A decision doc that **reaches** a recommendation, rather than one
+   mandated here. *(Corrected 2026-07-25: three places in this plan
+   previously required the doc to "recommend Path A", and the eval's rubric
+   supplied the Path B rejection rationale as the expected answer. A spike
+   whose conclusion is fixed in advance cannot de-risk anything — it can
+   only fail on a broken command.)* The doc must:
+   - state the **falsifier** up front: the concrete observation under which
+     R3 should NOT proceed with Path A. The obvious candidate is
+     requirement 2's grant test — if a dynamically minted user cannot be
+     given the grants and ownership an app needs without unacceptable
+     `creation_statements` complexity, Path A is not viable and R3 must not
+     be unblocked on it;
+   - record a real Path B evidence step: name the PG18 OAuth validator
+     module, establish whether one exists that accepts Vault/Nomad-issued
+     JWTs, and record the answer. Rejecting Path B on a rationale nobody
+     checked is not evidence;
+   - capture the rotation findings per requirement 4.
 2. A working PoC, proven against the live firebat Postgres, of: the Vault
    `database` secrets engine enabled, a Vault DB connection to PG18, a
    role that mints a short-lived Postgres user, and a Nomad job that reads
    `database/creds/<role>` via Nomad WI and connects to Postgres with the
    minted credential.
+   **The connection test must be a privileged operation against a real
+   owned object, not `select 1`.** `select 1` needs only CONNECT and passes
+   for a role with zero object privileges, so it proves authentication and
+   nothing about viability. Point the PoC role at one real app database
+   (memex or ducklake), write `creation_statements` — a REQUIRED attribute
+   of `vault_database_secret_backend_role`, which this plan previously never
+   mentioned — that reproduce the grants that role needs, and assert a
+   read/write against an existing object owned by the static role.
+   This is the ticket's hardest unknown: the applications layer owns every
+   app object under a static role
+   (`deployments/applications/database.tf:53-68`, `postgresql_database` with
+   `owner = postgresql_role.role[...]`), and R3 names exactly this as its
+   failure mode 4 — *"dynamic user lacks a grant the app needs, or ownership
+   differs from the static role, so migrations or writes fail"*
+   (`R3-rollout-postgres-vault-db-creds.md:409-412`). A spike that declares
+   Path A proven while handing this to R3 undiminished has done nothing.
 3. An explicit test of the known wrinkle: a long-lived connection pool
    holding a credential whose lease expires. Record the observed failure
    mode and the mitigation options.
+   **Set a short `max_ttl` on the PoC role, not just `default_ttl`.**
+   Nomad's template runner renews a renewable Vault lease continuously, so a
+   dynamic DB credential expires at `max_ttl` — unset here, meaning Vault's
+   768h default. As previously specified, this test renews quietly for 32
+   days and reports nothing. Also name the pool apparatus: §7 describes the
+   PoC job as "a minimal `driver = "podman"` job" with no pooling client, so
+   the test currently has no subject.
 
 Restrictions the repo enforces (cite where stated):
 
 - **Secret-path convention.** Follow the epic convention
   `secret/data/<namespace>/<job_id>/<entry>` for any KV touch, and mirror
-  the existing dynamic-secrets path style. The Nomad-workloads Vault policy
-  that governs reachable paths is at
-  `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2`;
-  any new engine path (`database/creds/<role>`) the PoC job needs must be
-  granted by an addition to that policy, not by widening to `*`.
+  the existing dynamic-secrets path style.
+- **DO NOT grant `database/creds/*` by editing the shared Ansible policy.**
+  *(Corrected 2026-07-25: this plan previously made editing
+  `vault_nomad_workloads.hcl.j2` its central wrinkle, which would give every
+  Nomad workload on the cluster read access to `database/creds/*` — for a
+  throwaway spike — and require two live Ansible bootstrap re-runs, apply
+  then revert.)* F3 already shipped the alternative in the same Terraform
+  root, with the opposite answer: `pki.tf:63-84` states the case verbatim
+  ("widening it would let EVERY workload mint certs"; the job "gets its own
+  JWT role and its own policy... a SECOND role on that mount, selected
+  per-job via `vault { role = ... }`, leaving the default `nomad-workloads`
+  role untouched"). Mirror it: `vault_policy` + `vault_jwt_auth_backend_role`
+  bound to the PoC job, `vault { role = ... }` in the jobspec, shared policy
+  untouched.
+- **Record the one-token trade-off as a spike finding for R3.** A Nomad task
+  holds exactly one Vault token, so a dedicated role's policy must ALSO
+  carry the KV grants a converted job still needs (memex's `db-migrate`
+  prestart, mlflow, phoenix). "Widen the shared policy" versus "per-job role
+  that must re-grant KV" is precisely the decision a spike should make for
+  R3, and neither option is free.
 - **Never hardcode credentials; all secrets in Vault KV2** (CLAUDE.md, Key
   Conventions). The Vault DB connection's admin password must come from the
   existing `default/postgres/localstack` KV entry
@@ -162,9 +214,17 @@ New or changed files. Anchors are the existing patterns to mirror.
   clearly labelled throwaway.** Terraform that mounts the `database`
   secrets engine, configures a Vault DB connection to firebat PG18 using
   the admin creds ephemerally read from `default/postgres/localstack`, and
-  defines one short-lived role. Mirror the ephemeral-read pattern at
+  defines one short-lived role (with `creation_statements` per requirement 2
+  and a short `max_ttl` per requirement 3).
+  **The ephemeral-read pattern does not transfer as cited.**
   `deployments/applications/services.tf:11-19` and
-  `deployments/applications/providers.tf:46-53`. Reuse `var.secret_mount`
+  `providers.tf:46-53` are *provider configuration*, the one context where
+  ephemeral values are unconditionally legal; feeding an ephemeral value
+  into an ordinary resource attribute is a hard Terraform error. For
+  `vault_database_secret_backend_connection.postgresql` use
+  **`password_wo` + `password_wo_version`** (write-only attributes present
+  in the pinned vault 5.3.0 provider), and keep the credential OUT of
+  `connection_url`. Reuse `var.secret_mount`
   (`deployments/infrastructure/variables.tf:1-4`) and the vault provider
   at `deployments/infrastructure/providers.tf:28`. NOTE: this lives in the
   infrastructure layer because that is where the Postgres job and its root
@@ -178,19 +238,36 @@ New or changed files. Anchors are the existing patterns to mirror.
   works. Rendered by a `nomad_job` resource mirroring
   `services.tf:293-298`.
 - `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2` —
-  **modify (the load-bearing wrinkle).** Add a `path "database/creds/*"`
-  (or a role-scoped path) with `["read"]` so the WI token carrying the
-  `nomad-workloads` policy can read the dynamic credential. Without this
-  the PoC job's Vault read is denied. Keep the addition minimal and
-  scoped; do not widen existing KV globs. Note this is an Ansible-managed
-  policy: applying it to the live Vault requires re-running the relevant
-  bootstrap task (`bootstrap/roles/nomad_server/tasks/main.yml:265-271`),
-  which is a manual runbook step, not something the loop gate exercises.
+  **DO NOT MODIFY.** *(Corrected 2026-07-25; this was previously listed as
+  "modify — the load-bearing wrinkle".)* Editing the shared policy grants
+  every workload on the cluster `database/creds/*` and needs two live
+  Ansible re-runs. Use the per-job pattern instead, below.
+- `deployments/infrastructure/database-secrets-poc.tf` (same new file) —
+  also carries the authorization: a `vault_policy` granting `read` on
+  `database/creds/<role>` only, plus a `vault_jwt_auth_backend_role` on
+  backend `jwt-nomad` bound to the PoC job's `nomad_job_id`/
+  `nomad_namespace`, with `claim_mappings` replicated. Mirror
+  `pki.tf:69-116` exactly. The PoC job then selects it with
+  `vault { role = "<poc-role>" }` (pattern `haproxy.hcl:39-41`).
 
 ## 8. Tests & validation gates
 
+**Prerequisite in a worktree:** run `just worktree_setup <path>`
+(`justfile:30-32`, added in `3c12c7a`) BEFORE the first gate, or
+`terraform-validate` dies on the gitignored `.ssh/id_rsa` that
+`services.tf:287` evaluates — a failure unrelated to this ticket. The hook
+has `pass_filenames: false`, so it runs on every gate invocation regardless
+of what S2 touched.
+
+**Environment gap: `psql` is NOT installed here.** `which psql` returns
+nothing, and neither `.devcontainer/Dockerfile` nor `bootstrap.sh` installs a
+Postgres client. Requirement 2's connection test therefore cannot run as a
+bare `psql` invocation. Docker-in-docker is enabled, so
+`docker run --rm postgres:18 psql ...` works; alternatively run the check
+from inside the PoC alloc. Name whichever mechanism is chosen.
+
 **Repo gate (what the loop runs):** `just pre_commit` runs
-`pre-commit run --all-files` (root `justfile:17-18`). The hooks in
+`pre-commit run --all-files` (root `justfile:18-19`). The hooks in
 `.pre-commit-config.yaml` now include Terraform validation, so the PoC
 `.tf` is gated, not just formatted:
 
@@ -216,8 +293,9 @@ New or changed files. Anchors are the existing patterns to mirror.
 is held to the markdown slop-scan (`.claude/rules/slop-scan-for-docs.md`):
 run the three layers (P0 critical patterns, document economy, sentence
 slop), verify prose wraps at 80 chars, and confirm `end-of-file-fixer`
-leaves a trailing newline. The doc must be thesis-first (Path A
-recommended) and every backticked identifier / cited path must resolve.
+leaves a trailing newline. The doc must be thesis-first — stating whatever
+conclusion the evidence supports, NOT a pre-mandated one — and every
+backticked identifier / cited path must resolve.
 
 **Evals (live PoC acceptance).** The cluster is reachable this run:
 `VAULT_ADDR`, `VAULT_TOKEN`, `NOMAD_ADDR`, `NOMAD_TOKEN`, and
@@ -312,10 +390,11 @@ gates live at `.loop/evals/S2-spike-postgres-vault-creds.md` (author with the
 Ordered, dependency-aware:
 
 1. **Decision-doc skeleton.** Create
-   `docs/postgres-vault-dynamic-creds-spike.md` with the thesis (Path A
-   recommended), the Path A vs. Path B comparison, and placeholder
-   sections for PoC runbook and rotation findings. Verify: doc passes
-   slop-scan layers and `end-of-file-fixer`.
+   `docs/postgres-vault-dynamic-creds-spike.md` with the **falsifier stated
+   up front** (requirement 1), the Path A vs. Path B comparison, and
+   placeholder sections for the PoC runbook, the grant/ownership result, and
+   the rotation findings. The conclusion is written LAST, after the evidence
+   exists. Verify: doc passes slop-scan layers and `end-of-file-fixer`.
 2. **PoC Terraform.** Add `database-secrets-poc.tf`: mount `database`
    engine, configure the Vault DB connection to firebat PG18 via an
    ephemeral read of `default/postgres/localstack`, define one short-lived
@@ -333,19 +412,29 @@ Ordered, dependency-aware:
    Verify: findings section names the concrete failure and at least one
    mitigation.
 6. **Cleanup + doc finalize.** Tear down PoC resources; finalize the
-   decision doc with the recommendation and the runbook. Verify:
-   `just pre_commit` green; doc complete.
+   decision doc with the recommendation the evidence supports and the
+   runbook. Verify: `just pre_commit` green; doc complete.
+
+**Missing owner:** OQ2 and the evals require the Vault DB connection to
+authenticate as a dedicated `vault-dbengine-admin` Postgres role, but no
+subticket above creates it. It needs `CREATEROLE` and, per requirement 2,
+membership in the app owner roles — and the repo's only `postgresql`
+provider is at `deployments/applications/providers.tf:46-53`, the opposite
+root from where OQ3 places the PoC. Assign its creation to a named subticket
+and resolve the cross-root implication in OQ3 before implementing.
 
 ## 11. Open questions
 
-1. **How is the "working PoC" verified within the loop?** The loop gate
-   (`just pre_commit`) only checks formatting/syntax; it cannot reach the
-   live Vault or firebat Postgres, and the repo has no `terraform validate`
-   recipe or CI. **Recommendation:** treat the committable deliverable as
-   docs + PoC config that pass `just pre_commit`, with the live proof and
-   rotation test performed by the operator via the runbook in the doc. The
-   operator must accept this split before the loop runs, otherwise the
-   `working PoC` criterion is unsatisfiable inside the harness.
+1. **RESOLVED 2026-07-25 — the PoC is proven live.** This question is
+   struck. It claimed the gate "cannot reach the live Vault or firebat
+   Postgres" and that "the repo has no `terraform validate` recipe or CI",
+   both of which §8 itself refutes: `terraform-validate` is a configured
+   pre-commit hook (`.pre-commit-config.yaml:28-33`) and the cluster IS
+   reachable from this environment (`VAULT_ADDR`, `NOMAD_ADDR`,
+   `CONSUL_HTTP_ADDR` and their tokens are set). The two statements
+   contradicted each other, leaving "done" undefined. §8 stands: the PoC is
+   proven live, not merely documented. The one real gap is `psql`, handled
+   in §8.
 
 2. **Which admin identity does the Vault DB connection use to mint users?**
    Reusing the real `localstack` root role risks a cluster-wide outage if
@@ -354,13 +443,25 @@ Ordered, dependency-aware:
    rotation disabled for the spike. Needs an operator decision because it
    adds a role to the live DB.
 
-3. **Layer placement of the PoC Terraform.** Postgres and its root KV
-   entry live in `deployments/infrastructure/`, but the per-app DB roles
-   and the PostgreSQL provider live in `deployments/applications/`
-   (`providers.tf:46-53`). The database engine logically brokers
-   application creds. **Recommendation:** put the PoC in
-   `infrastructure/` since that owns the Postgres job and root creds and
-   already has the vault+nomad providers; revisit for R3.
+3. **Layer placement of the PoC Terraform, AND the Ansible-vs-Terraform
+   split this plan never asked about.** Postgres and its root KV entry live
+   in `deployments/infrastructure/`, but the per-app DB roles and the
+   PostgreSQL provider live in `deployments/applications/`
+   (`providers.tf:46-53`). **Recommendation:** put the PoC in
+   `infrastructure/`; revisit for R3.
+   **The unasked half:** F5 and F6 established a config-split invariant for
+   Vault engines needing a privileged external credential — Ansible owns the
+   mount and `config/`, Terraform owns only the role, precisely because the
+   management credential must stay out of Terraform state (which lives in a
+   Consul backend, `backend.tf:2`). See `consul_deploy_role.tf:7-15` and
+   `nomad_deploy_role.tf:32-35`. The database engine has that exact shape:
+   `database/config/<conn>` holds a Postgres superuser credential. §7 puts
+   both the mount and the connection config in Terraform, quietly departing
+   from the pattern R3 would then inherit at production scale. The invariant
+   is not absolute — F3 put `vault_mount.pki` in Terraform — but PKI needs no
+   external privileged credential, which is the distinguishing criterion.
+   *Operator must settle:* follow F5/F6 (Ansible owns mount + `config/`), or
+   argue the exception explicitly. Do not pick silently.
 
 4. **Scope of the policy path.** Grant `database/creds/*` (all roles) or a
    single-role path for the PoC? **Recommendation:** scope to the one PoC
