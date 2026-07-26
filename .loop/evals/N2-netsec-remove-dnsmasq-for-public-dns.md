@@ -1,0 +1,23 @@
+eval: N2-netsec-remove-dnsmasq-for-public-dns
+
+**Definition of Done:** The dnsmasq job, its `nomad_job` resource, its
+firewall entry and its open port are gone, `docs/dns.md` describes how the lab
+zone resolves now, and every lab hostname still resolves and still reaches the
+edge — from a device that never used the resolver being removed.
+
+**The precondition is the whole ticket.** dnsmasq may only be removed while
+public records answer. It was verified on 2026-07-26 and was false a few hours
+earlier, so row 1 re-checks it at implementation time rather than trusting the
+plan.
+
+| Behavior | Input | Expected | Scorer | Threshold |
+| --- | --- | --- | --- | --- |
+| **Guardrail: the lab zone resolves publicly BEFORE anything is deleted** | Query two independent public resolvers, neither of which is dnsmasq: `dig +short @1.1.1.1 grafana.lab.orangecluster.nl`, the same against `@8.8.8.8`, plus the bare `lab.orangecluster.nl` and an invented name like `brand-new-name.lab.orangecluster.nl` | All four answer `192.168.2.30` from both resolvers. The invented name proves the wildcard, and the bare name needs its own record since a wildcard does not match it. **If any of these fails, block the ticket rather than adapting it** — removing the resolver first strands every lab hostname with no fallback | deterministic check (all names answer 192.168.2.30 from both public resolvers) | 100% |
+| **Guardrail: the operator's public site and mail are untouched** | `dig +short @1.1.1.1 orangecluster.nl` and its MX | Apex returns `37.97.254.29`, MX unchanged. The new records live under `lab.`, and a mistake at the apex would break the live website | deterministic check (apex returns 37.97.254.29) | 100% |
+| The dnsmasq job is gone from the cluster | `nomad job status dnsmasq` | Reports no such job, or the job is `dead` with no running allocation | deterministic check (`nomad job status dnsmasq` finds nothing running) | 100% |
+| **Guardrail: port 53 is actually closed on firebat, not merely dropped from Terraform** | On `192.168.2.30`: `sudo ufw status numbered`, and from the dev container `dig +short @192.168.2.30 grafana.lab.orangecluster.nl` | No ufw rule allowing 53/udp or 53/tcp remains, and the query gets no answer. `null_resource.firewall` only runs `ufw allow` and has no destroy provisioner, so removing the map entry leaves the port open to a service that is no longer listening. Deleting the rule is a manual step and this row is what catches its omission | deterministic check (`ufw status` shows no port 53 rule AND the query fails) | 100% |
+| **Lab hostnames still resolve on a device that never used dnsmasq** | From the dev container, which has always used its own resolver: resolve `grafana.lab.orangecluster.nl` and `mlflow.lab.orangecluster.nl` | Both answer `192.168.2.30`. This is the row that proves the replacement works rather than that the old thing is gone | deterministic check (both resolve to 192.168.2.30) | 100% |
+| **The edge still serves every routed hostname over TLS** | For each routed service, request it through the edge with no `-k` and no `--cacert` | Every hostname answers and the certificate validates. Removing a resolver must not disturb what the edge serves; if this fails, something other than DNS changed | deterministic check (all routed hostnames answer, TLS validates) | 100% |
+| **Guardrail: certificate renewal is unaffected** | Inspect `services/acme.hcl` for `LEGO_DNS_RESOLVERS`, then force a run: `nomad job periodic force acme` | The pin to `1.1.1.1:53` is still present and the run completes. The pin exists precisely so issuance never depended on the resolver being removed, so it must survive this ticket rather than being cleaned up alongside it | deterministic check (pin present AND the forced run completes) | 100% |
+| **Guardrail: nothing beyond the three declared files changed** | `git diff` for the ticket | Only `services/dnsmasq.hcl` deleted, the two `services.tf` blocks removed, and `docs/dns.md` rewritten. No change to the ACME job, HAProxy, any Vault resource, or any other firewall entry | deterministic check (`git diff` confined to the declared surface) | 100% |
+| A reader arriving later learns how the lab zone resolves and what was traded away | Read the rewritten `docs/dns.md` | It states that names resolve from public DNS, that the records point at a private address unreachable from the internet, that split-horizon was given up deliberately so household DNS would not depend on a cluster machine, and that devices behind DNS-rebinding protection may refuse the answers. A file that only says "dnsmasq was removed" fails this row | model + rubric (adversarial review agent) | 4/5 |

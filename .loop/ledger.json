@@ -593,6 +593,27 @@
         "vault",
         "terraform"
       ]
+    },
+    "N2-netsec-remove-dnsmasq-for-public-dns": {
+      "slug": "N2-netsec-remove-dnsmasq-for-public-dns",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "netsec",
+      "dependencies": [],
+      "priority": 22,
+      "summary": "Retire the dnsmasq resolver once the lab zone is published as public A records. Removes the job, its firewall rule and its doc. Reverses T2 deliberately: the operator declined to make household DNS depend on a cluster machine.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "dns",
+        "dnsmasq",
+        "cleanup",
+        "revert"
+      ]
     }
   }
 }
