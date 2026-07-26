@@ -42,7 +42,9 @@ job "acme" {
       }
 
       config {
-        image        = "docker.io/goacme/lego:v5.3.1@sha256:f4fd80df0ef94d2f536cc2e7fb5bdbd090fb0aa81b3595226b9fe814bb9a2bfe"
+        ### Pinned by digest ALONE (tag v5.3.1). A reference carrying both a
+        ### tag and a digest is rejected by the podman driver at run time.
+        image        = "docker.io/goacme/lego@sha256:f4fd80df0ef94d2f536cc2e7fb5bdbd090fb0aa81b3595226b9fe814bb9a2bfe"
         network_mode = "host"
 
         ### `run` is the only issuance command in lego v5 and handles both
@@ -127,7 +129,8 @@ LEGO_DNS_RESOLVERS="1.1.1.1:53"
       driver = "podman"
 
       config {
-        image        = "docker.io/hashicorp/vault:1.21@sha256:4e33b126a59c0c333b76fb4e894722462659a6bec7c48c9ee8cea56fccfd2569"
+        ### Pinned by digest ALONE (tag 1.21), same driver constraint.
+        image        = "docker.io/hashicorp/vault@sha256:4e33b126a59c0c333b76fb4e894722462659a6bec7c48c9ee8cea56fccfd2569"
         network_mode = "host"
         entrypoint   = ["/bin/sh", "-c"]
 

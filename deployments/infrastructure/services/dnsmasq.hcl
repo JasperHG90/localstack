@@ -24,7 +24,12 @@ job "dnsmasq" {
         ### match the record type returns NODATA instead of being forwarded
         ### upstream, which would break the ACME client's zone lookup and
         ### silently stop certificate renewal.
-        image        = "docker.io/4km3/dnsmasq:2.90-r3@sha256:52e25fb2601156ab66f6a0872c180b285df7cafaa41267d8d65689f066490641"
+        ### Pinned by digest ALONE (tag 2.90-r3). The podman driver cannot
+        ### parse a reference carrying both a tag and a digest: it reads
+        ### everything before the first colon as a transport name, fails,
+        ### retries as docker://, and containers/image rejects tag-plus-digest.
+        ### The surfaced error names the transport, not the real cause.
+        image        = "docker.io/4km3/dnsmasq@sha256:52e25fb2601156ab66f6a0872c180b285df7cafaa41267d8d65689f066490641"
         network_mode = "host"
         cap_add      = ["NET_BIND_SERVICE"]
         args         = ["--conf-file=/local/dnsmasq.conf"]

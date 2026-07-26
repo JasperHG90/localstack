@@ -395,6 +395,20 @@
       "dependencies": [],
       "priority": 52,
       "relay_block_nonfork": null
+    },
+    "T4-tls-fix-podman-image-digest-refs": {
+      "slug": "T4-tls-fix-podman-image-digest-refs",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/T4-tls-fix-podman-image-digest-refs.adversarial.md",
+      "dropped": false,
+      "epic": "tls",
+      "dependencies": [],
+      "priority": 80,
+      "relay_block_nonfork": null
     }
   }
 }
