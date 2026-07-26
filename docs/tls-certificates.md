@@ -143,14 +143,19 @@ at fault.
 
 ## Changing the ACME environment
 
-`var.acme_server` defaults to the Let's Encrypt staging endpoint. Staging
-certificates are untrusted by design, which makes them safe for proving the
-job works without spending the production budget.
+`var.acme_server` points at the Let's Encrypt production endpoint. It was on
+staging until the idempotency gate was cleared on 2026-07-26: the job ran
+twice, lego reported `Skip renewal` with the certificate serial unchanged, and
+only then was production enabled.
 
-To go live, set `acme_server` to
-`https://acme-v02.api.letsencrypt.org/directory` and apply. Because state is
-namespaced by environment, the production run starts from an empty tree,
-registers a fresh account, and issues a real certificate. Before flipping,
-run the job twice against staging and confirm the certificate serial is
-unchanged the second time. That is what proves the job is idempotent, and an
-idempotency bug discovered on production costs a week of lockout.
+To test changes to the job, point `acme_server` back at
+`https://acme-staging-v02.api.letsencrypt.org/directory` and apply. Staging
+certificates are untrusted by design, which is what makes them safe for
+experiments. State is namespaced by environment, so the two keep separate
+accounts and certificates under `/acme-state/staging` and
+`/acme-state/production`, and switching does not disturb the other.
+
+Keep the gate in mind whenever the invocation changes. Let's Encrypt allows 5
+certificates per exact set of names per 7 days, so a job that re-issues on
+every run exhausts that in under a week and then cannot issue at all until the
+window rolls forward. Prove idempotency on staging, then come back.
