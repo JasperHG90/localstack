@@ -1,7 +1,7 @@
 ---
 epic = "tls"
 depends_on = ["T1-tls-acme-letsencrypt-transip", "T2-tls-dnsmasq-lab-zone-dns"]
-priority = 60
+priority = 140
 relay_block_nonfork = true
 summary = "Flag-day edge cutover: HAProxy serves the publicly-trusted Let's Encrypt cert from Vault KV2, all twelve routed hostnames rename to <svc>.lab.orangecluster.nl in a single apply, and F3's Vault PKI apparatus is deleted. After this apply no .localstack name is served."
 tags = ["tls", "haproxy", "dns", "vault"]

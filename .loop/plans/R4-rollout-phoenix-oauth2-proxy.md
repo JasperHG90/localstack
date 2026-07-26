@@ -1,447 +1,363 @@
 ---
 epic = "rollout"
-depends_on = ["L1-landing-oauth2-proxy", "A1-audit-plan-premise-sweep"]
+depends_on = ["F2-foundation-vault-oidc-provider", "T3-tls-edge-cutover-lab-domain", "A1-audit-plan-premise-sweep"]
 priority = 5
-summary = "Put the Arize Phoenix web UI behind oauth2-proxy against Vault OIDC, reusing the L1 forward-auth pattern, without breaking OTLP trace ingest, which shares port 6006 with the UI and also listens on gRPC 4317. Only the UI gets the auth-code flow."
-tags = ["phoenix", "oauth2-proxy", "oidc", "haproxy"]
+summary = "Turn on Phoenix's own authentication and point its generic OIDC client at Vault, instead of fronting it with oauth2-proxy. Phoenix speaks OIDC natively and authenticates OTLP ingest with a bearer key on the same port, so the port-6006 split, the extra proxy job, and the L1 dependency all disappear. Enabling auth blocks ingest until the sender presents a key, so the memex job gains an OTLP auth header in the same change."
+tags = ["phoenix", "oidc", "vault", "terraform", "otlp"]
 ---
 
-R4-rollout-phoenix-oauth2-proxy: front the Phoenix web UI with oauth2-proxy against Vault OIDC while leaving OTLP trace ingest working
+# R4 — Sign in to Phoenix with Vault OIDC, natively
+
+> **Rewritten 2026-07-26.** The previous plan's central premise, "Phoenix has
+> **no native OIDC**, so the UI is fronted by oauth2-proxy" (old §3), is false.
+> Phoenix supports a generic OIDC provider and authenticates programmatic
+> access with bearer keys. The oauth2-proxy design, the port-6006 split, and
+> the L1 dependency are all consequences of that premise and are removed. The
+> operator's 2026-07-23 fork resolutions are carried forward or marked
+> superseded in §11. The cancelled content remains in git history.
+>
+> **The slug still says `oauth2-proxy` and now misdescribes the ticket.** See
+> §12.
 
 ## 1. Title
 
-Put the Arize Phoenix **web UI** behind oauth2-proxy (Vault OIDC as the
-human IdP, reusing the L1 forward-auth pattern), routed via HAProxy, so
-that a browser must complete a Vault login to reach the Phoenix console
-— **without** breaking OTLP trace ingest from services, which shares
-port 6006 (HTTP `/v1/traces`) with the UI and also listens on gRPC 4317.
-Only the UI gets oauth2-proxy; ingest does not go through the human
-auth-code flow.
+Enable Phoenix's built-in authentication and point its generic OIDC client at
+Vault's OIDC provider, so a browser must complete a Vault login to reach the
+Phoenix console, and authenticate OTLP trace ingest with a bearer key rather
+than leaving it open. No proxy in front of Phoenix.
 
 ## 2. Size / Effort
 
-**Medium.** The moving parts are small (one oauth2-proxy deployment
-following L1, one HAProxy backend rewrite, one Vault OIDC client added
-in F2's stack, and a path/port split so ingest survives). Effort is
-driven not by line count but by three couplings the implementer must get
-right: (a) the UI and the HTTP OTLP collector share **one port (6006)**,
-so a naive "front 6006 with oauth2-proxy" breaks `memex` trace ingest;
-(b) R4 sits on two tickets that are **not yet implemented** (L1, F2 — see
-Open Questions Q1/Q2); (c) the auth-code flow runs over the LAN's
-plaintext HTTP today, not TLS. The functional success criteria are an
-operator manual-acceptance step, not a loop-runnable test.
+**Small.** Configuration only on both sides: a handful of `PHOENIX_*` env
+settings in an existing Vault-templated block, one OIDC client in Terraform,
+three secrets in KV2, and one added env line on the `memex` job. No new job, no
+proxy, no HAProxy auth change, no application code.
+
+Turning auth on **blocks all trace ingest until the sender presents a key**, so
+the `memex` side is not optional. It is a one-line job change: `memex` already
+supports OTLP exporter headers (§4, verified in source). The remaining effort
+is the Phoenix callback path, which is version-dependent against a `:latest`
+image, and the sequencing so ingest is never dark between applies (§9).
 
 ## 3. Triggered by
 
-Home-lab auth epic. CONFIRMED: **Vault is the OIDC provider for humans**
-(Zitadel dropped); Nomad Workload-Identity JWTs are machine identity.
-Phoenix has **no native OIDC**, so — as with MLflow (R1) — the UI is
-fronted by oauth2-proxy using the L1 forward-auth pattern and a Phoenix
-client in Vault's OIDC provider (F2). This is the per-service rollout
-step R4 for Phoenix.
+Home-lab auth epic, per-service rollout step for Phoenix. CONFIRMED: Vault is
+the OIDC provider for humans (Zitadel dropped); Nomad Workload-Identity JWTs
+are machine identity.
 
-## 4. Context
+The rewrite itself was triggered by the operator on 2026-07-26, who noticed
+that Phoenix documents native authentication:
+https://arize.com/docs/phoenix/self-hosting/features/authentication
 
-Today's deployed state (all anchors resolved in-repo; re-open these, do
-not re-guess):
+This is the same correction G1 applies to Grafana, and the same failure pattern
+A1 was created to sweep for: a plan premise that was never true, surrounded by
+`path:line` anchors that all still resolve.
 
-- **Phoenix job — note: it is under `applications/`, not
-  `infrastructure/`** as the epic brief stated. The job is
+## 4. Context (today's state)
+
+Verified 2026-07-26 against the repo and the running cluster.
+
+- **Phoenix runs under `applications/`, not `infrastructure/`.** The job is
   `deployments/applications/services/phoenix.hcl`, rendered by
   `deployments/applications/services.tf:97-107` with `phoenix_host =
-  "192.168.2.29"` (`services.tf:103`). It pins the mutable tag
-  `docker.io/arizephoenix/phoenix:latest` (`phoenix.hcl:53`), runs
-  `network_mode = "host"` on `orangepi4a` (constraint
-  `phoenix.hcl:6-9`), and exposes **two static ports**:
-  - `http = 6006` (`phoenix.hcl:12-14`) — the **web UI AND the HTTP
-    OTLP collector** (`/v1/traces`) are the same port. Registered as
-    Consul service `phoenix` with an HTTP `/healthz` check
-    (`phoenix.hcl:23-36`).
-  - `grpc = 4317` (`phoenix.hcl:15-17`) — the gRPC OTLP ingest
-    endpoint. Registered as Consul service `phoenix-grpc` with a TCP
-    check (`phoenix.hcl:38-50`).
-- **The port-6006 collision is the load-bearing fact.** `memex` sends
-  traces over HTTP OTLP to
-  `http://${phoenix_host}:6006/v1/traces`
-  (`deployments/applications/services/memex.hcl:143`). It is the only
-  in-repo OTLP sender to Phoenix (repo-wide grep for `6006` / `4317` /
-  `v1/traces` finds only `memex.hcl:143` plus the Phoenix job and the
-  HAProxy backend). Nothing in-repo sends to gRPC 4317, but the port is
-  exposed for external/dev senders. **If all of :6006 is placed behind
-  the browser auth-code flow, `memex` ingest breaks** — this is exactly
-  the UI-vs-ingest distinction the epic calls out, on a single port.
-- **HAProxy edge**, `deployments/infrastructure/services/haproxy.hcl`,
-  runs on `firebat` and binds **plaintext `*:80`** (`haproxy.hcl:49`) —
-  there is **no TLS / port 443 / SSL cert anywhere** (grep confirms).
-  Phoenix is routed by host ACL `phoenix.localstack`
-  (`haproxy.hcl:56`, `use_backend` at `:69`) to backend `phoenix`
-  (`haproxy.hcl:99-101`), which **currently applies HTTP basic auth**:
-  `http-request auth unless { http_auth(openfang_users) }`
-  (`haproxy.hcl:100`) against the `openfang_users` userlist
-  (`haproxy.hcl:45-46`), then proxies to `192.168.2.29:6006`
-  (`haproxy.hcl:101`). MLflow (`haproxy.hcl:115-117`) and Bifrost
-  (`:119-121`) use the same basic-auth line today. The
-  `openfang_password` is injected at
-  `deployments/infrastructure/services.tf:309-313`.
-- **Dependency L1 (oauth2-proxy forward-auth pattern) is not yet in the
-  repo.** No `oauth2-proxy` job, forward-auth config, or L1 ticket file
-  exists (`ls .loop/plans/` shows only F2, M1, S1-S3; repo-wide grep for
-  `oauth2-proxy` outside `.cache` returns only ticket prose). R4 **reuses
-  a pattern that L1 must first establish** — see Q1.
-- **Dependency F2 (Vault OIDC provider) is scoped but not applied.** Its
-  ticket `.loop/plans/F2-foundation-vault-oidc-provider.md` creates the
-  issuer + clients in a new `deployments/infrastructure/oidc.tf`, but its
-  declared clients are **oauth2-proxy (landing page, L1) + three MinIO
-  tiers** (F2 §6, lines 99-102) — **there is no Phoenix client yet**, and
-  F2's issuer is plaintext-HTTP with `https_enabled = false` (F2 Q2). R4
-  needs a Phoenix OIDC client (or to reuse L1's shared client) — see Q3.
+  "192.168.2.29"`. It runs `network_mode = "host"` on `orangepi4a`
+  (`phoenix.hcl:6-9`) and is live: `curl http://192.168.2.29:6006/healthz`
+  returns `200`. Re-read for current line numbers.
+- **The job has exactly one env template today** (`phoenix.hcl:59-66`),
+  injecting `PHOENIX_SQL_DATABASE_URL` from Vault KV2. It already carries a
+  `vault {}` stanza (`phoenix.hcl:57`). This is the block the new settings
+  extend; no new mechanism is required. Phoenix is already Postgres-backed,
+  which is where it stores its user table.
+- **Two static ports** (`phoenix.hcl:12-17`): `6006` serves the web UI **and**
+  the HTTP OTLP collector (`/v1/traces`); `4317` serves gRPC OTLP.
+- **`memex` is the only in-repo trace sender.** `memex.hcl:142-143` sets
+  `MEMEX_SERVER__TRACING__ENABLED=true` and
+  `MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces`. The
+  job sets no header today, but **`memex` supports one**, verified in the
+  vendored source at `apm_modules/JasperHG90/memex`:
+  - `TracingConfig.headers: dict[str, str]`
+    (`packages/common/src/memex_common/config.py:1542-1545`), described as
+    "Optional headers for the OTLP exporter (e.g. auth tokens)".
+  - Passed straight through to the exporter:
+    `OTLPSpanExporter(endpoint=config.endpoint, headers=config.headers or
+    None)` (`packages/core/src/memex_core/tracing.py:46-49`).
 
-What is missing: an oauth2-proxy fronting the Phoenix UI, a Phoenix OIDC
-client in Vault, and a HAProxy routing change that authenticates browser
-paths while leaving OTLP ingest (both the `/v1/traces` HTTP path on 6006
-and gRPC 4317) reachable by services.
+  So the ingest credential is a **job config change, not an upstream code
+  change**. Two caveats the implementer must confirm rather than assume:
+  - The env spelling follows the existing `__` nesting convention, so
+    `MEMEX_SERVER__TRACING__HEADERS`, supplied as a JSON object because the
+    field is a `dict`. **Confirm the exact form pydantic-settings accepts in
+    the deployed build before applying**, since a silently unparsed value
+    means traces stop.
+  - The vendored copy is pinned at `apm.yml:2` (`version: 2a053a7`) and may
+    lag the deployed `memex-jetson` image. Check the running build has the
+    field.
+- **Phoenix's image is the mutable tag `docker.io/arizephoenix/phoenix:latest`
+  (`phoenix.hcl:53`).** Nobody can tell from the repo which Phoenix version is
+  running, and OIDC role mapping and auth env vars vary by version. It is also
+  the only unpinned image in the applications layer, which sits at odds with
+  the T4 digest-pinning commit. Pinning it is out of scope here (§5) but is a
+  precondition the implementer should raise, not silently absorb.
+- **HAProxy** (`deployments/infrastructure/services/haproxy.hcl`) routes
+  Phoenix by host ACL to a backend that applies shared basic auth
+  (`http-request auth unless { http_auth(openfang_users) }`) against the
+  `openfang_users` userlist. MLflow and Bifrost use the same line. Post-T3 the
+  edge serves TLS and the hostname is `phoenix.lab.orangecluster.nl`.
+  **Re-read the file for current line numbers: T3 rewrites this frontend.**
+- **Vault's OIDC provider does not exist yet.** F2 creates the issuer, key,
+  scopes and clients in `deployments/infrastructure/oidc.tf`. F2's declared
+  clients do not include Phoenix. This ticket adds one.
+
+### What Phoenix actually supports
+
+From the authentication doc, fetched 2026-07-26:
+
+- `PHOENIX_ENABLE_AUTH=True` plus `PHOENIX_SECRET` (a long JWT-signing string)
+  turns authentication on.
+- **Generic OIDC**: `PHOENIX_OAUTH2_<IDP>_CLIENT_ID`,
+  `PHOENIX_OAUTH2_<IDP>_CLIENT_SECRET`, `PHOENIX_OAUTH2_<IDP>_OIDC_CONFIG_URL`.
+  The doc's wording is "any IDPs that support OpenID Connect and a well-known
+  configuration endpoint", which Vault's OIDC provider publishes.
+- **Programmatic access uses bearer keys**: `Authorization: Bearer <key>`. The
+  doc notes the header field must be **lowercased** for gRPC compatibility.
+- **`PHOENIX_ADMIN_SECRET`**: a bearer token settable by env var that
+  authenticates as the first system user, usable instead of a UI-minted API
+  key. Minimum 32 characters, at least one digit and one lowercase letter, must
+  differ from `PHOENIX_SECRET`. **This is what makes the ticket automatable**:
+  system API keys are otherwise UI-only, which no Terraform run can do.
+- Enabling auth "will stop collecting traces and block all API access until API
+  keys are created". There is no unauthenticated-ingest escape hatch.
 
 ## 5. Non-goals / out of scope
 
-- **Not** authenticating OTLP trace ingest through the browser
-  auth-code flow. gRPC (4317) must never be routed through oauth2-proxy
-  (it would break the gRPC stream), and the HTTP OTLP path
-  (`/v1/traces` on 6006) must not require an interactive login. R4
-  either leaves ingest unauthenticated on the trusted LAN or gates it
-  with a non-interactive Bearer/mTLS mechanism — a decision to make and
-  document, not route through forward-auth (see Q4).
-- **Not** building the oauth2-proxy forward-auth pattern itself (that is
-  L1) or the Vault OIDC issuer/scope/key (that is F2). R4 consumes both.
-- **Not** rolling MLflow, Bifrost, or any other service behind
-  oauth2-proxy (those are R1 / their own R-tickets). R4 touches Phoenix
-  and its HAProxy backend only.
-- **Not** changing where Phoenix runs, its image, its Postgres backing
-  (`phoenix.hcl:59-66`), or its ports.
-- **Not** terminating TLS at HAProxy or changing the `*:80` listener.
-  If oauth2-proxy or Vault demands an `https` issuer/cookie, that TLS
-  work is a separate cross-cutting ticket (see Q5), consistent with F2
-  Q2.
-- **Not** repointing `memex`'s tracing endpoint away from `/v1/traces`
-  unless Q4's chosen option requires it (default recommendation does
-  not touch `memex.hcl:143`).
+- **Deploying oauth2-proxy for Phoenix.** Phoenix has a native OIDC client; a
+  proxy would be a second, redundant auth layer. This is the reversal.
+- Creating the Vault OIDC issuer, key, or scopes. That is F2.
+- Changing `memex`'s application code. The ingest credential is configuration
+  (§4); if the deployed image turns out to lack `TracingConfig.headers`,
+  upgrading it is a dependency of this ticket, not work done here.
+- Authenticating `memex`'s own HTTP surface. `memex.hcl:138-140` already gates
+  it with API keys, and its edge auth is a separate gap (§12).
+- Pinning `phoenix:latest` to a digest. Real, and it should be its own ticket
+  (§12), but it is not this ticket's subject.
+- Removing HAProxy's shared basic auth from MLflow or Bifrost. Only the Phoenix
+  line is touched.
+- Changing where Phoenix runs, its ports, or its Postgres backing.
+- Role or group mapping beyond flat access. See Q3.
+- LDAP, and Phoenix's built-in OAuth2 authorization server for MCP/CLI clients.
 
 ## 6. Requirements & restrictions
 
 Must achieve:
 
-- Browsing `http://phoenix.localstack` requires a completed Vault OIDC
-  login via oauth2-proxy; an unauthenticated browser is redirected to
-  the Vault login and cannot reach the Phoenix console.
-- OTLP trace ingest continues to work: `memex`'s
-  `http://192.168.2.29:6006/v1/traces` POSTs
-  (`memex.hcl:143`) still succeed, and gRPC 4317 is untouched by
-  HAProxy/oauth2-proxy.
-- The pre-existing HAProxy basic-auth on the Phoenix backend
-  (`haproxy.hcl:100`) is **replaced**, not stacked on top of
-  oauth2-proxy (no double auth). Remove only the Phoenix line; leave
-  MLflow/Bifrost basic-auth lines untouched (surgical change).
-- The OTLP-ingest auth posture (Q4) is **explicitly documented** in the
-  job/HAProxy config or a short doc note, per the epic's instruction to
-  "decide and document."
+1. Browsing `https://phoenix.lab.orangecluster.nl` requires a completed Vault
+   OIDC login. An unauthenticated browser is not served the console.
+2. **OTLP trace ingest keeps working.** `memex` traces continue to arrive after
+   auth is enabled. This is the load-bearing guardrail, same as in the previous
+   plan, for a different reason: the risk is now an unauthenticated sender
+   rather than an intercepting proxy.
+3. The HAProxy shared basic-auth line on the Phoenix backend is **removed**,
+   not stacked on top of Phoenix's own login. Leave MLflow and Bifrost alone.
+4. `PHOENIX_SECRET` and `PHOENIX_ADMIN_SECRET` are distinct values, both
+   generated by Terraform `random_password` and stored in Vault KV2, never
+   committed. `PHOENIX_ADMIN_SECRET` must satisfy the documented complexity
+   rule (>=32 chars, >=1 digit, >=1 lowercase), which `random_password` does not
+   guarantee by default: set `min_lower` and `min_numeric` explicitly.
+5. A way in that does not depend on Vault survives, or its absence is an
+   explicit operator decision. See Q2.
 
-Restrictions the repo enforces (cited):
+Restrictions the repo enforces:
 
-- **Reuse the L1 pattern; do not invent a new one.** R4 must follow
-  whatever oauth2-proxy shape L1 establishes (central forward-auth vs
-  per-service sidecar). "Match existing style… no abstractions for
-  single-use code" (`CLAUDE.md` §2, §3). If L1 is not yet merged, R4 is
-  blocked or must be authored against L1's agreed shape (Q1).
-- **Surface tradeoffs, do not pick silently** (`CLAUDE.md` §1). The
-  port-6006 split, the ingest-auth posture, TLS, and the OIDC-client
-  ownership are forks recorded in §11, not decided here.
-- **Secrets live in Vault KV2, never hardcoded** (`CLAUDE.md` Key
-  Conventions; pattern at
-  `deployments/infrastructure/secrets.tf:10-29`). The oauth2-proxy
-  `client_secret` and `cookie_secret` must come from Vault via a
-  `template { … }` block (as `phoenix.hcl:59-66` and `mlflow.hcl:47-56`
-  template DB creds), never committed. `detect-private-key` runs in
-  pre-commit (`.pre-commit-config.yaml`).
-- **Provider/version pins are authoritative.** The oauth2-proxy image
-  must be pinned to a specific tag (not `latest`) even though the
-  Phoenix job itself uses `:latest` — do not copy that anti-pattern into
-  new config.
-- **Adversarial review before done** (`.claude/rules/adversarial-reviews.md`):
-  hand a sub-agent the port-6006 ingest-survival check specifically.
+- Secrets live in Vault KV2 and reach the job through `template { env = true }`
+  (`CLAUDE.md` Key Conventions; the shape is at `phoenix.hcl:59-66` and
+  `deployments/infrastructure/secrets.tf`). `detect-private-key` runs in
+  pre-commit.
+- The OIDC client is declared in Terraform beside F2's other clients, never
+  created by hand in Vault.
+- Terraform provider pins at `providers.tf` are authoritative. Do not bump.
+- Surgical changes only (`CLAUDE.md` §3): the Phoenix backend line, the Phoenix
+  job's env template, and the new Terraform resources. Nothing adjacent.
+- Adversarial review before done (`.claude/rules/adversarial-reviews.md`). Hand
+  the reviewer the ingest-survival evidence specifically.
 
 ## 7. Code surface
 
-Exact files and anchors, each with the change:
-
-- **`deployments/infrastructure/services/haproxy.hcl:99-101`** — the
-  `backend phoenix` block. Replace the basic-auth line (`:100`) with the
-  L1 forward-auth mechanism (e.g. `http-request auth` replaced by an
-  oauth2-proxy `forward-auth`/`use_backend` to the oauth2-proxy
-  frontend), **scoped to browser paths only**. The OTLP HTTP path
-  (`/v1/traces`, and any `/v1/*` collector path) must bypass auth (an
-  ACL exempting it, or a separate unauthenticated backend to
-  `192.168.2.29:6006`). Confirm the exact split against Q4's chosen
-  option. Server target stays `192.168.2.29:6006`.
-- **oauth2-proxy deployment (shape per L1)** — either a new
-  `deployments/applications/services/phoenix-oauth2-proxy.hcl` (+ a
-  `nomad_job` in `deployments/applications/services.tf` near the Phoenix
-  block at `:96-107`) if L1 uses per-service oauth2-proxy, or a config
-  entry in L1's central oauth2-proxy if L1 is centralized. Do **not**
-  author this until Q1 settles L1's shape. It must template
-  `client_id` / `client_secret` / `cookie_secret` from Vault KV2 and set
-  the Vault OIDC issuer, redirect URL `http://phoenix.localstack/…`
-  (path per L1), and the allowed group (Q6).
-- **`deployments/applications/services/memex.hcl:143`** — READ, cited.
-  Its `…:6006/v1/traces` endpoint is the ingest that must not break.
-  Edited **only if** Q4's chosen option repoints it (default: not
-  touched).
-- **F2's `deployments/infrastructure/oidc.tf`** (created by F2) — add a
-  Phoenix `vault_identity_oidc_client` + its `assignment` + a
-  `vault_kv_secret_v2` for the client secret, following F2 §7 and
-  `secrets.tf:15-29`. This is a **coordination edit into F2's file**
-  (Q3): either R4 adds it, or F2 is extended to include a `phoenix`
-  client. Decide ownership before writing.
-
-Reference anchors the implementer will re-open: `phoenix.hcl:6-9,12-17,
-23-50`, `services.tf:97-107`, `haproxy.hcl:45-46,49,56,69,99-101,309`
-(note `:309` is in `infrastructure/services.tf`, not the job),
-`memex.hcl:143`, F2 ticket §6-§7.
+- **`deployments/applications/services/phoenix.hcl:59-66`** — extend the
+  existing env template with `PHOENIX_ENABLE_AUTH`, `PHOENIX_SECRET`,
+  `PHOENIX_ADMIN_SECRET`, the three `PHOENIX_OAUTH2_VAULT_*` settings, and
+  `PHOENIX_USE_SECURE_COOKIES` (post-T3 the edge is HTTPS). Values come from
+  Vault, not literals.
+- **`deployments/applications/services.tf:97-107`** — thread the new Vault
+  secret paths into the Phoenix `templatefile(...)` var map, following the
+  `phoenix_secret` var already there.
+- **`deployments/infrastructure/oidc.tf`** (created by F2) — add a
+  `vault_identity_oidc_client` for Phoenix with redirect URI
+  `https://phoenix.lab.orangecluster.nl/oauth2/vault/callback` (**confirm the
+  exact callback path against the deployed Phoenix version before applying**;
+  it is version-dependent and a mismatch presents as an opaque provider-side
+  error), plus its assignment.
+- **`deployments/infrastructure/secrets.tf`** — `random_password` +
+  `vault_kv_secret_v2` for the OIDC client secret, `PHOENIX_SECRET`, and
+  `PHOENIX_ADMIN_SECRET`, following the existing shape in that file.
+- **`deployments/applications/services/memex.hcl:142-143`** — add the OTLP
+  auth header beside the existing tracing settings, templated from the same
+  Vault secret Phoenix reads, so the two can never drift. **This file is
+  edited in this ticket**, reversing the previous plan's "default
+  recommendation does not touch `memex.hcl`".
+- **`deployments/infrastructure/services/haproxy.hcl`** — remove the shared
+  basic-auth line from the Phoenix backend only. Re-read for line numbers,
+  T3 rewrites this file.
+- **`docs/`** — how to sign in, and the recovery path from Q2.
 
 ## 8. Tests & validation gates
 
-This ticket ships HCL + Terraform, no Python — the "every code change
-ships a test" constraint (`.claude/rules/python-testing.md`) has no unit
-to exercise here. Two gates apply: the repo's pre-commit run (now
-Terraform-aware) and a now-runnable live acceptance eval.
+### Repo gate
 
-### Repo gate (the loop's gate): `just pre_commit`
+`just pre_commit` runs `pre-commit run --all-files` (`justfile:18-19`) and is
+the single loop gate. It validates both `.hcl` (`nomad fmt -recursive`) and
+`.tf` (`terraform fmt -check`, plus `scripts/tf_validate.sh` running
+`terraform validate` offline against all three roots). The config excludes
+`^\.(claude|loop)/`, so this ticket file is not linted. There is no separate
+Terraform step to run by hand.
 
-`just pre_commit` → `pre-commit run --all-files` (root `justfile:17-18`)
-is the single loop gate and now validates **both** `.hcl` and `.tf`.
-Configured hooks (`.pre-commit-config.yaml`):
+`terraform -chdir=deployments/applications plan` must show the Phoenix job
+updated in place and the new secrets added, destroying nothing.
 
-- Upstream hooks: `check-json`, `check-ast`, `check-merge-conflict`,
-  `check-yaml --unsafe`, `debug-statements`, `detect-private-key`,
-  `end-of-file-fixer` (`.pre-commit-config.yaml:6-13`).
-- Local `nomad-fmt` — `nomad fmt -recursive`, scoped to `.hcl`
-  (`types: [hcl]`, `.pre-commit-config.yaml:16-21`). Every new/edited
-  `.hcl` (the oauth2-proxy job, the HAProxy job) is `nomad fmt`-checked.
-- Local `terraform-fmt` — `terraform fmt -check -recursive`,
-  `types: [terraform]` (`.pre-commit-config.yaml:22-27`).
-- Local `terraform-validate` — `scripts/tf_validate.sh`,
-  `types: [terraform]` (`.pre-commit-config.yaml:28-33`). The script
-  runs `terraform validate` against all three roots
-  (`deployments/infrastructure`, `deployments/applications`,
-  `deployments/applications/modules/bucket`) offline with
-  `init -backend=false`, so it needs no Consul backend or credentials
-  (`scripts/tf_validate.sh:7-19`).
+### Evals
 
-Because `terraform-fmt` and `terraform-validate` run **inside**
-`just pre_commit`, the `.tf` edits this ticket makes (the `nomad_job`
-for oauth2-proxy and/or F2's `oidc.tf`) are formatted and validated by
-the loop gate itself. There is **no separate `terraform fmt` /
-`terraform validate` step to run by hand** — the earlier "terraform not
-validated by pre-commit" caveat no longer holds. The config `exclude`
-is `^\.(claude|loop)/` (`.pre-commit-config.yaml:1`), so this ticket
-file is not linted, and `detect-private-key` plus the KV2 convention
-forbid committing the oauth2-proxy client/cookie secrets in the diff.
+The authoritative set is `.loop/evals/R4-rollout-phoenix-oauth2-proxy.md`,
+rewritten alongside this plan. The load-bearing rows are the ingest survival
+check and the UI gate. **A pass requires the UI to be gated AND ingest to keep
+working. Breaking either side is a fail**, unchanged in spirit from the
+previous plan even though the mechanism is different.
 
-**The loop's verifiable bar is a green `just pre_commit`.**
-
-### Evals (live acceptance)
-
-The cluster is reachable from this environment — `VAULT_ADDR`,
-`VAULT_TOKEN`, `NOMAD_ADDR`, `NOMAD_TOKEN`, and `CONSUL_HTTP_ADDR` are
-all set — so the two R4 success criteria are **runnable** after the
-change is applied, not deferred to a manual step. Run all three checks
-below once `terraform apply` and the Nomad deploy have landed. They
-**depend on L1 (the oauth2-proxy pattern) and F2 (the Vault OIDC
-provider) being applied first** (Open Questions Q1/Q2); until both land
-there is no auth backend for the UI check to redirect to.
-
-Both sides of the port-6006 collision must be evaluated together. A pass
-requires the UI check to gate **and** both ingest checks to stay
-ungated. Breaking either side is a fail.
-
-**(a) UI is gated** — an unauthenticated request is redirected to the
-Vault OIDC login instead of the Phoenix console:
-
-```
-curl -sI https://phoenix.localstack/
-```
-
-Expected: a `302` whose `Location` points at the Vault OIDC login
-(`vault.localstack` / the oauth2-proxy `/oauth2/start` sign-in), **not**
-a `200` that serves the Phoenix app. A `200` means the console is
-reachable unauthenticated — a fail.
-
-**(b) HTTP OTLP ingest still works and is NOT gated** — this is the
-`memex` ingest path (`memex.hcl:143`) that must survive the split:
-
-```
-curl -s -o /dev/null -w '%{http_code}\n' -X POST \
-  http://192.168.2.29:6006/v1/traces \
-  -H 'content-type: application/json' \
-  -d '{"resourceSpans":[]}'
-```
-
-Expected: a **non-auth** status returned by Phoenix's collector itself —
-`200`, `415`, or a `400`/parse error depending on the payload — which
-proves the request reached Phoenix. It must **not** be `302` or `401`:
-either means oauth2-proxy intercepted the ingest path and `memex` trace
-ingest is broken. This is the highest-value check in the ticket.
-
-**(c) gRPC OTLP ingest (4317) is still reachable** and never routed
-through HAProxy/oauth2-proxy (services reach `192.168.2.29:4317`
-directly):
-
-```
-nc -z -w3 192.168.2.29 4317 && echo "4317 open"
-```
-
-Expected: the port is open (`4317 open`). If `nc` is unavailable, use
-`timeout 3 bash -c '</dev/tcp/192.168.2.29/4317' && echo "4317 open"`.
-R4 must leave this path unchanged.
-
-Record the outputs of (a), (b), and (c) at close-out. The port-6006
-ingest-survival evidence ((b) and (c)) is the specific item to hand the
-adversarial reviewer (`.claude/rules/adversarial-reviews.md`).
-
-These live-acceptance scenarios are captured as the loop eval marker at
-`.loop/evals/R4-rollout-phoenix-oauth2-proxy.md` (six rows: job-status, UI
-gated, HTTP `/v1/traces` ungated, gRPC 4317 reachable, no double-auth, and a
-reviewer-judged authenticated-render check).
+Note the asymmetry with the old evals: previously ingest passing meant
+`/v1/traces` answering **without** auth. Now it means answering **with** a
+bearer key, and answering `401`/`403` **without** one.
 
 ## 9. Risk assessment
 
-- **Blast radius (loop-time):** near zero — the loop only edits config
-  and never applies. **Blast radius (apply-time, operator):** medium.
-  Getting the port-6006 split wrong silently breaks `memex` trace ingest
-  (data loss for observability) while the UI still looks fine — the
-  highest-value failure to guard against. A too-broad auth rule locks
-  ingest out; a too-narrow one leaves the UI reachable unauthenticated.
-- **Reversibility:** high. Reverting the HAProxy backend to the
-  basic-auth line (`haproxy.hcl:100`) and removing the oauth2-proxy job
-  restores today's behavior; no data migration.
-- **Likeliest failure modes:** (1) fronting all of :6006 and breaking
-  `memex.hcl:143` ingest (mitigate: path-exempt `/v1/traces`, test it);
-  (2) building against an L1 pattern that does not exist yet, so R4's
-  oauth2-proxy shape diverges from the eventual L1 (mitigate: block on
-  Q1); (3) F2 has no Phoenix client, so the auth-code flow has no valid
-  `client_id`/redirect (mitigate: Q3 coordination); (4) oauth2-proxy
-  rejecting the plaintext-HTTP Vault issuer or refusing to set an
-  insecure cookie over `http://` (mitigate: Q5, `--cookie-secure=false`
-  for v1, mirrors F2 Q2); (5) double auth if the basic-auth line is left
-  in place alongside oauth2-proxy.
+- **Blast radius at apply time: medium, and the failure is silent.** Enabling
+  auth stops trace collection instantly if the sender has no key. The UI will
+  look correct while observability data is quietly lost, which is the same
+  shape of failure as the old plan's port-6006 mistake. It is caught only by
+  explicitly testing ingest.
+- **Lockout.** Misconfigure the OIDC client, or leave Vault sealed, and nobody
+  can log in. Q2 exists for this. Phoenix is less load-bearing during an
+  incident than Grafana (G1's version of this risk), but `PHOENIX_ADMIN_SECRET`
+  gives a bearer-token way in regardless, which is a genuine advantage of this
+  design over the proxy one.
+- **`PHOENIX_ADMIN_SECRET` as the ingest credential grants admin to `memex`.**
+  It is the only non-interactive option, so it is the recommended v1, but it is
+  over-privileged for a trace sender. Q4 records the follow-up.
+- **`:latest` means the deployed feature set is unknown.** Auth env var names
+  and the OIDC callback path have moved across Phoenix releases. Verify against
+  the running container before applying, not against the docs alone.
+- **Reversibility: high.** Remove the env settings and Phoenix returns to
+  unauthenticated; restore the basic-auth line and the edge gate returns. No
+  data migration either way.
+- **Reduced risk versus the old plan:** no new job, no proxy, no HAProxy
+  path-splitting, and one less unmet dependency (L1).
 
 ## 10. Subtickets (ordered, dependency-aware)
 
-1. **Settle the forks (blocking).** Operator answers Q1 (L1 shape +
-   readiness), Q3 (Phoenix OIDC client ownership), Q4 (ingest-auth
-   posture), Q5 (http vs https / cookie), Q6 (which group gates Phoenix).
-   Nothing below can be authored correctly until these are set.
-2. **Add the Phoenix OIDC client** in F2's `oidc.tf`
-   (`vault_identity_oidc_client` + assignment + `vault_kv_secret_v2` for
-   the secret), redirect URI per L1's callback path. `terraform validate`.
-3. **Deploy oauth2-proxy for Phoenix** following L1's pattern
-   (new `.hcl` + `nomad_job`, or L1 central-config entry), templating
-   client/cookie secrets from Vault, issuer = Vault OIDC, allowed group
-   from Q6. `nomad fmt`.
-4. **Rewrite the HAProxy Phoenix backend** (`haproxy.hcl:99-101`):
-   forward-auth for browser paths, **exempt `/v1/traces` (and OTLP HTTP
-   collector paths)** per Q4, remove the basic-auth line, keep the
-   `:6006` server. Leave MLflow/Bifrost lines untouched. `nomad fmt`.
-5. **Document the ingest-auth decision** (Q4) inline in the config
-   and/or a short note under `docs/` (if a doc is added, it is subject to
-   `end-of-file-fixer` and the slop scan,
-   `.claude/rules/slop-scan-for-docs.md`).
-6. **Gate + adversarial review.** Run `just pre_commit`, `terraform
-   fmt`/`validate`; hand a reviewer the port-6006 ingest-survival check
-   (`.claude/rules/adversarial-reviews.md`). Record the operator
-   acceptance procedure (§8) in close-out.
+1. Confirm the deployed builds: which Phoenix version is behind `:latest` and
+   its auth env surface plus callback path, and that the running `memex` image
+   carries `TracingConfig.headers`. Pin `phoenix:latest` to a digest, or get
+   the operator's agreement that it stays mutable for this ticket.
+2. Secrets in Terraform: OIDC client secret, `PHOENIX_SECRET`,
+   `PHOENIX_ADMIN_SECRET`, into KV2.
+3. Phoenix OIDC client in F2's `oidc.tf`, with the verified callback path.
+4. **Give `memex` the ingest credential first**, while Phoenix is still
+   unauthenticated. A header Phoenix ignores is harmless; a missing header
+   after auth is on drops traces. Ordering this before step 5 is what keeps
+   ingest from going dark between applies.
+5. Phoenix job env settings, enabling auth. Apply. Confirm the UI redirects to
+   Vault and that **a trace actually lands**, not merely that the POST
+   returns 200.
+6. Remove the HAProxy basic-auth line from the Phoenix backend only.
+7. Docs: sign-in, and the Q2 recovery path.
+8. Gate and adversarial review. Hand the reviewer the ingest evidence.
 
-## 11. Open questions (forks — operator must settle)
+## 11. Open questions (forks the operator must settle)
 
-- **Q1 — L1 does not exist yet (BLOCKING).** No oauth2-proxy job,
-  forward-auth config, or L1 ticket is in the repo. R4 reuses L1's
-  pattern, so its central-vs-per-service shape and callback path are
-  undefined. *Recommendation:* treat R4 as **blocked on L1 merging**;
-  the "per-service rollout" framing suggests a per-service oauth2-proxy
-  (a sidecar/job fronting `localhost:6006` on `orangepi4a`), so author
-  R4 against that shape but do not implement until L1 lands and fixes the
-  callback path. If the operator wants R4 authored in parallel, pin the
-  assumed L1 shape here first.
-- **Q2 — F2 not yet applied.** F2 (`.loop/plans/F2-…md`) is scoped but
-  its `oidc.tf` is not in the tree. R4's OIDC client depends on F2's
-  issuer/scope/key existing. *Recommendation:* sequence R4 after F2
-  apply; if authored earlier, reference F2's resource names as the
-  contract.
-- **Q3 — Who owns the Phoenix OIDC client?** F2's declared clients are
-  oauth2-proxy-landing-page + three MinIO tiers — no Phoenix client.
-  Does R4 add a dedicated `phoenix` client to F2's `oidc.tf`, or does one
-  shared oauth2-proxy client cover all fronted UIs (if L1 is a single
-  central landing page)? *Recommendation:* if L1 is per-service, add a
-  dedicated `phoenix` `vault_identity_oidc_client` (redirect
-  `http://phoenix.localstack/oauth2/callback`, path per L1) in F2's
-  `oidc.tf` and a `vault_kv_secret_v2` for its secret; if L1 is central,
-  reuse the single client and register `phoenix.localstack` as an allowed
-  redirect. Confirm L1's model first (ties to Q1).
-- **Q4 — OTLP ingest auth posture (the epic asks to decide+document).**
-  The HTTP OTLP collector shares port 6006 with the UI, and gRPC ingest
-  is on 4317. *Recommendation:* for v1, **leave ingest unauthenticated on
-  the trusted LAN**: at HAProxy, exempt `/v1/traces` (and OTLP HTTP
-  collector paths) from oauth2-proxy so `memex.hcl:143` keeps working,
-  and leave gRPC 4317 entirely off the HAProxy path (services reach
-  `192.168.2.29:4317` directly). This keeps R4 UI-only and does not touch
-  `memex.hcl:143`. A Bearer-token or mTLS gate on ingest is a documented
-  **follow-up**, not R4. The alternative — repointing `memex` to gRPC
-  4317 and fully guarding 6006 — expands scope into `memex` config and is
-  not recommended.
-- **Q5 — http vs https / cookie security.** HAProxy binds plaintext
-  `*:80` (`haproxy.hcl:49`) and Vault's issuer is `http://`
-  (F2 Q2). oauth2-proxy defaults to a secure cookie and may reject a
-  non-https issuer. *Recommendation:* v1 runs over `http` on the trusted
-  LAN with `--cookie-secure=false` and `--insecure-oidc-*` as needed;
-  record that a real fix is TLS termination at HAProxy for
-  `phoenix.localstack` (and `vault.localstack`), a separate cross-cutting
-  ticket — the epic brief's "behind TLS" phrasing does **not** match the
-  current plaintext edge and should not be silently assumed.
-- **Q6 — Which Vault identity group may access the Phoenix UI?** F2
-  defines `minio-admins/readers/writers` and `dashboard-users`
-  (F2 §6). *Recommendation:* gate Phoenix on `dashboard-users` (the F2
-  group intended for observability dashboards) via oauth2-proxy's
-  allowed-group setting; if the operator wants Phoenix access decoupled
-  from Grafana/other dashboards, add a dedicated `phoenix-users` group in
-  F2 instead. Confirm before wiring the assignment.
+- **Q1 — ANSWERED 2026-07-26, not a fork.** `memex` supports OTLP exporter
+  headers (`config.py:1542-1545`, `tracing.py:46-49`), so the ingest
+  credential is a job config change. Kept here as a record because the
+  previous plan treated ingest auth as impossible and deferred it. What
+  remains is verification, not a decision: confirm the env spelling and that
+  the deployed image carries the field (§4).
+- **Q2 — What is the way in if Vault is unavailable?** Phoenix supports local
+  username/password accounts alongside OIDC, and `PHOENIX_ADMIN_SECRET` is a
+  bearer token that bypasses the login flow. *Recommendation:* keep local
+  login enabled and treat `PHOENIX_ADMIN_SECRET` as the break-glass path,
+  documented before it is needed. G1 makes the same call for Grafana.
+- **Q3 — Flat access, or map Vault groups to Phoenix roles?** F2 defines
+  `dashboard-users` among its groups. *Recommendation:* start flat, matching
+  the epic's "any successful login is authorized" posture for a
+  single-operator lab, and matching G1's Q2. The operator's 2026-07-23
+  resolution to gate on `dashboard-users` was made for oauth2-proxy's
+  allowed-group setting, which no longer exists in this design; Phoenix's own
+  role mapping is the replacement mechanism and is straightforward to add
+  later.
+- **Q4 — Scoped system key instead of the admin secret, later?**
+  `PHOENIX_ADMIN_SECRET` is the only key provisionable without a browser, so
+  v1 uses it. Whether a scoped system key can then be minted through Phoenix's
+  API using that bearer token is **unverified** and worth one experiment
+  before it is promised. *Recommendation:* ship v1 on the admin secret, record
+  the privilege concern, and revisit.
 
-## Resolved forks (operator, 2026-07-23)
+### Operator fork resolutions carried over from 2026-07-23
 
-- **Q1 → Blocked on L1; per-service dedicated proxy.** Per the locked
-  architecture (dedicated + reverse-proxy across L1/R1/R4), R4 is a
-  dedicated `phoenix` oauth2-proxy fronting `localhost:6006` on
-  `orangepi4a`. Author against that shape; do not implement until L1
-  lands.
-- **Q2 → Sequence after F2 apply.** R4's OIDC client depends on F2's
-  issuer/scope/key. Reference F2 resource names as the contract if
-  authored earlier.
-- **Q3 → Dedicated `phoenix` OIDC client in F2's `oidc.tf`** (+ a
-  `vault_kv_secret_v2` for its secret), redirect
-  `https://phoenix.localstack/oauth2/callback` (https per Q5).
-  CROSS-CUTTING: because the architecture is dedicated-per-service, F2
-  must provision one oauth2-proxy OIDC client PER fronted service —
-  `dash` (L1), `mlflow` (R1), `phoenix` (R4) — not just the
-  landing-page + MinIO-tier clients originally scoped. See the note fed
-  back into F2.
-- **Q4 → UI-only gate; ingest unauthenticated on the LAN.** Exempt
-  `/v1/traces` (+ OTLP HTTP paths) from oauth2-proxy at HAProxy so
-  `memex.hcl:143` keeps working; leave gRPC 4317 off the HAProxy path.
-  Bearer/mTLS on ingest is a documented follow-up, not R4.
-- **Q5 → TLS-consistent: F3 + `--cookie-secure=true`** (revised from the
-  planner's http/insecure v1). Aligns with HTTPS-everywhere
-  (F2/F3/L1/R1). https issuer, depend on F3 for `phoenix.localstack`
-  TLS; no cleartext-cookie interim.
-- **Q6 → Reuse `dashboard-users`.** Gate Phoenix on F2's existing
-  `dashboard-users` group via oauth2-proxy's allowed-group. No dedicated
-  `phoenix-users` group.
+The operator settled six forks against the oauth2-proxy design. Their status:
 
-**Dependencies:** R4 depends on **L1** (pattern) → **F2** (OIDC client,
-`dashboard-users` group) + **F3** (TLS).
+- **Q1 (blocked on L1, per-service dedicated proxy) — SUPERSEDED.** No proxy
+  exists in this design, so L1 is no longer a dependency.
+- **Q2 (sequence after F2) — STANDS.** F2 still owns the issuer.
+- **Q3 (dedicated `phoenix` OIDC client in F2's `oidc.tf`) — STANDS**, and is
+  now simpler: the client belongs to Phoenix itself rather than to a proxy in
+  front of it. The cross-cutting note fed back into F2, that F2 must provision
+  one client per fronted service, still holds for the services that do use
+  oauth2-proxy.
+- **Q4 (UI-only gate, ingest unauthenticated on the LAN) — SUPERSEDED, and
+  reversed.** Phoenix has no unauthenticated-ingest mode once auth is on.
+  Ingest becomes authenticated with a bearer key, which is what the old plan
+  listed as its deferred follow-up. This is a genuine change to what the
+  operator approved and should be re-confirmed.
+- **Q5 (TLS-consistent, `--cookie-secure=true`, depend on F3) — STANDS, with
+  the dependency retargeted.** F3 is done but superseded by T3, which is what
+  actually delivers the trusted cert and the `lab.orangecluster.nl` hostname.
+  `depends_on` names T3.
+- **Q6 (gate on `dashboard-users`) — SUPERSEDED as written.** See Q3 above.
+
+## 12. Findings for other tickets
+
+Surfaced while rewriting this plan, out of scope here, recorded so they are not
+lost:
+
+- **`phoenix:latest` is unpinned** (`phoenix.hcl:53`), the only such image in
+  the applications layer, and at odds with the T4 digest-pinning work. It is
+  also why this ticket cannot state the deployed auth surface with certainty.
+  Deserves its own ticket.
+- **`memex`'s edge auth was never assigned.** `memex` is routed at the HAProxy
+  edge behind the same shared `openfang_users` basic auth as MLflow, Phoenix,
+  and Bifrost, and no rollout ticket covers replacing it. This is the same gap
+  G1 found for Grafana. If `memex` supports OIDC for humans and workload
+  identities in a build newer than the vendored pin, the fix is native auth
+  like G1 and this ticket, not oauth2-proxy. Worth its own ticket; confirm the
+  capability against the current `memex` release first, since the vendored
+  copy at `apm.yml:2` shows API-key auth only
+  (`packages/core/src/memex_core/server/auth.py:1,52-61`).
+
+## 13. Ticket identity
+
+The slug `R4-rollout-phoenix-oauth2-proxy` now describes the approach this
+plan rejects. Every ledger line, eval filename, and future commit subject will
+say `oauth2-proxy` for a ticket that deliberately avoids one, which is exactly
+the "looks fine, is wrong" pattern A1 exists to catch.
+
+Renaming is safe but manual: no other ticket declares R4 as a dependency
+(verified against `.loop/ledger.json`), and `loopctl` has no rename command, so
+it means registering `R4-rollout-phoenix-native-oidc`, moving this file and the
+eval marker, and dropping the old slug. Recommend doing it before
+implementation starts. Operator's call.

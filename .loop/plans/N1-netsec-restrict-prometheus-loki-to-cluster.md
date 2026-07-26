@@ -1,7 +1,7 @@
 ---
 epic = "netsec"
 depends_on = []
-priority = 58
+priority = 150
 summary = "Prometheus and Loki answer their query APIs to the entire LAN with no credentials. Narrow both firewall rules to the callers that actually need them, leaving Grafana (which authenticates) reachable. The two rules live in different Terraform roots."
 tags = ["prometheus", "loki", "firewall", "security", "terraform"]
 ---

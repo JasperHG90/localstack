@@ -262,17 +262,19 @@
       "dropped": false,
       "epic": "rollout",
       "dependencies": [
-        "L1-landing-oauth2-proxy",
+        "F2-foundation-vault-oidc-provider",
+        "T3-tls-edge-cutover-lab-domain",
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": "Put the Arize Phoenix web UI behind oauth2-proxy against Vault OIDC, reusing the L1 forward-auth pattern, without breaking OTLP trace ingest, which shares port 6006 with the UI and also listens on gRPC 4317. Only the UI gets the auth-code flow.",
+      "summary": "Turn on Phoenix's own authentication and point its generic OIDC client at Vault, instead of fronting it with oauth2-proxy. Phoenix speaks OIDC natively and authenticates OTLP ingest with a bearer key on the same port, so the port-6006 split, the extra proxy job, and the L1 dependency all disappear. Enabling auth blocks ingest until the sender presents a key, so the memex job gains an OTLP auth header in the same change.",
       "relay_block_nonfork": null,
       "tags": [
         "phoenix",
-        "oauth2-proxy",
         "oidc",
-        "haproxy"
+        "vault",
+        "terraform",
+        "otlp"
       ]
     },
     "S1-spike-boundary-evaluation": {

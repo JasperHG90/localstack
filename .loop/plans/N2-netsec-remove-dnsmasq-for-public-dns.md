@@ -1,7 +1,7 @@
 ---
 epic = "netsec"
 depends_on = []
-priority = 22
+priority = 160
 summary = "Retire the dnsmasq resolver once the lab zone is published as public A records. Removes the job, its firewall rule and its doc. Reverses T2 deliberately: the operator declined to make household DNS depend on a cluster machine."
 tags = ["dns", "dnsmasq", "cleanup", "revert"]
 ---
