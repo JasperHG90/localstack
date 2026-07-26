@@ -131,18 +131,35 @@ the trusted cert, T2 the resolution; this ticket flips the edge.
   prometheus.localstack / grafana.localstack" steps. **Relayed from F3.**
 - `docs/tls-certificates.md` (already exists) — add the serving half: how
   HAProxy consumes the cert and what a renewal looks like from the edge.
-  **Also correct the statements that describe this cutover in the present
-  tense**, written when the file was authored and true only once this ticket
-  lands: "The edge proxy templates these into a single PEM file", "Names
-  resolve on the LAN only, from the local resolver", and the verification
-  `curl https://grafana.lab.orangecluster.nl/`. Until the flip that hostname
-  does not resolve, so an operator following the doc debugs a certificate
-  that is fine. Re-read the file for current line numbers.
-  While editing, note the field shape the doc already records: `certificate`
-  holds the leaf AND its issuing chain, and `issuer_chain` repeats that
-  intermediate separately. The HAProxy PEM therefore needs only `certificate`
-  plus `private_key`; appending `issuer_chain` sends the intermediate twice,
-  which is harmless but pointless.
+
+  **RELAYED FINDING** *(from T1-tls-acme-letsencrypt-transip, surfaced by its
+  adversarial review, re-verified live 2026-07-26. Constraint, not a fork:
+  the doc must describe reality, and there is no decision open.)*
+
+  The doc describes this cutover in the present tense, because it was written
+  before the cutover existed. Two statements are still false as of the
+  re-verification and this ticket is what makes them true:
+
+  1. Line ~53, "The edge proxy templates these into a single PEM file and
+     reloads when they change." HAProxy does not read this secret yet.
+  2. Line ~117, the verification `curl -sS -o /dev/null -w '%{http_code}\n'
+     https://grafana.lab.orangecluster.nl/`. Measured today it exits **000**:
+     the name now resolves, but the edge still serves the old `*.localstack`
+     leaf, so TLS verification fails. An operator following the doc right now
+     debugs a certificate that is fine.
+
+  **Do NOT touch the third statement.** Line ~63, "There is no public A record
+  for the lab zone. Names resolve on the LAN only, from the local resolver",
+  was also false when this finding was first raised and has since become TRUE:
+  the resolver was applied and answers. Re-read all three before editing
+  rather than trusting these line numbers.
+
+  While editing, note the field shape, confirmed against the live certificate:
+  `certificate` holds the leaf AND its issuing chain (4 PEM blocks on the
+  current production leaf), and `issuer_chain` repeats that intermediate on
+  its own. The HAProxy PEM therefore needs only `certificate` plus
+  `private_key`; appending `issuer_chain` sends the intermediate twice, which
+  is harmless but pointless.
 - `.loop/plans/L1-landing-oauth2-proxy.md` — update requirements 10 and 11,
   which currently name `.localstack` and tell the implementer no PKI work
   follows. Plan files are excluded from the tree fingerprint.

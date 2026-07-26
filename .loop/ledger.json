@@ -351,10 +351,13 @@
     },
     "T3-tls-edge-cutover-lab-domain": {
       "slug": "T3-tls-edge-cutover-lab-domain",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "out-of-scope-fix-needed",
+        "reason": "docs/tls-certificates.md relayed from T1: two present-tense claims about this cutover are still false (edge templates the PEM; the verification curl exits 000). Operator triage per relay_block_nonfork."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
