@@ -172,11 +172,12 @@ Restrictions the repo enforces (cite where stated):
   Nomad workload on the cluster read access to `database/creds/*` — for a
   throwaway spike — and require two live Ansible bootstrap re-runs, apply
   then revert.)* F3 already shipped the alternative in the same Terraform
-  root, with the opposite answer: `pki.tf:63-84` states the case verbatim
-  ("widening it would let EVERY workload mint certs"; the job "gets its own
-  JWT role and its own policy... a SECOND role on that mount, selected
-  per-job via `vault { role = ... }`, leaving the default `nomad-workloads`
-  role untouched"). Mirror it: `vault_policy` + `vault_jwt_auth_backend_role`
+  root, with the opposite answer: `acme.tf:50-65` makes the case in its
+  comment, that the job gets its own JWT role and its own policy as a second
+  role on the Ansible-owned mount, selected per-job via
+  `vault { role = ... }`, leaving every other workload on the default role
+  untouched. (F3 stated it first, in the `pki.tf` that T3 deleted; the
+  archived plan keeps that wording.) Mirror it: `vault_policy` + `vault_jwt_auth_backend_role`
   bound to the PoC job, `vault { role = ... }` in the jobspec, shared policy
   untouched.
 - **Record the one-token trade-off as a spike finding for R3.** A Nomad task
@@ -249,8 +250,8 @@ New or changed files. Anchors are the existing patterns to mirror.
   `database/creds/<role>` only, plus a `vault_jwt_auth_backend_role` on
   backend `jwt-nomad` bound to the PoC job's `nomad_job_id`/
   `nomad_namespace`, with `claim_mappings` replicated. Mirror
-  `pki.tf:69-116` exactly. The PoC job then selects it with
-  `vault { role = "<poc-role>" }` (pattern `haproxy.hcl:39-41`).
+  `acme.tf:41-90` exactly. The PoC job then selects it with
+  `vault { role = "<poc-role>" }` (pattern `services/acme.hcl:73-75`).
 
 ## 8. Tests & validation gates
 

@@ -6,12 +6,12 @@ summary = "Deploy gethomepage as a Nomad job with static config on a dynamic hos
 tags = ["homepage", "nomad", "haproxy", "oauth2-proxy"]
 ---
 
-# L2: OAuth-gated Homepage (gethomepage) landing page at dash.localstack
+# L2: OAuth-gated Homepage (gethomepage) landing page at dash.lab.orangecluster.nl
 
 ## 1. Title
 
 Deploy Homepage (gethomepage) as a Nomad job with static file config on a
-dynamic host volume, and route it behind HAProxy at `dash.localstack`
+dynamic host volume, and route it behind HAProxy at `dash.lab.orangecluster.nl`
 gated by the L1 oauth2-proxy forward-auth, so an authenticated operator
 sees a themed landing page with tiles and live-status widgets for the
 cluster services.
@@ -38,7 +38,7 @@ which depends on F2+F3) makes gate-able.
 ## 4. Context
 
 Today the cluster has a hostname-routing browser front door but no
-landing page: an operator must know each `*.localstack` hostname by hand.
+landing page: an operator must know each `*.lab.orangecluster.nl` hostname by hand.
 
 - **Front door.** HAProxy runs as a Nomad job pinned to `firebat`
   (`deployments/infrastructure/services/haproxy.hcl:6-9`), binds plain
@@ -71,7 +71,7 @@ landing page: an operator must know each `*.localstack` hostname by hand.
   `template` stanzas (`grafana.hcl:86-125`). Homepage's YAML config should
   follow this exact pattern (inline `template` -> `local/...` -> mounted
   read-only), starting static.
-- **Service placement / DNS.** All `*.localstack` names resolve to firebat
+- **Service placement / DNS.** All `*.lab.orangecluster.nl` names resolve to firebat
   (`192.168.2.30`), the HAProxy host, per
   `docs/haproxy_reverse_proxy.md:1-3,20-27`. The nine services to tile are
   already reachable through HAProxy backends: minio/s3
@@ -114,7 +114,7 @@ The change MUST:
    `deployments/infrastructure/services/homepage.hcl`, driver `podman`,
    arm64-compatible image pinned to a specific tag (not `latest`),
    modeled structurally on an existing service job (grafana/nats). Set
-   `HOMEPAGE_ALLOWED_HOSTS` to `dash.localstack` — recent gethomepage
+   `HOMEPAGE_ALLOWED_HOSTS` to `dash.lab.orangecluster.nl` — recent gethomepage
    releases refuse requests otherwise, which would surface as a blank/403
    page behind the proxy. (Verify the exact env-var name against the
    pinned image's docs during implementation.)
@@ -131,17 +131,17 @@ The change MUST:
    `services.tf` using `templatefile(...)` (model: `services.tf:333-355`),
    with `depends_on` on the new host volume.
 4. **Add the `dash` route to HAProxy** in `haproxy.hcl`: a
-   `hdr(host) -i dash.localstack` ACL (model: `haproxy.hcl:51-62`), a
+   `hdr(host) -i dash.lab.orangecluster.nl` ACL (model: `haproxy.hcl:51-62`), a
    matching `use_backend` (model: `haproxy.hcl:64-75`), and a `backend`
    block pointing at the Homepage host:port. The backend MUST be gated by
    L1's forward-auth, not by `http_auth(openfang_users)` (see Q1).
 5. **Populate tiles for all nine services** — MinIO, Postgres, Grafana,
    Prometheus, Loki, Phoenix, Memex, MLflow, NATS — pointing at their
-   real reachable URLs (the `*.localstack` HAProxy hostnames where routed;
+   real reachable URLs (the `*.lab.orangecluster.nl` HAProxy hostnames where routed;
    direct host:port for Postgres and NATS monitoring per Context).
 6. **Add live-status widgets** for the services that support them
    (Homepage `siteMonitor`/service widgets), so tiles show up/down.
-7. **Success criterion:** browsing `http://dash.localstack` after passing
+7. **Success criterion:** browsing `http://dash.lab.orangecluster.nl` after passing
    L1 OAuth login renders the themed Homepage with working tiles;
    unauthenticated access is blocked by L1's forward-auth. Confirm the
    config renders (nomad job runs healthy) and the HAProxy config is
@@ -239,11 +239,11 @@ gate, plus live evals run against the reachable cluster.
   `terraform apply`, to baseline) or **[close-out]** (only after apply).
 
   1. **[pre-apply] No `dash` route yet (baseline).**
-     `curl -sI http://dash.localstack/` — expect NOT a Homepage 200
+     `curl -sI http://dash.lab.orangecluster.nl/` — expect NOT a Homepage 200
      (HAProxy has no `dash` backend today: a 503/no-backend or connection
      refusal), confirming the route is introduced by this ticket.
   2. **[pre-apply] Reference route baseline for regression.**
-     `curl -sI http://grafana.localstack/` — record the returned status
+     `curl -sI http://grafana.lab.orangecluster.nl/` — record the returned status
      line; check 7 compares against it.
   3. **[close-out] Homepage alloc healthy.**
      `nomad job status homepage` — expect the `homepage` group `Running`
@@ -251,26 +251,26 @@ gate, plus live evals run against the reachable cluster.
      `nomad alloc status <alloc-id>` shows the task's health `check`
      passing.
   4. **[close-out] Unauthenticated request is blocked by L1.**
-     `curl -sI http://dash.localstack/` — expect a `302` redirect to the
+     `curl -sI http://dash.lab.orangecluster.nl/` — expect a `302` redirect to the
      Vault/oauth2-proxy login (`Location:` header pointing at the L1
      auth endpoint), NOT `HTTP/1.1 200`. A 200 here means the Homepage is
      served without auth and FAILS acceptance (Risk 1).
   5. **[close-out] Authenticated request renders the Homepage.** With a
      valid L1 session cookie (from a completed OAuth login), e.g.
      `curl -s --cookie "<oauth2-proxy session cookie>"
-     http://dash.localstack/` — expect `200` and the Homepage HTML body.
+     http://dash.lab.orangecluster.nl/` — expect `200` and the Homepage HTML body.
   6. **[close-out] The nine service tiles are present.** Pipe the
      authenticated body through grep:
-     `curl -s --cookie "<cookie>" http://dash.localstack/ | grep -Eio
+     `curl -s --cookie "<cookie>" http://dash.lab.orangecluster.nl/ | grep -Eio
      'minio|postgres|grafana|prometheus|loki|phoenix|memex|mlflow|nats'`
      — expect all nine names to match. Then confirm each tile's
      `siteMonitor`/service widget resolves (status shown, not error) in
      the rendered page or Homepage's service-status API, with each tile
      pointing at a reachable URL per Section 6 req 5 (HAProxy
-     `*.localstack` hostnames, Postgres on firebat:5432, NATS monitoring
+     `*.lab.orangecluster.nl` hostnames, Postgres on firebat:5432, NATS monitoring
      on radxa:8222).
   7. **[close-out] No existing route regressed.**
-     `curl -sI http://grafana.localstack/` — expect the same status line
+     `curl -sI http://grafana.lab.orangecluster.nl/` — expect the same status line
      recorded in check 2, confirming the heredoc `haproxy.hcl` edit did
      not break shared routing.
 
@@ -299,7 +299,7 @@ gate, plus live evals run against the reachable cluster.
      it explicitly. If L1 is not merged, do not ship an open route — see
      Q1.
   2. **`HOMEPAGE_ALLOWED_HOSTS` unset/wrong** — page returns blank/403
-     behind the proxy host header. Set it to `dash.localstack`.
+     behind the proxy host header. Set it to `dash.lab.orangecluster.nl`.
   3. **HAProxy heredoc syntax error** — breaks all routing; mitigated by
      the config-validity check.
   4. **Node/port collision** — Homepage default port (3000) collides with
@@ -378,7 +378,7 @@ default.
 
 - **Q1 → Hard-block on merged L1.** L2's gated route waits until L1
   exists. Integration is **reverse-proxy**, not forward-auth (per L1-Q2):
-  HAProxy routes `dash.localstack` → oauth2-proxy (L1) →
+  HAProxy routes `dash.lab.orangecluster.nl` → oauth2-proxy (L1) →
   `--upstream` Homepage (L2). **Reconcile all "forward-auth" wording in
   this ticket to reverse-proxy.** Never ship an unauthenticated page or a
   basic-auth stand-in.
@@ -396,5 +396,5 @@ default.
 
 **Dependencies:** L2 depends on **L1** (which depends on F2 + F3) and on
 **F4** (network-wide `.localstack` DNS) — L2 must not be marked done until
-F4 lands, so `dash.localstack` resolves from non-Mac LAN devices, not just
+F4 lands, so `dash.lab.orangecluster.nl` resolves from non-Mac LAN devices, not just
 via the operator's `/etc/hosts`.

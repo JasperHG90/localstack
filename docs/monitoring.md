@@ -36,10 +36,10 @@ Closing the second one means adding authentication at the edge, either the
 existing basic-auth pattern or the OIDC work the rollout epic is doing for
 other services. No ticket owns that for these two backends today.
 
-Note also that `prometheus.localstack` and `loki.localstack` do not resolve
-on the LAN, so the edge is reachable by address or by a hosts entry rather
-than by name. The edge cutover ticket renames this whole set to the
-`lab.orangecluster.nl` domain, which is when the names start working.
+Both names resolve from public DNS today, and once the edge cutover is
+applied it serves them over a publicly-trusted certificate, so reaching them
+takes a browser and nothing else. That is the point of the edge, and it is
+also why the paragraph above matters.
 
 ### Applying a change to these rules
 
@@ -64,11 +64,11 @@ Only one of them matters, and it is the dangerous one. **Losing Grafana's
 3000 rule takes Grafana down by every route, tailnet included.** `ubuntu`
 has no tailscale interface (`lo`, `eth0`, `wlan0`, `podman0`, `veth0`), so
 the `100.64.0.0/10` rule beside it is already dead at the interface level and
-is not a fallback. Tailnet users arrive at `grafana.localstack`, which
-resolves to the tailnet address of HAProxy, and HAProxy then dials
-`192.168.2.47:3000` from `192.168.2.30`, a LAN source admitted by the LAN
-rule. Everyone depends on the rule that would vanish, and nothing announces
-it.
+is not a fallback. Tailnet users arrive at `grafana.lab.orangecluster.nl`,
+which resolves to `192.168.2.30` and is reachable over Tailscale's subnet
+route, and HAProxy then dials `192.168.2.47:3000` from `192.168.2.30`, a LAN
+source admitted by the LAN rule. Everyone depends on the rule that would
+vanish, and nothing announces it.
 
 Losing the 9100 rule, by contrast, breaks nothing. Its source and its host
 are the same machine, `.47` to `.47` routes over `lo`
@@ -322,10 +322,11 @@ Add to `frontend stats`:
     http-request use-service prometheus-exporter if { path /metrics }
 ```
 
-Add to `frontend http_in`:
+Add to `frontend https_in`, the `:443` frontend where all routing lives.
+`http_in` only 301-redirects, so an ACL placed there can never route:
 ```
-    acl is_prometheus hdr(host) -i prometheus.localstack
-    acl is_grafana    hdr(host) -i grafana.localstack
+    acl is_prometheus hdr(host) -i prometheus.lab.orangecluster.nl
+    acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
     use_backend prometheus if is_prometheus
     use_backend grafana    if is_grafana
 ```
@@ -333,10 +334,10 @@ Add to `frontend http_in`:
 Add backend blocks:
 ```
 backend prometheus
-    server prometheus1 192.168.2.30:9090 check
+    server prometheus1 192.168.2.47:9090 check
 
 backend grafana
-    server grafana1 192.168.2.30:3000 check
+    server grafana1 192.168.2.47:3000 check
 ```
 
 ---
@@ -360,6 +361,6 @@ backend grafana
 
 1. After bootstrap re-run: `curl http://192.168.2.30:4646/v1/metrics?format=prometheus` returns metrics
 2. After `just apply`: check Nomad UI for jobs `prometheus`, `grafana`, `node-exporter` (system), `postgres` (updated)
-3. Visit `prometheus.localstack` -- Status > Targets should show all 8+ targets as UP
-4. Visit `grafana.localstack` -- login with admin/password-from-vault, Prometheus datasource should be pre-configured
+3. Visit `prometheus.lab.orangecluster.nl` -- Status > Targets should show all 8+ targets as UP
+4. Visit `grafana.lab.orangecluster.nl` -- login with admin/password-from-vault, Prometheus datasource should be pre-configured
 5. Import community dashboards: Node Exporter Full (1860), PostgreSQL (9628)

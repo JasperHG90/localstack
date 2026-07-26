@@ -50,18 +50,26 @@ fields therefore sends the intermediate twice. That is harmless, since
 receivers ignore the duplicate, but a consumer needs only `certificate` and
 `private_key` to serve a complete chain.
 
-The edge proxy templates these into a single PEM file and reloads when they
-change.
+HAProxy reads `certificate` and `private_key` from this path with a Vault
+template, writes them as the single concatenated PEM its `crt` argument
+expects, and restarts when the stored secret changes. It does not append
+`issuer_chain`, for the reason above. See the TLS section of
+`docs/haproxy_reverse_proxy.md` for the serving side.
 
 ## What is public and what is not
 
-Only two things about this domain are visible from the internet. The first is
-a CAA record on `lab.orangecluster.nl` naming Let's Encrypt as the only CA
-permitted to issue for the zone. The second is the `_acme-challenge` TXT
-record, which lego creates during issuance and removes afterward.
+A CAA record on `lab.orangecluster.nl` names Let's Encrypt as the only CA
+permitted to issue for the zone, and lego creates an `_acme-challenge` TXT
+record during issuance and removes it afterward.
 
-There is no public A record for the lab zone. Names resolve on the LAN only,
-from the local resolver. Nothing about the cluster's addressing is published.
+The lab zone also has public A records: `*.lab` and the bare `lab` both
+answer `192.168.2.30`. That address is RFC1918 and unroutable from the
+internet, so resolving a lab name from outside gains an attacker the internal
+address and the knowledge that the zone exists, not a route to it. The local
+resolver that used to serve these names privately was removed once the public
+records existed, because keeping it meant household DNS depending on a
+machine in the cluster. `docs/dns.md` covers that trade and the exposure it
+accepts.
 
 One thing is public and permanent: certificate transparency logs record every
 Let's Encrypt certificate, so `*.lab.orangecluster.nl` is a matter of public
@@ -72,7 +80,7 @@ hostname.
 ## State, and why it matters
 
 lego keeps its ACME account key and the issued bundle on a Nomad host volume
-named `acme_state`, mounted at `/acme-state`. Each nightly run is a new
+named `acme_lego_state`, mounted at `/acme-state`. Each nightly run is a new
 allocation with a fresh working directory, so without this volume lego would
 register a new ACME account and request a new certificate every single night.
 

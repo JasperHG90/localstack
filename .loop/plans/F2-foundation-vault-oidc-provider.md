@@ -55,24 +55,24 @@ backend, applied with `just apply`):
   `jwt-nomad/`). There is no `userpass`, `oidc`, or `ldap` auth method
   for humans, and no `vault_identity_entity` / group resources. This is
   the central prerequisite fork (see Open Questions Q1).
-- **HOSTNAME CHANGE, 2026-07-25.** Every `vault.localstack` reference below is
-  stale. F3's TLS shipped an unusable wildcard (`*.localstack` cannot match a
-  hostname), so the edge is moving to `*.lab.orangecluster.nl` with a
+- **HOSTNAME CHANGE, 2026-07-25, LANDED.** The references below now read
+  `vault.lab.orangecluster.nl` and are current. F3's TLS shipped an unusable
+  wildcard (`*.localstack` cannot match a hostname), so the edge moved to
+  `*.lab.orangecluster.nl` with a
   publicly-trusted Let's Encrypt cert. This ticket's `depends_on` was
   retargeted from F3 to T3 for that reason: an OIDC **issuer URL** is baked
-  into client configs and issued tokens, so committing to
-  `https://vault.localstack` before the rename would mean re-issuing it.
-  Read every `vault.localstack` below as `vault.lab.orangecluster.nl`, and
-  the issuer as `https://vault.lab.orangecluster.nl` over a cert clients
-  already trust — which also removes F2-Q2's https-issuer obstacle entirely.
-- Vault is reachable at `http://vault.localstack` (haproxy host ACL
+  into client configs and issued tokens, so committing to an issuer before
+  the rename would have meant re-issuing it. The issuer is now
+  `https://vault.lab.orangecluster.nl` over a certificate clients already
+  trust, which also removes F2-Q2's https-issuer obstacle entirely.
+- Vault is reachable at `http://vault.lab.orangecluster.nl` (haproxy host ACL
   `deployments/infrastructure/services/haproxy.hcl:53`, routed by
   `:66` to backend `vault1 192.168.2.30:8200` at `:91`). The Vault
   listener runs **plaintext HTTP** (`tls_disable = true`,
   `bootstrap/roles/vault_server/templates/vault.hcl.j2:17-20`;
   `api_addr = http://…:8200` at `:7`).
 - Relying-party hosts that will consume the issuer: MinIO console at
-  `minio.localstack` (haproxy `:51`, `:64`, backend `:84-85` →
+  `minio.lab.orangecluster.nl` (haproxy `:51`, `:64`, backend `:84-85` →
   `192.168.2.29:9001`); the landing page (oauth2-proxy, L1) has **no
   host defined yet**.
 
@@ -323,26 +323,26 @@ execute at ticket close.
 - **Q2 — HTTP vs HTTPS issuer.** Vault runs plaintext HTTP behind
   haproxy on port 80 (`vault.hcl.j2:17-20`, `haproxy.hcl:91`). The
   `vault_identity_oidc_provider` issuer will therefore be
-  `http://vault.localstack/...` with `https_enabled = false`. Some OIDC
+  `http://vault.lab.orangecluster.nl/...` with `https_enabled = false`. Some OIDC
   relying parties (oauth2-proxy, MinIO) reject non-`https` issuers.
   *Recommendation:* ship `http` + `https_enabled = false` for v1 (works
   on the trusted LAN) and record that if L1/M2 report an
   https-issuer requirement, the fix is TLS termination at haproxy for
-  `vault.localstack` — a separate ticket, not F2.
+  `vault.lab.orangecluster.nl` — a separate ticket, not F2.
 
 - **Q3 — Issuer host value.** Use the haproxy hostname
-  `vault.localstack` (`haproxy.hcl:53`) or the direct backend IP
-  `192.168.2.30:8200`? *Recommendation:* `vault.localstack`, so the
+  `vault.lab.orangecluster.nl` (`haproxy.hcl:53`) or the direct backend IP
+  `192.168.2.30:8200`? *Recommendation:* `vault.lab.orangecluster.nl`, so the
   issuer stays stable if the backend IP changes, and expose it as a
   variable with that default.
 
 - **Q4 — Redirect URIs (L1/M2 hosts not built yet).** oauth2-proxy's
   landing-page host does not exist yet; the MinIO console is
-  `minio.localstack` (`haproxy.hcl:84-85`) but its OIDC callback path is
+  `minio.lab.orangecluster.nl` (`haproxy.hcl:84-85`) but its OIDC callback path is
   defined by M2. *Recommendation:* make every `redirect_uris` a
   Terraform variable (in `variables.tf` / `prod.tfvars`) with
   best-known placeholders (e.g. MinIO console
-  `http://minio.localstack/oauth_callback`), so L1/M2 can set exact
+  `http://minio.lab.orangecluster.nl/oauth_callback`), so L1/M2 can set exact
   values without editing `oidc.tf`. Do not hardcode.
 
 - **Q5 — Group-claim shape.** What claim key and value do the RPs read —
@@ -373,12 +373,12 @@ Done in `.loop/evals/F2-foundation-vault-oidc-provider.md` (validated by
   `member_entity_ids`. Self-contained, no external IdP. (Google OIDC
   federation deferred as a future option, not chosen.)
 - **Q2 → Require HTTPS now. DEPENDENCY: F2 is blocked on F3.** The OIDC
-  issuer must be `https://vault.localstack/...` from day one — no
-  plaintext OIDC. This requires TLS termination for `vault.localstack`
+  issuer must be `https://vault.lab.orangecluster.nl/...` from day one — no
+  plaintext OIDC. This requires TLS termination for `vault.lab.orangecluster.nl`
   at haproxy, which is F3's deliverable. **Build order becomes
   F1 → F3 → F2**; F2's eval cannot pass until F3 is merged. Set
   `https_enabled = true`.
-- **Q3 → `vault.localstack` hostname.** Issuer uses the haproxy
+- **Q3 → `vault.lab.orangecluster.nl` hostname.** Issuer uses the haproxy
   hostname (exposed as a variable with that default) so it stays stable
   across backend IP changes.
 - **Q4 → Terraform variables + placeholders.** Every `redirect_uris` is

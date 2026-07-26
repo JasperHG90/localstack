@@ -142,7 +142,7 @@ The change MUST:
    HAProxy `mlflow` backend at the proxy's listen port instead of 5050
    directly (`haproxy.hcl:117`). A request with neither a session cookie
    nor a valid Bearer token gets 401/redirect, not the MLflow UI.
-5. **Route through HAProxy.** Keep the `mlflow.localstack` host-header
+5. **Route through HAProxy.** Keep the `mlflow.lab.orangecluster.nl` host-header
    route (`haproxy.hcl:61,74`); only the backend target and auth line
    change. Follow the doc's "Adding a New Service" convention in
    `docs/haproxy_reverse_proxy.md`.
@@ -262,7 +262,7 @@ owns them.
 
   2. **Human path — unauthenticated redirect to Vault.** A browserless
      request to the UI is bounced to Vault OIDC, not served MLflow.
-     - Command: `curl -sI http://mlflow.localstack/`
+     - Command: `curl -sI http://mlflow.lab.orangecluster.nl/`
      - Expected: `HTTP/1.1 302` (or 307) with a `Location:` header
        pointing at the Vault OIDC authorize endpoint on
        `http://192.168.2.30:8200` (`$VAULT_ADDR`), NOT `200` and NOT the
@@ -277,7 +277,7 @@ owns them.
      `TOKEN=$(nomad alloc exec <alloc-id> cat /secrets/mlflow_wi.jwt)`.
      - Command:
        `curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer
-       $TOKEN" http://mlflow.localstack/api/2.0/mlflow/experiments/search`
+       $TOKEN" http://mlflow.lab.orangecluster.nl/api/2.0/mlflow/experiments/search`
        (endpoint is `experiments/search`; MLflow 2.20.0 removed the old
        `experiments/list`).
      - Expected: `200`, with a JSON experiments payload — proving the
@@ -288,13 +288,13 @@ owns them.
      cookie nor a valid Bearer token does not reach the MLflow API.
      - Command:
        `curl -s -o /dev/null -w '%{http_code}'
-       http://mlflow.localstack/api/2.0/mlflow/experiments/search`
+       http://mlflow.lab.orangecluster.nl/api/2.0/mlflow/experiments/search`
      - Expected: `401` (or a `302` login redirect), NOT `200`.
 
   5. **Old HAProxy basic auth is gone.** The removed
      `openfang_users`/`http_auth` gate (`haproxy.hcl:116`) no longer
      fronts MLflow, so there is no basic-auth prompt and no double-auth.
-     - Command: `curl -sI http://mlflow.localstack/` and inspect
+     - Command: `curl -sI http://mlflow.lab.orangecluster.nl/` and inspect
        headers; also confirm the running HAProxy config no longer has
        the auth line for the `mlflow` backend (`nomad alloc exec
        <haproxy-alloc> grep -A3 'backend mlflow' <cfg>`).
@@ -306,7 +306,7 @@ owns them.
   6. **Health check stays green.** `/health` is skip-auth so the Consul
      check (`mlflow.hcl:27-32`) does not flap.
      - Command: `curl -s -o /dev/null -w '%{http_code}'
-       http://mlflow.localstack/health` and `consul catalog services |
+       http://mlflow.lab.orangecluster.nl/health` and `consul catalog services |
        grep mlflow` / `nomad job status mlflow`.
      - Expected: `/health` returns `200` unauthenticated and the
        `mlflow` service check is passing.
@@ -361,7 +361,7 @@ Definition of Done in `.loop/evals/R1-rollout-mlflow-oauth2-proxy.md`
      bearer bypass).
   3. **Redirect-URI / host mismatch.** With `network_mode = host` and
      HAProxy rewriting host headers, the OIDC callback URL and cookie
-     domain must match `mlflow.localstack`, or the auth-code flow loops.
+     domain must match `mlflow.lab.orangecluster.nl`, or the auth-code flow loops.
   4. **Health-check regression.** If the proxy also gates `/health`, the
      Consul check fails and Nomad reschedules the job.
   5. **TLS assumption.** OIDC over plain HTTP:80 means cookies/tokens

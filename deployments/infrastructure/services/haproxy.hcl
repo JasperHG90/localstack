@@ -31,26 +31,28 @@ job "haproxy" {
         cap_add      = ["NET_BIND_SERVICE"]
       }
 
-      ### Workload Identity login against the dedicated `haproxy` JWT role,
-      ### whose only grant is issuing a leaf from the PKI role (see pki.tf).
-      ### Without `role` the job would land on the default `nomad-workloads`
-      ### role, which carries no pki/ capability and would leave the cert
-      ### template blocked forever.
-      vault {
-        role = "${vault_role}"
-      }
+      ### Bare `vault {}`: the job lands on the default `nomad-workloads` role,
+      ### whose policy already grants a read on this job's own KV prefix, which
+      ### is exactly where the certificate is stored. No dedicated role or
+      ### policy is needed, and adding one back would widen the grant for no
+      ### gain.
+      vault {}
 
-      ### Leaf cert + key + issuing CA concatenated into the single PEM
-      ### HAProxy's `crt` argument expects. Re-rendering issues a fresh leaf;
-      ### `change_mode = "restart"` reloads HAProxy with it, because
-      ### haproxy:3.1-alpine has no confirmed hitless reload under podman and
-      ### a brief restart on a 72h renewal cycle is acceptable here.
+      ### Leaf + issuing chain + key concatenated into the single PEM HAProxy's
+      ### `crt` argument expects. `certificate` already carries the leaf AND
+      ### its chain, so `issuer_chain` is deliberately not appended: it repeats
+      ### the intermediate, which is harmless but pointless.
       ###
-      ### A PKI issue response carries no Vault lease (generate_lease is off),
-      ### so consul-template falls back to the cert's own `expiration` field and
-      ### re-renders at ~85-95% of its life — ~61-68h for this 72h leaf, not the
-      ### ~48h (2/3) the ticket's Q5 estimated. Renewal still lands well before
-      ### expiry; the difference is only how much slack precedes it.
+      ### KV2 nests the payload one level deeper than a PKI issue response did,
+      ### hence `.Data.data.x` rather than `.Data.x`. Getting that wrong renders
+      ### blank lines, HAProxy cannot parse `crt`, and every routed service goes
+      ### down at once.
+      ###
+      ### The certificate is renewed by the acme job rather than issued here, so
+      ### this template re-renders when the stored secret changes.
+      ### `change_mode = "restart"` reloads HAProxy with it, because
+      ### haproxy:3.1-alpine has no confirmed hitless reload under podman and a
+      ### brief restart on a ~60-day renewal cycle is acceptable here.
       ###
       ### perms 0644, not 0600: this image runs as USER haproxy (uid 99), while
       ### Nomad renders template files as the agent user. A 0600 file would be
@@ -59,10 +61,9 @@ job "haproxy" {
       ### is private to this task and torn down with the alloc — not the mode.
       template {
         data        = <<-EOH
-{{ with secret "${pki_issue_path}" "common_name=*.localstack" "ttl=72h" }}
-{{ .Data.certificate }}
-{{ .Data.private_key }}
-{{ .Data.issuing_ca }}
+{{ with secret "${tls_secret}" }}
+{{ .Data.data.certificate }}
+{{ .Data.data.private_key }}
 {{ end }}
         EOH
         destination = "secrets/haproxy.pem"
@@ -94,18 +95,18 @@ frontend http_in
 frontend https_in
     bind *:443 ssl crt /secrets/haproxy.pem
 
-    acl is_minio      hdr(host) -i minio.localstack
-    acl is_s3         hdr(host) -i s3.localstack
-    acl is_vault      hdr(host) -i vault.localstack
-    acl is_nomad      hdr(host) -i nomad.localstack
-    acl is_consul     hdr(host) -i consul.localstack
-    acl is_phoenix    hdr(host) -i phoenix.localstack
-    acl is_memex      hdr(host) -i memex.localstack
-    acl is_prometheus hdr(host) -i prometheus.localstack
-    acl is_grafana    hdr(host) -i grafana.localstack
-    acl is_loki       hdr(host) -i loki.localstack
-    acl is_mlflow     hdr(host) -i mlflow.localstack
-    acl is_bifrost    hdr(host) -i bifrost.localstack
+    acl is_minio      hdr(host) -i minio.lab.orangecluster.nl
+    acl is_s3         hdr(host) -i s3.lab.orangecluster.nl
+    acl is_vault      hdr(host) -i vault.lab.orangecluster.nl
+    acl is_nomad      hdr(host) -i nomad.lab.orangecluster.nl
+    acl is_consul     hdr(host) -i consul.lab.orangecluster.nl
+    acl is_phoenix    hdr(host) -i phoenix.lab.orangecluster.nl
+    acl is_memex      hdr(host) -i memex.lab.orangecluster.nl
+    acl is_prometheus hdr(host) -i prometheus.lab.orangecluster.nl
+    acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
+    acl is_loki       hdr(host) -i loki.lab.orangecluster.nl
+    acl is_mlflow     hdr(host) -i mlflow.lab.orangecluster.nl
+    acl is_bifrost    hdr(host) -i bifrost.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3

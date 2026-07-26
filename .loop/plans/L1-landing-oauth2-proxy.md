@@ -43,7 +43,7 @@ and R4 (Phoenix) will copy.
   `services.tf:308-316`), enforced per-backend via
   `http-request auth unless { http_auth(openfang_users) }`
   (`haproxy.hcl:100,116,120`).
-- **No landing-page service and no `dash.localstack` ACL/backend exist**
+- **No landing-page service and no `dash.lab.orangecluster.nl` ACL/backend exist**
   today (`grep dash` in `haproxy.hcl` returns nothing; the only `dash`
   matches in the tree are Grafana *dashboard* files).
 - **No Vault OIDC provider or `vault_identity_oidc_client` resource exists**
@@ -95,18 +95,18 @@ and R4 (Phoenix) will copy.
    written to Vault KV2, mirroring `secrets.tf:46-66`. oauth2-proxy requires
    the cookie secret to be exactly 16, 24, or 32 bytes — size it so the
    stored value decodes to one of those lengths (see Open Questions Q3).
-4. Redirect URL is `https://dash.localstack/oauth2/callback`; cookies must be
+4. Redirect URL is `https://dash.lab.orangecluster.nl/oauth2/callback`; cookies must be
    set `Secure` (`--cookie-secure=true`) so they never traverse cleartext.
    This is why the ticket depends on F3.
 5. Flat access: configure the "any successful login is authorized" policy
    (in oauth2-proxy this is the default once no `--allowed-*` restriction is
    set; do not add email-domain/group allowlists). State this explicitly in
    the jobspec via a comment so R1/R4 copyists do not add restrictions.
-6. Wire the gate into HAProxy for the `dash.localstack` host: add the ACL +
+6. Wire the gate into HAProxy for the `dash.lab.orangecluster.nl` host: add the ACL +
    `use_backend` in the frontend (`haproxy.hcl:48-75`) and the backend
    definition (alongside `haproxy.hcl:84-121`). See Open Questions Q2 for
    the forward-auth-vs-reverse-proxy fork; the recommendation is
-   reverse-proxy mode so HAProxy routes `dash.localstack` to oauth2-proxy as
+   reverse-proxy mode so HAProxy routes `dash.lab.orangecluster.nl` to oauth2-proxy as
    an ordinary backend.
 7. Terraform must add a `resource "nomad_job" "oauth2_proxy"` using
    `templatefile(...)` (pattern `services.tf:301-316`) and pass the Vault
@@ -117,40 +117,36 @@ and R4 (Phoenix) will copy.
    pattern is copyable without editing the job body. Respect `CLAUDE.md`
    Simplicity/Surgical rules: no speculative multi-app config now.
 9. Match existing HCL style; the gate reformats via `nomad fmt` (see below).
-10. **Refresh the edge docs that F3 made false.** *(Relayed from
-    F3-foundation-haproxy-tls-vault-pki, 2026-07-24. Constraint, not a fork —
-    no decision to settle.)* F3 made the edge HTTPS-only: `:443` serves a
-    Vault-PKI wildcard `*.localstack` leaf and `:80` now 301-redirects. Two
-    docs still describe the old cleartext edge and are wrong as written:
-    - `docs/haproxy_reverse_proxy.md:24-37` — the `/etc/hosts` + access
-      section presents the edge as plain HTTP.
-    - `docs/monitoring.md:206-207` — "Visit `prometheus.localstack` /
-      `grafana.localstack`" implies an HTTP visit.
-    F3 left these alone deliberately: `docs/` was outside its declared Code
-    surface and the documentation review pass is disabled in
-    `.loop/config.json`. L1 is the natural owner because it is the next
-    ticket to touch the edge and it adds `dash.localstack` to the same
-    frontend. While editing, also note that browsers warn until the
-    `localstack Root CA` is installed on the client
-    (`vault read -field=certificate pki/cert/ca`), since distributing that
-    root was out of scope for F3 and readers will otherwise read the warning
-    as a broken deployment.
-    Add both docs to this ticket's Code surface when implementing, so every
-    changed line still traces to this plan.
+10. **DISCHARGED by T3-tls-edge-cutover-lab-domain, 2026-07-26. Nothing to do
+    here.** *(This requirement was relayed from
+    F3-foundation-haproxy-tls-vault-pki, 2026-07-24, and is kept as a record
+    rather than deleted.)* F3 made the edge HTTPS-only while leaving `docs/`
+    outside its Code surface, so `docs/haproxy_reverse_proxy.md` and
+    `docs/monitoring.md` still described a cleartext edge reached through
+    `/etc/hosts`. L1 was assigned the fix as the next ticket to touch the
+    edge.
+    T3 took it instead, because T3 renamed every hostname in those same
+    documents and fixing them anywhere else would have meant editing the same
+    lines twice. Both are now current, and the root-CA caveat that used to
+    belong here is moot: the edge serves a publicly-trusted Let's Encrypt
+    certificate, so no client installs anything.
 11. **The host is `dash.lab.orangecluster.nl`, and its ACL goes on
-    `https_in`, not `http_in`.** *(Rewritten 2026-07-25. Supersedes the
-    earlier F3-era text, which named `dash.localstack` and is now wrong.)*
+    `https_in`, not `http_in`.** *(Rewritten 2026-07-25, updated 2026-07-26
+    once T3 landed. Supersedes the earlier F3-era text, which named
+    `dash.localstack` and is now wrong.)*
     - F3 split the single frontend: `:80` only 301-redirects, and every ACL
       lives on the `:443 ssl` frontend `https_in`. An ACL added to `http_in`
       sits on the redirect-only frontend and can never route.
-    - T3 renames the whole edge to `<svc>.lab.orangecluster.nl` and replaces
+    - T3 renamed the whole edge to `<svc>.lab.orangecluster.nl` and replaced
       the unusable Vault-PKI leaf with a publicly-trusted Let's Encrypt
-      wildcard. **L1 now depends on T3, not F3** (front-matter updated), so
-      by the time L1 runs the old names are gone.
+      wildcard. **L1 depends on T3, not F3** (front-matter updated), so the
+      old names are already gone.
     - No cert work follows: the wildcard `*.lab.orangecluster.nl` already
       covers `dash`. No PKI change, no SAN edit, no new firewall rule.
-    - `dash.lab.orangecluster.nl` resolves via the dnsmasq wildcard from T2
-      with no DNS record to add.
+    - `dash.lab.orangecluster.nl` resolves from public DNS via the `*.lab`
+      wildcard A record, with no DNS record to add. The dnsmasq resolver that
+      used to answer this zone was removed by
+      N2-netsec-remove-dnsmasq-for-public-dns.
 
 ## Code surface
 - `deployments/infrastructure/services/oauth2-proxy.hcl` **(new)** — the
@@ -173,7 +169,7 @@ and R4 (Phoenix) will copy.
   `use_backend dash if is_dash` **in the `https_in` frontend**.
   *(Rewritten 2026-07-25. This bullet originally read ":48-75 ... in the
   `http_in` frontend" with host `dash.localstack`; both were wrong. F3 split
-  the frontend so `http_in` only 301-redirects, and T3 renames the edge to
+  the frontend so `http_in` only 301-redirects, and T3 renamed the edge to
   `.lab.orangecluster.nl`. Re-read the file for line numbers — F3 shifted
   them and T3 shifts them again.)*
 - `deployments/infrastructure/services/haproxy.hcl` — add a `backend
@@ -244,7 +240,7 @@ command and the expected result:**
 
 2. **Unauthenticated request to the protected route redirects to Vault
    OIDC.**
-   - Command: `curl -sI https://dash.localstack/`
+   - Command: `curl -sI https://dash.lab.orangecluster.nl/`
    - Expect: `HTTP/2 302` with a `Location:` header pointing at the Vault
      OIDC authorize endpoint, i.e. under
      `$VAULT_ADDR/v1/identity/oidc/provider/<provider-name>/authorize?...`
@@ -253,21 +249,21 @@ command and the expected result:**
      3).
 
 3. **The `/oauth2/callback` route exists (is served by oauth2-proxy).**
-   - Command: `curl -sI https://dash.localstack/oauth2/callback`
+   - Command: `curl -sI https://dash.lab.orangecluster.nl/oauth2/callback`
    - Expect: **not** `404`. oauth2-proxy handles the route (a `302`/`400`
      from the proxy is fine); a `404` means the callback path was never
      wired.
 
 4. **Session cookie is `Secure` + `HttpOnly` (requires F3 TLS).**
-   - Command: `curl -sI https://dash.localstack/ | grep -i set-cookie`
+   - Command: `curl -sI https://dash.lab.orangecluster.nl/ | grep -i set-cookie`
    - Expect: the `_oauth2_proxy` cookie in `Set-Cookie` carries both
      `Secure` and `HttpOnly` attributes, confirming cookies never traverse
      cleartext.
 
 5. **A completed auth-code flow yields an allowed request.**
-   - Command: complete the Vault login for `https://dash.localstack/` in a
+   - Command: complete the Vault login for `https://dash.lab.orangecluster.nl/` in a
      browser (or a scripted authorization-code flow), then re-request
-     `curl -sI https://dash.localstack/` with the session cookie.
+     `curl -sI https://dash.lab.orangecluster.nl/` with the session cookie.
    - Expect: `HTTP/2 200` reaching the landing-page upstream, confirming the
      flat "any authenticated user allowed" policy lets the session through.
 
@@ -299,7 +295,7 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
      template reads, the job boots but every login 500s. Parametrize the
      path; confirm against F2 before apply.
   3. **Issuer/discovery URL mismatch:** oauth2-proxy validates the OIDC
-     discovery document; a wrong issuer host (`vault.localstack` vs internal
+     discovery document; a wrong issuer host (`vault.lab.orangecluster.nl` vs internal
      IP) fails startup. Must match F2's provider issuer exactly.
   4. **arm64 image tag** that is amd64-only fails to pull on the Orange Pi
      nodes — verify the tag is multi-arch/arm64.
@@ -323,7 +319,7 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
 
 ## Open questions (forks for the operator to settle first)
 - **Q1 — Does L1 include the landing-page service itself, or only the auth
-  gate?** No `dash.localstack` backend or landing app exists today. The
+  gate?** No `dash.lab.orangecluster.nl` backend or landing app exists today. The
   ticket as scoped wires oauth2-proxy as the `dash` backend and treats the
   landing page content as either (a) served by oauth2-proxy's upstream, or
   (b) a separate ticket. *Recommendation:* keep L1 to the auth gate plus the
@@ -353,7 +349,7 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
   `client_id`/`client_secret`, and make L1 read that path. Block apply (not
   the loop's HCL work) until F2 confirms.
 - **Q5 — OIDC issuer/discovery URL.** Needs the exact issuer, likely
-  `https://vault.localstack/v1/identity/oidc/provider/<provider-name>`, where
+  `https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/<provider-name>`, where
   `<provider-name>` is F2's choice. *Recommendation:* thread it as a
   Terraform variable (`variables.tf`) defaulted to the expected value, so it
   is set once F2 names the provider.
@@ -372,11 +368,11 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
 
 - **Q1 → Auth gate only (revised).** L1 is the oauth2-proxy gate; it does
   NOT build the landing app. L2 (Homepage/gethomepage) owns the landing
-  app at `dash.localstack`. In reverse-proxy mode, L1's `--upstream`
+  app at `dash.lab.orangecluster.nl`. In reverse-proxy mode, L1's `--upstream`
   points at L2's Homepage service. (Operator initially said "include the
   app," then confirmed keeping L1/L2 split.)
 - **Q2 → Reverse-proxy mode.** oauth2-proxy runs as the `dash` backend
-  with `--upstream=<L2 Homepage>`; HAProxy just routes `dash.localstack`
+  with `--upstream=<L2 Homepage>`; HAProxy just routes `dash.lab.orangecluster.nl`
   to it. No SPOE/Lua forward-auth. NOTE: L2's ticket text says
   "forward-auth" and must be reconciled to this reverse-proxy wiring.
 - **Q3 → `random_password { length = 32, special = false }`, raw.** Pass
@@ -386,7 +382,7 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
   until F2 confirms the path/keys. (Depends on F2.)
 - **Q5 → Terraform variable, defaulted.** Issuer threaded via
   `variables.tf`, defaulted to
-  `https://vault.localstack/v1/identity/oidc/provider/<provider>`, set
+  `https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/<provider>`, set
   once F2 names the provider.
 - **Q6 → firebat + static port — PENDING A LIVE CAPACITY CHECK.**
   Default is to colocate on `firebat` (HAProxy edge host) with a static

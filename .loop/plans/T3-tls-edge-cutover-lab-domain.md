@@ -101,13 +101,22 @@ the trusted cert, T2 the resolution; this ticket flips the edge.
 10. Before starting, enable the `documentation` review pass in
     `.loop/config.json` (`review_passes[2].enabled = true`) so the doc-freshness
     verdict gates this commit. Re-disable afterward only if the operator asks.
-11. **Add a certificate-expiry alert** to
-    `services/grafana/alert-rules.yaml`. Deferred out of T1 deliberately:
-    before this ticket a silent non-renewal costs nothing, but once HAProxy
-    serves the Let's Encrypt cert an unnoticed renewal failure takes all
-    twelve routed services down simultaneously, ~60 days after the fact and
-    with no warning. Alert on days-to-expiry, not on job success, so it fires
-    regardless of which link in the chain broke.
+11. ~~**Add a certificate-expiry alert** to
+    `services/grafana/alert-rules.yaml`.~~ **DEFERRED to its own ticket by
+    operator decision, 2026-07-26. NOT delivered by T3.**
+    The intent stands and the risk is real: once HAProxy serves the Let's
+    Encrypt cert, an unnoticed renewal failure takes all twelve routed
+    services down at once, with no warning. The acme job runs daily with
+    `--renew-days 30`, so the gap between the first silently failed renewal
+    and the outage is 30 days, not the 90-day life of the leaf.
+    It could not be delivered here. Nothing in the cluster measures
+    days-to-expiry: HAProxy's exporter has only SSL connection and rate
+    counters, no blackbox exporter exists, and Prometheus scrapes nothing
+    over HTTPS. An alert rule alone has no metric to read, so satisfying this
+    needs a new exporter job, a scrape config and a firewall rule, none of
+    which are in this ticket's Code surface and none of which belong in a
+    flag-day apply. The follow-up ticket recommends blackbox_exporter
+    probing the edge for `probe_ssl_earliest_cert_expiry`.
 
 ## Code surface
 - `deployments/infrastructure/services/haproxy.hcl` — cert template: swap
@@ -189,8 +198,10 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
 - **Worktree note:** `just worktree_setup <path>` first (`3c12c7a`).
 - **Command:** `terraform -chdir=deployments/infrastructure plan` -> updates
   `nomad_job.haproxy` in place; DESTROYS the six `pki.tf` resources. Confirm it
-  destroys no KV mount, no backend, no firewall rule, and does not touch
-  `vault_mount.kvv2`.
+  destroys no KV mount and no backend, and does not touch `vault_mount.kvv2`.
+  The plan also carries the dnsmasq removal and the Prometheus firewall
+  replacement from the two tickets committed just before this one, so a total
+  of nine destroys is expected rather than six.
 
 ### Offline pre-apply check (do this; F3 proved its value)
 - Render the config template, substitute vars, generate a throwaway PEM, run

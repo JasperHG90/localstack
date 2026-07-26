@@ -311,25 +311,18 @@ resource "nomad_job" "minio" {
 }
 
 ### HAProxy
-### The pki_* / vault_role references are load-bearing beyond string
-### substitution: they order the PKI mount, role, policy and JWT role ahead of
-### the job, so the cert template can never be rendered before the grant that
-### authorizes it exists.
+### The certificate is written to KV2 by the acme job at runtime rather than
+### created by Terraform, so there is no resource to reference and no ordering
+### to express here. If the secret is absent the cert template simply blocks
+### until the acme job stores it.
 resource "nomad_job" "haproxy" {
   jobspec = templatefile(
     "${path.module}/services/haproxy.hcl",
     {
       openfang_password = random_password.openfang_basic_auth.result
-      pki_issue_path    = "${vault_mount.pki.path}/issue/${vault_pki_secret_backend_role.haproxy.name}"
-      vault_role        = vault_jwt_auth_backend_role.haproxy.role_name
+      tls_secret        = "${var.secret_mount}/data/default/haproxy/tls"
     }
   )
-
-  ### The var references above order the mount, role, policy and JWT role ahead
-  ### of the job, but NOT the root CA: a mount accepts role/URL writes while its
-  ### root is still generating, yet rejects `issue`. Without this the job can be
-  ### submitted mid-generation on the first apply and sit retrying its template.
-  depends_on = [vault_pki_secret_backend_root_cert.root]
 }
 
 ### Node exporter (system job, all nodes)

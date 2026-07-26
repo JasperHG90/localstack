@@ -470,12 +470,12 @@
     },
     "T3-tls-edge-cutover-lab-domain": {
       "slug": "T3-tls-edge-cutover-lab-domain",
-      "stage": "ready",
-      "attempts": 0,
-      "review_cycles": 0,
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/T3-tls-edge-cutover-lab-domain.adversarial.md, .loop/verdicts/T3-tls-edge-cutover-lab-domain.documentation.md",
       "dropped": false,
       "epic": "tls",
       "dependencies": [

@@ -187,7 +187,7 @@ job "nats" {
 - Add firewall rules for ports 4222 (NATS client) and 8222 (NATS monitoring)
 
 **`deployments/infrastructure/services/haproxy.hcl`**:
-- Optionally add NATS monitoring backend (`nats.localstack` -> RV2:8222)
+- Optionally add NATS monitoring backend (`nats.lab.orangecluster.nl` -> RV2:8222)
 
 ### Step 6: Monitoring integration
 

@@ -38,7 +38,7 @@ debugging connectivity and deployment at the same time.
 - **The tailnet path to firebat is already open.** `services.tf:182-193`
   admits `100.64.0.0/10` to firebat on ports 80, 443, and 8404;
   `services.tf:204-221` does the same for Prometheus 9090 and Grafana 3000.
-  HAProxy binds all three of its ports and already proxies `nomad.localstack`
+  HAProxy binds all three of its ports and already proxies `nomad.lab.orangecluster.nl`
   to firebat:4646; `docs/haproxy_reverse_proxy.md:30` documents the tailnet
   path. **The original plan's central premise — that port 22 is the only
   precedent for admitting the CGNAT range, so a new ufw rule is needed — was
@@ -77,9 +77,9 @@ debugging connectivity and deployment at the same time.
    advertised subnet route, which requires `--accept-routes` on the runner —
    off by default in the action. *Prefer the tailnet IP.*
 3. **Target a hostname-independent endpoint.** Anything reached with a
-   `Host: <svc>.localstack` header silently starts hitting the default
-   backend when T3 renames all twelve ACLs, and port 80 becomes a 301 to
-   https after T3. Do not couple this smoke test to hostnames in flight.
+   `Host: <svc>.lab.orangecluster.nl` header hits the default backend if the
+   hostname is wrong, and port 80 is a 301 to https. T3 has landed, so the
+   twelve ACLs now carry the `.lab.orangecluster.nl` names.
 4. **The Tailscale OAuth secret goes in a GitHub Environment with a
    protection rule, not a repository secret.** Repository-level Actions
    secrets are readable by every workflow in the repo, and this repo runs

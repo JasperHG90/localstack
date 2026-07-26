@@ -369,7 +369,7 @@ redeployed.
 - **Q3 → Issuer/config URL is an F2-provided input.** Consume F2's
   `.well-known/openid-configuration` issuer (TF output or KV entry); do
   not hardcode it.
-- **Q4 → HAProxy hostname `https://minio.localstack/oauth_callback`.**
+- **Q4 → HAProxy hostname `https://minio.lab.orangecluster.nl/oauth_callback`.**
   Must match F2's registered `redirect_uris` exactly; consistent with
   F2's https issuer.
 - **Q5 → writer = put/get/list + multipart + delete.** Full write

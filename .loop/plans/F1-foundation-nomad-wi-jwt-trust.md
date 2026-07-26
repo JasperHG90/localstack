@@ -97,21 +97,24 @@ single audience. Concretely:
   implicit `default_identity` (aud `vault.io`).
 - **A SECOND JWT role now exists, created in Terraform, and it changes the
   ownership story this ticket was written to settle.** F3 shipped after this
-  plan was drafted. Verified live: `vault list auth/jwt-nomad/role` returns
-  `haproxy` and `nomad-workloads`. `deployments/infrastructure/pki.tf:69-116`
-  declares `vault_policy.haproxy_pki` and
-  `vault_jwt_auth_backend_role.haproxy` on the Ansible-created `jwt-nomad`
-  mount, and `services/haproxy.hcl:39-41` selects it with
-  `vault { role = "${vault_role}" }`. The real model is therefore a SPLIT:
+  plan was drafted. `vault list auth/jwt-nomad/role` returns `acme` and
+  `nomad-workloads` once T3 is applied; before that apply it also returns the
+  `haproxy` role, which T3 destroys. `deployments/infrastructure/acme.tf:41-90`
+  declares `vault_policy.acme_tls_write` and
+  `vault_jwt_auth_backend_role.acme` on the Ansible-created `jwt-nomad`
+  mount, and `services/acme.hcl:73-75` selects it with
+  `vault { role = "${vault_role}" }`. (F3 shipped the first instance of this
+  pattern in `pki.tf`; T3 deleted that file, and the acme job is now the live
+  example.) The real model is therefore a SPLIT:
   bootstrap-time root of trust (mount, config, default role, shared policy)
   in Ansible; per-job roles and policies in Terraform, alongside the engine
   they grant access to.
 - **One task holds exactly one Vault token.** A task has a single `vault`
   block and performs a single JWT login, so naming a dedicated role
-  REPLACES `nomad-workloads` rather than adding to it — `pki.tf:113` sets
-  `token_policies` to the dedicated policy alone. Any future job needing
-  both a scoped grant and ordinary KV reads must list both policies on its
-  own role. This is the single most useful sentence this document can
+  REPLACES `nomad-workloads` rather than adding to it. That is exactly why
+  `acme.tf:87` sets `token_policies` to BOTH `nomad-workloads` and the
+  dedicated policy: the acme job needs a scoped grant AND ordinary KV reads,
+  so its own role has to carry both. This is the single most useful sentence this document can
   contain, and every consumer (M1, S2/R3, F5/F6) will need it.
 - **Nomad's OIDC discovery endpoint is DISABLED.**
   `curl http://192.168.2.30:4646/.well-known/openid-configuration` returns
@@ -183,7 +186,7 @@ single audience. Concretely:
    not the intended one.
 2. **The doc must document the Ansible/Terraform split and the one-token
    rule.** Specifically: per-job roles and policies go in Terraform beside
-   the engine they grant (pattern `pki.tf:69-116`), are selected with
+   the engine they grant (pattern `acme.tf:41-90`), are selected with
    `vault { role = "<name>" }`, and REPLACE `nomad-workloads` rather than
    adding to it — so a job needing both a scoped grant and KV reads must
    list both policies on its own role. Lead the convention section with the
@@ -256,15 +259,17 @@ secret convention is `secret/data/<namespace>/<job_id>/<entry>`.
   read/create/update (`:17-24`). Read-only reference; the doc describes all
   three. The test job's secret path must fall under
   `secret/data/<namespace>/<job_id>/*` for the first grant to cover it.
-- `deployments/infrastructure/pki.tf:69-116` — **the live example of the
-  Terraform half of the split**: `vault_policy.haproxy_pki` plus
-  `vault_jwt_auth_backend_role.haproxy` on the Ansible-created `jwt-nomad`
-  mount, with `claim_mappings` replicated and `token_policies` set to the
-  dedicated policy alone. Read-only reference; this is what the doc's
-  convention section describes. (An earlier draft pointed at
+- `deployments/infrastructure/acme.tf:41-90` — **the live example of the
+  Terraform half of the split**: `vault_policy.acme_tls_write` plus
+  `vault_jwt_auth_backend_role.acme` on the Ansible-created `jwt-nomad`
+  mount, with `claim_mappings` replicated. Note `token_policies`
+  (`acme.tf:87`) lists BOTH `nomad-workloads` and the dedicated policy,
+  because naming a role replaces the default rather than adding to it, so a
+  job needing both grants must name both. Read-only reference; this is what
+  the doc's convention section describes. (An earlier draft pointed at
   `providers.tf:7-10,28` as where such resources "would" land — they
   already landed, here.)
-- `deployments/infrastructure/services/haproxy.hcl:39-41` — the consuming
+- `deployments/infrastructure/services/acme.hcl:73-75` — the consuming
   side: `vault { role = "${vault_role}" }`. Read-only reference.
 - `deployments/infrastructure/secrets.tf:1-29` — KV2 mount and the
   `default/<job>/<entry>` secret pattern; the test job's scoped secret
@@ -510,8 +515,8 @@ the hand-written probe secret, the eval transcript in the doc, and a green
   in Ansible — they must exist before Terraform can authenticate to Vault at
   all. But per-job `vault_jwt_auth_backend_role` + `vault_policy` resources
   now live in Terraform beside the engine they grant, as shipped in
-  `pki.tf:69-116` and consumed via `vault { role = ... }`
-  (`haproxy.hcl:39-41`). F1 documents this split; it migrates nothing.
+  `acme.tf:41-90` and consumed via `vault { role = ... }`
+  (`services/acme.hcl:73-75`). F1 documents this split; it migrates nothing.
 - **Q2 → Keep `vault.io`; one audience per VERIFYING SERVICE.** Retain
   `vault.io` for the existing Vault path (renaming breaks every running
   workload). Add a distinct audience only per new consumer class that

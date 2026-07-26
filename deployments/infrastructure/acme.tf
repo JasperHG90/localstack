@@ -1,8 +1,9 @@
 ### ACME certificate renewal for the *.lab.orangecluster.nl edge.
 ###
 ### A periodic job runs lego's DNS-01 challenge against TransIP and writes the
-### issued material to Vault KV2, where the edge proxy reads it. Nothing
-### consumes it yet.
+### issued material to Vault KV2, where the edge proxy reads it. HAProxy
+### templates that secret into the PEM it serves, so a failed renewal
+### eventually takes every routed service down together.
 
 ### lego needs durable state. It keeps the ACME account key under
 ### <path>/accounts and the issued bundle under <path>/certificates, and every
@@ -50,8 +51,7 @@ resource "vault_policy" "acme_tls_write" {
 ### The `jwt-nomad` auth mount, its config, and the default `nomad-workloads`
 ### role are Ansible-owned (bootstrap/roles/nomad_server/tasks/main.yml). This
 ### is a SECOND role on that mount, selected per-job via `vault { role }`,
-### leaving every other workload on the default role untouched. Same split as
-### the per-job role in pki.tf.
+### leaving every other workload on the default role untouched.
 ###
 ### token_policies carries BOTH policies deliberately. A Nomad task performs a
 ### single JWT login and holds a single token, so naming a dedicated role

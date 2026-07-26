@@ -52,14 +52,15 @@ Verified live 2026-07-25 (`vault policy read nomad-workloads`,
   specific consumer and applied to the default role that everything inherits.
   **Which jobs actually read `bootstrap/*` is not yet established** — that is
   subticket 1, and it decides the shape of the fix.
-- The mechanism for a narrower grant already exists and is proven twice: F3's
-  `pki.tf:69-116` creates a dedicated `vault_policy` +
+- The mechanism for a narrower grant already exists and is proven: the acme
+  job's `acme.tf:41-90` creates a dedicated `vault_policy` +
   `vault_jwt_auth_backend_role` on the same `jwt-nomad` mount, selected with
-  `vault { role = ... }` (`haproxy.hcl:39-41`).
-- **One token per task.** A dedicated role REPLACES `nomad-workloads` rather
-  than adding to it (`pki.tf:113` sets `token_policies` to the dedicated
-  policy alone), so any job moved onto its own role must be granted its KV
-  reads there too, or it breaks.
+  `vault { role = ... }` (`services/acme.hcl:73-75`).
+- **One token per task.** A Nomad task performs a single JWT login and holds
+  a single token, so naming a dedicated role REPLACES `nomad-workloads`
+  rather than adding to it. That is why `acme.tf:87` sets `token_policies` to
+  BOTH `nomad-workloads` and the dedicated policy. Any job moved onto its own
+  role must be granted its KV reads there too, or it breaks.
 
 ## Non-goals / out of scope
 - Rotating the exposed credentials. Worth doing, but it is a separate
@@ -76,7 +77,7 @@ Verified live 2026-07-25 (`vault policy read nomad-workloads`,
    or write `bootstrap/data/*`.
 2. Any job that genuinely needs `bootstrap/*` gets it through a dedicated
    `vault_jwt_auth_backend_role` + `vault_policy` selected with
-   `vault { role = ... }`, mirroring `pki.tf:69-116`. That role's
+   `vault { role = ... }`, mirroring `acme.tf:41-90`. That role's
    `token_policies` must ALSO carry `nomad-workloads` (or re-grant the job's
    KV paths), or the job loses its own secret reads — see Context.
 3. **Establish the consumer list before removing anything.** Removing a
@@ -100,9 +101,9 @@ Verified live 2026-07-25 (`vault policy read nomad-workloads`,
   `secret/metadata/*` list, per requirement 4.
 - `deployments/infrastructure/<consumer>.tf` **(new, only if subticket 1
   finds a real consumer)** — the dedicated policy and JWT role for it,
-  pattern `pki.tf:69-116`.
+  pattern `acme.tf:41-90`.
 - The consuming jobspec under `deployments/infrastructure/services/` — add
-  `vault { role = ... }`, pattern `haproxy.hcl:39-41`.
+  `vault { role = ... }`, pattern `services/acme.hcl:73-75`.
 - `docs/credential-rotation.md` — update if it documents the current grant
   as the mechanism rotation jobs rely on.
 
