@@ -10,8 +10,8 @@
 ### re-registers and re-issues on every run, exhausting Let's Encrypt's
 ### 5-certs-per-identifier-set-per-week limit within days and locking out
 ### issuance until the window rolls.
-resource "nomad_dynamic_host_volume" "acme_state" {
-  name      = "acme_state"
+resource "nomad_dynamic_host_volume" "acme_lego_state" {
+  name      = "acme_lego_state"
   namespace = "default"
   plugin_id = "mkdir"
   node_pool = "default"
@@ -122,5 +122,5 @@ resource "nomad_job" "acme" {
     }
   )
 
-  depends_on = [nomad_dynamic_host_volume.acme_state]
+  depends_on = [nomad_dynamic_host_volume.acme_lego_state]
 }

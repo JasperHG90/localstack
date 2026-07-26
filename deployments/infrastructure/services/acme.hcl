@@ -25,7 +25,7 @@ job "acme" {
     ### run, which exhausts the CA's per-identifier-set weekly limit in days.
     volume "acme_state_volume" {
       type            = "host"
-      source          = "acme_state"
+      source          = "acme_lego_state"
       access_mode     = "single-node-writer"
       attachment_mode = "file-system"
     }
