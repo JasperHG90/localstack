@@ -21,7 +21,7 @@ resource "nomad_dynamic_host_volume" "acme_state" {
 
   constraint {
     attribute = "$${attr.unique.hostname}"
-    value     = "firebat"
+    value     = "ubuntu"
   }
 
   capability {

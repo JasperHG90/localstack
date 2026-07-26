@@ -9,7 +9,14 @@ with no configuration.
 ## How it works
 
 A periodic batch job named `acme` runs every night at 04:00 Amsterdam time on
-firebat. It has two tasks.
+ubuntu. It has two tasks.
+
+It runs there rather than on firebat, which hosts the edge, because the
+certificate travels through Vault rather than through the filesystem, so the
+job does not need to sit next to the proxy that serves it. Firebat is also
+fully reserved: 3200 of 3200 MHz, most of it held by Postgres, which leaves no
+room to schedule anything new even though actual usage across the node is near
+zero.
 
 The `issue` task runs [lego](https://go-acme.github.io/lego/) with the
 DNS-01 challenge against TransIP. DNS-01 is the only challenge type that can

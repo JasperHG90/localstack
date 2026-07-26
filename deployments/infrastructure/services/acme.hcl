@@ -16,7 +16,7 @@ job "acme" {
   group "acme" {
     constraint {
       attribute = "$${attr.unique.hostname}"
-      value     = "firebat"
+      value     = "ubuntu"
     }
 
     ### Holds the ACME account key and the issued bundle between periodic
@@ -108,8 +108,8 @@ LEGO_DNS_RESOLVERS="1.1.1.1:53"
       }
 
       resources {
-        cpu    = 300
-        memory = 256
+        cpu    = 100
+        memory = 128
       }
     }
 
@@ -164,7 +164,7 @@ LEGO_DNS_RESOLVERS="1.1.1.1:53"
       }
 
       resources {
-        cpu    = 200
+        cpu    = 50
         memory = 128
       }
     }
