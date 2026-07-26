@@ -47,12 +47,20 @@ locals {
         "allow from 192.168.2.46 to any port 8642 proto tcp",
       ]
     }
-    # Loki on ubuntu (rpi4b) — LAN only (Promtail clients across the cluster)
+    # Loki on ubuntu (rpi4b) — cluster nodes only. Promtail is a system job, so
+    # it ships from every node and each node address must stay on this list;
+    # dropping one stops that node's logs silently. 192.168.2.30 doubles as the
+    # HAProxy edge, which is how browsers reach Loki. The push and query APIs
+    # have no authentication, so the LAN-wide rule is gone.
     loki = {
       host     = "192.168.2.47"
       ssh_user = "raspberry"
       rules = [
-        "allow from 192.168.0.0/16 to any port 3100 proto tcp",
+        "allow from 192.168.2.30 to any port 3100 proto tcp",
+        "allow from 192.168.2.29 to any port 3100 proto tcp",
+        "allow from 192.168.2.46 to any port 3100 proto tcp",
+        "allow from 192.168.2.47 to any port 3100 proto tcp",
+        "allow from 192.168.2.50 to any port 3100 proto tcp",
       ]
     }
     # MLflow on radxa-dragon-q6a (firebat CPU is fully reserved; port 5050 since 5000/5001 are reserved for the Docker registry on firebat)

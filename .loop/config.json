@@ -6,7 +6,7 @@
   "require_eval": true,
   "plans_dir": ".loop/plans",
   "notify_title": "loop harness",
-  "max_review_cycles": 3,
+  "max_review_cycles": 4,
   "review_passes": [
     {
       "id": "adversarial",

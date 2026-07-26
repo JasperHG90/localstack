@@ -201,13 +201,16 @@ locals {
         "allow from 192.168.0.0/16 to any port 5001 proto tcp",
       ]
     }
-    # Prometheus on ubuntu (rpi4b) — LAN + Tailscale
+    # Prometheus on ubuntu (rpi4b) — cluster-internal only. Grafana's datasource
+    # dials the node address from this same host; browsers arrive via HAProxy,
+    # which already admits the LAN and the tailnet on 80/443. The query API has
+    # no authentication, so it is not exposed to the LAN directly.
     prometheus = {
       host     = "192.168.2.47"
       ssh_user = "raspberry"
       rules = [
-        "allow from 192.168.0.0/16 to any port 9090 proto tcp",
-        "allow from 100.64.0.0/10 to any port 9090 proto tcp",
+        "allow from 192.168.2.47 to any port 9090 proto tcp",
+        "allow from 192.168.2.30 to any port 9090 proto tcp",
       ]
     }
     # Grafana on ubuntu (rpi4b) — LAN + Tailscale
