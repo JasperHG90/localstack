@@ -162,3 +162,36 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
   *Recommendation:* author it separately. It is not a prerequisite for this
   ticket, since Grafana already requires a login, but the gap should not stay
   implicit.
+
+---
+
+## Follow-on, 2026-07-26: the edge routes were removed too
+
+N1 as scoped narrowed the firewall, which closed the direct path and left the
+proxied one. That was recorded honestly at the time as "one exposure of two":
+HAProxy has to sit on the allow-list for any hostname it proxies, so
+`prometheus.lab.orangecluster.nl` still served every metric to anyone who
+asked, over a trusted certificate, with no password. The `prometheus` and
+`loki` backends carried no `http-request auth`, unlike `phoenix`, `mlflow`
+and `bifrost` in the same file.
+
+The operator asked why those hostnames are routed at all, given Grafana is
+the only thing anyone reads them through. Measured answer: nothing used them.
+Grafana's datasources dial `192.168.2.47` directly from the same node,
+promtail pushes directly to Loki, and the only reference to either hostname
+anywhere in the repo was HAProxy's own ACL defining it. The sole consumer was
+a human typing a URL.
+
+So the two ACLs, two `use_backend` lines and two backend blocks were deleted
+rather than given a password, which is the simpler and stricter answer. After
+this, Prometheus and Loki are reachable only from cluster nodes.
+
+Done directly on `main` at the operator's explicit instruction rather than
+through a new ticket. Validated the same way T3 was: config rendered, real
+HAProxy `-c` check green, negative control red, `terraform plan` confined to
+`nomad_job.haproxy` in place.
+
+**Cost accepted:** Prometheus's own web UI is gone from the browser. Its
+Targets page shows real scrape error text where Grafana shows only `up == 0`,
+so for debugging use a port-forward: `ssh -L 9090:192.168.2.47:9090
+raspberry@192.168.2.47`.

@@ -616,6 +616,28 @@
         "cleanup",
         "revert"
       ]
+    },
+    "T5-tls-certificate-expiry-alert": {
+      "slug": "T5-tls-certificate-expiry-alert",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "tls",
+      "dependencies": [],
+      "priority": 90,
+      "summary": "Alert on days-to-certificate-expiry at the edge. Deferred out of T3 because nothing in the cluster measures it: needs a blackbox exporter, a scrape config and a firewall rule before an alert rule has anything to read. Until this lands, a failed renewal is silent for 30 days and then takes all twelve routed services down at once.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "tls",
+        "monitoring",
+        "alerting",
+        "prometheus",
+        "blackbox-exporter"
+      ]
     }
   }
 }

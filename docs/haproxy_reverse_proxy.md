@@ -19,14 +19,24 @@ to the HTTPS URL.
 | `consul.lab.orangecluster.nl` | firebat (192.168.2.30) | 8500 |
 | `phoenix.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 6006 |
 | `memex.lab.orangecluster.nl` | jetson-orin-nano (192.168.2.46) | 8000 |
-| `prometheus.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 9090 |
 | `grafana.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 3000 |
-| `loki.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 3100 |
 | `mlflow.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 5050 |
 | `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
 
 `phoenix`, `mlflow` and `bifrost` sit behind HTTP basic auth. The rest are
 open to anyone who reaches the edge.
+
+**Prometheus and Loki are deliberately not routed here.** Both serve their
+query APIs with no authentication, and nothing needs them through the proxy:
+Grafana's datasources dial `192.168.2.47` directly from the same node, and
+promtail pushes straight to Loki. Routing them would have meant every metric
+and every log line readable by anyone who can reach the edge, to save a
+browser tab. To reach Prometheus's own UI while debugging a scrape, forward
+the port for as long as you need it:
+
+```bash
+ssh -L 9090:192.168.2.47:9090 raspberry@192.168.2.47
+```
 
 The stats dashboard is at `http://192.168.2.30:8404`, outside the TLS
 frontend.

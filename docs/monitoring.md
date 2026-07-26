@@ -2,18 +2,22 @@
 
 ## How to reach the monitoring stack today
 
-Prometheus and Loki do not accept **direct** connections from the LAN. Both
-serve their query APIs with no authentication, so their firewall rules admit
-only the callers that need them, and going straight to `192.168.2.47:9090` or
-`192.168.2.47:3100` from an ordinary LAN device fails. This describes what
-Terraform declares. It is true of the host once the apply in *Applying a
-change to these rules* below has run, and the last commands in that section
-are how to confirm it.
+Prometheus and Loki are reachable only from inside the cluster. Both serve
+their query APIs with no authentication, so there are two barriers rather
+than one: their firewall rules admit only the callers that need them, and
+neither is routed through the edge proxy. Going to `192.168.2.47:9090` or
+`192.168.2.47:3100` from an ordinary LAN device fails, and so does asking
+HAProxy for them.
 
-| Service | Port | Who may connect directly |
+**You read both through Grafana.** Its Explore view queries the Prometheus and
+Loki datasources, which dial `192.168.2.47` directly from the same node.
+Grafana requires a login, so it is the authenticated front door to data that
+has no authentication of its own.
+
+| Service | Port | Who may connect |
 |---|---|---|
-| Prometheus | 9090 | `192.168.2.47` (Grafana's datasource, same node), `192.168.2.30` (HAProxy) |
-| Loki | 3100 | all five node addresses (promtail is a `system` job), which includes `192.168.2.30` for HAProxy |
+| Prometheus | 9090 | `192.168.2.47` only, which is Grafana's datasource on the same node |
+| Loki | 3100 | all five node addresses, because promtail is a `system` job and ships from every node |
 | Grafana | 3000 | `192.168.0.0/16` and `100.64.0.0/10`, unchanged |
 
 Grafana is unchanged. It requires a login, so it keeps its LAN and tailnet
@@ -22,24 +26,27 @@ reach on port 3000.
 Prometheus scraping is unaffected. It dials outward to its targets, and no
 inbound rule touches that.
 
-### The edge path is still open, and still unauthenticated
+### Why they are not behind the edge proxy
 
-Closing the direct port does **not** make these services private. HAProxy on
-`192.168.2.30` stays on both allow-lists, and the `prometheus` and `loki`
-backends carry no `http-request auth` line, unlike `phoenix`, `mlflow` and
-`bifrost` in the same file (`services/haproxy.hcl`). Anyone who can reach the
-edge can still read every metric and every log line, and Prometheus's admin
-API is enabled. What the firewall change removes is the direct path, which is
-one exposure of two.
+Narrowing the firewall alone would not have made these services private.
+HAProxy has to be on the allow-list for any hostname it proxies, so a routed
+`prometheus.lab.orangecluster.nl` would have fetched metrics for anyone who
+asked it, over a publicly-trusted certificate, with no password. The
+`prometheus` and `loki` backends carried no `http-request auth` line, unlike
+`phoenix`, `mlflow` and `bifrost` in the same file.
 
-Closing the second one means adding authentication at the edge, either the
-existing basic-auth pattern or the OIDC work the rollout epic is doing for
-other services. No ticket owns that for these two backends today.
+The ACLs and backends were removed rather than given a password. Nothing
+needed them: Grafana's datasources dial the node directly and promtail pushes
+directly, so the only consumer of those routes was a human typing the URL.
+Adding authentication would have protected a door with nothing behind it.
 
-Both names resolve from public DNS today, and once the edge cutover is
-applied it serves them over a publicly-trusted certificate, so reaching them
-takes a browser and nothing else. That is the point of the edge, and it is
-also why the paragraph above matters.
+The cost is Prometheus's own web UI, which is worth having when a scrape
+breaks because its Targets page shows the actual error text where Grafana
+shows only `up == 0`. Forward the port for as long as the debugging takes:
+
+```bash
+ssh -L 9090:192.168.2.47:9090 raspberry@192.168.2.47
+```
 
 ### Applying a change to these rules
 
@@ -323,19 +330,16 @@ Add to `frontend stats`:
 ```
 
 Add to `frontend https_in`, the `:443` frontend where all routing lives.
-`http_in` only 301-redirects, so an ACL placed there can never route:
+`http_in` only 301-redirects, so an ACL placed there can never route.
+Grafana is routed; Prometheus deliberately is not, for the reason given at
+the top of this file:
 ```
-    acl is_prometheus hdr(host) -i prometheus.lab.orangecluster.nl
     acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
-    use_backend prometheus if is_prometheus
     use_backend grafana    if is_grafana
 ```
 
-Add backend blocks:
+Add the backend block:
 ```
-backend prometheus
-    server prometheus1 192.168.2.47:9090 check
-
 backend grafana
     server grafana1 192.168.2.47:3000 check
 ```
@@ -361,6 +365,6 @@ backend grafana
 
 1. After bootstrap re-run: `curl http://192.168.2.30:4646/v1/metrics?format=prometheus` returns metrics
 2. After `just apply`: check Nomad UI for jobs `prometheus`, `grafana`, `node-exporter` (system), `postgres` (updated)
-3. Visit `prometheus.lab.orangecluster.nl` -- Status > Targets should show all 8+ targets as UP
+3. Check scrape targets. Prometheus is not routed through the edge, so forward the port: `ssh -L 9090:192.168.2.47:9090 raspberry@192.168.2.47`, then open `http://localhost:9090` and check Status > Targets shows all targets UP
 4. Visit `grafana.lab.orangecluster.nl` -- login with admin/password-from-vault, Prometheus datasource should be pre-configured
 5. Import community dashboards: Node Exporter Full (1860), PostgreSQL (9628)

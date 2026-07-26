@@ -102,9 +102,7 @@ frontend https_in
     acl is_consul     hdr(host) -i consul.lab.orangecluster.nl
     acl is_phoenix    hdr(host) -i phoenix.lab.orangecluster.nl
     acl is_memex      hdr(host) -i memex.lab.orangecluster.nl
-    acl is_prometheus hdr(host) -i prometheus.lab.orangecluster.nl
     acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
-    acl is_loki       hdr(host) -i loki.lab.orangecluster.nl
     acl is_mlflow     hdr(host) -i mlflow.lab.orangecluster.nl
     acl is_bifrost    hdr(host) -i bifrost.lab.orangecluster.nl
 
@@ -115,9 +113,7 @@ frontend https_in
     use_backend consul     if is_consul
     use_backend phoenix    if is_phoenix
     use_backend memex      if is_memex
-    use_backend prometheus if is_prometheus
     use_backend grafana    if is_grafana
-    use_backend loki       if is_loki
     use_backend mlflow     if is_mlflow
     use_backend bifrost    if is_bifrost
 
@@ -150,14 +146,8 @@ backend phoenix
 backend memex
     server memex1 192.168.2.46:8000 check
 
-backend prometheus
-    server prometheus1 192.168.2.47:9090 check
-
 backend grafana
     server grafana1 192.168.2.47:3000 check
-
-backend loki
-    server loki1 192.168.2.47:3100 check
 
 backend mlflow
     http-request auth unless { http_auth(openfang_users) }
