@@ -192,17 +192,6 @@ locals {
         "allow from 100.64.0.0/10 to any port 8404 proto tcp",
       ]
     }
-    # dnsmasq on firebat. UDP and TCP both: large answers and retries fall
-    # back to TCP, and a UDP-only rule fails intermittently rather than
-    # outright, which is harder to diagnose.
-    dnsmasq = {
-      host     = "192.168.2.30"
-      ssh_user = "firebat"
-      rules = [
-        "allow from 192.168.0.0/16 to any port 53 proto udp",
-        "allow from 192.168.0.0/16 to any port 53 proto tcp",
-      ]
-    }
     # Docker registry on firebat
     registry = {
       host     = "192.168.2.30"
@@ -389,17 +378,4 @@ resource "nomad_job" "promtail" {
 resource "nomad_job" "nats" {
   jobspec    = templatefile("${path.module}/services/nats.hcl", {})
   depends_on = [nomad_dynamic_host_volume.nats_data]
-}
-
-### dnsmasq resolves the lab zone for the whole LAN. Split-horizon: these
-### names have no public A record, so they answer here and nowhere else.
-resource "nomad_job" "dnsmasq" {
-  jobspec = templatefile(
-    "${path.module}/services/dnsmasq.hcl",
-    {
-      lab_domain    = var.acme_domain
-      edge_ip       = "192.168.2.30"
-      public_domain = join(".", slice(split(".", var.acme_domain), 1, length(split(".", var.acme_domain))))
-    }
-  )
 }

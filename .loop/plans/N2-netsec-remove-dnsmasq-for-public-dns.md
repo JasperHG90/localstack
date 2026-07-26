@@ -89,6 +89,11 @@ in the path.
    (`services.tf:274-290`), so deleting the map entry leaves 53/udp and
    53/tcp open on the host. Delete them explicitly with `ufw delete allow`,
    or the port stays open indefinitely. This is the same trap N1 documents.
+   **Delete by rule SPEC, not by index.** The eval sends the operator to
+   `ufw status numbered`, which prints the rules as `[22]` and `[23]`, and the
+   natural next move after reading numbered output is `ufw delete 22` — which
+   renumbers `[23]` before the second delete runs, so the second command hits
+   the wrong rule.
 4. Rewrite `docs/dns.md` rather than deleting it: how the lab zone resolves
    now, what is published publicly, and why there is no local resolver. A
    reader arriving from the git history should find the answer, not a gap.
