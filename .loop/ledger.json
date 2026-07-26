@@ -482,7 +482,7 @@
         "T1-tls-acme-letsencrypt-transip",
         "T2-tls-dnsmasq-lab-zone-dns"
       ],
-      "priority": 60,
+      "priority": 140,
       "summary": "Flag-day edge cutover: HAProxy serves the publicly-trusted Let's Encrypt cert from Vault KV2, all twelve routed hostnames rename to <svc>.lab.orangecluster.nl in a single apply, and F3's Vault PKI apparatus is deleted. After this apply no .localstack name is served.",
       "relay_block_nonfork": true,
       "tags": [
@@ -562,7 +562,7 @@
       "dropped": false,
       "epic": "netsec",
       "dependencies": [],
-      "priority": 58,
+      "priority": 150,
       "summary": "Prometheus and Loki answer their query APIs to the entire LAN with no credentials. Narrow both firewall rules to the callers that actually need them, leaving Grafana (which authenticates) reachable. The two rules live in different Terraform roots.",
       "relay_block_nonfork": null,
       "tags": [
@@ -607,7 +607,7 @@
       "dropped": false,
       "epic": "netsec",
       "dependencies": [],
-      "priority": 22,
+      "priority": 160,
       "summary": "Retire the dnsmasq resolver once the lab zone is published as public A records. Removes the job, its firewall rule and its doc. Reverses T2 deliberately: the operator declined to make household DNS depend on a cluster machine.",
       "relay_block_nonfork": null,
       "tags": [

@@ -157,14 +157,26 @@ routed hostname.
 6. Adversarial review.
 
 ## Open questions
-- **Q1 — Run this before or after T3?** *Recommendation: after.* T3 is the
-  flag day that renames all twelve hostnames at once. Keeping dnsmasq until
-  the cutover is verified means there are two independent paths resolving the
-  lab zone during the riskiest change, and removing it afterwards costs
-  nothing. The reverse order removes the fallback exactly when it is most
-  likely to be wanted. This is a soft ordering, so it is expressed as a
-  recommendation rather than a `depends_on`, but the operator should
-  deliberately choose to ignore it rather than drift into it.
+- **Q1 → RESOLVED (operator, 2026-07-26): run this BEFORE T3.** Priority 160
+  places it above T3 at 140, so the loop hands it over first. My earlier
+  recommendation was the reverse and is superseded; it is recorded here rather
+  than deleted so the reasoning on both sides survives.
+
+  The case I made for going after T3: the cutover renames all twelve hostnames
+  at once, and keeping dnsmasq through it leaves two independent paths
+  resolving the lab zone during the riskiest change.
+
+  The case for going first, which is the decision: two resolution paths is
+  also two ways to be confused. With both dnsmasq and public records
+  answering, a device's result depends on which resolver it happened to ask,
+  so a cutover problem and a resolution problem look identical. Removing the
+  resolver first makes the path unambiguous, and it is verifiable on its own
+  before the flag day depends on it — which is exactly what the eval rows do.
+
+  **Consequence to accept knowingly:** during T3 there is no local fallback.
+  If the public records are wrong or a resolver refuses the RFC1918 answer,
+  the lab is unreachable until DNS is fixed, and no amount of edge
+  configuration compensates. That is the trade this ordering makes.
 - **Q2 — Delete `docs/dns.md` or rewrite it?** *Recommendation: rewrite.* The
   question "how do lab names resolve" still has an answer worth documenting,
   and a deleted file leaves a reader who found it in the history with nothing.
