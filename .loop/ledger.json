@@ -12,7 +12,9 @@
       "epic": "cicd",
       "dependencies": [],
       "priority": 0,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
@@ -26,7 +28,9 @@
       "epic": "foundation",
       "dependencies": [],
       "priority": 40,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
@@ -43,7 +47,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 50,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F3-foundation-haproxy-tls-vault-pki": {
       "slug": "F3-foundation-haproxy-tls-vault-pki",
@@ -52,12 +58,14 @@
       "review_cycles": 1,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/F3-foundation-haproxy-tls-vault-pki.adversarial.md",
+      "review_verdict": ".loop/archive/F3-foundation-haproxy-tls-vault-pki/verdict.adversarial.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
       "priority": 55,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
@@ -75,7 +83,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 30,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
@@ -92,7 +102,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
@@ -109,7 +121,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
@@ -126,7 +140,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
@@ -143,7 +159,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
@@ -161,7 +179,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
@@ -179,7 +199,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
@@ -196,7 +218,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
@@ -213,7 +237,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 15,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
@@ -227,7 +253,9 @@
       "epic": "spike",
       "dependencies": [],
       "priority": 35,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "S3-spike-oidc-version-claims": {
       "slug": "S3-spike-oidc-version-claims",
@@ -241,7 +269,9 @@
       "epic": "spike",
       "dependencies": [],
       "priority": 15,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F4-foundation-dnsmasq-localstack-dns": {
       "slug": "F4-foundation-dnsmasq-localstack-dns",
@@ -255,7 +285,9 @@
       "epic": "foundation",
       "dependencies": [],
       "priority": 20,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F5-foundation-vault-nomad-secrets-engine": {
       "slug": "F5-foundation-vault-nomad-secrets-engine",
@@ -264,12 +296,14 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/F5-foundation-vault-nomad-secrets-engine.adversarial.md",
+      "review_verdict": ".loop/archive/F5-foundation-vault-nomad-secrets-engine/verdict.adversarial.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
       "priority": 60,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F6-foundation-vault-consul-secrets-engine": {
       "slug": "F6-foundation-vault-consul-secrets-engine",
@@ -278,12 +312,14 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/F6-foundation-vault-consul-secrets-engine.adversarial.md",
+      "review_verdict": ".loop/archive/F6-foundation-vault-consul-secrets-engine/verdict.adversarial.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [],
       "priority": 59,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F7-foundation-deployer-vault-oidc-login": {
       "slug": "F7-foundation-deployer-vault-oidc-login",
@@ -300,7 +336,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 45,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
@@ -319,7 +357,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 40,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "T1-tls-acme-letsencrypt-transip": {
       "slug": "T1-tls-acme-letsencrypt-transip",
@@ -328,12 +368,14 @@
       "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/T1-tls-acme-letsencrypt-transip.adversarial.md",
+      "review_verdict": ".loop/archive/T1-tls-acme-letsencrypt-transip/verdict.adversarial.md",
       "dropped": false,
       "epic": "tls",
       "dependencies": [],
       "priority": 70,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "T2-tls-dnsmasq-lab-zone-dns": {
       "slug": "T2-tls-dnsmasq-lab-zone-dns",
@@ -342,12 +384,14 @@
       "review_cycles": 1,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/T2-tls-dnsmasq-lab-zone-dns.adversarial.md",
+      "review_verdict": ".loop/archive/T2-tls-dnsmasq-lab-zone-dns/verdict.adversarial.md",
       "dropped": false,
       "epic": "tls",
       "dependencies": [],
       "priority": 65,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "T3-tls-edge-cutover-lab-domain": {
       "slug": "T3-tls-edge-cutover-lab-domain",
@@ -364,7 +408,9 @@
         "T2-tls-dnsmasq-lab-zone-dns"
       ],
       "priority": 60,
-      "relay_block_nonfork": true
+      "summary": null,
+      "relay_block_nonfork": true,
+      "tags": []
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
@@ -380,7 +426,9 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 48,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "A1-audit-plan-premise-sweep": {
       "slug": "A1-audit-plan-premise-sweep",
@@ -394,7 +442,9 @@
       "epic": "audit",
       "dependencies": [],
       "priority": 52,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     },
     "T4-tls-fix-podman-image-digest-refs": {
       "slug": "T4-tls-fix-podman-image-digest-refs",
@@ -403,12 +453,14 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/T4-tls-fix-podman-image-digest-refs.adversarial.md",
+      "review_verdict": ".loop/archive/T4-tls-fix-podman-image-digest-refs/verdict.adversarial.md",
       "dropped": false,
       "epic": "tls",
       "dependencies": [],
       "priority": 80,
-      "relay_block_nonfork": null
+      "summary": null,
+      "relay_block_nonfork": null,
+      "tags": []
     }
   }
 }
