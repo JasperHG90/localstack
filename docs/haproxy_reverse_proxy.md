@@ -31,12 +31,8 @@ query APIs with no authentication, and nothing needs them through the proxy:
 Grafana's datasources dial `192.168.2.47` directly from the same node, and
 promtail pushes straight to Loki. Routing them would have meant every metric
 and every log line readable by anyone who can reach the edge, to save a
-browser tab. To reach Prometheus's own UI while debugging a scrape, forward
-the port for as long as you need it:
-
-```bash
-ssh -L 9090:192.168.2.47:9090 raspberry@192.168.2.47
-```
+browser tab. To reach either one while debugging, use an SSH tunnel: see
+*Reaching Prometheus or Loki directly* in `docs/monitoring.md`.
 
 The stats dashboard is at `http://192.168.2.30:8404`, outside the TLS
 frontend.

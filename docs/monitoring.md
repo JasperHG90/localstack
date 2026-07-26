@@ -40,13 +40,52 @@ needed them: Grafana's datasources dial the node directly and promtail pushes
 directly, so the only consumer of those routes was a human typing the URL.
 Adding authentication would have protected a door with nothing behind it.
 
-The cost is Prometheus's own web UI, which is worth having when a scrape
-breaks because its Targets page shows the actual error text where Grafana
-shows only `up == 0`. Forward the port for as long as the debugging takes:
+The cost is Prometheus's own web UI. Reach it with an SSH tunnel when you
+need it, as below.
+
+### Reaching Prometheus or Loki directly
+
+Grafana covers the day-to-day. Three things it does not give you:
+
+- **Status > Targets**, which shows the real scrape failure text
+  (`connection refused`, `context deadline exceeded`, a TLS error). Grafana
+  can tell you `up == 0` but not why.
+- The **expression browser** with metric-name autocomplete, for working out a
+  query before putting it on a dashboard.
+- Loki's **HTTP API**, for scripted queries or checking `/ready` when the
+  ingester looks unhappy.
+
+Forward both ports over SSH. The tunnel exists only while the command runs,
+so nothing is left open afterwards:
 
 ```bash
-ssh -L 9090:192.168.2.47:9090 raspberry@192.168.2.47
+ssh -L 9090:192.168.2.47:9090 -L 3100:192.168.2.47:3100 raspberry@192.168.2.47
 ```
+
+Then, in another shell or a browser:
+
+```bash
+open http://localhost:9090/targets              # scrape health, with error text
+open http://localhost:9090/query                # expression browser (/graph redirects here)
+curl -s http://localhost:3100/ready             # Loki readiness
+curl -s --get http://localhost:3100/loki/api/v1/labels   # Loki label list
+```
+
+Close it with `Ctrl-C`, or `exit` if you took a shell with it. To run it in
+the background instead, add `-f -N` and kill it by port when you are done:
+
+```bash
+ssh -f -N -L 9090:192.168.2.47:9090 raspberry@192.168.2.47
+pkill -f '9090:192.168.2.47'
+```
+
+If port 9090 or 3100 is already taken locally, pick any free local port: the
+left-hand number is yours, the right-hand pair is the target. `-L
+19090:192.168.2.47:9090` then serves on `http://localhost:19090`.
+
+This works from anywhere you can SSH to the node, LAN or tailnet, and needs
+no firewall change: the connection to Prometheus originates on
+`192.168.2.47` itself, which is already on its own allow-list.
 
 ### Applying a change to these rules
 
@@ -365,6 +404,6 @@ backend grafana
 
 1. After bootstrap re-run: `curl http://192.168.2.30:4646/v1/metrics?format=prometheus` returns metrics
 2. After `just apply`: check Nomad UI for jobs `prometheus`, `grafana`, `node-exporter` (system), `postgres` (updated)
-3. Check scrape targets. Prometheus is not routed through the edge, so forward the port: `ssh -L 9090:192.168.2.47:9090 raspberry@192.168.2.47`, then open `http://localhost:9090` and check Status > Targets shows all targets UP
+3. Check scrape targets. Prometheus is not routed through the edge, so tunnel to it (see *Reaching Prometheus or Loki directly* above) and confirm Status > Targets shows every target UP
 4. Visit `grafana.lab.orangecluster.nl` -- login with admin/password-from-vault, Prometheus datasource should be pre-configured
 5. Import community dashboards: Node Exporter Full (1860), PostgreSQL (9628)
