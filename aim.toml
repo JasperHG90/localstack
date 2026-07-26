@@ -122,6 +122,13 @@ source_path = "skills/tools/remove-image-background"
 target_dir = ".claude/skills/remove-image-background"
 risk_acknowledged = false
 
+[[skill]]
+qualified_name = "4290899e4697f267/agent-creator"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/agent-creator"
+target_dir = ".claude/skills/agent-creator"
+risk_acknowledged = false
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"

@@ -1,7 +1,7 @@
 ---
 epic = "tls"
 depends_on = []
-priority = 90
+priority = 10
 summary = "Alert on days-to-certificate-expiry at the edge. Deferred out of T3 because nothing in the cluster measures it: needs a blackbox exporter, a scrape config and a firewall rule before an alert rule has anything to read. Until this lands, a failed renewal is silent for 30 days and then takes all twelve routed services down at once."
 tags = ["tls", "monitoring", "alerting", "prometheus", "blackbox-exporter"]
 ---

@@ -1,7 +1,7 @@
 ---
 epic = "netsec"
 depends_on = []
-priority = 85
+priority = 10
 summary = "Make Terraform's ufw management converge and clean up after itself. Today null_resource.firewall runs `ufw allow` once at create and has no destroy step, so removed rules stay open on the host and host-side drift is invisible. Adds a scoped reconcile that adds what is missing and deletes what this map owns and no longer wants."
 tags = ["firewall", "ufw", "terraform", "provisioner", "drift"]
 ---

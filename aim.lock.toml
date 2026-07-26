@@ -126,6 +126,19 @@ risk_acknowledged = false
 sha = "8618a2dea8b1997e94bab553b436054ab7fec9c3"
 installed_at = "2026-07-06T20:27:11.145289Z"
 
+[[skill]]
+qualified_name = "4290899e4697f267/agent-creator"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/agent-creator"
+target_dir = ".claude/skills/agent-creator"
+history = []
+content_hash = "5d01261a106c86055a1cfc8b0288fc561164eb6f7da7d806468a4649914501e5"
+risk_acknowledged = false
+
+[skill.current]
+sha = "ba5842dee9bd077b2f1e65843c6b497a526cef77"
+installed_at = "2026-07-26T15:23:03.607725Z"
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"

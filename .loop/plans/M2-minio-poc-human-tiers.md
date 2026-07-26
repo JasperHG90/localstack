@@ -68,6 +68,45 @@ What is missing: no `identity_openid` provider is configured on the
 job, and no admin/writer/reader MinIO policies exist for OIDC users to
 assume via `role_policy`.
 
+### Relayed finding: console OIDC login is still available on this release
+
+Verified live against the running server on 2026-07-26. This ticket is the one
+most exposed to MinIO's `RELEASE.2025-05-24T17-08-30Z` notes, which say
+"Embedded UI Console is now deprecated and moved to object-browser" and
+"External IDP logins via LDAP/OIDC are removed as well; these are now available
+as part of the AiStor Product". The job runs a release **after** that date
+(`RELEASE.2025-09-07T16-13-09Z`, `minio.hcl:66`), so on the release notes alone
+M2 reads as impossible: it wants tiered **console** login via OIDC, and that
+note appears to remove both halves. **The deployed server contradicts it on
+both counts.** Do not re-litigate this from release notes.
+
+Evidence, all read-only against the running cluster:
+
+- **The console still serves.** `http://192.168.2.29:9001/` returns `200` with
+  `<meta content="MinIO Console" name="description">` and
+  `<meta name="minio-license" content="agpl">`.
+- **The OIDC subsystem is present.** `mc admin config get <alias>` lists
+  `identity_openid  enable OpenID SSO support`.
+- **Every key this ticket needs is settable.** `mc admin config get <alias>
+  identity_openid` returns `enable`, `display_name`, `config_url`,
+  `client_id`, `client_secret`, `claim_name` (default `policy`),
+  `claim_userinfo`, **`role_policy`** (the per-tier binding M2 is built on),
+  `redirect_uri_dynamic` (`off`), `scopes`, `vendor`, `user_id_claim`.
+  `display_name` is what labels the per-tier sign-in buttons.
+
+Two caveats the implementer still owns, neither of which is a fork:
+
+- A config key being settable is not proof the browser flow works end to end
+  on this release. M2's evals must exercise a real console login, not merely
+  assert the config applied.
+- The plan assumes **three named** `MINIO_IDENTITY_OPENID_*_<tier>` variable
+  sets (`Context`, first bullet). The config surface above is shown for the
+  default provider; confirm multi-provider naming against this release before
+  writing the job, since that is the mechanism the three tiers rely on.
+
+This is a constraint, not a fork: it confirms M2's premise rather than opening
+a decision, so M2 is not blocked.
+
 ## Non-goals / out of scope
 
 - The Vault side (F2): the OIDC provider, key, scope, the three

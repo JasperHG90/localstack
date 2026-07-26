@@ -72,6 +72,40 @@ What is missing: no `identity` stanza exists on any Nomad job in the repo
 MinIO has no `identity_openid` provider, so no keyless machine path
 exists yet.
 
+### Relayed finding: the deployed MinIO still supports OIDC and STS
+
+Verified live against the running server on 2026-07-26. Recorded because
+MinIO's `RELEASE.2025-05-24T17-08-30Z` notes say "External IDP logins via
+LDAP/OIDC are removed as well; these are now available as part of the AiStor
+Product", and this job runs a release **after** that date
+(`RELEASE.2025-09-07T16-13-09Z`, `minio.hcl:66`). Read alone, that note reads
+as though M1's whole mechanism was removed from the community server. **It was
+not.** Do not re-litigate this from release notes; the server was asked
+directly.
+
+Evidence, all read-only against `192.168.2.29:9000` with the root credentials
+from `secret/default/minio/localstack`:
+
+- `mc admin config get <alias>` lists `identity_openid  enable OpenID SSO
+  support` in the config subsystem, alongside `identity_ldap`.
+- `mc admin config get <alias> identity_openid` returns the full key set,
+  including the two this ticket depends on: **`role_policy`** (the
+  policy-name-equals-job-id binding) and **`claim_name`** (defaulting to
+  `policy`, the claim mode). Also present: `config_url`, `client_id`,
+  `client_secret`, `scopes`, `vendor`, `redirect_uri_dynamic`,
+  `user_id_claim`.
+- The STS endpoint is live and role-aware: an unauthenticated
+  `AssumeRoleWithWebIdentity` POST with a junk token returns
+  `InvalidParameterValue: Role arn:minio:iam:::role/dummy-internal does not
+  exist`, which is the response of a handler that exists and found no
+  configured role, not of a removed feature.
+
+This is a constraint, not a fork: it confirms M1's premise rather than opening
+a decision, so M1 is not blocked. The one thing still worth doing inside M1 is
+confirming the **behavior** rather than the config surface, since a key being
+settable is not proof the flow works end to end on this release. That is
+already M1's job, and its evals cover it.
+
 ## 5. Non-goals / out of scope
 
 - The human path (Vault as OIDC provider for interactive S3 access). M1
