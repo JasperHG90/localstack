@@ -638,6 +638,28 @@
         "prometheus",
         "blackbox-exporter"
       ]
+    },
+    "N3-netsec-converging-firewall-provisioner": {
+      "slug": "N3-netsec-converging-firewall-provisioner",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "netsec",
+      "dependencies": [],
+      "priority": 85,
+      "summary": "Make Terraform's ufw management converge and clean up after itself. Today null_resource.firewall runs `ufw allow` once at create and has no destroy step, so removed rules stay open on the host and host-side drift is invisible. Adds a scoped reconcile that adds what is missing and deletes what this map owns and no longer wants.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "firewall",
+        "ufw",
+        "terraform",
+        "provisioner",
+        "drift"
+      ]
     }
   }
 }
