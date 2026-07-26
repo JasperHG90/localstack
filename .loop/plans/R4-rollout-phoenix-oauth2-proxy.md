@@ -2,6 +2,8 @@
 epic = "rollout"
 depends_on = ["L1-landing-oauth2-proxy", "A1-audit-plan-premise-sweep"]
 priority = 5
+summary = "Put the Arize Phoenix web UI behind oauth2-proxy against Vault OIDC, reusing the L1 forward-auth pattern, without breaking OTLP trace ingest, which shares port 6006 with the UI and also listens on gRPC 4317. Only the UI gets the auth-code flow."
+tags = ["phoenix", "oauth2-proxy", "oidc", "haproxy"]
 ---
 
 R4-rollout-phoenix-oauth2-proxy: front the Phoenix web UI with oauth2-proxy against Vault OIDC while leaving OTLP trace ingest working

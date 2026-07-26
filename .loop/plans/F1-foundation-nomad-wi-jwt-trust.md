@@ -2,6 +2,8 @@
 epic = "foundation"
 depends_on = []
 priority = 40
+summary = "Make Nomad Workload Identity the cluster's machine-identity root: document the existing Nomad-to-Vault JWT trust chain, settle the identity-stanza audience convention for future non-Vault consumers, and prove keyless Vault reads with a scoped test job."
+tags = ["nomad", "vault", "jwt", "docs"]
 ---
 
 # F1: Establish Nomad Workload Identity as a trusted JWT issuer (foundation)

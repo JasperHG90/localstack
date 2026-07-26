@@ -2,6 +2,8 @@
 epic = "landing"
 depends_on = ["L1-landing-oauth2-proxy", "A1-audit-plan-premise-sweep"]
 priority = 5
+summary = "Deploy gethomepage as a Nomad job with static config on a dynamic host volume, routed through HAProxy behind L1's forward-auth, so an authenticated operator gets one themed landing page with tiles and live-status widgets instead of memorizing hostnames."
+tags = ["homepage", "nomad", "haproxy", "oauth2-proxy"]
 ---
 
 # L2: OAuth-gated Homepage (gethomepage) landing page at dash.localstack

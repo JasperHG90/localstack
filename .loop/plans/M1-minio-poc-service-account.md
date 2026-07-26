@@ -2,6 +2,8 @@
 epic = "minio"
 depends_on = ["F1-foundation-nomad-wi-jwt-trust", "A1-audit-plan-premise-sweep"]
 priority = 10
+summary = "Prove keyless machine access to MinIO by wiring Nomad Workload Identity JWTs to a named identity_openid provider on the MinIO job, then having a throwaway consumer job assume STS credentials and read its bucket. Establishes the policy-name-equals-job-id convention."
+tags = ["minio", "nomad", "jwt", "sts"]
 ---
 
 # M1: MinIO OIDC POC — keyless machine access via Nomad Workload Identity

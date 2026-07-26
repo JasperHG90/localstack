@@ -2,6 +2,8 @@
 epic = "foundation"
 depends_on = ["A1-audit-plan-premise-sweep"]
 priority = 48
+summary = "The shared nomad-workloads Vault policy grants every workload read/create/update on bootstrap/data/* (the GitHub PAT and Tailscale auth key) plus list on every secret path. Narrow it to the jobs that actually need it."
+tags = ["vault", "nomad", "policy", "security"]
 ---
 
 # F9 — Stop granting every Nomad workload write access to the bootstrap secrets

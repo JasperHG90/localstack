@@ -2,6 +2,8 @@
 epic = "rollout"
 depends_on = ["L1-landing-oauth2-proxy", "A1-audit-plan-premise-sweep"]
 priority = 5
+summary = "Front the MLflow tracking server with oauth2-proxy: humans via Vault OIDC auth-code flow, machines via Nomad Workload Identity bearer JWTs, replacing MLflow's shared HAProxy basic-auth gate. MLflow has no native SSO."
+tags = ["mlflow", "oauth2-proxy", "oidc", "haproxy"]
 ---
 
 # R1: Front MLflow with oauth2-proxy (Vault OIDC for humans, Nomad WI bearer for machines)

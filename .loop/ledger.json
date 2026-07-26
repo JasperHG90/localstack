@@ -12,9 +12,13 @@
       "epic": "cicd",
       "dependencies": [],
       "priority": 0,
-      "summary": null,
+      "summary": "A GitHub Actions workflow joins the tailnet as tag:ci and reaches one cluster service over it. That is the whole deliverable: the CI-to-cluster path proven in isolation, with nothing deployed.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "ci",
+        "tailscale",
+        "networking"
+      ]
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
@@ -28,9 +32,14 @@
       "epic": "foundation",
       "dependencies": [],
       "priority": 40,
-      "summary": null,
+      "summary": "Make Nomad Workload Identity the cluster's machine-identity root: document the existing Nomad-to-Vault JWT trust chain, settle the identity-stanza audience convention for future non-Vault consumers, and prove keyless Vault reads with a scoped test job.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "nomad",
+        "vault",
+        "jwt",
+        "docs"
+      ]
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
@@ -47,9 +56,13 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 50,
-      "summary": null,
+      "summary": "Stand up Vault's OIDC identity provider (key, scopes, clients, assignments, provider, and the identity groups they gate on) purely in Terraform, so every human OIDC login consumes one shared issuer.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "vault",
+        "oidc",
+        "terraform"
+      ]
     },
     "F3-foundation-haproxy-tls-vault-pki": {
       "slug": "F3-foundation-haproxy-tls-vault-pki",
@@ -83,9 +96,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 30,
-      "summary": null,
+      "summary": "Deploy oauth2-proxy as an OIDC client against Vault's provider, gating the cluster landing page at the HAProxy edge with a flat any-authenticated-user policy and HTTPS-only cookies. Establishes the forward-auth pattern R1 and R4 copy.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "oauth2-proxy",
+        "haproxy",
+        "oidc",
+        "vault"
+      ]
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
@@ -102,9 +120,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": null,
+      "summary": "Deploy gethomepage as a Nomad job with static config on a dynamic host volume, routed through HAProxy behind L1's forward-auth, so an authenticated operator gets one themed landing page with tiles and live-status widgets instead of memorizing hostnames.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "homepage",
+        "nomad",
+        "haproxy",
+        "oauth2-proxy"
+      ]
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
@@ -121,9 +144,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
-      "summary": null,
+      "summary": "Prove keyless machine access to MinIO by wiring Nomad Workload Identity JWTs to a named identity_openid provider on the MinIO job, then having a throwaway consumer job assume STS credentials and read its bucket. Establishes the policy-name-equals-job-id convention.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "minio",
+        "nomad",
+        "jwt",
+        "sts"
+      ]
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
@@ -140,9 +168,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
-      "summary": null,
+      "summary": "Give humans tiered MinIO console access (Admin, Reader, Writer) via three Vault-gated OIDC providers on the MinIO job, each bound to a matching MinIO role policy. Spans both Terraform layers, so the cross-layer ordering constraint is the real cost.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "minio",
+        "vault",
+        "oidc",
+        "terraform"
+      ]
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
@@ -159,9 +192,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": null,
+      "summary": "Front the MLflow tracking server with oauth2-proxy: humans via Vault OIDC auth-code flow, machines via Nomad Workload Identity bearer JWTs, replacing MLflow's shared HAProxy basic-auth gate. MLflow has no native SSO.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "mlflow",
+        "oauth2-proxy",
+        "oidc",
+        "haproxy"
+      ]
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
@@ -179,9 +217,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": null,
+      "summary": "Author and deploy a NATS auth-callout bridge and switch the nats server to delegate authentication to it, so a client presenting a valid Vault OIDC or Nomad WI JWT gets a scoped NATS user JWT and unauthenticated clients are rejected. The bus has no authentication today.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "nats",
+        "oidc",
+        "jwt",
+        "vault"
+      ]
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
@@ -199,9 +242,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": null,
+      "summary": "Replace static Terraform-generated Postgres passwords with short-lived credentials minted by Vault's database secrets engine, delivered to Nomad jobs through Workload Identity and rotated automatically. Prove it end to end on one real service and document the migration path for the rest.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "postgres",
+        "vault",
+        "secrets",
+        "nomad"
+      ]
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
@@ -218,9 +266,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": null,
+      "summary": "Put the Arize Phoenix web UI behind oauth2-proxy against Vault OIDC, reusing the L1 forward-auth pattern, without breaking OTLP trace ingest, which shares port 6006 with the UI and also listens on gRPC 4317. Only the UI gets the auth-code flow.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "phoenix",
+        "oauth2-proxy",
+        "oidc",
+        "haproxy"
+      ]
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
@@ -237,9 +290,13 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 15,
-      "summary": null,
+      "summary": "Time-boxed spike: decide whether HashiCorp Boundary earns its deploy-and-maintain cost as the session broker for programmatic and SSH access in this lab. The one artifact is a keep/drop decision document backed by evidence; no product code ships.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "spike",
+        "boundary",
+        "docs"
+      ]
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
@@ -253,9 +310,14 @@
       "epic": "spike",
       "dependencies": [],
       "priority": 35,
-      "summary": null,
+      "summary": "Spike: prove Vault's database secrets engine minting short-lived Postgres users on the existing PG18, consumed by a Nomad job via Workload Identity, and write up the credential-rotation-in-pools failure mode. Deliverable is a decision doc plus a proof of concept, not the rollout (that is R3).",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "spike",
+        "postgres",
+        "vault",
+        "secrets"
+      ]
     },
     "S3-spike-oidc-version-claims": {
       "slug": "S3-spike-oidc-version-claims",
@@ -336,9 +398,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 45,
-      "summary": null,
+      "summary": "Replace the Terraform deployer's static Vault root token with an operator OIDC login, and author a scoped deployer policy granting exactly the KV2, nomad/creds, consul/creds, and database/creds paths it needs.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "vault",
+        "oidc",
+        "terraform",
+        "policy"
+      ]
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
@@ -357,9 +424,15 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 40,
-      "summary": null,
+      "summary": "Flip the Nomad and Consul Terraform providers off their static god-mode env tokens onto Vault-brokered short-lived tokens, then delete the static tokens so the F7 OIDC session is the only credential entry point. Highest blast radius of the F5-F8 sub-feature: the Consul state backend consumes a token at init, before any provider runs.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "vault",
+        "nomad",
+        "consul",
+        "terraform",
+        "secrets"
+      ]
     },
     "T1-tls-acme-letsencrypt-transip": {
       "slug": "T1-tls-acme-letsencrypt-transip",
@@ -408,9 +481,14 @@
         "T2-tls-dnsmasq-lab-zone-dns"
       ],
       "priority": 60,
-      "summary": null,
+      "summary": "Flag-day edge cutover: HAProxy serves the publicly-trusted Let's Encrypt cert from Vault KV2, all twelve routed hostnames rename to <svc>.lab.orangecluster.nl in a single apply, and F3's Vault PKI apparatus is deleted. After this apply no .localstack name is served.",
       "relay_block_nonfork": true,
-      "tags": []
+      "tags": [
+        "tls",
+        "haproxy",
+        "dns",
+        "vault"
+      ]
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
@@ -426,9 +504,14 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 48,
-      "summary": null,
+      "summary": "The shared nomad-workloads Vault policy grants every workload read/create/update on bootstrap/data/* (the GitHub PAT and Tailscale auth key) plus list on every secret path. Narrow it to the jobs that actually need it.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "vault",
+        "nomad",
+        "policy",
+        "security"
+      ]
     },
     "A1-audit-plan-premise-sweep": {
       "slug": "A1-audit-plan-premise-sweep",
@@ -442,9 +525,13 @@
       "epic": "audit",
       "dependencies": [],
       "priority": 52,
-      "summary": null,
+      "summary": "Re-audit the thirteen plans that never had a plan-level review, for one failure pattern: premises falsified by work that shipped after authoring, while the path:line anchors still resolve so the existing gates see nothing wrong. Output is a triage verdict per plan plus mechanical corrections.",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [
+        "audit",
+        "planning",
+        "process"
+      ]
     },
     "T4-tls-fix-podman-image-digest-refs": {
       "slug": "T4-tls-fix-podman-image-digest-refs",
@@ -461,6 +548,51 @@
       "summary": null,
       "relay_block_nonfork": null,
       "tags": []
+    },
+    "N1-netsec-restrict-prometheus-loki-to-cluster": {
+      "slug": "N1-netsec-restrict-prometheus-loki-to-cluster",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "netsec",
+      "dependencies": [],
+      "priority": 58,
+      "summary": "Prometheus and Loki answer their query APIs to the entire LAN with no credentials. Narrow both firewall rules to the callers that actually need them, leaving Grafana (which authenticates) reachable. The two rules live in different Terraform roots.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "prometheus",
+        "loki",
+        "firewall",
+        "security",
+        "terraform"
+      ]
+    },
+    "G1-grafana-native-oidc-login": {
+      "slug": "G1-grafana-native-oidc-login",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "rollout",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 12,
+      "summary": "Point Grafana's built-in generic OAuth client at Vault's OIDC provider, so Grafana joins single sign-on without an oauth2-proxy in front of it. Configuration only; Grafana already authenticates, so this improves the login rather than closing a hole.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "grafana",
+        "oidc",
+        "vault",
+        "terraform"
+      ]
     }
   }
 }

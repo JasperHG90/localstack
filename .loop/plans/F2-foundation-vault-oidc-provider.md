@@ -2,6 +2,8 @@
 epic = "foundation"
 depends_on = ["T3-tls-edge-cutover-lab-domain", "A1-audit-plan-premise-sweep"]
 priority = 50
+summary = "Stand up Vault's OIDC identity provider (key, scopes, clients, assignments, provider, and the identity groups they gate on) purely in Terraform, so every human OIDC login consumes one shared issuer."
+tags = ["vault", "oidc", "terraform"]
 ---
 
 # F2 — Vault OIDC provider scaffolding (foundation)

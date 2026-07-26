@@ -2,6 +2,8 @@
 epic = "foundation"
 depends_on = ["F2-foundation-vault-oidc-provider", "A1-audit-plan-premise-sweep"]
 priority = 45
+summary = "Replace the Terraform deployer's static Vault root token with an operator OIDC login, and author a scoped deployer policy granting exactly the KV2, nomad/creds, consul/creds, and database/creds paths it needs."
+tags = ["vault", "oidc", "terraform", "policy"]
 ---
 
 # F7 — Deployer Vault OIDC login + scoped `deployer` policy (foundation)

@@ -2,6 +2,8 @@
 epic = "audit"
 depends_on = []
 priority = 52
+summary = "Re-audit the thirteen plans that never had a plan-level review, for one failure pattern: premises falsified by work that shipped after authoring, while the path:line anchors still resolve so the existing gates see nothing wrong. Output is a triage verdict per plan plus mechanical corrections."
+tags = ["audit", "planning", "process"]
 ---
 
 # A1 — Sweep every unreviewed plan for premises that went stale

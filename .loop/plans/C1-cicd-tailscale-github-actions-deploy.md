@@ -2,6 +2,8 @@
 epic = "cicd"
 depends_on = []
 priority = 0
+summary = "A GitHub Actions workflow joins the tailnet as tag:ci and reaches one cluster service over it. That is the whole deliverable: the CI-to-cluster path proven in isolation, with nothing deployed."
+tags = ["ci", "tailscale", "networking"]
 ---
 
 # C1 — Prove GitHub Actions can reach the cluster over the tailnet

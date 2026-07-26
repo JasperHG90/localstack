@@ -2,6 +2,8 @@
 epic = "rollout"
 depends_on = ["F1-foundation-nomad-wi-jwt-trust", "S2-spike-postgres-vault-creds", "A1-audit-plan-premise-sweep"]
 priority = 5
+summary = "Replace static Terraform-generated Postgres passwords with short-lived credentials minted by Vault's database secrets engine, delivered to Nomad jobs through Workload Identity and rotated automatically. Prove it end to end on one real service and document the migration path for the rest."
+tags = ["postgres", "vault", "secrets", "nomad"]
 ---
 
 # R3-rollout-postgres-vault-db-creds: roll out short-lived Vault-minted Postgres credentials (Path A)

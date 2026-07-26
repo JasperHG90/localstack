@@ -2,6 +2,8 @@
 epic = "rollout"
 depends_on = ["F1-foundation-nomad-wi-jwt-trust", "F2-foundation-vault-oidc-provider", "A1-audit-plan-premise-sweep"]
 priority = 5
+summary = "Author and deploy a NATS auth-callout bridge and switch the nats server to delegate authentication to it, so a client presenting a valid Vault OIDC or Nomad WI JWT gets a scoped NATS user JWT and unauthenticated clients are rejected. The bus has no authentication today."
+tags = ["nats", "oidc", "jwt", "vault"]
 ---
 
 # R2: Rollout — NATS auth-callout bridge for OIDC/WI identity

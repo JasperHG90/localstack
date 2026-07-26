@@ -2,6 +2,8 @@
 epic = "minio"
 depends_on = ["F2-foundation-vault-oidc-provider", "A1-audit-plan-premise-sweep"]
 priority = 10
+summary = "Give humans tiered MinIO console access (Admin, Reader, Writer) via three Vault-gated OIDC providers on the MinIO job, each bound to a matching MinIO role policy. Spans both Terraform layers, so the cross-layer ordering constraint is the real cost."
+tags = ["minio", "vault", "oidc", "terraform"]
 ---
 
 # M2 — MinIO OIDC POC, human path (console login by tier)

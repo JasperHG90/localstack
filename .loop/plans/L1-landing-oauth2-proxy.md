@@ -2,6 +2,8 @@
 epic = "landing"
 depends_on = ["F2-foundation-vault-oidc-provider", "T3-tls-edge-cutover-lab-domain", "A1-audit-plan-premise-sweep"]
 priority = 30
+summary = "Deploy oauth2-proxy as an OIDC client against Vault's provider, gating the cluster landing page at the HAProxy edge with a flat any-authenticated-user policy and HTTPS-only cookies. Establishes the forward-auth pattern R1 and R4 copy."
+tags = ["oauth2-proxy", "haproxy", "oidc", "vault"]
 ---
 
 # L1 — oauth2-proxy forward-auth gate for the cluster landing page

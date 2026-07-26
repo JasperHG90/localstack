@@ -2,6 +2,8 @@
 epic = "spike"
 depends_on = []
 priority = 35
+summary = "Spike: prove Vault's database secrets engine minting short-lived Postgres users on the existing PG18, consumed by a Nomad job via Workload Identity, and write up the credential-rotation-in-pools failure mode. Deliverable is a decision doc plus a proof of concept, not the rollout (that is R3)."
+tags = ["spike", "postgres", "vault", "secrets"]
 ---
 
 # S2 — Spike: Vault database secrets engine for short-lived Postgres creds

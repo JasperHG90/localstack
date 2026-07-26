@@ -2,6 +2,8 @@
 epic = "spike"
 depends_on = ["S2-spike-postgres-vault-creds", "A1-audit-plan-premise-sweep"]
 priority = 15
+summary = "Time-boxed spike: decide whether HashiCorp Boundary earns its deploy-and-maintain cost as the session broker for programmatic and SSH access in this lab. The one artifact is a keep/drop decision document backed by evidence; no product code ships."
+tags = ["spike", "boundary", "docs"]
 ---
 
 # S1: Spike — evaluate HashiCorp Boundary for the localstack home lab
