@@ -475,7 +475,7 @@
       "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/T3-tls-edge-cutover-lab-domain.adversarial.md, .loop/verdicts/T3-tls-edge-cutover-lab-domain.documentation.md",
+      "review_verdict": ".loop/archive/T3-tls-edge-cutover-lab-domain/verdict.adversarial.md, .loop/archive/T3-tls-edge-cutover-lab-domain/verdict.documentation.md",
       "dropped": false,
       "epic": "tls",
       "dependencies": [
@@ -558,7 +558,7 @@
       "review_cycles": 4,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/N1-netsec-restrict-prometheus-loki-to-cluster.adversarial.md",
+      "review_verdict": ".loop/archive/N1-netsec-restrict-prometheus-loki-to-cluster/verdict.adversarial.md",
       "dropped": false,
       "epic": "netsec",
       "dependencies": [],
@@ -603,7 +603,7 @@
       "review_cycles": 1,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/N2-netsec-remove-dnsmasq-for-public-dns.adversarial.md",
+      "review_verdict": ".loop/archive/N2-netsec-remove-dnsmasq-for-public-dns/verdict.adversarial.md",
       "dropped": false,
       "epic": "netsec",
       "dependencies": [],
@@ -628,7 +628,7 @@
       "dropped": false,
       "epic": "tls",
       "dependencies": [],
-      "priority": 90,
+      "priority": 10,
       "summary": "Alert on days-to-certificate-expiry at the edge. Deferred out of T3 because nothing in the cluster measures it: needs a blackbox exporter, a scrape config and a firewall rule before an alert rule has anything to read. Until this lands, a failed renewal is silent for 30 days and then takes all twelve routed services down at once.",
       "relay_block_nonfork": null,
       "tags": [
@@ -650,7 +650,7 @@
       "dropped": false,
       "epic": "netsec",
       "dependencies": [],
-      "priority": 85,
+      "priority": 10,
       "summary": "Make Terraform's ufw management converge and clean up after itself. Today null_resource.firewall runs `ufw allow` once at create and has no destroy step, so removed rules stay open on the host and host-side drift is invisible. Adds a scoped reconcile that adds what is missing and deletes what this map owns and no longer wants.",
       "relay_block_nonfork": null,
       "tags": [
@@ -660,6 +660,22 @@
         "provisioner",
         "drift"
       ]
+    },
+    "B1-bifrost-native-auth-and-virtual-keys": {
+      "slug": "B1-bifrost-native-auth-and-virtual-keys",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "bifrost",
+      "dependencies": [],
+      "priority": 200,
+      "summary": "Replace HAProxy basic-auth gating Bifrost with Bifrost's native\ngovernance.auth_config, gate inference via enforce_auth_on_inference +\na Terraform-managed virtual key for Hermes, and move the Prometheus\n/metrics scrape to basic_auth. Prerequisite for API keys.\n",
+      "relay_block_nonfork": null,
+      "tags": []
     }
   }
 }
