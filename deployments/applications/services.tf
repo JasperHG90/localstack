@@ -131,6 +131,7 @@ resource "nomad_job" "hermes" {
       email_secret                   = "${var.secret_mount}/data/default/hermes/email"
       nomad_secret                   = "${var.secret_mount}/data/default/hermes/nomad"
       api_server_secret              = vault_kv_secret_v2.hermes_api_server.path
+      bifrost_key_secret             = vault_kv_secret_v2.bifrost_hermes_key.path
       telegram_allowed_users         = var.telegram_allowed_users
       hermes_email_address           = var.hermes_email_address
       hermes_digest_email            = var.hermes_digest_email
@@ -141,6 +142,9 @@ resource "nomad_job" "hermes" {
       }
     }
   )
+  # Explicit dependency on the issued-key secret so terraform only deploys
+  # Hermes after the Bifrost virtual key exists in Vault (operator-required).
+  depends_on = [vault_kv_secret_v2.bifrost_hermes_key]
 }
 
 ### Loki — central log aggregator on ubuntu (rpi4b), MinIO-backed
@@ -183,12 +187,58 @@ resource "nomad_job" "bifrost" {
       #   vault kv put secret/default/bifrost/ollama-xebia    API_KEY=...
       #   vault kv put secret/default/bifrost/ollama-proton   API_KEY=...
       #   vault kv put secret/default/bifrost/gemini          GOOGLE_API_KEY=...
-      ollama_personal_secret = "${var.secret_mount}/data/default/bifrost/ollama-personal"
-      ollama_xebia_secret    = "${var.secret_mount}/data/default/bifrost/ollama-xebia"
-      ollama_proton_secret   = "${var.secret_mount}/data/default/bifrost/ollama-proton"
-      gemini_secret          = "${var.secret_mount}/data/default/bifrost/gemini"
+      #   vault kv put secret/default/bifrost/credentials username=... password=...
+      ollama_personal_secret     = "${var.secret_mount}/data/default/bifrost/ollama-personal"
+      ollama_xebia_secret        = "${var.secret_mount}/data/default/bifrost/ollama-xebia"
+      ollama_proton_secret       = "${var.secret_mount}/data/default/bifrost/ollama-proton"
+      gemini_secret              = "${var.secret_mount}/data/default/bifrost/gemini"
+      bifrost_credentials_secret = "${var.secret_mount}/data/default/bifrost/credentials"
     }
   )
+}
+
+# Admin creds the bifrost provider authenticates with and Bifrost itself reads
+# via env.BIFROST_ADMIN_USERNAME/PASSWORD. Externally seeded (see comment above).
+ephemeral "vault_kv_secret_v2" "bifrost_admin" {
+  mount = var.secret_mount
+  name  = "default/bifrost/credentials"
+}
+
+# The bifrost terraform provider has no retry/wait, so a virtual_key create can
+# 401/refuse against a not-yet-ready Bifrost. This gate polls /health (always
+# whitelisted, even with auth enabled) until the gateway is up before the key
+# resource runs.
+resource "null_resource" "bifrost_ready" {
+  depends_on = [nomad_job.bifrost]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/sh", "-c"]
+    command     = <<-EOT
+      for i in $(seq 1 60); do
+        if curl -fsS http://192.168.2.50:8080/health >/dev/null 2>&1; then
+          echo "bifrost ready"
+          exit 0
+        fi
+        echo "waiting for bifrost /health..."
+        sleep 2
+      done
+      echo "bifrost did not become ready" >&2
+      exit 1
+    EOT
+  }
+}
+
+# Hermes virtual key: allow-all on ollama + gemini. key_ids/allowed_models
+# default to deny-all, so both MUST be ["*"] or Hermes inference 403s.
+resource "bifrost_virtual_key" "hermes" {
+  name = "hermes"
+
+  provider_configs = [
+    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+  ]
+
+  depends_on = [null_resource.bifrost_ready]
 }
 
 ### MLflow — experiment + model tracking, Postgres backend + MinIO artifacts

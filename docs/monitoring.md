@@ -33,7 +33,7 @@ HAProxy has to be on the allow-list for any hostname it proxies, so a routed
 `prometheus.lab.orangecluster.nl` would have fetched metrics for anyone who
 asked it, over a publicly-trusted certificate, with no password. The
 `prometheus` and `loki` backends carried no `http-request auth` line, unlike
-`phoenix`, `mlflow` and `bifrost` in the same file.
+`phoenix` and `mlflow` in the same file.
 
 The ACLs and backends were removed rather than given a password. Nothing
 needed them: Grafana's datasources dial the node directly and promtail pushes

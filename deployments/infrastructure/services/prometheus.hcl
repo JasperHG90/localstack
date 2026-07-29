@@ -60,6 +60,10 @@ job "prometheus" {
         destination = "/prometheus"
       }
 
+      # Reads the synced bifrost admin creds (default/prometheus/bifrost-admin)
+      # for the dedicated bifrost /metrics scrape job's basic_auth.
+      vault {}
+
       template {
         data = <<-EOF
         global:
@@ -99,6 +103,20 @@ job "prometheus" {
             metrics_path: /minio/v2/metrics/cluster
             static_configs:
               - targets: ["192.168.2.29:9000"]
+
+          # Bifrost /metrics requires basic_auth now that governance.auth_config
+          # is enabled (whitelisting /metrics is not supported). Creds come from
+          # the synced copy at default/prometheus/bifrost-admin. Not scraped via
+          # the shared consul_services job because that job cannot carry
+          # per-target basic_auth, and the bifrost service is no longer tagged
+          # "prometheus".
+          - job_name: bifrost
+            metrics_path: /metrics
+            basic_auth:
+              username: "{{ with secret "${bifrost_admin_secret}" }}{{ .Data.data.username }}{{ end }}"
+              password: "{{ with secret "${bifrost_admin_secret}" }}{{ .Data.data.password }}{{ end }}"
+            static_configs:
+              - targets: ["192.168.2.50:8080"]
 
           # memex omitted: /metrics requires auth — wire up via Consul SD when
           # an auth-aware Prometheus config is added (or remove the auth gate).

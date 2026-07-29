@@ -154,7 +154,6 @@ backend mlflow
     server mlflow1 192.168.2.50:5050 check
 
 backend bifrost
-    http-request auth unless { http_auth(openfang_users) }
     server bifrost1 192.168.2.50:8080 check
         EOH
         destination = "local/haproxy.cfg"

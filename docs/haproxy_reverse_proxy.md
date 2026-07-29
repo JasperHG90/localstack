@@ -23,8 +23,9 @@ to the HTTPS URL.
 | `mlflow.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 5050 |
 | `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
 
-`phoenix`, `mlflow` and `bifrost` sit behind HTTP basic auth. The rest are
-open to anyone who reaches the edge.
+`phoenix` and `mlflow` sit behind HTTP basic auth. `bifrost` authenticates
+with its own native `governance.auth_config` (admin creds from Vault), so
+HAProxy no longer gates it. The rest are open to anyone who reaches the edge.
 
 **Prometheus and Loki are deliberately not routed here.** Both serve their
 query APIs with no authentication, and nothing needs them through the proxy:

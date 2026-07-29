@@ -24,6 +24,10 @@ terraform {
       source  = "hashicorp/null"
       version = "~>3.2.0"
     }
+    bifrost = {
+      source  = "AirHelp-OSP/bifrost"
+      version = "~>0.1.0"
+    }
   }
 }
 
@@ -50,4 +54,10 @@ provider "postgresql" {
   password        = ephemeral.vault_kv_secret_v2.postgres_admin.data.password
   sslmode         = "disable"
   connect_timeout = 15
+}
+
+provider "bifrost" {
+  endpoint = "http://192.168.2.50:8080"
+  username = ephemeral.vault_kv_secret_v2.bifrost_admin.data.username
+  password = ephemeral.vault_kv_secret_v2.bifrost_admin.data.password
 }

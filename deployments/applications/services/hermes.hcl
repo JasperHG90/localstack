@@ -206,7 +206,9 @@ NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
 HERMES_YOLO_MODE=true
 HERMES_HOME=/opt/data
-BIFROST_API_KEY=hermes-local
+{{- with secret "${bifrost_key_secret}" }}
+BIFROST_API_KEY={{ .Data.data.API_KEY }}
+{{- end }}
 EOF
 
         destination = "local/hermes.env"
@@ -405,6 +407,9 @@ MEMEX_API_KEY={{ .Data.data.admin_key }}
 {{- with secret "${api_server_secret}" }}
 API_SERVER_KEY={{ .Data.data.key }}
 {{- end }}
+{{- with secret "${bifrost_key_secret}" }}
+BIFROST_API_KEY={{ .Data.data.API_KEY }}
+{{- end }}
 EOF
 
         destination = "secrets/file.env"
@@ -451,7 +456,6 @@ EOF
         EMAIL_IMAP_HOST        = "imap.gmail.com"
         EMAIL_SMTP_HOST        = "smtp.gmail.com"
         DIGEST_EMAIL           = "${hermes_digest_email}"
-        BIFROST_API_KEY        = "hermes-local"
         API_SERVER_ENABLED     = "true"
         API_SERVER_HOST        = "0.0.0.0"
         GATEWAY_HEALTH_TIMEOUT = "5"

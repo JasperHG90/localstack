@@ -99,6 +99,18 @@ resource "vault_kv_secret_v2" "hermes_api_server" {
   })
 }
 
+# Bifrost virtual key issued to Hermes. Stored under Hermes's own KV prefix
+# (default/hermes/*) because the nomad-workloads role grants Hermes read only
+# there. `value` is set only on create and is sensitive.
+resource "vault_kv_secret_v2" "bifrost_hermes_key" {
+  mount = var.secret_mount
+  name  = "default/hermes/bifrost"
+  data_json = jsonencode({
+    API_KEY = bifrost_virtual_key.hermes.value
+  })
+  depends_on = [bifrost_virtual_key.hermes]
+}
+
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users
   mount    = var.secret_mount

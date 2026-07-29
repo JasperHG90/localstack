@@ -334,7 +334,10 @@ resource "nomad_job" "node_exporter" {
 resource "nomad_job" "prometheus" {
   jobspec = templatefile(
     "${path.module}/services/prometheus.hcl",
-    { consul_address = "192.168.2.30:8500" }
+    {
+      consul_address       = "192.168.2.30:8500"
+      bifrost_admin_secret = vault_kv_secret_v2.prometheus_bifrost_admin.path
+    }
   )
   depends_on = [nomad_dynamic_host_volume.prometheus_data]
 }

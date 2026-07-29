@@ -122,7 +122,7 @@ Database schema changes go through `applications/migrations/` using golang-migra
 - **Task runner**: `just` (not make). Each major directory has its own `justfile`.
 - **Container runtime**: Podman (not Docker) on the cluster nodes. Dev container uses Docker-in-Docker.
 - **Secrets**: All in Vault KV2. Never hardcode credentials. Bootstrap secrets come from `bootstrap/.env` (see `.env.example`).
-- **Terraform providers**: Nomad, Vault, Consul, MinIO, PostgreSQL — all configured in respective `providers.tf` files.
+- **Terraform providers**: Nomad, Vault, Consul, MinIO, PostgreSQL, Bifrost — all configured in respective `providers.tf` files.
 - **Pre-commit hooks**: JSON/YAML validation, AST checks, private key detection, Nomad HCL formatting. Run `just pre_commit` before committing.
 - **Python**: 3.12 (see `.python-version`).
 

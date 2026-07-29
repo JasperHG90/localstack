@@ -86,3 +86,33 @@ resource "vault_kv_secret_v2" "postgres_root_credentials" {
     }
   }
 }
+
+### Bifrost admin creds — synced copy for Prometheus /metrics basic_auth.
+### The bifrost admin creds live at default/bifrost/credentials (externally
+### seeded). Prometheus's nomad-workloads role grants read on default/prometheus/*
+### only, so rather than widen that policy we copy the creds into Prometheus's
+### own prefix here. Drift risk: rotating default/bifrost/credentials without a
+### terraform apply leaves Prometheus scraping with stale creds (401).
+### A data source (not an ephemeral read) is required: the synced creds persist
+### in state via data_json, and ephemeral values cannot flow into a
+### non-write-only attribute.
+data "vault_kv_secret_v2" "bifrost_admin" {
+  mount = var.secret_mount
+  name  = "default/bifrost/credentials"
+}
+
+resource "vault_kv_secret_v2" "prometheus_bifrost_admin" {
+  mount = vault_mount.kvv2.path
+  name  = "default/prometheus/bifrost-admin"
+  data_json = jsonencode({
+    username = data.vault_kv_secret_v2.bifrost_admin.data.username
+    password = data.vault_kv_secret_v2.bifrost_admin.data.password
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}

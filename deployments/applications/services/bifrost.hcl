@@ -22,11 +22,11 @@ job "bifrost" {
         port    = "http"
         address = "${bifrost_host}"
 
-        # "prometheus" opts this service into the consul_services scrape job
-        # (see prometheus.hcl). Bifrost serves /metrics on the API port with no
-        # auth; if auth_config.is_enabled is ever set, the scrape job needs
-        # basic_auth to keep reaching /metrics.
-        tags = ["http", "llm", "gateway", "prometheus"]
+        # governance.auth_config is enabled, so /metrics requires basic_auth.
+        # This service is NOT tagged "prometheus": the shared consul_services
+        # job cannot carry per-target basic_auth, so prometheus.hcl scrapes
+        # bifrost via a dedicated basic_auth job instead.
+        tags = ["http", "llm", "gateway"]
 
         check {
           type     = "http"
@@ -55,9 +55,13 @@ job "bifrost" {
 
       vault {}
 
-      # --- provider API keys (resolved by Bifrost via env. references) ---
+      # --- provider API keys + admin creds (resolved by Bifrost via env. references) ---
       template {
         data        = <<EOF
+{{- with secret "${bifrost_credentials_secret}" }}
+BIFROST_ADMIN_USERNAME={{ .Data.data.username }}
+BIFROST_ADMIN_PASSWORD={{ .Data.data.password }}
+{{- end }}
 {{- with secret "${ollama_personal_secret}" }}
 OLLAMA_KEY_PERSONAL={{ .Data.data.API_KEY }}
 {{- end }}
@@ -84,7 +88,15 @@ EOF
   "$schema": "https://www.getbifrost.ai/schema",
   "client": {
     "drop_excess_requests": false,
-    "enable_logging": true
+    "enable_logging": true,
+    "enforce_auth_on_inference": true
+  },
+  "governance": {
+    "auth_config": {
+      "is_enabled": true,
+      "admin_username": "env.BIFROST_ADMIN_USERNAME",
+      "admin_password": "env.BIFROST_ADMIN_PASSWORD"
+    }
   },
   "providers": {
     "ollama": {
