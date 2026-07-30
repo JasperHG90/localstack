@@ -169,9 +169,13 @@ resource "nomad_job" "memex" {
       memex_host            = "192.168.2.46"
       bifrost_host          = "192.168.2.50"
       memex_version         = "1.1.0"
+      # Bifrost virtual key issued to Memex (default/memex/bifrost). Memex's
+      # default/extraction/reflection models all call Bifrost /v1 with this key.
+      bifrost_key_secret = vault_kv_secret_v2.bifrost_memex_key.path
     }
   )
-  depends_on = [postgresql_database.database]
+  # Deploy Memex only after its Bifrost key exists in Vault.
+  depends_on = [postgresql_database.database, vault_kv_secret_v2.bifrost_memex_key]
 }
 
 ### Bifrost — LLM gateway: load-balances two Ollama Cloud keys, falls back to Gemini (ADR-001)
@@ -193,8 +197,14 @@ resource "nomad_job" "bifrost" {
       ollama_proton_secret       = "${var.secret_mount}/data/default/bifrost/ollama-proton"
       gemini_secret              = "${var.secret_mount}/data/default/bifrost/gemini"
       bifrost_credentials_secret = "${var.secret_mount}/data/default/bifrost/credentials"
+      # config_store is Postgres (see bifrost.hcl); the bifrost role/DB are
+      # provisioned in database.tf and the creds stored at default/bifrost/db.
+      bifrost_postgres_host = data.consul_service.postgres.service[0].node_address
+      bifrost_db_secret     = vault_kv_secret_v2.bifrost_db_credentials.path
     }
   )
+  # Bifrost migrates its config_store schema on startup, so the DB must exist first.
+  depends_on = [postgresql_database.database]
 }
 
 # Admin creds the bifrost provider authenticates with and Bifrost itself reads
@@ -211,11 +221,22 @@ ephemeral "vault_kv_secret_v2" "bifrost_admin" {
 resource "null_resource" "bifrost_ready" {
   depends_on = [nomad_job.bifrost]
 
+  # Carry the endpoint and a hash of the jobspec. The jobspec hash forces this
+  # gate to replace (and re-poll /health) on every Bifrost redeploy, so virtual
+  # keys (which depend on this resource) are only touched after the gateway is
+  # back up. Carrying the endpoint in triggers also makes the bifrost provider
+  # (providers.tf) depend on this resource: the provider cannot configure until
+  # Bifrost is up, instead of racing a restart against a hardcoded IP.
+  triggers = {
+    endpoint = "http://192.168.2.50:8080"
+    jobspec  = sha1(nomad_job.bifrost.jobspec)
+  }
+
   provisioner "local-exec" {
     interpreter = ["/bin/sh", "-c"]
     command     = <<-EOT
       for i in $(seq 1 60); do
-        if curl -fsS http://192.168.2.50:8080/health >/dev/null 2>&1; then
+        if curl -fsS ${self.triggers.endpoint}/health >/dev/null 2>&1; then
           echo "bifrost ready"
           exit 0
         fi
@@ -232,6 +253,19 @@ resource "null_resource" "bifrost_ready" {
 # default to deny-all, so both MUST be ["*"] or Hermes inference 403s.
 resource "bifrost_virtual_key" "hermes" {
   name = "hermes"
+
+  provider_configs = [
+    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+  ]
+
+  depends_on = [null_resource.bifrost_ready]
+}
+
+# Memex virtual key: allow-all on ollama + gemini. Same deny-all default as the
+# Hermes key, so key_ids/allowed_models MUST be ["*"] or Memex inference 403s.
+resource "bifrost_virtual_key" "memex" {
+  name = "memex"
 
   provider_configs = [
     { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 },

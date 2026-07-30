@@ -10,13 +10,26 @@ init:
     CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
     terraform init -backend-config=./vars/backend-config.hcl
 
-apply:
-    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
-    terraform apply -var-file=./vars/prod.tfvars
+apply refresh="true" target="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{target}}" ]; then
+        echo ">> No target specified, applying all resources"
+        CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+        terraform apply -var-file=./vars/prod.tfvars -refresh={{refresh}}
+    else
+        echo ">> Applying target: {{target}}"
+        CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+        terraform apply -var-file=./vars/prod.tfvars -refresh={{refresh}} -target={{target}}
+    fi
 
 destroy:
     CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
     terraform destroy -var-file=./vars/prod.tfvars
+
+state_rm resource:
+    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    terraform state rm {{resource}}
 
 # Rebuild and push the custom Hermes image (Hermes base + Memex wheels).
 # Tag is read from services.tf so the Dockerfile and Terraform stay in lockstep.

@@ -57,7 +57,14 @@ provider "postgresql" {
 }
 
 provider "bifrost" {
-  endpoint = "http://192.168.2.50:8080"
+  # Endpoint is carried by null_resource.bifrost_ready.triggers. Reading a
+  # null_resource attribute here gives the provider an explicit dependency on
+  # Bifrost being up (bifrost_ready depends on nomad_job.bifrost and re-polls
+  # /health on every redeploy), so the provider cannot configure — and virtual
+  # keys cannot refresh — against a down or mid-restart gateway. Provider blocks
+  # take no depends_on; a resource reference is the Terraform-native way to
+  # express this dependency.
+  endpoint = null_resource.bifrost_ready.triggers["endpoint"]
   username = ephemeral.vault_kv_secret_v2.bifrost_admin.data.username
   password = ephemeral.vault_kv_secret_v2.bifrost_admin.data.password
 }

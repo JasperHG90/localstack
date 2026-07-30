@@ -111,6 +111,29 @@ resource "vault_kv_secret_v2" "bifrost_hermes_key" {
   depends_on = [bifrost_virtual_key.hermes]
 }
 
+# Bifrost virtual key issued to Memex (its extraction/reflection/default models
+# all route through Bifrost /v1). Stored under Memex's own KV prefix
+# (default/memex/*) per the nomad-workloads role grant.
+resource "vault_kv_secret_v2" "bifrost_memex_key" {
+  mount = var.secret_mount
+  name  = "default/memex/bifrost"
+  data_json = jsonencode({
+    API_KEY = bifrost_virtual_key.memex.value
+  })
+  depends_on = [bifrost_virtual_key.memex]
+}
+
+# Bifrost Postgres config_store credentials. The bifrost nomad-workloads role
+# grants read on default/bifrost/*, so no policy change is needed.
+resource "vault_kv_secret_v2" "bifrost_db_credentials" {
+  mount = var.secret_mount
+  name  = "default/bifrost/db"
+  data_json = jsonencode({
+    username = postgresql_role.role["bifrost"].name
+    password = random_password.password["bifrost"].result
+  })
+}
+
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users
   mount    = var.secret_mount

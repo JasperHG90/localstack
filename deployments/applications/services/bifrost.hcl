@@ -40,9 +40,10 @@ job "bifrost" {
         image        = "docker.io/maximhq/bifrost:v${bifrost_version}"
         network_mode = "host"
 
-        # config.json is the declarative source of truth (GitOps); the
-        # SQLite config/log stores live in the container's anonymous
-        # /app/data volume and are rebuilt from it on every alloc.
+        # config.json is the declarative source of truth (GitOps). The
+        # config_store is Postgres (persistent) so governance virtual keys
+        # survive restarts and the admin UI can manage them; the logs_store
+        # stays SQLite on the anonymous /app/data volume, rebuilt per alloc.
         volumes = [
           "local/config.json:/app/data/config.json",
         ]
@@ -73,6 +74,11 @@ OLLAMA_KEY_PROTON={{ .Data.data.API_KEY }}
 {{- end }}
 {{- with secret "${gemini_secret}" }}
 GEMINI_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
+{{- end }}
+PG_HOST=${bifrost_postgres_host}
+{{- with secret "${bifrost_db_secret}" }}
+PG_USER={{ .Data.data.username }}
+PG_PASSWORD={{ .Data.data.password }}
 {{- end }}
 EOF
         destination = "secrets/bifrost.env"
@@ -119,8 +125,15 @@ EOF
   },
   "config_store": {
     "enabled": true,
-    "type": "sqlite",
-    "config": { "path": "/app/data/config.db" }
+    "type": "postgres",
+    "config": {
+      "host": "env.PG_HOST",
+      "port": "5432",
+      "user": "env.PG_USER",
+      "password": "env.PG_PASSWORD",
+      "db_name": "bifrost",
+      "ssl_mode": "disable"
+    }
   },
   "logs_store": {
     "enabled": true,

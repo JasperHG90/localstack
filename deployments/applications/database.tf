@@ -5,6 +5,7 @@ locals {
     "memex",
     "phoenix",
     "mlflow",
+    "bifrost",
   ]
   databases = {
     ducklake = {
@@ -24,6 +25,14 @@ locals {
     }
     mlflow = {
       owner      = "mlflow"
+      readers    = []
+      extensions = []
+    }
+    # Bifrost config_store: persists governance virtual keys across restarts so
+    # the admin UI can manage them. An empty DB is enough; Bifrost migrates its
+    # own schema on startup.
+    bifrost = {
+      owner      = "bifrost"
       readers    = []
       extensions = []
     }
