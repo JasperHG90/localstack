@@ -325,3 +325,21 @@ silently.
 - **Q3–Q5** are for the spike itself to answer in the doc (backing
   Postgres, controller/worker collocation, Boundary-SSH vs Tailscale-SSH)
   — surfaced as tradeoffs, not settled up front.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/S1-spike-boundary-evaluation.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: Its deliverable path `docs/notes/` was deleted after authoring, the operator's own resolved fork chose `docs/rfcs/`, and the eval hardcodes the dead path into five 100%-threshold rows. The spike is unexecutable to a passing Definition of Done. It is NOT redundant, unlike dropped S3 -- fix it, do not drop it.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

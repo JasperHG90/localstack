@@ -43,10 +43,13 @@
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review PARTIALLY SOUND/fail: client set is 4 different numbers across body, addendum and eval; decides what artifact exists and L1/R1/R4/G1 all consume it. See .loop/verdicts/F2-foundation-vault-oidc-provider.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -82,10 +85,13 @@
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review PARTIALLY SOUND/fail: eval redirect/cookie expectations wrong for oauth2-proxy so correct code fails a 100% row; L1<->L2 dependency cycle. See .loop/verdicts/L1-landing-oauth2-proxy.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -107,10 +113,13 @@
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: body mandates an ungated dash backend contradicting its own resolved fork; security eval row passes against an empty cluster. See .loop/verdicts/L2-landing-homepage.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -131,10 +140,13 @@
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "premise BROKEN: MinIO RELEASE.2025-09-07 removed jwks_url, only config_url works; Nomad discovery disabled and no ticket owns oidc_issuer. See .loop/verdicts/M1-minio-poc-service-account.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -155,10 +167,13 @@
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review PARTIALLY SOUND/fail: MinIO per-target redirect_uri deprecated and replacement is server-global, so 3 tiers cannot have 3 callbacks; no X-Forwarded-Proto so callback derives http. See .loop/verdicts/M2-minio-poc-human-tiers.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -179,10 +194,13 @@
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: mlflow#10922 closed not_planned 19 days before authoring, S3 citation refers to a spike that never ran, MLflow now ships an SSO plugin. See .loop/verdicts/R1-rollout-mlflow-oauth2-proxy.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -203,10 +221,13 @@
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: nats-server#5692 is a doc request not the capability claim; nats --creds cannot carry a WI JWT; registry firebat:5000 does not exist. See .loop/verdicts/R2-rollout-nats-auth-callout.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -228,10 +249,13 @@
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: inlines S2's conclusion but S2 never ran and now forbids the mechanism; F9 owns the same policy and is narrowing it. See .loop/verdicts/R3-rollout-postgres-vault-db-creds.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -253,10 +277,13 @@
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review PARTIALLY SOUND/fail: Phoenix hard-requires an email claim, Vault emits none and silently drops the scope, so the callback dies after a successful login. See .loop/verdicts/R4-rollout-phoenix-oauth2-proxy.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -279,10 +306,13 @@
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 1,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: deliverable path docs/notes was deleted after authoring and the eval hardcodes it into five 100% rows; unexecutable to a passing DoD. NOT redundant - fix, do not drop. See .loop/verdicts/S1-spike-boundary-evaluation.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -387,10 +417,13 @@
     },
     "F7-foundation-deployer-vault-oidc-login": {
       "slug": "F7-foundation-deployer-vault-oidc-login",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: deployer policy forbids the sys/* and auth/* writes its own terraform apply performs; eval row 3 certifies the broken result green. See .loop/verdicts/F7-foundation-deployer-vault-oidc-login.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -411,10 +444,13 @@
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review BROKEN/fail: acceptance unachievable under F7's declared grant; brokered token cannot manage the Nomad ACL policy defining it. See .loop/verdicts/F8-foundation-deployer-provider-cutover.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -494,10 +530,13 @@
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "eval-missing",
+        "reason": "no eval marker exists (loopctl eval -> absent) plus 3 required fixes from plan review. See .loop/verdicts/F9-foundation-scope-nomad-workloads-policy.plan-validator.md"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -517,12 +556,12 @@
     },
     "A1-audit-plan-premise-sweep": {
       "slug": "A1-audit-plan-premise-sweep",
-      "stage": "ready",
-      "attempts": 0,
-      "review_cycles": 0,
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/A1-audit-plan-premise-sweep.adversarial.md, .loop/verdicts/A1-audit-plan-premise-sweep.documentation.md",
       "dropped": false,
       "epic": "audit",
       "dependencies": [],

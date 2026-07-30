@@ -361,3 +361,21 @@ Renaming is safe but manual: no other ticket declares R4 as a dependency
 it means registering `R4-rollout-phoenix-native-oidc`, moving this file and the
 eval marker, and dropping the old slug. Recommend doing it before
 implementation starts. Operator's call.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: PARTIALLY SOUND. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/R4-rollout-phoenix-oauth2-proxy.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: Phoenix hard-requires an `email` claim; Vault emits none and silently drops the scope, so the login succeeds and the callback dies. The redirect URI literal is wrong. Two eval rows fail a correct implementation.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

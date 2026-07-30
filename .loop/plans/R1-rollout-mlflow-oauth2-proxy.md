@@ -472,3 +472,21 @@ instance, no HAProxy SPOE/Lua forward-auth. Chosen over shared+forward-auth
 for the lighter wiring and per-service blast radius.
 
 **Dependencies:** R1 depends on **L1** (pattern) → **F2** + **F3**.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/R1-rollout-mlflow-oauth2-proxy.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: `mlflow/mlflow#10922` was closed `not_planned` 19 days BEFORE this plan was authored, its "confirmed by the S3 spike finding" cites a spike that never ran, and MLflow now ships a documented SSO plugin. Eval row 6 passes with basic auth fully intact.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

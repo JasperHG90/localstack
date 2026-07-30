@@ -414,7 +414,33 @@ redeployed.
 - **Q5 → writer = put/get/list + multipart + delete.** Full write
   including `s3:DeleteObject`. (reader = get/list; admin = full.)
 
-**Dependencies:** M2 depends on **F2** (OIDC provider/clients) and on
-**F4** (network-wide `.localstack` DNS) — M2 must not be marked done until
-F4 lands, so the MinIO console resolves from non-Mac LAN devices, not just
-via the operator's `/etc/hosts`.
+**Dependencies:** M2 depends on **F2** (OIDC provider/clients).
+
+*(Corrected 2026-07-30 by A1's plan review. This previously added: "and on
+**F4** (network-wide `.localstack` DNS) — M2 must not be marked done until F4
+lands, so the MinIO console resolves from non-Mac LAN devices, not just via
+the operator's `/etc/hosts`." False in all three clauses. F4 is dropped in the
+ledger; T3's commit records that no `.localstack` name is served at all any
+more; and public DNS already answers, verified by `dig +short
+minio.lab.orangecluster.nl @1.1.1.1` returning 192.168.2.30 with zero
+`orangecluster` entries in `/etc/hosts`. The block was prose only and never
+appeared in front-matter, so `loopctl graph` could not see it and it survived
+F4's drop. The front-matter `depends_on` is unchanged and correct.)*
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: PARTIALLY SOUND. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/M2-minio-poc-human-tiers.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: MinIO's per-target `redirect_uri` is deprecated and its replacement is server-global, so three tiers cannot have three callbacks. HAProxy sets no `X-Forwarded-Proto`, so the derived callback is `http://` and cannot match the registration.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.
