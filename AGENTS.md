@@ -71,7 +71,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Overview
 
-Infrastructure-as-code project for a home lab cluster running on Orange Pi boards. Uses the HashiCorp stack (Nomad, Vault, Consul) with Podman as the container runtime. Deploys PostgreSQL, MinIO, a private Docker registry, and monitoring (Prometheus, Loki, Grafana).
+Infrastructure-as-code project for a home lab cluster running on various hardware boards.
 
 <!-- Add your project's overview here. This section is not managed by aim. -->
 
@@ -111,11 +111,18 @@ Three layers, deployed in order:
 
 1. **Bootstrap** (`bootstrap/`) — Ansible playbooks and roles that install Nomad, Vault, Consul, CNI plugins, and configure Podman on cluster nodes. Inventory defines server vs client nodes.
 
-2. **Infrastructure** (`deployments/infrastructure/`) — Terraform that provisions Vault secret mounts, generates service passwords, creates Nomad dynamic host volumes, and deploys core service jobs (PostgreSQL, MinIO, Docker Registry). State stored in Consul backend.
+2. **Infrastructure** (`deployments/infrastructure/`) — Terraform that provisions Vault secret mounts, generates service passwords, creates Nomad dynamic host volumes, and deploys core service jobs (PostgreSQL, MinIO). State stored in Consul backend.
 
-3. **Applications** (`deployments/applications/`) — Terraform that creates PostgreSQL databases/roles (e.g. DuckLake), MinIO buckets/IAM policies (via reusable `modules/bucket/`), and writes credentials to Vault KV2. Also state in Consul.
+3. **Applications** (`deployments/applications/`) — Terraform that deploys applications **to** infrastructure (e.g. databases, secrets, nomad jobs). Also state in Consul.
 
-Database schema changes go through `applications/migrations/` using golang-migrate.
+## Not hosted in localstack
+
+- Private docker registry: we use the GitHub registry.
+- Backups (e.g. MinIO and postgres) land on GCS.
+
+## Localstack public address
+
+We host the localstack url (*.lab.orangecluster.nl) on TransIP. It is fixed against the HAProxy cluster node IP address. Users approach the cluster using tailscale.
 
 ## Key Conventions
 
