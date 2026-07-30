@@ -139,6 +139,32 @@ risk_acknowledged = false
 sha = "ba5842dee9bd077b2f1e65843c6b497a526cef77"
 installed_at = "2026-07-26T15:23:03.607725Z"
 
+[[skill]]
+qualified_name = "53c3c880a0bf7ec7/adhd"
+repo_alias = "53c3c880a0bf7ec7"
+source_path = "skills/adhd"
+target_dir = ".claude/skills/adhd"
+history = []
+content_hash = "cdb6d2fb59dcbe58e9697cfe31e5f08eaeb588fbf39a36ef52cdec8dd540cfd7"
+risk_acknowledged = false
+
+[skill.current]
+sha = "55ed38514cd996f6096b51c8320331a8a5dced19"
+installed_at = "2026-07-30T18:31:58.361274Z"
+
+[[skill]]
+qualified_name = "4290899e4697f267/rule-creator"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/rule-creator"
+target_dir = ".claude/skills/rule-creator"
+history = []
+content_hash = "dd17e35774d8642fec7543b7f8098bfee922ac98fa6b2826d7baa0d903cb5fdf"
+risk_acknowledged = false
+
+[skill.current]
+sha = "c3e24452dfb7152cfee4fc13ee2da5f3a0f9198a"
+installed_at = "2026-07-30T18:32:44.504400Z"
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"
@@ -397,12 +423,30 @@ tag = "0.1.0"
 sha = "6d3b80eaed69dee86cdd3e09d12a2c269cb35003"
 installed_at = "2026-07-22T10:00:55.268246Z"
 
+[[plugin]]
+qualified_name = "10ae737f6885d841/caveman"
+repo_alias = "10ae737f6885d841"
+flavor = "claude"
+source_path = ""
+target_dir = ".claude/plugins/aim-10ae737f6885d841/caveman"
+marketplace_name = "aim-10ae737f6885d841"
+history = []
+content_hash = "d69a3516a1e899e4f0379981f088a9124b3da4fcbc9b0057fd3ddc9a9a41d4bb"
+risk_acknowledged = false
+
+[plugin.current]
+tag = "v1.9.1"
+sha = "e2c09c9a7e66d6bb30cadb5f955bd8a36b0e8d9a"
+installed_at = "2026-07-30T18:59:36.193847Z"
+
 [managed_region_hashes]
 header = "8209ab5f5a7c8f642c374946c62b4af4bc0abcf6b44bc22fc745ebc94105a7bc"
 guidelines = "9f2811d5c944f66b8dd93552c313b774b0bb2ecc1796783b476131e17e808f69"
 
 [repos]
+10ae737f6885d841 = "https://github.com/juliusbrussee/caveman"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
+53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
 8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
 ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"

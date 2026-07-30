@@ -13,8 +13,10 @@ risk_acknowledged = false
 scope = "local"
 
 [repos]
+10ae737f6885d841 = "https://github.com/juliusbrussee/caveman"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
+53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
 8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
 ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"
 
@@ -129,6 +131,20 @@ source_path = "skills/tools/agent-creator"
 target_dir = ".claude/skills/agent-creator"
 risk_acknowledged = false
 
+[[skill]]
+qualified_name = "53c3c880a0bf7ec7/adhd"
+repo_alias = "53c3c880a0bf7ec7"
+source_path = "skills/adhd"
+target_dir = ".claude/skills/adhd"
+risk_acknowledged = false
+
+[[skill]]
+qualified_name = "4290899e4697f267/rule-creator"
+repo_alias = "4290899e4697f267"
+source_path = "skills/tools/rule-creator"
+target_dir = ".claude/skills/rule-creator"
+risk_acknowledged = false
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"
@@ -173,4 +189,12 @@ repo_alias = "ef9f6a17bd3105b7"
 flavor = "claude"
 source_path = ""
 marketplace_name = "loop-harness"
+risk_acknowledged = false
+
+[[plugin]]
+qualified_name = "10ae737f6885d841/caveman"
+repo_alias = "10ae737f6885d841"
+flavor = "claude"
+source_path = ""
+marketplace_name = "caveman"
 risk_acknowledged = false
