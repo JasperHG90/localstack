@@ -526,3 +526,21 @@ resolve and are listed so the loop does not decide them silently.
 
 **Dependencies:** R3 builds on the **S2** spike (proves the Postgres+Vault
 dynamic-creds pattern). First target: **memex**.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/R3-rollout-postgres-vault-db-creds.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: Inlines dependency S2's conclusion as settled, but S2 never ran and its corrected plan now FORBIDS the mechanism R3 is built on. F9 owns the same policy and is narrowing it. `database.tf:88-96`, cited four times as the reader grants, resolves to a different resource.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

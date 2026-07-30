@@ -399,3 +399,20 @@ Eval marker (five-column acceptance table, `loopctl eval`-validated): see
 
 **Dependencies:** L1 depends on **F2** (OIDC client creds/issuer) and
 **F3** (TLS for `--cookie-secure`). **L2 depends on L1.**
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: PARTIALLY SOUND. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/L1-landing-oauth2-proxy.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: The eval's redirect and cookie expectations are wrong for oauth2-proxy, so a correct implementation fails a 100%-threshold row. There is also an L1-to-L2 dependency cycle: L1's own Definition of Done needs L2's upstream.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

@@ -417,3 +417,21 @@ must be encoded in `.loop/evals/F7-foundation-deployer-vault-oidc-login.md`
 before pickup (`.loop/config.json` sets `require_eval: true`, so the loop
 refuses pickup until the marker exists). Co-author it with the
 `create-eval` skill.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/F7-foundation-deployer-vault-oidc-login.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: The `deployer` policy forbids the `sys/*` and `auth/*` writes that `terraform apply` of its own Terraform root performs. Eval row 3 asserts that denial as proof of correctness, so the guardrail certifies the broken result green.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

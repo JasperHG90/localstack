@@ -394,7 +394,33 @@ default.
   drop it and mount config read-only — surface the simplification rather
   than carrying an unused volume.
 
-**Dependencies:** L2 depends on **L1** (which depends on F2 + F3) and on
-**F4** (network-wide `.localstack` DNS) — L2 must not be marked done until
-F4 lands, so `dash.lab.orangecluster.nl` resolves from non-Mac LAN devices, not just
-via the operator's `/etc/hosts`.
+**Dependencies:** L2 depends on **L1** (which depends on F2 + F3).
+
+*(Corrected 2026-07-30 by A1's plan review. This previously added: "and on
+**F4** (network-wide `.localstack` DNS) — L2 must not be marked done until F4
+lands, so `dash.lab.orangecluster.nl` resolves from non-Mac LAN devices, not
+just via the operator's `/etc/hosts`." That completion block is dead twice
+over. F4 is dropped, and N2 is done and published public DNS records, so the
+need is already met: `getent hosts dash.lab.orangecluster.nl` resolves to
+192.168.2.30 from the LAN today. The block was prose only and never appeared
+in front-matter, so `loopctl graph` could not see it and it survived F4's
+drop. The front-matter `depends_on = ["L1-landing-oauth2-proxy",
+"A1-audit-plan-premise-sweep"]` is unchanged and correct.)*
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/L2-landing-homepage.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: The body, code surface and subticket 6 mandate a `dash` backend pointing straight at Homepage, contradicting the plan's own resolved fork. Its security eval row passes today against a cluster with no Homepage at all.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

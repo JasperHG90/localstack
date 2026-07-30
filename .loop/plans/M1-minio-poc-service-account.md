@@ -394,3 +394,21 @@ an operator decision before or during the loop.
   no established pattern. Recommendation: use the smallest client that the
   POC image already ships; record the exact call for reuse in later
   epic tickets.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/M1-minio-poc-service-account.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: MinIO RELEASE.2025-09-07 REMOVED `jwks_url`; only `config_url` (a real discovery document) works, and Nomad's discovery endpoint is disabled. No ticket owns setting `oidc_issuer`. Separately, the unnamed `identity` stanza writes no JWT to the alloc.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

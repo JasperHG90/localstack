@@ -483,3 +483,21 @@ the `create-eval` skill before implementation). `.loop/config.json` sets
   in F8 widens the blast radius of an already high-risk ticket and risks
   breaking an unrelated consumer; retire it only after the live reconcile
   proves nothing uses the static Nomad token.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: BROKEN. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/F8-foundation-deployer-provider-cutover.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: Acceptance is unachievable under the grant its dependency F7 declares, and the brokered token cannot manage the Nomad ACL policy that defines it. Two eval rows are `git grep` guardrails that pass against wrong content.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.

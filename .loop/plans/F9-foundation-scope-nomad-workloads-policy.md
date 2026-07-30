@@ -32,7 +32,18 @@ Verified live 2026-07-25 (`vault policy read nomad-workloads`,
 - The shared policy is
   `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2`, **24
   lines**, and it is what `jwt-nomad`'s `default_role` attaches. Every job
-  using a bare `vault {}` — which is every job except haproxy — holds it.
+  using a bare `vault {}` holds it. Live, that is **fifteen of the nineteen
+  running jobs**: `acme` is the one job with a dedicated role (`Role: acme`),
+  and `nats`, `node-exporter` and `promtail` declare no `vault` block at all
+  and hold nothing.
+  *(Corrected 2026-07-30 by A1's plan review. This previously read "every job
+  except haproxy", which is inverted: `haproxy.hcl:39` IS a bare `vault {}`
+  and live `nomad job inspect haproxy` reports `Role: ""`. Consequence for
+  this ticket: haproxy renders the edge TLS PEM from Vault, so it must be IN
+  the verification population, not exempt from it. Eval 2's population of
+  memex, grafana, minio omits it. Note also that two holders, `talat-consumer`
+  and `talat-shim`, have NO job file in this repo, so a repo-side grep will
+  miss them.)*
 - Its grants:
   - `:1-7` `read` on `secret/data/{{ns}}/{{job_id}}/*` and the bare path.
     This is the intended, job-scoped part.
@@ -176,3 +187,19 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
   separately?** *Recommendation:* same change — it is the same file, the
   same apply, and the same eval run. Split only if subticket 1 shows a
   consumer that makes it contentious.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: PARTIALLY SOUND. Gate verdict: `pass-with-required-fixes`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/F9-foundation-scope-nomad-workloads-policy.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: The core survives attack. The inverted haproxy/acme claim was corrected inline by A1. Remaining: no eval marker exists at all, and there is no dependency edge to F1, which requires documenting this same policy unchanged.
+
+A1 applied the mechanical corrections marked inline above. The remaining
+required fixes are in the verdict. Author and sign an eval marker before
+this ticket can be picked up.

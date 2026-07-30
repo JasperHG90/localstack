@@ -12,6 +12,17 @@ statement of correctness, only that none of the five known patterns appeared.
 Row 8 exists so the audit doc cannot overclaim, because a later reader will
 otherwise treat "clean" as "reviewed".
 
+**RESCOPED 2026-07-30 (operator).** The mechanism changed: every in-scope plan
+is now reviewed by the loop's `loop-plan-reviewer` agent (pass id
+`plan-validator`) instead of a hand-rolled pattern sweep. Row 12 is added to
+bind that evidence. Rows 1-11 are unchanged and still hold: the deliverable,
+the guardrails, and the "clean is not correct" trap survive the mechanism
+change. Note the trap now cuts the other way too — a plan the reviewer calls
+`SOUND` is a genuine premise review, so its row must not be softened to the
+shallow-sweep caveat, and a plan the reviewer calls `BROKEN` is NOT thereby
+fixed by this ticket (requirement 4 still forbids acting on structural
+findings).
+
 | Behavior | Input | Expected | Scorer | Threshold |
 | --- | --- | --- | --- | --- |
 | Every in-scope plan gets a verdict, and none is silently skipped | `grep -c '^|' docs/notes/audit/plan-premise-sweep-2026-07.md` and read the table | Exactly thirteen verdict rows, one per in-scope slug (F2, F7, F8, L1, L2, M1, M2, R1, R2, R3, R4, S1, F9), each reading `clean`, `fixed`, or `needs deep review`. No slug absent, no slug added | deterministic check (thirteen rows, one per named slug) | 100% |
@@ -25,3 +36,7 @@ otherwise treat "clean" as "reviewed".
 | The ledger survives the front-matter edits | `loopctl reconcile`; then `loopctl graph` | `ledger consistent with git`, and every `depends_on` in every edited plan resolves to a real slug. A typo in a dependency reads as an unsatisfiable edge and silently strands a ticket forever | deterministic check (`loopctl reconcile` clean, all edges resolve) | 100% |
 | Every eval marker the sweep touches is still schema-valid | `loopctl eval <slug>` for each marker modified | `valid` for every one. A marker corrected into an invalid shape blocks its ticket at pickup under `require_eval` | deterministic check (`loopctl eval` valid for all touched markers) | 100% |
 | Shape-check evals are identified wherever they exist | Read the audit doc's eval findings | Any in-scope marker whose rows are `ls`, `grep`, or file-existence checks that would pass against wrong content is named. This is the systemic defect: S3's marker was entirely shape checks, and F1's row 6 was a green check asserting something false | model + rubric (adversarial review agent) | 4/5 |
+| **ADDED 2026-07-30: every triage verdict is backed by a real reviewer verdict bound to the plan it reviewed** | `ls .loop/verdicts/*.plan-validator.md`; for each, compare its `plan:` fingerprint (or the fingerprint named in a `fail` verdict's body) against `sha256sum .loop/plans/<slug>.md` | Thirteen verdict files exist, one per in-scope slug, each written by `loop-plan-reviewer` and each bound to the sha256 of the plan as reviewed. A triage row in the audit doc with no matching verdict file is an unevidenced claim, and a verdict bound to a stale hash reviewed a plan that no longer exists | deterministic check (thirteen verdict files, fingerprints match the reviewed plans) | 100% |
+| **ADDED 2026-07-30: the audit doc does not overstate or understate the reviewer** | For each in-scope slug, read its `plan-validator` verdict, then its row in the audit doc | Each row's triage matches its verdict's premise finding: no plan the reviewer called `BROKEN` is recorded as `clean`, and no plan it called `SOUND` is recorded as `needs deep review` without a stated reason beyond the reviewer's own findings. Summarizing thirteen reviews into one table is exactly where a finding gets quietly lost | model + rubric (adversarial review agent) | 5/5 |
+
+signed-off-by: jasperginn 2026-07-30

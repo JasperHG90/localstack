@@ -400,3 +400,21 @@ architecture is **dedicated per service**, so F2 must provision one
 (R1), `phoenix` (R4) — each with its own `redirect_uris` variable and
 KV2 secret, in addition to the MinIO-tier clients. Not a single shared
 oauth2-proxy client.
+
+## Plan review, 2026-07-30 (A1 premise sweep)
+
+**Premise: PARTIALLY SOUND. Gate verdict: `fail`.** Reviewed by the loop's
+`loop-plan-reviewer` against the repo AND the live cluster, as part of
+`A1-audit-plan-premise-sweep`. Thirteen plans were reviewed; none passed clean.
+
+**Read `.loop/verdicts/F2-foundation-vault-oidc-provider.plan-validator.md` before touching this plan.**
+It carries the per-assumption findings with evidence anchors and the full
+required-fix list. This section is a pointer, not a summary of record.
+
+Headline defect: The client set is four different numbers: the body says 4, the plan's own addendum 6, the eval Definition of Done 5, and eval row 3 four. This decides what artifact exists at the end, and L1, R1, R4 and G1 all consume it.
+
+This ticket is **`blocked`** (`unresolved-design-fork`). A1 applied no
+structural fix here: the required fixes reverse design decisions or need an
+operator call. **Do not implement from this plan as written.** Work the
+verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
+unblocking.
