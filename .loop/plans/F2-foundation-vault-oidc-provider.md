@@ -117,7 +117,18 @@ Must achieve:
 4. **One smoke-test client**, its group, and its assignment — the minimum
    needed to prove an end-to-end authorization-code login. It is explicitly
    throwaway and may be deleted once a real consumer client exists.
-5. **Client-id registration must not require editing the key resource.** Use
+5. **Consumers use F2's provider, never Vault's built-in `default`**
+   (operator, 2026-07-30). Live, `identity/oidc/provider/default` advertises
+   `allowed_client_ids = ["*"]` and an issuer of
+   `http://192.168.2.30:8200/v1/identity/oidc/provider/default` — a raw IP
+   over plain HTTP that accepts any client. It is a working issuer, so a
+   consumer pointed at it by mistake would function, silently bypassing every
+   scoping decision F2 makes. F2 must therefore (a) create a NAMED provider
+   whose issuer is the HTTPS edge hostname, and (b) state in its close-out
+   notes that each consumer's `config_url` / `--oidc-issuer-url` names F2's
+   provider path, not `/default`. F2 does not delete or reconfigure
+   `default`: it is Vault built-in and removing it is out of scope. See Q9.
+6. **Client-id registration must not require editing the key resource.** Use
    `vault_identity_oidc_key_allowed_client_id` — **verified present in pinned
    5.3.0** by inspecting the provider binary — so each consumer ticket
    registers its own client without touching `oidc.tf`. Naming
@@ -232,7 +243,7 @@ operator at apply time. The loop's own bar is rows 1-3.
   signing key invalidates live tokens, which is harmless before first use.
 - **Likeliest failure modes:** (1) attribute drift vs 5.3.0, caught by
   `terraform validate`; (2) the `key` to `client` to `allowed_client_id`
-  cycle, avoided by requirement 5; (3) a redirect URI mismatch on the
+  cycle, avoided by requirement 6; (3) a redirect URI mismatch on the
   smoke-test client, which surfaces as an opaque `invalid_redirect_uri`;
   (4) adopting rather than replacing the drifting `test` client, see Q7.
 
@@ -266,6 +277,16 @@ operator at apply time. The loop's own bar is rows 1-3.
   `vault delete identity/oidc/assignment/test`. Record it in the close-out
   notes so eval row 11 can score it. Leave the built-in `default` provider,
   `default` key and `allow_all` assignment alone; those are Vault's own.
+
+- **Q9 — Should the built-in `default` provider be locked down?** It
+  advertises `allowed_client_ids = ["*"]`, so any client that names it gets a
+  working issuer, bypassing F2's scoping. F2 creates a named provider and
+  documents that consumers must use it (requirement 5), but nothing stops a
+  future misconfiguration from pointing at `/default` and appearing to work.
+  *Recommendation:* leave `default` alone in F2 (it is Vault built-in and
+  altering it is a separate blast radius), and instead have each consumer
+  ticket's eval assert its issuer URL matches F2's provider path. Raise a
+  follow-up if the operator wants `default` restricted cluster-wide.
 
 - **Q8 — Does the `groups` claim generalize, or is it per-RP?** The
   pre-rewrite plan's resolved Q5 required one canonical `groups` claim "read

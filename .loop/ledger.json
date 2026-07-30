@@ -527,13 +527,10 @@
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "eval-missing",
-        "reason": "no eval marker exists (loopctl eval -> absent) plus 3 required fixes from plan review. See .loop/verdicts/F9-foundation-scope-nomad-workloads-policy.plan-validator.md"
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -712,6 +709,27 @@
       "summary": "Replace HAProxy basic-auth gating Bifrost with Bifrost's native\ngovernance.auth_config, gate inference via enforce_auth_on_inference +\na Terraform-managed virtual key for Hermes, and move the Prometheus\n/metrics scrape to basic_auth. Prerequisite for API keys.\n",
       "relay_block_nonfork": null,
       "tags": []
+    },
+    "F10-foundation-nomad-oidc-issuer": {
+      "slug": "F10-foundation-nomad-oidc-issuer",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 44,
+      "summary": "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which is the single reason M1 cannot work and R1's machine bearer path has no owner.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "nomad",
+        "oidc",
+        "bootstrap",
+        "ansible"
+      ]
     }
   }
 }
