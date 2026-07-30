@@ -249,8 +249,12 @@ resource "null_resource" "bifrost_ready" {
   }
 }
 
-# Hermes virtual key: allow-all on ollama + gemini. key_ids/allowed_models
-# default to deny-all, so both MUST be ["*"] or Hermes inference 403s.
+# Hermes virtual key: allow-all on ollama + gemini. allowed_models=["*"] is the
+# wildcard (Bifrost IsUnrestricted); key_ids=["*"] allows all upstream keys.
+# Note: the wildcard does NOT bypass Bifrost's model catalog — a requested model
+# must still exist in the catalog for the provider (plugins/governance/resolver.go
+# IsModelAllowedForProvider). ollama models not in the catalog 403 as
+# "Model not allowed for this virtual key" regardless of this allowlist.
 resource "bifrost_virtual_key" "hermes" {
   name = "hermes"
 
@@ -262,8 +266,9 @@ resource "bifrost_virtual_key" "hermes" {
   depends_on = [null_resource.bifrost_ready]
 }
 
-# Memex virtual key: allow-all on ollama + gemini. Same deny-all default as the
-# Hermes key, so key_ids/allowed_models MUST be ["*"] or Memex inference 403s.
+# Memex virtual key: allow-all on ollama + gemini. Same wildcard semantics as
+# the Hermes key: allowed_models=["*"], key_ids=["*"]. See the Hermes comment
+# for the model-catalog caveat.
 resource "bifrost_virtual_key" "memex" {
   name = "memex"
 
