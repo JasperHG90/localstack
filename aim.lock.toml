@@ -347,6 +347,21 @@ tag = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 sha = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 installed_at = "2026-07-02T08:28:51.297338Z"
 
+[[rule]]
+qualified_name = "4290899e4697f267/plain-language"
+repo_alias = "4290899e4697f267"
+source_path = "rules/plain-language.md"
+content_hash = "7eccb47c6a89272aa81fd9e1ddca795144f2ab396020a163bc864f939d20e541"
+risk_acknowledged = false
+
+[rule.current]
+sha = "d0f02626629875a5dd57ddbc611ba129cdb4092b"
+installed_at = "2026-07-30T19:40:10.012014Z"
+
+[[rule.history]]
+sha = "d0f02626629875a5dd57ddbc611ba129cdb4092b"
+installed_at = "2026-07-30T19:39:40.008944Z"
+
 [[plugin]]
 qualified_name = "8b8de8ec329cb5d5/memex"
 repo_alias = "8b8de8ec329cb5d5"

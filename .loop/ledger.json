@@ -43,13 +43,10 @@
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "plan review PARTIALLY SOUND/fail: client set is 4 different numbers across body, addendum and eval; decides what artifact exists and L1/R1/R4/G1 all consume it. See .loop/verdicts/F2-foundation-vault-oidc-provider.plan-validator.md"
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -59,7 +56,7 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 50,
-      "summary": "Stand up Vault's OIDC identity provider (key, scopes, clients, assignments, provider, and the identity groups they gate on) purely in Terraform, so every human OIDC login consumes one shared issuer.",
+      "summary": "Stand up the singleton half of Vault's OIDC identity provider in Terraform: signing key, scope, provider, the userpass human auth backend, and one smoke-test client proving a real login. Consumer clients belong to the tickets that consume them.",
       "relay_block_nonfork": null,
       "tags": [
         "vault",

@@ -62,6 +62,12 @@ source_path = "rules/uv-installer.md"
 pin = "7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c"
 risk_acknowledged = false
 
+[[rule]]
+qualified_name = "4290899e4697f267/plain-language"
+repo_alias = "4290899e4697f267"
+source_path = "rules/plain-language.md"
+risk_acknowledged = false
+
 [[skill]]
 qualified_name = "4290899e4697f267/manifesto"
 repo_alias = "4290899e4697f267"
