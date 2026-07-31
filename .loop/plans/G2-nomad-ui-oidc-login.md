@@ -230,6 +230,12 @@ accepting that a token came back, for the reason in R1.
 
 ## Open questions (operator must settle)
 
+> **All questions in this section were resolved on 2026-07-31 in
+> `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
+> recommendation recorded below, so these read as history rather than as
+> pending decisions.
+
+
 **Q1 — the unmanaged `developer` policy: import, replace, or reference?**
 It is live, grants `alloc-exec` and `alloc-node-exec`, and no `.tf` file
 mentions it. Three options. *Import* it into Terraform and bind to it, which
@@ -265,3 +271,32 @@ hostname over HTTPS for the former and `localhost:4649` for the latter.
 *Recommendation:* verify against the running UI during subticket 3 before
 writing the Vault client's `redirect_uris`, since a mismatch fails at the
 last hop and reads like a Vault problem rather than a URI typo.
+
+## Forks resolved, 2026-07-31
+
+- **Q1 → import the `developer` policy into Terraform.** It is live, unmanaged
+  and grants `alloc-exec` and `alloc-node-exec`. Importing puts an existing
+  grant under management without changing what any current token can do, which
+  keeps the behavior change out of the same ticket that introduces a login
+  path. Replacing it would do both at once; referencing it by name leaves the
+  drift that made this a question.
+  Two consequences the implementer must carry: the import must be verified to
+  leave the live rules **byte-identical**, and `alloc-node-exec` stays for now
+  and gets its own decision later. Narrowing it here would be a behavior
+  change smuggled in under an import.
+- **Q2 → `token_locality = "global"`, `max_token_ttl = 8h`.** One region, so
+  locality is moot and `global` avoids a surprise if that ever changes. Eight
+  hours matches a working day. This is a browser session with no refresh
+  mechanism behind it, so it is a genuinely different decision from D2 Q6,
+  which concerns the long-lived Vault token a human holds on disk.
+- **Q3 → a dedicated `nomad-developers` Vault group.** A shared operators
+  group means every future consumer admits the same people by default, which
+  is the opposite of what per-consumer assignments are for. F2 set the pattern
+  with `oidc-smoke`; this is the first real one.
+- **Q4 → verify the callback paths against the running UI in subticket 3,
+  before writing them into the Vault client.** HashiCorp documents
+  `/ui/settings/tokens` for the UI and `/oidc/callback` for the CLI. This
+  ticket assumes the edge hostname over HTTPS for the first and
+  `localhost:4649` for the second. A mismatch fails at the last hop of a
+  browser redirect and reads like a Vault problem rather than a URI typo, so
+  confirm rather than trust the plan.

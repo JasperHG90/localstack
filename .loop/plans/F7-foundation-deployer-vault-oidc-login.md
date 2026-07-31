@@ -550,3 +550,31 @@ Nomad or Consul.
 
 D2 §12 carries the full model. F7 should leave `auth_userpass.tf` alone on
 this point and scope its work to the policy.
+
+### F7 also owns the human read roles (added 2026-07-31)
+
+`D4-cli-cluster-tui` Q2 asked which ticket should create a read-capable Nomad
+role, since the `deploy` role withholds `list-jobs` and node access and a
+monitoring panel built on it shows "denied" in both headline widgets. The
+answer is **this ticket**, and the replan should absorb it.
+
+The reasoning is about where the decision belongs, not convenience. `D2`
+carries a guardrail forbidding it from authoring Terraform. `D3` needs the
+same token for `status` and `service`, so building it in `D4` puts it in the
+ticket that needs it second. Keeping every Vault and Nomad policy decision in
+one ticket is also where the review attention already is.
+
+What to add:
+
+- A Nomad ACL policy granting `list-jobs`, `read-job` and node read on the
+  `default` namespace, and nothing else. No `read-logs`, no `submit-job`, no
+  `alloc-exec`.
+- A `vault_nomad_secret_role` brokering it, so `D2` can read
+  `nomad/creds/<name>` the way it reads `nomad/creds/deploy`.
+- The matching grant in the operator policy.
+
+**Do not reuse the existing `developer` Nomad policy for this.** It grants
+`alloc-exec` and `alloc-node-exec`, which is shell access inside allocations
+and on the node. A read-only panel must not hold it.
+`G2-nomad-ui-oidc-login` Q1 owns bringing `developer` under management; that
+is a separate concern from creating a narrow read role here.

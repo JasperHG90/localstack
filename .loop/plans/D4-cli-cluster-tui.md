@@ -352,6 +352,13 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
 
 ## Open questions
 
+> **All questions in this section were resolved on 2026-07-31. Read
+> `## Forks resolved, 2026-07-31` at the end of this plan BEFORE acting on any
+> recommendation below.** Q2 in particular was resolved AGAINST its own
+> recommendation: the read-capable Nomad role belongs to F7, not to this
+> ticket.
+
+
 - **Q1 — D1 and D2 do not exist as tickets.** No `D1-*` or `D2-*` slug is in
   `.loop/plans/` or `.loop/ledger.json` (verified 2026-07-30). `depends_on =
   ["D2-cli-login-broker-tokens"]` is a **hard gate**: `loopctl advance <slug>
@@ -437,3 +444,43 @@ layer all stand.
 
 The eval marker's signature was cleared for the rename. No row's rigor
 changed, only the command each row launches.
+
+## Forks resolved, 2026-07-31
+
+- **Q1 → stale, dependency stands.** `D1-cli-package-skeleton` and
+  `D2-cli-login-broker-tokens` are both registered and `planning`. The
+  `depends_on` edge was never weakened and does not need to be.
+- **Q2 → none of (a), (b) or (c). The read role belongs to F7.** The question
+  offered three homes for a read-capable Nomad role and all three are worse
+  than the fourth. D2 carries a guardrail forbidding it from authoring
+  Terraform, D3 needs the same token for `status` and `service`, and reusing
+  `deploy` ships a panel whose headline widgets say "denied". Building it here
+  would put a Vault role and a Nomad ACL policy in the TUI ticket while a
+  second ticket needs them first.
+  **F7's replan owns it**, alongside the deployer policy: one ticket holding
+  every Vault and Nomad policy decision, which is where the review attention
+  already is. Recorded in F7. Grant `list-jobs`, `read-job` and node read on
+  the `default` namespace and nothing else. **Do not reuse the existing
+  `developer` policy for this**: it grants `alloc-exec` and `alloc-node-exec`,
+  which a monitoring panel has no business holding.
+- **Q3 → D3 owns the fetch layer; this ticket imports it.** D3's eval already
+  scores the reuse contract, requiring `cli/localstack/api/` to import neither
+  typer nor rich precisely so this TUI can consume it. Do not create
+  `cluster_api.py`. If pickup order ever puts this ticket first, build the
+  module at D3's path under D3's contract rather than a parallel one.
+- **Q4 → live, 5-second poll, `r` to force, 2-second per-source timeout.** A
+  timed-out panel keeps its last value marked stale rather than blanking. Four
+  small calls every 5 seconds against a five-node cluster is negligible.
+- **Q5 → on-LAN only, with a legible failure.** ufw admits 4646/8200/8500 from
+  `192.168.0.0/16` and gives the tailnet port 22 alone. Opening those ports to
+  the tailnet is a firewall change with its own blast radius and belongs in
+  its own ticket, not smuggled in here. Off-LAN shows "unreachable" plus a
+  one-line hint about the SSH hop.
+- **Q6 → standard env vars, then `localstack config`, then the defaults.**
+  `config` is now a real command in D2, so this ticket reads it rather than
+  inventing a format.
+- **Q7 → rely on the tokenless Consul read, and comment why.** It works only
+  because `tokens.default` is set to the agent token despite
+  `default_policy = "deny"`. Brokering a Consul token for a read that needs
+  none is unearned. If that config tightens, the Consul widget degrades to
+  "denied" like any other source, which is the designed behavior.

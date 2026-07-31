@@ -771,3 +771,22 @@ themselves, is **not** this ticket. See `D6-cli-deps-and-shims`.
 
 The eval marker's signature was cleared: it was signed against the
 four-command scope before these decisions.
+
+### Remaining forks resolved, 2026-07-31
+
+Q1, Q3, Q4 and Q6 were settled earlier the same day and are marked inline.
+The other three are resolved on their recorded recommendations:
+
+- **Q2 → `httpx` plus `respx`.** `.claude/rules/python-testing.md` names
+  `respx` as this repo's tool for `httpx` and names nothing for `hvac`'s
+  `requests` layer. The handful of Vault endpoints here does not earn a client
+  library plus a mocking story the rules do not cover. Confirm against D1's
+  shipped `cli/pyproject.toml` at pickup; if D1 already added `hvac`, raise it
+  rather than adding a second HTTP stack.
+- **Q5 → one session file, no profiles.** One cluster exists. The schema
+  already carries `version` and `vault_addr`, so a profile layer stays an
+  additive change. Building it now is speculative.
+- **Q7 → `docs/cli-login.md`, pointing at `docs/vault-human-auth.md`.** That
+  doc already carries the `vault kv get secret/default/vault/operator` recipe
+  and is now merged on `main`. Do not add a KV2 read path to the CLI to fetch
+  the password it needs in order to log in.

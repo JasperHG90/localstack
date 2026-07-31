@@ -1,5 +1,11 @@
 eval: D5-cli-breakglass
 
+**Forks resolved 2026-07-31.** All eight open questions settled on their
+recorded recommendations, so the rows below score a decided design rather than
+an assumed one. The two that shape these rows: the command **prints** the
+unseal command and never runs it (Q1), and it **names** `/opt/vault/init.json`
+without ever reading it (Q3). Both are scored explicitly.
+
 **Definition of Done:** `localstack breakglass` runs read-only, credential-free
 reachability probes, then prints a recovery runbook with a distinct section per
 failure mode. It **never** reads, caches, displays or exports a credential. The

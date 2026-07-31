@@ -188,6 +188,12 @@ rows.
 
 ## Open questions (operator must settle)
 
+> **All questions in this section were resolved on 2026-07-31 in
+> `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
+> recommendation recorded below, so these read as history rather than as
+> pending decisions.
+
+
 **Q1 — should `deps` install the shims by default?**
 Locked provisionally as **opt-in** (`--with-shims`), which is the honest
 default: shadowing `nomad` is a change to someone's machine and should be
@@ -216,3 +222,21 @@ version constraint.
 is real. Terraform's version is not declared anywhere this ticket can read,
 so including it would mean inventing the second source of truth R1 exists to
 prevent.
+
+## Forks resolved, 2026-07-31
+
+- **Q1 → opt-in.** `localstack deps` installs no shim; `--with-shims` does,
+  and the devcontainer passes it at build time. Shadowing `nomad` on a
+  developer's PATH is a change to their machine and must be asked for, while a
+  disposable container can be seamless. The cost is real and accepted: someone
+  running `deps` on a laptop will hit "why does `nomad` not see my login" once.
+  R8's drift report should name the missing shims so that once is enough.
+- **Q2 → `releases.hashicorp.com`, stripping the `-1` revision.** It publishes
+  per-platform archives with checksums, which is what R3 needs, and it serves
+  macOS. The apt repository matches the pinned package revision exactly but is
+  Debian-only, and `deps` runs on the developer's machine. Confirm the URL
+  shape and checksum format during subticket 2 rather than writing them in
+  from memory.
+- **Q3 → no `terraform`.** Its version is declared nowhere this ticket can
+  read, so including it would mean inventing the second source of truth R1
+  exists to prevent. Open a separate ticket if the pain is real.

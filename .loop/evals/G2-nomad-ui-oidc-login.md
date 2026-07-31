@@ -1,5 +1,11 @@
 eval: G2-nomad-ui-oidc-login
 
+**Forks resolved 2026-07-31.** Q1 the `developer` policy is **imported**
+into Terraform, not replaced or referenced. Q2 `token_locality = "global"` and
+`max_token_ttl = 8h`. Q3 a dedicated `nomad-developers` Vault group. Q4 the
+callback paths get verified against the running UI before they are written
+into the Vault client.
+
 **Definition of Done:** Nomad is a registered OIDC client of Vault's `lab`
 provider, and a developer who is a member of the bound Vault group can sign
 in to the Nomad web UI at `https://nomad.lab.orangecluster.nl` and to

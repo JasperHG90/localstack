@@ -321,6 +321,12 @@ command and URL resolves) first.
 
 ## Open questions
 
+> **All questions in this section were resolved on 2026-07-31 in
+> `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
+> recommendation recorded below, so these read as history rather than as
+> pending decisions.
+
+
 - **Q1 — May the command invoke `just unseal_vault`, given that unsealing is
   not the root token?** *Recommendation: no. Print the command, do not run it.*
   The reasoning is specific to this repo rather than general caution:
@@ -375,3 +381,34 @@ command and URL resolves) first.
   (`CLAUDE.md`, "Localstack public address"), and a dead tailnet presents
   exactly like a dead cluster. Two lines: confirm your own connectivity, then
   read on.
+
+## Forks resolved, 2026-07-31
+
+All eight resolve on their recorded recommendations. Two are worth restating
+because they are the security-shaped ones:
+
+- **Q1 → no, print the command, never run it.** `scripts/unseal_vault.sh`
+  refuses unless `VAULT_TOKEN` is set alongside the three unseal keys, so
+  invoking it would require this CLI to hold an environment carrying the root
+  token and every unseal key. That collides with the credential boundary that
+  is this ticket's whole point, and it buys one typed command. If it is ever
+  wanted, the honest prerequisite is fixing the script's token guard first.
+- **Q3 → yes, name `/opt/vault/init.json`.** It is a path, not a secret, it is
+  already in the repo at `bootstrap/roles/vault_server/tasks/main.yml:116-123`,
+  and during an outage with an empty devcontainer environment it is the only
+  unseal route that works. Naming a file the operator must `sudo` to read does
+  not cross the boundary. Reading it would, and this ticket never does.
+
+The rest as recommended: **Q2** diagnose by default with `--no-probe`;
+**Q4** always exit 0, because the command is documentation and a non-zero exit
+invites a wrapper to swallow the output; **Q5** keep `docs/breakglass.md` as a
+ten-line pointer that duplicates no step; **Q6** probe Consul with a TCP
+connect and treat any HTTP response including 403 as reachable; **Q8** open
+with the tailnet prelude, since a dead tailnet presents exactly like a dead
+cluster.
+
+**Q7 → answerable now.** D1 is registered and its plan settles the layout:
+package under `cli/`, src layout, its own `cli/pyproject.toml`, `typer` at
+runtime. Resolve the `<pkg>` anchors against D1's shipped tree at pickup, and
+still raise `out-of-scope-fix-needed` rather than inventing a parallel
+structure if they do not fit.
