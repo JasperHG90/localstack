@@ -501,3 +501,140 @@ structural fix here: the required fixes reverse design decisions or need an
 operator call. **Do not implement from this plan as written.** Work the
 verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
 unblocking.
+
+# REPLANNED, 2026-07-31
+
+**This section supersedes every conflicting statement above.** The
+plan-validator listed nine required fixes and named P1 as a design question
+the plan did not contain at all. Both P1 and P2 are answered below, from a
+precedent already in the repo.
+
+## P2 first, because it unlocks P1
+
+**The problem.** `nomad_acl_policy.deploy`
+(`deployments/infrastructure/nomad_deploy_role.tf:13`) is a Terraform
+resource. Writing a Nomad ACL policy requires a **management** token. The
+brokered `nomad/creds/deploy` token is `type: client`
+(`nomad_deploy_role.tf:39`, confirmed live: `nomad acl token self` reports
+`Type = client`). So the deployer can never apply the very policy that defines
+it. Requirement 8's "full apply" proof was unrunnable, exactly as the verdict
+said.
+
+**The answer, and it is not new machinery.** Ansible already authors a Nomad
+ACL policy with the management token:
+
+```
+bootstrap/roles/nomad_server/tasks/main.yml:182-184
+  nomad acl policy apply -description "Developer policy" developer \
+    /opt/nomad/policies/nomad_developer_policy.hcl
+  env: NOMAD_TOKEN={{ nomad_bootstrap_token }}
+```
+
+with the source checked in at
+`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`.
+
+**Decision: move `nomad_acl_policy.deploy` out of Terraform and into Ansible,
+following that precedent exactly.** Terraform keeps
+`vault_nomad_secret_role.deploy`, which references the policy **by name** and
+needs no Nomad ACL write. `nomad_deploy_role.tf` loses its
+`nomad_acl_policy` resource and keeps the Vault role.
+
+Rejected alternative: broker a `type: management` Nomad token for the deployer.
+The Vault Nomad secrets engine supports it, and it would make the Terraform
+resource applicable. But it hands the deployer god-mode on Nomad, which is the
+opposite of what F7 exists to establish, and it would make the `deploy` ACL
+policy decorative.
+
+Consequence for the config-split invariant this repo already follows: the
+thing that needs a management token lives with the thing that holds one.
+Consul's `deploy` policy is already Ansible-side for the same reason
+(`consul_deploy_role.tf:7-15` says so explicitly). This makes Nomad consistent
+with Consul rather than introducing a new split.
+
+## P1 — the five infra-root Vault objects
+
+**The problem.** F8 asserted "the F7 OIDC session is the only credential entry
+point" and that `just apply` of the infrastructure root succeeds under it. F7's
+policy, as originally written, forbade `sys/*` and `auth/*`, which that root
+writes. The fork was in neither plan.
+
+**The answer: F7's replan grants those paths, scoped.** F7 now derives its
+policy from the resource graph rather than a KV list, and explicitly grants
+`sys/mounts/secret`, `sys/auth/userpass` (the one path needing `sudo`),
+`sys/policies/acl/` scoped to the policies the deployer owns,
+`auth/jwt-nomad/role/*`, `auth/userpass/users/*`, `identity/*`, `nomad/role/*`
+and `consul/roles/*`. The least-privilege story became "scoped `sys` and
+`auth`", not "no `sys` and `auth`".
+
+So F8's acceptance criterion is achievable **without** widening F7 toward root
+and **without** splitting the infrastructure root. No third option is needed.
+F8's dependency on F7 is now load-bearing in a way it was not before: F8 cannot
+be verified until F7's policy exists, which the existing `depends_on` already
+encodes.
+
+## Fix 5 — F8 owns the lease TTLs
+
+F5 and F6 are closed, so "hand the number to F5/F6" has nobody to hand it to.
+The two live values:
+
+- Nomad: `ttl=30m max_ttl=1h` at
+  `bootstrap/roles/nomad_server/tasks/main.yml:309`.
+- Consul: `ttl = 1800`, `max_ttl = 3600` at
+  `deployments/infrastructure/consul_deploy_role.tf:23-24`.
+
+**Decision: leave both at 30m/1h and make the deployer renew within a run.**
+A long `terraform apply` outliving its token is the failure to design for, and
+the fix is renewal, not a longer lease. If a real apply is measured to exceed
+an hour, that is a finding for a follow-up, not a reason to widen the lease
+now. Both files join the code surface.
+
+## Fix 7 — the ephemeral branch is closed, not open
+
+Vault provider 5.3.0 exposes `ephemeral` only for `vault_database_secret` and
+`vault_kv_secret_v2`. There is no ephemeral form for the Nomad or Consul creds
+endpoints, so **both brokered tokens WILL land in Terraform state**, and that
+state travels to the Consul backend. State this as settled.
+
+Two consequences worth carrying rather than hiding:
+
+- Terraform state already holds every secret this repo writes, so the brokered
+  tokens are not a new class of exposure. They are, however, short-lived, which
+  the static tokens they replace were not.
+- `N4-netsec-edge-only-service-access` moves the Consul backend address to the
+  HTTPS edge. Until then the state travels over plaintext HTTP. That is a real
+  interaction between these two tickets and belongs in F8's risk section.
+
+## Fixes 3, 4, 6, 9 — anchors and stale facts
+
+Re-anchor at pickup rather than trusting any list written today; these files
+moved repeatedly. Known corrections: `deployments/applications/providers.tf` is
+`:34`, `:36`, `:38-42`, `:44-57`, and `provider "bifrost"` at `:59-69` must
+join the do-not-touch list and the provider count.
+`deployments/applications/justfile` has five occurrences at 10, 18, 22, 27, 31.
+Add `bootstrap/playbooks/enable_consul_secrets.yml:46-48` for the
+`session_prefix` change. Terraform is v1.14.3. Nine dynamic host volumes, not
+eight.
+
+## Fix 8 — the eval
+
+Replace the two grep guardrails with checks that fail on wrong content, and
+add rows for the host-volume apply and the state-locking cycle. Specifically:
+
+- Assert `git grep -c '\${CONSUL_TOKEN}' -- deployments` returns **0**.
+- Assert the resolved provider token paths are `nomad/creds/deploy` and
+  `consul/creds/deploy`, not merely that some brokered path is referenced.
+- **A full `just apply` of the infrastructure root under the brokered path**,
+  including a `nomad_dynamic_host_volume` change, which is the resource class
+  the `deploy` policy's host-volume capabilities exist for.
+- **A state-locking cycle**: two concurrent applies, one must block and then
+  succeed. Consul-backed locking under a brokered token with a 30-minute lease
+  is where renewal actually gets exercised.
+- **A row that fails if `nomad_acl_policy` is still a Terraform resource**,
+  since P2's whole answer is that it moved to Ansible.
+
+## Ordering note
+
+F8 now depends on F7 in substance, not just in the ledger. Do not pick it up
+until F7's policy is applied and its own eval rows pass, because F8's
+acceptance is "the whole thing works under that policy" and there is nothing to
+test against until it exists.

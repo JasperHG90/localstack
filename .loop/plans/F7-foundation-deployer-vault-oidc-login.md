@@ -578,3 +578,166 @@ What to add:
 and on the node. A read-only panel must not hold it.
 `G2-nomad-ui-oidc-login` Q1 owns bringing `developer` under management; that
 is a separate concern from creating a narrow read role here.
+
+# REPLANNED, 2026-07-31
+
+**This section supersedes every conflicting statement above.** Where the older
+text and this section disagree, this section wins. The plan-validator verdict
+listed seven required fixes; each is answered below by number.
+
+The ticket also shrank. Its login half is gone: it described building a
+`vault_jwt_auth_backend` in `oidc` mode so the operator could run
+`vault login -method=oidc`. **The operator chose `userpass`, and F2 shipped it
+on 2026-07-31.** `vault auth list` returns `jwt-nomad/`, `token/`, `userpass/`,
+and the `operator` entity is live at `351f302a-…`. So the login front door
+exists and this ticket does not build one.
+
+**What remains: the policy, and the roles a human reads from.**
+
+## Fix 5 — the F2 dependency, and the retitle
+
+The frontmatter kept `depends_on = F2` while Q1 recommended an external IdP.
+The contradiction is gone because the fork is settled the other way: **the
+login method is `userpass`, delivered by F2**, so the dependency is correct and
+Q1 is closed. Strike "OIDC login" from the title. This ticket is now:
+
+> Author the scoped `deployer` Vault policy and the human read roles, and bind
+> them to the `operator` entity F2 created.
+
+## Fix 1 — the policy, derived from the resource graph
+
+Walked every `vault_*` resource in both roots. The least-privilege story is
+**scoped `sys` and `auth` paths, not "no `sys`/`auth`"**. The policy must grant:
+
+| Path | Capabilities | Why |
+| --- | --- | --- |
+| `sys/mounts` | read, list | provider refresh |
+| `sys/mounts/secret` | create, read, update, delete | `vault_mount.kvv2` (`secrets.tf:2`) |
+| `sys/auth` | read, list | provider refresh |
+| `sys/auth/userpass` | create, read, update, delete, **sudo** | `vault_auth_backend.userpass` (`auth_userpass.tf:13`) |
+| `sys/policies/acl/acme-tls-write` | create, read, update, delete | `vault_policy.acme_tls_write` (`acme.tf:41`) |
+| `sys/policies/acl/deployer` | create, read, update, delete | this ticket's own policy |
+| `auth/jwt-nomad/role/*` | create, read, update, delete | `vault_jwt_auth_backend_role.acme` (`acme.tf:66`) |
+| `auth/userpass/users/*` | create, read, update, delete | `vault_generic_endpoint.operator` |
+| `identity/*` | create, read, update, delete, list | 9 identity + OIDC resources in `oidc.tf` and `auth_userpass.tf` |
+| `nomad/role/*` | create, read, update, delete | `vault_nomad_secret_role.deploy` |
+| `consul/roles/*` | create, read, update, delete | `vault_consul_secret_backend_role.deploy` |
+| `secret/data/default/*` | create, read, update, delete, patch | every `vault_kv_secret_v2`, both roots |
+| `secret/metadata/default/*` | read, list, delete | KV2 v2 splits data from metadata |
+| `nomad/creds/deploy` | read | brokered Nomad token |
+| `consul/creds/deploy` | read | brokered Consul token |
+
+**Only `sys/auth/*` needs `sudo`.** Measured, not assumed: a probe policy
+granting these paths with no `sudo` anywhere created a secrets mount
+successfully and was refused an auth mount. See `## Measured evidence,
+2026-07-31` above. The verdict's fix-1 list put `sys/mounts/<secret_mount>`
+among the forbidden writes; on Vault 2.0.3 it needs an ordinary grant.
+
+## Fix 3 — the KV2 enumeration, and its shape
+
+The verdict is right that the per-secret list churns every ticket. Counted
+today: **9 `vault_kv_secret_v2` resources in the infrastructure root and 13 in
+applications**, plus 3 `ephemeral` and 2 `data` reads. Enumerating 22 names
+guarantees the policy is wrong the next time anyone adds a secret, and the
+failure mode is a `terraform apply` that dies halfway.
+
+**Decision: grant the prefix `secret/data/default/*` and
+`secret/metadata/default/*`.** Everything this repo writes lives under
+`default/`, so the prefix is the honest boundary. It is not root-equivalent:
+it grants nothing on `bootstrap/`, nothing on `sys/`, nothing outside the
+mount. F9 removed the deployer-adjacent `bootstrap/*` grants from the
+workload policy for the same reason, and this keeps that boundary.
+
+## Fix 4 — F5, F6 and F8 state
+
+Corrected. **F5 and F6 are `done`.** Their code is live at
+`deployments/infrastructure/nomad_deploy_role.tf` and `consul_deploy_role.tf`.
+Both brokered paths work, verified 2026-07-31: `vault read nomad/creds/deploy`
+mints a `type: client` token with `Policies = [deploy]`, and
+`vault read consul/creds/deploy` mints a Consul token; both carry 30-minute
+renewable leases. **F8 has a plan** and is `blocked` on its own premise, not
+on this one. Eval row 4's brokered read is exercisable now.
+
+## Fixes 6 and 7 — anchors and the git-ignored tfvars
+
+Anchors: use the shipped precedent `deployments/infrastructure/acme.tf:41,66`
+rather than the F3 plan path; `providers.tf` in applications is `:36`;
+`justfile` is `:17-19`. Re-verify each at pickup rather than trusting this
+list, since the files moved twice today.
+
+`vars/prod.tfvars` is git-ignored (`.gitignore:12`), so the code surface can
+only touch `vars/prod.tfvars.example` inside the loop. The operator applies the
+real file by hand.
+
+## NEW SCOPE — the human read roles
+
+Absorbed from `D4-cli-cluster-tui` Q2, which asked which ticket creates a
+read-capable Nomad role and answered "D4". Rejected: `D2` is barred from
+authoring Terraform, `D3` needs the same token first, and reusing `deploy`
+ships a panel whose headline widgets say denied. Every Vault and Nomad policy
+decision belongs in one ticket, and this is it.
+
+Add:
+
+- A Nomad ACL policy granting `list-jobs`, `read-job` and `node { policy =
+  "read" }` on the `default` namespace, and nothing else. No `read-logs`, no
+  `submit-job`, no `alloc-exec`.
+- A `vault_nomad_secret_role` brokering it, so `D2` can read
+  `nomad/creds/<name>` alongside `nomad/creds/deploy`.
+- The matching read grant in the `deployer` policy.
+
+**Do NOT reuse the `developer` Nomad policy for this.** It grants `alloc-exec`
+and `alloc-node-exec`, and Ansible owns it
+(`bootstrap/roles/nomad_server/tasks/main.yml:182-184`).
+
+**Where the Nomad ACL policy lives — the constraint F8 exposed.** A brokered
+`nomad/creds/*` token is `type: client` and **cannot write Nomad ACL policies**;
+that needs a management token. So a Terraform `nomad_acl_policy` resource can
+never be applied by the deployer it defines. Ansible already solves this and
+already holds the management token: it applies the `developer` policy at
+`nomad_server/tasks/main.yml:182-184` from `files/nomad_developer_policy.hcl`.
+
+**Decision: the read policy is authored in Ansible, following that exact
+precedent.** Terraform brokers it by name through `vault_nomad_secret_role`.
+See F8's replan, which moves `nomad_acl_policy.deploy` the same way.
+
+## Fix 2 — the eval marker
+
+Row 3 asserted that `vault write sys/policies/acl/xyz` returning 403 proves
+correctness. It does not: writing `sys/policies/acl/*` is a legitimate deployer
+action, so that row **certifies the broken result green**. Replace it with:
+
+- **A negative row that is genuinely out of scope.** `vault token create
+  -policy=root` must be denied, and `vault auth enable -path=probe userpass`
+  must be denied. Both are real privilege escalations the deployer never needs.
+- **A negative row inside the same family.** Writing
+  `sys/policies/acl/not-ours` must be denied while
+  `sys/policies/acl/acme-tls-write` succeeds. That is the row that proves the
+  policy is scoped rather than blanket, and a `sys/policies/acl/*` wildcard
+  would fail it.
+- **A positive row that would have caught the original defect.**
+  `terraform plan` on `deployments/infrastructure` must exit 0 under a
+  `deployer` token. A policy that cannot plan its own root is the failure this
+  whole ticket is about, and no config-reading row detects it.
+- **A second positive row:** `terraform plan` on `deployments/applications`
+  under the same token, since that root reads KV2 through `ephemeral` and
+  `data` blocks the prefix grant must cover.
+- **A guardrail on the prefix.** `secret/data/bootstrap/*` and
+  `secret/metadata/otherns/*` must be denied, proving `default/*` is a
+  boundary and not decoration.
+
+## Open questions, all closed
+
+- **Q1 (login mechanism) → CLOSED.** `userpass`, shipped by F2. No OIDC login
+  method is built here.
+- **Q2 (TTLs) → CLOSED.** Do not set `token_ttl` on the operator login. The
+  operator reversed that on 2026-07-31: the Vault token is the long-lived
+  credential a human holds, and the 30-minute brokered creds are the
+  short-lived ones. See the section above and `D2` §12.
+- **Q4 (runbook) → CLOSED.** Yes, add one, and it must pass the slop scan.
+
+## What this ticket still does NOT do
+
+It does not repoint the providers or remove `VAULT_TOKEN` from
+`.devcontainer/.env`. That is `F8`. This ticket makes the unprivileged path
+possible; F8 makes it the default.
