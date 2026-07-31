@@ -8,6 +8,24 @@ data_dir  = "/opt/nomad/data"
 plugin_dir = "/usr/bin"
 bind_addr = "0.0.0.0"
 
+# Bind on every interface, but advertise ONE address explicitly.
+#
+# Without this block Nomad picks an interface at startup, and on this host it
+# can pick podman0 (10.88.0.1). Workers read the advertised RPC address out of
+# Consul and dial it, so they end up dialling their OWN podman bridge and the
+# cluster silently loses every client while the HTTP API keeps answering.
+#
+# Observed 2026-07-31: unattended-upgrades patched openssl at 06:44:17 and
+# restarted nomad one second later; that restart advertised RPC 10.88.0.1 and
+# four of five nodes went down. The journal shows the two logged restarts split
+# 1-1 between 192.168.2.30 and 10.88.0.1, so it is a coin flip on every restart,
+# which is why restarting again used to "fix" it.
+advertise {
+  http = "{{ nomad_server_ip_address }}"
+  rpc  = "{{ nomad_server_ip_address }}"
+  serf = "{{ nomad_server_ip_address }}"
+}
+
 server {
   enabled          = true
   bootstrap_expect = 1

@@ -1,7 +1,18 @@
 datacenter = "localstack"
 data_dir   = "/opt/nomad/data"
 plugin_dir = "/usr/bin"
-bind_addr  = "0.0.0.0" 
+bind_addr  = "0.0.0.0"
+
+# Bind on every interface, but advertise ONE address explicitly. See the same
+# block in the nomad_server template: with only bind_addr = "0.0.0.0", Nomad
+# picks an interface at startup and can pick podman0, which makes the address
+# it publishes unreachable from anywhere else. Each client advertises its own
+# inventory address so the choice never depends on interface ordering.
+advertise {
+  http = "{{ ansible_host }}"
+  rpc  = "{{ ansible_host }}"
+  serf = "{{ ansible_host }}"
+}
 
 log_level = "DEBUG"
 
