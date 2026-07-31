@@ -14,20 +14,38 @@ ticket **state**; this file is only about **sequence**.
 
 | # | Ticket | Why here | Gate before pickup |
 |---|--------|----------|--------------------|
-| 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | **Replan + plan review.** `blocked` |
-| 2 | `D1-cli-package-skeleton` | Parallel track. Zero deps, touches no file `F7` touches | Clear |
-| 3 | `N3-netsec-converging-firewall-provisioner` | Prerequisite for `N4`: without it, narrowing a firewall rule leaves the broad one live | Clear. `ready` |
-| 4 | `N4-netsec-edge-only-service-access` | Closes direct LAN access to every service. Lands before `D2` so the CLI is built against edge addresses | `N3` done. **Eval unsigned** |
-| 5 | `D2-cli-login-broker-tokens` | Needs `F7`'s policy to do anything | `D1`, and `F7` in practice |
-| 6 | `D6-cli-deps-and-shims` | Without the shims a bare `nomad` cannot see the session, so `D2` is half-delivered | `D1` |
-| 7 | `G2-nomad-ui-oidc-login` | Browser SSO for the one surface with no alternative | Clear |
-| 8 | `G1-grafana-native-oidc-login` | Browser SSO where a working login already exists | Clear. `ready` |
-| 9 | `F8-foundation-deployer-provider-cutover` | Terraform's Nomad and Consul providers onto brokered tokens | **Replan.** `blocked` |
-| 10 | `D3` / `D4` / `D5` | CLI surface on top of `D2` | `D2` |
+| # | Ticket | Why here | State | Gate before pickup |
+|---|--------|----------|-------|--------------------|
+| 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | `blocked` | Replan, then a fresh plan review |
+| 2 | `D1-cli-package-skeleton` | Parallel track. Zero deps, touches no file `F7` touches | `planning` | **Plan review** |
+| 3 | `N3-netsec-converging-firewall-provisioner` | Prerequisite for `N4`: without it, narrowing a firewall rule leaves the broad one live | **`ready`** | **None. Pickable now** |
+| 4 | `N4-netsec-edge-only-service-access` | Closes direct LAN access to every service. Lands before `D2` so the CLI is built against edge addresses | `planning` | **Plan review**, eval signature, `N3` done |
+| 5 | `D2-cli-login-broker-tokens` | Needs `F7`'s policy to do anything | `planning` | **Plan review**, `D1`, and `F7` in practice |
+| 6 | `D6-cli-deps-and-shims` | Without the shims a bare `nomad` cannot see the session, so `D2` is half-delivered | `planning` | **Plan review**, `D1` |
+| 7 | `G2-nomad-ui-oidc-login` | Browser SSO for the one surface with no alternative | `planning` | **Plan review** |
+| 8 | `G1-grafana-native-oidc-login` | Browser SSO where a working login already exists | **`ready`** | **None. Pickable now** |
+| 9 | `F8-foundation-deployer-provider-cutover` | Terraform's Nomad and Consul providers onto brokered tokens | `blocked` | Replan, then a fresh plan review |
+| 10 | `D3` / `D4` / `D5` | CLI surface on top of `D2` | `planning` | **Plan review**, `D2` |
 
-Eval markers: D1 to D6, G1, G2 all signed and reporting `valid` as of
-2026-07-31. **`N4` is the only unsigned one.** The two real gates left are
-that signature and F7's replan.
+### Only two of these are pickable today
+
+`N3` and `G1`. Everything else is gated, and the gate is not the one an
+earlier version of this file claimed.
+
+**Seven tickets sit in `planning` and need a plan review to leave it.**
+`.loop/config.json` enables the `plan-validator` planning pass, and
+`lifecycle.py:127` refuses the `planning -> ready` flip without that pass's
+verdict on disk. `ls .loop/verdicts/` confirms only `F7` and `F8` have one,
+and both of those verdicts are the `BROKEN` ones that blocked them.
+
+That review is a `loop-plan-reviewer` sub-agent dispatch. It is the step that
+attacks a plan's premises rather than checking it has the right sections, and
+it is what caught the false capability claims that blocked `F1`, `L1`, `L2`,
+`M1`, `M2`, `R1` to `R4`, `S1`, `F7` and `F8`. Skipping it for the tickets
+written today would be the one shortcut this repo has already paid for.
+
+Eval markers are NOT the blocker: D1 to D6, G1 and G2 are all signed and
+report `valid`. `N4` is the only unsigned one.
 
 `D1` can run concurrently with `F7`. Nothing else in this list should.
 
