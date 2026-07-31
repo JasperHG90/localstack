@@ -513,3 +513,35 @@ and the loop's job is to write them down precisely.
    *Recommendation: no, but file the follow-up.* It is real scope, the
    ticket is already Large, and `docs/gcs-backups.md` shows the pattern a
    later ticket would copy.
+
+## Update, 2026-07-31 (post-incident)
+
+Three facts changed after this plan was written. They are recorded here rather
+than edited into the text above, so the original reasoning stays readable.
+
+1. **The cluster was degraded when the upgrade epic was planned, and is not
+   now.** At 06:44:17 UTC `unattended-upgrades` patched openssl and restarted
+   nomad one second later. On that restart Nomad re-resolved
+   `bind_addr = "0.0.0.0"` and advertised the podman bridge for RPC and Serf
+   (`10.88.0.1`), so four of five clients could not reach the server. HTTP
+   resolved correctly, which is why the API kept answering and nothing looked
+   wrong. Twelve of nineteen jobs sat `pending`; running allocations survived.
+
+2. **That is fixed.** Commit `c744b92` adds an explicit `advertise` block to
+   both `nomad_server` and `nomad_client` templates, and the live manager was
+   patched and restarted the same way. All five nodes returned `ready` and all
+   19 jobs `running`. **The clients still run the old config**: they recovered
+   because the server now advertises correctly, but each can still publish a
+   bad address on its own restart until the template reaches it.
+
+3. **`unattended-upgrades` can restart these services at any time.** It has
+   run 44 times per `/var/log/apt/history.log`. Combined with `upgrade: dist`
+   at `install_dependencies.yml:8-13`, both the version and the restart timing
+   of the HashiStack are currently outside the repo's control. That is the
+   standing condition this epic exists to end.
+
+**Consequence for any post-upgrade verification in this ticket:** a healthy
+cluster is now the baseline, and "all nodes ready, all jobs running" is a
+meaningful assertion again. Capture the baseline immediately before the
+upgrade regardless, because the gap between planning and applying is exactly
+where this ticket's own premises went stale once already.
