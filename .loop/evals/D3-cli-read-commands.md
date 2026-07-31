@@ -34,4 +34,4 @@ exist because the natural implementation of `consul services` and
 | **Guardrail: read-only** | `grep -rnE "\.(post\|put\|delete\|patch)\(" cli/localstack/api/`; review the diff | No mutating HTTP verb anywhere in the API layer, no Terraform change, no Vault policy authored. This ticket reads; the read-role gap it found is relayed to D2, not fixed here | deterministic check (no mutating verbs; no `deployments/**` changes) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed, including ruff, mypy and pytest | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

@@ -34,4 +34,4 @@ fails row 10.
 | **Guardrail: no feature scaffolding from D2-D5** | `grep -rniE "login|logout|whoami|breakglass|textual|vault|nomad|consul" cli/src/` | No login flow, no token handling, no HTTP client, no Textual import, and no empty typer sub-groups "ready for D3". An empty group is a guess about D3's shape, and the plan forbids it. Bare mentions in a docstring or a config variable name are acceptable; an implementation is not | model + rubric (adversarial review agent) | 5/5 |
 | One pin, not two | Read `cli/pyproject.toml`, `cli/uv.lock` and `.pre-commit-config.yaml` | Tool versions are pinned once, by the dev dependencies plus the lock. The new hooks do NOT additionally pin ruff or mypy through an upstream pre-commit `rev`, which would create two pins that drift apart | deterministic check (no upstream rev pin for ruff/mypy) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

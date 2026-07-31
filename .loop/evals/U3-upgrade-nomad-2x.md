@@ -39,4 +39,4 @@ runs.
 | The runbook is followable cold and its prose passes the gates | Read it end to end; run the doc slop scan | Status line, "Before you start", numbered steps with copy-pasteable commands and expected output, explicit rollback, "Afterwards". Plain language, active voice, prose wrapped at 80, Layer 0 clean (every cited path and command resolves) | model + rubric (adversarial review agent) | 4/5 |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. No gate silenced; pre-existing failures fixed rather than skipped | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

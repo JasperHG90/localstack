@@ -40,4 +40,4 @@ passes by doing nothing at all. Rows 3, 4 and 5 are the ones that can fail.
 | The unreadable node is resolved or recorded | Check `orange_pi_4a` (192.168.2.29) | Its installed versions are read and pinned like the rest, OR the ticket records explicitly that its SSH host key changed and the node is unverified, so nobody assumes coverage it does not have. It refused SSH during planning | deterministic check (node read, or its exclusion explicitly recorded) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. This change is YAML, so `check-yaml` and `end-of-file-fixer` are what bite | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

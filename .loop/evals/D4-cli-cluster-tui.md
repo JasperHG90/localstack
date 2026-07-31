@@ -31,4 +31,4 @@ during, and row 4 covers the one that quietly reports healthy jobs as broken.
 | No token value ever renders | Grep the source, the rendered output and every snapshot fixture for token values and the `hvs.`/`hvo_` prefixes | No match. Snapshot fixtures are scrubbed. `detect-private-key` stays green, though note that hook matches PEM headers only and would not catch a Vault token, which is why this row greps explicitly rather than relying on it | deterministic check (no token in source, output or fixtures) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. New deps (`textual`, `pytest-textual-snapshot`, `respx`) added via `uv add`, landing in `cli/pyproject.toml` and `cli/uv.lock`. `httpx` reused rather than adding `requests` | deterministic check (`just pre_commit` all Passed; deps in pyproject) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

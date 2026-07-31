@@ -45,4 +45,4 @@ use `backend "consul" {}`.
 | The runbook is followable cold | Read it end to end as someone who has not seen this ticket | Status line up front; a "Before you start" section whose points are the difference between a clean apply and an outage; numbered steps with copy-pasteable commands and expected outputs; explicit rollback; an "Afterwards" section. Plain language, active voice, prose wrapped at 80 | model + rubric (adversarial review agent) | 4/5 |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. No gate silenced; any pre-existing failure surfaced is fixed rather than worked around | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

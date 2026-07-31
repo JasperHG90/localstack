@@ -38,4 +38,4 @@ fail.
 | **Guardrail: this ticket authors no policy and no Terraform** | `git diff --stat` over the branch | No changes under `deployments/`, no `.tf` file, no Vault policy document. The deployer policy is F7's, and this ticket's whole design is to be the client that tells F7 what it needs. A diff that "helpfully" adds the grant has taken F7's decision | deterministic check (no `deployments/**` or `.tf` changes) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed, including the ruff, mypy and pytest hooks D1 added. The default `uv run pytest` stays offline: any test touching the live cluster carries the `cluster` marker and is excluded via `addopts` | deterministic check (`just pre_commit` all Passed; default suite offline) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

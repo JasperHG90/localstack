@@ -43,4 +43,4 @@ row 6 refuses to let it be guessed.
 | The runbook is followable cold and its prose passes the gates | Read it end to end; run the doc slop scan | "Before you start" naming the two things separating a clean apply from an outage, copy-pasteable blocks with expected output, verification that discriminates (negative controls, not just green checks), explicit Rollback. Prose wrapped at 80, zero em dashes, no British spellings, every cited path real | model + rubric (adversarial review agent) | 4/5 |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. It is green today, so any failure is this change's. Nothing silenced | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

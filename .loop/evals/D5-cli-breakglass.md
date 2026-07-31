@@ -35,4 +35,4 @@ does not satisfy it.
 | The printed text meets the prose gates | Run `.claude/rules/slop-scan-for-docs.md` layers over the markdown source | Layer 0 clean: every backticked path, command and URL resolves to a real thing (requirement 4's test partly automates this). No identity leaks, no bare TODO. Sentence-level: em dashes within budget, no tier-1 slop, American spellings, prose wrapped at 80 | model + rubric (adversarial review agent) | 4/5 |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed, including ruff, mypy and pytest. Any new dependency landed via `uv add` in `cli/pyproject.toml` and `cli/uv.lock` | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31
