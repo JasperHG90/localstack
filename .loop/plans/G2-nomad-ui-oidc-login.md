@@ -2,7 +2,7 @@
 epic = "rollout"
 depends_on = ["F2-foundation-vault-oidc-provider"]
 priority = 25
-summary = "Give the Nomad web UI and `nomad login` a sign-in button backed by Vault's OIDC provider, so a developer reaches Nomad with the same identity they use everywhere else instead of pasting an ACL token. Also resolves the unmanaged `developer` policy the cluster already carries."
+summary = "Give the Nomad web UI and `nomad login` a sign-in button backed by Vault's OIDC provider, so a developer reaches Nomad with the same identity they use everywhere else instead of pasting an ACL token. Binds to the `developer` Nomad policy that Ansible already owns, authoring none of it."
 tags = ["nomad", "oidc", "vault", "terraform", "sso"]
 ---
 
@@ -20,8 +20,8 @@ token carrying the `developer` policy, gated on Vault group membership.
 **M.** The resource graph is small and every piece is verified to exist. The
 weight is in three places: the `groups` claim can go missing silently, so the
 gates have to decode a token rather than trust that one came back; the
-`developer` policy is live but unmanaged, so this ticket has to decide its
-fate rather than build beside it; and a redirect URI that does not match
+`developer` policy is owned by Ansible, so this ticket must consume it rather
+than re-author it; and a redirect URI that does not match
 exactly fails at the last hop of a browser flow, which is tedious to debug.
 
 ## Triggered by
@@ -84,9 +84,14 @@ human.**
 
 ### The finding that shapes this ticket
 
-**`developer` already exists and is not in Terraform.** `grep` over
-`deployments/**/*.tf` returns nothing for it. It grants exactly what a person
-at a keyboard needs:
+**`developer` already exists, and ANSIBLE owns it.** Corrected 2026-07-31: an
+earlier version of this section said it was "not in Terraform" and concluded it
+was unmanaged. That was a bad inference from a `grep` over `.tf` files only.
+`bootstrap/roles/nomad_server/tasks/main.yml:182-184` applies it with the
+bootstrap token from the checked-in source
+`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`.
+
+It grants exactly what a person at a keyboard needs:
 
 ```
 namespace "default": write + submit-job, read-job, list-jobs, dispatch-job,
@@ -97,9 +102,10 @@ node / agent / operator: read
 ```
 
 So the policy this ticket wants to hand out is already written, already live,
-and owned by nobody. That is the same shape as the drifting `test` OIDC client
-F2 found, and it needs the same explicit decision rather than being built
-around. See Q1.
+and **already owned**. This ticket consumes it by name and authors nothing.
+It is NOT the same shape as the drifting `test` OIDC client F2 found: that
+one genuinely had no owner. See Q1, whose original framing rested on the
+mistaken reading and is corrected there.
 
 ### Why this matters beyond the browser
 
@@ -164,9 +170,13 @@ but D3 should be re-read after this lands.
   the Nomad auth method by reference. Do not score this with
   `detect-private-key`: that hook matches a fixed blocklist of PEM headers and
   cannot match a Vault client secret. F2's marker records that false green.
-- **R7. Resolve the `developer` policy, do not duplicate it.** Per Q1.
-  Creating a second, Terraform-managed policy with the same grants beside the
-  unmanaged original leaves two sources of truth for who can `alloc-exec`.
+- **R7. Do NOT author or import the `developer` policy.** Ansible owns it
+  (`nomad_server/tasks/main.yml:182-184`). Bind the binding rule to it by
+  name. A Terraform copy, whether imported or freshly written, creates two
+  owners: the next `just bootstrap` re-applies Ansible's version, Terraform
+  reports drift on the following plan, and the two fight indefinitely. If the
+  grants need changing, change
+  `bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`.
 
 ## Code surface
 
@@ -274,16 +284,31 @@ last hop and reads like a Vault problem rather than a URI typo.
 
 ## Forks resolved, 2026-07-31
 
-- **Q1 → import the `developer` policy into Terraform.** It is live, unmanaged
-  and grants `alloc-exec` and `alloc-node-exec`. Importing puts an existing
-  grant under management without changing what any current token can do, which
-  keeps the behavior change out of the same ticket that introduces a login
-  path. Replacing it would do both at once; referencing it by name leaves the
-  drift that made this a question.
-  Two consequences the implementer must carry: the import must be verified to
-  leave the live rules **byte-identical**, and `alloc-node-exec` stays for now
-  and gets its own decision later. Narrowing it here would be a behavior
-  change smuggled in under an import.
+- **Q1 → CORRECTED 2026-07-31. Reference it by name. Ansible owns it, and the
+  question's own premise was wrong.**
+
+  This plan said the `developer` policy was "live, unmanaged and owned by
+  nobody", inferred from `grep` finding it in no `.tf` file. That inference was
+  bad: not-in-Terraform is not the same as unmanaged. **Ansible owns it.**
+  `bootstrap/roles/nomad_server/tasks/main.yml:182-184` runs
+  `nomad acl policy apply ... developer /opt/nomad/policies/nomad_developer_policy.hcl`
+  with the bootstrap token, from the checked-in source at
+  `bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`.
+
+  So the earlier answer, "import it into Terraform", is now **rejected**: it
+  would create two owners for one policy. The next `just bootstrap` would
+  re-apply Ansible's copy over Terraform's, Terraform would see drift on the
+  following plan, and the two would fight indefinitely. That is a worse state
+  than the one the question was trying to fix.
+
+  **Bind the auth method's binding rule to the policy by name.** Ansible keeps
+  authoring it; this ticket consumes it. If the grants need changing, change
+  `files/nomad_developer_policy.hcl`, which is where they already live.
+
+  `alloc-node-exec` still deserves its own decision later. It grants exec on
+  the node, not just an allocation, and this ticket hands it to everyone in the
+  bound Vault group. Say so in the close-out rather than inheriting it
+  silently.
 - **Q2 → `token_locality = "global"`, `max_token_ttl = 8h`.** One region, so
   locality is moot and `global` avoids a surprise if that ever changes. Eight
   hours matches a working day. This is a browser session with no refresh

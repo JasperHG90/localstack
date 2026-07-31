@@ -12,8 +12,6 @@ ticket **state**; this file is only about **sequence**.
 
 ## The order
 
-| # | Ticket | Why here | Gate before pickup |
-|---|--------|----------|--------------------|
 | # | Ticket | Why here | State | Gate before pickup |
 |---|--------|----------|-------|--------------------|
 | 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | `blocked` | Replan, then a fresh plan review |
@@ -219,9 +217,11 @@ before the change.
 - **`F8` carries its own broken premise**: a brokered `client`-type Nomad
   token cannot manage the ACL policy that defines it. Replanning `F7` does not
   fix `F8`.
-- **A live `developer` Nomad ACL policy is owned by no `.tf` file.** It grants
-  `alloc-exec` and `alloc-node-exec`. `G2` Q1 makes resolving it part of that
-  ticket.
+- **The `developer` Nomad ACL policy grants `alloc-exec` and
+  `alloc-node-exec`**, and `G2` hands it to everyone in the bound Vault group.
+  Ansible owns the policy (`nomad_server/tasks/main.yml:182-184`), so `G2`
+  consumes it by name. Whether `alloc-node-exec`, which is exec on the node
+  rather than an allocation, should be in it at all is undecided.
 - **`D3`'s scope was justified by the `deploy` token's 403s.** Once `G2` lets
   a human hold a `developer`-scoped token, that justification weakens. Re-read
   `D3` after `G2` lands rather than implementing it as written.
