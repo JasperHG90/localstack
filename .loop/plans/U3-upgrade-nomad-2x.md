@@ -564,3 +564,28 @@ cluster is now the baseline, and "all nodes ready, all jobs running" is a
 meaningful assertion again. Capture the baseline immediately before the
 upgrade regardless, because the gap between planning and applying is exactly
 where this ticket's own premises went stale once already.
+
+## Applied, 2026-07-31
+
+Nomad 1.11.3-1 to 2.0.4-1 on all five nodes. Server first, then the four
+clients one at a time, each verified before moving to the next.
+
+A non-redacted snapshot was taken first and kept at mode 600. A second
+snapshot was taken after the upgrade, because a 1.11.3 snapshot cannot be
+restored into 2.x, which would otherwise leave the cluster holding a backup
+that only works after a downgrade Nomad does not support.
+
+Each client received the `advertise` block before its restart. That mattered
+more than it looks: a restart is exactly when the old bug bit. With
+`bind_addr = "0.0.0.0"` and no advertise block, Nomad published the podman
+bridge `10.88.0.1` for RPC and Serf, which is what took four of five nodes
+down when unattended-upgrades restarted it. Upgrading without fixing that
+first would have reproduced the outage and blamed the upgrade for it.
+
+Verified after: all five agents report `2.0.4 ready`, 19 jobs running, the
+advertised addresses are 192.168.2.30 and not 10.88.0.1, and workload
+identity still works (see U2, the grafana restart).
+
+The podman driver stayed at 0.6.4-1 and loads fine under Nomad 2.0.4, which
+was the risk worth watching: this cluster runs Podman, so a driver that
+refused to load would mean no workload runs at all.

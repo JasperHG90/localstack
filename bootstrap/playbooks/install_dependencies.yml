@@ -5,6 +5,27 @@
   gather_facts: true
 
   tasks:
+    - name: Pin the HashiStack versions before anything upgrades packages
+      ansible.builtin.copy:
+        dest: /etc/apt/preferences.d/hashistack
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by Ansible. Versions live in
+          # bootstrap/inventory/group_vars/all.yml.
+          #
+          # Priority 990 keeps the next task's `upgrade: dist`, a manual
+          # `apt upgrade` and unattended-upgrades off these four packages.
+          # It stays below 1000 so apt never downgrades a node that is
+          # ahead of the pin; that drift is reported instead.
+          {% for pkg, version in hashistack_versions.items() %}
+          Package: {{ pkg }}
+          Pin: version {{ version }}
+          Pin-Priority: 990
+
+          {% endfor %}
+
     - name: Update apt cache and upgrade installed packages
       ansible.builtin.apt:
         update_cache: true
@@ -94,14 +115,32 @@
     - name: Install Hashistack products
       ansible.builtin.apt:
         name:
-          - consul
-          - vault
-          - nomad
-          - nomad-driver-podman
+          - "consul={{ hashistack_versions.consul }}"
+          - "vault={{ hashistack_versions.vault }}"
+          - "nomad={{ hashistack_versions.nomad }}"
+          - "nomad-driver-podman={{ hashistack_versions['nomad-driver-podman'] }}"
         state: present
         update_cache: true
       environment:
         DEBIAN_FRONTEND: noninteractive
+
+    - name: Read back the installed HashiStack versions
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Report any node that is ahead of the pin
+      ansible.builtin.debug:
+        msg: >-
+          DRIFT on {{ inventory_hostname }}: {{ item.key }} is
+          {{ ansible_facts.packages[item.key][0].version }} but the pin says
+          {{ item.value }}. apt does not downgrade at priority 990. Decide
+          deliberately: move the pin in group_vars/all.yml, or fix the node.
+      loop: "{{ hashistack_versions | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when:
+        - item.key in ansible_facts.packages
+        - ansible_facts.packages[item.key][0].version != item.value
 
 - name: Install CNI plugins
   hosts: all

@@ -545,3 +545,57 @@ cluster is now the baseline, and "all nodes ready, all jobs running" is a
 meaningful assertion again. Capture the baseline immediately before the
 upgrade regardless, because the gap between planning and applying is exactly
 where this ticket's own premises went stale once already.
+
+## Open Question 2 - SETTLED empirically, 2026-07-31
+
+**Vault 2.0.3 accepts and correctly resolves a wildcard after a rendered
+identity template.** This ticket is not blocked by it.
+
+Method, so it can be re-run rather than trusted: an isolated `vault server
+-dev` on 2.0.3 (the binary already in the devcontainer), a `jwt` auth mount
+mirroring `jwt-nomad` exactly (`bound_audiences=vault.io`,
+`user_claim=/nomad_job_id`, `claim_mappings` for `nomad_namespace` and
+`nomad_job_id`), a locally minted RS256 JWT carrying
+`nomad_namespace=default` and `nomad_job_id=memex`, and the live policy shape
+templated on that mount's accessor.
+
+| Path | Result |
+| --- | --- |
+| `secret/data/<ns>/<job>` (bare template, control) | ALLOWED |
+| `secret/data/<ns>/<job>/*` (**the question**) | ALLOWED |
+| `secret/data/<ns>/other/creds` (scoping control) | DENIED |
+
+**The controls are the point.** A first attempt reported DENIED and would
+have blocked this ticket. It was wrong: it used `userpass`, which cannot
+populate alias metadata, and set the metadata on the entity rather than the
+alias, so `identity.entity.aliases.<accessor>.metadata` resolved to nothing
+and every path failed. The bare-template control failing is what exposed it.
+A test whose positive and negative cases both fail is measuring its own setup,
+not the system. Anyone re-running this must keep both controls.
+
+## Applied, 2026-07-31
+
+Vault 1.21.4-1 to 2.0.3-1. Unsealed, `storage: consul`, serving.
+
+The manager runs the server. The four workers carry the package as a CLI
+only, with the service `inactive` and `disabled`, so their upgrade restarted
+nothing. All five now report 2.0.3-1.
+
+The wildcard question that could have blocked this ticket is settled, and it
+was settled empirically before the manager was touched. A JWT mount
+mirroring `jwt-nomad` with the same `claim_mappings` showed the wildcard
+ALLOWED. The first attempt gave a false DENIED because it used `userpass`,
+which cannot populate alias metadata; the bare-template control failing is
+what exposed the bad harness. Sixteen jobs rode on getting this right.
+
+Confirmed live afterwards: `jwt-nomad/` present on the same accessor with
+both roles, policies `nomad-workloads` and `acme-tls-write` intact, KV
+readable, and a real workload proving it end to end. Restarting `grafana`
+forced a fresh login through `jwt-nomad` on 2.0.3 and its deployment
+completed, so a workload can still obtain a token and render its template.
+The edge still serves TLS.
+
+Deviation: no rehearsed restore into an isolated instance. The rollback
+rests on the cached `vault_1.21.4-1_amd64.deb` and the Consul snapshots,
+both verified present. An untested restore is weaker than the plan asked
+for, and it is the main gap in this apply.

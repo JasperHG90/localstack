@@ -392,3 +392,30 @@ cluster is now the baseline, and "all nodes ready, all jobs running" is a
 meaningful assertion again. Capture the baseline immediately before the
 upgrade regardless, because the gap between planning and applying is exactly
 where this ticket's own premises went stale once already.
+
+## Applied, 2026-07-31
+
+Live on all five nodes. The four versions are declared once, in
+`bootstrap/inventory/group_vars/all.yml`. Both consumers read from there:
+the apt preferences file and the install task.
+
+The pin is written **before** the `upgrade: dist` task, not alongside the
+install task. That ordering is the whole point: `upgrade: dist` runs first,
+so a pin placed only on the install task never gets a say.
+
+Proved rather than asserted. On `raspberry`, `apt-get -s dist-upgrade`
+before the pin offered `nomad-driver-podman` 0.6.4-1 to 0.6.5-1. After the
+pin, that line is gone on all five nodes. The check discriminates because
+the control genuinely upgraded something.
+
+Priority is 990, not 1001. Above 1000 apt downgrades a node that is ahead of
+the pin, which is the one thing this ticket must never do. At 990 apt
+blocks the upgrade and leaves a drifted node alone; a debug task reports it.
+
+This also closes the door on the incident that started all of this:
+unattended-upgrades can no longer move these four packages.
+
+Deviation: the pin records the post-upgrade versions. U2 through U4 ran
+first, so "what is installed today" is the 2.x stack.
+
+  consul 2.0.2-1, vault 2.0.3-1, nomad 2.0.4-1, nomad-driver-podman 0.6.4-1

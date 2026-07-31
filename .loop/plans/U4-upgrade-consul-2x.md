@@ -543,3 +543,42 @@ cluster is now the baseline, and "all nodes ready, all jobs running" is a
 meaningful assertion again. Capture the baseline immediately before the
 upgrade regardless, because the gap between planning and applying is exactly
 where this ticket's own premises went stale once already.
+
+## Applied, 2026-07-31
+
+Consul 1.22.6-1 to 2.0.2-1 on all five nodes, server first.
+
+**The largest open question is answered, and the answer is good.** Vault
+does not seal when Consul restarts under it. During the server restart, with
+`journalctl -fu vault` running, Vault logged zero errors and zero seal
+events, and stayed unsealed throughout. The leader came back in about 10
+seconds. The plan refused to guess this, and it was right to: Vault has
+`Restart=on-failure` and no `After=consul.service`, so a crash would have
+returned it sealed.
+
+The first Consul snapshot that has ever existed was taken before any of
+this, then a second one after the Nomad and Vault upgrades, then a third on
+2.0.2 after verification. The last one matters because `snapshot restore`
+only restores into the version that took the snapshot.
+
+Install and restart were kept separate. The deb postinst does not restart
+the service, so the pause point is real and was used.
+
+Every client refreshed its apt cache and verified the candidate was 2.0.2-1
+before installing, and aborts otherwise. Without that check a stale cache
+makes the install a silent no-op and the operator believes a node upgraded
+when nothing changed.
+
+Verified after: all five members alive, all 25 services present, the
+`vault/` and `terraform/` prefixes intact with 274 keys under `vault/`, and
+Vault unsealed on Consul storage.
+
+The check that actually proves the Terraform states survived is a clean
+plan, not the presence of the keys. Both roots return exit code 0, no
+changes. An earlier run of mine crashed and reported nothing; that was a bad
+invocation on my side, missing `-backend-config` and using the wrong var
+file, not a real finding.
+
+Deviation: no restore rehearsal into a scratch 1.22.6 instance. The
+snapshots are verified by `consul snapshot inspect`, which is weaker than
+restoring one. This is the main gap in this apply.

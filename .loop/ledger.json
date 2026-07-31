@@ -792,7 +792,7 @@
       "dependencies": [
         "D2-cli-login-broker-tokens"
       ],
-      "priority": 44,
+      "priority": 20,
       "summary": "Add read-only Nomad, Vault and Consul commands to the localstack CLI, rendered with rich over the HTTP APIs. Live checks show the brokered deploy tokens cannot list Nomad jobs (403) and see only 2 of 25 Consul services, so the ticket scopes the surface to what those tokens can do and relays the gaps to D2.",
       "relay_block_nonfork": null,
       "tags": [
@@ -846,6 +846,99 @@
         "textual",
         "tui",
         "observability"
+      ]
+    },
+    "U1-upgrade-pin-hashistack-versions": {
+      "slug": "U1-upgrade-pin-hashistack-versions",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "upgrade",
+      "dependencies": [],
+      "priority": 49,
+      "summary": "Declare and pin the Vault, Nomad, Consul and nomad-driver-podman versions the cluster already runs, so the apt install stops being 'whatever the repo had on first provision' and the U2-U4 upgrades become deliberate one-line moves. Pins to today's installed versions: no version changes.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "bootstrap",
+        "ansible",
+        "versioning",
+        "hashistack"
+      ]
+    },
+    "U2-upgrade-vault-2x": {
+      "slug": "U2-upgrade-vault-2x",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "upgrade",
+      "dependencies": [
+        "U1-upgrade-pin-hashistack-versions"
+      ],
+      "priority": 48,
+      "summary": "Vault runs 1.21.4 Community, the terminal patch on that line (1.21.5-1.21.8 are Enterprise only). Move the pin to 2.0.3 and ship the runbook the operator applies by hand. Verified: Vault 2.x still supports the Consul storage backend, so this is a version bump, not a storage migration.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "vault",
+        "upgrade",
+        "bootstrap",
+        "storage"
+      ]
+    },
+    "U3-upgrade-nomad-2x": {
+      "slug": "U3-upgrade-nomad-2x",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "upgrade",
+      "dependencies": [
+        "U1-upgrade-pin-hashistack-versions",
+        "U2-upgrade-vault-2x"
+      ],
+      "priority": 47,
+      "summary": "Move the cluster from Nomad CE 1.11.3 to 2.0.4 on the single server and the\nfour workers. 2.0.x is the CE continuation of the 1.11 line under IBM's V.M.F\nnaming, not a semver-major break: Enterprise 1.11.4 and CE 2.0.0 ship the same\nchangelog. CE 1.11.3 is the last CE build of that line and carries two\nunpatched CVEs fixed in 2.0.1. The repo change is a version pin plus a\ncommitted runbook. An operator applies it, because it restarts the only server,\nwhich is also the client hosting the edge proxy.\n",
+      "relay_block_nonfork": null,
+      "tags": [
+        "nomad",
+        "upgrade",
+        "bootstrap",
+        "podman"
+      ]
+    },
+    "U4-upgrade-consul-2x": {
+      "slug": "U4-upgrade-consul-2x",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "upgrade",
+      "dependencies": [
+        "U1-upgrade-pin-hashistack-versions",
+        "U2-upgrade-vault-2x"
+      ],
+      "priority": 46,
+      "summary": "Move Consul from 1.22.6 to 2.0.2 on the single server and all four clients. Consul holds Vault's storage and both Terraform states, so the deliverable is a pinned version plus a snapshot-first operator runbook with a rehearsed restore, not an apply the loop can run.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "consul",
+        "upgrade",
+        "bootstrap",
+        "storage",
+        "terraform"
       ]
     }
   }
