@@ -13,14 +13,20 @@ stock `vault` CLI inherits the session, and expose the rest as shell exports
 and to the PATH shims. Purely a client: it authors no Terraform and no Vault
 policy.
 
-**Two states of the world, and the marker must score both.** F2 is committed
-on a branch, unmerged and unapplied, so `auth/userpass` does not exist on the
-live cluster yet. And F2's operator user ships `token_policies = []`, so even
-once applied, a successful login yields a `default`-policy token and **every
-broker call 403s** until F7 grants the creds reads. Rows 1-9 are offline and
-runnable today. Rows 10-12 need F2 applied. **Row 4 is the one that matters
-most right now**: the 403 is the expected result, and the ticket's value is
-that it says so precisely instead of failing obscurely inside a later
+**Corrected 2026-07-31: F2 is applied.** This marker previously said F2 was
+committed on a branch, unmerged and unapplied, and that `auth/userpass` did not
+exist. It was merged and applied the same day. `vault auth list` now returns
+`jwt-nomad/`, `token/` and `userpass/`, and the `operator` entity is live at
+`351f302a-…`. **The rows marked *(needs F2 applied)* are runnable now.**
+
+**What has NOT changed is the 403.** F2's operator user ships
+`token_policies = []`, so a successful login yields a `default`-policy token
+and **every broker call 403s** until F7 grants the creds reads. Verified
+against the operator's own token on 2026-07-31: `secret/data/*`,
+`sys/policy`, `identity/entity/id` and `auth/userpass/users` all return
+`["deny"]`. **The 403 row is still the one that matters most**: that denial is
+the expected result at implementation time, and the ticket's value is that it
+says so precisely instead of failing obscurely inside a later
 `terraform apply`.
 
 **The trap.** This ticket handles credentials, so the tempting rows ("a token
@@ -49,9 +55,9 @@ fail.
 | **`config` never prints a secret** | `localstack config` and `localstack config --json` with a live session | Shows addresses and the edge domain only. No token, no password, no `hvs.`/`hvo_` value, no contents of the session file beyond non-secret fields. `config` is the command a developer will paste into an issue when asking for help, which is precisely why it must be safe to paste | deterministic check (no secret material in either output form) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed, including the ruff, mypy and pytest hooks D1 added. The default `uv run pytest` stays offline: any test touching the live cluster carries the `cluster` marker and is excluded via `addopts` | deterministic check (`just pre_commit` all Passed; default suite offline) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31
 
 **Signature cleared 2026-07-31.** Signed against a four-command scope earlier
 the same day. The operator then added `token` and `config` and reversed the
 `~/.vault-token` decision, so three new rows exist that the signature never
-covered. Re-sign alongside D3 and D4.
+covered. Re-signed the same day, after the additions.

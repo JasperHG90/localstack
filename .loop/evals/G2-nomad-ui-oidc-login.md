@@ -45,4 +45,4 @@ issuer for that reason; a login succeeding is not evidence it was scoped.
 | The `developer` grant is stated, not stumbled into | Read the ticket's close-out notes | The notes state plainly that members of the bound Vault group receive `alloc-exec` and `alloc-node-exec`, which is shell access inside running allocations and on the node. Q1 and the §Risk note flag this; the close-out must confirm the operator accepted it rather than inheriting it silently from a pre-existing policy | model + rubric (adversarial review agent) | 4/5 |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. This change is Terraform, so `terraform fmt -check` and `terraform validate` per root are what bite | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

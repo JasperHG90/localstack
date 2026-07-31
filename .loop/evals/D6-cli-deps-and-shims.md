@@ -40,4 +40,4 @@ substitutes for the shim.
 | The default test suite is offline | `cd cli && uv run pytest` with no network | Green, and no outbound request. Downloads are mocked; any test reaching a real release server carries a marker excluded via `addopts` | deterministic check (suite green and offline) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed, including the ruff, mypy and pytest hooks D1 added | deterministic check (`just pre_commit` all Passed) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31

@@ -41,11 +41,11 @@ reports healthy jobs as broken.
 | No token value ever renders | Grep the source, the rendered output and every snapshot fixture for token values and the `hvs.`/`hvo_` prefixes | No match. Snapshot fixtures are scrubbed. `detect-private-key` stays green, though note that hook matches PEM headers only and would not catch a Vault token, which is why this row greps explicitly rather than relying on it | deterministic check (no token in source, output or fixtures) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. New deps (`textual`, `pytest-textual-snapshot`, `respx`) added via `uv add`, landing in `cli/pyproject.toml` and `cli/uv.lock`. `httpx` reused rather than adding `requests` | deterministic check (`just pre_commit` all Passed; deps in pyproject) | 100% |
 
-signed-off-by: PENDING
+signed-off-by: JasperHG90 2026-07-31
 
 **Signature cleared 2026-07-31.** The TUI was renamed from `localstack status`
 to `localstack monitor`, freeing `status` for D3's one-shot, scriptable
 renderer of the same data. This is a lighter case than D3's: no row's rigor
 changed, only the command each row launches. Cleared anyway, because a
 signature that describes a command name no longer in the ticket is a
-signature nobody can check. Re-sign alongside D3 in one pass.
+signature nobody can check. Re-signed the same day, after the rename.
