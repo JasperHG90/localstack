@@ -435,3 +435,102 @@ structural fix here: the required fixes reverse design decisions or need an
 operator call. **Do not implement from this plan as written.** Work the
 verdict's required-fix list, then re-dispatch `loop-plan-reviewer` before
 unblocking.
+
+## Measured evidence, 2026-07-31
+
+Measured against the live cluster after F2 was applied. Vault is **2.0.3** on
+Consul storage. This section adds evidence; it does not resolve the fork or
+unblock the ticket. Work the verdict's required-fix list and re-dispatch
+`loop-plan-reviewer` as that section says.
+
+### How it was measured
+
+A throwaway policy `probe-nosudo` granting the deployer's paths with **no
+`sudo` capability anywhere**, a 10-minute token against it, then each
+operation attempted for real. The policy, the token and a scratch mount were
+deleted afterwards; `vault secrets list`, `vault auth list` and `vault policy
+list` were re-read to confirm the cluster came back to 8 mounts, 3 auth
+methods and 5 policies.
+
+The point of withholding `sudo` is that it is the only way to tell a
+root-protected endpoint from a merely privileged one. Granting a broad policy
+and watching it succeed cannot distinguish them.
+
+### Result
+
+| Operation | Terraform resource | Non-sudo token |
+| --- | --- | --- |
+| read/list `sys/mounts` | refresh of `vault_mount.kvv2` | OK |
+| read/list `sys/auth` | refresh of `vault_auth_backend.userpass` | OK |
+| create/read/update/delete `secret/*` | every `vault_kv_secret_v2` | OK |
+| read `nomad/creds/deploy` | brokered Nomad token | OK |
+| read `consul/creds/deploy` | brokered Consul token | OK |
+| **enable a secrets mount** (`sys/mounts/*`) | `vault_mount.kvv2` create | **OK — no `sudo` required** |
+| **enable an auth method** (`sys/auth/*`) | `vault_auth_backend.userpass` create | **DENIED without `sudo`** |
+
+### What this changes
+
+**The headline defect is narrower than recorded.** The verdict says the
+policy "forbids the `sys/*` and `auth/*` writes that `terraform apply`
+performs", and its table at `:45` lists `sys/mounts/<secret_mount>` among the
+forbidden writes. On Vault 2.0.3 `sys/mounts/*` needs **no `sudo`**: an
+ordinary `create`/`update` grant is enough. So of everything this Terraform
+root writes, exactly **one** path is root-protected:
+
+```
+path "sys/auth/*" { capabilities = ["create","read","update","delete","sudo"] }
+```
+
+That one line is the whole distance between "the deployer runs unprivileged"
+and where the repo is today. The rest of the fix is scoping breadth, not
+privilege: `sys/policies/acl/*` for the policies the deployer owns,
+`sys/mounts/*`, and now `identity/*`.
+
+**`sys/auth/*` is a NEW requirement the verdict could not have seen.** The
+verdict was written 2026-07-30, when the only auth backend was `jwt-nomad/`,
+created by Ansible and outside Terraform. F2 applied on 2026-07-31 and added
+`vault_auth_backend.userpass` to this Terraform root, so `sys/auth/userpass`
+became a path the deployer writes. Anyone working the required-fix list from
+the verdict alone will scope the policy against a resource set that is one
+short.
+
+**F2 widened the deployer's surface in three other ways**, all also
+post-dating the verdict and all needing to appear in the policy: nine
+`identity/*` objects (entity, alias, group, and the six `identity/oidc/*`
+resources), a `vault_generic_endpoint` writing
+`auth/userpass/users/operator`, and two more KV2 paths under
+`secret/data/default/vault/`.
+
+**Mitigating detail on `sys/auth/*`:** `vault_auth_backend.userpass` is
+create-once and already exists, so a steady-state `apply` only reads the auth
+table, which needs no `sudo`. A deployer without `sudo` therefore works
+day-to-day and fails on a fresh bootstrap or any change to that resource —
+the worst failure shape, since it passes every test until the day it matters.
+Grant the `sudo` or move `vault_auth_backend` to Ansible, which already owns
+the other auth backend. Do not leave it to be discovered.
+
+### Brokering is proven end to end
+
+F5 and F6 are `done` and the brokered path works against the live cluster, not
+just in Vault:
+
+- `vault read nomad/creds/deploy` mints a client token, 30-minute renewable
+  lease. `nomad acl token self` reports `Type = client`, `Policies =
+  [deploy]`. `nomad job status` and `nomad node status` both return **403**,
+  which is `nomad_deploy_role.tf` working as designed. It grants
+  `submit-job`/`read-job` and deliberately withholds `list-jobs`, node and
+  agent access.
+- `vault read consul/creds/deploy` mints a Consul token, 30-minute renewable
+  lease. It reads the catalog and the `terraform/` KV prefix holding both
+  Terraform states, and is refused `acl:read`.
+
+So the deployer half of "one human login, brokered service tokens" needs no
+new mechanism. What is missing is only the Vault policy that lets a human read
+those two paths.
+
+**Note for whoever scopes that policy:** the Consul `deploy` token can read
+`terraform/applications` and `terraform/infrastructure`. It must, since that
+is the state backend. Terraform state holds secrets in plaintext, so anyone
+who can deploy can read every secret in state. This is not a regression, since
+the static Consul token it replaces can do the same, but the brokered token is
+not a containment boundary and should not be described as one.
