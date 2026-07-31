@@ -86,6 +86,14 @@ one line is unavoidable: Vault gates the provider on its `allowed_client_ids`
 and offers no standalone resource for it, unlike the key. Omit it and Vault
 refuses the authorization request.
 
+Finally, make your client **request** the `groups` scope, not just read it.
+Send `scope=openid groups`; oauth2-proxy calls this `--scope`. Only `openid`
+is required, so a client that sets `--oidc-groups-claim` and leaves its
+default scope alone gets a signed token with no `groups` claim, however
+correct the scope template is. Nothing errors. Verified live on 2026-07-31:
+with the scope requested, the decoded payload carries
+`"groups": ["oidc-smoke"]`.
+
 Write your client secret to KV2 under your service's own prefix. Do not put it
 in a `.tf` file. Note that the `detect-private-key` pre-commit hook will NOT
 catch a Vault client secret: it matches a fixed list of PEM headers, and
@@ -103,7 +111,7 @@ read everywhere.
 
 ## Rotating the operator password
 
-Taint the generated password and re-apply:
+Replace the generated password and re-apply:
 
 ```
 cd deployments/infrastructure

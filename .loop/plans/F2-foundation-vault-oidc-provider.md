@@ -416,3 +416,73 @@ Against `.loop/verdicts/F2-foundation-vault-oidc-provider.plan-validator.md`
 Two corrections to the verdict itself, verified live 2026-07-30: it reported
 one drifting assignment, but there are **two** (`allow_all` and `test`); and
 `identity/oidc/scope` is **empty**, which it did not state.
+
+## Applied, 2026-07-31
+
+Merged into `main` and applied. `terraform apply` added 14 resources, changed
+0, destroyed 0: the nine `vault_identity*` objects, the `userpass` mount, the
+generated operator password, its `vault_generic_endpoint` user, and two KV2
+writes. A re-plan afterwards returned `-detailed-exitcode` 0, so state matches
+Vault.
+
+The gate (`just pre_commit`) was re-run green in the worktree before the merge,
+so row 10 was earned here, not inherited from the review.
+
+### Close-out rows, run by hand
+
+Rows 1-9 and 11 all pass. What each actually showed:
+
+- **Rows 1, 2.** Issuer is
+  `https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab`, HTTPS as
+  required, and the advertised JWKS serves a non-empty `keys` array. The
+  advertised `authorization_endpoint` is the UI path, as the plan warned, so
+  the API path is what rows 5 and 6 drove.
+- **Row 3.** `terraform state list | grep -c '^vault_identity'` returns
+  **exactly 9**, one of each enumerated type. Counted, not grepped.
+- **Row 4.** A real `userpass` login as `operator` returns a token whose
+  `entity_id` is `351f302a-…`, the Terraform-created entity. Its policy set is
+  `["default"]` only, as intended: this account exists to hold an identity,
+  not privilege.
+- **Row 5, the one that mattered.** With `scope=openid groups`, the decoded
+  `id_token` payload carries `"groups": ["oidc-smoke"]` as a real JSON
+  **array**. This is the trap the scope-template comment describes: a template
+  built with `jsonencode` or a quoted placeholder would have produced the
+  string `"[\"oidc-smoke\"]"`, or dropped the claim entirely, and Vault would
+  have signed and returned the token either way. The payload was decoded and
+  asserted; a returned token was not treated as evidence.
+- **Row 6.** A throwaway `rowsix` entity, deliberately outside the assignment,
+  was refused: `access_denied`, `identity entity not authorized by client
+  assignment`, no `id_token`. The negative control discriminates because
+  `rowsix` **logged in successfully first** and carried its own `entity_id`, so
+  the refusal came from the assignment rather than from a broken login. The
+  entity and user were deleted afterwards.
+- **Rows 7, 8, 9.** No `client_secret =` or `hvo_secret_` in the `.tf`/`.tfvars`
+  diff. Exactly one client, `oidc-smoke`. The key carries no inline
+  `allowed_client_ids`; the only such attribute is on the provider, where Vault
+  offers no standalone resource.
+- **Row 11.** The drifting `test` client and assignment are **deleted**, per
+  Q7's resolution. Before deleting, both were read: the client sat on the
+  built-in `default` key (not `lab`), with empty `redirect_uris`, so it could
+  never have completed a login. `identity/oidc/client` now lists only
+  `oidc-smoke`; `identity/oidc/assignment` lists `allow_all` and `oidc-smoke`.
+  Vault's own `default` provider, `default` key and `allow_all` assignment were
+  left alone.
+
+### State afterwards
+
+5 nodes ready, 24 allocations running with none pending or failed, Vault 2.0.3
+unsealed on Consul storage. `vault auth list` now holds `jwt-nomad/`, `token/`
+and `userpass/` — the cluster's first human auth backend.
+
+### Still open
+
+Q8 (whether the `groups` claim generalizes across relying parties, which M2
+already falsifies) and Q9 (whether Vault's built-in `default` provider should
+be locked down) are unchanged. Neither blocks a consumer ticket.
+
+The two documentation gaps recorded in the documentation verdict are now
+**fixed**, along with the prose double-dash in `oidc.tf`. They were unfixable
+in-ticket only because `review_cycles` had hit its cap of 3; that no longer
+binds once the ticket is done. `docs/vault-human-auth.md` now tells a consumer
+to request `scope=openid groups` and explains why omitting it fails silently,
+and the rotation section says "replace" to match the `-replace` flag it uses.

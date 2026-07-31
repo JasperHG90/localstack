@@ -85,7 +85,7 @@ resource "vault_identity_oidc_provider" "lab" {
 ### --- Smoke test -----------------------------------------------------------
 ### The minimum needed to prove the issuer works: a group, an assignment
 ### gating on it, and a client. Explicitly throwaway. Once a real consumer
-### client exists, this can be deleted -- but remove its entry from
+### client exists, this can be deleted — but remove its entry from
 ### `local.oidc_provider_client_ids` in the same change, or the provider
 ### references a client id that no longer exists.
 
