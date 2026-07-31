@@ -43,7 +43,7 @@
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
-      "stage": "commit",
+      "stage": "done",
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
