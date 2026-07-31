@@ -733,6 +733,120 @@
         "bootstrap",
         "ansible"
       ]
+    },
+    "D1-cli-package-skeleton": {
+      "slug": "D1-cli-package-skeleton",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "cli",
+      "dependencies": [],
+      "priority": 47,
+      "summary": "Create the cli/ Python package, its `localstack` entrypoint, and the ruff,\nmypy and pytest gates this repo does not have yet. Skeleton only: no login,\nno read commands, no TUI, no breakglass. Those are D2 to D5. The value is\nthat this is the repo's first Python packaging, so the layout, the install\npath and the gate wiring get decided once instead of four times.\n",
+      "relay_block_nonfork": null,
+      "tags": [
+        "cli",
+        "python",
+        "tooling"
+      ]
+    },
+    "D2-cli-login-broker-tokens": {
+      "slug": "D2-cli-login-broker-tokens",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "cli",
+      "dependencies": [
+        "D1-cli-package-skeleton",
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 46,
+      "summary": "Add `localstack login|logout|whoami|env`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and expose them to terraform and the hashi CLIs without any static god-mode token.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "cli",
+        "vault",
+        "nomad",
+        "consul",
+        "auth"
+      ]
+    },
+    "D3-cli-read-commands": {
+      "slug": "D3-cli-read-commands",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "cli",
+      "dependencies": [
+        "D2-cli-login-broker-tokens"
+      ],
+      "priority": 44,
+      "summary": "Add read-only Nomad, Vault and Consul commands to the localstack CLI, rendered with rich over the HTTP APIs. Live checks show the brokered deploy tokens cannot list Nomad jobs (403) and see only 2 of 25 Consul services, so the ticket scopes the surface to what those tokens can do and relays the gaps to D2.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "cli",
+        "nomad",
+        "vault",
+        "consul"
+      ]
+    },
+    "D5-cli-breakglass": {
+      "slug": "D5-cli-breakglass",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "cli",
+      "dependencies": [
+        "D1-cli-package-skeleton"
+      ],
+      "priority": 43,
+      "summary": "`localstack breakglass` prints the recovery runbook for a cluster you cannot authenticate to or reach, and optionally runs read-only reachability probes to say which failure you are in. It handles no credentials: it never reads, caches, prints or exports the Vault root token or the unseal keys. Tests pin every fact in the printed text against the repo file that states it, so drift fails a gate instead of going stale silently.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "cli",
+        "recovery",
+        "runbook",
+        "security"
+      ]
+    },
+    "D4-cli-cluster-tui": {
+      "slug": "D4-cli-cluster-tui",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "cli",
+      "dependencies": [
+        "D2-cli-login-broker-tokens"
+      ],
+      "priority": 42,
+      "summary": "A Textual `localstack status` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "cli",
+        "textual",
+        "tui",
+        "observability"
+      ]
     }
   }
 }
