@@ -258,7 +258,67 @@ operator at apply time. The loop's own bar is rows 1-3.
    `vault_identity_oidc_key_allowed_client_id`.**
 5. **Persist the smoke-test client id/secret to KV2** per `secrets.tf:15-29`.
 6. **Gate:** `just worktree_setup`, then `just pre_commit`.
-7. **Write the close-out acceptance procedure** (evals 4-6) into the ticket.
+7. **Write the close-out acceptance procedure** into the ticket (below).
+
+## Close-out procedure (operator, at apply time)
+
+The loop commits the Terraform. It does not apply it. After `just apply` in
+`deployments/infrastructure`:
+
+1. **Run the post-apply eval rows** from
+   `.loop/evals/F2-foundation-vault-oidc-provider.md` — marker rows 1, 2, 4, 5
+   and 6 (the plan's §8 numbering differs; go by the marker): discovery over
+   HTTPS with the issuer prefix asserted, JWKS non-empty, a real `userpass`
+   login yielding a NON-empty `entity_id`, the authorization-code flow
+   carrying the `groups` claim, then the non-member denial.
+
+   **Row 6 needs a second entity, and F2 does not create one.** Make a
+   throwaway that is deliberately NOT in `oidc-smoke`, run the same
+   authorization request as row 5, confirm it is refused, then delete it:
+   ```
+   vault write auth/userpass/users/rowsix password="$(openssl rand -base64 24)"
+   vault write identity/entity name=rowsix
+   vault write identity/entity-alias name=rowsix \
+     canonical_id=$(vault read -field=id identity/entity/name/rowsix) \
+     mount_accessor=$(vault auth list -format=json | jq -r '."userpass/".accessor')
+   # log in as rowsix, drive /authorize against the smoke client: expect DENIED
+   vault delete identity/entity/name/rowsix
+   vault delete auth/userpass/users/rowsix
+   ```
+   Without this, row 5 passing proves only that login works, not that the
+   assignment gates anything, which is the property the row exists for.
+
+   **The authorize request MUST ask for the groups scope**, or none of the
+   above proves anything. Vault's `/identity/oidc/provider/<name>/authorize`
+   takes a space-delimited `scope` and only `openid` is required, so a request
+   sending `scope=openid` returns a signed `id_token` with no `groups` claim
+   even when the scope template is perfect. Send:
+   ```
+   scope=openid groups
+   ```
+   alongside the other authorize params (`client_id`, `redirect_uri`,
+   `response_type=code`, `state`, `nonce`).
+
+   **Then check the claim is actually present, not just that a token came
+   back.** Decode the `id_token` payload and assert `groups` exists and is an
+   ARRAY. A malformed scope template makes Vault drop the claim silently and
+   still return a signed token, so "the flow completed" is not evidence. This
+   is the exact trap that hid the `jsonencode` defect: apply succeeded, tokens
+   issued, and the claim was simply absent.
+2. **Delete the drifting `test` OIDC client and its assignment**, per Q7. This
+   is not a Terraform resource: F2 cannot express deleting an object it does
+   not manage, so it is a manual step.
+   ```
+   vault delete identity/oidc/client/test
+   vault delete identity/oidc/assignment/test
+   ```
+   **Leave alone** the built-in `default` provider, the `default` key, and the
+   `allow_all` assignment. Those are Vault's own, not drift.
+3. **Confirm the result:** `vault list identity/oidc/client` returns only the
+   smoke-test client, and `vault list identity/oidc/assignment` returns
+   `allow_all` plus the smoke-test assignment.
+4. Record in the ticket close-out which of steps 1-3 ran and what they
+   returned, so eval row 11 can be scored against something.
 
 ## 11. Open questions
 

@@ -48,3 +48,21 @@ variable "acme_server" {
   type        = string
   default     = "https://acme-v02.api.letsencrypt.org/directory"
 }
+
+variable "vault_issuer_host" {
+  description = "Host the Vault OIDC provider advertises as its issuer. Baked into every issued token and into each consumer's client config, so changing it later means re-issuing everywhere. Uses the edge hostname, not the backend IP, so it survives a backend change."
+  type        = string
+  default     = "vault.lab.orangecluster.nl"
+}
+
+variable "vault_operator_username" {
+  description = "Username for the human userpass account whose entity OIDC assignments gate on. The password is generated and written to Vault KV2; it is never set here."
+  type        = string
+  default     = "operator"
+}
+
+variable "oidc_smoke_redirect_uris" {
+  description = "Redirect URIs for F2's throwaway smoke-test OIDC client. A placeholder is fine: the client exists to prove the issuer completes an auth-code flow, not to serve a real app. Consumer tickets set their own. WARNING: the default hardcodes the issuer host, because Terraform forbids interpolation in a default. Change vault_issuer_host and this must be changed with it, or the redirect silently stops matching."
+  type        = list(string)
+  default     = ["https://vault.lab.orangecluster.nl/ui/vault/auth/oidc/oidc/callback"]
+}

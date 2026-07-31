@@ -116,3 +116,40 @@ resource "vault_kv_secret_v2" "prometheus_bifrost_admin" {
     }
   }
 }
+
+### Human operator's userpass password. Generated, never in the repo or tfvars.
+resource "vault_kv_secret_v2" "vault_operator_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/vault/operator"
+  data_json = jsonencode({
+    username = var.vault_operator_username
+    password = random_password.operator.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+### Smoke-test OIDC client credentials. client_secret is provider-generated;
+### it must reach KV2 and never a .tf literal. Note detect-private-key does
+### NOT guard this: that hook matches PEM headers only.
+resource "vault_kv_secret_v2" "oidc_smoke_client" {
+  mount = vault_mount.kvv2.path
+  name  = "default/vault/oidc-smoke"
+  data_json = jsonencode({
+    client_id     = vault_identity_oidc_client.smoke.client_id
+    client_secret = vault_identity_oidc_client.smoke.client_secret
+    issuer        = "https://${var.vault_issuer_host}/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}"
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
