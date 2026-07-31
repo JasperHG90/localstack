@@ -533,13 +533,11 @@ anyway.
 
 ## 11. Open questions
 
-**Q1 — D1's package root, entry point, and CLI framework (blocking).**
-No `pyproject.toml` exists in the tracked tree and `D1-cli-package-skeleton`
-has no plan file yet, so §7's paths are an assumption.
-*Recommendation:* author and settle D1 first, then confirm the root here
-before pickup. If D1 lands `cli/` with `src/localstack_cli/`, §7 needs no
-edit. D2's `depends_on` already gates on it; this question is about
-whether §7's anchors are right, not whether the ordering holds.
+**Q1 → ANSWERED by D1, 2026-07-31.** This question said D1 had no plan file.
+It has one now, and it settles the fork: package under `cli/`, src layout,
+its own `cli/pyproject.toml`, `typer` at runtime. §7's anchors hold. Still
+verify at pickup, since D1 is `planning` and nothing is built — no `cli/`
+directory exists in the tree yet.
 
 **Q2 — HTTP client and its mocking tool.** `requirements.txt` lists both
 `httpx` (`:3`) and `hvac` (`:5`), and nothing installs either.
@@ -549,23 +547,47 @@ names `respx` as this repo's tool for `httpx` and names nothing for
 enough that `hvac` buys little and costs a mocking story the rules do not
 cover. Defer to D1 if D1 already picked.
 
-**Q3 — `env` versus `exec` as the token surface.** `localstack env` for
-`eval "$(...)"`, a shell profile write, or `localstack exec -- <cmd>`.
-*Recommendation:* `env`, and defer `exec`. `env` composes with the
-existing `just apply` recipes unchanged
-(`deployments/infrastructure/justfile:11-13`), matches `gcloud` and
-`minikube docker-env`, and needs no process wrapping. The honest cost:
-exported variables go stale in the shell after 30 minutes and `env`
-cannot reach back in to refresh them, so a developer re-runs
-`eval "$(localstack env)"`. `exec` would fix freshness by brokering per
-invocation, at the price of rewriting every recipe call site. If the
-operator would rather pay that now, this flips.
+**Q3 → RESOLVED (operator, 2026-07-31): a PATH shim. Neither `env` nor
+`exec`.** A third option this question did not list, and it dissolves the
+cost the recommendation admitted. `~/.localstack/bin` goes on PATH ahead of
+`/usr/bin`, holding a shim per CLI that refreshes the brokered token when
+stale and then execs the real binary. See §12 for the contract.
 
-**Q4 — Should `login` also write `~/.vault-token`?** Doing so makes the
-stock `vault` CLI inherit the session with no extra step.
-*Recommendation:* no. It is a file the CLI does not own and clobbering it
-would silently replace whatever the developer's `vault login` put there.
-Revisit as an opt-in flag if the friction is real.
+Why it beats both listed options: `env` goes stale after 30 minutes with no
+way to reach back into the shell, and it only ever fixes the one shell it
+ran in — scripts, subshells and `just` recipes each need their own `eval`.
+`exec` is always fresh but rewrites every call site and you type the prefix
+forever. The shim is fresh per invocation AND works in every shell, script
+and subprocess with nothing typed.
+
+The forcing constraint, measured 2026-07-31: **`nomad` has no credential
+file.** `NOMAD_TOKEN_FILE` does not exist — zero occurrences in the 2.0.3
+binary, against two for `CONSUL_HTTP_TOKEN_FILE` — and `nomad login` has no
+sink flag, it only prints. So `nomad` reads `NOMAD_TOKEN` or `-token` and
+nothing else, and a child process cannot set its parent shell's environment.
+Every option that is not a shim inherits that limitation.
+
+`vault` needs no shim at all once Q4 is applied, and `consul` needs none if
+`CONSUL_HTTP_TOKEN_FILE` is set statically in the devcontainer. Nomad is the
+only CLI that strictly requires one; ship the other two for uniformity or
+skip them, implementer's call.
+
+**Q4 → RESOLVED (operator, 2026-07-31): yes, write `~/.vault-token`,
+mode 0600.** The earlier recommendation was no. It is reversed.
+
+That file is the whole reason the stock `vault` CLI needs no shim: `vault`
+reads it natively, so writing it is what makes `vault kv get` work after
+`localstack login` with no env var and no wrapper. It is also the exact
+mechanism this repo is copying — `gcloud` keeps its credential in
+`~/.config/gcloud/credentials.db` and every later `gcloud` command reads it.
+
+The objection stands but is thin here: the CLI writes a file it does not
+own, and clobbers whatever a developer's own `vault login` put there. One
+cluster, one operator, and `localstack login` is itself a Vault login, so
+the value it writes is the value `vault login` would have written.
+
+Write it the way `vault login` does: 0600, and on `localstack logout` remove
+it rather than leaving a revoked token on disk.
 
 **Q5 — One session or named profiles?** One cluster exists.
 *Recommendation:* one session file, no profile flag. The schema already
@@ -573,14 +595,29 @@ carries `version` and `vault_addr`, so a profile layer is an additive
 change later. Building it now is speculative
 (`AGENTS.md` §2).
 
-**Q6 — The 32-day login token TTL that D2 cannot control.** F2 sets no
-`token_ttl` on the userpass user and Vault's system default is unset, so
-the token cached on disk lives 32 days. The client cannot lower it.
-*Recommendation:* D2 warns in `whoami` when the Vault TTL exceeds 24
-hours, and this ticket records the finding as a required input to F7's
-replan: F7 should set `token_ttl`/`token_max_ttl` on the operator login
-so the session expires on its own. Do not patch `auth_userpass.tf` from
-this ticket.
+**Q6 → RESOLVED (operator, 2026-07-31): the 32-day TTL is the design, not a
+defect. Keep it.** This question framed a long Vault TTL as a problem to fix.
+That framing is wrong once the two credentials are told apart.
+
+The Vault token is the **refresh token**: long-lived, renewable, held on
+disk, re-obtained by logging in about monthly. The brokered Nomad and Consul
+creds are the **access tokens**: 30 minutes, refreshed invisibly by the Q3
+shim. Short access tokens are a feature precisely because refresh is
+automatic; lengthening them would be the wrong fix for the staleness `env`
+suffered from. This is `gcloud`'s architecture, which is what the CLI is
+modelled on.
+
+Two consequences, both reversals of the earlier recommendation:
+
+- **Drop the `whoami` warning** above 24 hours. It would fire on every
+  healthy session and train the operator to ignore it.
+- **Drop the `token_ttl`/`token_max_ttl` task handed to F7.** Recorded in
+  F7's `## Measured evidence, 2026-07-31` section so its replan does not act
+  on the earlier advice.
+
+`whoami` should still *show* the remaining TTL, and warn when it is nearly
+expired, which is the useful direction. Leave `auth_userpass.tf` alone, as
+before.
 
 **Q7 — Where the one-time password retrieval is documented.** The
 operator needs the KV2 password once, using the root token, and the CLI
@@ -621,3 +658,86 @@ operator sign-off. This ticket does not author it.
 Two guardrails belong in that eval, because prose alone leaves them
 wobbly: `env` must emit both Consul variable names, and `logout` must
 revoke before it deletes.
+
+## 12. Design locked, 2026-07-31
+
+The operator settled Q1, Q3, Q4 and Q6 in one sitting. This section is the
+shape those answers add up to, so an implementer does not have to reassemble
+it from four question blocks.
+
+### The model
+
+`gcloud`, mapped onto Vault. One long-lived credential the human holds, and
+short-lived service credentials refreshed from it without the human noticing.
+
+```
+Vault token       32 days, renewable    -> ~/.vault-token (0600)
+  |                                        + ~/.localstack/session.json
+  +- nomad/creds/deploy     30 min       -> refreshed by the shim
+  +- consul/creds/deploy    30 min       -> refreshed by the shim
+```
+
+### How each CLI gets its token
+
+Measured against the installed binaries on 2026-07-31, not assumed:
+
+| CLI | Reads a credential file? | Needs a shim? |
+| --- | --- | --- |
+| `vault` | yes, `~/.vault-token`, no config needed | **no**, once Q4 writes it |
+| `consul` | yes, via `CONSUL_HTTP_TOKEN_FILE` | **no**, if that var is set statically |
+| `nomad` | **no. `NOMAD_TOKEN_FILE` does not exist** | **yes** |
+
+`CONSUL_HTTP_TOKEN_FILE` is configuration, not a credential: it names a path,
+never changes, and holds no secret, so the devcontainer can export it once
+and `localstack login` just writes the file it points at.
+
+### The shim contract
+
+```bash
+# ~/.localstack/bin/nomad
+#!/usr/bin/env bash
+T="$(localstack token nomad 2>/dev/null)" || exec /usr/bin/nomad "$@"
+exec env NOMAD_TOKEN="$T" /usr/bin/nomad "$@"
+```
+
+Three requirements the implementer must not drop:
+
+1. **Fall through on failure.** If `localstack token` cannot produce one, exec
+   the real binary unchanged. A broken CLI must degrade to today's behavior,
+   never to a dead `nomad`.
+2. **Cache, do not mint per invocation.** Reuse the brokered token until it is
+   near expiry. Minting on every `nomad` call piles up Vault leases fast. This
+   is what `gcloud`'s `access_tokens.db` is for.
+3. **Resolve the real binary robustly.** `/usr/bin/nomad` is the current path;
+   do not re-resolve through `PATH` or the shim calls itself.
+
+The devcontainer puts `~/.localstack/bin` on PATH ahead of `/usr/bin`, so on
+a configured machine the setup cost is zero. `which nomad` showing the shim is
+the accepted cost.
+
+### `localstack ui consul`
+
+Consul's OIDC auth method is Enterprise-only and this cluster is CE, verified
+2026-07-31: `consul version` carries no `+ent` and the agent reports
+`Edition: n/a`. The CE `jwt` method is programmatic, with no browser redirect,
+so the Consul UI cannot drive it either. Pasting a token is the only route,
+and no amount of design removes that.
+
+So make it one command: broker a Consul token, copy it to the clipboard, print
+it as a fallback, and open `https://consul.lab.orangecluster.nl`. The operator
+pastes once per session.
+
+- Print the token even when the clipboard write succeeds. Inside a container
+  the clipboard is the part most likely to fail, and a silent failure leaves
+  the operator with a browser and no token.
+- Clipboard needs a helper (`xclip`, `pbcopy`, or an OSC 52 escape). OSC 52
+  travels over SSH and through the devcontainer, so prefer it.
+- The same command shape can serve `localstack ui nomad` later, but do not
+  build that here. Once Nomad UI SSO lands, Nomad needs no token paste at all.
+
+### What this does NOT settle
+
+`localstack env` still has a place for `just` recipes and CI, where a shim on
+PATH may not be present. Q3 chose the shim as the developer surface, not as
+the only surface. Keep `env` if it is cheap; do not make the recipes depend on
+a shim being installed.

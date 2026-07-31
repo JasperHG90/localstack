@@ -940,6 +940,30 @@
         "storage",
         "terraform"
       ]
+    },
+    "G2-nomad-ui-oidc-login": {
+      "slug": "G2-nomad-ui-oidc-login",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "rollout",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 25,
+      "summary": "Give the Nomad web UI and `nomad login` a sign-in button backed by Vault's OIDC provider, so a developer reaches Nomad with the same identity they use everywhere else instead of pasting an ACL token. Also resolves the unmanaged `developer` policy the cluster already carries.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "nomad",
+        "oidc",
+        "vault",
+        "terraform",
+        "sso"
+      ]
     }
   }
 }

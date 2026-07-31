@@ -534,3 +534,19 @@ is the state backend. Terraform state holds secrets in plaintext, so anyone
 who can deploy can read every secret in state. This is not a regression, since
 the static Consul token it replaces can do the same, but the brokered token is
 not a containment boundary and should not be described as one.
+
+### Do NOT set `token_ttl` on the operator login
+
+D2's Q6 previously handed F7 a task: set `token_ttl`/`token_max_ttl` on the
+operator `userpass` user so the 32-day session expires on its own. **The
+operator reversed that on 2026-07-31. Do not do it.**
+
+The reasoning is that the two credentials play different roles. The Vault
+token is the long-lived credential a human holds and re-obtains by logging in,
+roughly monthly. The brokered Nomad and Consul creds are the short-lived ones,
+30 minutes, refreshed automatically by the CLI. Shortening the Vault token
+would force a daily login without shortening anything that actually reaches
+Nomad or Consul.
+
+D2 §12 carries the full model. F7 should leave `auth_userpass.tf` alone on
+this point and scope its work to the policy.
