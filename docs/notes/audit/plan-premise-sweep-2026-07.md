@@ -75,6 +75,16 @@ policy as job-scoped by citing 11 of the 24 lines. F9 exists to narrow this.
 Read back with `vault policy read nomad-workloads`, which renders six `path`
 blocks.
 
+*(Superseded in part, 2026-07-31, by ticket
+`F9-foundation-scope-nomad-workloads-policy`. The paragraph above is a dated
+snapshot of 2026-07-30 and is left standing as
+A1's record. As of F9's merge the committed template is 21 lines with three
+`path` blocks: grants 3, 4 and 5 are removed and only the two job-scoped
+`secret/data` reads and the namespace-scoped `secret/metadata` list remain. The
+LIVE policy still renders six blocks until an operator applies F9, so this
+paragraph stays accurate about the cluster and is already stale about the repo.
+F9's runbook extends this line with the date the live cluster changes.)*
+
 **Vault mounts and OIDC provider state.** `vault secrets list`: `bootstrap/`
 (kv), `consul/`, `cubbyhole/`, `identity/`, `nomad/`, `secret/` (kv v2),
 `sys/`. Note there is **no `database/` engine mounted**. `vault policy list`:

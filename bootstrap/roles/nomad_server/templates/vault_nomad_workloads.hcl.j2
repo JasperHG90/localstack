@@ -10,15 +10,12 @@ path "secret/metadata/{{ '{{' }}identity.entity.aliases.{{ auth_method_accessor 
   capabilities = ["list"]
 }
 
-path "secret/metadata/*" {
-  capabilities = ["list"]
-}
-
-# Bootstrap secrets (for rotation jobs)
-path "bootstrap/data/*" {
-  capabilities = ["read", "create", "update"]
-}
-
-path "bootstrap/metadata/*" {
-  capabilities = ["list"]
-}
+# F9 (2026-07-30) removed three grants here: cluster-wide secret-metadata
+# listing, and read/create/update plus listing on the bootstrap mount. No
+# workload consumed them and rotation runs from the host, not from Nomad.
+# Rationale and evidence: ticket F9-foundation-scope-nomad-workloads-policy
+# (.loop/plans/ while open, .loop/archive/<slug>/plan.md once closed)
+#
+# Deliberately NOT restating the removed path rules: Vault stores policy text
+# verbatim, so anything written here is echoed by `vault policy read` and would
+# make a grep for a revoked grant match.

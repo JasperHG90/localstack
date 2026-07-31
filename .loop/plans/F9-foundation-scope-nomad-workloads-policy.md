@@ -55,14 +55,32 @@ Verified live 2026-07-25 (`vault policy read nomad-workloads`,
 - `vault list bootstrap/metadata` returns `github` and `tailscale` — the
   GitHub PAT and the Tailscale auth key
   (`docs/credential-rotation.md:20,29`).
-- So minio, memex, hermes, grafana, postgres, prometheus, loki, nats, the
-  backup jobs, and any future workload can read AND overwrite both
-  credentials. The Tailscale key is the sharper edge: it admits a new device
-  to the tailnet.
+- **So sixteen of the nineteen running jobs can read AND overwrite both
+  credentials**, plus any future workload: the fifteen default-role holders
+  below, plus `acme`, whose dedicated role also carries `nomad-workloads` in
+  its `token_policies` (`acme.tf:87`). Fifteen is the right number for the
+  *verification population* (the jobs whose reads could break), but sixteen is
+  the right number for the *exposure*. The full list, from
+  `nomad job inspect` over all nineteen live jobs on 2026-07-30:
+  `backup-minio`, `backup-postgres`, `bifrost`, `grafana`, `haproxy`,
+  `hermes`, `loki`, `memex`, `minio`, `mlflow`, `phoenix`, `postgres`,
+  `prometheus`, `talat-consumer`, `talat-shim`. Note `nats` is NOT among them
+  (no `vault` block), and `talat-consumer`/`talat-shim` have no job file in
+  this repo, so a repo-side grep misses two live holders. The Tailscale key is
+  the sharper edge: it admits a new device to the tailnet.
+  *(Corrected 2026-07-30: this list previously named nats, which holds
+  nothing, and omitted six jobs that do.)*
 - The comment says "for rotation jobs", so the grant was written for a
   specific consumer and applied to the default role that everything inherits.
-  **Which jobs actually read `bootstrap/*` is not yet established** — that is
-  subticket 1, and it decides the shape of the fix.
+  **No workload consumes it. Established 2026-07-30, three ways:** an inspect
+  of all nineteen live jobs shows zero references to the `bootstrap` mount; a
+  repo-wide grep shows zero; and `docs/credential-rotation.md:34-40` is a
+  section titled "Why Ansible (Not Nomad Periodic Jobs)" stating both
+  credentials are rotated from the host by design. Subticket 1 confirms rather
+  than searches, and the fix is deletion, not a dedicated role.
+  *(This bullet previously read "Which jobs actually read `bootstrap/*` is not
+  yet established". The F9 plan review gathered the evidence; folding it in
+  here is that review's recommended fix.)*
 - The mechanism for a narrower grant already exists and is proven: the acme
   job's `acme.tf:41-90` creates a dedicated `vault_policy` +
   `vault_jwt_auth_backend_role` on the same `jwt-nomad` mount, selected with
@@ -94,9 +112,14 @@ Verified live 2026-07-25 (`vault policy read nomad-workloads`,
 3. **Establish the consumer list before removing anything.** Removing a
    grant something silently depends on is the failure mode here, and it
    surfaces as a template that blocks forever rather than a clear error.
-4. Decide and record whether `list` on `secret/metadata/*` (cluster-wide)
-   narrows to the job's own namespace. It leaks path names, not values —
-   lower severity than the write grant, and it may have a consumer.
+4. **DECIDED 2026-07-30: the unscoped `secret/metadata/*` list is REMOVED.**
+   The namespace-scoped `secret/metadata/{{ns}}/*` list on the line above it
+   survives, so a workload can still enumerate its own namespace; only
+   cluster-wide enumeration goes. It leaked path names, not values, so it is
+   lower severity than the write grant, but it had no consumer: workload
+   templates `read` specific data paths and do not `list` metadata at all.
+   Decided rather than deferred because the plan required a recorded answer
+   and either outcome was acceptable; this is the narrower one.
 5. The shared policy is Ansible-owned
    (`bootstrap/roles/nomad_server/tasks/main.yml`, the task that writes it).
    Applying a change means re-running that bootstrap task against the live
@@ -131,11 +154,18 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
 1. **The grant is gone.** Mint a WI token for an ordinary job (or use the
    F1 probe job), then `vault kv get -mount=bootstrap github` -> **403**.
    Before this ticket the same command succeeds; that contrast is the point.
-2. **Ordinary jobs still read their own secrets.** For at least three live
-   jobs across different nodes (e.g. memex, grafana, minio), confirm the
-   alloc is healthy and its rendered template is non-empty after the policy
-   is applied. A blocked template is the signature of an over-narrowed
-   policy.
+2. **Every default-role holder still reads its own secrets.** All fifteen,
+   not a sample: `backup-minio`, `backup-postgres`, `bifrost`, `grafana`,
+   **`haproxy`**, `hermes`, `loki`, `memex`, `minio`, `mlflow`, `phoenix`,
+   `postgres`, `prometheus`, `talat-consumer`, `talat-shim`. Confirm each
+   alloc is healthy and its template rendered. A blocked template is the
+   signature of an over-narrowed policy.
+   **haproxy is the one that matters most.** It reads
+   `secret/data/default/haproxy/tls` (`services.tf:323`) to render the edge
+   PEM, and that read stays covered by the surviving job-scoped grant. So a
+   blocked haproxy template after this change means the policy was
+   over-narrowed and must trigger the rollback in the runbook — and until it
+   does, every routed service is down.
 3. **The named consumer still works**, if subticket 1 found one: its job
    reaches `running` and reads `bootstrap/*` through its dedicated role.
 4. **Metadata list narrowed**, per requirement 4: a WI token's
@@ -158,6 +188,118 @@ No unit-test harness for infra HCL, no CI. Repo gate plus live evals.
   change.
 - **Do not batch this with other bootstrap changes.** If something breaks,
   the cause should be unambiguous.
+- **F1 collision, recorded rather than silently resolved.** F1
+  (`F1-foundation-nomad-wi-jwt-trust`, stage `ready`) documents this policy as
+  it currently stands and says "Do not narrow it either"
+  (`.loop/plans/F1-foundation-nomad-wi-jwt-trust.md:169`, and its requirement 1,
+  whose line number the relay insertion shifted — re-read the file rather than
+  trusting a cite). F9
+  falsifies that. No `depends_on` edge was added, because the two tickets do
+  not need ordering — they conflict on *content*, not sequence, and adding an
+  edge would imply F1 must run first when the opposite is true. Instead the
+  finding is relayed onto F1 so whoever picks it up re-plans against the
+  narrowed policy. If F1 lands first it is merely stale; if F9 lands first F1
+  is wrong, which is why the relay exists.
+
+## Runbook: applying this change
+
+The loop commits the template. **It does not apply it.**
+
+**The Ansible task cannot be run in isolation.** `nomad_server` has zero
+`tags:`, so `--tags` cannot select it, and the two policy tasks
+(`tasks/main.yml:257-271`) depend on facts set earlier in the same role
+(`vault_bootstrap_token` at `:194-196`, `auth_method_accessor` at `:253-255`),
+so `--start-at-task` fails too. The only Ansible path is the whole
+`playbooks/configure_hashistack_server.yml`, which also runs the
+`consul_server` and `vault_server` roles — which is exactly the batching this
+ticket says to avoid.
+
+**So apply it directly instead**, and **do NOT try to render the Jinja
+template by hand.**
+
+*Corrected 2026-07-30 after both review passes caught the same defect.* This
+step previously said "the template's only variable is `auth_method_accessor`".
+That is true of Jinja *variables* and false of the *file*: every surviving
+path line is double-escaped, `{{ '{{' }}...{{ '}}' }}`, so that Jinja emits
+Vault's own ACL templating. Substituting only the accessor leaves those
+literals in place, and Vault then accepts a policy whose templated paths match
+nothing. All fifteen holders silently lose their own KV read, haproxy
+included, which drops every routed service.
+
+The manager already has the correctly rendered file. The Ansible task wrote it
+there (`tasks/main.yml:257-263`), unescaped and with the accessor substituted,
+before feeding it to `vault policy write`. Edit that file; never re-render.
+
+On the manager (192.168.2.30), as root:
+
+1. **Set up an admin session and capture rollback.** The `VAULT_TOKEN` is
+   required: without it `vault policy read` fails and the redirect leaves an
+   EMPTY backup, so the rollback in this runbook would wipe the policy rather
+   than restore it.
+   ```
+   export VAULT_ADDR=http://127.0.0.1:8200
+   export VAULT_TOKEN=$(jq -r '.root_token' /opt/vault/init.json)
+   vault policy read nomad-workloads > /root/nomad-workloads.bak.hcl
+   test -s /root/nomad-workloads.bak.hcl || { echo "EMPTY BACKUP - STOP"; exit 1; }
+   cp /opt/nomad/policies/vault_nomad_workloads.hcl /root/vault_nomad_workloads.hcl.bak
+   ```
+2. **Edit the already-rendered file in place and write it.** Delete exactly
+   three `path` blocks from
+   `/opt/nomad/policies/vault_nomad_workloads.hcl` — the unscoped
+   `secret/metadata` list, and the two `bootstrap` blocks — **and the
+   `# Bootstrap secrets (for rotation jobs)` comment line above them**, which
+   is otherwise left behind advertising a grant that no longer exists. Leave
+   the two job-scoped `secret/data` reads and the namespace-scoped
+   `secret/metadata` list untouched, and do not touch the
+   `identity.entity.aliases` text inside the surviving blocks.
+   ```
+   vault policy write nomad-workloads /opt/nomad/policies/vault_nomad_workloads.hcl
+   P=$(vault policy read nomad-workloads)
+   echo "$P" | grep -c '^path'                    # expect: 3
+   echo "$P" | grep -c 'path "bootstrap'          # expect: 0
+   echo "$P" | grep -ci 'bootstrap'               # expect: 0 (catches the comment)
+   echo "$P" | grep -c 'secret/metadata/{{'       # expect: 1 (the SCOPED list survives)
+   ```
+   The third assertion is case-insensitive on purpose: a case-sensitive grep
+   for `bootstrap` returns 0 against a surviving `# Bootstrap secrets` comment
+   and would pass a policy that still advertises the deleted grant. The fourth
+   distinguishes deleting the unscoped `secret/metadata` block from deleting
+   the scoped one by mistake; eval row 9 would also catch that at step 3, but
+   later and less clearly.
+   **These assertions are for this one-shot apply.** After a future full
+   bootstrap run the committed template's own comment contains the word
+   "bootstrap" (`vault_nomad_workloads.hcl.j2:14`), so `grep -ci` legitimately
+   returns non-zero then. Only `grep -c 'path "bootstrap'` stays valid
+   long-term.
+   **No restart, no job disruption:** tokens carry policy *names* and the body
+   is resolved per request, so the change takes effect on the next Vault call
+   from every existing token.
+3. **Verify against the eval marker, in order:** the 403 deny checks with a
+   NON-root token, then all fifteen holders healthy, then the edge still
+   serving TLS, then **re-check at T+10 minutes** — a blocked Vault template
+   retries silently rather than failing, so an immediate pass proves little.
+4. **The superseded note on `docs/notes/audit/plan-premise-sweep-2026-07.md`
+   is already appended** by this ticket's commit, not by you. Its ground-truth
+   section describes the policy as 24 lines with six `path` blocks in the
+   present tense, and that goes false about the REPO FILE at merge — earlier
+   than the apply, and the event this loop controls — so deferring it to
+   apply-time left a window where a reader of that section opens a file
+   contradicting it. The note is an appended line, never a rewrite: the
+   section stays A1's dated record. After step 2, extend that line with the
+   date the live cluster changed too.
+
+The next full bootstrap run is a no-op for this policy: the committed template
+renders exactly the three blocks step 2 leaves behind. If they ever disagree,
+the template wins and the bootstrap run silently corrects the drift.
+
+**Rollback**, if any template blocks: on the manager, with `VAULT_TOKEN` set
+as in step 1, `vault policy write nomad-workloads /root/nomad-workloads.bak.hcl`.
+Confirm the backup is non-empty first; step 1's `test -s` guard exists so this
+is never in doubt. This
+restores access immediately and needs no re-login and no Ansible run, because
+tokens carry policy names and the body resolves per request. Re-add the removed
+blocks to the committed template afterwards, or the next bootstrap run undoes
+the rollback.
 
 ## Subtickets (ordered)
 1. **Establish the consumer list.** Search every live job and the repo for

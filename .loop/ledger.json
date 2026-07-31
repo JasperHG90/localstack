@@ -22,10 +22,13 @@
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "F9 removed the bootstrap/data/*, bootstrap/metadata/* and unscoped secret/metadata/* grants; F1 documents the policy as it was and says 'do not narrow it'. Re-plan against the 3-block policy before implementing."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -527,12 +530,12 @@
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
-      "stage": "ready",
-      "attempts": 0,
-      "review_cycles": 0,
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/F9-foundation-scope-nomad-workloads-policy.adversarial.md, .loop/verdicts/F9-foundation-scope-nomad-workloads-policy.documentation.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [

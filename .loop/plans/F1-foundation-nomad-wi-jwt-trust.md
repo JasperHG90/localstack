@@ -171,6 +171,29 @@ single audience. Concretely:
   own blast radius (every workload's token changes). F1 documents it and
   stops.
 
+> **RELAYED FROM F9, 2026-07-30. F1's premise about this policy is now
+> false.** `F9-foundation-scope-nomad-workloads-policy` has REMOVED three
+> grants from `vault_nomad_workloads.hcl.j2`: `bootstrap/data/*`
+> (read/create/update), `bootstrap/metadata/*` (list), and the unscoped
+> `secret/metadata/*` (list). The policy is now three `path` blocks, not six.
+>
+> This falsifies F1 in **at least five places**, not two: this bullet, which
+> tells the implementer the grant still exists and must not be touched;
+> requirement 1, which instructs the doc to describe the policy "as it
+> actually is (including the `bootstrap/data/*` write grant and the
+> cluster-wide `secret/metadata/*` list)"; and further references in F1's
+> Context and Open Questions. **Do not re-plan F1 from line numbers** — the
+> template drops from 24 lines to 20, so every line cite into it shifts.
+> Re-read the file and the live policy instead. Written as specified, F1 would
+> publish a document describing a policy that no longer exists, in the one
+> artifact downstream tickets are meant to trust.
+>
+> No `depends_on` edge was added: the two tickets conflict on content, not
+> ordering, and an edge would imply F1 must run first when the opposite is
+> true. F1 is BLOCKED instead, so it is re-planned against the narrowed
+> policy rather than picked up on a stale premise. Re-read the live policy
+> with `vault policy read nomad-workloads` before re-planning.
+
 ## Requirements & restrictions
 
 **Must achieve:**
