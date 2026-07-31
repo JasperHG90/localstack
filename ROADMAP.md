@@ -14,16 +14,20 @@ ticket **state**; this file is only about **sequence**.
 
 | # | Ticket | Why here | Gate before pickup |
 |---|--------|----------|--------------------|
-| 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | Replan + plan review. Currently `blocked` |
-| 2 | `D1-cli-package-skeleton` | Parallel track. Zero deps, touches no file `F7` touches | None. `planning`, eval signed |
-| 2b | `N3-netsec-converging-firewall-provisioner` | Prerequisite for `N4`: without it, narrowing a firewall rule leaves the broad one live | None. `ready` |
-| 2c | `N4-netsec-edge-only-service-access` | Closes direct LAN access to every service. Lands before `D2` so the CLI is built against edge addresses | `N3`. Eval needs sign-off |
-| 3 | `D2-cli-login-broker-tokens` | Needs `F7`'s policy to do anything | `D1`, and `F7` in practice. Eval needs re-signing |
-| 4 | `D6-cli-deps-and-shims` | Without the shims a bare `nomad` cannot see the session, so `D2` is half-delivered | `D1`. Eval needs sign-off |
-| 5 | `G2-nomad-ui-oidc-login` | Browser SSO for the one surface with no alternative | Eval marker needs sign-off |
-| 6 | `G1-grafana-native-oidc-login` | Browser SSO where a working login already exists | None. `ready` |
-| 7 | `F8-foundation-deployer-provider-cutover` | Terraform's Nomad and Consul providers onto brokered tokens | Replan. Currently `blocked` |
-| 8 | `D3` / `D4` / `D5` | CLI surface on top of `D2` | `D2`. `D3` and `D4` evals need re-signing |
+| 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | **Replan + plan review.** `blocked` |
+| 2 | `D1-cli-package-skeleton` | Parallel track. Zero deps, touches no file `F7` touches | Clear |
+| 3 | `N3-netsec-converging-firewall-provisioner` | Prerequisite for `N4`: without it, narrowing a firewall rule leaves the broad one live | Clear. `ready` |
+| 4 | `N4-netsec-edge-only-service-access` | Closes direct LAN access to every service. Lands before `D2` so the CLI is built against edge addresses | `N3` done. **Eval unsigned** |
+| 5 | `D2-cli-login-broker-tokens` | Needs `F7`'s policy to do anything | `D1`, and `F7` in practice |
+| 6 | `D6-cli-deps-and-shims` | Without the shims a bare `nomad` cannot see the session, so `D2` is half-delivered | `D1` |
+| 7 | `G2-nomad-ui-oidc-login` | Browser SSO for the one surface with no alternative | Clear |
+| 8 | `G1-grafana-native-oidc-login` | Browser SSO where a working login already exists | Clear. `ready` |
+| 9 | `F8-foundation-deployer-provider-cutover` | Terraform's Nomad and Consul providers onto brokered tokens | **Replan.** `blocked` |
+| 10 | `D3` / `D4` / `D5` | CLI surface on top of `D2` | `D2` |
+
+Eval markers: D1 to D6, G1, G2 all signed and reporting `valid` as of
+2026-07-31. **`N4` is the only unsigned one.** The two real gates left are
+that signature and F7's replan.
 
 `D1` can run concurrently with `F7`. Nothing else in this list should.
 
@@ -127,9 +131,15 @@ Deliberately absent: anything that deploys, restarts, stops or edits. The
 cockpit shows and authenticates. Changing the cluster stays in Terraform,
 where it is reviewable.
 
-Three eval markers were re-opened by this decision (`D2`, `D3`, `D4`) and two
-are new (`G2`, `D6`). All five need signing before their tickets can be
-implemented.
+This decision re-opened three eval markers (`D2`, `D3`, `D4`) and created two
+(`G2`, `D6`). All five were re-signed on 2026-07-31.
+
+Signing them surfaced two claims that the same day's applies had made false,
+both about to ship under a signature. `D2` said F2 was unmerged and unapplied
+and that `auth/userpass` did not exist; it is applied, so the rows marked
+*needs F2 applied* are runnable. `D3` said F9 was unapplied and live Vault
+served six policy blocks; it serves three. Both corrected. The 403 that `D2`
+turns on is unchanged: the operator entity still carries no policy.
 
 ## Why N3 and N4 sit before the CLI
 
@@ -155,6 +165,35 @@ Nomad job, and afterwards the only route to Nomad's API is haproxy. A dead
 edge cannot be restarted through the edge. The escape is SSH to firebat and
 `NOMAD_ADDR=http://127.0.0.1:4646`, which is why the ticket ships a runbook
 and proves it by killing the edge and recovering from it.
+
+### N4's decisions, settled 2026-07-31
+
+- **The Ansible firewall role learns to reconcile**, deleting rules it no
+  longer declares, mirroring what `N3` does for Terraform. A one-off
+  `ufw delete` was rejected: it fixes today's rules and leaves the
+  accumulate-only role intact, so the next narrowing hits the same bug.
+  `ufw --force reset` was rejected outright, because it drops port 22 for the
+  window between reset and re-apply, over the SSH connection doing the work.
+- **haproxy's 8404 stats page is restricted to the Prometheus host** and the
+  human stats UI is dropped. Prometheus scrapes it and Grafana renders it, so
+  a second unauthenticated view of the same data is not worth an exposure.
+  It must still answer **from** `192.168.2.47`: closing it to everything looks
+  like success and breaks scraping, and the only symptom is an empty panel
+  found days later.
+- **No exception for the devcontainer.** It moves to the edge like everything
+  else. An allowance for "the developer's machine" rests on a DHCP lease that
+  will move to someone else.
+- **haproxy keeps its ten explicit host ACLs.** No wildcard, no default
+  backend. That list is the allowlist, and a wildcard plus a default backend
+  would route unknown names somewhere instead of refusing them, inverting the
+  point of the ticket. An unknown Host returns 503 today and must keep doing
+  so.
+
+The marker carries **30 rows** and none of the closures may be scored by
+reading a config file, because neither provisioner removes a rule: the config
+can read perfectly while the host is untouched. Every closure is proven from a
+socket, from a host that is not a cluster node, against a response recorded
+before the change.
 
 ## Known gaps this order does not close
 
