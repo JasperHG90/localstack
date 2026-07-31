@@ -741,3 +741,33 @@ pastes once per session.
 PATH may not be present. Q3 chose the shim as the developer surface, not as
 the only surface. Keep `env` if it is cheap; do not make the recipes depend on
 a shim being installed.
+
+### Command surface, settled 2026-07-31
+
+The operator fixed the CLI's whole command surface on the same day as §12's
+decisions. Two commands land in this ticket that were not in its original
+`login|logout|whoami|env` scope:
+
+- **`localstack token <svc>`** — prints the brokered token for `nomad`,
+  `consul` or `vault`, refreshing it first if stale. This is the shim's
+  backend, so its output contract is strict: **the token and nothing else on
+  stdout**, every diagnostic on stderr, and a non-zero exit with empty stdout
+  when it cannot produce one. The shim puts the result straight into
+  `NOMAD_TOKEN`, so a stray banner becomes an invalid token and a 403 that
+  reads like a permissions bug. Failing closed with empty stdout is what makes
+  the shim's fall-through to the bare binary safe.
+- **`localstack config`** — show the cluster addresses and edge domain. It
+  lands here rather than in D1 because this ticket already needs `vault_addr`
+  to log in and already owns the session file. Keep it small, and keep it free
+  of secrets: `config` is what a developer pastes into an issue when asking
+  for help.
+
+`login` also writes `~/.vault-token` now, per Q4, and `logout` must remove it.
+A revoked token left on disk is worse than no file, because the next `vault`
+command fails with a confusing 403 instead of an honest "not logged in".
+
+Machine setup, meaning installing the pinned CLI binaries and the shims
+themselves, is **not** this ticket. See `D6-cli-deps-and-shims`.
+
+The eval marker's signature was cleared: it was signed against the
+four-command scope before these decisions.

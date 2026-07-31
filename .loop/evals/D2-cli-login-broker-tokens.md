@@ -1,10 +1,17 @@
 eval: D2-cli-login-broker-tokens
 
-**Definition of Done:** `localstack login|logout|whoami|env` authenticate a
-developer against Vault's `userpass` backend, eagerly broker
+**Amended 2026-07-31** after the operator settled the token surface. Two
+commands were added (`token`, `config`), `login` now writes `~/.vault-token`,
+and the shim in D2 §12 depends on `token` behaving exactly as row 14 requires.
+Everything else stands; the rows below were never about the command list.
+
+**Definition of Done:** `localstack login|logout|whoami|env|token|config`
+authenticate a developer against Vault's `userpass` backend, eagerly broker
 `nomad/creds/deploy` and `consul/creds/deploy` from that session, cache all
-three in one `0600` file with absolute expiries, and expose them as shell
-exports. Purely a client: it authors no Terraform and no Vault policy.
+three in one `0600` file with absolute expiries, write `~/.vault-token` so the
+stock `vault` CLI inherits the session, and expose the rest as shell exports
+and to the PATH shims. Purely a client: it authors no Terraform and no Vault
+policy.
 
 **Two states of the world, and the marker must score both.** F2 is committed
 on a branch, unmerged and unapplied, so `auth/userpass` does not exist on the
@@ -36,6 +43,15 @@ fail.
 | Expiries are absolute and per credential *(needs F2 applied)* | Read the cache after a login | Three separate entries, each with an absolute ISO8601 `expires_at` computed from that response's `lease_duration` at receipt, plus `renewable` read from the response rather than assumed. They differ: Consul caps at `max_ttl 3600` (`consul_deploy_role.tf:24`), Nomad at `1h` (`nomad/config/lease`), the Vault token at its own TTL. A single shared expiry would be wrong for at least two of the three | deterministic check (three entries, distinct absolute expiries, renewable from response) | 100% |
 | Stale brokered credentials are RE-BROKERED, not renewed *(needs F2 applied)* | Force a brokered entry within the 5-minute skew, then run a command needing it | The brokered entry is re-brokered from Vault; the Vault token itself is renewed via `auth/token/renew-self` when it is within skew and renewable. Brokered leases cap at `max_ttl`, so renewing them buys at most one window and then fails anyway. Superseded leases are left to expire, because per-lease revocation needs `sys/leases/revoke`, which the `default` policy does not grant | model + rubric (adversarial review agent) | 4/5 |
 | **Guardrail: this ticket authors no policy and no Terraform** | `git diff --stat` over the branch | No changes under `deployments/`, no `.tf` file, no Vault policy document. The deployer policy is F7's, and this ticket's whole design is to be the client that tells F7 what it needs. A diff that "helpfully" adds the grant has taken F7's decision | deterministic check (no `deployments/**` or `.tf` changes) | 100% |
+| **`token <svc>` emits the token and NOTHING else on stdout** | `localstack token nomad`, `localstack token consul`, `localstack token vault`; capture stdout byte for byte | Stdout is the token value and a single trailing newline. No banner, no timing line, no colour codes, no warning. Every diagnostic goes to stderr. This is the contract the PATH shim depends on: the shim does `T="$(localstack token nomad)"` and puts the result straight into `NOMAD_TOKEN`, so one stray character on stdout produces an invalid token and a 403 that looks like a permissions bug | deterministic check (stdout is exactly the token plus newline; diagnostics on stderr) | 100% |
+| **`token <svc>` fails closed, with empty stdout** | Run with no session, and again with a session whose Vault token lacks the creds grant | Exits NON-ZERO and stdout is **empty** in both cases. The shim falls through to the bare binary on a non-zero exit; if the command exited zero, or printed an error message to stdout, the shim would export that message as the token. Failing closed with nothing on stdout is what makes the fall-through safe | deterministic check (non-zero exit; stdout empty; message on stderr) | 100% |
+| **`login` writes `~/.vault-token` and `logout` removes it** | `localstack login`, then `stat -c '%a' ~/.vault-token` and read it; then `localstack logout` | The file exists at mode `600` and holds the Vault token, so a bare `vault kv get` works with no env var. After `logout` the file is **gone**, not left holding a revoked token. Operator decision of 2026-07-31 (D2 Q4). Leaving a revoked token on disk is worse than leaving none: the next `vault` command fails with a confusing 403 rather than an honest "not logged in" | deterministic check (0600 file present with the token; absent after logout) | 100% |
+| **`config` never prints a secret** | `localstack config` and `localstack config --json` with a live session | Shows addresses and the edge domain only. No token, no password, no `hvs.`/`hvo_` value, no contents of the session file beyond non-secret fields. `config` is the command a developer will paste into an issue when asking for help, which is precisely why it must be safe to paste | deterministic check (no secret material in either output form) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed, including the ruff, mypy and pytest hooks D1 added. The default `uv run pytest` stays offline: any test touching the live cluster carries the `cluster` marker and is excluded via `addopts` | deterministic check (`just pre_commit` all Passed; default suite offline) | 100% |
 
-signed-off-by: JasperHG90 2026-07-31
+signed-off-by: PENDING
+
+**Signature cleared 2026-07-31.** Signed against a four-command scope earlier
+the same day. The operator then added `token` and `config` and reversed the
+`~/.vault-token` decision, so three new rows exist that the signature never
+covered. Re-sign alongside D3 and D4.

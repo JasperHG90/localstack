@@ -1,6 +1,6 @@
 eval: D4-cli-cluster-tui
 
-**Definition of Done:** a `localstack status` Textual TUI showing exactly four
+**Definition of Done:** a `localstack monitor` Textual TUI showing exactly four
 things — Vault seal state, Nomad node status, per-job allocation health, and
 Consul critical checks — refreshing without ever blocking on a dead source,
 with every degraded state named, rendered and snapshot-tested. Auth comes
@@ -17,7 +17,7 @@ during, and row 4 covers the one that quietly reports healthy jobs as broken.
 
 | Behavior | Input | Expected | Scorer | Threshold |
 | --- | --- | --- | --- | --- |
-| The panel shows exactly four widgets | Launch `localstack status` against mocked sources; inspect the widget tree | Vault seal state, Nomad node status, per-job allocation health, Consul critical checks. **No fifth widget.** Specifically no "recent failed allocations" panel: Nomad garbage-collects dead allocs (24 live, all running, verified), so it is empty most days while `JobSummary.Failed`/`Lost` on the job row already answers it | deterministic check (exactly four widgets, none extra) | 100% |
+| The panel shows exactly four widgets | Launch `localstack monitor` against mocked sources; inspect the widget tree | Vault seal state, Nomad node status, per-job allocation health, Consul critical checks. **No fifth widget.** Specifically no "recent failed allocations" panel: Nomad garbage-collects dead allocs (24 live, all running, verified), so it is empty most days while `JobSummary.Failed`/`Lost` on the job row already answers it | deterministic check (exactly four widgets, none extra) | 100% |
 | Jobs come from the API, never the repo | `grep -rn "deployments/" cli/localstack/`; run against a mocked cluster including `talat-shim` and `talat-consumer` | No enumeration from `deployments/`. Both talat jobs appear in the job widget. They run live and have **no job file in this repository**, so anything driven from the repo tree silently under-reports by two | deterministic check (talat jobs present; no deployments/ enumeration) | 100% |
 | **Periodic and system jobs are not reported as broken** | Fixtures: a `batch/periodic` parent with `Running: 0` between runs (this is `acme`'s normal state), a `system` job on 5 eligible nodes, and a `service` job at 2/3 desired | The periodic job renders healthy, judged on the parent's `Status` and last child outcome — NOT on `Running == 0`. The system job is judged running-count vs eligible-node-count. Only the service job shows degraded. Verified live: 3 of 19 jobs would falsely red under a naive `Running > 0` rule, and a panel that cries wolf on a third of the cluster gets ignored | deterministic check (periodic and system healthy; service degraded) | 100% |
 | **A dead source degrades its own panel and nothing else** | Launch with Vault unreachable (connection refused) while Nomad and Consul respond normally | The Vault widget renders an error state; the other three render real data within the normal refresh. The UI never blocks. Each source fetches independently with its own timeout. A TUI that hangs on a dead Vault is worse than no TUI, and this is the most likely real failure | deterministic check (three panels live, one errored, no hang) | 100% |
@@ -31,4 +31,11 @@ during, and row 4 covers the one that quietly reports healthy jobs as broken.
 | No token value ever renders | Grep the source, the rendered output and every snapshot fixture for token values and the `hvs.`/`hvo_` prefixes | No match. Snapshot fixtures are scrubbed. `detect-private-key` stays green, though note that hook matches PEM headers only and would not catch a Vault token, which is why this row greps explicitly rather than relying on it | deterministic check (no token in source, output or fixtures) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. New deps (`textual`, `pytest-textual-snapshot`, `respx`) added via `uv add`, landing in `cli/pyproject.toml` and `cli/uv.lock`. `httpx` reused rather than adding `requests` | deterministic check (`just pre_commit` all Passed; deps in pyproject) | 100% |
 
-signed-off-by: JasperHG90 2026-07-31
+signed-off-by: PENDING
+
+**Signature cleared 2026-07-31.** The TUI was renamed from `localstack status`
+to `localstack monitor`, freeing `status` for D3's one-shot, scriptable
+renderer of the same data. This is a lighter case than D3's: no row's rigor
+changed, only the command each row launches. Cleared anyway, because a
+signature that describes a command name no longer in the ticket is a
+signature nobody can check. Re-sign alongside D3 in one pass.

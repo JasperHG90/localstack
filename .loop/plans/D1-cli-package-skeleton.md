@@ -359,3 +359,21 @@ first gate is a gate people learn to skip.
 modules and expensive to retrofit once D2 to D5 have added HTTP clients and
 a TUI. If typer or textual stubs make strict mode painful in a later
 ticket, narrow it there with evidence rather than starting loose.
+
+## Command surface settled elsewhere, 2026-07-31
+
+The operator fixed the CLI's full command surface on 2026-07-31. **This ticket
+is unchanged by that**, and deliberately so: its §5 already refuses to
+scaffold empty typer groups, on the grounds that an empty group is a guess
+about a later ticket. That reasoning holds and the surface below is recorded
+here only so the entrypoint is built against a known shape, not to add scope.
+
+```
+login | logout | whoami | env | token <svc> | config      D2
+status | service [<name>] | secret <service> | vault grants <job>   D3
+monitor                                                   D4
+breakglass                                                D5
+deps [--with-shims|--remove-shims]                        D6
+```
+
+Build the entrypoint and the gates. Add no groups.

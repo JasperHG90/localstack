@@ -509,3 +509,60 @@ cited facts and to KV keys in everyday use.
   `secret/default/` lists 18 job prefixes live, including `gemini` and
   `openfang`, which correspond to no running job. That is a genuinely useful
   view. Values stay out under the hard non-goal, and test 12 enforces it.
+
+## Scope revised, 2026-07-31
+
+The operator settled the CLI's command surface and this ticket lost most of
+it. The governing rule: **the cockpit does what no native CLI can. It does not
+restate what `vault kv list` and `nomad job status` already do.**
+
+### Cut
+
+`nomad jobs`, `nomad job <id>`, `vault mounts`, `vault policies`,
+`vault policy <name>`, `vault kv [path]`, `consul services`.
+
+Every one is a native command under a new name. They cost a second surface to
+maintain, they lag the tool they mirror, and they add nothing a developer with
+the real CLI on PATH cannot already do. The `deps` ticket puts those CLIs on
+PATH, so the mirrors are not even a fallback.
+
+### Kept and added
+
+| Command | Why it survives the rule |
+| --- | --- |
+| `status` | Vault seal state, Nomad nodes and allocations, Consul checks in one view. No single tool spans all three |
+| `service [<name>] [--open]` | Joins the Nomad job, its Consul health check, and the haproxy hostname. The URL lives in `services/haproxy.hcl`, which neither Nomad nor Consul can see |
+| `secret <service>` | Which KV2 paths a job's `template` stanzas read, and whether each exists. Vault cannot say which job wants a path; Nomad cannot say whether it is there |
+| `vault grants <job>` | Already in scope and already synthesis: resolves the `nomad-workloads` policy template against a job. Unchanged |
+
+`service --open` absorbs the `localstack ui consul` command locked earlier in
+D2 §12. One verb, not two. Consul is the service that needs a token pasted,
+so `service consul --open` prints the brokered token alongside the URL; that
+is a per-service quirk, not its own command.
+
+### What did not change
+
+The `api/` and `commands/` split, the no-subprocess rule, the offline test
+suite, the read-only guardrail, and every `vault grants` correctness
+requirement stand as written. They were never about which commands exist.
+
+`status` here is the one-shot, scriptable renderer. D4 owns the live Textual
+view and is renamed `localstack monitor` to match. Both read the same `api/`
+layer, which is what this ticket's reuse-contract row already required.
+
+### Consequences
+
+- **The eval marker's signature was cleared.** It was signed against the
+  eight-command scope on the same day the scope changed. Re-sign before
+  implementing.
+- **The D2 read-role finding matters more, not less.** This ticket previously
+  worked around the brokered `deploy` token's limits by scoping its surface to
+  what that token could reach. `status` and `service` both want data the token
+  is denied: `GET /v1/jobs` returns 403, and Consul's catalog silently filters
+  to 2 of 25 services. The commands must report that rather than render a
+  confident, wrong table, which is what the ACL-footer and the
+  not-allowed-versus-not-logged-in rows now enforce.
+- **Re-read this ticket after `G2-nomad-ui-oidc-login` lands.** G2 gives a
+  human a `developer`-scoped Nomad token, which can list jobs. That does not
+  widen this ticket's scope by itself, but it changes which of these rows are
+  exercising a real constraint and which are exercising a stale one.

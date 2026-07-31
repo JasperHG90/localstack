@@ -839,7 +839,7 @@
         "D2-cli-login-broker-tokens"
       ],
       "priority": 42,
-      "summary": "A Textual `localstack status` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI.",
+      "summary": "A Textual `localstack monitor` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -963,6 +963,29 @@
         "vault",
         "terraform",
         "sso"
+      ]
+    },
+    "D6-cli-deps-and-shims": {
+      "slug": "D6-cli-deps-and-shims",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "cli",
+      "dependencies": [
+        "D1-cli-package-skeleton"
+      ],
+      "priority": 44,
+      "summary": "`localstack deps` installs the HashiCorp CLIs at exactly the versions this cluster pins, reading them from the same group_vars file the Ansible pin reads, and optionally installs the PATH shims that let a bare `nomad` command inherit a `localstack login` session.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "cli",
+        "tooling",
+        "versions",
+        "shims"
       ]
     }
   }

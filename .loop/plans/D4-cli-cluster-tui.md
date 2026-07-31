@@ -3,13 +3,13 @@ epic = "cli"
 depends_on = ["D2-cli-login-broker-tokens"]
 priority = 42
 tags = ["cli", "textual", "tui", "observability"]
-summary = "A Textual `localstack status` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI."
+summary = "A Textual `localstack monitor` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI."
 ---
 
 # D4 — Cluster overview TUI in the `localstack` CLI
 
 ## Title
-Add a Textual TUI (`localstack status`) that answers "is the cluster fine and
+Add a Textual TUI (`localstack monitor`) that answers "is the cluster fine and
 is my job running" in one screen, using the tokens D2 brokers.
 
 ## Size / Effort
@@ -224,7 +224,7 @@ Modified:
   exclude it in `addopts` per `.claude/rules/python-testing.md:26-32`.
 - `cli/src/localstack/__main__.py` or D1's command registry — register the
   `status` subcommand. Exact file per D1's structure.
-- `docs/monitoring.md` — one short section: what `localstack status` shows and
+- `docs/monitoring.md` — one short section: what `localstack monitor` shows and
   what it deliberately does not (pointing at `:48-56`'s existing boundary
   discussion). Do not restructure the doc.
 
@@ -418,3 +418,22 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
   read that needs none is unearned work. If that config ever tightens, the
   panel's Consul widget degrades to "denied" like any other source, which is
   the designed behavior rather than a crash.
+
+## Renamed, 2026-07-31
+
+`localstack status` becomes **`localstack monitor`**, per the operator's
+command-surface decision. The name `status` moves to D3, as the one-shot,
+scriptable renderer of the same data.
+
+Two commands, two renderers, one `api/` layer:
+
+- `localstack status` prints once and exits. Pipe it, script it, use it in a
+  health check.
+- `localstack monitor` is this ticket: the live Textual panel you leave open.
+
+Nothing else about this ticket changes. The four widgets, the independent
+polling so one dead source degrades one panel, and the reuse of D3's `api/`
+layer all stand.
+
+The eval marker's signature was cleared for the rename. No row's rigor
+changed, only the command each row launches.
