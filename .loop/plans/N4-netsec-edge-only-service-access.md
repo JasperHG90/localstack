@@ -321,3 +321,88 @@ All four settled on their recorded recommendations.
   unknown names somewhere instead of refusing them, which inverts the point of
   the ticket. Verified today that an unknown Host returns 503; that behavior
   is now a scored row so a later convenience edit cannot quietly remove it.
+
+# PLAN REVIEW FINDINGS, 2026-07-31 — READ BEFORE THE PLAN ABOVE
+
+`loop-plan-reviewer` returned **fail**, premise PARTIALLY SOUND. Verdict at
+`.loop/verdicts/N4-netsec-edge-only-service-access.plan-validator.md`. The
+exposure inventory above is **incomplete and must not be implemented as
+written**. What follows is confirmed, not relayed.
+
+## A live authentication bypass, open right now
+
+| Service | Direct | Through the edge |
+| --- | --- | --- |
+| mlflow | `http://192.168.2.50:5050/` → **200** | `https://mlflow.lab…` → **401** |
+| phoenix | `http://192.168.2.29:6006/` → **200** | `https://phoenix.lab…` → **401** |
+
+haproxy enforces basic auth on both (`haproxy.hcl:143`, `:153`). The direct
+ports do not. Anyone on the LAN reaches both with no credentials. **Neither
+service appears in this plan's exposure table**, so implementing it exactly
+would turn every row green with the bypass still open.
+
+## A second credential exposure, unrelated to the firewall
+
+The openfang basic-auth password is interpolated into the haproxy jobspec
+(`deployments/infrastructure/services.tf:322`) and the **running job carries it
+as a literal**: `nomad job inspect haproxy` returns one `insecure-password`
+with a real value, not a template reference. Both the `deploy` and `developer`
+Nomad policies grant `read-job`.
+
+So the credential protecting mlflow and phoenix at the edge is readable by
+anyone who can read a Nomad job. Closing the firewall does not fix this. It
+needs its own ticket: render the password from Vault through a `template`
+stanza the way the TLS cert already is, so it never enters the jobspec.
+
+## There is a THIRD firewall provisioner
+
+`deployments/applications/services.tf:22-102` runs its own `sudo ufw` map over
+SSH (`:85-101`). This plan describes two provisioners and misses this one,
+which owns phoenix 6006, memex 8000, mlflow 5050, hermes, loki and bifrost.
+Every inventory claim above is therefore incomplete.
+
+That file also already states the principle this ticket is built on, in its
+loki entry: *"The push and query APIs have no authentication, so the LAN-wide
+rule is gone."* Phoenix 6006 has no authentication and is LAN-wide. The
+precedent for the fix is in the same file as the defect.
+
+## A consumer that a naive narrowing would break
+
+`deployments/applications/services/memex.hcl:143` sends traces to
+`http://${phoenix_host}:6006/v1/traces`, and memex runs on a **different node**
+(jetson_nano `192.168.2.46`) from phoenix (orange_pi_4a `192.168.2.29`). So
+phoenix 6006 must allow `192.168.2.30` (haproxy) **and** `192.168.2.46`
+(memex), following the `hermes` pattern at `:41-48`. Narrowing it to the edge
+alone silently kills tracing. mlflow 5050 has no in-cluster consumer and can go
+to the edge alone.
+
+## Premises of this plan that are FALSE
+
+- **SSH recovery is manager-only.** `configure_tailscale.yml:3` targets
+  `manager`, so only firebat has tailnet SSH; workers have LAN only. R4 and its
+  eval row assert tailnet SSH on all five nodes, which does not exist.
+- **The dynamic-port row is unexecutable.** Zero of 24 running allocations use
+  `20000:32000`, and nothing listens in that range. The row cannot pass or
+  fail.
+- **Half the mDNS row already fails.** `firebat.local:4646` does not resolve
+  today, so that half passes before any change.
+- **8404 is not the only tailnet exposure.** Grafana 3000 and port 8080 are
+  also open to `100.64.0.0/10` (`services.tf:222`, `:231`).
+- **R6 misses the MinIO provider.** `applications/providers.tf:45` dials
+  `<consul node>:9000` from the devcontainer and must move with the rest.
+
+Anchor corrections: `services.tf:52-53` → `:188-192`; `:73-74` →
+`:212-213`/`:235-258`; `haproxy.hcl:129` → `:122`.
+
+## Why nothing was fixed on the spot
+
+Narrowing a rule requires **deleting** the broad one, and no provisioner can
+express a deletion. Editing the map and applying would add narrow rules beside
+the live broad ones and close nothing. `ufw` matches the broad rule.
+
+The reviewer found this already happening: on radxa,
+`[10] 8642/tcp ALLOW 192.168.0.0/16` survives beside the two narrow rules the
+repo actually declares. The shadowing this plan predicts is not hypothetical.
+
+**So N3 is not merely a dependency; it is the only thing that makes any of this
+take effect.** It is `ready` and needs no gate. Do it first.
