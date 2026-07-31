@@ -16,6 +16,8 @@ ticket **state**; this file is only about **sequence**.
 |---|--------|----------|--------------------|
 | 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | Replan + plan review. Currently `blocked` |
 | 2 | `D1-cli-package-skeleton` | Parallel track. Zero deps, touches no file `F7` touches | None. `planning`, eval signed |
+| 2b | `N3-netsec-converging-firewall-provisioner` | Prerequisite for `N4`: without it, narrowing a firewall rule leaves the broad one live | None. `ready` |
+| 2c | `N4-netsec-edge-only-service-access` | Closes direct LAN access to every service. Lands before `D2` so the CLI is built against edge addresses | `N3`. Eval needs sign-off |
 | 3 | `D2-cli-login-broker-tokens` | Needs `F7`'s policy to do anything | `D1`, and `F7` in practice. Eval needs re-signing |
 | 4 | `D6-cli-deps-and-shims` | Without the shims a bare `nomad` cannot see the session, so `D2` is half-delivered | `D1`. Eval needs sign-off |
 | 5 | `G2-nomad-ui-oidc-login` | Browser SSO for the one surface with no alternative | Eval marker needs sign-off |
@@ -128,6 +130,31 @@ where it is reviewable.
 Three eval markers were re-opened by this decision (`D2`, `D3`, `D4`) and two
 are new (`G2`, `D6`). All five need signing before their tickets can be
 implemented.
+
+## Why N3 and N4 sit before the CLI
+
+Measured 2026-07-31: Nomad, Vault, Consul and MinIO all answer 200 on
+plaintext to any host on `192.168.0.0/16`, and haproxy's stats page serves an
+unauthenticated map of every backend to the tailnet. The edge hostname is a
+convention today, not a boundary.
+
+`N4` closes that. It sits before `D2` because it changes every address this
+repo uses: `.devcontainer/.env` and the Consul provider both point at raw IPs
+over plaintext, and both move to the HTTPS edge. `D2`'s eval already demands
+the CLI refuse to send a password in the clear and name the HTTPS edge, so
+the CLI was designed for the post-`N4` world. Building it first would mean
+building against addresses that are about to change.
+
+`N3` comes first because neither provisioner removes a firewall rule.
+Narrowing one adds a narrow rule beside the broad one, `ufw` matches the
+broad one, and nothing closes. Without `N3`, `N4`'s Terraform half is a no-op
+on the host while every config file reads correctly.
+
+`N4` also creates a failure mode worth knowing before it exists: haproxy is a
+Nomad job, and afterwards the only route to Nomad's API is haproxy. A dead
+edge cannot be restarted through the edge. The escape is SSH to firebat and
+`NOMAD_ADDR=http://127.0.0.1:4646`, which is why the ticket ships a runbook
+and proves it by killing the edge and recovering from it.
 
 ## Known gaps this order does not close
 

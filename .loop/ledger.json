@@ -987,6 +987,30 @@
         "versions",
         "shims"
       ]
+    },
+    "N4-netsec-edge-only-service-access": {
+      "slug": "N4-netsec-edge-only-service-access",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "netsec",
+      "dependencies": [
+        "N3-netsec-converging-firewall-provisioner"
+      ],
+      "priority": 50,
+      "summary": "Close direct LAN access to every service that has an edge route, so `*.lab.orangecluster.nl` over TLS is the only way in. Measured today: Nomad, Vault, Consul, MinIO and an unauthenticated haproxy stats page all answer 200 on plaintext to any host on 192.168.0.0/16. Ships the recovery runbook for the outage this change makes possible.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "netsec",
+        "ufw",
+        "haproxy",
+        "tls",
+        "runbook"
+      ]
     }
   }
 }
