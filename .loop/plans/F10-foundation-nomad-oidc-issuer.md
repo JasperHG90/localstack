@@ -55,10 +55,24 @@ resolve F1's Q7.
   returns `OIDC Discovery endpoint disabled`, while
   `curl $NOMAD_ADDR/.well-known/jwks.json` returns a populated key set. Nomad
   is a signer, not an issuer.
-- **Single server.** `nomad server members`: one member, `firebat.global` at
-  `192.168.2.30:4648`, `alive`, **leader**, build **1.11.3**,
-  `bootstrap_expect = 1`. Restarting it is a brief control-plane outage.
-  Running allocations keep running; scheduling and the API pause.
+- **Single server, and it is ALSO a client, and it runs the edge.**
+  `nomad server members`: one member, `firebat.global` at `192.168.2.30:4648`,
+  `alive`, **leader**, build **1.11.3**, `bootstrap_expect = 1`.
+  **CORRECTED 2026-07-30 (plan review).** This bullet previously ended
+  "Restarting it is a brief control-plane outage. Running allocations keep
+  running; scheduling and the API pause." That understated it and cited no
+  evidence. `nomad.hcl.j2:20` sets `client { enabled = true }`, so firebat is
+  a combined server AND client, and
+  `deployments/infrastructure/services/haproxy.hcl:6-9` pins the edge proxy to
+  it by hostname constraint. So the restart touches the agent supervising the
+  edge proxy, not just the control plane.
+  There is a circularity worth seeing plainly: **the issuer URL this ticket
+  configures, `https://nomad.lab.orangecluster.nl`, is served BY haproxy, ON
+  firebat, the node being restarted.** If the restart disturbs the haproxy
+  allocation, the issuer becomes unreachable at exactly the moment it is first
+  needed. Whether Nomad's client-state recovery keeps the allocation up across
+  an agent restart is NOT established here and must be confirmed before the
+  run, not assumed.
 - **How it is applied.** `bootstrap/roles/nomad_server/tasks/main.yml:121-128`
   templates `nomad.hcl.j2` to `/etc/nomad.d/nomad.hcl` and carries
   `notify: Restart nomad`, so the handler restarts the service on change. This
@@ -92,8 +106,14 @@ resolve F1's Q7.
 ## Requirements & restrictions
 1. `server { oidc_issuer = "<url>" }` is set in
    `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`, sourced from an
-   Ansible variable with a default, not a literal, matching how
-   `nomad_server_ip_address` is already used in the same file.
+   Ansible variable, not a literal, matching how `nomad_server_ip_address` is
+   already used in the same file.
+   **CORRECTED 2026-07-30 (plan review):** this previously said "with a
+   default". There is nowhere to put one. No role in this repo has a
+   `defaults/` directory; the convention is an inline `vars:` block on the
+   role invocation at `bootstrap/playbooks/configure_hashistack_server.yml:41-44`,
+   which is also where `nomad_server_ip_address` is set. Follow that. Do not
+   introduce a `defaults/` directory as a side effect of this ticket.
 2. After the bootstrap run, `curl <nomad>/.well-known/openid-configuration`
    returns HTTP 200 with a JSON body carrying `issuer` and a `jwks_uri`, and
    the advertised `jwks_uri` fetches a non-empty `keys` array.
@@ -111,12 +131,14 @@ resolve F1's Q7.
 ## Code surface
 - `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:11-14` — add
   `oidc_issuer` to the existing `server` block.
-- `bootstrap/roles/nomad_server/defaults/main.yml` **or** the inventory group
-  vars — the new variable and its default. Confirm which the role already
-  uses for `nomad_server_ip_address` and follow it; do not introduce a second
-  convention.
+- `bootstrap/playbooks/configure_hashistack_server.yml:41-44` — add the new
+  variable to the existing inline `vars:` block, beside
+  `nomad_server_ip_address`. **There is no `defaults/main.yml` to use**: no
+  role in this repo has a `defaults/` directory.
 - `bootstrap/roles/nomad_server/tasks/main.yml:121-128` — read only. The
   existing `notify: Restart nomad` already handles the restart; no new task.
+- `deployments/infrastructure/services/haproxy.hcl:6-9` — read only, but READ
+  it: it pins the edge proxy to `firebat`, the node being restarted.
 
 No Terraform, no jobspec, no `deployments/` change.
 
@@ -151,6 +173,12 @@ executes. The loop's own bar is the gate plus the rendered-template check.
   rather than here.
 - **Reversibility: high.** Removing the line and re-running the role restores
   the previous state, at the cost of a second restart.
+- **The edge is in the blast radius, not outside it.** See the Context
+  correction: firebat is server and client, haproxy is pinned to it, and the
+  issuer URL is served through that proxy. Verify the haproxy allocation
+  survives the restart before treating the change as applied, and have the
+  direct address `http://192.168.2.30:4646` to hand for diagnosis if the edge
+  does not come back.
 
 ## Subtickets (ordered)
 1. Settle Q1 (the issuer URL value and scheme).
@@ -164,7 +192,11 @@ executes. The loop's own bar is the gate plus the rendered-template check.
    after the restart.
 6. Close F1's Q7 by pointing it at this ticket, and unblock M1's dependency
    question. Use the `relay-finding` skill rather than editing those plans ad
-   hoc.
+   hoc. **MOVED 2026-07-30 (plan review): do this FIRST, as part of subticket
+   1, not last.** F1's Q7 tells its own implementer to make this same edit, so
+   until the relay lands, two tickets both believe they own `oidc_issuer`.
+   Note F1 is currently `blocked` (F9 falsified its policy premise on
+   2026-07-30), which reduces but does not remove the collision risk.
 7. Adversarial review.
 
 ## Open questions
@@ -195,11 +227,17 @@ executes. The loop's own bar is the gate plus the rendered-template check.
   plaintext into every token, and the HTTP edge 301s anyway, which some
   clients will not follow when fetching a discovery document.
 
-  One check the implementer still owns: confirm the discovery document Nomad
-  generates advertises a `jwks_uri` under the SAME host, not the internal
-  address. If Nomad derives `jwks_uri` from the request rather than from
-  `oidc_issuer`, a client reaching it through the edge could be handed an
-  unreachable internal URL. **Operator confirms the value before subticket 2.**
+  **SETTLED 2026-07-30 by the plan review, in Nomad's source at the deployed
+  tag.** This was flagged as the implementer's remaining unknown: whether
+  Nomad derives `jwks_uri` from `oidc_issuer` or from the request host. It
+  derives it from the configured issuer. `hashicorp/nomad` v1.11.3,
+  `nomad/structs/keyring.go:621`: `jwksURL, err := url.JoinPath(issuer, JWKSPath)`.
+  The token side matches: `nomad/encrypter.go:339` is `claims.Issuer = e.issuer`,
+  seeded at `:99` from `srv.GetConfig().OIDCIssuer`. So the discovery
+  document's `issuer`, `agent/self`'s `OIDCIssuer`, and the minted `iss` are
+  all one value, and setting it to the edge hostname yields a `jwks_uri` on
+  that same host. **Operator still confirms the value itself before
+  subticket 2**, but the mechanism is no longer open.
 
 - **Q2 — Does Vault's `jwt-nomad` switch from `jwks_url` to
   `oidc_discovery_url` once discovery exists?** It is not required: JWKS trust
