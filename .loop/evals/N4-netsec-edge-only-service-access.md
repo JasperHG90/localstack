@@ -15,15 +15,24 @@ fix. So **narrowing a rule adds a narrow one and leaves the broad one live**,
 `ufw` matches the broad one, and the port stays open. A run reports `changed`,
 the config reads perfectly, and nothing closed.
 
-Therefore: **no row in this marker may be scored by reading a config file.**
-Rows 1 to 7 are scored from a socket, attempted from a LAN host that is not a
-cluster node. Rows that read config exist only to catch the inverse error and
-are marked as such.
+Therefore: **no closure in this marker may be scored by reading a config
+file.** Every row asserting that something is now unreachable is scored from a
+socket, attempted from a LAN host that is not a cluster node. The rows that do
+read config are the guardrails, and they exist to catch the inverse error:
+something reopened, or a rule keyed to a host that should not have one.
 
 **The second trap: a test that cannot fail.** A `curl` that is refused proves
 nothing on its own, because a typo in the hostname is also refused. Row 1
 requires the **pre-change 200 to be recorded first**, so every closure is a
 measured transition rather than an assertion about an unreachable address.
+
+**Forks resolved 2026-07-31**, all four on their recommendations, and four
+rows exist because of them. Q1 teaches the Ansible role to reconcile, so a row
+now checks the role deletes an undeclared rule rather than accepting a manual
+`ufw delete`. Q2 restricts 8404 to the Prometheus host, so a row asserts it is
+still reachable from there. Q3 allows no devcontainer exception, so a row bars
+any rule keyed to a non-cluster host. Q4 keeps the explicit host ACLs, so a
+row pins the 503 on an unknown Host.
 
 **Measured starting state, 2026-07-31.** All 200, all plaintext, all from the
 devcontainer: `192.168.2.30:4646` (Nomad), `:8200` (Vault), `:8500` (Consul),
@@ -38,7 +47,11 @@ mDNS name.
 | **The broad rule is DELETED, not shadowed** | `ufw status numbered` on every node in `bootstrap/inventory/cluster.ini` | **No** `192.168.0.0/16` entry survives for 4646, 8200, 8500, or `20000:32000`. A narrow rule added beside a surviving broad one is the single most likely failure of this ticket, it passes any config-file check, and `ufw` will match the broad rule. Enumerate the live table; do not infer it from the playbook | deterministic check (no broad entry for the closed ports on any node) | 100% |
 | **The mDNS name is closed too, not just the IP** | `http://firebat:4646/` and `http://firebat.local:4646/` from a non-cluster LAN host | Refused. `avahi-daemon` is installed on every node (`install_dependencies.yml`), so the hostname is a second route to the same socket. The operator's own report named this form. A rule keyed on anything but the destination port and source address would close one and leave the other | deterministic check (both name forms refused) | 100% |
 | **The Nomad dynamic port range is closed** | Pick a live allocation's dynamic port from `nomad alloc status`, then connect to it directly from a non-cluster LAN host | Refused. `20000:32000` is open to `192.168.0.0/16` today, which means **every dynamically-ported job is directly reachable** whether or not it has a named firewall entry. A ticket that closes only the six named services leaves the whole range open and looks complete | deterministic check (a live dynamic port is refused) | 100% |
-| **haproxy stats is off the tailnet** | `http://192.168.2.30:8404/` from a tailnet address and from a non-cluster LAN host | Not reachable unauthenticated from either. Today it returns 200 with no auth and publishes every backend IP, port and health state, and it is the only thing besides 80/443 open to `100.64.0.0/10` (`services.tf:52-53`). Whichever option Q2 settled, the unauthenticated topology map must be gone | deterministic check (8404 not served unauthenticated from tailnet or LAN) | 100% |
+| **haproxy stats is off the tailnet** | `http://192.168.2.30:8404/` from a tailnet address and from a non-cluster LAN host | Not reachable from either. Today it returns 200 with no auth and publishes every backend IP, port and health state, and it is the only thing besides 80/443 open to `100.64.0.0/10` (`services.tf:52-53`). Q2 resolved to restrict it to the Prometheus host and drop the human stats UI | deterministic check (8404 not served from tailnet or non-cluster LAN) | 100% |
+| **8404 is still reachable FROM the Prometheus host (positive control)** | Connect to `192.168.2.30:8404/metrics` from `192.168.2.47`, the Prometheus host | 200 with metrics. Q2 kept scraping as 8404's real job (`haproxy.hcl:129` serves `/metrics` via `http-request use-service prometheus-exporter`). **Closing 8404 to everything passes the row above and is a failure**, and its only symptom is an empty Grafana panel discovered days later. Every closure row in this marker needs its matching positive control, and this is 8404's | deterministic check (200 from the Prometheus host with metrics) | 100% |
+| **The Ansible role RECONCILES; it does not merely stop declaring** | Add a throwaway rule via the role, remove it from `firewall_ufw_ports`, re-run the playbook, then read `ufw status numbered` | The throwaway rule is **gone from the host**. Q1 resolved to teach the role to delete what it no longer declares, mirroring N3 on the Terraform side. **This row exists because the broad-rule row above passes against a one-off `ufw delete`**, which fixes today's rules and leaves the accumulate-only role intact so the next narrowing hits the same bug. The defect is the role, not these particular rules | deterministic check (an undeclared rule is removed from the host by a normal run) | 100% |
+| **Guardrail: no rule is keyed to a non-cluster host** | Read the final rule set in `configure_network.yml` and the Terraform firewall map | Every `from_ip` is a cluster node address, `192.168.0.0/16` for port 22 and the edge ports, or `100.64.0.0/10` for port 22 and the edge. **No entry pins a developer machine, a laptop, or the devcontainer.** Q3 resolved there is no exception: such an allowance depends on a DHCP address that will change, and it silently reopens exactly what this ticket closes for whoever inherits that lease | deterministic check (no non-cluster host address in any rule) | 100% |
+| **Guardrail: haproxy still refuses an unknown Host** | `curl -k -H 'Host: bogus.example.com' https://192.168.2.30/` | 503, as measured 2026-07-31. Q4 resolved to keep the ten explicit `hdr(host)` ACLs with no wildcard and no `default_backend`. A wildcard `hdr(host) -m end .lab.orangecluster.nl` plus a default backend would route unknown names somewhere instead of refusing them, inverting the point of the ticket. The list is the allowlist, and this row stops a later convenience edit from quietly removing it | deterministic check (unknown Host returns 503; no wildcard ACL; no default_backend) | 100% |
 | **Postgres and the registry are knowingly untouched** | `ufw status` for 5432 and 5000 | Unchanged and explicitly recorded as out of scope in the close-out. Neither has an edge route, so "use the hostname" is meaningless for them. This row exists so the boundary is a decision on the record rather than an oversight, and so nobody silently firewalls a database port inside a networking ticket | deterministic check (5432 and 5000 unchanged; exclusion recorded) | 100% |
 | **All ten edge hostnames still serve** | `https://<h>.lab.orangecluster.nl` for minio, s3, vault, nomad, consul, phoenix, memex, grafana, mlflow, bifrost | Every one answers as it did before the change, compared against the pre-change capture from row 1. The edge is the only remaining way in, so a hostname that stops working is now a total outage for that service rather than an inconvenience | deterministic check (all ten match their pre-change responses) | 100% |
 | **The full API still proxies, not just the UI** | `https://nomad.lab.orangecluster.nl/v1/agent/health`, `https://vault.lab.orangecluster.nl/v1/sys/health`, `https://consul.lab.orangecluster.nl/v1/status/leader` | All 200. Verified 200 before the change. Terraform and the CLI drive the API, not the UI, so a change that preserves the web interface while breaking `/v1/` would pass a browser check and break every deploy | deterministic check (all three API paths 200 through the edge) | 100% |

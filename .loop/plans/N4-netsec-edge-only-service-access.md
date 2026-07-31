@@ -243,6 +243,12 @@ and its verification is deliberately socket-level for the reason in R1.
 
 ## Open questions (operator must settle)
 
+> **All four questions were resolved on 2026-07-31 in
+> `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
+> recommendation recorded below, so these read as history rather than as
+> pending decisions.
+
+
 **Q1 — how does the Ansible half remove a rule?**
 The role only adds. Options: (a) teach the role to reconcile, deleting ufw
 rules it no longer declares, mirroring what N3 does for Terraform; (b) a
@@ -280,3 +286,38 @@ that file.
 `hdr(host) -m end .lab.orangecluster.nl` with a default backend would route
 unknown names somewhere rather than 503-ing them, which is the opposite of
 what this ticket is for.
+
+## Forks resolved, 2026-07-31
+
+All four settled on their recorded recommendations.
+
+- **Q1 → (a), teach the Ansible firewall role to reconcile.** It deletes the
+  ufw rules it no longer declares, mirroring what N3 does on the Terraform
+  side. Rejected (b), a one-off `ufw delete` list, because it fixes this
+  ticket's rules and leaves the next narrowing to hit the same bug; the
+  accumulate-only role is the defect, not these particular rules. Rejected (c)
+  outright: `ufw --force reset` drops port 22 for the window between reset and
+  re-apply, over the SSH connection doing the work.
+  **This is now scored on its own.** The eval previously checked only that the
+  broad rule was gone, which a manual `ufw delete` satisfies while leaving the
+  role unchanged. A row now requires the role itself to reconcile.
+- **Q2 → (a), restrict 8404 to the Prometheus host and drop the human stats
+  UI.** Scraping is its real job: `haproxy.hcl:129` already serves
+  `/metrics` via `http-request use-service prometheus-exporter`. Prometheus
+  scrapes it and Grafana renders it, so a second unauthenticated view of the
+  same data is not worth an exposure, least of all one on the tailnet.
+  **Note the positive control this creates:** 8404 must remain reachable
+  **from the Prometheus host**, or scraping breaks silently and the only
+  symptom is an empty dashboard days later. Closing it to everything is a
+  failure, not an over-achievement.
+- **Q3 → no devcontainer exception.** It moves to the edge like everything
+  else. Direct access is what the runbook's SSH path is for, and an allowance
+  for "the developer's machine" is not expressible in ufw without pinning a
+  DHCP address that will change. A guardrail row now checks no rule is keyed
+  to a non-cluster host.
+- **Q4 → keep the ten explicit `hdr(host)` ACLs, add no wildcard and no
+  default backend.** That list is the allowlist. A wildcard
+  `hdr(host) -m end .lab.orangecluster.nl` plus a default backend would route
+  unknown names somewhere instead of refusing them, which inverts the point of
+  the ticket. Verified today that an unknown Host returns 503; that behavior
+  is now a scored row so a later convenience edit cannot quietly remove it.
