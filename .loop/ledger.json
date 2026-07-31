@@ -43,12 +43,12 @@
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
-      "stage": "ready",
-      "attempts": 0,
-      "review_cycles": 0,
+      "stage": "commit",
+      "attempts": 1,
+      "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/F2-foundation-vault-oidc-provider.adversarial.md, .loop/verdicts/F2-foundation-vault-oidc-provider.documentation.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [
