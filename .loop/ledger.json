@@ -2,10 +2,13 @@
   "entries": {
     "C1-cicd-tailscale-github-actions-deploy": {
       "slug": "C1-cicd-tailscale-github-actions-deploy",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -51,7 +54,7 @@
       "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/F2-foundation-vault-oidc-provider.adversarial.md, .loop/verdicts/F2-foundation-vault-oidc-provider.documentation.md",
+      "review_verdict": ".loop/archive/F2-foundation-vault-oidc-provider/verdict.adversarial.md, .loop/archive/F2-foundation-vault-oidc-provider/verdict.documentation.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [
@@ -332,10 +335,13 @@
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -426,7 +432,7 @@
       },
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false,
+      "dropped": true,
       "epic": "foundation",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -458,7 +464,7 @@
       "dependencies": [
         "F5-foundation-vault-nomad-secrets-engine",
         "F6-foundation-vault-consul-secrets-engine",
-        "F7-foundation-deployer-vault-oidc-login",
+        "F11-foundation-human-read-role",
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 40,
@@ -535,7 +541,7 @@
       "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/F9-foundation-scope-nomad-workloads-policy.adversarial.md, .loop/verdicts/F9-foundation-scope-nomad-workloads-policy.documentation.md",
+      "review_verdict": ".loop/archive/F9-foundation-scope-nomad-workloads-policy/verdict.adversarial.md, .loop/archive/F9-foundation-scope-nomad-workloads-policy/verdict.documentation.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [
@@ -558,7 +564,7 @@
       "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/A1-audit-plan-premise-sweep.adversarial.md, .loop/verdicts/A1-audit-plan-premise-sweep.documentation.md",
+      "review_verdict": ".loop/archive/A1-audit-plan-premise-sweep/verdict.adversarial.md, .loop/archive/A1-audit-plan-premise-sweep/verdict.documentation.md",
       "dropped": false,
       "epic": "audit",
       "dependencies": [],
@@ -611,10 +617,13 @@
     },
     "G1-grafana-native-oidc-login": {
       "slug": "G1-grafana-native-oidc-login",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -655,10 +664,13 @@
     },
     "T5-tls-certificate-expiry-alert": {
       "slug": "T5-tls-certificate-expiry-alert",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -677,10 +689,13 @@
     },
     "N3-netsec-converging-firewall-provisioner": {
       "slug": "N3-netsec-converging-firewall-provisioner",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -704,7 +719,7 @@
       "review_cycles": 1,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/B1-bifrost-native-auth-and-virtual-keys.adversarial.md, .loop/verdicts/B1-bifrost-native-auth-and-virtual-keys.documentation.md",
+      "review_verdict": ".loop/archive/B1-bifrost-native-auth-and-virtual-keys/verdict.adversarial.md, .loop/archive/B1-bifrost-native-auth-and-virtual-keys/verdict.documentation.md",
       "dropped": false,
       "epic": "bifrost",
       "dependencies": [],
@@ -736,7 +751,7 @@
     },
     "D1-cli-package-skeleton": {
       "slug": "D1-cli-package-skeleton",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -839,7 +854,7 @@
       "epic": "cli",
       "dependencies": [
         "D2-cli-login-broker-tokens",
-        "F7-foundation-deployer-vault-oidc-login"
+        "F11-foundation-human-read-role"
       ],
       "priority": 42,
       "summary": "A Textual `localstack monitor` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI.",
@@ -982,7 +997,7 @@
         "D1-cli-package-skeleton"
       ],
       "priority": 44,
-      "summary": "`localstack deps` installs the HashiCorp CLIs at exactly the versions this cluster pins, reading them from the same group_vars file the Ansible pin reads, and optionally installs the PATH shims that let a bare `nomad` command inherit a `localstack login` session.",
+      "summary": "`localstack deps` installs the HashiCorp CLIs at exactly the versions this cluster pins, reading them from the same group_vars file the Ansible pin reads, and optionally installs the PATH shims that let a bare `nomad`, `consul` or `vault` command inherit a `localstack login` session.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -1013,6 +1028,121 @@
         "haproxy",
         "tls",
         "runbook"
+      ]
+    },
+    "F11-foundation-human-read-role": {
+      "slug": "F11-foundation-human-read-role",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 46,
+      "summary": "One Vault identity group, `developer`, carrying one policy that covers everything a human does on this cluster: both Terraform roots, brokered Nomad and Consul tokens, user and group management, and every secret under default/. Bound to the operator entity. This is the ticket that retires the root token.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "vault",
+        "human-auth",
+        "terraform",
+        "rbac"
+      ]
+    },
+    "F12-foundation-deployer-privilege-split": {
+      "slug": "F12-foundation-deployer-privilege-split",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": true,
+      "epic": "foundation",
+      "dependencies": [],
+      "priority": 45,
+      "summary": "Give the applications Terraform root its own Vault identity holding three grants. Measured: it plans clean, covers every write that root performs, and is denied all four escalation routes. This is the root that changes weekly, and it needs almost nothing. The infrastructure root is F13.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "vault",
+        "terraform",
+        "deployer"
+      ]
+    },
+    "F13-foundation-infrastructure-deployer": {
+      "slug": "F13-foundation-infrastructure-deployer",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": true,
+      "epic": "foundation",
+      "dependencies": [
+        "F11-foundation-human-read-role",
+        "F12-foundation-deployer-privilege-split"
+      ],
+      "priority": 43,
+      "summary": "Get the infrastructure Terraform root off the root token. Its 19-path policy is measured and plans clean, but a token holding both ACL-policy write and identity-group write escalates to root in two steps, so this ticket also moves every vault_policy resource out of Terraform into Ansible. That move is the deliverable, not a detail.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "vault",
+        "terraform",
+        "deployer",
+        "ansible"
+      ]
+    },
+    "F14-foundation-app-user-groups": {
+      "slug": "F14-foundation-app-user-groups",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": true,
+      "epic": "foundation",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider",
+        "F11-foundation-human-read-role"
+      ],
+      "priority": 30,
+      "summary": "Settle the group naming and claim contract for application users: people who use MinIO, MLflow or Memex but hold no Vault or Nomad access. One Vault identity group per (app, level), carried to each app by the OIDC groups claim. Fixes the fact that every consumer ticket currently invents its own mapping.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "vault",
+        "oidc",
+        "rbac",
+        "taxonomy"
+      ]
+    },
+    "F14-foundation-role-taxonomy": {
+      "slug": "F14-foundation-role-taxonomy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "foundation",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider",
+        "F11-foundation-human-read-role"
+      ],
+      "priority": 35,
+      "summary": "Create the `admin` group as a wildcard mode you join when `developer` is too narrow, and the scaffold that makes application-user groups a map entry. Ships no app-specific groups. Writes the four-role layout down once.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "vault",
+        "oidc",
+        "rbac",
+        "taxonomy"
       ]
     }
   }

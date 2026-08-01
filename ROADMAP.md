@@ -1,7 +1,8 @@
 # Pickup order
 
-**Implementable right now: N3. Everything else is listed below with the one
-action that unblocks it.** Updated 2026-08-01.
+**Today: F11, then D1.** Both are `ready` with signed eval markers and passing
+verdicts. Everything else is blocked, and the reasons are below.
+Updated 2026-08-01.
 
 A ticket is implementable only when BOTH hold:
 1. stage is `ready` — which needs a **passing** `plan-validator` verdict bound
@@ -9,19 +10,72 @@ A ticket is implementable only when BOTH hold:
 2. its eval marker is **signed** (`lifecycle.py`, "implementing entry needs a
    signed eval marker").
 
-## Implementable now
+`pass-with-required-fixes` counts as passing. Where a ticket carries one, the
+fixes are listed in its verdict and are **implementation work, not optional**.
 
-| Ticket | What it does |
-|---|---|
-| **N3-netsec-converging-firewall-provisioner** | Makes ufw provisioning converge, so a removed rule is actually deleted from the host instead of left live beside its narrower replacement. Nothing else in netsec takes effect until this lands. |
+## Today's order
 
-## One action away
-
-| Ticket | What it does | The one action |
+| # | Ticket | What it does |
 |---|---|---|
-| **G1-grafana-native-oidc-login** | Grafana logs in through Vault OIDC instead of its own accounts | Author its eval marker. It is already `ready`; the marker is absent, not unsigned |
-| **F7-foundation-deployer-vault-oidc-login** | Scoped `deployer` Vault policy plus a human read role. **This is the ticket that retires the root token** | Re-review, running now |
-| **D1-cli-package-skeleton** | `cli/` package, `localstack` entrypoint, Python gates. D2 to D6 all build inside it | Re-review, running now |
+| 1 | **F11-foundation-human-read-role** | The `developer` group: one Vault policy covering both Terraform roots, brokered Nomad and Consul tokens, and user/group management. **This is what retires the root token.** Unblocks F8, F14, D2, D4 |
+| 2 | **D1-cli-package-skeleton** | `cli/` package, `localstack` entrypoint, Python gates. Unblocks D2 through D6 |
+
+### Required fixes to apply while implementing
+
+- **F11** — four, in its verdict. The one that bites first: **a Vault token
+  alone cannot plan either root.** Both keep state in Consul, so every run also
+  needs a brokered `CONSUL_HTTP_TOKEN`. Folded into the plan; do not
+  rediscover it.
+- **D1** — two, in its verdict. The ruff hook needs `types: [python]` or
+  `just pre_commit` goes red on `cli/uv.lock`; mypy needs
+  `--config-file cli/pyproject.toml` or `strict = true` is silently inert.
+
+## Ready, waiting only on F11
+
+| Ticket | State |
+|---|---|
+| **F14-foundation-role-taxonomy** | `ready`, eval **signed**, passing verdict bound to its current plan. The `admin` group and the app-user scaffold. Its only unmet dependency is F11 |
+
+## In plan review, 2026-08-01
+
+| Ticket | Note |
+|---|---|
+| **D2-cli-login-broker-tokens** | Rewritten after its failing verdict and never re-reviewed. Also re-pointed off the retired F7 onto F11, which grants exactly the two creds paths D2 brokers |
+| **G2-nomad-ui-oidc-login** | Same. Plus a new non-goal: F14 owns the group convention, G2 consumes a name rather than defining one |
+| **N4-netsec-edge-only-service-access** | Same. Highest blast radius on the board |
+| **N3-netsec-converging-firewall-provisioner** | First review it has ever had. N4 cannot be implemented without it |
+
+## Blocked: never reviewed
+
+These sat at `ready` because they were advanced before the planning-review pass
+was wired in, so **no plan-validator verdict has ever run against them**. Their
+premises have never been attacked.
+
+Every plan that *was* reviewed on 2026-08-01 carried a defect and several were
+fatal — a wrong Vault endpoint, an eval row that failed correct work, a policy
+that could escalate to root in two steps. On that record, "ready but never
+reviewed" is weaker than "ready with a passing verdict", not stronger.
+
+| Ticket | Why it matters that nobody checked |
+|---|---|
+| **N3-netsec-converging-firewall-provisioner** | Rewrites ufw rules on five nodes over the same SSH it runs on. Highest cost of a wrong premise on the board |
+| **G1-grafana-native-oidc-login** | Also has **no eval marker at all** — needs authoring, not signing |
+| **S2-spike-postgres-vault-creds** | R3 and S1 both depend on its conclusion |
+| **T5-tls-certificate-expiry-alert** | Low blast radius; cheapest of the five to clear |
+| **C1-cicd-tailscale-github-actions-deploy** | Gives CI cluster access. Worth a premise check before it exists |
+
+Unblock each by running the plan reviewer against it.
+
+## Done but not closed in the ledger
+
+`U1` to `U4` shipped in `547cab0 build: upgrade HashiStack to 2.x and pin the
+versions`. All four services run 2.x and the versions are pinned in
+`bootstrap/inventory/group_vars/all.yml:9-13`. `loopctl done` cannot close them
+because it matches on a commit subject starting with the slug, and that commit
+does not carry one.
+
+**Pinned is ahead of live**: Nomad pins `2.0.4-1` and runs 2.0.3; Consul pins
+`2.0.2-1` and runs 2.0.1. The next `just bootstrap` upgrades both.
 
 ## Waiting on one re-review round
 
@@ -44,12 +98,17 @@ gate reads.
 
 ```
 N3  ->  N4                        closes the live auth bypass
-F7  ->  D2 (useful) -> D6         retires the root token, then the CLI works
+F11 ->  D2 -> D6                  retires the root token, then the CLI works
+F11 ->  F8                        Terraform providers off the static tokens
+F11 ->  F14 -> G1/G2/M2           application users, per app
 D1  ->  D2 -> D3/D4/D5
 ```
 
-`F7` and `D1` are independent of `N3` and of each other, so all three can run
+`F11` and `D1` are independent of `N3` and of each other, so all three can run
 in parallel.
+
+`F11` is the unblocker for almost everything else. It is small, and every
+capability in it has been run against the live cluster.
 
 ## Why not the CLI first
 
@@ -66,32 +125,77 @@ auth/userpass/users                 ["deny"]
 
 `D2`'s own plan states the same conclusion: *"`login` will authenticate but
 every broker call returns 403 until a policy binds the operator entity to the
-creds paths. That policy is F7's deliverable, not D2's."*
+creds paths."* That policy is now `F11`'s deliverable; `D2` names `F7`, which
+is retired, so re-read that line against `F11` when `D2` comes up. `D2` and
+`D4` also broker `nomad/creds/deploy` and `consul/creds/deploy` by name, which
+`F11` grants.
 
 Built first, `D2` is four commands that log in successfully and do nothing.
 
 If "CLI first" means `D1`, that is fine and it is item 2. If it means `D2`, it
 is premature by exactly one ticket.
 
-## Why F7 is smaller than it looks
+## The role model, settled 2026-08-01
 
-Its plan describes building a `vault_jwt_auth_backend` in OIDC mode plus a
-role. **That half is dead.** The operator chose `userpass`, and `F2` shipped
-it on 2026-07-31. What remains is one scoped `vault_policy` and a binding to
-the operator entity or a group.
+The operator's taxonomy, and where each part lives:
 
-Three of its seven required fixes are already answered:
+| Role | What it is | Ticket |
+| --- | --- | --- |
+| **Application user** | Uses MinIO, MLflow, Memex. No Vault or Nomad access at all | scaffold in `F14`; the groups themselves come with each app |
+| **Developer** | Everything: infra and apps, Nomad jobs, Vault user and group management, and deploying the Terraform | `F11` |
+| **Admin** | Full control, via a breakglass procedure rather than a daily credential | group in `F14`, procedure in `D5` |
+| **Service account** | A workload reaching another service, e.g. Memex to a MinIO bucket | `F1`, `M1`, `R3` |
 
-- Which `sys/*` paths need `sudo`. Measured, not assumed: only `sys/auth/*`.
-  `sys/mounts/*` needs an ordinary grant on Vault 2.0.3. Recorded in F7's
-  `## Measured evidence, 2026-07-31`.
-- The login-method fork. Settled as `userpass`.
-- The `token_ttl` task. Withdrawn, see below.
+**Developer and Deployer are one group.** The operator collapsed them on
+2026-08-01. A `developer` can write `identity/*` and `sys/policies/acl/*`, so
+they can grant themselves anything short of `root` — Vault refuses to attach
+`root` and refuses nothing else, measured. That is a deliberate choice for a
+one-person cluster, not an oversight, and `F11` forbids any doc calling the
+policy least privilege.
 
-What the replan still owes: the eval marker. Its row 3 asserts that
-`vault write sys/policies/acl/xyz` returning 403 proves correctness, when the
-deployer must be able to write that path. The marker certifies the broken
-result green, so fixing the plan without fixing the marker fixes nothing.
+What the credential does buy over the root token: it is per-person, revocable
+without re-keying Vault, attributable in the audit log, and it cannot reach the
+`bootstrap` KV mount, `sys/raw`, audit devices or unseal.
+
+**The group name is the contract.** `F2` already emits
+`identity.entity.groups.names` as a `groups` array in the OIDC token
+(`oidc.tf:36-49`). That one string is what a relying party maps to its own
+role, and nothing else crosses service boundaries.
+
+**A group needs an OIDC assignment before it grants anything.** Live, the
+provider has one client whose assignment is `group_ids = [<oidc-smoke>]`,
+`entity_ids = []` — membership in an unassigned group gets you nowhere. `F14`
+builds that extension point; each app ticket adds its own groups to its own
+assignment.
+
+Consumers are not uniform and `F14` deliberately does not decide for them:
+`M2` gates on the per-client assignment and ignores the claim entirely
+(`oidc.tf:36-38`), and oauth2-proxy can only allow or deny, so the *level* half
+of a tier cannot reach a proxied app through it. Each app ticket picks its own
+mechanism.
+
+### F7, F12 and F13 are retired
+
+`F7` split one policy across a human and a deployer and failed plan review
+twice on the same fault: it was root-equivalent while presented as least
+privilege, and its own eval guardrail certified the escalation green. `F12` and
+`F13` were the second attempt at that split. All three died when the operator
+collapsed the two roles.
+
+Three measurements survive them and are folded into `F11`:
+
+- **The Vault provider calls `auth/token/create` at configure time**, before it
+  reads a single resource, and the live `default` policy does not grant it. It
+  appears in no `vault_*` resource block. This killed `F7`'s policy twice.
+- **`GET sys/mounts/auth/<path>` is required** for auth-mount tuning. Also in no
+  resource block.
+- **Narrowing `sys/policies/acl/*` to exact names does not stop escalation.**
+  Vault resolves identity-group policies at request time, so any writable
+  policy name plus group write is root in two steps. And `nomad/role/*` write
+  is a second route entirely: flip a role to `type = management`, broker its
+  creds, run a job that mounts `/opt/vault`. Both verified. This is why the
+  collapse is the right call — the boundary was never enforceable while
+  Terraform owned the privileged resources.
 
 ## Decisions locked, do not reopen without cause
 
@@ -106,7 +210,7 @@ Settled by the operator on 2026-07-31. Full reasoning in
   `vault` CLI needs no shim.
 - **The 32-day Vault token TTL is the design, not a defect.** It is the
   refresh token; the 30-minute brokered creds are the access tokens the shim
-  refreshes. This withdraws the `token_ttl` task previously handed to `F7` and
+  refreshes. This withdraws the `token_ttl` task previously handed to the retired `F7` and
   drops `D2`'s `whoami` warning above 24 hours.
 - **Consul UI gets `localstack ui consul`**, which brokers a token, copies it
   to the clipboard, prints it as a fallback, and opens the UI. Consul's OIDC
@@ -214,8 +318,17 @@ before the change.
 
 - **The Consul UI never gets SSO.** Licensing, not design.
 - **`F8` carries its own broken premise**: a brokered `client`-type Nomad
-  token cannot manage the ACL policy that defines it. Replanning `F7` does not
-  fix `F8`.
+  token cannot manage the ACL policy that defines it. `F11` does not fix this,
+  because `F11` grants Vault capabilities and this is a Nomad ACL limit.
+  `F8`'s dependency now points at `F11`, but its body still argues from `F7` in
+  27 places, so it needs a replan of its own, not an edit.
+- **Consul's ACLs do not gate reads at all.** Measured 2026-08-01: raw HTTP
+  with no token to `192.168.2.30:8500` returns all 25 services, all 5 nodes and
+  all 41 health checks. `consul.hcl.j2:29-32` sets `tokens { default = <agent
+  token> }`, so every unauthenticated request runs as the agent, and
+  `default_policy = "deny"` never applies. Any Consul read role is therefore a
+  subset of what anonymous already has. **This needs its own ticket** and is
+  not covered anywhere below.
 - **The `developer` Nomad ACL policy grants `alloc-exec` and
   `alloc-node-exec`**, and `G2` hands it to everyone in the bound Vault group.
   Ansible owns the policy (`nomad_server/tasks/main.yml:182-184`), so `G2`

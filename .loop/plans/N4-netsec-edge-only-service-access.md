@@ -145,7 +145,7 @@ and the misses that break a cluster are the ones haproxy never sees.
 | Port and host | Must still admit | Evidence |
 | --- | --- | --- |
 | nomad 4646, consul 8500 on `.30` | `.30` (edge, node-local), `.47` (Prometheus), **`.50`** (hermes) | `prometheus.hcl:85`, `:92`; `hermes.hcl:205-206`, `:451-452` |
-| **vault 8200 on `.30`** | `.30` (edge, node-local) **and `.47`** (acme renews the edge's own certificate) | `haproxy.hcl:134`; `acme.hcl:163`, placed on `ubuntu` = `.47` by `acme.hcl:17-20` |
+| **vault 8200 on `.30`** | `.30`, **and every Nomad client: `.29`, `.46`, `.47`, `.50`** | `haproxy.hcl:134`; `acme.hcl:163` on `.47`; **and `nomad_client/templates/nomad.hcl.j2:33-36`** — every client carries `vault { enabled = true, address = "http://<server>:8200" }`, and `bootstrap/inventory/cluster.ini` puts all four workers in `[worker]`. Verified live: the `nomad` process on `.50` holds a connection to `192.168.2.30:8200` |
 | minio 9000/9001 on `.29` | `.30` (edge), `.47` (Prometheus scrapes 9000, loki stores chunks), **`.46`** (memex file store), **`.50`** (mlflow artifacts, backup-minio) | `haproxy.hcl:128`, `:131`; `prometheus.hcl:105`; `loki.hcl:119`; `memex.hcl:122`; `mlflow.hcl:50`; `backup-minio.hcl:37`, pinned to radxa by `:13-16` |
 | **phoenix 6006 on `.29`** | `.30` (edge) **and `.46`** (memex sends traces) | `haproxy.hcl:144`; `memex.hcl:143` |
 | phoenix 4317 on `.29` | no edge route and no consumer found in the repo; narrow to `.46` alongside 6006 and confirm phoenix still records traces | `applications/services.tf:30` |
@@ -154,6 +154,22 @@ and the misses that break a cluster are the ones haproxy never sees.
 | mlflow 5050 on `.50` | `.30` (edge) only. No in-cluster consumer exists | `haproxy.hcl:154` |
 | grafana 3000 on `.47` | `.30` (edge) only | `haproxy.hcl:150` |
 | 8404 on `.30` | `.47` (Prometheus) only, per Q2 | `prometheus.hcl:96` |
+
+**Consul authenticates nobody, so closing the port is its only control.**
+Measured 2026-08-01: `bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32`
+sets `tokens { default = <agent token> }`, and the client role does the same at
+`consul_client/templates/consul.hcl.j2:16-19`. Every request arriving without a
+token therefore resolves to the agent's identity, which holds `node_prefix`,
+`service_prefix`, `agent_prefix` and `session_prefix ""` at write.
+Unauthenticated against `192.168.2.30:8500`: 25 services, 5 nodes, 41 health
+checks, and a 200 on `/ui/`. `default_policy = "deny"` is set and never
+applies.
+
+Two consequences for this ticket. Closing the port is the whole of the control
+— there is no second layer behind it. And **after N4 the catalog is still
+readable with no credential through the edge**, because the edge forwards to
+the same unauthenticated listener. That is not this ticket's job to fix, and it
+must not be described as fixed. It is filed separately.
 
 **The cross-node consumers are the trap.** memex runs on jetson_nano
 `192.168.2.46` and phoenix on orange_pi_4a `192.168.2.29`, so narrowing
@@ -201,10 +217,17 @@ applications map too. Quoting its summary: *"runs `ufw allow` once at create
 and has no destroy step, so removed rules stay open on the host and host-side
 drift is invisible."*
 
-Four consequences:
+Five consequences:
+
+0. **N3 is `blocked`, not `ready`.** It was blocked on 2026-08-01 because no
+   `plan-validator` verdict has ever run against it — its premise has never
+   been attacked. Subticket 1 is therefore *"get N3 reviewed, unblocked and
+   landed"*, not *"land N3"*. **N4 cannot be judged final until N3's premise
+   has been attacked**, because Q1's scope bound rests on N3's mirror
+   constraint holding.
 
 1. **N3 is not merely a dependency; it is the only thing that makes the
-   Terraform half take effect.** It is `ready` and needs no gate. Do it first.
+   Terraform half take effect.** Do it first — after clearing item 0.
 2. **The Ansible half needs the same treatment** and N3 does not cover it.
    See Q1.
 3. **This ticket must then narrow both Terraform maps**, including the

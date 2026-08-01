@@ -139,8 +139,14 @@ but D3 should be re-read after this lands.
   must not be confused: one is a Nomad auth method trusting Vault, the other
   is a Vault auth method trusting Nomad.
 - **No Vault policy changes.** Whether the operator entity can read
-  `nomad/creds/*` is `F7`'s question and is unrelated: OIDC login to Nomad
-  bypasses brokering entirely.
+  `nomad/creds/*` is `F11`'s question (F7 is retired) and is unrelated here:
+  OIDC login to Nomad bypasses brokering entirely.
+- **No group taxonomy.** `F14-foundation-role-taxonomy` owns the group naming
+  convention and the OIDC assignment wiring that decides who may authorize
+  against a client. G2 consumes a group name; it does not define one. If the
+  group this ticket binds does not yet exist, it comes from F14's scaffold or
+  is created here as a service-specific group — state which, and follow F14's
+  convention either way.
 - **No oauth2-proxy.** Nomad speaks OIDC natively. `L1` is a different
   mechanism for services that do not.
 

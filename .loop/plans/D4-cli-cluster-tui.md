@@ -1,6 +1,6 @@
 ---
 epic = "cli"
-depends_on = ["D2-cli-login-broker-tokens", "F7-foundation-deployer-vault-oidc-login"]
+depends_on = ["D2-cli-login-broker-tokens", "F11-foundation-human-read-role"]
 priority = 42
 tags = ["cli", "textual", "tui", "observability"]
 summary = "A Textual `localstack monitor` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI."

@@ -4,255 +4,397 @@ verdict: fail
 
 # N4-netsec-edge-only-service-access — plan review (pass id: plan-validator)
 
-Plan reviewed: `/home/vscode/workspace/.loop/plans/N4-netsec-edge-only-service-access.md`
-Plan content sha256 (computed here, **not supplied by the briefing**):
-`87b7afec5b8e56a00920cd8665d4cb73f006ef91970c21a7ec712b18c9d1ce3d`.
-On a `fail` the contract omits the `plan:` line, so no authorizing hash is
-written. Note the briefing did not carry an explicit fingerprint; had this been
-a pass I would have stopped rather than invent one.
+Plan: `/home/vscode/workspace/.loop/plans/N4-netsec-edge-only-service-access.md`
+Fingerprint supplied by the briefing:
+`074c2e431c623c0efc3fbe22adda39959b2e334ffef8df6e501be2c5aec12d1f`.
+This is a `fail`, so the contract omits the `plan:` line and no authorizing
+hash is written.
 
-All probes below were run live against the cluster from the devcontainer on
-2026-07-31, plus read-only `ssh ... sudo ufw status` on firebat, radxa and the
-rpi4b. No mutating command was run.
+**What I re-ran vs only read.** Re-ran live, read-only, 2026-08-01: every URL
+in the exposure table from the devcontainer; the edge equivalents; the unknown
+Host 503; Consul catalog/nodes/KV unauthenticated; `sudo ufw status numbered`
+on firebat, radxa and the rpi4b; `sudo iptables -S INPUT` and `-S ts-input` on
+firebat and radxa; `ss -ltn` and `ss -tn state established` on firebat and all
+four workers; `sudo ss -tnp` on radxa to name the process holding a Vault
+connection; `curl http://127.0.0.1:4646/v1/agent/health` and `/v1/jobs` on
+firebat; `hostname` on all four workers; the `.loop` ledger. Only read: the
+plan, the eval marker, the prior verdict, and the repo files cited below. No
+mutating command was run, no firewall rule touched, nothing restarted.
 
-## Premise verdict: PARTIALLY SOUND, with breaks severe enough to reshape the ticket
+## Prior verdict (2026-07-31): its ten fixes did land
 
-The plan's headline mechanism is right and I confirmed it on a live host. Its
-**inventory of what is exposed and where the rules come from is wrong**, and
-the scope, code surface and eval rows all inherit that error. A ticket built to
-this plan can pass every scored row while leaving two authenticated services
-reachable unauthenticated on the LAN.
+I checked each. Fix 1 (third provisioner) landed and the anchors resolve.
+Fix 2 (exposure table widened, mlflow/phoenix named as an auth bypass) landed
+and I re-measured every row: `192.168.2.50:5050` 200 vs edge 401,
+`192.168.2.29:6006` 200 vs edge 401, memex 401, bifrost 200, grafana 302,
+hermes 404, 8404 200 unauthenticated, `firebat:4646` 307. Fix 3 (grafana 3000
+and 8080 already on the tailnet) landed; confirmed on the rpi4b's live table
+(`[12] 3000/tcp ALLOW 100.64.0.0/10`, `[14] 8080/tcp ALLOW 100.64.0.0/10`).
+Fix 4 (R4 restated to firebat-only tailnet) landed; radxa and the rpi4b have no
+`tailscale` binary. Fix 5 (three anchors) landed: `infrastructure/services.tf`
+`:191-192`, `:222`, `:231`, and `haproxy.hcl:122` all resolve exactly. Fix 6
+(MinIO provider) landed. Fix 7 (per-service target table) landed. Fix 8 (eval
+rows D5, D6, D63) landed. Fix 9 (second circular dependency) landed. Fix 10
+(`.env.example` is mDNS) landed.
+
+That work was real. The plan is now the most carefully evidenced one on this
+board. It also still rests on four assumptions that are false against the live
+cluster, and two of them are the kind that take the cluster down.
+
+## Premise verdict: BROKEN
+
+Not because the ticket is wrong to exist — it is right, and the mlflow/phoenix
+bypass re-measured today justifies it on its own. It is broken because the
+plan's own contract (R5's target table, R8's tailnet clause, subticket 1's
+ordering, and R7's recovery escape) contains four statements that the cluster
+contradicts, and the eval marker scores each of them green anyway.
 
 ## Per assumption
 
-**P1 — the seven measured URLs answer 200 directly today. HOLDS.**
-Re-measured: `192.168.2.30:4646` 307 (UI redirect), `:8200/v1/sys/health` 200,
-`:8500/v1/status/leader` 200, `192.168.2.29:9001` 200, `:9000/minio/health/live`
-200, `192.168.2.30:8404` 200 with no auth, `http://firebat:4646/` 307.
-Caveat: `firebat.local:4646` does **not** resolve from the devcontainer (curl
-000/timeout), which matters for the eval row that scores it (see D6).
+**P1 — the measured exposure table is accurate. HOLDS.**
+Re-measured all thirteen rows today from the devcontainer; every one matches,
+including the two 200/401 pairs. `curl -H 'Host: bogus.example.com'` on 443
+returns 503. `firebat:4646` 307.
 
-**P2 — "Two provisioners, split by concern". BREAKS.**
-There is a **third**: `deployments/applications/services.tf:22-102`, a second
-`null_resource.firewall` with its own map and `sudo ufw` remote-exec
-(`applications/services.tf:100`). It declares LAN-wide rules for phoenix 6006 +
-4317 (`:29-30`), memex 8000 (`:38`), mlflow 5050 (`:71`) and bifrost 8080
-(`:79`). The plan's Context, code surface and subticket list never mention it.
-`grep -rn ufw` across the repo returns exactly three sources: the Ansible role,
-`infrastructure/services.tf:293`, `applications/services.tf:100`.
+**P2 — rules come from exactly three provisioners. HOLDS.**
+`grep -rn ufw` returns the Ansible role
+(`bootstrap/roles/firewall/tasks/main.yml:15-22`, no delete step; default deny
+at `:7-13`), `deployments/infrastructure/services.tf:293`, and
+`deployments/applications/services.tf:100`. The applications map's anchors are
+exact: map at `:23-82`, phoenix `:29-30`, memex `:38`, hermes `:46-47`, loki
+`:50-63`, mlflow `:71`, bifrost `:79`, `null_resource.firewall` at `:85`,
+remote-exec `:93`, `sudo ufw` at `:100`.
 
-**P3 — "Default incoming policy is deny, so these explicit allows are the
-entire exposure". BREAKS as written.**
-Default-deny itself holds: 3100 (loki), 9080 (promtail), 4317, 7777, 9090 are
-all filtered from here. But the plan's enumeration of the allows is missing five
-services **that have edge routes**, all of which answered me directly:
+**P3 — no provisioner removes a rule, so narrowing shadows. HOLDS, and is live
+today.** radxa's table still shows `[10] 8642/tcp ALLOW IN 192.168.0.0/16`
+beside `[12] 192.168.2.30` and `[14] 192.168.2.46`, exactly as the plan says.
 
-| Direct | Result | Edge equivalent |
-| --- | --- | --- |
-| `http://192.168.2.50:5050/` mlflow | **200** | `https://mlflow.lab...` → **401** |
-| `http://192.168.2.29:6006/` phoenix | **200** | `https://phoenix.lab...` → **401** |
-| `http://192.168.2.50:8080/` bifrost | 200 | `https://bifrost.lab...` 200 |
-| `http://192.168.2.46:8000/` memex | 401 | `https://memex.lab...` 401 |
-| `http://192.168.2.47:3000/` grafana | 302 | `https://grafana.lab...` 200 |
-| `http://192.168.2.50:8642/` hermes | 404 (reachable) | via memex/haproxy only |
+**P4 — the per-service target table is the contract, and it is complete.
+BREAKS. This is the one that sinks the ticket.**
+The table gives vault 8200 on `.30` two admitted sources: `.30` (node-local)
+and `.47` (acme). That is wrong. Every Nomad **client** dials Vault on
+`192.168.2.30:8200`:
+`bootstrap/roles/nomad_client/templates/nomad.hcl.j2:33-36` sets
+`vault { address = "http://{{ nomad_client_server_address }}:8200" }`, and
+`bootstrap/playbooks/configure_hashistack_clients.yml:17` sets
+`nomad_client_server_address: "192.168.2.30"`. I confirmed the rendered file on
+all four workers carries `address = "http://192.168.2.30:8200"`, and I caught
+the traffic:
 
-mlflow and phoenix are gated at the edge by `http-request auth unless {
-http_auth(openfang_users) }` (`haproxy.hcl:143`, `:153`) and are **wide open on
-the LAN**. That is not just a plaintext bypass, it is an authentication bypass,
-and it is the strongest case for this ticket — and it is absent from the
-exposure table, from Requirements, from the code surface and from every scored
-row.
+    ESTAB 192.168.2.50:41900  192.168.2.30:8200  users:(("nomad",pid=2369993,fd=9))
 
-**P4 — neither provisioner removes a rule, so narrowing shadows. HOLDS, and I
-found it live.**
-Role code confirmed: `bootstrap/roles/firewall/tasks/main.yml:15-22` is a bare
-`rule: allow` loop with no `delete`; default deny at `:7-13`. Terraform is
-create-only (`infrastructure/services.tf:279-295`). The predicted failure is
-already on a host: `sudo ufw status numbered` on radxa shows
-`[10] 8642/tcp ALLOW IN 192.168.0.0/16` still live beside
-`[12] 8642/tcp ALLOW IN 192.168.2.30` and `[14] ... 192.168.2.46`, while the
-repo declares **only** the two narrow rules (`applications/services.tf:46-47`).
-Hermes is therefore LAN-reachable despite a repo that says otherwise. This is
-the plan's best claim and it is fully vindicated.
+That is the Nomad client agent on radxa, not an application. I also observed
+`192.168.2.29:36428 -> 192.168.2.30:8200` established on orange_pi_4a. The
+connections are transient because they are template renewals.
 
-**P5 — the edge proxies the full API, not just the UI. HOLDS.**
-`https://nomad.lab.orangecluster.nl/v1/agent/health` 200,
-`https://vault.lab.orangecluster.nl/v1/sys/health` 200,
-`https://consul.lab.orangecluster.nl/v1/status/leader` 200. Also
-`s3.../minio/health/live` 200 and `grafana.../api/health` 200.
+Fourteen jobspecs carry a `vault {}` stanza and render `{{ with secret }}`
+(`grep -rln "vault {" deployments/*/services/*.hcl`), including memex on `.46`
+(`memex.hcl:44`, `:114`, `:124`, `:132`, `:139`), phoenix on `.29`, and
+mlflow, bifrost, hermes and loki on `.50`. Narrow 8200 to `{.30, .47}` as the
+table instructs and the Nomad clients on `.29`, `.46` and `.50` lose Vault.
+Nothing errors at apply time. Secrets stop renewing on three of five nodes and
+the cluster degrades over hours to days.
 
-**P6 — haproxy runs on firebat with the Nomad server, Vault and Consul.
-HOLDS; the inference drawn from it is too broad.**
-`nomad job status haproxy` → alloc `974b69bf` on node `a898783a`;
-`nomad node status` → `a898783a` is firebat; `nomad server members` → single
-server `firebat.global` 192.168.2.30, leader; `vault status` unsealed at
-`192.168.2.30:8200`. But haproxy's backends are **not** all node-local:
-`haproxy.hcl:127-157` dials 192.168.2.29 (minio, s3, phoenix), 192.168.2.46
-(memex), 192.168.2.47 (grafana) and 192.168.2.50 (mlflow, bifrost). Any
-narrowing on those four hosts must retain `192.168.2.30`. The plan states the
-node-local case as if it covered the whole edge.
+This is precisely the failure the plan's own risk section calls "High: killing
+a cross-node consumer silently", arriving through the one door the table
+forgot. And the eval's positive-control row probes 8200 **only from
+`192.168.2.47`**, so the marker goes green over it.
 
-**P7 — unknown Host returns 503, no default backend. HOLDS.**
-`curl -k -H 'Host: bogus.example.com' https://192.168.2.30/` → 503. No
-`default_backend` in `haproxy.hcl`. Note port 80 answers 301 (redirect to
-https) for an unknown Host, so the 503 guarantee is 443-only; the eval row
-should say so.
+**P5 — R8's tailnet clause is achievable by editing ufw rules. BREAKS.**
+On firebat, tailscale's netfilter chain runs before ufw and accepts everything
+on the tunnel:
 
-**P8 — "SSH stays open to LAN and tailnet on port 22, which is the recovery
-path". BREAKS for four of five nodes.**
-firebat has both (`ufw status numbered` rules `[1] 22 ALLOW 192.168.0.0/16`,
-`[2] 22 ALLOW 100.64.0.0/10`). radxa and the rpi4b have **LAN only**, and
-`tailscale ip -4` on the rpi4b returns nothing — tailscale is installed on the
-manager alone (`bootstrap/playbooks/configure_tailscale.yml:3`, `hosts:
-manager`). The worker playbook grants 22 to `192.168.0.0/16` only
-(`configure_network.yml:33`). R4 and the SSH eval row assert a state that does
-not exist and cannot be reached without widening scope onto tailscale rollout.
+    -P INPUT DROP
+    -A INPUT -j ts-input          <- first
+    -A INPUT -j ufw-before-input
+    ...
+    -A ts-input -i tailscale0 -j ACCEPT
 
-**P9 — "8404 is the only thing besides 80/443 reachable from the tailnet".
-BREAKS.**
-`infrastructure/services.tf:222` allows Grafana 3000 from `100.64.0.0/10` and
-`:231` allows 8080 from `100.64.0.0/10`. Confirmed on the host: rpi4b's ufw
-table carries `3000/tcp ALLOW 100.64.0.0/10` and `8080/tcp ALLOW
-100.64.0.0/10`. The tailnet already reaches Grafana and 8080 directly.
+Live proof rather than inference: firebat's ufw table grants 8200 to
+`192.168.0.0/16` only (`[7] 8200/tcp ALLOW IN 192.168.0.0/16`, no tailnet
+entry), yet `ss` on firebat shows
+`100.117.172.3:8200 <- 100.64.146.75:65166` established. A tailnet peer is
+talking to Vault through a port ufw never allowed it. **ufw does not gate
+tailscale0 on firebat at all.** Every port on firebat — 4646, 8200, 8500,
+5432, 5000/5001, 20000:32000, 8404, 9100 — is open to the tailnet regardless
+of what the rule set says.
 
-**P10 — `20000:32000` means every dynamically-ported job is directly
-reachable. VACUOUS today.**
-Zero of the 24 running allocations use a port in that range: every allocated
-host port is static (`/v1/allocations?resources=true` → jq filter for
-20000..32000 returns 0). `ss -ltn` on firebat and radxa shows no listener in
-the range. Closing it is still correct hygiene, but the plan presents it as a
-live exposure driver and the eval hangs a 100% row on probing a port that does
-not exist (see D5).
+Three consequences. R8's "the tailnet loses everything but 80/443 and SSH to
+firebat" cannot be delivered by this ticket's mechanism. The eval row "The
+tailnet keeps 80, 443 and SSH-to-firebat, and nothing else" cannot pass for
+its 8404 probe. And the plan's Context paragraph "8404 is not the only thing
+on the tailnet ... R8 covers all three, not just 8404" understates the
+exposure by an order of magnitude: it is not three ports, it is every port on
+the manager. The rpi4b half is fine — no tailscale there
+(`which tailscale` returns nothing), so its `100.64.0.0/10` rules for 3000 and
+8080 are real and removable.
 
-**P11 — the dependency on N3 is correct. HOLDS, and it is sufficient for the
-Terraform mechanism.**
-N3's own Context names both roots: `deployments/infrastructure/services.tf:279-295`
-and `deployments/applications/services.tf:85-101`
-(`.loop/plans/N3-netsec-converging-firewall-provisioner.md`, Context). So N3
-will make the applications root converge too. The gap is on N4's side: it must
-then narrow that map, and it never says so.
+The plan also declares "No tailnet firewall redesign" a non-goal while R8
+requires a tailnet outcome. Those two cannot both hold once you know ufw is
+bypassed.
 
-**P12 — cited anchors resolve. BREAKS (three of them).**
-- `services.tf:52-53` (claimed: the tailnet exposure of 8404) is
-  `nomad_dynamic_host_volume "memex_data"`'s constraint block. Real location:
-  `infrastructure/services.tf:188-192`. Cited in the plan's Context and in eval
-  row 6.
-- `services.tf:73-74` (claimed: prometheus / node_exporter narrow rules) is
-  `nomad_dynamic_host_volume "hermes_data"`. Real: `:212-213` (prometheus) and
-  `:235-258` (node exporters).
-- `haproxy.hcl:129` (claimed: `http-request use-service prometheus-exporter`)
-  is `server s3_1 192.168.2.29:9000 check`. Real: `haproxy.hcl:122`. Cited
-  three times (plan Q2, plan Forks-resolved, eval row 7).
-Anchors that do resolve: `bootstrap/roles/firewall/tasks/main.yml:7-13` and
-`:15-22`; `applications/providers.tf:38-42` and `:40`.
+**P6 — "N3 is `ready` and needs no gate. Do it first." BREAKS.**
+`.loop/ledger.json` gives N3 `"stage": "blocked"` with
+`"code": "unresolved-design-fork"` and the reason *"No plan-validator verdict
+has ever run ... treat never-reviewed as weaker than reviewed, not stronger."*
+`ls .loop/verdicts/ | grep N3` returns nothing. The plan asserts N3's readiness
+twice (consequence 1 under "The finding that reshapes this ticket", and
+subticket 1). Both are false as of today.
 
-**P13 — `.devcontainer/.env.example` points at raw IPs. BREAKS in detail.**
-`.env.example` uses mDNS names (`NOMAD_ADDR=http://localstack.local:4646`,
-`VAULT_ADDR=http://localstack.local:8200`,
-`MINIO_ENDPOINT=http://orangepirv2.local:9000`). The operator's real
-`.devcontainer/.env` does use IPs (`:3`, `:6`, `:9`). The eval row that says the
-template is "on `http://192.168.2.30:8200`" describes a file that does not say
-that. The requirement survives; the rationale is wrong.
+This matters beyond bookkeeping. The plan says N3 "is the only thing that makes
+the Terraform half take effect", so N4's steps 6 through 9 are no-ops on the
+host without it. N4's premise therefore rests on an unreviewed prerequisite,
+and N4's most dangerous mechanism (does a narrowed rule actually replace the
+broad one?) is entirely N3's to deliver. **No, N4 cannot be sound while N3 is
+unreviewed** — not because dependencies must always be reviewed first, but
+because this specific dependency owns the mechanism on which N4's central claim
+depends, and N4 cites N3's scope bound
+(`.loop/evals/N3-netsec-converging-firewall-provisioner.md`, "the prune is
+deliberately scoped so it cannot touch the Ansible half") as load-bearing in
+Q1's resolution. If N3's scope bound is wrong, Q1's answer is wrong too.
 
-**P14 — R6's list of addresses to move is complete. BREAKS.**
-`applications/providers.tf:45` builds the MinIO provider address as
-`"${data.consul_service.minio.service[0].node_address}:9000"`, and `:51` does
-the same for Postgres. `minio_iam_user` / `minio_accesskey` resources exist
-(`applications/storage.tf:46,51`), so a plan/refresh from the devcontainer dials
-MinIO on 9000 directly. Closing 9000/9001 to non-cluster hosts breaks
-`terraform plan` in the applications root, and neither R6 nor the code surface
-mentions this file. The "both roots plan clean" eval row would catch it, but at
-implementation time, as a surprise.
+**P7 — the recovery escape works: SSH to firebat plus
+`NOMAD_ADDR=http://127.0.0.1:4646`. PARTIALLY BREAKS.**
+The address half holds. `ss -ltn` on firebat shows `*:4646` (Nomad binds
+`0.0.0.0`, `nomad_server/templates/nomad.hcl.j2:9`), and
+`curl http://127.0.0.1:4646/v1/agent/health` from firebat returns 200. Consul
+and Vault are reachable on loopback too (`client_addr = "0.0.0.0"` at
+`consul_server/templates/consul.hcl.j2:7`; `*:8200` in `ss -ltn`), which the
+runbook will need for the state backend and the unseal path.
 
-**P15 — the runbook covers every way this change can strand you.
-UNCERTAIN → incomplete.**
-The plan names one loop (haproxy is a Nomad job; Nomad is behind haproxy). There
-is a second: haproxy's TLS PEM is rendered from Vault
-(`haproxy.hcl:39`, `:62-72`), and `just unseal_vault` runs
-`scripts/unseal_vault.sh` against `$VAULT_ADDR` from the devcontainer
-(`.devcontainer/.env:9`). After the migration, a sealed Vault plus a haproxy
-restart means no edge, and no edge means no way to unseal except SSH. That is
-the same trap in a second shape and the runbook rows do not name it.
+The authorization half fails. Nomad ACLs are on
+(`nomad_server/templates/nomad.hcl.j2:34-36`) and bootstrapped:
+`curl http://127.0.0.1:4646/v1/jobs` from firebat with no token returns **403**.
+So the escape the plan mandates —
+`NOMAD_ADDR=http://127.0.0.1:4646 nomad job restart haproxy` — does not work as
+written. I found no `NOMAD_TOKEN` on firebat (`grep -rl NOMAD_TOKEN` over
+`/etc`, `/root/.bashrc`, `/home/firebat` returns nothing). The operator's token
+lives in `.devcontainer/.env:2`, on the machine that just lost every other
+route in.
+
+The eval row "The runbook answers BOTH circular dependencies by name" scores
+the runbook for *stating that exact command*. So a row certifies an escape that
+403s. Only the last row ("kill the edge and recover") would expose it, and only
+during the maintenance window.
+
+**P8 — R6 lists every address this repo dials from outside the cluster.
+BREAKS, three more.**
+- `deployments/applications/services.tf:231` hardcodes
+  `endpoint = "http://192.168.2.50:8080"` in `null_resource.bifrost_ready`,
+  whose `local-exec` at `:235-249` curls `${self.triggers.endpoint}/health`
+  from wherever Terraform runs, and `deployments/applications/providers.tf:67`
+  wires that same trigger into the **bifrost provider**. R8 narrows bifrost 8080
+  to `{.30, .46, .47}`. The devcontainer is not on that list, so the provider
+  cannot configure and `bifrost_virtual_key` refresh (`services.tf:266`, `:280`)
+  fails. This is the MinIO-provider defect the last verdict caught, repeated in
+  a second file that neither R6 nor the code surface names.
+- `.devcontainer/.env:27` `MEMEX_SERVER_URL=http://192.168.2.46…`. R8 narrows
+  memex 8000 to `{.30, .50}`.
+- `deployments/infrastructure/services.tf:364`
+  `grafana_external_url = "http://192.168.2.47:3000"`, rendered into the
+  Telegram alert body at `grafana.hcl:300`
+  (`<a href="${grafana_external_url}/alerting/list">`), plus the hardcoded
+  `GF_SERVER_ROOT_URL = "http://192.168.2.47:3000"` at `grafana.hcl:70`. After
+  this ticket every alert link points at a closed port. (I checked the
+  browser-visible case: `https://grafana.lab.orangecluster.nl/` returns 302 with
+  `location: /login`, relative, so login is unaffected.)
+
+The eval's grep guardrail cannot catch any of the three. Its pattern is
+`192\.168\.2\.(29|30|46|47|50):(4646|8200|8500|9000|9001)` scoped to
+`.devcontainer/`, `deployments/*/providers.tf`, `deployments/*/vars/`. Ports
+8080, 8000 and 3000 are absent from the alternation, and `services.tf` is
+outside the searched paths.
+
+**P9 — the exposure inventory is complete. BREAKS, one class missing.**
+Consul and Nomad answer on **every** node, not just `.30`. Measured today:
+`192.168.2.29:8500` 200, `.46:8500` 200, `.47:8500` 200, `.50:8500` 200,
+`.29:4646` 200, `.50:4646` 200. The Consul client config sets
+`client_addr = "0.0.0.0"` (`consul_client/templates/consul.hcl.j2:5`) and the
+Nomad client binds `0.0.0.0` (`nomad_client/templates/nomad.hcl.j2:4`); the
+worker Ansible block opens both to `192.168.0.0/16`
+(`configure_network.yml:37`, `:39`). The plan's code surface does say "narrow
+`from_ip` for 4646, 8500 ... in both blocks", so the rule edit is in scope —
+but the target table gives no source set for the worker copies, the exposure
+table and R2's negative control never record them, and the eval's refusal row
+scores exactly the ten haproxy backends, so eight live, ungated endpoints are
+outside every measurement in the ticket.
+
+**P10 — Consul's own controls are irrelevant because the port is being closed.
+UNCERTAIN, and the plan should say it out loud.**
+Confirmed the briefing's measurement: with no token,
+`http://192.168.2.30:8500/v1/catalog/services` returns the full service list
+and `/v1/catalog/nodes` the full node list, because
+`bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32` sets
+`tokens { agent = …, default = … }`, so an unauthenticated request runs as the
+agent. `default_policy = "deny"` at `:27` never applies to it. The same pattern
+is in `consul_client/templates/consul.hcl.j2:16-19`, which is why all four
+worker agents answered above. KV *is* gated: `/v1/kv/terraform/infrastructure`
+returns 403, so the Terraform state is not exposed.
+
+The plan's remedy is right — closing the port is the only control Consul has
+here. What the plan never states is the consequence: after N4, Consul's full
+catalog is still readable **with no credential by anyone who reaches the edge
+on 443**, which is the whole LAN and (per P5) the whole tailnet. The same holds
+for the Nomad UI, the Vault UI, the MinIO console and bifrost. The non-goal "No
+authentication at the edge" covers the intent, but a reader of the Context will
+conclude that closing 8500 protects Consul, and it does not. Add one sentence.
+
+**P11 — R3's port enumeration covers the broad rules that must die. BREAKS,
+minor.** Two live broad rules are not in the plan's or the marker's list:
+radxa `[11] 9119/tcp ALLOW IN 192.168.0.0/16` (with a narrow `[13] … .30`
+beside it — the same shadowing shape as 8642, and 9119 appears **nowhere** in
+the repo), and the rpi4b's `[10]/[11] 50051/tcp` from `.30` and `.46`, also
+undeclared. `grep -rn 9119` and `grep -rn 50051` across `*.tf` and `*.hcl`
+return nothing. A marker that enumerates ports by name will score green over
+both.
+
+**P12 — anchors resolve. HOLDS.** I opened every `path:line` the plan cites.
+All resolve, including the three the last verdict rejected. `haproxy.hcl`
+`:122`, `:127-157`, `:143`, `:153`, `:39`, `:62-72`, `:89`; `prometheus.hcl`
+`:85`, `:92`, `:96`, `:105`, `:119`; `acme.hcl:17-20` and `:158-163`;
+`backup-minio.hcl:13-16`, `:37`; `memex.hcl:122`, `:143`, `:148`, `:155`,
+`:158`; `hermes.hcl:203`, `:205-206`, `:449`, `:451-452`; `mlflow.hcl:50`;
+`loki.hcl:119`; `.devcontainer/.env` `:3`, `:6`, `:9`, `:18`; `.env.example`
+`:3`, `:7`, `:11`, `:23`; both `vars/backend-config.hcl:1-3`. Node placements
+check out by `hostname`: `.47` = `ubuntu` (acme), `.50` = `radxa-dragon-q6a`
+(backup-minio), `.46` = `jetson-orin-nano` (memex). The only nit is
+`infrastructure/services.tf:174-182` for the minio block, which ends at `:181`;
+`:182` is the next comment.
+
+**P13 — `20000:32000` is a standing hole, not a live one. HOLDS.**
+`ss -ltn` on firebat returns no listener in the range.
+
+**P14 — closures are provable from a socket, as R1 claims. HOLDS for the
+marker's closure rows.** I checked each row. Every row asserting unreachability
+probes a socket or enumerates the live `ufw status numbered` table, which is
+host state, not config. The rows that read config are labelled guardrails
+(no-non-cluster-host, intra-cluster-ports, `.env.example`), which the marker's
+own doctrine permits. One row is a config read scoring an *edit* rather than a
+closure — "The third provisioner was actually edited" — and that is honest,
+because the refusal rows carry the closure. So the answer to the brief's
+question is: no closure row in this marker scores by reading a config file.
 
 ## Most dangerous assumption
 
-**P2/P3 — the plan's inventory of rule sources and of what is exposed.**
-Everything downstream inherits it: the seven-URL exposure table, R6, the code
-surface, and the eval's `Direct access is refused` row, which scores exactly
-those seven URLs. Implement this plan to the letter and
-`http://192.168.2.50:5050/` (mlflow) and `http://192.168.2.29:6006/` (phoenix)
-still answer **200 with no credentials**, while the edge answers 401 — and every
-row in the marker is green. The eval's own Definition of Done ("every service
-with an edge route is reachable only through `https://<name>...`") is not
-enforced by any row it carries.
+**P4 — the vault 8200 line of the per-service target table.** R5 says "The
+target table is the contract here." Implement the contract as written and the
+Nomad clients on `.29`, `.46` and `.50` lose Vault, so every
+`template { with secret }` on three of five nodes stops renewing. Nothing
+fails loudly, the eval's cross-node positive control probes 8200 only from
+`.47`, and every row in the marker is green while the cluster quietly loses its
+secrets. It is the same shape of miss the last verdict caught in the exposure
+table, one layer deeper.
 
-## Eval marker: rows that cannot fail, or cannot pass
+## Eval marker: rows that cannot fail, cannot pass, or certify a broken thing
 
-- **D5 (unscorable).** Row 5, "Pick a live allocation's dynamic port from
-  `nomad alloc status`, then connect to it directly ... Refused." No running
-  allocation uses 20000:32000 and nothing listens in the range on firebat or
-  radxa. There is no subject to probe; the row is unexecutable as written.
-  Rewrite it to schedule a throwaway job with a dynamic port, or to assert the
-  absence of the ufw range rule plus a refusal on an arbitrary in-range port.
-- **D6 (half vacuous).** Row 4 requires both `firebat:4646` and
-  `firebat.local:4646` to be refused. `firebat.local` already fails to resolve
-  from the devcontainer today, so that half passes before any change. Only the
-  bare `firebat` form is a real measurement.
-- **D63 (unsatisfiable).** The SSH row requires 22 open from `192.168.0.0/16`
-  **and** `100.64.0.0/10` on all five nodes with both connections succeeding.
-  Four nodes have no tailnet rule and no tailscale (see P8). As written the row
-  forces a scope expansion the plan lists nowhere.
-- **D2 (under-scoped).** The refusal row covers seven URLs and misses 5050,
-  6006, 8000, 8080, 8642 and 3000 — the six that matter most.
-- **D46/D50 anchors.** Rows 6 and 7 cite `services.tf:52-53` and
-  `haproxy.hcl:129`; both are wrong (P12).
+- **Cannot pass — "The tailnet keeps 80, 443 and SSH-to-firebat, and nothing
+  else."** Its 8404 probe targets firebat, where `ts-input` ACCEPTs before ufw
+  (P5). No ufw edit closes it. The 3000 and 8080 halves on the rpi4b are
+  achievable.
+- **Certifies a broken command — "The runbook answers BOTH circular
+  dependencies by name."** It scores the runbook for stating
+  `NOMAD_ADDR=http://127.0.0.1:4646 nomad job restart haproxy`, which returns
+  403 (P7). The row must also require the token-acquisition step.
+- **Misses the break it exists to catch — "Every cross-node consumer still
+  reaches its target."** Twelve probes, none of them 8200 from `.29`, `.46` or
+  `.50` (P4).
+- **Blind guardrail — "No raw service address survives in the repo's own client
+  config."** Pattern and path scope both miss the three addresses in P8.
+- **Under-enumerated — "The broad rule is DELETED, not shadowed."** Names
+  8642 but not 9119 on radxa or 50051 on the rpi4b (P11), and cannot see the
+  tailnet at all.
+- **Under-scoped — "Direct access is refused for EVERY edge-routed service."**
+  Ten addresses, so the eight worker Consul/Nomad endpoints in P9 are outside
+  it. The row is consistent with the marker's Definition of Done; the
+  Definition of Done is what is too narrow for a ticket titled "only
+  `*.lab.orangecluster.nl` reaches a service".
+- **Probably unexecutable — "A fresh bootstrap still converges."** It needs "a
+  scratch or re-imaged node". Five nodes are in production and none is spare.
+  Say how it will be run, or make it a deferred assertion with an owner.
+- **Brittle — "The cluster is unchanged underneath"** pins literal counts
+  (5 nodes, 19 jobs, 24 allocations). It is a pre/post comparison; hardcoding
+  the numbers makes it red for reasons unrelated to this change.
+- **Self-certifying, acceptable — "applied to a worker before the manager"**
+  and **"The negative control is captured before the change"** are scored from
+  the implementer's own record. Both are the right shape for what they check;
+  flagging them so nobody mistakes them for measurements.
+- **Rows that are genuinely strong**: the two-auth-bypass priority row, the
+  RST-to-timeout transition for `20000:32000` (the direction is the signal, and
+  it is right — ufw's default deny DROPs, so the probe hangs), the 8404
+  positive control, the Ansible-reconciles-in-its-own-lane row, and above all
+  "kill the edge and recover", which is the only row that would catch P7.
 
 ## Required fixes before this plan leaves PLANNING
 
-1. **Add the third provisioner.** `deployments/applications/services.tf:22-102`
-   joins the Context, the code surface and the subticket order.
-2. **Extend the exposure table and R-list to every service with an edge
-   route**: mlflow 5050, phoenix 6006, memex 8000, bifrost 8080, grafana 3000,
-   hermes 8642 (and 4317, 9119 as their siblings). Call out that mlflow and
-   phoenix are an **auth** bypass, not merely a plaintext one
-   (`haproxy.hcl:143`, `:153`).
-3. **Fix P9's claim and R8.** Grafana 3000 and 8080 are already on the tailnet
-   (`services.tf:222`, `:231`); 8404 is not the only one. Decide explicitly
-   whether they stay.
-4. **Restate R4 and the SSH eval row** to what is true: firebat has LAN +
-   tailnet 22, workers have LAN only and no tailscale
-   (`configure_tailscale.yml:3`). Either scope the tailnet rollout in or drop
-   the tailnet half of the assertion for workers.
-5. **Repair the three anchors** (`services.tf:52-53` → `:188-192`;
-   `services.tf:73-74` → `:212-213` / `:235-258`; `haproxy.hcl:129` → `:122`),
-   in the plan and in the eval rows that repeat them.
-6. **Add `applications/providers.tf:45` (MinIO) to R6**, or state explicitly
-   that MinIO 9000 stays open to cluster nodes and that the devcontainer is not
-   one — and say which.
-7. **State the narrowing target.** "Narrow `from_ip`" never says to what. If it
-   is the five node IPs, say so; Prometheus scrapes `192.168.2.30:4646` and
-   `:8500` from `192.168.2.47` (`prometheus.hcl:85`, `:92`), and haproxy dials
-   four non-local backends, so the target set is load-bearing.
-8. **Fix eval rows D5, D6, D63 and widen D2** per the section above.
-9. **Add the second circular dependency to R7's runbook**: sealed Vault plus a
-   haproxy restart leaves no edge to unseal through
-   (`haproxy.hcl:39`, `:62-72`; `scripts/unseal_vault.sh`).
-10. **Correct the `.env.example` claim** (it is on `localstack.local`, not an
-    IP) so the eval row's rationale matches the file.
+1. **Fix the vault 8200 target set.** It must admit every Nomad client:
+   `.29`, `.46`, `.47`, `.50` and `.30`. Evidence:
+   `nomad_client/templates/nomad.hcl.j2:33-36`,
+   `configure_hashistack_clients.yml:17`, and the live
+   `nomad` process holding `192.168.2.50 -> 192.168.2.30:8200`. Add 8200 probes
+   from `.29`, `.46` and `.50` to the cross-node positive-control row.
+2. **Resolve the tailnet contradiction.** ufw does not gate `tailscale0` on
+   firebat (`iptables -S INPUT` puts `-A INPUT -j ts-input` first;
+   `-A ts-input -i tailscale0 -j ACCEPT`). Either scope in the mechanism that
+   can gate it (tailscale ACLs, `--netfilter-mode=off` plus explicit rules, or
+   `tailscale serve`), or drop the firebat half of R8 and rewrite the eval row
+   to score only the rpi4b's 3000 and 8080. State plainly in the Context that
+   after this ticket every port on the manager remains open to the tailnet.
+3. **Correct the N3 statement.** N3 is `stage: blocked`
+   (`.loop/ledger.json`, blocker `unresolved-design-fork`), not `ready`, and no
+   `.loop/verdicts/N3-*.plan-validator.md` exists. Subticket 1 becomes "get N3
+   reviewed and unblocked, then land it". Say explicitly that Q1's scope bound
+   depends on N3's mirror constraint holding, so N4 cannot be judged final until
+   N3's premise has been attacked.
+4. **Fix the recovery escape.** `curl http://127.0.0.1:4646/v1/jobs` on firebat
+   returns 403; Nomad ACLs are on (`nomad_server/templates/nomad.hcl.j2:34-36`).
+   R7 and its eval row must carry the full sequence: where `NOMAD_TOKEN` comes
+   from during an outage (Vault on `127.0.0.1:8200` is reachable, which is the
+   natural source), and the same question for `CONSUL_HTTP_TOKEN` if the runbook
+   touches the state backend.
+5. **Add the three missing addresses to R6 and the code surface**:
+   `deployments/applications/services.tf:231` with its `local-exec` at
+   `:235-249` and the provider wiring at `providers.tf:67`;
+   `.devcontainer/.env:27`; and `infrastructure/services.tf:364` with
+   `grafana.hcl:70`, `:300`. Widen the eval's grep guardrail to cover ports
+   8080, 8000 and 3000 and to search `deployments/*/services.tf`.
+6. **Inventory the worker Consul and Nomad agents.** `.29`, `.46`, `.47`,
+   `.50` all answer 8500, and at least `.29` and `.50` answer 4646 (measured).
+   Give them a source set in the target table, put them in R2's negative
+   control, and either add them to the refusal row or record in the non-goals
+   that they stay open and why.
+7. **Add 9119 (radxa) and 50051 (rpi4b) to R3's enumeration**, or record them
+   as knowingly untouched. Both are live broad or narrow rules with no
+   declaration anywhere in the repo.
+8. **State the Consul ACL fact in the Context**
+   (`consul_server/templates/consul.hcl.j2:29-32`,
+   `consul_client/templates/consul.hcl.j2:16-19`): the default token is the
+   agent token, so unauthenticated reads return the full catalog, and closing
+   the port is the only control Consul has. Then state the consequence: after
+   N4 the catalog is still readable with no credential through the edge.
+9. **Make "A fresh bootstrap still converges" executable** — name the node or
+   defer it with an owner — and change "The cluster is unchanged underneath" to
+   compare against row 1's capture instead of pinning 5/19/24.
+10. **Small one:** the code surface hedges "Possibly
+    `haproxy.hcl` for 8404 (`:120-125`)" on a fork that Q2 already decided.
+    Q2 resolved to drop the human stats UI, so that edit is required, not
+    possible. `haproxy.hcl:123-125` is `stats enable` / `stats uri /` /
+    `stats refresh 10s`, and `:122` is the `/metrics` line that must survive.
 
 ## Contract hygiene (checked, secondary)
 
 Non-goals are explicit and specific. Forks are surfaced with recommendations
-and recorded as resolved. The gate command `just pre_commit` matches the root
-`justfile`, and `just worktree_setup <path>` exists as the eval's final row
-assumes. The code surface is real but incomplete (fix 1, 6). Anchors fail
-(fix 5). Tests are homed in the eval marker rather than test files, which is
-right for an infrastructure ticket.
+and recorded as resolved with reasoning. The gate command `just pre_commit`
+matches the root `justfile`, and `just worktree_setup <path>` exists at
+`justfile:30-32` as the marker's last row assumes. Tests are homed in the eval
+marker rather than test files, which is right for an infrastructure ticket.
+Anchors resolve (P12). The code surface is real but incomplete per fix 5.
 
 ## Bottom line
 
-The plan is well argued and its central mechanism is confirmed on a live host.
-It is wrong about how much is exposed and about how many places the rules come
-from, and that error propagates into a marker whose Definition of Done no row
-enforces. Two of its rows cannot be executed at all. This stays at `PLANNING`
-until fixes 1 through 10 land.
+The rewrite fixed all ten of the last verdict's findings and its Context now
+re-measures true in every particular I could check. The plan fails on four
+newer facts: the target table omits the Nomad clients' dial to Vault, ufw
+cannot gate the tailnet on the one node that has tailscale, N3 is blocked
+rather than ready, and the recovery escape 403s. Two of those produce an
+outage, one invalidates a requirement, and one breaks the runbook this ticket
+exists to ship. Stays at `PLANNING` until fixes 1 through 10 land.

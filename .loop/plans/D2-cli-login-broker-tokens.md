@@ -39,8 +39,10 @@ Operator request: a developer should authenticate once and deploy, the
 way `gcloud auth login` works, instead of copying a Vault root token and
 two static god-mode tokens into `.devcontainer/.env`
 (`.devcontainer/.env.example:2,6,10`). This is the client half of
-`F7-foundation-deployer-vault-oidc-login`, which is `blocked` on a broken
-premise. D2 builds the client. F7 keeps the policy.
+`F11-foundation-human-read-role`. D2 builds the client; F11 owns the policy.
+**F7 is retired** — it was dropped on 2026-08-01 after failing plan review
+twice, and this plan named it throughout. F11 replaces it and is `ready` with
+a signed eval marker.
 
 ## 4. Context
 
@@ -138,9 +140,11 @@ successful `userpass` login therefore yields a token carrying only the
 Consequences the implementer must design around:
 
 1. `login` will authenticate but every broker call returns 403 until a
-   policy binds the operator entity to the creds paths. That policy is
-   F7's deliverable, not D2's. The CLI must fail with a message naming
-   the missing grant, not a bare traceback.
+   policy binds the operator entity to the creds paths. **That policy is
+   `F11`, which is `ready` and grants exactly `nomad/creds/deploy` and
+   `consul/creds/deploy` as read** — the two paths this client brokers, so
+   the coupling is satisfied once F11 lands. Until then the CLI must fail with
+   a message naming the missing grant, not a bare traceback.
 2. `logout` can still revoke cleanly: `auth/token/revoke-self` is in the
    `default` policy, and revoking a Vault token revokes the leases that
    token created. Per-lease revocation via `sys/leases/revoke` is not
@@ -235,11 +239,12 @@ consumes what D1 established. See Q1 and §8.
 
 ## 5. Non-goals / out of scope
 
-- **Not the `deployer` Vault policy.** F7 owns it. Its verdict
-  (`.loop/verdicts/F7-foundation-deployer-vault-oidc-login.plan-validator.md:36-73`)
-  found the policy forbids the `sys/*` and `auth/*` writes its own
-  `terraform apply` performs. D2 must not author, widen, or work around
-  that policy. A diff touching `deployments/` is out of scope here.
+- **Not the `developer` Vault policy.** `F11` owns it. D2 must not author,
+  widen, or work around it, and a diff touching `deployments/` is out of scope
+  here. Note that `F11` deliberately grants the **exact** paths
+  `nomad/creds/deploy` and `consul/creds/deploy`, not `nomad/creds/*` — so a
+  client that brokers any other role name will 403 by design, not by
+  oversight.
 - **Not OIDC login.** Operator decision, already made: authenticate
   against the `userpass` backend F2 ships. Reserve `--method` in the
   interface so OIDC can be added later without an interface change. Do
@@ -377,10 +382,13 @@ out-of-band retrieval instead.
 
 **R8 — Errors name the cause.** A 403 on a creds path prints which path
 was denied, that the login token's policies are `<policies from
-lookup-self>`, and that the grant is F7's ticket. **This is the expected
-result at implementation time** (§4: `token_policies = []`, and F7 is
-`blocked`), so it is the message a developer will actually see and the
-one that gets the most care. A 404 on `auth/userpass/login/*` prints that
+lookup-self>`, and that the grant is `F11`'s ticket. **Read
+`identity_policies`, not `policies`** — F11 binds through an identity group,
+so the granted policy lands in the former while `policies` holds only
+`default`. An error message reporting `policies` will tell the developer they
+have no grants when they do. If F11 has not landed, the 403 is the expected
+result and this is the message a developer will actually see, so it gets the
+most care. A 404 on `auth/userpass/login/*` prints that
 the `userpass` backend is not enabled at that path; it is no longer the
 expected state of the world, since F2 is applied, so treat it as a
 misconfigured `--vault-addr` or a wrong username rather than a known
@@ -479,21 +487,33 @@ when asking for help, which is exactly why it must be safe to paste. It
 lands here rather than in D1 because it reads the resolved `vault_addr`
 and the session file, both of which this ticket owns.
 
-**R14 — `localstack ui consul`.** Brokers a Consul token (R4 freshness
-rules), copies it to the clipboard, prints it as a fallback, and opens
-`https://consul.lab.orangecluster.nl`. Grounded in §12: Consul's OIDC
-auth method is Enterprise-only and this cluster is CE, so pasting a token
-is the only route into the UI.
+**R14 — `localstack ui consul` opens the UI and brokers NOTHING.**
 
-- **Print the token even when the clipboard write succeeds.** Inside a
-  container the clipboard is the part most likely to fail, and a silent
-  failure leaves the operator with a browser and no token. This is a
-  deliberate exception to R9, in the same class as `env` and `token`.
-- Prefer an OSC 52 escape over `xclip` or `pbcopy`: it travels over SSH
-  and through the devcontainer.
-- Do not open a browser when there is no session or brokering fails. Exit
-  non-zero with the R8 message instead.
+The original design brokered a token, copied it to the clipboard and printed
+it, grounded in "Consul's OIDC auth method is Enterprise-only, so pasting a
+token is the only route into the UI." **That premise is false on this
+cluster**, measured 2026-08-01:
+
+- `bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32` sets
+  `tokens { default = <agent token> }`, so every request arriving without a
+  token resolves to the agent's identity under `agent_policy`, which holds
+  `node_prefix`, `service_prefix`, `agent_prefix` and `session_prefix ""` at
+  **write**. Untokened: 25 services, 5 nodes, 41 health checks, and a 200 on
+  `/ui/`. `default_policy = "deny"` is set and never applies.
+- **Pasting the brokered token makes the UI worse, not better.** An explicit
+  token *replaces* the agent default rather than merging with it, and the live
+  `deploy` Consul policy grants service read on `minio` and `postgres-db`
+  only. So the brokered token cuts the UI from 25 services to 2.
+
+So: open the URL, and stop. No brokering, no clipboard, no printed token.
+
+- Do not open a browser when there is no session. Exit non-zero with R8.
 - Do not build `localstack ui nomad`.
+- **Record why there is no token step**, so nobody restores it. The Consul UI
+  needing no credential is a *finding about this cluster's configuration*, not
+  a property of Consul — it is an open read surface on the tailnet and is
+  filed separately. If that is ever fixed, this requirement must be revisited
+  and the brokered token will then need a policy wider than `deploy`.
 
 ### Restrictions the repo states
 
@@ -569,7 +589,7 @@ New files:
 - `cli/src/localstack_cli/commands/config.py` — R13. Addresses and edge
   domain, text and JSON, no secrets.
 - `cli/src/localstack_cli/commands/ui.py` — R14. `localstack ui consul`:
-  broker, OSC 52 clipboard write, print the token anyway, open the
+  open the
   browser.
 - `cli/tests/auth/test_vault.py` — login, lookup, renew, revoke, and the
   R2 plaintext refusal, all against `respx`.
@@ -606,7 +626,7 @@ New files:
   opt-in per test; a fixture building a session file.
 - `docs/cli-login.md` — one page: how to get the password the first time,
   `localstack login`, `eval "$(localstack env)"`, what `logout` revokes,
-  and the F2/F7 preconditions. Runs the slop scan.
+  and the F2/F11 preconditions. Runs the slop scan.
 
 Modified:
 
@@ -678,7 +698,7 @@ Each file below is listed in §7.
    (`respx` route `.call_count == 0`, not a loose not-called assertion,
    per `.claude/rules/python-testing.md:101-103`).
 9. `test_broker.py::test_403_on_creds_names_the_missing_grant` — R8.
-   Asserts the message names the path and points at F7.
+   Asserts the message names the path and points at F11.
 10. `test_auth_commands.py::test_env_emits_both_consul_variable_names` —
     R5. The single highest-value regression test in this ticket: the
     naming split at `deployments/infrastructure/justfile:8` is the trap.
@@ -740,9 +760,9 @@ R7 and Q7. Run these; do not record them as blocked.
 26. Brokering both creds paths **fails with R8's message naming the
     missing policy**. This is the one row that is not a success
     assertion, and it is correct as written: the operator user ships
-    `token_policies = []` and F7 is `blocked`, so a 403 is the true state
+    `token_policies = []` and F11 has not applied, so a 403 is the true state
     of the cluster. Assert the message. If brokering ever succeeds here,
-    F7 landed and this row needs rewriting, not deleting.
+    F11 landed and this row needs rewriting, not deleting.
 27. `logout` revokes: after it, `vault token lookup` on the cached token
     fails. Assert against the Vault token, not against the brokered
     accessors, since under row 26 there are none to check.
@@ -768,7 +788,7 @@ the same mode; tests 18 and 19 cover it.
 
 **What a stolen `session.json` buys, stated plainly.** Today: a
 `default`-policy Vault token, which brokers nothing, so the loss is small.
-**Once F7 grants the creds reads, the same file becomes a bearer
+**Once F11 grants the creds reads, the same file becomes a bearer
 credential that mints deploy-capable Nomad and Consul tokens on demand for
 up to 32 days** — Vault's built-in `768h` default, since `auth_userpass.tf`
 sets no `token_ttl` and `sys/config/state/sanitized` reports
@@ -787,7 +807,7 @@ the outstanding token revoked. The operator's own token cannot do the
 second: `default` grants no `sys/leases/revoke` and no token-accessor
 revocation (§4, verified). So a stolen session is revoked by root, not by
 the person who lost it. Note this in `docs/cli-login.md`. Shortening the
-TTL is F7's lever if the operator later wants one; D2 cannot set it from
+TTL is F11's lever if the operator later wants one; D2 cannot set it from
 the client.
 
 **The `~/.vault-token` write is inert today, by measurement, not by
@@ -834,7 +854,7 @@ anyway.
    There is already a stale `~/.vault-token` in this container that a
    careless test would overwrite.
 7. **Scope creep into the policy.** The 403 in test 9 will tempt an
-   implementer to "just add the grant". That is F7's ticket and the
+   implementer to "just add the grant". That is F11's ticket and the
    subject of a `fail` verdict. Blocking with `out-of-scope-fix-needed`
    is the correct move.
 8. **A banner on `token`'s stdout.** A progress spinner, a deprecation
@@ -1017,9 +1037,6 @@ Two consequences, both reversals of the earlier recommendation:
 
 - **Drop the `whoami` warning** above 24 hours. It would fire on every
   healthy session and train the operator to ignore it.
-- **Drop the `token_ttl`/`token_max_ttl` task handed to F7.** Recorded in
-  F7's `## Measured evidence, 2026-07-31` section so its replan does not act
-  on the earlier advice.
 
 `whoami` should still *show* the remaining TTL, and warn when it is nearly
 expired, which is the useful direction. Leave `auth_userpass.tf` alone, as
@@ -1033,37 +1050,23 @@ branch's `docs/vault-human-auth.md`, which already carries the
 `vault kv get secret/default/vault/operator` recipe. Do not add a KV2
 read path to the CLI.
 
-## How this ticket informs F7's replan
+## What this ticket settled for F11
 
-D2 does not fix F7, and does not touch its policy. It does settle three
-things F7's replan needs, each verified here rather than assumed:
+F7 was retired on 2026-08-01 and its artifacts moved to `.loop/archive/`;
+`F11-foundation-human-read-role` replaces it and is `ready` with a signed eval
+marker. Three things this plan established fed into it, each verified here
+rather than assumed:
 
-1. **The login method is `userpass`, not OIDC.** Operator decision. F7's
-   own Q1 recommended Google OIDC, and its verdict flagged the
-   `depends_on = F2` edge as contradicting that recommendation
-   (`.loop/verdicts/F7-foundation-deployer-vault-oidc-login.plan-validator.md:118-138`).
-   With `userpass` chosen, the F2 edge is correct and F7's login half
-   collapses to binding a policy to the existing operator entity.
-2. **What the policy must grant on top of `default`.** D2's client calls
-   `nomad/creds/deploy` (read), `consul/creds/deploy` (read),
-   `auth/token/lookup-self`, `auth/token/renew-self`,
-   `auth/token/revoke-self`. The last three are already in `default`. The
-   first two are the minimum F7 must add for `localstack login` to
-   function at all. This is separate from, and smaller than, the
-   terraform-apply grant the verdict says F7 got wrong
-   (`:250-260`).
-3. **The operator login does NOT need a `token_ttl`.** This line
-   previously said the opposite, contradicting Q6 in the same document.
-   Q6 is the resolution: the 32-day Vault token is the refresh
-   credential by design, and D2 withdrew the `token_ttl` task it had
-   handed F7. F7 has already closed the question that way
-   (`.loop/plans/F7-foundation-deployer-vault-oidc-login.md:538-540`
-   "Do NOT set `token_ttl` on the operator login", and `:733`
-   "Q2 (TTLs) → CLOSED"). Leave `auth_userpass.tf` alone. What F7 should
-   read instead is §9's residual-risk paragraph: the TTL is the design,
-   and the consequence is that a stolen `session.json` is revocable only
-   by root, so if the operator ever wants a shorter bound, `token_ttl` on
-   the userpass user is where it goes and it is F7's to set.
+1. **The login method is `userpass`, not OIDC.** Operator decision, shipped by
+   F2 on 2026-07-31.
+2. **`nomad/creds/deploy` and `consul/creds/deploy` read are the minimum for
+   `localstack login` to work.** F11 grants exactly those two paths, as exact
+   names rather than `nomad/creds/*` — so a client brokering any other role
+   will 403 by design.
+3. **The 32-day token TTL is the design, not a defect.** Measured here:
+   `ttl = 2764799`. It is the refresh token; the 30-minute brokered creds are
+   the access tokens. The `token_ttl` task once handed to F7 was withdrawn on
+   that basis and F11 does not carry it.
 
 ## Eval marker
 

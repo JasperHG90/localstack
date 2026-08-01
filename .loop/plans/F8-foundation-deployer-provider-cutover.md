@@ -1,6 +1,6 @@
 ---
 epic = "foundation"
-depends_on = ["F5-foundation-vault-nomad-secrets-engine", "F6-foundation-vault-consul-secrets-engine", "F7-foundation-deployer-vault-oidc-login", "A1-audit-plan-premise-sweep"]
+depends_on = ["F5-foundation-vault-nomad-secrets-engine", "F6-foundation-vault-consul-secrets-engine", "F11-foundation-human-read-role", "A1-audit-plan-premise-sweep"]
 priority = 40
 summary = "Flip the Nomad and Consul Terraform providers off their static god-mode env tokens onto Vault-brokered short-lived tokens, then delete the static tokens so the F7 OIDC session is the only credential entry point. Highest blast radius of the F5-F8 sub-feature: the Consul state backend consumes a token at init, before any provider runs."
 tags = ["vault", "nomad", "consul", "terraform", "secrets"]

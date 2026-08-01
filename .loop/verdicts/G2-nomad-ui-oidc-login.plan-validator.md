@@ -4,403 +4,421 @@ verdict: fail
 
 # G2-nomad-ui-oidc-login — plan premise review (pass `plan-validator`)
 
-## Why this is recorded as `fail` rather than `pass-with-required-fixes`
-
-Read this first, because the header understates the review.
-
-**The premise review landed at PARTIALLY SOUND, and on premise severity alone
-the gate verdict would be `pass-with-required-fixes`.** The core mechanism is
-verified working end to end against the live cluster and the pinned provider.
-Two things force the `fail` header instead:
-
-1. **My briefing supplied no plan fingerprint.** The dispatcher gave the repo
-   root, the plan path, the slug, the pass id and the verdict path, but no
-   64-hex sha256 to bind. My contract is explicit: report the gap, never
-   invent one, never write a fingerprint I was not given. A verdict with no
-   authorizing `plan:` line cannot flip `PLANNING -> READY`, which is the
-   correct and safe outcome.
-   For the operator's convenience only, and **not** as an authorizing binding:
-   `sha256(.loop/plans/G2-nomad-ui-oidc-login.md)` at review time was
-   `9c74ccddcf2b70e45c5175a94bbd637eb43e63c55e11232e744ea770ac052e59`.
-2. **The required fixes below change the plan and the eval marker anyway**, so
-   any fingerprint bound now would be stale on arrival. Apply RF1–RF5, then
-   re-run this pass with the fingerprint supplied.
-
-Nothing here is a "the approach is wrong" fail. The approach is sound.
-
----
+Reviewed against plan sha256 `8ab982b52366a544c66f83b1951152fcf5688d2de4bed37f22b025c6ae19878a`.
+No `plan:` line is written, because this is a `fail` and a failing verdict must
+never carry an authorizing hash.
 
 ## Premise verdict
 
-**PARTIALLY SOUND.**
+**PARTIALLY SOUND, failing on severity.**
 
-The load-bearing capability claims that this repo's history says to distrust —
-Nomad OIDC in Community Edition, the pinned provider's schema, the redirect
-URI paths, Consul OIDC being Enterprise-only, the unmanaged `developer` policy,
-and the achievability of Q1's import — **all hold, verified against the live
-cluster, the provider binary and first-party docs.** One third-party capability
-claim is false (PKCE), and three scoring/scope defects would let a broken
-ticket report green.
+Every claim the prior verdict flagged has been fixed, and I re-measured each fix
+rather than reading the corrected prose. The plan's OIDC mechanism itself is
+sound: I built the exact auth method and binding rule this plan describes,
+selector and all, against a throwaway Nomad dev agent and they were accepted.
 
-## Per assumption
+Two findings the prior pass did not reach force the `fail`, and neither is a
+text fix:
 
-### P1 — Nomad supports the OIDC auth method in Community Edition; the cluster runs 2.0.4 — **HOLDS**
+1. **The plan puts two management-token-only Nomad resources into a Terraform
+   root whose own sibling file writes down the invariant that they must not go
+   there.** Measured, not inferred. G2 never mentions the credential its
+   resources need, and no row in its eval can catch this.
+2. **The group non-goal and the group mechanism contradict each other.** The
+   non-goal says G2 consumes a group name and does not define one, and demands
+   G2 state which of two sources the name comes from. §Code surface and Q3 then
+   define one, and the name matches neither source.
 
-Four independent lines of evidence, all confirming CE and confirming OIDC is
-not license-gated:
-
-- `nomad license get` on this cluster returns `Error getting license: Nomad
-  Enterprise only endpoint`. The binary is CE.
-- `nomad server members` reports leader `firebat.global`, `Build 2.0.4`;
-  `/v1/agent/self` reports `"Version": "2.0.4"`. Plan §Context is exact.
-- The CE binary's `nomad acl auth-method create -help` prints, verbatim:
-  `Sets the type of the auth method. Supported types are 'OIDC' and 'JWT'.`
-  Plan §Context quotes this correctly.
-- `developer.hashicorp.com/nomad/docs/secure/authentication/oidc` carries no
-  Enterprise badge and no Enterprise prose in its body, and its nav entry reads
-  plain "Configure OIDC". Contrast the Consul equivalent below, which the same
-  doc system tags `OIDC (ENT)`.
-
-### P2 — pinned `hashicorp/nomad` 2.5.2 carries the named resources and fields — **HOLDS**
-
-Verified against the actual provider binary, not the registry docs. I built a
-throwaway root, `terraform init -plugin-dir=` against the repo's own provider
-cache, and dumped `terraform providers schema -json`. Lockfile in that root
-resolves `registry.terraform.io/hashicorp/nomad version = "2.5.2"`, matching
-`deployments/infrastructure/.terraform.lock.hcl`.
-
-- Resources present: `nomad_acl_auth_method`, `nomad_acl_binding_rule`,
-  `nomad_acl_role`, plus `nomad_acl_policy` (needed for Q1).
-- `nomad_acl_auth_method` `config` block attributes present: `oidc_discovery_url`,
-  `oidc_client_id`, `oidc_client_secret`, `oidc_scopes`, `oidc_enable_pkce`,
-  `bound_audiences`, `bound_issuer`, `allowed_redirect_uris`, `claim_mappings`,
-  `list_claim_mappings`. Top-level: `token_locality`, `max_token_ttl`,
-  `token_name_format`, `type`, `default`.
-- `nomad_acl_binding_rule` carries `auth_method`, `bind_name`, `bind_type`,
-  `selector`, `description`.
-- Provenance: `terraform-provider-nomad` CHANGELOG 2.5.0 (April 16, 2025) adds
-  `oidc_enable_pkce` (PR #523). The `~>2.5.0` pin at `providers.tf:3-6` is the
-  first line that carries it. "No provider bump" is correct.
-
-Two accuracy nits, neither a break:
-
-- The plan lists the OIDC fields as if they sit on the resource. They are
-  inside the nested `config` block. Cosmetic for a reader, but the implementer
-  should know.
-- `bound_issuer` is typed `["list","string"]`, not a string. R4 says "Set
-  `bound_issuer` to the `lab` issuer"; it takes a one-element list.
-
-Bonus check, since it would have been a nasty surprise: Nomad redacts the OIDC
-client secret from API responses (CVE-2025-1296, changelog line 935), which
-would normally give Terraform a perpetual diff. Provider 2.5.2 handles it —
-`resource_acl_auth_method.go:438-471` defines `unredactACLAuthMethodResource`,
-"mutates fetchedAuthMethod with real secrets ... redacted in Nomad API
-responses". No drift. (Note 2.6.0 adds `oidc_client_secret_wo`; at 2.5.2 the
-secret does land in Terraform state, consistent with the repo's existing
-`random_password` resources.)
-
-### P3 — "PKCE is required from Nomad 1.10 onward, per HashiCorp's Vault-to-Nomad guide" (R2) — **BREAKS**
-
-This is the false third-party capability claim. Three sources contradict it:
-
-- The guide the plan names,
-  `developer.hashicorp.com/nomad/docs/secure/authentication/sso-vault`,
-  **never mentions PKCE**. The string "pkce" occurs exactly once in the whole
-  rendered page, in the left sidebar nav link to a different document. Its
-  worked auth-method config is
-  `{"OIDCDiscoveryURL":…,"OIDCClientID":…,"OIDCClientSecret":…,"BoundAudiences":…,"OIDCScopes":["groups"],"AllowedRedirectURIs":[…],"ListClaimMappings":{"groups":"roles"}}`
-  — no `OIDCEnablePKCE` at all.
-- The document that does cover it,
-  `…/secure/authentication/sso-pkce-jwt`, states: "Beginning with Nomad
-  v1.10.0, Nomad **supports** PKCE. To take advantage of the additional
-  security of PKCE, you must enable it in Keycloak." Supports, not requires.
-- Nomad CHANGELOG 1.10.0 (April 09, 2025), FEATURES: "**OIDC Login:** Nomad now
-  **enables** PKCE for OIDC logins…" A feature, not a requirement.
-- Schema confirms: `oidc_enable_pkce` is `optional`, default off.
-
-**The action R2 prescribes is still right, and safe.** I checked the one thing
-that could have made it actively harmful: the live `lab` provider's discovery
-document at
-`https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/.well-known/openid-configuration`
-advertises `"code_challenge_methods_supported": ["plain","S256"]`. Vault
-supports PKCE, so enabling it works and eval row 7 is achievable. Only the
-stated justification is fabricated. Fix the rationale, keep the setting.
-
-### P4 — redirect URIs `/ui/settings/tokens` and `http://localhost:4649/oidc/callback` — **HOLDS**
-
-Verbatim from the Nomad OIDC docs: "Logging in via the UI requires the redirect
-URI `http://{host:port}/ui/settings/tokens`. Logging in via the CLI requires
-the redirect URI `http://{host:port}/oidc/callback`." And: "If the
-`-oidc-callback-addr` flag is not specified, it will default to
-`localhost:4649`." Corroborated by the local CLI: `nomad login -help` documents
-`-oidc-callback-addr … defaults to "localhost:4649"`. The sso-vault guide's own
-example lists both:
-`["http://localhost:4649/oidc/callback","http://localhost:4646/ui/settings/tokens"]`.
-
-The UI host is right too: `https://nomad.lab.orangecluster.nl/` returns 307 to
-`https://nomad.lab.orangecluster.nl/ui/`, and the docs warn "URIs need to match
-exactly. Check http/https, 127.0.0.1/localhost, port numbers, and whether
-trailing slashes are present" — which is exactly why R3 and Q4 exist. Good
-plan.
-
-One prerequisite the plan never states, verified favorably: the `lab`
-provider's `authorization_endpoint` is a **Vault UI** path
-(`https://vault.lab.orangecluster.nl/ui/vault/identity/oidc/provider/lab/authorize`),
-which F2's own marker flagged. So the browser flow requires the developer's
-browser to reach the Vault UI through the edge and log in there. It does:
-`https://vault.lab.orangecluster.nl/ui/` returns 200, and `vault auth list`
-shows `userpass/`. Not a break, but see RF5.
-
-### P5 — Consul's OIDC auth method is Enterprise-only — conclusion **HOLDS**, cited evidence **BREAKS**
-
-The conclusion is right, and better sourced than the plan claims.
-`developer.hashicorp.com/consul/docs/secure/acl/auth-method/oidc` says:
-"**Enterprise** — This feature requires version 1.8.0+ of self-managed Consul
-Enterprise", and "Browser interaction is required. This is only available in
-Consul Enterprise." Its nav tags the page `OIDC (ENT)`. The non-goal stands.
-
-But the plan's stated verification does not resolve. It claims
-"`/v1/agent/self` reports `Edition: n/a`". On this cluster `/v1/agent/self`
-has **no `Edition` field at all** — `.Config` returns `{"Version":"2.0.2",
-"VersionMetadata":null}` — and `consul version` prints only
-`Consul v2.0.1 / Revision / Build Date / Protocol`, with no Edition line.
-`grep -i edition` across both outputs is empty. CE is still established (no
-`+ent` suffix, `VersionMetadata: null`), but the citation as written is not
-reproducible. In a repo with this history, a fabricated-looking verification
-string next to a correct conclusion is worth correcting.
-
-### P6 — a live unmanaged `developer` policy granting alloc-exec and alloc-node-exec — **HOLDS, exactly**
-
-- `nomad acl policy list` returns `deploy` and `developer` only.
-- `nomad acl policy info developer` returns rules matching the plan's §Context
-  block grant for grant: namespace "default" policy=write with `submit-job,
-  read-job, list-jobs, dispatch-job, read-logs, read-fs, alloc-exec,
-  alloc-lifecycle, alloc-node-exec`; `host_volume "*"` write; `node`, `agent`,
-  `operator` read.
-- `grep -rn 'developer' deployments --include=*.tf` returns nothing. Unowned,
-  confirmed.
-- `nomad acl auth-method list` → "No ACL auth methods found";
-  `nomad acl role list` → "No ACL roles found". The §Context ACL-state block is
-  accurate, so eval row 1's attribution argument holds.
-- The `deploy` contrast is accurate: `nomad_deploy_role.tf:13-30` grants only
-  `submit-job`, `read-job` and the five `host-volume-*` capabilities, with no
-  `list-jobs`, no `read-logs`, no `alloc-exec` and no node/agent/operator
-  block. That also substantiates the D3 aside without needing to mint a token:
-  `nomad job status` needs `list-jobs`, which `deploy` does not have.
-
-### P7 — Q1's "import the policy" is achievable with the pinned provider — **HOLDS** (probed)
-
-I ran a real import probe in a throwaway root against the live cluster with
-`-lock=false` (plan only, no mutation):
-
-```
-resource "nomad_acl_policy" "developer" { name = "developer" … }
-import { to = nomad_acl_policy.developer, id = "developer" }
-```
-
-`terraform plan` returned `Plan: 1 to import, 0 to add, 1 to change, 0 to
-destroy`, and rendered the live rules in the diff — the import reads the
-policy body, so Q1's "verify the import leaves the live rules byte-identical"
-is mechanically checkable by matching `rules_hcl`. Import is supported.
-Eval row 10 can also fail today (grep returns nothing right now), so it is a
-real check.
-
-The binding half works too: `nomad acl binding-rule create -help` gives
-`-bind-type … Valid options are "role", "policy", or "management"`, so binding
-straight to the imported policy is legal. And the claim mapping works:
-the OIDC docs' attribute table gives `list.groups` the operations
-`In, Not In, Is Empty, Is Not Empty` (not interpolatable), which is exactly
-what a `"nomad-developers" in list.groups` selector with a static `bind_name`
-needs.
-
-### P8 — Vault's `lab` provider is live at the HTTPS issuer with a `groups` scope — **HOLDS**
-
-Live discovery document returns
-`"issuer": "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab"`,
-`"scopes_supported": ["groups","openid"]`, `"response_types_supported":["code"]`,
-`"grant_types_supported":["authorization_code"]`, and a working `jwks_uri`.
-F2 is applied. `oidc.tf:63-67` is the `locals { oidc_provider_client_ids = [...] }`
-block the plan says it is, and `oidc.tf:118-121` is the standalone
-`vault_identity_oidc_key_allowed_client_id "smoke"` the plan says to copy.
-R5's "no inline `allowed_client_ids` on the key" is true of the live file
-(`oidc.tf:26-31`), so eval row 8's third assertion is meaningful.
-
-### P9 — Vault's built-in `default` provider is the trap R4 describes — **HOLDS, exactly**
-
-`vault read identity/oidc/provider/default` returns
-`allowed_client_ids: ["*"]` and
-`issuer: http://192.168.2.30:8200/v1/identity/oidc/provider/default`.
-Plaintext, raw IP, wildcard. R4 and eval row 6 are well founded.
-
-### P10 — repo anchors — **HOLDS**
-
-- `haproxy.hcl:101` is `acl is_nomad hdr(host) -i nomad.lab.orangecluster.nl`;
-  `:112` is `use_backend nomad if is_nomad`; `:136-137` is
-  `backend nomad / server nomad1 192.168.2.30:4646 check`. All three resolve.
-- `providers.tf:3-6` is the `nomad = { source = "hashicorp/nomad", version =
-  "~>2.5.0" }` block.
-- `nomad_deploy_role.tf:13-30` is `resource "nomad_acl_policy" "deploy"`.
-- `secrets.tf` carries the `vault_kv_secret_v2` + `custom_metadata` pattern the
-  plan says to match (e.g. `secrets.tf:15-29`).
-- `docs/vault-human-auth.md:71` is `## Adding a service that logs people in
-  through Vault`.
-- The F2 close-out claims the plan leans on are real:
-  `.loop/evals/F2-foundation-vault-oidc-provider.md:37` records the
-  `scope=openid groups` trap ("`openid` alone returns a token with NO groups
-  claim however correct the template"), and `:25`/`:39` record the
-  `detect-private-key` false green.
-
-### P11 — the gates are this repo's real gates — **HOLDS**
-
-`justfile:18-19` `pre_commit: pre-commit run --all-files`.
-`.pre-commit-config.yaml:22-33` defines `terraform-fmt`
-(`terraform fmt -check -recursive`) and `terraform-validate`
-(`scripts/tf_validate.sh`, per root). `justfile:30-32` defines
-`worktree_setup path`, which eval row 12 invokes. Discovered, not assumed.
-
-### P12 — R6's replacement secret guardrail "can fail" — **BREAKS**  ← most dangerous
-
-R6 and eval row 9 correctly reject `detect-private-key` (it is at
-`.pre-commit-config.yaml:12` and matches a fixed PEM blocklist). But the
-replacement pattern, copied from F2's marker verbatim, **cannot fail either**.
-
-The scored command is
-`grep -nE 'client_secret[[:space:]]*=[[:space:]]*"\|hvo_secret_'`.
-In ERE, `\|` is an escaped literal pipe, not alternation, so the pattern
-searches for the single literal string `client_secret = "|hvo_secret_`, which
-will never appear. Tested on this host against a file containing a real leak
-shape:
-
-```
-$ printf 'oidc_client_secret = "hvo_abc"\nfoo hvo_secret_x\n' > g.txt
-$ /usr/bin/grep -nE 'client_secret[[:space:]]*=[[:space:]]*"\|hvo_secret_' g.txt ; echo $?
-1                       # no match — GNU grep 3.11
-$ grep -nE 'client_secret[[:space:]]*=[[:space:]]*"\|hvo_secret_' g.txt ; echo $?
-1                       # no match — ugrep 7.5.0, what `grep` resolves to here
-$ grep -nE 'client_secret[[:space:]]*=[[:space:]]*"|hvo_secret_' g.txt
-1:oidc_client_secret = "hvo_abc"
-2:foo hvo_secret_x        # unescaped pipe matches both
-```
-
-So the row whose entire stated purpose is "scored by something that can fail"
-returns green against a literal client secret committed to a `.tf` file. This
-is the same false-green class the marker's own prose claims to have fixed, one
-layer down. It is the most dangerous finding here: being wrong about it means
-a real credential ships with a green board.
-
-### P13 — eval row 11's workload-path guardrail observes what it claims — **BREAKS**
-
-Row 11's input is "`nomad acl auth-method list` for the workload path" and its
-expectation is "The `jwt-nomad` Vault mount that workloads use is untouched."
-`nomad acl auth-method list` lists **Nomad** auth methods and can never show a
-Vault mount. `jwt-nomad` is a Vault auth mount: `vault auth list` returns
-`jwt-nomad/  jwt`, alongside `token/` and `userpass/`. Worse, after this ticket
-that command returns exactly the new OIDC method, which a scorer could read as
-a green signal about something it never looked at. The plan's own non-goal
-states the distinction correctly ("one is a Nomad auth method trusting Vault,
-the other is a Vault auth method trusting Nomad"); the marker then scores it
-with the wrong tool.
-
-The other half of row 11 is fine: `vault_nomad_secret_role.deploy` exists at
-`nomad_deploy_role.tf:36-41` and `vault secrets list` shows the `nomad/` mount.
-
-### P14 — §Code surface covers the resolved Q1 — **BREAKS**
-
-Q1 resolved to **import** the `developer` policy (§Forks resolved), and
-subticket 4 says "Resolve `developer` per Q1". But §Code surface lists no
-`nomad_acl_policy "developer"` resource and no `import` block, and names no
-file for either. §7 is the scope contract the create-ticket skill checks
-"every changed line traces to the ticket" against, and needing a file not
-listed there is the `out-of-scope-fix-needed` blocker. As written, the
-implementer must guess whether the import lands in the new `nomad_oidc.tf`,
-in `nomad_deploy_role.tf`, or in a new file — mid-loop, on the one resource
-that grants `alloc-node-exec`.
-
-### P15 — R1's scope handling — **HOLDS**, with one ambiguity
-
-The trap is real and correctly stated (F2 eval row at
-`.loop/evals/F2-foundation-vault-oidc-provider.md:37`). Minor ambiguity: R1
-says "Set `oidc_scopes` to include `groups`. Vault requires `openid`", which
-leaves open whether to write `["groups"]` or `["openid","groups"]`. The
-sso-vault guide uses `"OIDCScopes": ["groups"]` (Nomad's OIDC library adds
-`openid` itself). Not a break; worth one clarifying clause.
-
-## Most dangerous assumption
-
-**P12 — that R6 and eval row 9 give this ticket a secret-leak guardrail that
-can actually fail.** Every other finding costs rework; this one lets a real
-Vault client secret land in a committed `.tf` file with the whole board green,
-which is the exact defect F2's marker exists to prevent. P3 is the headline
-false capability claim and must be fixed, but the plan still ships correctly
-with it, because PKCE genuinely works against this Vault provider.
-
-## Required fixes
-
-**RF1 (P3).** Rewrite R2's justification and the eval row 7 rationale. PKCE is
-*supported* from Nomad 1.10.0, not required, and the Vault-to-Nomad guide never
-mentions it. Keep `oidc_enable_pkce = true`; justify it as defense in depth,
-citing `…/secure/authentication/sso-pkce-jwt` ("Beginning with Nomad v1.10.0,
-Nomad supports PKCE") and the live discovery document's
-`code_challenge_methods_supported: ["plain","S256"]`, which is what makes it
-work here.
-
-**RF2 (P12).** Fix the guardrail pattern in eval row 9 so it can fail: drop the
-backslash, `grep -nE 'client_secret[[:space:]]*=[[:space:]]*"|hvo_secret_'`.
-Verify it by running it against a line containing
-`oidc_client_secret = "hvo_abc"` and confirming a match before trusting it.
-F2's marker carries the same broken pattern and should be corrected too.
-
-**RF3 (P13).** Fix eval row 11's workload-path input. `nomad acl auth-method
-list` cannot observe the `jwt-nomad` Vault mount. Use `vault auth list` (or
-`vault read sys/auth/jwt-nomad`) and assert the mount and its config are
-unchanged.
-
-**RF4 (P14).** Add the Q1 import to §Code surface: name the `nomad_acl_policy
-"developer"` resource, name the `import` block, and name the file each lands
-in. State that `rules_hcl` must reproduce the live policy byte for byte, and
-that the check is a clean `terraform plan` after import (my probe shows the
-diff renders the live rules, so this is verifiable).
-
-**RF5 (P5, P2, P4 — small, group them).**
- (a) Replace the Consul non-goal's unreproducible citation: `/v1/agent/self`
-     has no `Edition` field on this cluster and `consul version` prints no
-     Edition line. Cite instead the Consul OIDC doc's own banner ("This feature
-     requires version 1.8.0+ of self-managed Consul Enterprise") plus
-     `VersionMetadata: null` / no `+ent` suffix.
- (b) Note in §Code surface that the OIDC fields sit inside the auth method's
-     nested `config` block, and that `bound_issuer` takes a list of strings.
- (c) Add one line to §Context or §Risk: the browser flow redirects to Vault's
-     **UI** authorize path
-     (`https://vault.lab.orangecluster.nl/ui/vault/identity/oidc/provider/lab/authorize`),
-     so the developer's browser must reach the Vault UI through the edge and
-     log in there (userpass). Verified reachable (HTTP 200), but the DoD hangs
-     on it and F2's marker already flagged the UI-path surprise.
- (d) Optional, one clause on R1: write `oidc_scopes = ["groups"]`, matching
-     HashiCorp's guide; the OIDC library adds `openid` itself.
-
-## Contract hygiene
-
-All eleven create-ticket sections are present. Anchors resolve (P10). Gates are
-discovered from `justfile` and `.pre-commit-config.yaml`, not assumed (P11).
-Non-goals are explicit and, apart from RF5(a)'s citation, correct. Forks are
-surfaced with recommendations and then resolved in a dated block. §8 names no
-unit tests, which is genuinely empty for a Terraform-only change and is stated
-as such ("Post-apply checks are the operator's"), so §7's "every named test has
-a file" requirement is vacuous here rather than violated. The one contract
-break is §7's omission of the Q1 import (RF4).
-
-## What I could not verify
-
-- The end-to-end browser login itself. It cannot be driven without applying the
-  change, and I am read-only. Eval rows 2 to 5 are the right shape to catch it.
-- The D3 aside ("2 of 25 Consul services") was not probed; minting a brokered
-  token has side effects. The 403 half is substantiated by reading the `deploy`
-  policy at `nomad_deploy_role.tf:18-28`, which lacks `list-jobs`. Either way
-  it is motivation, not a load-bearing premise.
+Both reverse a design decision or need an operator call, which is the
+`unresolved-design-fork` shape rather than a required-fix shape.
 
 ---
 
-**Recommendation to the operator:** apply RF1–RF5, then re-dispatch this pass
-**with the plan fingerprint in the briefing**. On premise severity the plan is
-close to ready — its verified core is unusually well evidenced — and the fixes
-are all text.
+## Prior verdict's required fixes: all five addressed, re-measured
+
+| RF | Status | Evidence I re-ran |
+|----|--------|-------------------|
+| RF1 PKCE rationale | **fixed** | R2 (`:167-179`) now says "defense in depth", cites `sso-pkce-jwt` "supports", and states the guide never mentions PKCE. Eval row 7 carries the same correction. |
+| RF2 broken grep guardrail | **fixed and verified** | Eval row 9 now uses `grep -nE -e 'client_secret[[:space:]]*=[[:space:]]*"' -e 'hvo_secret_'`. Ran it here on ugrep 7.5.0: matches both leak shapes (exit 0), clean file exit 1, and the by-reference form the plan mandates (`oidc_client_secret = vault_identity_oidc_client.nomad.client_secret`) exit 1. It can fail and does not false-red. |
+| RF3 row 11 workload path | **fixed and verified live** | Row 11 now reads `vault auth list` + `vault read auth/jwt-nomad/config`. Live: `jwt-nomad/ jwt` present; config returns `default_role = nomad-workloads`, `jwks_url = http://127.0.0.1:4646/.well-known/jwks.json` — the row's asserted values are exact. |
+| RF4 Q1 import missing from §Code surface | **fixed by reversal** | Q1 now resolves to reference-by-name. §Code surface `:240-254` explicitly forbids the policy resource and the import block. Ansible ownership confirmed: `bootstrap/roles/nomad_server/tasks/main.yml:182-187` is the `nomad acl policy apply … developer` task with `NOMAD_TOKEN: {{ nomad_bootstrap_token }}`. Anchor resolves. |
+| RF5 a–d | **fixed** | (a) the Consul non-goal now cites the doc banner and explicitly retracts the `Edition: n/a` probe. (b) §Code surface `:224-231` states the nested `config` block and `bound_issuer` as a list — measured: `nomad acl auth-method create -config='{…"BoundIssuer":"https://example.com"…}'` returns `json: cannot unmarshal string into Go struct field .Alias.BoundIssuer of type []string`; the list form is accepted. (c) §Risk `:286-294` states the Vault UI authorize path — live discovery confirms `authorization_endpoint: https://vault.lab.orangecluster.nl/ui/vault/identity/oidc/provider/lab/authorize`, and `https://vault.lab.orangecluster.nl/ui/` returns 200. (d) R1 now says `oidc_scopes = ["groups"]`. |
+
+## Per assumption
+
+### P1 — Nomad CE supports the OIDC auth method at the pinned version — **HOLDS**
+
+Re-verified live, not carried over. `nomad license get` → `Error getting
+license: Nomad Enterprise only endpoint` (CE). `nomad server members` →
+leader `firebat.global`, `Build 2.0.4`. `nomad acl auth-method create -help` →
+`Sets the type of the auth method. Supported types are 'OIDC' and 'JWT'.`
+
+### P2 — the auth method and binding rule this plan describes are accepted as written — **HOLDS** (built them)
+
+I ran a throwaway `nomad agent -dev` with ACLs on Nomad 2.0.3 (same
+minor as the cluster's 2.0.4 servers) and created the plan's exact objects with
+a management token:
+
+```
+OIDC Enable PKCE       = true
+OIDC Scopes            = groups
+Bound issuer           = https://example.com
+Allowed redirects URIs = http://localhost:4649/oidc/callback,
+                         https://nomad.lab.orangecluster.nl/ui/settings/tokens
+```
+
+and the binding rule `Selector = "\"nomad-developers\" in list.groups"`,
+`Bind Type = policy`, `Bind Name = developer`. Both accepted. `nomad login
+-help` confirms `-oidc-callback-addr … defaults to "localhost:4649"`, so R3's
+CLI URI is right.
+
+Two things I learned doing it, neither a break:
+
+- **The binding rule does not validate that `bind_name` names a live policy.**
+  I created a rule bound to `does-not-exist-xyz` and it was accepted. So
+  referencing Ansible's `developer` by name imposes no ordering dependency —
+  and equally, a typo is silent until someone logs in. Eval row 2 catches it,
+  which is the right place, but the plan should say so.
+- The auth method does not validate that `oidc_discovery_url` resolves at
+  create time (`https://example.com` was accepted), so a misaimed URL surfaces
+  only at first login. R4's `bound_issuer` is the right guard.
+
+### P3 — **Terraform is the right owner for these two resources** — **BREAKS** ← most dangerous
+
+This is the finding that fails the plan. The plan asserts, throughout §Code
+surface and the subticket list, that `nomad_acl_auth_method` and
+`nomad_acl_binding_rule` belong in `deployments/infrastructure/`. It never
+states what credential applies them.
+
+**Measured.** On the throwaway dev agent I created a deliberately maximal Nomad
+client policy — `namespace "*" write`, `host_volume "*" write`, and
+`node`/`agent`/`operator`/`quota`/`plugin` all `write` — minted a
+`Type = client` token from it, and tried both creates:
+
+```
+=== A. maximal CLIENT policy -> auth-method create ===
+Error creating ACL auth method: Unexpected response code: 403 (Permission denied)
+=== B. MANAGEMENT token -> auth-method create (positive control) ===
+Name = probe   Type = OIDC   ...
+```
+
+Same 403 for `binding-rule create`. An earlier run with a token carrying the
+repo's real `developer` policy
+(`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`) gave the same
+403 on both. **No Nomad ACL policy can grant this.** Confirmed independently:
+
+- `nomad acl auth-method create -help` → "Use requires a management token."
+- `developer.hashicorp.com/nomad/api-docs/acl/auth-methods` → `ACL Required:
+  YES / all management token`, and the same on
+  `.../acl/binding-rules`. The **read** endpoints are management-only too, so
+  even a `terraform plan` refresh needs one.
+
+Why that sinks the plan rather than merely annoying it:
+
+- **The repo already writes the opposing invariant down, in the sibling file.**
+  `deployments/infrastructure/consul_deploy_role.tf:7-15`: "The `consul`
+  secrets engine mount, its `config/access` … AND the scoped `deploy` Consul
+  ACL policy are all owned by Ansible bootstrap … Each requires the Consul
+  management token, **which the config-split invariant keeps out of
+  Terraform.**" G2 puts two management-token-only Nomad objects into Terraform.
+- **F8's replan applies that same reasoning to Nomad and is the current
+  direction.** `.loop/plans/F8-foundation-deployer-provider-cutover.md:514-540`:
+  the brokered `nomad/creds/deploy` token is `type: client` (live: `Type =
+  client`), "so the deployer can never apply the very policy that defines it",
+  and the decision is to move `nomad_acl_policy.deploy` out of Terraform into
+  Ansible. `F8:632` adds an eval row that fails while any `nomad_acl_policy`
+  resource remains.
+- **G2 satisfies F8's literal row while violating its reason.** G2 adds no
+  `nomad_acl_policy` (eval row 10 enforces that, correctly). It adds two
+  resources with the *identical* constraint that F8's row was written to
+  express. After F8's cutover the infrastructure root would 403 on refresh of
+  `nomad_acl_auth_method`, so F8's own acceptance criterion — "**A full `just
+  apply` of the infrastructure root under the brokered path**" (`F8:624`) —
+  becomes unachievable again. That is precisely the `unresolved-design-fork`
+  F8 is blocked on today, reintroduced from a different ticket.
+- **Nothing in G2 can catch it.** G2's plan never mentions a management token,
+  F8, or the config-split invariant (`grep -n "F8" ` over the plan returns
+  nothing). Its gate is `just pre_commit`, which runs `terraform fmt -check`
+  and `terraform validate` (`.pre-commit-config.yaml:22-33`) — neither
+  contacts Nomad. Eval row 1 assumes the operator applies with today's
+  management `NOMAD_TOKEN` from `.devcontainer/.env` (live: `Type =
+  management`, `Name = Bootstrap Token`), which is the token F8 exists to
+  delete.
+
+This is a fork the plan does not contain: does the Nomad auth method and
+binding rule live in Terraform (which then pins the infra root to a management
+token forever, contradicting `consul_deploy_role.tf:7-15` and F8), or in
+Ansible bootstrap beside the `developer` policy it binds to (which is where the
+management token already is, at `nomad_server/tasks/main.yml:186`)? The plan
+picks the first silently, and its whole §Code surface, subticket order and eval
+depend on the answer.
+
+### P4 — "G2 consumes a group name; it does not define one" is coherent with G2's mechanism — **BREAKS**
+
+The non-goal at `:144-149` says F14 owns the naming convention and the OIDC
+assignment wiring, that G2 consumes a name rather than defining one, and that
+G2 "must state which" of F14's scaffold or a service-specific group it binds,
+"and follow F14's convention either way."
+
+The plan then does define one, and does not state which, and does not follow
+the convention:
+
+- §Code surface `:218-220` creates `vault_identity_group` and
+  `vault_identity_oidc_assignment`. Q3 and §Forks resolved `:397-400` name it
+  `nomad-developers`. Eval row 3 scores that literal name.
+- **F14's convention is `app-<service>-<level>`**
+  (`.loop/plans/F14-foundation-role-taxonomy.md` R7: "Naming is
+  `app-<service>-<level>`, documented, not enforced"). `nomad-developers` is
+  not that shape.
+- **F11 creates a Vault identity group literally named `developer`** and says
+  so explicitly: F11 R2, "**A `vault_identity_group` named `developer`** …
+  The group name also rides the OIDC `groups` claim (`oidc.tf:39`), which is
+  how F14 and the per-app tickets consume it." G2 is a per-app ticket. So the
+  live fork is: bind the selector to F11's `developer` tier group, or mint an
+  app-user group named `app-nomad-<level>` per F14. `nomad-developers` is
+  neither, and the plan never argues against either.
+- **`depends_on` lists only `F2`** (plan frontmatter `:3`, and
+  `.loop/ledger.json` `G2 → dependencies: ["F2-foundation-vault-oidc-provider"]`).
+  A non-goal that makes F14 the owner of a convention G2 must follow, with no
+  dependency edge on F14 or F11, lets G2 be picked up before either exists.
+  F14 is `ready` and F11 is unbuilt; priority ordering (F14=35, G2=25) happens
+  to favour F14 first, but priority is not a dependency.
+
+The non-goal as written is coherent *as an instruction*; the plan simply does
+not obey it. Q3 was resolved on 2026-07-31, before F11 and F14 became the
+owners, and was never revisited.
+
+Ancillary: F14 R11 rewrites `docs/vault-human-auth.md:71-87` step 2, which
+today "tells every consumer to create its own `vault_identity_group`", to say a
+consumer references tier groups first. G2 edits the same doc section
+(`:262-263`) and takes the behavior F14 is about to demote.
+
+F14 *does* disclaim consumer wiring ("No consumer wiring. `G1`, `G2`, `M2`,
+`R1`, `R4` each wire their own service"), so G2 minting its own
+`vault_identity_oidc_assignment` and client is coherent. The break is the group
+name and the unanswered "which source", not the assignment.
+
+### P5 — `developer` is live, Ansible-owned, and grants what the plan says — **HOLDS, exactly**
+
+Live `nomad acl policy info developer` returns, verbatim: namespace "default"
+`policy = "write"` with `submit-job, read-job, list-jobs, dispatch-job,
+read-logs, read-fs, alloc-exec, alloc-lifecycle, alloc-node-exec`;
+`host_volume "*" { policy = "write" }`; `node`/`agent`/`operator` read. Matches
+§Context `:98-104` grant for grant. `nomad acl policy list` → `deploy`,
+`developer` only. Ansible ownership anchor `main.yml:182-184` resolves (the
+task block is `:182-187`). R7's two-owners argument is correct and the Q1
+reversal is right.
+
+The plan's §Risk `:295-302` is honest that this hands `alloc-node-exec` — shell
+on the node — to everyone in the bound group. See P7 for why the guard on that
+is weak.
+
+### P6 — repo anchors — **HOLDS**
+
+Every `path:line` I opened resolves:
+
+- `haproxy.hcl:101` `acl is_nomad hdr(host) -i nomad.lab.orangecluster.nl`;
+  `:112` `use_backend nomad if is_nomad`; `:136-137` `backend nomad / server
+  nomad1 192.168.2.30:4646 check`. Live: `https://nomad.lab.orangecluster.nl/`
+  → 307 to `/ui/`.
+- `oidc.tf:63-67` is the `locals { oidc_provider_client_ids = [...] }` block
+  with the "APPEND YOUR CLIENT HERE" marker above it.
+- `oidc.tf:118-121` is `vault_identity_oidc_key_allowed_client_id "smoke"`.
+- `oidc.tf:26-31` (`vault_identity_oidc_key.lab`) carries no inline
+  `allowed_client_ids`, so R5's warning and eval row 8's third assertion are
+  meaningful.
+- `nomad_deploy_role.tf:13-30` is `nomad_acl_policy.deploy`, narrow exactly as
+  §Context says.
+- `providers.tf:3-6` is `hashicorp/nomad ~>2.5.0`.
+- `secrets.tf:15-29` is the `vault_kv_secret_v2` + `custom_metadata` pattern R6
+  says to match.
+- `docs/vault-human-auth.md:71` is `## Adding a service that logs people in
+  through Vault`.
+
+Live Vault: `identity/oidc/provider/lab` → `allowed_client_ids
+[zsJxdNqN7vIBQXhGmlgkwVIHigjhweGF]`, issuer the HTTPS `lab` path; discovery
+document advertises `scopes_supported ["groups","openid"]`,
+`code_challenge_methods_supported ["plain","S256"]`,
+`response_types_supported ["code"]`. `vault list identity/oidc/client` →
+`oidc-smoke` only. P2's PKCE claim in R2 is achievable.
+
+### P7 — R1's "something below the Terraform surface adds `openid`" — **HOLDS, and is settleable**
+
+The plan is honest here: it marks this an assumption with no citation and
+defers to a decode in subticket 3. That posture is correct and I am not asking
+for a change. But the citation exists, and the plan would be stronger with it:
+
+- `hashicorp/cap/oidc/config.go`: "The `oidc` scope will **always** be added to
+  the new configuration's Scopes, regardless of what additional scopes are
+  requested via the WithScopes option", and `configDefaults()` returns
+  `withScopes: []string{oidc.ScopeOpenID}`.
+- `hashicorp/cap/oidc/options.go:51-65`: for `configOptions`, `WithScopes`
+  **appends** ("configOptions already has the oidc.ScopeOpenID in its
+  defaults"); for `reqOptions` it prepends `ScopeOpenID`.
+- Nomad depends on `github.com/hashicorp/cap v0.13.0` (`go.mod:46`).
+
+I did not read Nomad's exact call site, so I record this as strong support, not
+proof — which is why it stays a decode-to-confirm rather than a settled fact.
+`oidc_scopes = ["groups"]` is the right thing to write.
+
+### P8 — the gates are this repo's real gates — **HOLDS**
+
+`.loop/config.json` gates on `just pre_commit`; `justfile:18-19` is
+`pre-commit run --all-files`; `.pre-commit-config.yaml:22-33` defines
+`terraform-fmt` (`terraform fmt -check -recursive`) and `terraform-validate`.
+`justfile:30-32` defines `worktree_setup path`, which eval row 13 invokes.
+`detect-private-key` is at `:12`, so R6's rejection of it names a real hook.
+Discovered, not assumed.
+
+## Most dangerous assumption
+
+**P3 — that these two Nomad ACL resources belong in Terraform.** Being wrong
+about it does not cost a rewrite of the plan's text; it moves the entire code
+surface to a different layer, changes who applies it, and reopens the exact
+design fork that has F8 blocked. Every other finding here is repairable inside
+the plan as structured.
+
+---
+
+## Eval marker review — `.loop/evals/G2-nomad-ui-oidc-login.md`
+
+**Can every row fail?** Rows 1–11 and 13, yes, and I checked the ones that
+looked soft. Row 1 can fail because the cluster has zero auth methods today
+(`nomad acl auth-method list` → "No ACL auth methods found"). Row 9's pattern
+is now genuinely falsifiable (ran it, above). Row 11's asserted values match
+live exactly, so it fails on real drift rather than on a stale constant. Row 4
+requires the scratch entity to log in to Vault successfully first, which is the
+right discrimination test.
+
+Three defects:
+
+**E1. Row 12 is self-certifying.** Input is "Read the ticket's close-out
+notes"; the expectation is that the notes state the `alloc-exec` /
+`alloc-node-exec` inheritance **and** "the close-out must confirm **the
+operator accepted it**". A review agent reading the implementer's own close-out
+cannot verify operator acceptance — the implementer writes the sentence and the
+row goes green. This is the only guard on the one grant the plan itself calls
+undecided (§Risk `:295-302`). Either score it against an artifact the
+implementer does not author, or scope the expectation down to disclosure and
+route acceptance to the operator's sign-off.
+
+**E2. Row 10 is labelled `deterministic check` but needs judgment, and will
+false-red.** `grep -rn 'developer' deployments/**/*.tf` **always** matches on a
+correct implementation, because the binding rule's `bind_name = "developer"` is
+required. And `terraform state list` "read for any `nomad_acl_policy` address"
+matches the pre-existing `nomad_acl_policy.deploy` (live, at
+`nomad_deploy_role.tf:13`). A mechanical scorer reading "no match" fails a
+correct ticket; a scorer reading loosely passes a wrong one. State the expected
+shape: exactly one `developer` occurrence and it is a `bind_name`, and no
+`nomad_acl_policy` address **named `developer`**.
+
+**E3. No row fails on P3.** Nothing in the marker observes that
+`nomad_acl_auth_method` and `nomad_acl_binding_rule` need a management token,
+or that they now sit in the root F8 is cutting over to a brokered client token.
+Row 13 (`just pre_commit`) runs `terraform validate`, which never contacts
+Nomad. This is the same false-green class the marker's own preamble is written
+to prevent, one layer up: the whole board can be green on a change that cannot
+be applied after F8.
+
+**Contradiction with a requirement:** row 4's expectation ("Authorization is
+REFUSED and no Nomad ACL token is issued") conflates the Vault assignment gate
+with the Nomad selector gate. An entity outside the assignment is refused; an
+entity inside the assignment but outside `nomad-developers` gets a token with
+**no policy**, which is the F2 defect shape, not a refusal. They coincide today
+only because G2's assignment lists exactly one group. Say which gate the row
+scores, or add the second case.
+
+Row 3 also carries the F14 collision from P4: it scores the bound group name,
+so whichever way the group fork resolves, this row changes.
+
+---
+
+## Required fixes
+
+**RF1 (P3, blocking, needs an operator decision).** Settle where the Nomad auth
+method and binding rule live, and write the credential requirement into the
+plan.
+ (a) Add to §Context, as a measured fact: creating or reading a Nomad ACL auth
+     method or binding rule requires a **management** token. Evidence: `nomad
+     acl auth-method create -help` "Use requires a management token";
+     `nomad/api-docs/acl/auth-methods` and `.../binding-rules` "ACL Required:
+     YES all management token"; and the probe above, where a client token with
+     `namespace "*" write` plus node/agent/operator/quota/plugin write got 403
+     on both creates while a management token succeeded.
+ (b) Reconcile with `consul_deploy_role.tf:7-15`, which states the config-split
+     invariant, and with `F8:514-540`, which moves `nomad_acl_policy.deploy`
+     out of Terraform for exactly this reason. Either put these two resources
+     in Ansible bootstrap beside the `developer` policy they bind to
+     (`nomad_server/tasks/main.yml:182-187`, where the management token already
+     is), or state and defend the exception and add the dependency edge on F8
+     plus an eval row asserting the infra root still applies under the brokered
+     path.
+ (c) Add an eval row that fails if the chosen owner is wrong — today no row
+     can.
+
+**RF2 (P4, blocking, needs an operator decision).** Answer the question the
+non-goal asks. Either bind the selector to **F11's `developer` Vault group**
+(F11 R2 says its name rides the `groups` claim and is how per-app tickets
+consume it), or mint an app-user group under **F14's `app-<service>-<level>`**
+convention (F14 R7). `nomad-developers` is neither. Whichever you pick, update
+Q3, §Code surface `:218-220`, §Forks resolved `:397-400` and eval row 3
+together, and add `F14-foundation-role-taxonomy` (and `F11` if you bind its
+group) to `depends_on`, which today lists only F2.
+
+**RF3 (E1).** Rewrite eval row 12 so it is not scored by the artifact the
+implementer wrote. At minimum drop "the close-out must confirm the operator
+accepted it" from a row a review agent scores, and route acceptance to the
+operator sign-off line.
+
+**RF4 (E2).** Give row 10 an expected shape a scorer can apply: exactly one
+`developer` occurrence in the Terraform diff and it is the binding rule's
+`bind_name`; no `nomad_acl_policy` address **named `developer`** in state
+(`nomad_acl_policy.deploy` is pre-existing and expected); no `import` block;
+`bootstrap/` unchanged.
+
+**RF5 (small, group them).**
+ (a) Row 4: name which gate is being scored — the Vault assignment refuses, the
+     Nomad selector yields an empty-policy token. Add the second case or scope
+     the row.
+ (b) §Code surface or R7: note that a binding rule does **not** validate that
+     `bind_name` names a live policy — measured, a rule bound to
+     `does-not-exist-xyz` was accepted — so a typo is silent until first login,
+     and eval row 2 is the only thing that catches it.
+ (c) Optional, R1: the `openid` question is settleable.
+     `hashicorp/cap/oidc/config.go` always adds `oidc.ScopeOpenID` to a
+     config's scopes and `options.go:51-65` appends rather than replaces;
+     Nomad pins `github.com/hashicorp/cap v0.13.0` (`go.mod:46`). Keep the
+     decode gate either way.
+
+## Contract hygiene
+
+Beneath the two premise breaks, the contract is in good shape and better than
+most: all sections present, every anchor I opened resolves (P6), gates
+discovered from `.loop/config.json`, `justfile` and `.pre-commit-config.yaml`
+rather than assumed (P8), non-goals explicit, forks surfaced with
+recommendations and then resolved in a dated block that marks its own
+corrections. §8 names no unit tests, which is genuinely empty for a
+Terraform-only change and is stated as such. The one contract break is the
+non-goal at `:144-149` that the plan's own §Code surface does not satisfy
+(P4) — a fork stated as settled that is not.
+
+## What I could not verify
+
+- The end-to-end browser login. It cannot be driven without applying, and I am
+  read-only against the live cluster. Eval rows 2–5 are the right shape.
+- Nomad's exact `cap/oidc` call site (P7), so `openid` injection is strongly
+  supported rather than proven. The plan's decode-to-confirm handles it.
+- Whether F8's replan will be accepted as written. F8 is `blocked` on
+  `unresolved-design-fork`. But P3 does not depend on F8's fate: the
+  management-token requirement is a property of Nomad, and the config-split
+  invariant is already checked into `consul_deploy_role.tf:7-15`.
+
+**What I re-ran versus only read:** re-ran — live Nomad version/members/policy
+list/auth-method list/role list/token self/`developer` policy body, live Vault
+auth list, OIDC client list, `lab` provider read, `auth/jwt-nomad/config`, the
+`lab` discovery document, the HAProxy edge probes, the row 9 grep against real
+leak and clean fixtures, and a throwaway `nomad agent -dev -acl` on which I
+built the plan's auth method and binding rule and ran the management-token
+probe both ways. Only read — the plan, the eval marker, F8/F11/F14 plans, the
+ledger, the repo `.tf`/Ansible files, the HashiCorp API docs pages, and the
+`hashicorp/cap` sources.
