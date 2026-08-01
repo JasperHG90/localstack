@@ -18,6 +18,17 @@ setup:
 pre_commit:
     pre-commit run --all-files
 
+# Install the localstack CLI: a project venv for the IDE, and `localstack` on PATH.
+#
+# `uv tool install --editable` binds ONE global `localstack` to the checkout it
+# was run from. Run this from the primary checkout, not a `.loop/worktrees/`
+# one, or the binary points into a directory that gets deleted.
+install_cli:
+    uv sync --project cli
+    uv tool install --editable ./cli
+    @echo "installed. run it with: localstack --help"
+
+
 # Unseal Vault server
 unseal_vault:
     bash scripts/unseal_vault.sh

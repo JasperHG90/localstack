@@ -16,13 +16,14 @@ This is my lab, not a general-purpose template — topology, hostnames, and serv
 
 ## Layout
 
-The repo is three layers, deployed in order:
+The repo is three deploy layers, plus a CLI:
 
 | Layer | Path | What it does |
 |---|---|---|
 | Bootstrap | `bootstrap/` | Ansible playbooks — install Nomad/Vault/Consul/Podman/CNI on the nodes, seed initial secrets |
 | Infrastructure | `deployments/infrastructure/` | Terraform — Vault mounts, dynamic host volumes, core services (PostgreSQL, MinIO, registry) |
 | Applications | `deployments/applications/` | Terraform — databases/roles, MinIO buckets/policies, application Nomad jobs |
+| CLI | `cli/` | Python — the `localstack` cockpit. Skeleton only today: `--version` and `--help`. Login and the read commands are D2 and D3 |
 
 Database schema changes live in `applications/migrations/` and run through [golang-migrate](https://github.com/golang-migrate/migrate).
 
@@ -58,11 +59,15 @@ cp vars/prod.tfvars.example vars/prod.tfvars   # fill in bot identity, etc.
 just init && just apply
 ```
 
-Pre-commit hooks (JSON/YAML lint, HCL format, private-key detection) — run `just setup` from the repo root, then `just pre_commit` before committing.
+Pre-commit hooks (JSON/YAML lint, HCL format, private-key detection, and for `cli/`: ruff lint and format, mypy in strict mode, pytest) — run `just setup` from the repo root, then `just pre_commit` before committing.
 
 ## Local dev container
 
 `.devcontainer/` has a Dockerfile for a reproducible shell with Terraform, Ansible, Nomad, Vault, Consul, MinIO CLI, and `just` preinstalled. Copy `.devcontainer/.env.example` to `.devcontainer/.env` and fill in your cluster credentials before starting the container.
+
+The container does not build the CLI's virtualenv. Run `just install_cli` once
+inside it — that creates `cli/.venv`, which is what the workspace's Python
+interpreter setting points at, and puts `localstack` on your PATH.
 
 ## License
 

@@ -28,7 +28,7 @@
           "Gruntfuggly.todo-tree"
         ],
         "settings": {
-          "python.pythonPath": "/home/vscode/workspace/.venv/bin/python"
+          "python.pythonPath": "/home/vscode/workspace/cli/.venv/bin/python"
         }
       }
     },
