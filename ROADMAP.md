@@ -1,56 +1,55 @@
 # Pickup order
 
-**F7 first, D1 alongside it. Not the CLI.** Settled 2026-07-31.
+**Implementable right now: N3. Everything else is listed below with the one
+action that unblocks it.** Updated 2026-08-01.
 
-The goal driving this order is retiring the Vault root token. `F7` delivers
-that on its own, without any CLI. The `localstack` CLI is convenience layered
-on top of the policy `F7` writes, and it is inert until that policy exists.
+A ticket is implementable only when BOTH hold:
+1. stage is `ready` — which needs a **passing** `plan-validator` verdict bound
+   to the plan's current sha256 (`lifecycle.py:127`), and
+2. its eval marker is **signed** (`lifecycle.py`, "implementing entry needs a
+   signed eval marker").
 
-This file records the order and the reasoning behind it so neither gets
-re-litigated. The ledger (`loopctl ledger`) remains the source of truth for
-ticket **state**; this file is only about **sequence**.
+## Implementable now
 
-## The order
+| Ticket | What it does |
+|---|---|
+| **N3-netsec-converging-firewall-provisioner** | Makes ufw provisioning converge, so a removed rule is actually deleted from the host instead of left live beside its narrower replacement. Nothing else in netsec takes effect until this lands. |
 
-| # | Ticket | Why here | State | Gate before pickup |
-|---|--------|----------|-------|--------------------|
-| 1 | `F7-foundation-deployer-vault-oidc-login` | The only ticket that retires the root token. Everything else waits on its policy or is unrelated to it | `blocked` | Replan, then a fresh plan review |
-| 2 | `D1-cli-package-skeleton` | Parallel track. Zero deps, touches no file `F7` touches | `planning` | **Plan review** |
-| 3 | `N3-netsec-converging-firewall-provisioner` | Prerequisite for `N4`: without it, narrowing a firewall rule leaves the broad one live | **`ready`** | **None. Pickable now** |
-| 4 | `N4-netsec-edge-only-service-access` | Closes direct LAN access to every service. Lands before `D2` so the CLI is built against edge addresses | `planning` | **Plan review**, eval signature, `N3` done |
-| 5 | `D2-cli-login-broker-tokens` | Needs `F7`'s policy to do anything | `planning` | **Plan review**, `D1`, and `F7` in practice |
-| 6 | `D6-cli-deps-and-shims` | Without the shims a bare `nomad` cannot see the session, so `D2` is half-delivered | `planning` | **Plan review**, `D1` |
-| 7 | `G2-nomad-ui-oidc-login` | Browser SSO for the one surface with no alternative | `planning` | **Plan review** |
-| 8 | `G1-grafana-native-oidc-login` | Browser SSO where a working login already exists | **`ready`** | **None. Pickable now** |
-| 9 | `F8-foundation-deployer-provider-cutover` | Terraform's Nomad and Consul providers onto brokered tokens | `blocked` | Replan, then a fresh plan review |
-| 10 | `D3` / `D4` / `D5` | CLI surface on top of `D2` | `planning` | **Plan review**, `D2` |
+## One action away
 
-### Only two of these are pickable today
+| Ticket | What it does | The one action |
+|---|---|---|
+| **G1-grafana-native-oidc-login** | Grafana logs in through Vault OIDC instead of its own accounts | Author its eval marker. It is already `ready`; the marker is absent, not unsigned |
+| **F7-foundation-deployer-vault-oidc-login** | Scoped `deployer` Vault policy plus a human read role. **This is the ticket that retires the root token** | Re-review, running now |
+| **D1-cli-package-skeleton** | `cli/` package, `localstack` entrypoint, Python gates. D2 to D6 all build inside it | Re-review, running now |
 
-`N3` and `G1`. Everything else is gated, and the gate is not the one an
-earlier version of this file claimed.
+## Waiting on one re-review round
 
-**Seven tickets sit in `planning` and need a plan review to leave it.**
-`.loop/config.json` enables the `plan-validator` planning pass, and
-`lifecycle.py:127` refuses the `planning -> ready` flip without that pass's
-verdict on disk. `ls .loop/verdicts/` confirms only `F7` and `F8` have one,
-and both of those verdicts are the `BROKEN` ones that blocked them.
+All eight were rewritten against their failing verdicts. The rewrites fixed the
+content; they did not produce a passing verdict, and the verdict is what the
+gate reads.
 
-That review is a `loop-plan-reviewer` sub-agent dispatch. It is the step that
-attacks a plan's premises rather than checking it has the right sections, and
-it is what caught the false capability claims that blocked `F1`, `L1`, `L2`,
-`M1`, `M2`, `R1` to `R4`, `S1`, `F7` and `F8`. Skipping it for the tickets
-written today would be the one shortcut this repo has already paid for.
+| Ticket | What it does |
+|---|---|
+| **N4-netsec-edge-only-service-access** | Closes direct LAN access so the edge is the only route in. Also closes a live auth bypass: mlflow and phoenix answer 200 with no credentials. Needs N3 first |
+| **D2-cli-login-broker-tokens** | `login/logout/whoami/env/token/config/ui consul`; brokers Nomad and Consul tokens from one Vault session |
+| **D6-cli-deps-and-shims** | Installs the CLIs at the versions the cluster pins, plus the PATH shims that let a bare `nomad` use your session |
+| **G2-nomad-ui-oidc-login** | Nomad web UI and `nomad login` sign in through Vault |
+| **D3-cli-read-commands** | `status`, `service`, `secret <svc>`, `vault grants` — the synthesis commands |
+| **D4-cli-cluster-tui** | `localstack monitor`, the live Textual panel |
+| **D5-cli-breakglass** | `localstack breakglass`, the recovery runbook |
+| **F8-foundation-deployer-provider-cutover** | Points Terraform's providers at brokered tokens, drops the static ones |
 
-Eval markers are NOT the blocker: D1 to D6, G1 and G2 are all signed and
-report `valid`. `N4` is the only unsigned one.
+## The critical path
 
-`D1` can run concurrently with `F7`. Nothing else in this list should.
+```
+N3  ->  N4                        closes the live auth bypass
+F7  ->  D2 (useful) -> D6         retires the root token, then the CLI works
+D1  ->  D2 -> D3/D4/D5
+```
 
-`D6` sits directly after `D2` because the two only work together: `D2` brokers
-the tokens and `D6` installs the shims that let a bare `nomad` command use
-them. Shipping `D2` alone leaves the developer typing `eval` by hand, which is
-the option the operator rejected.
+`F7` and `D1` are independent of `N3` and of each other, so all three can run
+in parallel.
 
 ## Why not the CLI first
 
