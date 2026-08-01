@@ -68,6 +68,53 @@ Discovery and keys, if you need to check them by hand:
 curl -s https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/.well-known/openid-configuration
 ```
 
+## What the operator can do: the `developer` group
+
+Logging in gives you the `developer` policy, carried by the
+`developer` identity group (`deployments/infrastructure/developer_group.tf`).
+It covers everything a person does here: both Terraform roots, brokered Nomad
+and Consul tokens, creating users and groups, and every secret under
+`default/`.
+
+**Check `identity_policies`, not `policies`.** The group carries the policy, so
+a fresh login reports:
+
+```
+token_policies     ["default"]
+identity_policies  ["developer"]
+```
+
+Anything asserting `developer` in `policies` will report that you have no
+grants when you do.
+
+### It is not a security boundary, and that is deliberate
+
+A `developer` can write `identity/*` and `sys/policies/acl/*`, so they can
+grant themselves anything short of `root` in about three commands. Vault
+refuses to attach the `root` policy and refuses nothing else. Developer and
+Deployer are one role on this cluster by choice — there is one person, and a
+boundary between "develops" and "deploys" would protect nothing while making
+every task need two credentials.
+
+So the `bootstrap` mount, `sys/audit` and the unseal surface are **outside what
+the policy grants**, not outside what the holder can reach.
+
+What the credential does buy over the root token:
+
+- It is per-person, and revoked by removing you from the group.
+- It cannot be used to unseal or rekey.
+
+What it does **not** buy: audit attribution. **No audit device is enabled on
+this cluster**, so nothing records who did what, whichever credential is used.
+That is worth fixing and is not this ticket's job.
+
+### Breaking glass
+
+If Vault is sealed, down, or you have locked yourself out, a Vault policy is
+worthless. SSH to firebat and read `/opt/vault/init.json` — see `localstack
+breakglass` (D5) for the runbook. `developer` is for when Vault is up and your
+policy is too narrow; breakglass is for when Vault will not answer.
+
 ## Adding a service that logs people in through Vault
 
 Four resources, then one line in a shared list. Copy the smoke-test block in
