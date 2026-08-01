@@ -135,7 +135,8 @@ the implementation.
     (`.devcontainer/devcontainer.json:37-39`).
 - **`vault`, `nomad` and `consul` CLIs are installed in the dev container**
   (`.devcontainer/Dockerfile:11-17`), so the runbook may name them directly.
-- **A real SSH break-glass artifact already exists**: `rescue-ssh.nomad.hcl:1-30`,
+- **A real SSH break-glass artifact already exists**:
+  `rescue-ssh.nomad.hcl:1-30`,
   a `sysbatch` job that appends a public key to every node's
   `authorized_keys` via a `/home:/host-home` mount. It needs a working Nomad,
   so it belongs in the "SSH is dead but Nomad answers" branch and nowhere else.
@@ -161,11 +162,13 @@ those. Four parts of it bind D5 directly:
 - **Q3, resolved**: **no devcontainer exception.** "Direct access is what the
   runbook's SSH path is for."
 - **§Risk assessment**, the circular-dependency bullet: closing the ports makes
-  the only route to Nomad's API a job that Nomad schedules. "The escape is SSH to
+  the only route to Nomad's API a job that Nomad schedules. "The escape is SSH
+  to
   firebat and `NOMAD_ADDR=http://127.0.0.1:4646`."
 
 Two more shape it. Its **R4** carries the constraint behind the prelude: firebat
-keeps 22 from both the LAN and the tailnet, the four workers keep 22 from the LAN
+keeps 22 from both the LAN and the tailnet, the four workers keep 22 from the
+LAN
 only and have no tailscale, so off-LAN recovery reaches a worker only by hopping
 through firebat. And its **R7** adopts D5's pinning rule by name. The edge ran
 one way: N4 cited D5, D5 did not cite N4. This section closes that.
@@ -176,7 +179,8 @@ the one that matters:
 1. N4 is the riskiest change in the repo. It is applied over SSH and can strand
    the operator, and it schedules its own runbook
    (`docs/edge-and-recovery.md`) as an early subticket, *before* the dangerous
-   apply-to-the-manager step. Gating the break-glass command behind the outage it
+   apply-to-the-manager step. Gating the break-glass command behind the outage
+   it
    exists to survive inverts the order.
 2. N4 is blocked behind `N3-netsec-converging-firewall-provisioner`, and N4's
    own §"The finding that reshapes this ticket" calls N3 "the only thing that
@@ -189,9 +193,11 @@ the one that matters:
    `configure_network.yml`, so the day N4 narrows `from_ip` the drift test goes
    red and the conditional paragraph must be corrected before the gate passes.
 
-That last point is the design. A runbook saying "the LAN address works because of
+That last point is the design. A runbook saying "the LAN address works because
+of
 this rule, and here is the SSH path for when it does not" is true before N4 and
-true after it. A runbook saying "use `192.168.2.30:8200`" is true for a few weeks
+true after it. A runbook saying "use `192.168.2.30:8200`" is true for a few
+weeks
 and then lies during an outage.
 
 **What D5 must not do:** print `192.168.2.30:<port>` as an unqualified escape
@@ -202,12 +208,14 @@ and Q2 each carry one part of that correction.
 ### House style for this kind of page
 `docs/tls-certificates.md:131` ("Recovering a failed renewal") is the in-`docs/`
 precedent, and it is tracked, so a worktree implementer will actually have it.
-Two habits the runbook copies are stated here rather than cited, because the page
+Two habits the runbook copies are stated here rather than cited, because the
+page
 they came from (`tmp/F9-MIGRATION.md`) is gitignored (`.gitignore:1`) and
 untracked, so `git worktree add` will not carry it into the implementation tree:
 
 - **Every guard states the failure it prevents.** Not `test -s backup.hcl`, but
-  `test -s backup.hcl || { echo "EMPTY BACKUP - STOP"; exit 1; }` followed by the
+  `test -s backup.hcl || { echo "EMPTY BACKUP - STOP"; exit 1; }` followed by
+  the
   sentence explaining that a failed read leaves an empty file and the rollback
   would then wipe the thing it was meant to restore. A guard with no stated
   reason gets deleted by the next reader.
@@ -218,13 +226,15 @@ untracked, so `git worktree add` will not carry it into the implementation tree:
   shape requirement 4's non-vacuous-parse rule exists to block.
 
 ### Why "keep it in sync" is not an answer
-`docs/credential-rotation.md` is a "Proposed Changes" page (`:48`) that tells the
+`docs/credential-rotation.md` is a "Proposed Changes" page (`:48`) that tells
+the
 reader to create `bootstrap/playbooks/rotate_secrets.yml` (`:50`) and to add
 `rotate_tailscale` / `rotate_github` recipes to `bootstrap/justfile` (`:78-85`).
 Neither was ever built: `bootstrap/playbooks/` has no `rotate_secrets.yml` and
 `bootstrap/justfile` has no rotation recipe. So it is an unbuilt design shipped
 as documentation, and nothing in the repo notices. That is the same rot, one
-step earlier: a reader who skims past the "Proposed" heading walks away believing
+step earlier: a reader who skims past the "Proposed" heading walks away
+believing
 a rotation path exists. A1-audit-plan-premise-sweep exists
 because the same failure hit thirteen plans, with the diagnosis that "the
 anchors still resolve, it is the surrounding claims that went false"
@@ -269,7 +279,8 @@ Also out of scope:
    (`configure_tailscale.yml:40-47,49-58`) and that the tailnet carries SSH and
    443, not the API ports.
 3. **Three addresses, each with its reachability class.** Any section naming a
-   service names all three routes, in this order, and says which one to reach for
+   service names all three routes, in this order, and says which one to reach
+   for
    when the others are suspect:
    1. **Edge** — `https://<svc>.lab.orangecluster.nl`, host-header routed by
       HAProxy (`haproxy.hcl:100-102` for the ACLs, `:133-140` for the backends).
@@ -289,10 +300,12 @@ Also out of scope:
 
    The wrong shape here is "edge or direct, pick one". The edge and the direct
    LAN address share a failure: both die when `firebat` dies, and the LAN one
-   also dies from a policy change that leaves the service perfectly healthy. Only
+   also dies from a policy change that leaves the service perfectly healthy.
+   Only
    the SSH plus loopback route is independent of both.
 4. **Drift has to fail a gate, and the gate has to be pinned to the file that
-   governs the claim.** Every fact-bearing token in the printed text is asserted,
+   governs the claim.** Every fact-bearing token in the printed text is
+   asserted,
    in a test, against the repo file that states it. At minimum:
    - the manager IP and username against `bootstrap/inventory/cluster.ini`;
    - the `unseal_vault` recipe name against the root `justfile`;
@@ -310,7 +323,8 @@ Also out of scope:
      `192.168.0.0/16`. When N4 narrows `from_ip`, the second half goes red.
 
    **Why `haproxy.hcl` alone is not enough, and this is the failure the previous
-   version of this requirement could not see.** `haproxy.hcl:134` will still read
+   version of this requirement could not see.** `haproxy.hcl:134` will still
+   read
    `server vault1 192.168.2.30:8200` after N4 closes 8200 to the LAN, because
    haproxy dials that backend from `firebat` itself and nothing about N4 changes
    it. Pin the developer's address against `haproxy.hcl` and every assertion
@@ -450,20 +464,24 @@ guard-with-a-stated-reason habit from §"House style for this kind of page").
 Two of these tests are the ones the previous version of this plan lacked, and
 they are the reason requirement 4 changed:
 
-- **The LAN reachability pin.** Parse `bootstrap/playbooks/configure_network.yml`
+- **The LAN reachability pin.** Parse
+  `bootstrap/playbooks/configure_network.yml`
    for the entries covering 8200, 4646 and 8500 (`:13,18,21`). Assert each entry
-   exists **and** that its `from_ip` is `192.168.0.0/16`. Then assert the runbook
+   exists **and** that its `from_ip` is `192.168.0.0/16`. Then assert the
+   runbook
    still prints the matching `192.168.2.30:<port>` address. When N4 narrows
    `from_ip` to node IPs, this test goes red and forces the runbook edit. Parse
    the YAML with the parser D1 standardized on rather than a regex, and fail
    loudly if the port is absent from the file entirely. An absent port and a
    narrowed port are both "the LAN route is gone" and both must fail.
 - **The pin is not satisfiable by `haproxy.hcl` alone.** A test asserting that
-   the LAN address appears in `haproxy.hcl` passes forever, because haproxy dials
+   the LAN address appears in `haproxy.hcl` passes forever, because haproxy
+   dials
    its backend from the same host N4 firewalls. Assert instead that the
    requirement-4 anchor set *contains* `configure_network.yml`, so a later
    simplification cannot quietly drop the only pin that can go red. State the
-   reason in the failure message. Without it, the next reader deletes the test as
+   reason in the failure message. Without it, the next reader deletes the test
+   as
    redundant.
 
 Every drift test's failure message says what it means and what to do: "N4 has
@@ -498,7 +516,8 @@ command and URL resolves) first.
   runbook, because it is trusted precisely when nobody has the patience to
   verify it. Requirement 4 exists for this and is the part most likely to be
   under-delivered as a token "the text is non-empty" test.
-- **The named instance of that risk is N4.** `N4-netsec-edge-only-service-access`
+- **The named instance of that risk is N4.**
+  `N4-netsec-edge-only-service-access`
   deletes the LAN route this runbook would otherwise lean on, and a plan review
   caught this ticket relying on that route in requirement 3, in three of four
   probes, and in a 100%-threshold eval row. The correction is spread across
@@ -509,7 +528,8 @@ command and URL resolves) first.
   defect. Treat them as one change, not five.
 - **A drift gate can be a spelling check.** Pinning a fact to a file that will
   never contradict it produces a permanently green test and zero information.
-  `haproxy.hcl:134` is exactly such a file for the developer's LAN address. Every
+  `haproxy.hcl:134` is exactly such a file for the developer's LAN address.
+  Every
   new anchor added later must answer: what change makes this go red? If nothing
   does, it is decoration.
 - **Second risk: a credential leaking through a convenience.** The likeliest
@@ -580,7 +600,8 @@ command and URL resolves) first.
 
   *Tier 2, the direct LAN addresses — secondary, and interpreted, not reported
   raw:* the same three paths on `http://192.168.2.30:{8200,4646,8500}`. All 200
-  today from this dev container. Their only job is to answer "is this the edge or
+  today from this dev container. Their only job is to answer "is this the edge
+  or
   the whole cluster", and after N4 they answer "the firewall no longer admits
   me". Requirement 9 governs how each combination is worded. Never let a tier-2
   failure alone produce the word "unreachable".
@@ -613,7 +634,8 @@ command and URL resolves) first.
 
   The config reading was right and the behavioral conclusion was wrong. Consul
   ACLs are on with `default_policy = "deny"`
-  (`bootstrap/roles/consul_server/templates/consul.hcl.j2:25-27`), so a 403 on an
+  (`bootstrap/roles/consul_server/templates/consul.hcl.j2:25-27`), so a 403 on
+  an
   unauthenticated read looked likely. Measured 2026-07-31, it does not happen:
   `GET http://192.168.2.30:8500/v1/status/leader` returns **200** with the body
   `"192.168.2.30:8300"`, `GET /v1/agent/self` returns **200**, and the same call
@@ -654,7 +676,8 @@ command and URL resolves) first.
   8200 and 8500 to the LAN and resolved its own Q3 as "no devcontainer
   exception — direct access is what the runbook's SSH path is for"
   (N4 Q3, resolved), which makes D5's SSH plus loopback route N4's own
-  recovery plan. Blocking a break-glass runbook behind the riskiest change in the
+  recovery plan. Blocking a break-glass runbook behind the riskiest change in
+  the
   repo, itself blocked behind N3, inverts the order: N4 wants this runbook
   written before its dangerous step, not after. The full argument and the three
   reasons are in §"Relationship to N4"; requirements 3, 4 and 9 and Q2 carry the
@@ -702,7 +725,8 @@ The three re-decided on measurement:
   tightens.
 - **Q9 → no hard `depends_on` on N4.** Instead the runbook is written so N4
   cannot falsify it, and requirement 4 pins the LAN address to the ufw rule that
-  permits it, so N4 landing turns a test red and forces the runbook edit. This is
+  permits it, so N4 landing turns a test red and forces the runbook edit. This
+  is
   the fix for the defect that failed the first plan review: D5 leaned on a LAN
   path that a higher-priority ticket exists to delete, and its drift gate was
   pinned only to files that N4 does not touch.

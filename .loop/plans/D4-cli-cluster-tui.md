@@ -98,7 +98,8 @@ in. The missing thing is a terminal glance.
   `Drain: false`: `firebat`, `orangepi4a`, `radxa-dragon-q6a`, `ubuntu`,
   `jetson-orin-nano`. `GET /v1/nodes` returns them in one call.
 - **One Nomad server, `firebat` at 192.168.2.30, `bootstrap_expect = 1`, and
-  it is also a client** (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32`
+  it is also a client**
+  (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32`
   server block, `:38-48` client block). The edge proxy is pinned to it
   (`deployments/infrastructure/services/haproxy.hcl:5-9`). Single point of
   failure: firebat down means Nomad API, Vault, Consul and the edge all go at
@@ -106,7 +107,8 @@ in. The missing thing is a terminal glance.
 - **Vault** at `http://192.168.2.30:8200`, unsealed today, shamir 3-of-5,
   **2.0.3**. Consul is **2.0.2**. The whole stack crossed a major version on
   2026-07-31 when unattended-upgrades restarted the services
-  (`nomad.hcl.j2:18-22` records the incident; `U1-upgrade-pin-hashistack-versions.md:72-74`
+  (`nomad.hcl.j2:18-22` records the incident;
+  `U1-upgrade-pin-hashistack-versions.md:72-74`
   has the before-and-after). Every payload shape this plan depends on was
   re-probed against the 2.x cluster on 2026-07-31.
   **A sealed Vault after a reboot is the common real outage here** —
@@ -119,7 +121,8 @@ in. The missing thing is a terminal glance.
   both return **403** with no token (verified 2026-07-31). ACL is on
   (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:34-36`).
 - **Consul** at `http://192.168.2.30:8500`, 5 members, ACL
-  `default_policy = "deny"` (`bootstrap/roles/consul_server/templates/consul.hcl.j2:25-33`,
+  `default_policy = "deny"`
+  (`bootstrap/roles/consul_server/templates/consul.hcl.j2:25-33`,
   the `default_policy` line at `:27` and the `tokens` block at `:29-32`).
   But `GET /v1/health/state/any` returns **200 with no token** (verified, 41
   checks, 0 critical), because the agent's `tokens.default` is set to the
@@ -135,7 +138,8 @@ in. The missing thing is a terminal glance.
 ### Auth today
 - Vault brokers cluster tokens: `vault read nomad/creds/deploy`
   (`deployments/infrastructure/nomad_deploy_role.tf:32-41`) and
-  `vault read consul/creds/deploy` (`deployments/infrastructure/consul_deploy_role.tf:1-25`).
+  `vault read consul/creds/deploy`
+  (`deployments/infrastructure/consul_deploy_role.tf:1-25`).
   F5 and F6 are `done` in the ledger; this brokering path works.
 - **The existing `deploy` Nomad policy cannot drive this panel.** Its own
   comment says so: "no alloc-exec, no alloc-node-exec, no list-jobs /
@@ -651,9 +655,9 @@ changed, only the command each row launches.
   handoff in F7's body left the ledger blind to it: the `advance implementing`
   gate reads `dependencies` (`loop_harness/ctl.py:162-170`) and the pick list
   reads it too (`loop_harness/deps.py:192`), so D4 would have surfaced as
-  actionable and been handed to an implementer while its token did not exist. F7 is `blocked` on `unresolved-design-fork`
-  today, and D4 waiting on it is the correct outcome, not a problem to route
-  around. Shipping 403 in both headline widgets is Q2's own option (c),
+  pickable and been handed to an implementer while its token did not exist.
+  F7 is `blocked` on `unresolved-design-fork` today, and D4 waiting on it is
+  the correct outcome, not a problem to route around. Shipping 403 in both headline widgets is Q2's own option (c),
   rejected here for the same reason then and now.
 - **Q3 → this ticket builds `api/` under D3's contract, because it is picked
   first.** The earlier resolution assumed D3 would land first. It will not.
