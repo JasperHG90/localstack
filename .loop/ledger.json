@@ -746,7 +746,7 @@
       "epic": "cli",
       "dependencies": [],
       "priority": 47,
-      "summary": "Create the cli/ Python package, its `localstack` entrypoint, and the ruff,\nmypy and pytest gates this repo does not have yet. Skeleton only: no login,\nno read commands, no TUI, no breakglass. Those are D2 to D5. The value is\nthat this is the repo's first Python packaging, so the layout, the install\npath and the gate wiring get decided once instead of four times.\n",
+      "summary": "Create the cli/ Python package, its `localstack` entrypoint, and the ruff,\nmypy and pytest gates this repo does not have yet. Skeleton only: no login,\nno read commands, no TUI, no breakglass, no `deps`. Those are D2 to D6. The\nvalue is that this is the repo's first Python packaging, so the layout, the\ninstall path and the gate wiring get decided once instead of five times.\n",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -769,7 +769,7 @@
         "F2-foundation-vault-oidc-provider"
       ],
       "priority": 46,
-      "summary": "Add `localstack login|logout|whoami|env`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and expose them to terraform and the hashi CLIs without any static god-mode token.",
+      "summary": "Add `localstack login|logout|whoami|env|token|config|ui consul`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform, the hashi CLIs and the Consul UI without any static god-mode token.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -790,16 +790,18 @@
       "dropped": false,
       "epic": "cli",
       "dependencies": [
+        "D1-cli-package-skeleton",
         "D2-cli-login-broker-tokens"
       ],
       "priority": 20,
-      "summary": "Add read-only Nomad, Vault and Consul commands to the localstack CLI, rendered with rich over the HTTP APIs. Live checks show the brokered deploy tokens cannot list Nomad jobs (403) and see only 2 of 25 Consul services, so the ticket scopes the surface to what those tokens can do and relays the gaps to D2.",
+      "summary": "Add four read-only synthesis commands to the localstack CLI (status, service, secret, vault grants), each answering a question no single native CLI can. All data comes from the Nomad, Vault and Consul HTTP APIs, never from the repo tree. Two of the four need Vault read grants the brokered human token does not hold today; F7 owns that policy and this ticket states it as a precondition rather than widening anything itself.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
         "nomad",
         "vault",
-        "consul"
+        "consul",
+        "haproxy"
       ]
     },
     "D5-cli-breakglass": {
@@ -816,7 +818,7 @@
         "D1-cli-package-skeleton"
       ],
       "priority": 43,
-      "summary": "`localstack breakglass` prints the recovery runbook for a cluster you cannot authenticate to or reach, and optionally runs read-only reachability probes to say which failure you are in. It handles no credentials: it never reads, caches, prints or exports the Vault root token or the unseal keys. Tests pin every fact in the printed text against the repo file that states it, so drift fails a gate instead of going stale silently.",
+      "summary": "`localstack breakglass` prints the recovery runbook for a cluster you cannot authenticate to or reach, and optionally runs read-only reachability probes to say which failure you are in. It handles no credentials: it never reads, caches, prints or exports the Vault root token or the unseal keys. Every address it prints carries its reachability class \u2014 edge, node-local over SSH, or LAN-conditional \u2014 so the runbook stays true when `N4-netsec-edge-only-service-access` closes the LAN ports. Tests pin every fact in the printed text against the repo file that states it, including the ufw rule that permits each address, so drift fails a gate instead of going stale silently.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -836,7 +838,8 @@
       "dropped": false,
       "epic": "cli",
       "dependencies": [
-        "D2-cli-login-broker-tokens"
+        "D2-cli-login-broker-tokens",
+        "F7-foundation-deployer-vault-oidc-login"
       ],
       "priority": 42,
       "summary": "A Textual `localstack monitor` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI.",
@@ -955,7 +958,7 @@
         "F2-foundation-vault-oidc-provider"
       ],
       "priority": 25,
-      "summary": "Give the Nomad web UI and `nomad login` a sign-in button backed by Vault's OIDC provider, so a developer reaches Nomad with the same identity they use everywhere else instead of pasting an ACL token. Also resolves the unmanaged `developer` policy the cluster already carries.",
+      "summary": "Give the Nomad web UI and `nomad login` a sign-in button backed by Vault's OIDC provider, so a developer reaches Nomad with the same identity they use everywhere else instead of pasting an ACL token. Binds to the `developer` Nomad policy that Ansible already owns, authoring none of it.",
       "relay_block_nonfork": null,
       "tags": [
         "nomad",
@@ -1002,7 +1005,7 @@
         "N3-netsec-converging-firewall-provisioner"
       ],
       "priority": 50,
-      "summary": "Close direct LAN access to every service that has an edge route, so `*.lab.orangecluster.nl` over TLS is the only way in. Measured today: Nomad, Vault, Consul, MinIO and an unauthenticated haproxy stats page all answer 200 on plaintext to any host on 192.168.0.0/16. Ships the recovery runbook for the outage this change makes possible.",
+      "summary": "Close direct LAN access to every service that has an edge route, so `*.lab.orangecluster.nl` over TLS is the only way in. Measured today: Nomad, Vault, Consul, MinIO, grafana, bifrost, memex and an unauthenticated haproxy stats page all answer on plaintext to any host on 192.168.0.0/16, and mlflow (192.168.2.50:5050) plus phoenix (192.168.2.29:6006) answer 200 with NO credentials while the edge answers 401, which is a live authentication bypass. Rules come from THREE provisioners, not two. Ships the recovery runbook for the outage this change makes possible.",
       "relay_block_nonfork": null,
       "tags": [
         "netsec",

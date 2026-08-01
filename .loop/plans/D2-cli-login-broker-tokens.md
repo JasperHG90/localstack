@@ -3,7 +3,7 @@ epic = "cli"
 depends_on = ["D1-cli-package-skeleton", "F2-foundation-vault-oidc-provider"]
 priority = 46
 tags = ["cli", "vault", "nomad", "consul", "auth"]
-summary = "Add `localstack login|logout|whoami|env`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and expose them to terraform and the hashi CLIs without any static god-mode token."
+summary = "Add `localstack login|logout|whoami|env|token|config|ui consul`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform, the hashi CLIs and the Consul UI without any static god-mode token."
 ---
 
 # D2 — `localstack login`: Vault session, brokered Nomad and Consul tokens
@@ -11,18 +11,27 @@ summary = "Add `localstack login|logout|whoami|env`: authenticate a developer to
 ## 1. Title
 
 Add the auth half of the `localstack` CLI: `login` (Vault `userpass`),
-`logout`, `whoami`, and `env`, so a developer holds a short-lived Vault
-session that brokers short-lived Nomad and Consul tokens on demand, and
-no static god-mode token is needed to deploy.
+`logout`, `whoami`, `env`, `token`, `config`, and `ui consul`, so a
+developer holds a short-lived Vault session that brokers short-lived Nomad
+and Consul tokens on demand, and no static god-mode token is needed to
+deploy.
 
 ## 2. Size / Effort
 
-**L.** Four commands, but the weight is elsewhere: a credential cache
+**L.** Seven commands (`login`, `logout`, `whoami`, `env`, `token`,
+`config`, `ui consul`), but the weight is elsewhere: a credential cache
 with per-credential expiry, three different lease models in one session
 (Vault token, Nomad lease, Consul lease), a revoke-on-logout path that
 must not leave live tokens behind, and an offline test suite that never
 touches the cluster by default. The command surface must also admit a
 future `--method oidc` without changing shape.
+
+`token` is small to write and easy to get wrong: it is the backend
+`D6-cli-deps-and-shims` builds its PATH shims on, so its stdout contract
+(the token, nothing else, empty on failure) is load-bearing for another
+ticket. `config` and `ui consul` are thin, and they live here because
+they read the session file and the resolved addresses this ticket already
+owns.
 
 ## 3. Triggered by
 
@@ -44,12 +53,28 @@ Static, long-lived, god-mode:
   `entity_id: ""`, `path: auth/token/root`. Source is
   `/opt/vault/init.json`, read at
   `bootstrap/roles/nomad_server/tasks/main.yml:189-196` and reused as
-  `VAULT_TOKEN` at `:202,211,224,241`.
+  `VAULT_TOKEN` at `:202,211,224`.
 - `NOMAD_TOKEN` and `CONSUL_TOKEN` are the bootstrap management tokens,
   exported from `.devcontainer/.env` (gitignored, `.gitignore:2`).
-- Addresses, verified in this shell: `VAULT_ADDR=http://192.168.2.30:8200`,
+- **All three reach every shell and every child process, because the
+  devcontainer injects the whole file into the container:**
+  `.devcontainer/devcontainer.json:38-39` passes
+  `--env-file .devcontainer/.env`, and `.devcontainer/.env:8` sets
+  `VAULT_TOKEN` to the root token. Nothing a CLI does can remove a
+  variable from a shell that already has it. This fact governs §6 R11 and
+  R12 and is the reason the shim in §12 exists.
+- Addresses, **current as of 2026-07-31, not fixtures**:
+  `VAULT_ADDR=http://192.168.2.30:8200`,
   `NOMAD_ADDR=http://192.168.2.30:4646`,
   `CONSUL_HTTP_ADDR=http://192.168.2.30:8500`.
+  `N4-netsec-edge-only-service-access` (`planning`, priority 50 against
+  D2's 46) moves `.devcontainer/.env` and `.env.example` to the edge
+  hostnames (`.loop/plans/N4-netsec-edge-only-service-access.md:224,231,321-322`).
+  That cutover is absorbed: every address D2 uses comes from the
+  environment or a flag. Two consequences to expect rather than
+  re-litigate. Today R2 forces `--insecure` on every login, because the
+  default `VAULT_ADDR` is non-loopback plaintext. After N4 lands that flag
+  becomes unnecessary, and the addresses above go stale.
 
 ### What already exists to broker from
 
@@ -77,10 +102,18 @@ detail at the end of it.
 
 ### What F2 ships, and what it does not
 
-F2 is committed on branch `loop/F2-foundation-vault-oidc-provider`. It is
-**not merged and not applied**. Verified live: `vault auth list` returns
-only `jwt-nomad/` and `token/`. On that branch,
-`deployments/infrastructure/auth_userpass.tf` creates:
+**F2 is merged and applied.** The ledger has
+`F2-foundation-vault-oidc-provider: done`. Verified live 2026-07-31:
+`vault auth list` returns `jwt-nomad/`, `token/` **and** `userpass/`
+(accessor `auth_userpass_ca653bd3`, description "Human logins. Entities
+created here are what OIDC assignments gate on."). `vault list
+auth/userpass/users` returns `operator`. The operator entity is live at
+`351f302a-ada1-0e79-15d3-e22a4be2e3e4`, and
+`secret/default/vault/operator` holds `username` and `password`. So a real
+`userpass` login runs today, and the live acceptance rows in §8 are
+runnable at pickup rather than blocked.
+
+`deployments/infrastructure/auth_userpass.tf`, now on `main`, creates:
 
 - `vault_auth_backend "userpass"` at path `userpass` (`:13-17`).
 - The user, written through the generic endpoint at
@@ -138,6 +171,46 @@ Every recipe bridges the two by hand:
 gitignored file says `CONSUL_TOKEN` (`.devcontainer/.env:5`). Any CLI
 that emits only one name breaks half the repo.
 
+The `consul` binary reads `CONSUL_HTTP_TOKEN`, never `CONSUL_TOKEN`.
+`CONSUL_TOKEN` matters only because the repo's own recipes bridge it into
+`CONSUL_HTTP_TOKEN`, so a stale `CONSUL_TOKEN` in the shell silently
+overwrites a fresh one inside every `just` recipe. That is why R5 emits
+both names and why emitting only the one the binary reads is not enough.
+
+### How each CLI picks up a credential, measured
+
+Measured against the installed binaries on 2026-07-31. These three results
+decide §6 R10 to R12 and the §12 shim table, so they are stated here rather
+than inside a design section.
+
+1. **`vault`: the environment beats the file.** With `HOME` pointed at a
+   directory whose `~/.vault-token` held garbage, `vault token lookup`
+   still succeeded, because it used `VAULT_TOKEN` from the environment.
+   Combined with the devcontainer injection above, **writing
+   `~/.vault-token` changes nothing in this container**: `vault` keeps
+   running as root. There is already an 8-byte, invalid `~/.vault-token`
+   in this container that no `vault login` created, and
+   `env -u VAULT_TOKEN vault token lookup` against it returns 403.
+2. **`consul`: the file beats the environment, and a missing file is
+   fatal.** With a valid token in `CONSUL_HTTP_TOKEN` and a garbage token
+   in the file `CONSUL_HTTP_TOKEN_FILE` names, `consul acl token read
+   -self` returned `403 (token does not exist: ACL not found)`. The file
+   won. And with `CONSUL_HTTP_TOKEN_FILE` pointing at a path that does not
+   exist, `consul members` returned `Error connecting to Consul agent:
+   Error loading token file ...: no such file or directory`, even with a
+   valid `CONSUL_HTTP_TOKEN` set. Exporting that variable before something
+   writes the file breaks the `consul` CLI for everyone. It is not inert.
+3. **`nomad`: there is no file.** `strings /usr/bin/nomad | grep -c
+   NOMAD_TOKEN_FILE` returns `0`, against `2` for `CONSUL_HTTP_TOKEN_FILE`
+   in `/usr/bin/consul`. The `NOMAD_*` string table carries `NOMAD_TOKEN`
+   and no file variant, and `nomad login -h` (v2.0.3) lists no sink flag.
+   `nomad` reads `NOMAD_TOKEN` or `-token` and nothing else.
+
+Result 1 is the dangerous one, because it fails silently in the direction
+of more privilege: a developer who ran `localstack login` and sees
+`vault kv get` working is still root. Result 2 is dangerous in the same
+direction one layer down. §6 R10 and R11 are the response.
+
 ### Addresses at the edge
 
 haproxy routes `vault.`, `nomad.`, and `consul.lab.orangecluster.nl` over
@@ -175,12 +248,21 @@ consumes what D1 established. See Q1 and §8.
 - **Not the read commands (D3) or the TUI (D4).** They consume these
   tokens. D2 does not anticipate their needs.
 - **Not the provider cutover (F8).** D2 does not edit `providers.tf`, any
-  `justfile`, or `.devcontainer/.env.example`. Removing the static tokens
-  is F8's story.
+  `justfile`, `.devcontainer/.env`, `.devcontainer/.env.example`, or
+  `.devcontainer/devcontainer.json`. Removing the static `VAULT_TOKEN`,
+  `NOMAD_TOKEN` and `CONSUL_TOKEN` from the injected env file is F8's
+  story, and F8 is `blocked` (`loopctl ledger`). **D2 therefore ships into
+  a container where the root token is in every shell**, and R11 is how it
+  behaves honestly there instead of pretending otherwise.
 - **Not `localstack exec`.** See Q3; `env` is the chosen surface.
-- **Not applying or merging F2.** D2 cannot be verified end to end until
-  someone applies F2. State that plainly rather than faking a green run.
+- **Not installing the shims or the pinned binaries.** `D6-cli-deps-and-shims`
+  owns `~/.localstack/bin`, the PATH entry, and the devcontainer change
+  that adds it. D2 owns only `localstack token`, the contract D6's shims
+  call. See R10.
 - **Not multi-cluster profiles.** One cluster, one session. See Q5.
+- **Not `localstack ui nomad`.** `ui consul` ships here because pasting a
+  token into the Consul UI is unavoidable on CE (§12). Nomad UI SSO is a
+  separate story and needs no paste.
 - **Not ACL management through the brokered Nomad token.** It is
   `type: client` (`nomad_deploy_role.tf:39`).
 
@@ -259,6 +341,20 @@ both names (§4). Tokens only, no addresses: the addresses are already
 exported and are not this command's to own. Every diagnostic goes to
 stderr so stdout stays evaluable. `--format json` for machine callers.
 
+Emitting `VAULT_TOKEN` is what makes `eval "$(localstack env)"` the one
+move that actually demotes the shell from root to `operator`, since the
+variable it overwrites is the injected root token (§4). That is a real
+benefit and it is also the reason R11's warning must not fire after an
+`eval`: the values match, so there is nothing to warn about.
+
+**R5 does not use `CONSUL_HTTP_TOKEN_FILE`, and neither does anything
+else in this ticket.** Measured, §4: the file outranks
+`CONSUL_HTTP_TOKEN`, so a stale file would silently beat every fresh
+token R5 emits and every token a shim exports, and a missing file makes
+the `consul` CLI fail outright rather than fall back. Setting it would
+turn R5 into decoration. See R12 for the ownership call and what D6 must
+change.
+
 **R6 — `localstack whoami` and `localstack logout`.**
 
 - `whoami` reports: username, `entity_id`, Vault token policies, Vault
@@ -281,20 +377,128 @@ out-of-band retrieval instead.
 
 **R8 — Errors name the cause.** A 403 on a creds path prints which path
 was denied, that the login token's policies are `<policies from
-lookup-self>`, and that the grant is F7's ticket. A 404 on
-`auth/userpass/login/*` prints that the `userpass` backend is not enabled
-and that F2 is unapplied. These two failures are the expected state of
-the world at implementation time, so they are the messages that get used
-most.
+lookup-self>`, and that the grant is F7's ticket. **This is the expected
+result at implementation time** (§4: `token_policies = []`, and F7 is
+`blocked`), so it is the message a developer will actually see and the
+one that gets the most care. A 404 on `auth/userpass/login/*` prints that
+the `userpass` backend is not enabled at that path; it is no longer the
+expected state of the world, since F2 is applied, so treat it as a
+misconfigured `--vault-addr` or a wrong username rather than a known
+blocker.
 
 **R9 — Tokens never reach stdout by accident.** No token value in any
 log line, exception message, or `--format json` output other than
-`env`'s, which exists to emit them.
+`env`'s and `token`'s, which exist to emit them.
+
+**R10 — `localstack token <svc>`.** Prints the current token for `nomad`,
+`consul` or `vault`, refreshing it first if stale (R4). This is the
+backend `D6-cli-deps-and-shims` builds its PATH shims on, so the contract
+is strict and mechanical, not stylistic:
+
+- **Stdout is the token value and a single trailing newline. Nothing
+  else.** No banner, no timing line, no colour, no warning. Every
+  diagnostic goes to stderr. The shim does `T="$(localstack token nomad)"`
+  and puts `$T` straight into `NOMAD_TOKEN`, so one stray character
+  becomes an invalid token and a 403 that reads like a permissions bug.
+- **Fail closed: non-zero exit with empty stdout**, whenever there is no
+  session, the session is expired, or brokering is denied. The shim's
+  fall-through to the unmodified binary is only safe because a failure
+  produces nothing to export. Exiting zero with an error message on
+  stdout would export the error message as the token.
+- An unknown service name exits non-zero with empty stdout too.
+
+**R11 — `login` writes `~/.vault-token`, and says out loud when the
+environment overrides it.** Two halves, and the second is the one that
+matters in this container.
+
+- Write the Vault token to `~/.vault-token` at mode `0600`, via the same
+  temp-file-plus-rename as R3, and delete it in `logout`. This is what
+  `vault login` itself writes, so the value is not a novel invention, and
+  a revoked token left on disk is worse than no file: the next `vault`
+  command fails with a confusing 403 instead of an honest "not logged
+  in". Q4 covers the decision.
+- **The file is inert while `VAULT_TOKEN` is set, and it is set for
+  everyone** (§4 result 1: the environment outranks the file;
+  `.devcontainer/devcontainer.json:38-39` plus `.devcontainer/.env:8`).
+  So `login` and `whoami` must compare the session token against
+  `$VAULT_TOKEN` and, when the variable is set and differs, print a
+  warning **to stderr** naming the mismatch, saying plainly that a bare
+  `vault` command runs as the environment's token and not as the session,
+  and naming the two ways out: `eval "$(localstack env)"` in this shell,
+  or the `vault` shim on PATH (R10, installed by D6). The warning names
+  the policies of the environment's token when `lookup-self` on it
+  succeeds, because "you are still root" is the fact worth printing.
+  `logout` warns the same way: it deletes the file and revokes the
+  session, and `vault` keeps working as the environment's token, so a
+  silent `logout` would look like it did nothing.
+- The warning must not fire when `VAULT_TOKEN` equals the session token,
+  which is the state after `eval "$(localstack env)"`. A warning on every
+  healthy session trains the operator to ignore it.
+- `whoami` reports which token a bare `vault` would use, not only which
+  token the session holds. That is the question the developer has.
+
+**R12 — Consul gets a shim, not a token file, and D2 owns that call.**
+Nothing in this repo writes a Consul token file today, and nothing should
+start. The write was unowned: D2 never mentioned it, and
+`D6-cli-deps-and-shims` disclaims all session and token logic
+(`.loop/plans/D6-cli-deps-and-shims.md:169`, "No session or token
+logic"). Per §4 result 2, an unowned `CONSUL_HTTP_TOKEN_FILE` export
+breaks `consul` for everyone the moment it lands.
+
+- D2's answer, and D2 owns it: `consul` takes a shim with the same shape
+  as `nomad`'s, calling `localstack token consul` and exporting
+  `CONSUL_HTTP_TOKEN` for that one invocation. One mechanism, one
+  precedence order, no file.
+- D2 writes no Consul token file and sets no `CONSUL_HTTP_TOKEN_FILE`.
+  The eval's guardrail row greps the branch diff for the name.
+- **D6 has taken all of it, verified 2026-07-31 after both plans were
+  corrected in parallel.** Its shim table
+  (`.loop/plans/D6-cli-deps-and-shims.md:84-88`) now reads **yes** for all
+  three tools: `vault` ("yes, `~/.vault-token`, but `VAULT_TOKEN` outranks
+  it"), `consul` ("yes, via `CONSUL_HTTP_TOKEN_FILE`, which is the
+  problem") and `nomad`. D6 exports `CONSUL_HTTP_TOKEN` and never the file
+  variant, and bans the file variant as a non-goal.
+- **The two plans converged independently on three shims.** D2 reached it
+  from Q4 (the `~/.vault-token` write is inert while the devcontainer
+  injects `VAULT_TOKEN`); D6 reached it by measuring the same precedence at
+  the wire. Nothing is left to relay. An earlier version of this section
+  said D6 "has NOT yet taken the `vault` row" and named two stale anchors
+  in it; both statements were true when written and are false now.
+- Interaction with the justfile bridge: `terraform` is not shimmed, so
+  recipes keep reading `CONSUL_HTTP_TOKEN=${CONSUL_TOKEN}`
+  (`deployments/infrastructure/justfile:8,12,16`). `eval "$(localstack
+  env)"` sets both names (R5), so the bridge substitutes the fresh token.
+  This is the second reason R5 emits both.
+
+**R13 — `localstack config`.** Prints the resolved cluster addresses and
+the edge domain, in text and with `--format json`. **No secret material
+in either form**: no token, no password, no `hvs.` or `hvo_` value, and
+no session-file field beyond the non-secret ones (`vault_addr`, `method`,
+`version`, expiries). `config` is what a developer pastes into an issue
+when asking for help, which is exactly why it must be safe to paste. It
+lands here rather than in D1 because it reads the resolved `vault_addr`
+and the session file, both of which this ticket owns.
+
+**R14 — `localstack ui consul`.** Brokers a Consul token (R4 freshness
+rules), copies it to the clipboard, prints it as a fallback, and opens
+`https://consul.lab.orangecluster.nl`. Grounded in §12: Consul's OIDC
+auth method is Enterprise-only and this cluster is CE, so pasting a token
+is the only route into the UI.
+
+- **Print the token even when the clipboard write succeeds.** Inside a
+  container the clipboard is the part most likely to fail, and a silent
+  failure leaves the operator with a browser and no token. This is a
+  deliberate exception to R9, in the same class as `env` and `token`.
+- Prefer an OSC 52 escape over `xclip` or `pbcopy`: it travels over SSH
+  and through the devcontainer.
+- Do not open a browser when there is no session or brokering fails. Exit
+  non-zero with the R8 message instead.
+- Do not build `localstack ui nomad`.
 
 ### Restrictions the repo states
 
 - **Tests ship with the code** (`.claude/rules/python-testing.md:6`) and
-  mirror the source tree (`:99-103` "Where tests live").
+  mirror the source tree (`:43-48` "Where tests live").
 - **Live-cluster tests carry a marker and are excluded by default**
   through `addopts` in `pyproject.toml`
   (`.claude/rules/python-testing.md:26-32`). Every test that talks to
@@ -349,10 +553,29 @@ New files:
   token and accessor). Verify both against one live read during
   implementation rather than assuming. The mapping into the cache schema
   lives here and nowhere else.
+- `cli/src/localstack_cli/auth/vault_token_file.py` — R11's first half:
+  write `~/.vault-token` at `0600` through temp-file-plus-rename, remove
+  it, and `env_token_differs(session_token)` reporting whether
+  `$VAULT_TOKEN` is set and differs. Separate from `session.py` because
+  it writes a file this CLI does not own, and the next reader should see
+  that boundary in the layout.
 - `cli/src/localstack_cli/commands/auth.py` — `login`, `logout`,
-  `whoami`, `env` wired into D1's CLI entry point.
+  `whoami`, `env` wired into D1's CLI entry point, plus R11's stderr
+  warning on `login`, `whoami` and `logout`.
+- `cli/src/localstack_cli/commands/token.py` — R10. `localstack token
+  <svc>`. Kept in its own module precisely because its stdout contract is
+  stricter than every other command's: no shared output helper that might
+  one day print a banner, and nothing else in the file to tempt one.
+- `cli/src/localstack_cli/commands/config.py` — R13. Addresses and edge
+  domain, text and JSON, no secrets.
+- `cli/src/localstack_cli/commands/ui.py` — R14. `localstack ui consul`:
+  broker, OSC 52 clipboard write, print the token anyway, open the
+  browser.
 - `cli/tests/auth/test_vault.py` — login, lookup, renew, revoke, and the
   R2 plaintext refusal, all against `respx`.
+- `cli/tests/auth/test_vault_token_file.py` — R11. Write at `0600`,
+  removal, and the `$VAULT_TOKEN` comparison including the equal case
+  that must not warn.
 - `cli/tests/auth/test_session.py` — write/read round trip, file mode
   `0600` and directory mode `0700`, atomicity (no world-readable window),
   staleness at the skew boundary, corrupt-file handling.
@@ -362,11 +585,25 @@ New files:
 - `cli/tests/commands/test_auth_commands.py` — `env` emits all four
   variable names including both Consul spellings; `whoami` prints no
   token value; `logout` calls `revoke-self` before deleting and still
-  deletes when revocation fails.
-- `cli/tests/auth/test_live_login.py` — marked live-cluster tests
-  (`@pytest.mark.integration` or D1's marker), excluded by default.
-- `cli/tests/conftest.py` — autouse fixture redirecting `XDG_CONFIG_HOME`
-  into `tmp_path`; a fixture building a session file.
+  deletes when revocation fails; R11's warning fires when `$VAULT_TOKEN`
+  differs and stays quiet when it matches.
+- `cli/tests/commands/test_token_command.py` — R10. Byte-for-byte stdout
+  purity across all three services, and failing closed with empty stdout
+  on every failure path.
+- `cli/tests/commands/test_config_command.py` — R13. No secret material
+  in text or JSON output, asserted against a session file whose token
+  values are known.
+- `cli/tests/commands/test_ui_command.py` — R14. Prints the token even
+  when the clipboard write succeeds, and does not open a browser when
+  brokering fails.
+- `cli/tests/auth/test_live_login.py` — live-cluster tests carrying D1's
+  `cluster` marker (`.loop/plans/D1-cli-package-skeleton.md:137-140,172`),
+  excluded by default via `addopts`.
+- `cli/tests/conftest.py` — autouse fixtures redirecting
+  `XDG_CONFIG_HOME` **and `HOME`** into `tmp_path`, so no test can write
+  the developer's real `~/.vault-token`, and a fixture that clears
+  `VAULT_TOKEN` from the environment by default so R11's warning is
+  opt-in per test; a fixture building a session file.
 - `docs/cli-login.md` — one page: how to get the password the first time,
   `localstack login`, `eval "$(localstack env)"`, what `logout` revokes,
   and the F2/F7 preconditions. Runs the slop scan.
@@ -374,19 +611,23 @@ New files:
 Modified:
 
 - `cli/pyproject.toml` (D1's file) — add `httpx` and dev `respx` via
-  `uv add`; register the integration marker and the `addopts` exclusion
-  if D1 did not.
-- D1's CLI entry module — register the four subcommands. One line each.
+  `uv add`; register the `cluster` marker and the `addopts` exclusion if
+  D1 did not.
+- D1's CLI entry module — register the subcommands: `login`, `logout`,
+  `whoami`, `env`, `token`, `config`, and the `ui` group with its one
+  `consul` subcommand. One line each.
 
 Read-only anchors the implementer will open, and must not edit:
 `deployments/infrastructure/nomad_deploy_role.tf:36-41`,
 `deployments/infrastructure/consul_deploy_role.tf:19-25`,
 `deployments/infrastructure/justfile:8,12,16`,
+`deployments/infrastructure/auth_userpass.tf:13-53`,
 `.devcontainer/.env.example:2,6,10-11`,
+`.devcontainer/devcontainer.json:38-39`,
 `bootstrap/roles/nomad_server/tasks/main.yml:309`,
-and, on branch `loop/F2-foundation-vault-oidc-provider`,
-`deployments/infrastructure/auth_userpass.tf:13-53` and
 `docs/vault-human-auth.md`.
+All of these are on `main` now that F2 is applied; nothing here needs a
+branch checkout.
 
 ## 8. Tests & validation gates
 
@@ -402,8 +643,10 @@ and, on branch `loop/F2-foundation-vault-oidc-provider`,
   (`.claude/rules/python-testing.md:21`). Because no pytest hook exists,
   `just pre_commit` will not run it. The implementer runs it by hand and
   it must be green before done.
-- **Marked live run:** `uv run pytest -m integration` (`:24`). Off by
-  default via `addopts` (`:26-32`).
+- **Marked live run:** `uv run pytest -m cluster` (`:24`). Off by default
+  via `addopts` (`:26-32`). The marker name is D1's
+  (`.loop/plans/D1-cli-package-skeleton.md:137-140,172`); use it rather than
+  inventing a second one.
 - **Review:** `.loop/config.json` `require_review: true`, plus
   `.claude/rules/adversarial-reviews.md`.
 - **Docs:** `docs/cli-login.md` runs the slop scan
@@ -433,7 +676,7 @@ Each file below is listed in §7.
 8. `test_broker.py::test_ensure_fresh_rebrokers_only_stale_entries` — R4.
    Asserts the fresh entry's request was never made
    (`respx` route `.call_count == 0`, not a loose not-called assertion,
-   per `.claude/rules/python-testing.md:44-48`).
+   per `.claude/rules/python-testing.md:101-103`).
 9. `test_broker.py::test_403_on_creds_names_the_missing_grant` — R8.
    Asserts the message names the path and points at F7.
 10. `test_auth_commands.py::test_env_emits_both_consul_variable_names` —
@@ -450,23 +693,66 @@ Each file below is listed in §7.
     — R6. Non-zero exit, accessors printed to stderr, file gone.
 15. `test_auth_commands.py::test_unsupported_method_exits_nonzero` —
     `--method oidc` today.
+16. `test_token_command.py::test_token_stdout_is_exactly_the_token` —
+    R10. Parametrized over `nomad`, `consul` and `vault`. Compares stdout
+    byte for byte against `f"{token}\n"`, not with `in` or `strip()`. A
+    loose assertion passes against the banner this test exists to catch.
+17. `test_token_command.py::test_token_fails_closed_with_empty_stdout` —
+    R10. Parametrized over no session, expired session, 403 on the creds
+    path, and an unknown service name. Each: non-zero exit, stdout
+    exactly empty, message on stderr. This is the row D6's shim safety
+    rests on.
+18. `test_vault_token_file.py::test_login_writes_0600_vault_token_file` —
+    R11. Written under the `HOME` redirected into `tmp_path`, mode
+    asserted, no world-readable window.
+19. `test_vault_token_file.py::test_logout_removes_vault_token_file` —
+    R11. Gone afterwards, and gone even when `revoke-self` failed.
+20. `test_auth_commands.py::test_warns_when_env_vault_token_differs` —
+    R11, and **the row that catches the dangerous failure**. With
+    `VAULT_TOKEN` set to a different value, `login`, `whoami` and
+    `logout` each print a warning to stderr saying a bare `vault` runs as
+    the environment's token, not the session. Assert on stderr, assert
+    stdout is unpolluted, and assert `whoami` reports which token a bare
+    `vault` would use.
+21. `test_auth_commands.py::test_no_warning_when_env_matches_session` —
+    R11. With `VAULT_TOKEN` equal to the session token, and with it
+    unset, stderr carries no such warning. A warning on every healthy
+    session is worse than none.
+22. `test_config_command.py::test_config_prints_no_secret` — R13. Text
+    and JSON forms, asserted against a session file whose token and
+    accessor values are known strings, plus a check for the `hvs.` and
+    `hvo_` prefixes.
+23. `test_ui_command.py::test_ui_consul_prints_token_even_when_clipboard_succeeds`
+    — R14. And a second case: brokering failure exits non-zero and opens
+    no browser.
 
-### Live-cluster acceptance, marked and deferred
+### Live-cluster acceptance, runnable now
 
-In `test_live_login.py`, all marked. **None of these can pass until F2 is
-merged and applied**: `vault auth list` returns only `jwt-nomad/` and
-`token/` today, so `auth/userpass/login/operator` 404s. Do not fake a
-green run. Record the blocked state.
+In `test_live_login.py`, all carrying the `cluster` marker. **F2 is
+applied, so rows 24, 25 and 27 run at pickup**: `vault auth list` returns
+`userpass/`, `auth/userpass/users/operator` exists, and the password is at
+`secret/default/vault/operator` (§4). Retrieve it out of band once, per
+R7 and Q7. Run these; do not record them as blocked.
 
-16. `login` against the real Vault yields a token with a non-empty
+24. `login` against the real Vault yields a token with a non-empty
     `entity_id` (the whole point of F2's entity, §4).
-17. `whoami` reports the entity and a TTL.
-18. Brokering both creds paths succeeds, **or** fails with R8's message
-    naming the missing policy. Under F2 as written
-    (`token_policies = []`), the R8 branch is the expected result until
-    F7 lands. Assert the message, not success.
-19. `logout` revokes: after it, `vault token lookup` on the cached token
-    fails, and the brokered Nomad and Consul accessors are gone.
+25. `whoami` reports the entity and a TTL.
+26. Brokering both creds paths **fails with R8's message naming the
+    missing policy**. This is the one row that is not a success
+    assertion, and it is correct as written: the operator user ships
+    `token_policies = []` and F7 is `blocked`, so a 403 is the true state
+    of the cluster. Assert the message. If brokering ever succeeds here,
+    F7 landed and this row needs rewriting, not deleting.
+27. `logout` revokes: after it, `vault token lookup` on the cached token
+    fails. Assert against the Vault token, not against the brokered
+    accessors, since under row 26 there are none to check.
+28. **R11 against the live container.** With the devcontainer's injected
+    `VAULT_TOKEN` still in the environment, after `localstack login`:
+    `vault token lookup` still reports `policies ["root"]`, the warning
+    fired on stderr, and after `eval "$(localstack env)"` the same lookup
+    reports the operator entity. This row exists because the whole point
+    of R11 is a fact about this machine, and an offline mock cannot prove
+    it. Skip it outside the devcontainer rather than faking it.
 
 ## 9. Risk assessment
 
@@ -476,8 +762,43 @@ verified), plus a Nomad and a Consul token each living at most an hour,
 plus lease ids, accessors, and `entity_id`. It does **not** hold the
 password. Mode `0600` in a `0700` directory is the whole protection; a
 wrong mode, a non-atomic write, or a path inside the repo tree is the
-worst realistic outcome of this ticket. Tests 3, 4, and 10 exist for
-that.
+worst realistic outcome of this ticket. Tests 3 and 4 exist for that.
+R11 adds a second file, `~/.vault-token`, holding the same Vault token at
+the same mode; tests 18 and 19 cover it.
+
+**What a stolen `session.json` buys, stated plainly.** Today: a
+`default`-policy Vault token, which brokers nothing, so the loss is small.
+**Once F7 grants the creds reads, the same file becomes a bearer
+credential that mints deploy-capable Nomad and Consul tokens on demand for
+up to 32 days** — Vault's built-in `768h` default, since `auth_userpass.tf`
+sets no `token_ttl` and `sys/config/state/sanitized` reports
+`default_lease_ttl: 0`. There is no client-side bound and no rotation. Q6
+records the operator's decision that this is the design, modelled on
+`gcloud`'s refresh token, and D2 does not overturn it. The consequence is
+recorded here because the `gcloud` analogy understates it: a Google
+refresh token is scoped and centrally revocable, this one is a key to the
+cluster's deploy path.
+
+**And recovery is not in the operator's hands.** The remedies are: the
+holder runs `localstack logout` (`auth/token/revoke-self`, granted by
+`default`), or someone with a management token revokes by accessor, or
+the operator password is rotated at `secret/default/vault/operator` and
+the outstanding token revoked. The operator's own token cannot do the
+second: `default` grants no `sys/leases/revoke` and no token-accessor
+revocation (§4, verified). So a stolen session is revoked by root, not by
+the person who lost it. Note this in `docs/cli-login.md`. Shortening the
+TTL is F7's lever if the operator later wants one; D2 cannot set it from
+the client.
+
+**The `~/.vault-token` write is inert today, by measurement, not by
+design.** `VAULT_TOKEN` is injected into every shell (§4), and the
+environment wins, so R11's file changes nothing until F8 removes the
+static token and F8 is `blocked`. R11's warning is the honest response:
+the failure it prevents is a developer believing they run as `operator`
+while every `vault` command runs as root. That is a wrong-direction
+failure — more privilege than expected, and no error to notice — which is
+why tests 20, 21 and 28 exist and why the warning is a requirement rather
+than a nicety.
 
 **Blast radius.** Additive. No `deployments/`, `bootstrap/`, or
 `justfile` change, so a wrong CLI cannot break an existing deploy path.
@@ -491,10 +812,11 @@ anyway.
 
 **Likeliest failure modes.**
 
-1. **Verifying nothing.** F2 is unapplied, so the implementer cannot run
-   a real login. The temptation is to assert what the offline mocks say
-   and call it proven. The honest close-out is: offline suite green, live
-   tests written and skipped, F2 named as the blocker.
+1. **Believing the `~/.vault-token` write did something.** It does not, in
+   this container (§4 result 1). An implementer who writes the file, runs
+   `vault kv get`, sees it work and calls R11 proven has measured the
+   injected root token. Test 28 is the check; `env -u VAULT_TOKEN vault
+   token lookup` is the one-liner that tells the truth.
 2. **Emitting one Consul variable name.** Half the repo reads
    `CONSUL_HTTP_TOKEN` and the shell exports `CONSUL_TOKEN` (§4). The
    failure is silent: `terraform` picks up a stale token from the shell
@@ -506,12 +828,24 @@ anyway.
    `auth/token/revoke-self` cascades and is granted.
 5. **`env` writing a diagnostic to stdout**, which lands inside
    `eval "$(...)"` and breaks the shell.
-6. **Tests writing to the real `~/.config/localstack/`** and clobbering
-   the developer's live session.
+6. **Tests writing to the real `~/.config/localstack/` or the real
+   `~/.vault-token`** and clobbering the developer's live session. Both
+   `XDG_CONFIG_HOME` and `HOME` are redirected in `conftest.py` (§7).
+   There is already a stale `~/.vault-token` in this container that a
+   careless test would overwrite.
 7. **Scope creep into the policy.** The 403 in test 9 will tempt an
    implementer to "just add the grant". That is F7's ticket and the
    subject of a `fail` verdict. Blocking with `out-of-scope-fix-needed`
    is the correct move.
+8. **A banner on `token`'s stdout.** A progress spinner, a deprecation
+   notice, or a shared output helper that prints one line of context
+   turns every shimmed `nomad` call into a 403 that looks like a
+   permissions bug, not a CLI bug. Test 16 compares bytes for this
+   reason, and `commands/token.py` is its own module for this reason.
+9. **Setting `CONSUL_HTTP_TOKEN_FILE` anyway**, because it looks tidier
+   than a shim. A missing file makes `consul` fail outright, and a stale
+   one silently outranks every fresh token (§4 result 2). R12 forbids it
+   here and tells D6 to drop it.
 
 ## 10. Subtickets (ordered, dependency-aware)
 
@@ -523,13 +857,35 @@ anyway.
    Tests 1 and 2.
 4. **`broker.py`.** Both creds paths, the two response shapes,
    `ensure_fresh`, the R8 messages. Tests 7 to 9. Depends on 2 and 3.
-5. **`login` and `logout`.** Prompt, eager broker, revoke-then-delete.
-   Tests 13 to 15.
-6. **`whoami` and `env`.** Both output formats, both Consul names,
-   stderr discipline. Tests 10 to 12.
-7. **Live tests and docs.** `test_live_login.py` (tests 16 to 19,
-   marked), `docs/cli-login.md`, slop scan, `just pre_commit`,
-   `uv run pytest`, adversarial review.
+5. **`vault_token_file.py`.** R11's first half: the `0600` write, the
+   removal, and the `$VAULT_TOKEN` comparison. Pure and file-backed, no
+   network. Tests 18 and 19. Depends on nothing above it, so it can run
+   alongside 3 and 4.
+6. **`login` and `logout`.** Prompt, eager broker, revoke-then-delete,
+   the `~/.vault-token` write and removal, and R11's stderr warning.
+   Tests 13 to 15, 20 and 21. Depends on 2, 3, 4 and 5.
+7. **`whoami` and `env`.** Both output formats, both Consul names,
+   stderr discipline, and `whoami` reporting which token a bare `vault`
+   would use. Tests 10 to 12, and the `whoami` halves of 20 and 21.
+8. **`token`.** R10, and the first thing `D6-cli-deps-and-shims` needs to
+   exist. Its own module, byte-exact stdout, fail-closed on every path.
+   Tests 16 and 17. Depends on 4, so it can land right after `broker.py`
+   if D6 is waiting; nothing in 5 to 7 blocks it.
+9. **`config` and `ui consul`.** R13 and R14: addresses with no secrets,
+   then broker-copy-print-open. Tests 22 and 23. Depends on 4 and 8.
+10. **Confirm D6 still writes three shims.** Nothing to relay: D6 took
+    the `vault` row independently on 2026-07-31 and its table
+    (`.loop/plans/D6-cli-deps-and-shims.md:84-88`) reads **yes** for
+    `vault`, `consul` and `nomad`. At pickup, re-read that table and stop
+    if it has drifted back to two, because Q4 and R11 both assume three
+    while the devcontainer injects a root `VAULT_TOKEN`. Do not edit D6
+    from inside this ticket.
+11. **Live tests and docs.** `test_live_login.py` (tests 24 to 28,
+    `cluster`-marked, and rows 24, 25, 27 and 28 are runnable now),
+    `docs/cli-login.md` covering the one-time password retrieval, the
+    `VAULT_TOKEN` shadowing and how to get out of it, and who can revoke
+    a stolen session. Slop scan, `just pre_commit`, `uv run pytest`,
+    adversarial review.
 
 ## 11. Open questions
 
@@ -567,27 +923,77 @@ sink flag, it only prints. So `nomad` reads `NOMAD_TOKEN` or `-token` and
 nothing else, and a child process cannot set its parent shell's environment.
 Every option that is not a shim inherits that limitation.
 
-`vault` needs no shim at all once Q4 is applied, and `consul` needs none if
-`CONSUL_HTTP_TOKEN_FILE` is set statically in the devcontainer. Nomad is the
-only CLI that strictly requires one; ship the other two for uniformity or
-skip them, implementer's call.
+The word "only" is slightly strong: an exported bash function
+(`export -f nomad`) would cover interactive shells and `bash` children.
+It does not cover non-bash processes, `just`, or `exec`-style callers, so
+the shim is still the more general answer. Also note the measurement is
+against CLI 2.0.3 and `D6-cli-deps-and-shims` installs the cluster's
+pinned 2.0.4 (`.loop/plans/D6-cli-deps-and-shims.md:45-46,61`). A shim works
+either way, so this does not need re-measuring before pickup.
 
-**Q4 → RESOLVED (operator, 2026-07-31): yes, write `~/.vault-token`,
-mode 0600.** The earlier recommendation was no. It is reversed.
+**All three CLIs take a shim**, not just `nomad`. The original answer here
+exempted `vault` and `consul`; the measurements in §4 removed both
+exemptions. `vault` because the injected `VAULT_TOKEN` outranks
+`~/.vault-token`, and a shim's `exec env VAULT_TOKEN=...` is the only
+thing that beats an inherited variable. `consul` because
+`CONSUL_HTTP_TOKEN_FILE` is worse than useless here (R12). One mechanism
+for all three, and `localstack token <svc>` (R10) is the single backend.
 
-That file is the whole reason the stock `vault` CLI needs no shim: `vault`
-reads it natively, so writing it is what makes `vault kv get` work after
-`localstack login` with no env var and no wrapper. It is also the exact
-mechanism this repo is copying — `gcloud` keeps its credential in
-`~/.config/gcloud/credentials.db` and every later `gcloud` command reads it.
+**Q4 → RE-DECIDED (2026-07-31, after measurement): write
+`~/.vault-token` at 0600, AND keep `vault` on the shim list, AND warn when
+`VAULT_TOKEN` disagrees.** The earlier answer to this question was "yes,
+write the file, and that is why `vault` needs no shim." The first half
+survives. **The second half was wrong**, and wrong in the direction that
+produces confident, silent, over-privileged behavior.
 
-The objection stands but is thin here: the CLI writes a file it does not
-own, and clobbers whatever a developer's own `vault login` put there. One
-cluster, one operator, and `localstack login` is itself a Vault login, so
-the value it writes is the value `vault login` would have written.
+What the earlier answer missed: `VAULT_TOKEN` in the environment outranks
+`~/.vault-token`, measured (§4 result 1). And `VAULT_TOKEN` is not
+hypothetical here. `.devcontainer/devcontainer.json:38-39` injects
+`.devcontainer/.env` into the container, and `.devcontainer/.env:8` sets
+`VAULT_TOKEN` to the bootstrap root token, so every shell and every child
+process has it. On the machine this ticket targets, writing
+`~/.vault-token` changes nothing: `vault kv get` keeps running as root,
+`localstack logout` deletes the file and `vault` keeps working as root, so
+logout looks like it did nothing. The developer believes they are
+`operator`. They are root.
 
-Write it the way `vault login` does: 0600, and on `localstack logout` remove
-it rather than leaving a revoked token on disk.
+Three responses were available. Each is recorded with why it was or was
+not taken:
+
+1. **Defer the whole thing until F8 removes `VAULT_TOKEN` from the env
+   file.** Rejected as the sole answer. F8 is `blocked` on a broken
+   premise (`loopctl ledger`), so "later" has no date, and D2 would ship a
+   `vault` story that is quietly false in the meantime.
+2. **Have `login` unset the variable.** Impossible, and worth writing down
+   so nobody tries: a child process cannot change its parent shell's
+   environment. It is the same constraint that forces the `nomad` shim.
+3. **Stop the devcontainer injecting it.** Correct, and explicitly not
+   D2's (§5: no `.devcontainer/` edits; F8 owns removing the static
+   tokens).
+
+So the decision is the honest combination. Write the file, because it
+costs nothing, it is exactly what `vault login` writes, and it becomes
+load-bearing the day F8 lands. Put `vault` on the shim list next to
+`nomad`, because a shim's `exec env VAULT_TOKEN=...` is the one mechanism
+that beats an inherited variable today. And warn to stderr whenever
+`$VAULT_TOKEN` is set and differs from the session token, because scripts,
+`just` recipes and anything calling `/usr/bin/vault` directly bypass the
+shim, and silence there is what makes the failure dangerous. R11 carries
+all three, tests 20, 21 and 28 check them, and `docs/cli-login.md` says
+plainly that until F8 lands a bare `vault` runs as root unless you ran
+`eval "$(localstack env)"` or use the shim.
+
+The residual cost of writing a file the CLI does not own still stands and
+is still thin: one cluster, one operator, and `localstack login` is itself
+a Vault login, so the value written is the value `vault login` would have
+written. Remove it on `logout` rather than leaving a revoked token on
+disk.
+
+**D6 already agrees.** It copied the pre-correction table verbatim, then
+corrected both rows on its own: `.loop/plans/D6-cli-deps-and-shims.md:84-88`
+now reads **yes** for `vault`, `consul` and `nomad`, reached by measuring
+`VAULT_TOKEN` precedence at the wire rather than by inheriting this
+finding. Two plans, two methods, same answer.
 
 **Q5 — One session or named profiles?** One cluster exists.
 *Recommendation:* one session file, no profile flag. The schema already
@@ -646,7 +1052,18 @@ things F7's replan needs, each verified here rather than assumed:
    function at all. This is separate from, and smaller than, the
    terraform-apply grant the verdict says F7 got wrong
    (`:250-260`).
-3. **The operator login needs a `token_ttl`.** See Q6.
+3. **The operator login does NOT need a `token_ttl`.** This line
+   previously said the opposite, contradicting Q6 in the same document.
+   Q6 is the resolution: the 32-day Vault token is the refresh
+   credential by design, and D2 withdrew the `token_ttl` task it had
+   handed F7. F7 has already closed the question that way
+   (`.loop/plans/F7-foundation-deployer-vault-oidc-login.md:538-540`
+   "Do NOT set `token_ttl` on the operator login", and `:733`
+   "Q2 (TTLs) → CLOSED"). Leave `auth_userpass.tf` alone. What F7 should
+   read instead is §9's residual-risk paragraph: the TTL is the design,
+   and the consequence is that a stolen `session.json` is revocable only
+   by root, so if the operator ever wants a shorter bound, `token_ttl` on
+   the userpass user is where it goes and it is F7's to set.
 
 ## Eval marker
 
@@ -655,9 +1072,10 @@ until `.loop/evals/D2-cli-login-broker-tokens.md` exists with a
 `signed-off-by` line. Co-author it with the `create-eval` skill and get
 operator sign-off. This ticket does not author it.
 
-Two guardrails belong in that eval, because prose alone leaves them
-wobbly: `env` must emit both Consul variable names, and `logout` must
-revoke before it deletes.
+Four guardrails belong in that eval, because prose alone leaves them
+wobbly: `env` must emit both Consul variable names, `logout` must revoke
+before it deletes, `token` must fail closed with empty stdout, and
+`login` must warn when `$VAULT_TOKEN` shadows the session.
 
 ## 12. Design locked, 2026-07-31
 
@@ -672,24 +1090,38 @@ short-lived service credentials refreshed from it without the human noticing.
 
 ```
 Vault token       32 days, renewable    -> ~/.vault-token (0600)
-  |                                        + ~/.localstack/session.json
+  |                                        + session.json
   +- nomad/creds/deploy     30 min       -> refreshed by the shim
   +- consul/creds/deploy    30 min       -> refreshed by the shim
 ```
 
 ### How each CLI gets its token
 
-Measured against the installed binaries on 2026-07-31, not assumed:
+**Corrected 2026-07-31, after measurement.** The table this section first
+carried exempted `vault` and `consul` from needing a shim. Both exemptions
+were wrong, both in the direction of silent failure, and
+`D6-cli-deps-and-shims` copied the wrong table verbatim and has since
+corrected it (`.loop/plans/D6-cli-deps-and-shims.md:84-88`). The full
+measurements are in
+§4, "How each CLI picks up a credential". This is the corrected table:
 
-| CLI | Reads a credential file? | Needs a shim? |
-| --- | --- | --- |
-| `vault` | yes, `~/.vault-token`, no config needed | **no**, once Q4 writes it |
-| `consul` | yes, via `CONSUL_HTTP_TOKEN_FILE` | **no**, if that var is set statically |
-| `nomad` | **no. `NOMAD_TOKEN_FILE` does not exist** | **yes** |
+| CLI | Credential file? | Precedence | Needs a shim? |
+| --- | --- | --- | --- |
+| `vault` | `~/.vault-token` | **env `VAULT_TOKEN` wins**, and the devcontainer injects a root token into every shell | **yes** |
+| `consul` | `CONSUL_HTTP_TOKEN_FILE` | **file wins** over `CONSUL_HTTP_TOKEN`, and a missing file is a hard error | **yes**, and set no file |
+| `nomad` | none. `NOMAD_TOKEN_FILE` does not exist | env `NOMAD_TOKEN` only | **yes** |
 
-`CONSUL_HTTP_TOKEN_FILE` is configuration, not a credential: it names a path,
-never changes, and holds no secret, so the devcontainer can export it once
-and `localstack login` just writes the file it points at.
+`CONSUL_HTTP_TOKEN_FILE` is not the harmless piece of configuration this
+section first called it. It is a credential path whose *contents* outrank the
+environment, so a stale file silently beats every fresh token, and whose
+*absence* makes `consul` refuse to run at all rather than fall back. D2 does
+not set it and does not write the file it names; see R12, which also carries
+what D6 must change.
+
+`~/.vault-token` still gets written (Q4, R11) because it is what `vault
+login` writes and it becomes load-bearing when F8 removes the injected
+`VAULT_TOKEN`. It is inert until then, and R11's stderr warning is what
+keeps that fact visible instead of silent.
 
 ### The shim contract
 
@@ -699,6 +1131,12 @@ and `localstack login` just writes the file it points at.
 T="$(localstack token nomad 2>/dev/null)" || exec /usr/bin/nomad "$@"
 exec env NOMAD_TOKEN="$T" /usr/bin/nomad "$@"
 ```
+
+The same shape serves all three, changing only the service name, the
+variable and the real binary: `VAULT_TOKEN` with `/usr/bin/vault`,
+`CONSUL_HTTP_TOKEN` with `/usr/bin/consul`. `exec env VAR=...` is what makes
+the `vault` shim work where the credential file does not: it overrides the
+inherited variable for that one call.
 
 Three requirements the implementer must not drop:
 
@@ -716,6 +1154,10 @@ a configured machine the setup cost is zero. `which nomad` showing the shim is
 the accepted cost.
 
 ### `localstack ui consul`
+
+**Owned by R14, built in subticket 9, tested by test 23, scored by the eval's
+`ui consul` row.** This section is the reasoning behind it, not a design note
+with no home.
 
 Consul's OIDC auth method is Enterprise-only and this cluster is CE, verified
 2026-07-31: `consul version` carries no `+ent` and the agent reports
@@ -739,38 +1181,46 @@ pastes once per session.
 
 `localstack env` still has a place for `just` recipes and CI, where a shim on
 PATH may not be present. Q3 chose the shim as the developer surface, not as
-the only surface. Keep `env` if it is cheap; do not make the recipes depend on
-a shim being installed.
+the only surface. Do not make the recipes depend on a shim being installed.
+
+`env` is **not** optional, and R5 is not a hedge. Two things depend on it that
+the shim cannot do. `terraform` is never shimmed, so the justfile bridge
+`CONSUL_HTTP_TOKEN=${CONSUL_TOKEN}` needs both Consul names refreshed in the
+shell. And `eval "$(localstack env)"` is the only move that overwrites the
+devcontainer's injected root `VAULT_TOKEN` for a whole shell, which is what
+R11's warning points the developer at.
 
 ### Command surface, settled 2026-07-31
 
 The operator fixed the CLI's whole command surface on the same day as §12's
-decisions. Two commands land in this ticket that were not in its original
-`login|logout|whoami|env` scope:
+decisions. Three commands land in this ticket that were not in its original
+`login|logout|whoami|env` scope. Each now has a requirement, a file, tests
+and a place in the build order; this list is the index:
 
-- **`localstack token <svc>`** — prints the brokered token for `nomad`,
-  `consul` or `vault`, refreshing it first if stale. This is the shim's
-  backend, so its output contract is strict: **the token and nothing else on
-  stdout**, every diagnostic on stderr, and a non-zero exit with empty stdout
-  when it cannot produce one. The shim puts the result straight into
-  `NOMAD_TOKEN`, so a stray banner becomes an invalid token and a 403 that
-  reads like a permissions bug. Failing closed with empty stdout is what makes
-  the shim's fall-through to the bare binary safe.
-- **`localstack config`** — show the cluster addresses and edge domain. It
-  lands here rather than in D1 because this ticket already needs `vault_addr`
-  to log in and already owns the session file. Keep it small, and keep it free
-  of secrets: `config` is what a developer pastes into an issue when asking
-  for help.
+- **`localstack token <svc>`** — R10, `commands/token.py`, tests 16 and 17,
+  subticket 8. The shim's backend, so the strict stdout contract and the
+  fail-closed behavior are requirements, not style.
+- **`localstack config`** — R13, `commands/config.py`, test 22, subticket 9.
+  Addresses and edge domain, never a secret. It lands here rather than in D1
+  because this ticket already resolves `vault_addr` and already owns the
+  session file.
+- **`localstack ui consul`** — R14, `commands/ui.py`, test 23, subticket 9.
 
-`login` also writes `~/.vault-token` now, per Q4, and `logout` must remove it.
-A revoked token left on disk is worse than no file, because the next `vault`
-command fails with a confusing 403 instead of an honest "not logged in".
+`login` also writes `~/.vault-token`, per Q4 as re-decided, and `logout`
+removes it. R11 carries that, plus the stderr warning that keeps the write
+from being a silent lie while the devcontainer injects a root `VAULT_TOKEN`.
+
+§1, §2, §5, §7, §8 and §10 were rewritten to carry these three commands.
+The frontmatter `summary` was updated. Before that pass this section was the
+only place they existed, and the plan could not be built to its own eval.
 
 Machine setup, meaning installing the pinned CLI binaries and the shims
-themselves, is **not** this ticket. See `D6-cli-deps-and-shims`.
+themselves, is **not** this ticket. See `D6-cli-deps-and-shims`. What D2 owes
+D6 is `localstack token`, the corrected shim table above, and R12's
+instruction to drop the `CONSUL_HTTP_TOKEN_FILE` export.
 
-The eval marker's signature was cleared: it was signed against the
-four-command scope before these decisions.
+The eval marker's signature was cleared and re-signed: it was first signed
+against the four-command scope before these decisions.
 
 ### Remaining forks resolved, 2026-07-31
 

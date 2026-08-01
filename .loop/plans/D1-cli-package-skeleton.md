@@ -6,9 +6,9 @@ tags = ["cli", "python", "tooling"]
 summary = """
 Create the cli/ Python package, its `localstack` entrypoint, and the ruff,
 mypy and pytest gates this repo does not have yet. Skeleton only: no login,
-no read commands, no TUI, no breakglass. Those are D2 to D5. The value is
-that this is the repo's first Python packaging, so the layout, the install
-path and the gate wiring get decided once instead of four times.
+no read commands, no TUI, no breakglass, no `deps`. Those are D2 to D6. The
+value is that this is the repo's first Python packaging, so the layout, the
+install path and the gate wiring get decided once instead of five times.
 """
 ---
 
@@ -17,7 +17,7 @@ path and the gate wiring get decided once instead of four times.
 ## Title
 Create `cli/` as a real Python package with a working `localstack`
 entrypoint and the lint, type and test gates the repo currently lacks, so
-D2 to D5 have a place to land and a gate that catches them.
+D2 to D6 have a place to land and a gate that catches them.
 
 ## Size / Effort
 **M.** Few lines, several decisions. This is the first Python packaging in
@@ -97,6 +97,9 @@ one file, and the repo's testing rule needs a place to put mirrored tests.
   D3's shape.
 - No Textual TUI and no `textual` dependency. That is D4.
 - No `breakglass`. That is D5.
+- No `deps` command, no PATH shims, no reading tool versions from
+  `group_vars`. That is D6, which depends on D1
+  (`.loop/plans/D6-cli-deps-and-shims.md:3`).
 - No root `pyproject.toml`, no uv workspace, no edit to `requirements.txt`,
   no packaging for anything outside `cli/`.
 - No CI workflow. The repo has no test CI and this ticket does not add one.
@@ -111,7 +114,11 @@ one file, and the repo's testing rule needs a place to put mirrored tests.
    Operator decision, already made. Do not re-open it, and do not add a
    root manifest.
 2. **Console script named `localstack`**, declared in
-   `[project.scripts]`. Operator-given.
+   `[project.scripts]`. Operator-given. `[project.scripts]` alone does not
+   put it on PATH: `cli/pyproject.toml` must also declare a
+   `[build-system]`, or uv treats `cli/` as a non-packaged project, never
+   installs it, and `uv run --project cli localstack` dies with "Failed to
+   spawn: `localstack`". See the code surface.
 3. `requires-python = ">=3.12"`, matching `.python-version` and
    `AGENTS.md:134`.
 4. **Dependencies go in with `uv add`**, never `uv pip`, so they land in
@@ -158,12 +165,20 @@ one file, and the repo's testing rule needs a place to put mirrored tests.
     (`.claude/rules/adversarial-reviews.md`).
 
 ## Code surface
-- `cli/pyproject.toml` **(new)**: `[project]` with name, version,
-  `requires-python`, dependencies; `[project.scripts] localstack =
-  "localstack_cli.main:main"`; `[tool.pytest.ini_options]` with the
-  `cluster` marker and the `addopts` exclusion; `[tool.ruff]` and
-  `[tool.mypy]` config. Generated and edited through `uv add` where
-  possible.
+- `cli/pyproject.toml` **(new)**: `[build-system]` naming the backend
+  (`requires = ["hatchling"]`, `build-backend = "hatchling.build"`);
+  `[project]` with name, version, `requires-python`, dependencies;
+  `[project.scripts] localstack = "localstack_cli.main:main"`;
+  `[tool.pytest.ini_options]` with the `cluster` marker and the `addopts`
+  exclusion; `[tool.ruff]` and `[tool.mypy]` config. Start from `uv init
+  --package cli`, which emits both the `[build-system]` table and the src
+  layout, then add dependencies through `uv add`.
+  **`[build-system]` is load-bearing, not boilerplate.** Without it uv reads
+  `cli/` as a non-packaged project and never installs it, so there is no
+  `localstack` console script (Requirement 2) and
+  `importlib.metadata.version("localstack-cli")` raises
+  `PackageNotFoundError` (Requirement 13). Both were reproduced against a
+  `cli/pyproject.toml` carrying every other table on this list.
 - `cli/uv.lock` **(new, generated, committed)**.
 - `cli/src/localstack_cli/__init__.py` **(new)**: empty or a one-line
   docstring.
@@ -208,16 +223,24 @@ ticket, not a pass.
 All three as `repo: local`, `language: system`, `files: '^cli/'`, appended
 after `.pre-commit-config.yaml:33`.
 
-1. **ruff** (lint and format) through `uv run` with `cli/` as the project
-   root.
+Every entry runs as **`uv run --project cli ...`**, never `uv run
+--directory cli ...`. The two flags are not interchangeable: `--project`
+discovers the project in `cli/` and leaves the working directory at the repo
+root, while `--directory` changes into `cli/` first. Pre-commit runs hooks
+from the repo root and passes root-relative filenames, so under
+`--directory` a hook handed `cli/src/localstack_cli/main.py` would look for
+`cli/cli/src/localstack_cli/main.py` and fail on a file that exists.
+`--project` is what makes filename passing safe. Both flags exist on uv
+0.11.16, the version the container pins
+(`.devcontainer/Dockerfile:7`).
+
+1. **ruff** (lint and format) as `uv run --project cli ruff ...`. Leave
+   `pass_filenames` at its default so ruff checks only the changed files;
+   the root-relative paths resolve because `--project` keeps the cwd at the
+   repo root, and ruff picks up `[tool.ruff]` by walking up from each file
+   to `cli/pyproject.toml`.
 2. **mypy** over `cli/src` and `cli/tests`, `pass_filenames: false`.
 3. **pytest** over `cli/tests`, `pass_filenames: false`.
-
-Pre-commit runs hooks with the repo root as the working directory, so every
-entry needs uv pointed at the `cli/` project (`uv run --directory cli ...`
-or `--project`). **Confirm the exact flag against `uv run --help` before
-writing it into the config rather than trusting this line.** uv 0.11.16 is
-what the container pins (`.devcontainer/Dockerfile:7`).
 
 ### Tests to add
 - `cli/tests/test_main.py`
@@ -225,7 +248,13 @@ what the container pins (`.devcontainer/Dockerfile:7`).
     `importlib.metadata.version` reports for the installed distribution.
     Use `typer.testing.CliRunner`. Assert against the metadata, not a
     literal, so the test fails if the two ever disagree.
-  - `--help` exits 0 and names the `localstack` program.
+  - `--help` exits 0 and lists the `--version` option. **Do not assert on
+    the program name here.** `typer.testing.CliRunner` takes the name from
+    the invocation, not from `[project.scripts]`: it prints `Usage: root`,
+    and passing `prog_name="localstack"` only makes the assertion check the
+    string the test itself supplied. Assert on what the app owns, its
+    options. The entrypoint's real name is proved by the manual check below
+    and by eval row 1, both of which run the installed console script.
 - `cli/tests/test_config.py`
   - All three env vars set: the loader returns them. `monkeypatch.setenv`.
   - One env var missing: the error names the missing variable.
@@ -249,8 +278,9 @@ Python step, which is a follow-up ticket, not this one.
 
 ### Evals
 `require_eval` is `true` (`.loop/config.json:6`), so the authoritative
-scenario set is `.loop/evals/D1-cli-package-skeleton.md`. This ticket does
-not author it; that step needs operator sign-off.
+scenario set is `.loop/evals/D1-cli-package-skeleton.md`. The operator
+signed it off on 2026-07-31. Read it as authoritative; this ticket does not
+author it and does not edit it to fit the implementation.
 
 ## Risk assessment
 - **Blast radius: additive and small.** One new top-level directory, three
@@ -269,16 +299,19 @@ not author it; that step needs operator sign-off.
   emulator on PyPI. A developer who installs both gets whichever shim wins
   on PATH. The name is the operator's decision; record the clash in the
   AGENTS.md block instead of quietly renaming.
-- **A wrong layout is the expensive failure.** D2 to D5 all build on this,
-  so moving the package later costs four tickets of churn. That is why the
+- **A wrong layout is the expensive failure.** D2 to D6 all build on this,
+  so moving the package later costs five tickets of churn. That is why the
   layout, install path and config-source questions are settled here rather
   than discovered in D2.
 - **Reversibility: high.** Delete `cli/`, revert the three hooks and the doc
   lines. No cluster state, no secrets, no terraform.
 
 ## Subtickets (ordered)
-1. `cli/pyproject.toml`, src layout, `main.py`, `--version` and `--help`,
-   `cli/tests/test_main.py`. Verify by running the entrypoint by hand.
+1. `uv init --package cli` for the `[build-system]` table and the src
+   layout, then `cli/pyproject.toml`, `main.py`, `--version` and `--help`,
+   `cli/tests/test_main.py`. Verify by running the entrypoint by hand: a
+   `cli/` that lints and type-checks but has no `localstack` on PATH is the
+   failure this subticket exists to catch.
 2. Commit `cli/uv.lock`. Add `cli/justfile` and the root install recipe.
 3. Wire the three local hooks into `.pre-commit-config.yaml`. Verify `just
    pre_commit` is green from the repo root and that each new hook actually

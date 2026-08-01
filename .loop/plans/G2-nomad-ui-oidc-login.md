@@ -65,7 +65,9 @@ Verified live on 2026-07-31 unless noted.
   `nomad_acl_role`, and the schema fields `oidc_discovery_url`,
   `oidc_client_id`, `oidc_client_secret`, `oidc_scopes`, `oidc_enable_pkce`,
   `bound_audiences`, `allowed_redirect_uris`, `claim_mappings`,
-  `list_claim_mappings`, plus `bind_type`/`bind_name`/`selector` on the
+  `list_claim_mappings` (these ten sit inside the auth method's nested
+  `config` block, not on the resource, see §Code surface), plus
+  `bind_type`/`bind_name`/`selector` on the
   binding rule. No provider bump, no new dependency.
 
 ### The cluster's ACL state
@@ -118,9 +120,16 @@ but D3 should be re-read after this lands.
 
 ## Non-goals / out of scope
 
-- **No Consul UI SSO.** Consul's OIDC auth method is Enterprise-only and this
-  cluster is Community Edition, verified: `consul version` carries no `+ent`
-  and `/v1/agent/self` reports `Edition: n/a`. The CE `jwt` method is
+- **No Consul UI SSO.** Consul's OIDC auth method is Enterprise-only. The
+  first-party doc banners it:
+  `consul/docs/secure/acl/auth-method/oidc` reads "This feature requires
+  version 1.8.0+ of self-managed Consul **Enterprise**", and its nav entry is
+  tagged `OIDC (ENT)`. That banner is the citation and it is the whole
+  argument. **Do not re-add a cluster probe here.** An earlier version of this
+  bullet claimed `/v1/agent/self` reports `Edition: n/a`. It reports no
+  `Edition` field at all (`grep -i edition` over the full response returns
+  nothing), and `consul version` prints no Edition line either, so no probe on
+  this cluster establishes edition directly. The CE `jwt` method is
   programmatic with no browser redirect, so the UI cannot drive it either.
   `D2` §12 owns the paste-a-token path for Consul. Do not attempt it here.
 - **No change to `vault_identity_oidc_client.smoke`** or its group and
@@ -137,15 +146,31 @@ but D3 should be re-read after this lands.
 
 ## Requirements & restrictions
 
-- **R1. Request the `groups` scope explicitly.** Set `oidc_scopes` to include
-  `groups`. Vault requires `openid`, and a request that omits `groups`
+- **R1. Request the `groups` scope explicitly.** Write
+  `oidc_scopes = ["groups"]`, matching HashiCorp's Vault-to-Nomad guide, whose
+  worked config is `"OIDCScopes": ["groups"]`. Vault also requires `openid`,
+  and the guide's example does not list it, which means something below the
+  Terraform surface adds it. **This plan has no citation for what.** So treat
+  it as an assumption and confirm it in subticket 3, next to Q4's callback
+  check: decode the issued token, and if the `groups` claim is missing, add
+  `"openid"` to the list and re-check. A request that omits `groups`
   returns a correctly signed token with **no groups claim**, however perfect
   the scope template is. F2's close-out records this as the trap that hid a
   real defect: apply succeeded, tokens issued, claim absent. The binding rule
   then matches nothing and every login yields a token with no policy.
-- **R2. Enable PKCE.** `oidc_enable_pkce = true`. HashiCorp's own
-  Vault-to-Nomad guide states PKCE is required from Nomad 1.10 onward, and
-  this cluster is on 2.0.4.
+- **R2. Enable PKCE.** `oidc_enable_pkce = true`, as defense in depth. It
+  works here because Vault does its half: the live `lab` provider's discovery
+  document advertises `"code_challenge_methods_supported": ["plain","S256"]`,
+  and the cluster is on 2.0.4, past the 1.10.0 that added PKCE on the Nomad
+  side. The setting is optional, not mandatory:
+  `nomad/docs/secure/authentication/sso-pkce-jwt` reads "Beginning with Nomad
+  v1.10.0, Nomad **supports** PKCE", the 1.10.0 changelog says Nomad
+  "**enables** PKCE for OIDC logins", and the provider schema types
+  `oidc_enable_pkce` as optional, defaulting off. **Rationale corrected
+  2026-07-31:** an earlier version of this line cited the Vault-to-Nomad guide
+  (`nomad/docs/secure/authentication/sso-vault`) as making PKCE required from
+  1.10. That guide never mentions PKCE, and its worked auth-method config
+  carries no `OIDCEnablePKCE`. The setting stays. The justification does not.
 - **R3. Both redirect URIs, exactly.** The UI callback
   `https://nomad.lab.orangecluster.nl/ui/settings/tokens` **and** the CLI
   callback `http://localhost:4649/oidc/callback`, which is where
@@ -158,7 +183,8 @@ but D3 should be re-read after this lands.
   `http://192.168.2.30:8200/v1/identity/oidc/provider/default`. A consumer
   aimed at it **works**, over plaintext against a raw IP, while bypassing
   every scoping decision F2 made. Set `bound_issuer` to the `lab` issuer so a
-  misaimed discovery URL fails loudly.
+  misaimed discovery URL fails loudly. It is typed as a list of strings, so
+  write it as a one-element list (see §Code surface).
 - **R5. Append the client to `local.oidc_provider_client_ids`**
   (`oidc.tf:63-67`). Vault gates the provider on that list and ships no
   standalone resource for it. Omit it and Vault refuses the authorization
@@ -187,10 +213,39 @@ New file, `deployments/infrastructure/nomad_oidc.tf`:
 - `vault_identity_group` and `vault_identity_oidc_assignment` gating who may
   use it.
 - `vault_identity_oidc_key_allowed_client_id`, copying `oidc.tf:118-121`.
-- `nomad_acl_auth_method`, type `OIDC`, `token_locality` and `max_token_ttl`
-  set deliberately (see Q2).
-- `nomad_acl_binding_rule` with a `selector` on the mapped groups list,
-  binding to the `developer` policy or a role wrapping it, per Q1.
+- `nomad_acl_auth_method`, type `OIDC`, `token_locality = "global"` and
+  `max_token_ttl = "8h"` per Q2. **Schema shape, verified against the 2.5.2
+  binary with `terraform providers schema -json`:** `type`, `token_locality`,
+  `max_token_ttl`, `token_name_format` and `default` sit on the resource, but
+  every OIDC field (`oidc_discovery_url`, `oidc_client_id`,
+  `oidc_client_secret`, `oidc_scopes`, `oidc_enable_pkce`, `bound_audiences`,
+  `bound_issuer`, `allowed_redirect_uris`, `claim_mappings`,
+  `list_claim_mappings`) lives inside the nested **`config` block**. And
+  `bound_issuer` is typed `["list","string"]`, so R4's issuer goes in as a
+  one-element list, not a bare string.
+- `nomad_acl_binding_rule` with `auth_method` pointing at the method above, a
+  `selector` on the mapped groups list
+  (`"nomad-developers" in list.groups`; the OIDC docs give `list.*` the
+  operations `In / Not In / Is Empty / Is Not Empty`, so a static `bind_name`
+  is the right shape here), `bind_type = "policy"` and
+  `bind_name = "developer"`, a **plain string reference to the policy
+  Ansible already owns**, per Q1.
+
+**Deliberately NOT created, per Q1 (read this before adding a file):**
+
+- **No `nomad_acl_policy "developer"` resource**, in `nomad_oidc.tf`, in
+  `nomad_deploy_role.tf`, or anywhere else.
+- **No `import` block** for that policy. An earlier draft of Q1 recommended
+  importing it, and that recommendation is rejected: an import gives one
+  policy two owners, so the next `just bootstrap` re-applies Ansible's copy,
+  the following `terraform plan` reports drift, and the two fight on every
+  run. `bind_name = "developer"` is a string; Terraform never reads or writes
+  the policy body.
+- Consequence for scope: this ticket touches **no file under `bootstrap/`**.
+  If the grants themselves turn out to need changing, that is a different
+  ticket against
+  `bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`, not an
+  in-scope edit here.
 
 Edited:
 
@@ -222,10 +277,23 @@ accepting that a token came back, for the reason in R1.
   is deleting the auth method, after which the UI returns to token paste.
 - **Low: silent claim failure.** Mitigated by R1 and the decode-the-token
   gate, which is exactly the defect this pattern produced in F2.
+- **Low, but it is where the DoD hangs: the browser is redirected to Vault's
+  UI.** The `lab` provider's `authorization_endpoint` is a Vault **UI** path,
+  `https://vault.lab.orangecluster.nl/ui/vault/identity/oidc/provider/lab/authorize`,
+  not an API path. So the developer's browser must reach the Vault UI through
+  the edge and log in there (`userpass`) before Nomad ever sees a code. That
+  is reachable today (`https://vault.lab.orangecluster.nl/ui/` returns 200,
+  `vault auth list` shows `userpass/`), and F2's marker already flagged the
+  UI-path surprise, so this is a prerequisite to state rather than a risk to
+  mitigate. A developer with no Vault UI access cannot complete the flow.
 - **Watch: `alloc-node-exec` in the `developer` policy** grants exec on the
   node itself, not just an allocation. That is a bigger grant than the rest
-  of the policy and predates this ticket. Q1's answer should say whether it
-  stays.
+  of the policy and predates this ticket. Q1 deliberately does not settle it:
+  the policy is Ansible's, so changing the grant is a different ticket against
+  `bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`. What this
+  ticket owes is a **stated** inheritance, not a silent one. The close-out
+  must say plainly that everyone in the bound group gets it, which is what
+  eval row 12 scores.
 
 ## Subtickets (ordered)
 
@@ -234,19 +302,25 @@ accepting that a token came back, for the reason in R1.
    appears in `vault list identity/oidc/client`.
 2. KV2 write for the client credentials.
 3. `nomad_acl_auth_method` with R1 to R4 applied.
-4. Resolve `developer` per Q1, then `nomad_acl_binding_rule`.
+4. `nomad_acl_binding_rule` binding by name to `developer` per Q1
+   (`bind_type = "policy"`, `bind_name = "developer"`). No policy resource,
+   no import block.
 5. Gate, then the operator's post-apply rows.
 6. Docs.
 
 ## Open questions (operator must settle)
 
 > **All questions in this section were resolved on 2026-07-31 in
-> `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
-> recommendation recorded below, so these read as history rather than as
-> pending decisions.
+> `## Forks resolved, 2026-07-31` at the end of this plan.** Q2, Q3 and Q4
+> followed the recommendation recorded below. **Q1 did not**: its premise was
+> false, so its answer overrides the recommendation printed here. These read
+> as history rather than as pending decisions.
 
 
-**Q1 — the unmanaged `developer` policy: import, replace, or reference?**
+**Q1 — the `developer` policy: import, replace, or reference?**
+*(Premise below is wrong and kept only as history, see the corrected answer
+in `## Forks resolved`. Ansible owns this policy; the option this question
+recommends is rejected.)*
 It is live, grants `alloc-exec` and `alloc-node-exec`, and no `.tf` file
 mentions it. Three options. *Import* it into Terraform and bind to it, which
 puts an existing grant under management without changing behavior. *Replace*
