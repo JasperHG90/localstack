@@ -72,6 +72,9 @@ OLLAMA_KEY_XEBIA={{ .Data.data.API_KEY }}
 {{- with secret "${ollama_proton_secret}" }}
 OLLAMA_KEY_PROTON={{ .Data.data.API_KEY }}
 {{- end }}
+{{- with secret "${ollama_rituals_secret}" }}
+OLLAMA_KEY_RITUALS={{ .Data.data.API_KEY }}
+{{- end }}
 {{- with secret "${gemini_secret}" }}
 GEMINI_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
 {{- end }}
@@ -85,8 +88,8 @@ EOF
         env         = true
       }
 
-      # --- gateway routing policy: three weighted Ollama Cloud keys
-      #     (personal + xebia + proton accounts). Gemini is addressed directly
+      # --- gateway routing policy: four weighted Ollama Cloud keys
+      #     (personal + xebia + proton + rituals accounts). Gemini is addressed directly
       #     by consumers via the "gemini/" model prefix ---
       template {
         data = <<EOF
@@ -109,7 +112,8 @@ EOF
       "keys": [
         { "name": "ollama-personal", "value": "env.OLLAMA_KEY_PERSONAL", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
         { "name": "ollama-xebia", "value": "env.OLLAMA_KEY_XEBIA", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
-        { "name": "ollama-proton", "value": "env.OLLAMA_KEY_PROTON", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } }
+        { "name": "ollama-proton", "value": "env.OLLAMA_KEY_PROTON", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
+        { "name": "ollama-rituals", "value": "env.OLLAMA_KEY_RITUALS", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } }
       ],
       "network_config": {
         "base_url": "https://ollama.com",

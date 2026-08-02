@@ -21,7 +21,8 @@
         "ci",
         "tailscale",
         "networking"
-      ]
+      ],
+      "stub": false
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
@@ -45,7 +46,8 @@
         "vault",
         "jwt",
         "docs"
-      ]
+      ],
+      "stub": false
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
@@ -68,7 +70,8 @@
         "vault",
         "oidc",
         "terraform"
-      ]
+      ],
+      "stub": false
     },
     "F3-foundation-haproxy-tls-vault-pki": {
       "slug": "F3-foundation-haproxy-tls-vault-pki",
@@ -84,7 +87,8 @@
       "priority": 55,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
@@ -112,7 +116,8 @@
         "haproxy",
         "oidc",
         "vault"
-      ]
+      ],
+      "stub": false
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
@@ -139,7 +144,8 @@
         "nomad",
         "haproxy",
         "oauth2-proxy"
-      ]
+      ],
+      "stub": false
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
@@ -166,7 +172,8 @@
         "nomad",
         "jwt",
         "sts"
-      ]
+      ],
+      "stub": false
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
@@ -193,7 +200,8 @@
         "vault",
         "oidc",
         "terraform"
-      ]
+      ],
+      "stub": false
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
@@ -220,7 +228,8 @@
         "oauth2-proxy",
         "oidc",
         "haproxy"
-      ]
+      ],
+      "stub": false
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
@@ -248,7 +257,8 @@
         "oidc",
         "jwt",
         "vault"
-      ]
+      ],
+      "stub": false
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
@@ -276,7 +286,8 @@
         "vault",
         "secrets",
         "nomad"
-      ]
+      ],
+      "stub": false
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
@@ -305,7 +316,8 @@
         "vault",
         "terraform",
         "otlp"
-      ]
+      ],
+      "stub": false
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
@@ -331,7 +343,8 @@
         "spike",
         "boundary",
         "docs"
-      ]
+      ],
+      "stub": false
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
@@ -355,7 +368,8 @@
         "postgres",
         "vault",
         "secrets"
-      ]
+      ],
+      "stub": false
     },
     "S3-spike-oidc-version-claims": {
       "slug": "S3-spike-oidc-version-claims",
@@ -371,7 +385,8 @@
       "priority": 15,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "F4-foundation-dnsmasq-localstack-dns": {
       "slug": "F4-foundation-dnsmasq-localstack-dns",
@@ -387,7 +402,8 @@
       "priority": 20,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "F5-foundation-vault-nomad-secrets-engine": {
       "slug": "F5-foundation-vault-nomad-secrets-engine",
@@ -403,7 +419,8 @@
       "priority": 60,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "F6-foundation-vault-consul-secrets-engine": {
       "slug": "F6-foundation-vault-consul-secrets-engine",
@@ -419,7 +436,8 @@
       "priority": 59,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "F7-foundation-deployer-vault-oidc-login": {
       "slug": "F7-foundation-deployer-vault-oidc-login",
@@ -446,7 +464,8 @@
         "oidc",
         "terraform",
         "policy"
-      ]
+      ],
+      "stub": false
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
@@ -476,7 +495,8 @@
         "consul",
         "terraform",
         "secrets"
-      ]
+      ],
+      "stub": false
     },
     "T1-tls-acme-letsencrypt-transip": {
       "slug": "T1-tls-acme-letsencrypt-transip",
@@ -492,7 +512,8 @@
       "priority": 70,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "T2-tls-dnsmasq-lab-zone-dns": {
       "slug": "T2-tls-dnsmasq-lab-zone-dns",
@@ -508,7 +529,8 @@
       "priority": 65,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "T3-tls-edge-cutover-lab-domain": {
       "slug": "T3-tls-edge-cutover-lab-domain",
@@ -532,7 +554,8 @@
         "haproxy",
         "dns",
         "vault"
-      ]
+      ],
+      "stub": false
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
@@ -555,7 +578,8 @@
         "nomad",
         "policy",
         "security"
-      ]
+      ],
+      "stub": false
     },
     "A1-audit-plan-premise-sweep": {
       "slug": "A1-audit-plan-premise-sweep",
@@ -575,7 +599,8 @@
         "audit",
         "planning",
         "process"
-      ]
+      ],
+      "stub": false
     },
     "T4-tls-fix-podman-image-digest-refs": {
       "slug": "T4-tls-fix-podman-image-digest-refs",
@@ -591,7 +616,8 @@
       "priority": 80,
       "summary": null,
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "N1-netsec-restrict-prometheus-loki-to-cluster": {
       "slug": "N1-netsec-restrict-prometheus-loki-to-cluster",
@@ -613,7 +639,8 @@
         "firewall",
         "security",
         "terraform"
-      ]
+      ],
+      "stub": false
     },
     "G1-grafana-native-oidc-login": {
       "slug": "G1-grafana-native-oidc-login",
@@ -639,7 +666,8 @@
         "oidc",
         "vault",
         "terraform"
-      ]
+      ],
+      "stub": false
     },
     "N2-netsec-remove-dnsmasq-for-public-dns": {
       "slug": "N2-netsec-remove-dnsmasq-for-public-dns",
@@ -660,7 +688,8 @@
         "dnsmasq",
         "cleanup",
         "revert"
-      ]
+      ],
+      "stub": false
     },
     "T5-tls-certificate-expiry-alert": {
       "slug": "T5-tls-certificate-expiry-alert",
@@ -685,7 +714,8 @@
         "alerting",
         "prometheus",
         "blackbox-exporter"
-      ]
+      ],
+      "stub": false
     },
     "N3-netsec-converging-firewall-provisioner": {
       "slug": "N3-netsec-converging-firewall-provisioner",
@@ -710,7 +740,8 @@
         "terraform",
         "provisioner",
         "drift"
-      ]
+      ],
+      "stub": false
     },
     "B1-bifrost-native-auth-and-virtual-keys": {
       "slug": "B1-bifrost-native-auth-and-virtual-keys",
@@ -726,11 +757,12 @@
       "priority": 200,
       "summary": "Replace HAProxy basic-auth gating Bifrost with Bifrost's native\ngovernance.auth_config, gate inference via enforce_auth_on_inference +\na Terraform-managed virtual key for Hermes, and move the Prometheus\n/metrics scrape to basic_auth. Prerequisite for API keys.\n",
       "relay_block_nonfork": null,
-      "tags": []
+      "tags": [],
+      "stub": false
     },
     "F10-foundation-nomad-oidc-issuer": {
       "slug": "F10-foundation-nomad-oidc-issuer",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -740,14 +772,15 @@
       "epic": "foundation",
       "dependencies": [],
       "priority": 44,
-      "summary": "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which M1 needs. **It does not by itself unblock M1 or R1**: M1's `F1` dependency is unmet and F1 is blocked, and R1 is blocked on unrelated grounds. This removes one blocker, not the last one.",
+      "summary": "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which M1 wants. This removes one blocker M1 shares with R1's premise, not the last one for either: M1 also has an unmet F1 dependency (F1 itself blocked), and R1 is blocked on grounds this ticket does not touch.",
       "relay_block_nonfork": null,
       "tags": [
         "nomad",
         "oidc",
         "bootstrap",
         "ansible"
-      ]
+      ],
+      "stub": false
     },
     "D1-cli-package-skeleton": {
       "slug": "D1-cli-package-skeleton",
@@ -767,15 +800,16 @@
         "cli",
         "python",
         "tooling"
-      ]
+      ],
+      "stub": false
     },
     "D2-cli-login-broker-tokens": {
       "slug": "D2-cli-login-broker-tokens",
-      "stage": "self-review",
+      "stage": "done",
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "26cbbb9fac920d9cb01a54b2da79142b06da89d9",
       "review_verdict": null,
       "dropped": false,
       "epic": "cli",
@@ -794,7 +828,8 @@
         "nomad",
         "consul",
         "auth"
-      ]
+      ],
+      "stub": false
     },
     "D3-cli-read-commands": {
       "slug": "D3-cli-read-commands",
@@ -819,7 +854,8 @@
         "vault",
         "consul",
         "haproxy"
-      ]
+      ],
+      "stub": false
     },
     "D5-cli-breakglass": {
       "slug": "D5-cli-breakglass",
@@ -842,7 +878,8 @@
         "recovery",
         "runbook",
         "security"
-      ]
+      ],
+      "stub": false
     },
     "D4-cli-cluster-tui": {
       "slug": "D4-cli-cluster-tui",
@@ -866,11 +903,12 @@
         "textual",
         "tui",
         "observability"
-      ]
+      ],
+      "stub": false
     },
     "U1-upgrade-pin-hashistack-versions": {
       "slug": "U1-upgrade-pin-hashistack-versions",
-      "stage": "planning",
+      "stage": "implementing",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -887,11 +925,12 @@
         "ansible",
         "versioning",
         "hashistack"
-      ]
+      ],
+      "stub": false
     },
     "U2-upgrade-vault-2x": {
       "slug": "U2-upgrade-vault-2x",
-      "stage": "planning",
+      "stage": "implementing",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -910,11 +949,12 @@
         "upgrade",
         "bootstrap",
         "storage"
-      ]
+      ],
+      "stub": false
     },
     "U3-upgrade-nomad-2x": {
       "slug": "U3-upgrade-nomad-2x",
-      "stage": "planning",
+      "stage": "implementing",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -934,11 +974,12 @@
         "upgrade",
         "bootstrap",
         "podman"
-      ]
+      ],
+      "stub": false
     },
     "U4-upgrade-consul-2x": {
       "slug": "U4-upgrade-consul-2x",
-      "stage": "planning",
+      "stage": "implementing",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -959,7 +1000,8 @@
         "bootstrap",
         "storage",
         "terraform"
-      ]
+      ],
+      "stub": false
     },
     "G2-nomad-ui-oidc-login": {
       "slug": "G2-nomad-ui-oidc-login",
@@ -983,7 +1025,8 @@
         "vault",
         "terraform",
         "sso"
-      ]
+      ],
+      "stub": false
     },
     "D6-cli-deps-and-shims": {
       "slug": "D6-cli-deps-and-shims",
@@ -1006,7 +1049,8 @@
         "tooling",
         "versions",
         "shims"
-      ]
+      ],
+      "stub": false
     },
     "N4-netsec-edge-only-service-access": {
       "slug": "N4-netsec-edge-only-service-access",
@@ -1030,7 +1074,8 @@
         "haproxy",
         "tls",
         "runbook"
-      ]
+      ],
+      "stub": false
     },
     "F11-foundation-human-read-role": {
       "slug": "F11-foundation-human-read-role",
@@ -1053,7 +1098,8 @@
         "human-auth",
         "terraform",
         "rbac"
-      ]
+      ],
+      "stub": false
     },
     "F12-foundation-deployer-privilege-split": {
       "slug": "F12-foundation-deployer-privilege-split",
@@ -1073,7 +1119,8 @@
         "vault",
         "terraform",
         "deployer"
-      ]
+      ],
+      "stub": false
     },
     "F13-foundation-infrastructure-deployer": {
       "slug": "F13-foundation-infrastructure-deployer",
@@ -1097,7 +1144,8 @@
         "terraform",
         "deployer",
         "ansible"
-      ]
+      ],
+      "stub": false
     },
     "F14-foundation-app-user-groups": {
       "slug": "F14-foundation-app-user-groups",
@@ -1121,7 +1169,8 @@
         "oidc",
         "rbac",
         "taxonomy"
-      ]
+      ],
+      "stub": false
     },
     "F14-foundation-role-taxonomy": {
       "slug": "F14-foundation-role-taxonomy",
@@ -1145,7 +1194,8 @@
         "oidc",
         "rbac",
         "taxonomy"
-      ]
+      ],
+      "stub": false
     }
   }
 }

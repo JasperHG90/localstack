@@ -190,17 +190,17 @@ marketplace_name = "memex"
 risk_acknowledged = false
 
 [[plugin]]
-qualified_name = "ef9f6a17bd3105b7/loop-harness"
-repo_alias = "ef9f6a17bd3105b7"
-flavor = "claude"
-source_path = ""
-marketplace_name = "loop-harness"
-risk_acknowledged = false
-
-[[plugin]]
 qualified_name = "10ae737f6885d841/caveman"
 repo_alias = "10ae737f6885d841"
 flavor = "claude"
 source_path = ""
 marketplace_name = "caveman"
+risk_acknowledged = false
+
+[[plugin]]
+qualified_name = "ef9f6a17bd3105b7/loop-harness"
+repo_alias = "ef9f6a17bd3105b7"
+flavor = "claude"
+source_path = ""
+marketplace_name = "loop-harness"
 risk_acknowledged = false

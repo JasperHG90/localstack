@@ -2,24 +2,24 @@
 epic = "foundation"
 depends_on = []
 priority = 44
-summary = "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which M1 needs. **It does not by itself unblock M1 or R1**: M1's `F1` dependency is unmet and F1 is blocked, and R1 is blocked on unrelated grounds. This removes one blocker, not the last one."
+summary = "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which M1 wants. This removes one blocker M1 shares with R1's premise, not the last one for either: M1 also has an unmet F1 dependency (F1 itself blocked), and R1 is blocked on grounds this ticket does not touch."
 tags = ["nomad", "oidc", "bootstrap", "ansible"]
 ---
 
-# F10 — Make Nomad a full OIDC issuer, not just a JWT signer
+# Ticket: F10-foundation-nomad-oidc-issuer — Make Nomad a full OIDC issuer, not just a JWT signer
 
-## Title
+## 1. Title
 Set `server { oidc_issuer = ... }` in the Nomad server config so Nomad serves
 `/.well-known/openid-configuration`. Today it signs Workload Identity JWTs and
 serves JWKS, but advertises no discovery document, and nothing in the ledger
 owns changing that.
 
-## Size / Effort
+## 2. Size / Effort
 **Small, with a real operational edge.** The change is one line in a Jinja
 template plus a variable. The cost is that applying it restarts the only Nomad
 server, and that the `iss` claim on newly minted WI JWTs changes.
 
-## Triggered by
+## 3. Triggered by
 A1's plan premise sweep, 2026-07-30. Two tickets need this and neither owns it:
 
 - **M1** (`M1-minio-poc-service-account`, blocked) points MinIO's
@@ -27,11 +27,15 @@ A1's plan premise sweep, 2026-07-30. Two tickets need this and neither owns it:
   the `jwks_url` parameter — its source at the deployed tag lists it under
   `// Removed params`, and `Enabled(kvs)` is literally
   `kvs.Get(ConfigURL) != ""`. Only `config_url`, a real discovery document,
-  works. M1 is unimplementable until this ticket lands.
+  works. This is one of M1's two blockers, not its only one: M1 also has an
+  unmet `F1` dependency, and F1 is itself blocked.
 - **R1** (`R1-rollout-mlflow-oauth2-proxy`, blocked) needs oauth2-proxy's
   bare-JWKS fallback, whose single `--extra-jwt-issuers` value must equal the
   JWT's `iss` **and** base a reachable JWKS URL — which requires `oidc_issuer`
-  to be set.
+  to be set. R1 is blocked on separate grounds this ticket does not touch
+  (mlflow#10922 closed not_planned, a stale S3 citation), and its own plan
+  review already doubts the oauth2-proxy approach, so this ticket removes one
+  premise R1 shares, not a guarantee R1 becomes pickable.
 
 **F1's Q7 already named this gap and left it open.** F1 marks
 `nomad.hcl.j2` read-only and delivers JWKS only; M1's Q1 says "block subticket
@@ -39,7 +43,7 @@ A1's plan premise sweep, 2026-07-30. Two tickets need this and neither owns it:
 planned never provides one. This ticket exists to break that deadlock and to
 resolve F1's Q7.
 
-## Context (verified live 2026-07-30)
+## 4. Context (verified live 2026-07-30)
 - **The setting is absent.** `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32`
   is exactly:
   ```
@@ -63,7 +67,7 @@ resolve F1's Q7.
   **CORRECTED 2026-07-30 (plan review).** This bullet previously ended
   "Restarting it is a brief control-plane outage. Running allocations keep
   running; scheduling and the API pause." That understated it and cited no
-  evidence. `nomad.hcl.j2:20` sets `client { enabled = true }`, so firebat is
+  evidence. `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:38-39` sets `client { enabled = true }`, so firebat is
   a combined server AND client, and
   `deployments/infrastructure/services/haproxy.hcl:6-9` pins the edge proxy to
   it by hostname constraint. So the restart touches the agent supervising the
@@ -82,7 +86,7 @@ resolve F1's Q7.
 
   **How to apply it, because the obvious command is wrong.** `just bootstrap`
   (`bootstrap/justfile:40-49`) runs nine playbooks and, via
-  `nomad_client/tasks/main.yml:56,65`, carries `notify: Restart nomad` — so it
+  `bootstrap/roles/nomad_client/tasks/main.yml:56,65`, carries `notify: Restart nomad` — so it
   restarts **all five agents**, not the one server whose config changed. Use
   the targeted playbook instead:
 
@@ -91,10 +95,10 @@ resolve F1's Q7.
   ```
 
   It is `hosts: manager`, so it touches firebat alone, and the server role's
-  own handler (`nomad_server/tasks/main.yml:128`) restarts the one agent.
+  own handler (`bootstrap/roles/nomad_server/tasks/main.yml:128`) restarts the one agent.
 
   **Check for a second pending change before you restart.** The template
-  carries an `advertise` block at `nomad.hcl.j2:23-27` added by `c744b92` on
+  carries an `advertise` block at `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:23-27` added by `c744b92` on
   2026-07-31, after this plan was written. If that block is not yet on the
   host, this run applies two config changes in one restart. Live
   `AdvertiseAddrs` reads `192.168.2.30` on all three ports — which is what the
@@ -113,7 +117,7 @@ resolve F1's Q7.
   matches `jwks`, `openid` or `oidc` (A1 ground truth), and Vault is the only
   configured consumer of Nomad WI JWTs.
 
-## Non-goals / out of scope
+## 5. Non-goals / out of scope
 - **Not implementing M1 or R1.** This ticket makes the discovery document
   exist. Consuming it is those tickets' work, and both are blocked on their
   own defects beyond this one.
@@ -124,21 +128,29 @@ resolve F1's Q7.
   security improvement worth its own ticket, and doing it here couples a
   low-risk config addition to a change that CAN lock workloads out.
 - **Not changing the JWKS endpoint, the `vault.io` audience, or the
-  `default_identity` block** (`nomad.hcl.j2:37-46`).
+  `default_identity` block** (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:60-63`, inside the `vault` stanza
+  at `:55-64`).
 - **Not adding TLS to the Nomad API.** The issuer URL's scheme is settled in
   Q1, not by re-architecting the listener.
 
-## Requirements & restrictions
+## 6. Requirements & restrictions
 1. `server { oidc_issuer = "<url>" }` is set in
    `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`, sourced from an
    Ansible variable, not a literal, matching how `nomad_server_ip_address` is
    already used in the same file.
    **CORRECTED 2026-07-30 (plan review):** this previously said "with a
-   default". There is nowhere to put one. No role in this repo has a
-   `defaults/` directory; the convention is an inline `vars:` block on the
+   default". No role in this repo has a `defaults/` directory, and the
+   convention for a role-scoped variable is the inline `vars:` block on the
    role invocation at `bootstrap/playbooks/configure_hashistack_server.yml:41-44`,
-   which is also where `nomad_server_ip_address` is set. Follow that. Do not
-   introduce a `defaults/` directory as a side effect of this ticket.
+   which is also where `nomad_server_ip_address` is set. Follow that.
+   **CORRECTED 2026-08-02 (plan re-review):** `bootstrap/inventory/group_vars/all.yml`
+   does exist and holds fleet-wide values (`hashistack_versions`, consumed by
+   `install_dependencies.yml:118-121,138`), so it is not true that no
+   alternative home exists at all. The playbook `vars:` block is still the
+   right choice here: `oidc_issuer` is server-role-scoped, not fleet-wide,
+   so it belongs beside `nomad_server_ip_address` rather than in a file meant
+   for values every role reads. Do not introduce a `defaults/` directory as a
+   side effect of this ticket.
 2. After the bootstrap run, `curl <nomad>/.well-known/openid-configuration`
    returns HTTP 200 with a JSON body carrying `issuer` and a `jwks_uri`, and
    the advertised `jwks_uri` fetches a non-empty `keys` array.
@@ -153,13 +165,15 @@ resolve F1's Q7.
    allocations), and the operator runs it.
 6. `.claude/rules/adversarial-reviews.md`: adversarial review before done.
 
-## Code surface
+## 7. Code surface
 - `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32` — add
   `oidc_issuer` to the existing `server` block.
 - `bootstrap/playbooks/configure_hashistack_server.yml:41-44` — add the new
   variable to the existing inline `vars:` block, beside
-  `nomad_server_ip_address`. **There is no `defaults/main.yml` to use**: no
-  role in this repo has a `defaults/` directory.
+  `nomad_server_ip_address`. No role in this repo has a `defaults/`
+  directory; `bootstrap/inventory/group_vars/all.yml` exists but holds
+  fleet-wide values, and `oidc_issuer` is server-role-scoped, so the
+  playbook `vars:` block is the right home, not the only possible one.
 - `bootstrap/roles/nomad_server/tasks/main.yml:121-128` — read only. The
   existing `notify: Restart nomad` already handles the restart; no new task.
 - `deployments/infrastructure/services/haproxy.hcl:6-9` — read only, but READ
@@ -167,7 +181,7 @@ resolve F1's Q7.
 
 No Terraform, no jobspec, no `deployments/` change.
 
-## Tests & validation gates
+## 8. Tests & validation gates
 No unit-test harness for Ansible or HCL, and no CI. The repo gate plus live
 verification.
 
@@ -175,7 +189,7 @@ verification.
 - **Command:** `just pre_commit` -> all Passed. Note this change touches a
   `.j2` template and YAML only, so `nomad-fmt` and `terraform-*` hooks will
   skip; `check-yaml` and `end-of-file-fixer` are the ones that matter.
-- **Worktree prerequisite:** `just worktree_setup <path>` (`justfile:30-32`).
+- **Worktree prerequisite:** `just worktree_setup <path>` (`justfile:41-43`).
 
 ### Evals
 Authoritative set is `.loop/evals/F10-foundation-nomad-oidc-issuer.md`.
@@ -183,7 +197,7 @@ The discovery checks require the Ansible run and the restart, which the loop
 never performs, so they are the close-out acceptance procedure the operator
 executes. The loop's own bar is the gate plus the rendered-template check.
 
-## Risk assessment
+## 9. Risk assessment
 - **Blast radius: the control plane, briefly.** One server, `bootstrap_expect
   = 1`, and it is the leader. During the restart, scheduling and the Nomad API
   are unavailable. Running allocations are unaffected. Choose the moment.
@@ -204,14 +218,32 @@ executes. The loop's own bar is the gate plus the rendered-template check.
   survives the restart before treating the change as applied, and have the
   direct address `http://192.168.2.30:4646` to hand for diagnosis if the edge
   does not come back.
+- **Run the targeted playbook, not `just bootstrap`.** `just bootstrap`
+  (`bootstrap/justfile:40-49`) runs nine playbooks and restarts all five
+  Nomad agents, because `bootstrap/roles/nomad_client/tasks/main.yml:56,65` also carries
+  `notify: Restart nomad`. Only
+  `ansible-playbook playbooks/configure_hashistack_server.yml` (`hosts:
+  manager`) restarts firebat alone.
+- **A second config change may ride along.** `nomad.hcl.j2` also carries an
+  `advertise` block (`:23-27`) added by `c744b92`, after this plan was first
+  written. Whether that block is already deployed on 192.168.2.30 could not
+  be confirmed by SSH (permission denied) during plan review. If it is not
+  yet deployed, this run applies two config changes in one restart, and eval
+  row 10's `git diff` check cannot catch that: the repo is identical either
+  way. Diff the rendered `/etc/nomad.d/nomad.hcl` against the template
+  before applying. Mitigating: that block exists to stop a restart
+  advertising the podman bridge (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:18-22` comment) instead of
+  the real address, so once deployed it makes this restart safer, not
+  riskier.
 
-## Subtickets (ordered)
+## 10. Subtickets (ordered)
 1. Confirm Q1's settled value still holds — `https://nomad.lab.orangecluster.nl`
    routed at the edge and serving JWKS — then set it. Do not re-open the fork.
 2. Add the variable and the `oidc_issuer` line; render the template locally
    and inspect the output before any run.
-3. Operator runs the bootstrap role against the Nomad server; the handler
-   restarts it.
+3. Operator runs `cd bootstrap && ansible-playbook playbooks/configure_hashistack_server.yml`
+   (`hosts: manager`, touches firebat alone); the server role's handler
+   restarts the one agent. Do NOT run `just bootstrap` — see Risk.
 4. Verify: discovery 200 with `issuer` and `jwks_uri`; `jwks_uri` returns
    keys; `issuer` matches the configured value exactly.
 5. Verify no regression: a `nomad-workloads` job renders its Vault template
@@ -225,7 +257,7 @@ executes. The loop's own bar is the gate plus the rendered-template check.
    2026-07-30), which reduces but does not remove the collision risk.
 7. Adversarial review.
 
-## Open questions
+## 11. Open questions
 - **Q1 — SETTLED. The issuer URL is `https://nomad.lab.orangecluster.nl`.**
   The candidates were the direct API
   address `http://192.168.2.30:4646`, or an edge hostname such as
@@ -254,24 +286,70 @@ executes. The loop's own bar is the gate plus the rendered-template check.
   plaintext into every token, and the HTTP edge 301s anyway, which some
   clients will not follow when fetching a discovery document.
 
-  **SETTLED 2026-07-30 by the plan review, in Nomad's source at the deployed
-  tag.** This was flagged as the implementer's remaining unknown: whether
-  Nomad derives `jwks_uri` from `oidc_issuer` or from the request host. It
-  derives it from the configured issuer. **Verified empirically on this
-  cluster's line rather than from source**, because the source citation an
-  earlier draft used was for v1.11.3 and the cluster runs 2.0.4. Measured on a
-  throwaway `nomad agent -dev` at 2.0.3: `oidc_issuer` is accepted, discovery
-  returns 200, and fetching over a *different* host:port than the configured
-  issuer still returns `jwks_uri` pointing at the **configured** host — so it
-  derives from the issuer, not the request. A real minted Workload Identity
-  JWT decodes with `iss` byte-identical to the discovery document's `issuer`. So the discovery
+  **SETTLED 2026-07-30 by the plan review, by empirical re-verification at
+  the version this cluster runs, not by reading source at a deployed tag.**
+  This was flagged as the implementer's remaining unknown: whether Nomad
+  derives `jwks_uri` from `oidc_issuer` or from the request host. It derives
+  it from the configured issuer. An earlier draft cited Nomad's source at
+  v1.11.3, but the cluster runs 2.0.4, so that citation was replaced with a
+  live measurement instead: a throwaway `nomad agent -dev` at 2.0.3, where
+  `oidc_issuer` is accepted, discovery returns 200, and fetching over a
+  *different* host:port than the configured issuer still returns `jwks_uri`
+  pointing at the **configured** host — so it derives from the issuer, not
+  the request. A real minted Workload Identity JWT decodes with `iss`
+  byte-identical to the discovery document's `issuer`. So the discovery
   document's `issuer`, `agent/self`'s `OIDCIssuer`, and the minted `iss` are
   all one value, and setting it to the edge hostname yields a `jwks_uri` on
-  that same host. **Operator still confirms the value itself before
-  subticket 2**, but the mechanism is no longer open.
+  that same host. **SETTLED, closed:** the signed eval
+  (`.loop/evals/F10-foundation-nomad-oidc-issuer.md`, signed
+  `JasperHG90 2026-07-31`) already hard-codes this value in the Definition
+  of Done and rows 1/3/4, so the choice is in practice final; there is no
+  remaining confirmation step before subticket 2.
 
 - **Q2 — Does Vault's `jwt-nomad` switch from `jwks_url` to
   `oidc_discovery_url` once discovery exists?** It is not required: JWKS trust
   works and is unaffected. *Recommendation:* leave it. Changing a working
   trust path for tidiness risks locking every workload out of Vault for no
   functional gain. Revisit only if a future ticket needs issuer validation.
+
+## Premises / assumptions
+
+- **P1 — `oidc_issuer` is absent from the repo and the live server.**
+  Probe: `grep -rn oidc_issuer bootstrap/ deployments/` returns nothing; live
+  `GET /v1/agent/self` reports `Server.OIDCIssuer: ''`. Anchor:
+  `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32` (the `server`
+  block, no `oidc_issuer` key).
+- **P2 — Discovery is disabled, JWKS is not.**
+  Probe: `curl $NOMAD_ADDR/.well-known/openid-configuration` returns `OIDC
+  Discovery endpoint disabled`; `curl $NOMAD_ADDR/.well-known/jwks.json`
+  returns a populated key set.
+- **P3 — firebat is the only Nomad server, and it is also a client and the
+  edge node.** `nomad server members`: one member, `firebat.global`,
+  `alive`, leader, `bootstrap_expect = 1`; `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:38-39` sets
+  `client { enabled = true }`; `haproxy.hcl:6-9` pins the edge proxy to
+  firebat by hostname constraint.
+- **P4 — setting `oidc_issuer` produces a discovery document whose `jwks_uri`
+  derives from the configured issuer, not the request host.** Probe: a
+  throwaway `nomad agent -dev` at the deployed version (2.0.3/2.0.4) with
+  `oidc_issuer` set returns discovery 200, and fetching over a different
+  host:port than the configured issuer still returns `jwks_uri` on the
+  **configured** host; a minted WI JWT decodes with `iss` byte-identical to
+  the discovery `issuer` (§11, Q1).
+- **P5 — the `iss` change is safe for the only existing consumer.**
+  Probe: `vault read auth/jwt-nomad/config` returns `bound_issuer: ""`, so
+  Vault does not validate `iss`; changing it does not invalidate existing
+  logins.
+- **P6 — a Nomad hostname is already routed at the edge over HTTPS.**
+  `deployments/infrastructure/services/haproxy.hcl:101` carries
+  `acl is_nomad hdr(host) -i nomad.lab.orangecluster.nl`, backed at `:136-137`
+  by `server nomad1 192.168.2.30:4646`. Probe:
+  `https://nomad.lab.orangecluster.nl/v1/agent/health` returns 200 live, and
+  the plain HTTP address redirects (301) to HTTPS (§11, Q1).
+- **P7 — `just bootstrap` restarts all five Nomad agents; only the targeted
+  playbook restarts firebat alone.** `bootstrap/justfile:40-48` runs nine
+  playbooks including the client role, whose `bootstrap/roles/nomad_client/tasks/main.yml:56,65`
+  also carries `notify: Restart nomad`.
+- **P8 — whether commit `c744b92`'s `advertise` block is already deployed on
+  192.168.2.30 is UNCERTAIN.** SSH access to check the live rendered config
+  was unavailable during plan review; live `AdvertiseAddrs` do not
+  distinguish the two scenarios.
