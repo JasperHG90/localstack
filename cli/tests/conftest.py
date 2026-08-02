@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from localstack_cli.auth.vault_token_file import VAULT_TOKEN
 from localstack_cli.config import CONSUL_HTTP_ADDR, NOMAD_ADDR, VAULT_ADDR
-from localstack_cli.status import VAULT_TOKEN
 from tests.fixtures.cluster import HEALTHY_ROUTES, FakeCluster, Handler
 
 
@@ -20,6 +20,7 @@ from tests.fixtures.cluster import HEALTHY_ROUTES, FakeCluster, Handler
 def cluster() -> Iterator[FakeCluster]:
     server = FakeCluster(("127.0.0.1", 0), Handler)
     server.routes = dict(HEALTHY_ROUTES)
+    server.requests = []
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
@@ -60,6 +61,9 @@ def isolated_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, closed
     home = tmp_path / "home"
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
+    # The session cache follows XDG_CONFIG_HOME, so it lands under tmp_path
+    # too and no test can read or write the developer's real one.
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
     monkeypatch.delenv(VAULT_TOKEN, raising=False)
     for name in (VAULT_ADDR, NOMAD_ADDR, CONSUL_HTTP_ADDR):
         monkeypatch.setenv(name, closed_addr)

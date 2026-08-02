@@ -133,9 +133,12 @@ What the credential does buy over the root token:
 - It is per-person.
 - It cannot be used to unseal or rekey.
 
-**`localstack logout` does not exist yet.** It ships with `D2`; today the
-installed `localstack` is `D1`'s skeleton and the command returns
-`No such command 'logout'`. Until then the equivalent is:
+**`localstack logout` ships with `D2` and is the way to do this.** It revokes
+the Vault token, and with it the brokered Nomad and Consul leases, then
+deletes the session file and `~/.vault-token`. See `docs/cli-login.md`.
+
+If you have the lost session's token but not its session file, the equivalent
+is:
 
 ```sh
 VAULT_TOKEN=<the lost session's token> vault token revoke -self
@@ -147,7 +150,7 @@ token** — running it bare would revoke root and take the cluster's admin
 credential with it. Deleting the placeholder instead of filling it is safe:
 an empty `VAULT_TOKEN` returns 403 rather than falling back to
 `~/.vault-token` (measured). Same endpoint and same cascade as `logout` once the token
-is right. Everything below describes the shape once `D2` lands.
+is right.
 
 **If a session is lost, do this first: `localstack logout`.** It calls
 `auth/token/revoke-self`, which `default` grants, and revoking the parent
@@ -180,7 +183,8 @@ Two things do close it:
   on a throwaway entity, never on the `developer` group.** Group policies
   resolve per request and the thief is also a `developer`: granting it to the
   group hands them `revoke-accessor` over every token in the cluster,
-  including all 14 workload tokens. That turns a stolen laptop into an outage.
+  including every workload token on the cluster. That turns a stolen laptop
+  into an outage.
 
   The policy needs `sudo` on the list path, or its first command fails:
 
@@ -190,16 +194,37 @@ Two things do close it:
   path "auth/token/revoke-accessor" { capabilities = ["update"] }
   ```
 
-  Two more traps. A `terraform apply` during the incident silently strips your
-  grant, because `developer_group.tf` manages `policies` as a fixed list — and
-  leaves an orphan policy behind. And you cannot pick the target by path: five
-  live accessors share the same path, display name, entity and policy list.
-  They differ on `creation_time`, but two of them were minted 10 seconds
-  apart, no audit device records when the lost session started, and every one
-  of them carries `developer` for another month. **So revoke every accessor at
-  that path except the one you are using now**, then log in again.
-  `localstack whoami` prints your own accessor (also `D2`; until then use
-  `vault token lookup -format=json` and read `data.accessor`).
+  **Since F14 landed there is a shorter route: join the `admin` group.** It
+  carries `path "*"` with `sudo`, so it covers all three accessor paths with
+  no policy to write and none to clean up, and its membership survives a
+  `terraform apply` running mid-incident. Prefer it; the hand-built policy
+  above is the fallback for anyone who cannot join. Both the join and leave
+  commands, including the empty-group case, are in `docs/cluster-roles.md`,
+  and `docs/cli-login.md` has the fast path: `localstack logout`, the accessor
+  revoke, and what each one cascades to.
+
+  Clean up the throwaway policy yourself, because Terraform will not: a policy
+  attached to a throwaway entity is invisible to it, so nothing removes the
+  orphan when the incident ends. An earlier version of this page said the
+  opposite — that a `terraform apply` would strip the grant mid-incident,
+  citing `developer_group.tf:161`. That is true only if you attach the policy
+  to the `developer` **group**, which the paragraph above forbids.
+
+  And you cannot pick the target by path. Every live session at
+  `auth/userpass/login/operator` shares the same display name, entity and
+  policy list, and they differ only on `creation_time` — which does not
+  identify which one was lost, since sessions minted seconds apart are common
+  and no audit device records when the lost one started. Each carries
+  `developer` for another month. **So revoke every accessor at that path
+  except the one you are using now**, then log in again. `localstack whoami`
+  prints your own accessor.
+
+  Do not trust a count of them written here: it drifts within a day, because
+  every login adds one. Read it when you need it:
+
+  ```sh
+  vault list auth/token/accessors
+  ```
 
   **Tearing the throwaway down: revoke its token by accessor FIRST, then
   delete the entity, the alias, the user and the policy.** Deleting the user

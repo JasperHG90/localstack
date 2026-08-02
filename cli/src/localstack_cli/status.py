@@ -7,20 +7,19 @@ already exists.
 """
 
 import json
-import os
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from pathlib import Path
 
+from localstack_cli.auth.vault_token_file import current_token
 from localstack_cli.config import Config, ConfigError
 
 # Long enough for a cluster on the far side of a tailnet, short enough that a
 # down node does not make the banner feel broken.
 TIMEOUT_SECONDS = 1.5
 
-VAULT_TOKEN = "VAULT_TOKEN"
+__all__ = ["ClusterStatus", "Identity", "Probe", "current_token", "probe_cluster"]
 
 
 @dataclass(frozen=True)
@@ -108,22 +107,6 @@ def _reason(error: OSError) -> str:
         return "timed out"
     message = str(getattr(error, "reason", error)) or error.__class__.__name__
     return message.removeprefix("[Errno 111] ").strip()
-
-
-def current_token() -> str | None:
-    """The Vault token this machine would use, or None.
-
-    `VAULT_TOKEN` wins over the file, matching the Vault CLI's own order, so
-    the banner reports the token a command would actually send.
-    """
-    from_env = os.environ.get(VAULT_TOKEN)
-    if from_env:
-        return from_env
-    token_file = Path.home() / ".vault-token"
-    try:
-        return token_file.read_text().strip() or None
-    except OSError:
-        return None
 
 
 def probe_identity(vault_addr: str, token: str | None) -> Identity:
