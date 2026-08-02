@@ -13,22 +13,30 @@ A ticket is implementable only when BOTH hold:
 `pass-with-required-fixes` counts as passing. Where a ticket carries one, the
 fixes are listed in its verdict and are **implementation work, not optional**.
 
-## Today's order
+## State, end of 2026-08-01
 
-| # | Ticket | What it does |
-|---|---|---|
-| 1 | **F11-foundation-human-read-role** | The `developer` group: one Vault policy covering both Terraform roots, brokered Nomad and Consul tokens, and user/group management. **This is what retires the root token.** Unblocks F8, F14, D2, D4 |
-| 2 | **D1-cli-package-skeleton** | `cli/` package, `localstack` entrypoint, Python gates. Unblocks D2 through D6 |
+| Ticket | Where it is |
+|---|---|
+| **F11-foundation-human-read-role** | **`done`.** The `developer` Vault policy and identity group are live and merged. `vault login -method=userpass username=operator` now covers both Terraform roots, brokered Nomad and Consul tokens, and user/group management |
+| **D1-cli-package-skeleton** | Built and green — `cli/` package, `localstack` entrypoint, 8 tests, four new pre-commit hooks. All 14 hooks pass. Commit gate holds pending two tree-bound review verdicts |
+| **F14-foundation-role-taxonomy** | `ready`, eval signed. Depends on F11, which is now done — so it is next after D1 |
+| **G2-nomad-ui-oidc-login** | Premise confirmed sound. Auth method and binding rule moved to Ansible; re-reviewing |
+| **D2-cli-login-broker-tokens** | `ui consul` cut per the locked surface; re-reviewing |
 
-### Required fixes to apply while implementing
+## Two cluster findings that own no ticket
 
-- **F11** — four, in its verdict. The one that bites first: **a Vault token
-  alone cannot plan either root.** Both keep state in Consul, so every run also
-  needs a brokered `CONSUL_HTTP_TOKEN`. Folded into the plan; do not
-  rediscover it.
-- **D1** — two, in its verdict. The ruff hook needs `types: [python]` or
-  `just pre_commit` goes red on `cli/uv.lock`; mypy needs
-  `--config-file cli/pyproject.toml` or `strict = true` is silently inert.
+**A stolen `localstack` session file: run `localstack logout` first.**
+That alone ends all three credentials, by cascade, and needs no root. If the file is gone, a revoke by accessor does the same — also without root, since `developer` can grant itself `auth/token/revoke-accessor`. Rotating the operator password does nothing: `secret/default/vault/operator` is
+the KV *record*, while the credential lives at `auth/userpass/users/operator`
+(`auth_userpass.tf:29`). And the holder of a stolen session has `developer`,
+which grants `auth/userpass/users/*` and `identity/*` — so they rotate it back
+or mint a second identity. Measured 2026-08-01.
+
+**Consul's catalog is readable with no credential**, on 8500 directly and
+through the TLS edge: 25 services, 5 nodes, 41 health checks, and `/ui/`
+answers 200. `consul_server/templates/consul.hcl.j2:29-32` puts the agent
+token on `tokens.default`, so `default_policy = "deny"` never applies. Closing
+the port is the only control Consul has, and there are two paths to close.
 
 ## Ready, waiting only on F11
 
@@ -59,7 +67,7 @@ reviewed" is weaker than "ready with a passing verdict", not stronger.
 | Ticket | Why it matters that nobody checked |
 |---|---|
 | **N3-netsec-converging-firewall-provisioner** | Rewrites ufw rules on five nodes over the same SSH it runs on. Highest cost of a wrong premise on the board |
-| **G1-grafana-native-oidc-login** | Also has **no eval marker at all** — needs authoring, not signing |
+| **G1-grafana-native-oidc-login** | Two problems. It has **no eval marker at all** — needs authoring, not signing. And a hole found 2026-08-01 while reviewing G2: it creates no `vault_identity_oidc_assignment`, and Vault admits no entity through a client by default, so **G1 as planned admits nobody**. |
 | **S2-spike-postgres-vault-creds** | R3 and S1 both depend on its conclusion |
 | **T5-tls-certificate-expiry-alert** | Low blast radius; cheapest of the five to clear |
 | **C1-cicd-tailscale-github-actions-deploy** | Gives CI cluster access. Worth a premise check before it exists |
@@ -86,7 +94,7 @@ gate reads.
 | Ticket | What it does |
 |---|---|
 | **N4-netsec-edge-only-service-access** | Closes direct LAN access so the edge is the only route in. Also closes a live auth bypass: mlflow and phoenix answer 200 with no credentials. Needs N3 first |
-| **D2-cli-login-broker-tokens** | `login/logout/whoami/env/token/config/ui consul`; brokers Nomad and Consul tokens from one Vault session |
+| **D2-cli-login-broker-tokens** | `login/logout/whoami/env/token/config`; brokers Nomad and Consul tokens from one Vault session |
 | **D6-cli-deps-and-shims** | Installs the CLIs at the versions the cluster pins, plus the PATH shims that let a bare `nomad` use your session |
 | **G2-nomad-ui-oidc-login** | Nomad web UI and `nomad login` sign in through Vault |
 | **D3-cli-read-commands** | `status`, `service`, `secret <svc>`, `vault grants` — the synthesis commands |
@@ -98,8 +106,9 @@ gate reads.
 
 ```
 N3  ->  N4                        closes the live auth bypass
-F11 ->  D2 -> D6                  retires the root token, then the CLI works
-F11 ->  F8                        Terraform providers off the static tokens
+F11 ->  D2 -> D6                  per-person sessions, then the shims
+F11 ->  F8                        retires the root token: providers off the
+                                  static tokens
 F11 ->  F14 -> G1/G2/M2           application users, per app
 D1  ->  D2 -> D3/D4/D5
 ```
@@ -212,10 +221,15 @@ Settled by the operator on 2026-07-31. Full reasoning in
   refresh token; the 30-minute brokered creds are the access tokens the shim
   refreshes. This withdraws the `token_ttl` task previously handed to the retired `F7` and
   drops `D2`'s `whoami` warning above 24 hours.
-- **Consul UI gets `localstack ui consul`**, which brokers a token, copies it
-  to the clipboard, prints it as a fallback, and opens the UI. Consul's OIDC
-  auth method is Enterprise-only and this cluster is Community Edition, so
-  pasting a token is the only route. No design removes that.
+- **`localstack ui consul` is CUT, and the reasoning above it was wrong.**
+  Consul's OIDC auth method is indeed Enterprise-only, but the conclusion
+  "pasting a token is the only route" does not follow — measured 2026-08-01,
+  the Consul UI needs **no** token: `consul.hcl.j2:29-32` puts the agent token
+  on `tokens.default`, so unauthenticated requests return all 25 services and
+  `/ui/` answers 200, directly and through the TLS edge. And an explicit token
+  *replaces* that default rather than merging, so the brokered `deploy` token
+  would cut the UI from 25 services to 2. The command degraded what it claimed
+  to enable. `service consul --open` (D3) opens the URL and brokers nothing.
 
 ## The CLI's command surface, settled 2026-07-31
 

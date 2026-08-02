@@ -1,296 +1,319 @@
 ---
 verdict: pass-with-required-fixes
-plan: f7b745ed1977443669f7163305bd5d247ea73c3b28a6d1ff1d946faff01e7e44
+plan: 35036bcfbd10042777d22a0cf5ff35327125442025b5677dbe21ff0e784cdea7
 ---
 
-# Plan review: F10-foundation-nomad-oidc-issuer
+# Plan review: F10-foundation-nomad-oidc-issuer (re-review)
 
-Fingerprint verified locally with `sha256sum` before binding.
+Fingerprint computed locally with `sha256sum` before binding. The value in my
+briefing (`...1eaf2a1e8b5cf6a1e2f5b1f8`) was wrong; the real one is bound above.
+
+## Did the prior verdict's required fixes land?
+
+Yes, and in response, not incidentally. The plan carries explicit
+`CORRECTED 2026-07-30 (plan review)` and `MOVED 2026-07-30 (plan review)`
+annotations that map one-to-one onto the prior verdict's numbered fixes, and the
+eval carries a matching `Corrected 2026-07-30` note plus two new rows.
+
+| Prior fix | State |
+| --- | --- |
+| 1. Variable location, drop "with a default" | APPLIED. Requirement 1 (`plan:111-116`) and Code surface (`plan:134-137`) now name `configure_hashistack_server.yml:41-44`; "with a default" is gone. |
+| 2. Correct the blast radius | APPLIED. New Context bullet (`plan:58-75`) and Risk bullet (`plan:176-181`) name the server+client node, the haproxy pin, and the circularity. |
+| 3. Fix the haproxy path | PARTIAL. Fixed in Context (`plan:65-66`) and Code surface (`plan:140`). Q1 still says `services/haproxy.hcl:101` and `:136-137` (`plan:214,216`), which does not resolve from the repo root. |
+| 4. Relay F1 Q7 first | APPLIED as an annotation (`plan:195-199`), still printed as item 6. |
+| 5. Record P9 settled | APPLIED (`plan:230-240`). |
+| Eval row 8 rewrite | APPLIED (now the `variable, not a literal` row). |
+| Eval: add a minted-`iss` row | APPLIED (new row). Plus an unrequested edge-survival row. |
+| Eval: Q1 answer hard-coded in the scorer | NOT APPLIED. See below; the eval is now signed with the value in it. |
 
 ## Premise verdict: PARTIALLY SOUND
 
-The core premise holds and is better evidenced than the plan claims. Nomad
-serves no discovery document today, `server { oidc_issuer }` is the setting
-that fixes it, and the `iss` change is safe for the only consumer. I settled
-the plan's central open unknown against Nomad v1.11.3 source, and it resolves
-in the plan's favor.
-
-Three defects survive, none of which sink the approach: a code-surface anchor
-that points at a directory that does not exist and contradicts the convention
-it names, a blast-radius claim that omits that the restarting node is also the
-client running the edge proxy that serves the chosen issuer URL, and an eval
-that never tests the one claim it says it exists to catch.
+The central mechanism is sound and I verified it harder than the plan does,
+against the version the cluster actually runs. What breaks is the plan's
+snapshot of the world: the config file and the Nomad version both moved after
+the plan was committed, and the plan's one settled technical citation points at
+source for a version that is no longer deployed.
 
 ## Per assumption
 
-### P1 — `nomad.hcl.j2:11-14` is the bare `server` block, no `oidc_issuer` anywhere: HOLDS
-`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:11-14` is exactly
-`server { enabled = true; bootstrap_expect = 1 }`. `grep -rn oidc_issuer
-bootstrap/ deployments/ services/` returns no matches (exit 1). The
-`default_identity` anchor at `:37-46` also resolves as described.
+### P1 — `nomad.hcl.j2:11-14` is the bare `server` block: BREAKS (stale anchor)
+The file changed after the plan was written. Commit `c744b92`
+("pin nomad advertise addresses…", 2026-07-31 09:55:32 +0200) inserted an
+18-line `advertise` block. The plan was committed 2026-07-31 07:31:35, 2.4 hours
+earlier. Every `nomad.hcl.j2` anchor in the plan is off by 18 lines:
 
-### P2 — Live: issuer empty, discovery disabled, JWKS populated: HOLDS
-`GET /v1/agent/self` returns `config.Server.OIDCIssuer: ""` and
-`BootstrapExpect: 1`. `GET /.well-known/openid-configuration` returns HTTP 404
-with body `OIDC Discovery endpoint disabled`. `GET /.well-known/jwks.json`
-returns 6 keys.
+| Plan says | Actual |
+| --- | --- |
+| `:11-14` bare `server` block | `:29-32` |
+| `:20` `client { enabled = true }` | `:38-39` |
+| `:37-46` `default_identity` | `:55-64` is the `vault` stanza; `default_identity` is `:60-63` |
 
-### P3 — Single server, leader, build 1.11.3: HOLDS
-`nomad server members`: one member `firebat.global`, `192.168.2.30:4648`,
-`alive`, leader `true`, build `1.11.3`. (The CLI on this box reports
-`Nomad v2.0.3`; the briefing was right to say trust `server members`.)
+An implementer opening `:11-14` lands mid-comment in the advertise block.
 
-### P4 — `tasks/main.yml:121-128` templates with `notify: Restart nomad`: HOLDS
-`bootstrap/roles/nomad_server/tasks/main.yml:121` is `- name: Template Nomad
-configuration`, and `:128` is `notify: Restart nomad`. Byte-exact on the range.
+### P2 — no `oidc_issuer` anywhere in the repo: HOLDS
+`grep -rn oidc_issuer bootstrap/ deployments/` exits 1, no matches.
 
-### P5 — The safety claim, that `bound_issuer: ""` means changing `iss` breaks nothing: HOLDS
-This is the claim the briefing asked me to attack hardest. It survives, and
-survives at a deeper level than the plan argued.
+### P3 — live: discovery disabled, JWKS populated: HOLDS
+`http://192.168.2.30:4646/.well-known/openid-configuration` returns HTTP 404,
+body `OIDC Discovery endpoint disabled`. `/.well-known/jwks.json` returns HTTP
+200 with a 3-key set. The gap the ticket exists to close is real today.
 
-- Live: `vault read auth/jwt-nomad/config` returns `bound_issuer n/a` (empty),
-  `jwks_url http://127.0.0.1:4646/.well-known/jwks.json`, `oidc_discovery_url
-  n/a`, `jwks_pairs []`.
-- `bound_issuer` is genuinely the only place `iss` is asserted. In
-  `hashicorp/vault-plugin-auth-jwt` `path_login.go:149`, the sole issuer
-  expectation is `Issuer: config.BoundIssuer` inside the `jwt.Expected`
-  struct passed to `validator.Validate`. No other `issuer` reference exists in
-  `path_login.go`, and `path_config.go` references it only as a stored field.
-- The validator skips an empty expectation. `hashicorp/cap` `jwt/jwt.go:240`:
-  `if expected.Issuer != "" && expected.Issuer != claims.Issuer`.
-- I went one step past the plan and checked the roles, which the plan did not.
-  `vault read auth/jwt-nomad/role/nomad-workloads` has `bound_claims <nil>` and
-  `bound_subject n/a`. `.../role/acme` has `bound_claims
-  map[nomad_job_id:[acme] nomad_namespace:[default]]`. Neither binds `iss`. So
-  `iss` is unvalidated at the role layer too.
+### P4 — "build 1.11.3": BREAKS
+`nomad server members` reports Build **2.0.4**. All five clients report 2.0.4
+(`nomad node status -json`). `bootstrap/inventory/group_vars/all.yml:12` pins
+`nomad: 2.0.4-1`, so pin and installed agree. The CLI in this container is
+v2.0.3.
 
-Vault 1.21.4. The claim holds on config, plugin source, and library source.
+This matters because Q1's SETTLED paragraph (`plan:230-240`) is the plan's only
+settled technical citation and it reads "in Nomad's source at the deployed tag…
+v1.11.3, `nomad/structs/keyring.go:621`, `nomad/encrypter.go:339`". That tag is
+not deployed. The conclusion survives (P5, P6), but the citation is wrong.
 
-### P6 — Nothing else consumes Nomad's `iss`: HOLDS, with one gap I could not close
-`grep -rniE "jwks|openid|oidc" deployments/` returns nothing. `vault auth list`
-shows only `jwt-nomad/` and `token/`. Gap: `consul acl auth-method list`
-returned 403 (`lacks permission 'acl:read'`), so I could not rule out a Consul
-JWT auth method by direct read. Low risk, because `nomad.hcl.j2:32-35` hands
-Consul a static token (`nomad_server_consul_token_secret`) rather than a
-workload identity, so Nomad's Consul path does not present a WI JWT.
+Side effect worth recording: because the pin matches what is installed,
+`install_dependencies.yml` is a no-op for Nomad. There is no hidden upgrade
+riding on this run.
 
-### P7 — MinIO removed `jwks_url` at the deployed tag: HOLDS
-An inlined conclusion from M1/A1, so I verified it independently rather than
-accepting it. The deployed tag is real:
-`deployments/infrastructure/services/minio.hcl:66` pins
-`docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z`. Upstream at that exact
-tag, `internal/config/identity/openid/openid.go:67-68` lists `JwksURL =
-"jwks_url"` under `// Removed params`, `:218` puts it in `deprecatedKeys`, and
-`:502-503` is `func Enabled(kvs config.KVS) bool { return kvs.Get(ConfigURL)
-!= "" }`. The plan quoted this correctly.
+### P5 — setting `oidc_issuer` produces a discovery document: HOLDS, re-verified at 2.0.x
+This is the whole premise and I tested it empirically rather than by reading
+docs. Throwaway `nomad agent -dev` (v2.0.3, isolated data-dir and ports, since
+torn down) with `server { oidc_issuer = "https://nomad.example.test" }`:
 
-### P8 — HAProxy routes the Nomad hostname, edge reachable over HTTPS: HOLDS on content, BREAKS on path
-Line numbers are byte-exact: `:101` `acl is_nomad hdr(host) -i
-nomad.lab.orangecluster.nl`, `:112` `use_backend nomad if is_nomad`, `:136`
-`backend nomad`, `:137` `server nomad1 192.168.2.30:4646 check`. Live:
-`https://nomad.lab.orangecluster.nl/v1/agent/health` returns 200, the HTTP form
-returns 301 to the HTTPS URL, and `https://nomad.lab.orangecluster.nl/.well-known/jwks.json`
-returns the 6-key set through the edge. DNS resolves the host to
-`192.168.2.30`, a LAN address, which supports the "reachable from any client on
-the LAN" claim.
+- Startup log: `nomad: issuer set; OIDC Discovery endpoint for workload
+  identities enabled: issuer=https://nomad.example.test`
+- `GET /.well-known/openid-configuration` → HTTP 200:
+  `{"id_token_signing_alg_values_supported":["RS256","EdDSA"],"issuer":"https://nomad.example.test","jwks_uri":"https://nomad.example.test/.well-known/jwks.json","response_types_supported":["code"],"subject_types_supported":["public"]}`
+- `jwks_uri` derives from the configured issuer, **not** the request host: I
+  fetched over `127.0.0.1:24646` and was handed back the `example.test` host.
+  That settles Q1's mechanism at the right version.
+- `GET /v1/agent/self` → `config.Server.OIDCIssuer` = the configured value. The
+  field name is unchanged at 2.0.x, so eval row 2's scorer path is valid.
+- The 2.0.3 binary carries `hcl:"oidc_issuer"` and
+  `Error using server.oidc_issuer = "%s" as a base URL: %s`, plus the warning
+  `is not using https. Many OIDC implementations require https.`, which endorses
+  the plan's HTTPS choice.
 
-The path is wrong. The plan cites `services/haproxy.hcl`; the file is
-`deployments/infrastructure/services/haproxy.hcl`. Rooted at the repo root the
-cited path does not resolve.
+### P6 — the minted `iss` equals the discovery `issuer`: HOLDS, decoded not assumed
+Submitted a throwaway batch job with `identity { name = "default" env = true }`
+to the dev agent, wrote `$NOMAD_TOKEN` to the alloc dir, base64-decoded the
+payload: `iss = 'https://nomad.example.test'`, byte-identical to the discovery
+`issuer`. The eval's headline row will pass on a correct implementation.
 
-### P9 — Nomad derives `jwks_uri` from `oidc_issuer`, not the request host: HOLDS (SETTLED)
-This was the plan's flagged unknown and the highest-value thing to contribute.
-It is settled, at the server's exact version.
+### P7 — `bound_issuer: ""` makes the `iss` change safe: HOLDS
+`vault read auth/jwt-nomad/config` live: `bound_issuer n/a` (empty),
+`jwks_url http://127.0.0.1:4646/.well-known/jwks.json`, `oidc_discovery_url n/a`,
+`default_role nomad-workloads`, `jwks_pairs []`. Vault does not assert `iss`.
 
-`hashicorp/nomad` tag `v1.11.3`, `nomad/structs/keyring.go:613-640`:
+Worth adding to the plan: Vault fetches JWKS over **loopback on the server**, so
+Vault is insulated from the haproxy coupling the plan worries about. The coupling
+binds M1 and R1, not Vault.
 
-```go
-func NewOIDCDiscoveryConfig(issuer string) (*OIDCDiscoveryConfig, error) {
-	if issuer == "" { ... }
-	jwksURL, err := url.JoinPath(issuer, JWKSPath)
-	...
-	disc := &OIDCDiscoveryConfig{ Issuer: issuer, JWKS: jwksURL, ... }
-```
+### P8 — `tasks/main.yml:121-128` templates with `notify: Restart nomad`: HOLDS
+Byte-exact. `:121` is `- name: Template Nomad configuration`, `:128` is
+`notify: Restart nomad`.
 
-`jwks_uri` is the configured issuer joined with the JWKS path. The request host
-never enters it. Corroborated on this box: `grep -a` on `/usr/bin/nomad` finds
-the literal `error determining jwks path: %w` and the struct tags
-`JWKS...json:"jwks_uri"`-family (`id_token_signing_alg_values_supported`,
-`subject_types_supported`), plus the live error body `OIDC Discovery endpoint
-disabled` matching the same code path.
+### P9 — `configure_hashistack_server.yml:41-44` is the `nomad_server` vars block: HOLDS
+Byte-exact: `- role: nomad_server` / `vars:` /
+`nomad_server_ip_address: "192.168.2.30"` / `nomad_server_consul_token_secret`.
 
-Second half, which the plan did not check but which matters more for M1: the
-token's `iss` will equal the configured value exactly.
-`nomad/encrypter.go:337-340` at v1.11.3 is `if e.issuer != "" {
-claims.Issuer = e.issuer }`, with `e.issuer` seeded at `:99` from
-`srv.GetConfig().OIDCIssuer`. So discovery `issuer`, `agent/self` OIDCIssuer,
-and the minted `iss` are one value. The plan's recommended
-`https://nomad.lab.orangecluster.nl` yields `jwks_uri
-https://nomad.lab.orangecluster.nl/.well-known/jwks.json`, which I fetched live
-and which returns 6 keys.
+### P10 — "There is nowhere to put a default; no role has a `defaults/` directory": BREAKS in part
+The `defaults/` half holds: `find bootstrap/roles -type d -name defaults` returns
+nothing. The absolute claim does not.
+**`bootstrap/inventory/group_vars/all.yml` now exists** (458 B), holding
+`hashistack_versions`, and it is consumed by `install_dependencies.yml:118-121`
+and `:138`. So a group-vars home is available today. The prior verdict's finding
+("There is no group-vars directory") was true when written and is now stale, and
+the plan hardened it into a settled correction.
 
-Bonus, and it endorses the plan's scheme choice: the binary carries the warning
-`server.oidc_issuer = "%s" is not using https. Many OIDC implementations
-require https.`
+This is not fatal: the playbook `vars:` block is still a defensible home, and
+F10's variable is server-role-scoped rather than fleet-wide. But the plan asserts
+a falsehood as verified fact, and eval row 9's justification ("neither of which
+exists in this repo") is now half-wrong.
 
-### P10 — The restart is bounded to "scheduling and the API pause, running allocations unaffected": BREAKS (incomplete, and it understates the blast radius)
-The node is not a pure server. `nomad.hcl.j2:20` has `client { enabled = true
-}`, and `nomad node status` lists `firebat` as an eligible, ready client
-alongside four others. Restarting the agent restarts the client too.
+### P11 — haproxy routes the Nomad hostname over HTTPS: HOLDS on content, path still wrong in Q1
+Anchors byte-exact in `deployments/infrastructure/services/haproxy.hcl`: `:6-9`
+constraint `attr.unique.hostname == firebat`; `:101` `acl is_nomad hdr(host) -i
+nomad.lab.orangecluster.nl`; `:112` `use_backend nomad if is_nomad`; `:136-137`
+`backend nomad` / `server nomad1 192.168.2.30:4646 check`. Live: health 200 via
+`https://nomad.lab.orangecluster.nl`, JWKS 200 through the edge, HTTP form 301s
+to HTTPS, DNS resolves to 192.168.2.30. The haproxy alloc is running on
+`firebat`, confirming the blast-radius correction. Q1 still cites the truncated
+path (prior fix 3 only half-applied).
 
-Worse, and the plan never says it:
-`deployments/infrastructure/services/haproxy.hcl:6-9` pins HAProxy with a
-`constraint` on `attr.unique.hostname == firebat`, and its allocation is in
-fact running on `firebat`. So the plan restarts the agent supervising the edge
-proxy, and the issuer URL it recommends is served **by that proxy, on that
-node**. Nomad normally reattaches task handles across an agent restart, so the
-allocation usually survives, but the plan asserts the bounded outcome flatly
-with no evidence and offers no rollback for the case where it does not. If the
-HAProxy allocation restarts, every routed host drops at once: vault, minio, s3,
-grafana, mlflow, memex, phoenix, consul, bifrost, and the new issuer URL
-itself (`haproxy.hcl:98-108`).
+### P12 — MinIO is on 192.168.2.29: HOLDS
+The `minio` alloc runs on node `orangepi4a`, whose address is 192.168.2.29. Eval
+row 4 names the right machine.
 
-There is also a standing coupling the plan should state: after this change the
-cluster's OIDC issuer and its JWKS are reachable only while HAProxy is up. This
-is not a bootstrap loop for Vault, which trusts `jwks_url` at
-`http://127.0.0.1:4646`, but M1's MinIO and R1's oauth2-proxy cannot validate a
-token whenever the edge is down.
+### P13 — the restart is one role against one node: UNCERTAIN, and the applied scope is understated
+Two gaps, and this is now the operational risk the plan does not cover.
 
-### P11 — The new variable follows the `nomad_server_ip_address` convention, in `defaults/main.yml` or inventory group vars, "with a default": BREAKS
-Both cited locations are wrong, and the requirement contradicts itself.
+- **The advertise block may ride along.** `c744b92` is in the repo template but I
+  could not confirm it is deployed on the manager: ssh to 192.168.2.30 returns
+  `Permission denied (publickey)`, so I could not read `/etc/nomad.d/nomad.hcl`.
+  If it is not yet applied, F10's run pushes **two** config changes in one
+  restart. Eval row 10 ("only the `oidc_issuer` line added") scores a `git diff`,
+  not the deployed config, so it passes either way and cannot catch this.
+- **No command is given, and the obvious one is far wider.** Subticket 3 says
+  "Operator runs the bootstrap role against the Nomad server" with no invocation.
+  The only task-runner recipe is `just bootstrap` (`bootstrap/justfile:40-49`),
+  which runs nine playbooks including `configure_hashistack_clients.yml`. The
+  client role also templates with `notify: Restart nomad`
+  (`bootstrap/roles/nomad_client/tasks/main.yml:56,65`) and its template also
+  gained an advertise block in `c744b92`, so `just bootstrap` restarts **all five
+  agents**, not one. The narrow path is
+  `ansible-playbook playbooks/configure_hashistack_server.yml`, which the plan
+  never names.
 
-- `bootstrap/roles/nomad_server/defaults/` does not exist. `find
-  bootstrap/roles -type d -name defaults` returns nothing: no role in this repo
-  has a `defaults/` directory at all.
-- There is no group-vars directory. The inventory is a single file,
-  `bootstrap/inventory/cluster.ini`.
-- The actual convention is an inline `vars:` block on the role invocation:
-  `bootstrap/playbooks/configure_hashistack_server.yml:41-44` sets
-  `nomad_server_ip_address: "192.168.2.30"` and
-  `nomad_server_consul_token_secret`.
-- Requirement 1 says "sourced from an Ansible variable with a default ...
-  matching how `nomad_server_ip_address` is already used in the same file."
-  `nomad_server_ip_address` has no default; it is a required role var supplied
-  by the playbook. The two halves of that sentence cannot both be satisfied.
+Mitigating, and worth stating in the plan: the advertise pin exists precisely
+because an unattended restart on 2026-07-31 advertised the podman bridge and
+dropped four of five nodes (template comment, `nomad.hcl.j2:18-22`). Once
+deployed it makes this restart safer than the plan assumes.
 
-This propagates into eval row 8, below.
+### P14 — "the single reason M1 cannot work": BREAKS as stated; the non-goals hedge correctly
+Ledger, read via `loopctl ledger`:
 
-### P12 — Repo gate anchors: HOLDS
-`justfile:30-32` is exactly the `worktree_setup path:` recipe and its two
-lines. `pre_commit` is `pre-commit run --all-files` (`justfile:18-19`).
+- **M1** is `blocked`, `deps: F1-foundation-nomad-wi-jwt-trust,
+  A1-audit-plan-premise-sweep (1 unmet)`. F1 is itself `blocked`
+  ("Re-plan against the 3-block policy before implementing"). F10 removes one of
+  M1's two blockers. M1 does not become pickable.
+- **R1** is `blocked` for reasons F10 does not touch: "mlflow#10922 closed
+  not_planned 19 days before authoring, S3 citation refers to a spike that never
+  ran, MLflow now ships an SSO plugin", plus `L1` unmet. R1's oauth2-proxy
+  approach may not survive its own replan, so "R1 needs oauth2-proxy's bare-JWKS
+  fallback" (`plan:31-34`) is a premise R1's own review already doubts.
 
-### P13 — `depends_on = []` is right: PARTIALLY (no hard edge needed, but the ordering is wrong)
-No file write-conflict exists. F1 marks `nomad.hcl.j2` read-only and its code
-surface targets `tasks/main.yml:198-271`; F10 writes `nomad.hcl.j2` and marks
-`tasks/main.yml` read-only. F10 consumes nothing F1 produces, so I would not
-add a `depends_on` edge.
+The frontmatter `summary` ("the single reason M1 cannot work") and "Triggered by"
+overstate. Non-goals (`plan:92-94`) hedge honestly: "both are blocked on their
+own defects beyond this one". Fix the overstatement, keep the hedge.
 
-The collision is one of ownership, not data. F1 is `stage: ready` in
-`.loop/ledger.json` and therefore pickable right now, and F1's Q7
-(`F1-foundation-nomad-wi-jwt-trust.md:571-590`) recommends doing exactly this
-change inside F1: "add it as a subticket here". F10's plan defers closing that
-question to subticket 6, after the change lands. Nothing prevents F1 from being
-picked up first and making the same edit. The relay must run first, not last.
+### P15 — repo gate: HOLDS, with one loose claim
+`justfile:18-19` is `pre_commit: pre-commit run --all-files`; `:30-32` is the
+`worktree_setup path:` recipe and its two lines. Both byte-exact. `nomad-fmt` has
+`files: '\.hcl$'` and `types: [hcl]`, so `nomad.hcl.j2` does not match. But
+`pre-commit run --all-files` passes every file in the repo, so the
+`types: [terraform]` hooks (`terraform-fmt`, `terraform-validate`) **do** run
+against the existing `.tf` files. "terraform-* hooks will skip" (`plan:151-152`)
+is wrong; the `worktree_setup` prerequisite the plan already lists is what makes
+them pass.
+
+### P16 — the Nomad ACL management-token constraint: does not apply, correctly
+F10 touches no Nomad ACL object: no auth-method, no binding-rule, no policy. It
+edits a Jinja template and a playbook `vars:` block, applied over ssh as root.
+The constraint that pushed G2 and F8 out of Terraform does not bite here, and
+F10 is already in Ansible. `nomad_acl_policy.deploy` at
+`deployments/infrastructure/nomad_deploy_role.tf:13` is untouched by this ticket.
 
 ## Most dangerous assumption
 
-**P10.** With P9 settled in the plan's favor, the remaining claim that can
-actually hurt the cluster is "running allocations are unaffected." The plan
-restarts the only Nomad server, which is also the client that runs the edge
-proxy, which serves the very issuer URL the plan chooses. If that allocation
-does not reattach, the whole edge drops and the plan has neither predicted it
-nor written a rollback for it.
+**P1 with P4.** The plan's Context is a snapshot of a file and a Nomad version
+that both moved after it was committed. The mechanism survives — I re-verified it
+end to end at 2.0.x — so this does not sink the approach. It sinks the plan's
+credibility as a map: every `nomad.hcl.j2` line number is wrong, and the one
+citation the plan calls SETTLED points at source for a version the cluster no
+longer runs. P13 is the close second, because it is the one that can actually
+hurt the cluster.
+
+## Eval review (`.loop/evals/F10-foundation-nomad-oidc-issuer.md`, signed 2026-07-31)
+
+The marker is operator-signed, so I am stating plainly what cannot run rather
+than assuming it is fine. **No row fails a correct implementation.** One row's
+stated procedure cannot be executed as written, and the signature has silently
+closed an open plan question.
+
+- **Row 14 (minted `iss`): its first suggested method cannot be executed.**
+  "read one from a running alloc's `secrets/` dir" does not work.
+  `nomad alloc fs <id> t/secrets/nomad_token` returns
+  `Reading secret file prohibited: t/secrets/nomad_token`. I hit this on the dev
+  agent at 2.0.3. The row is still passable via its second route (a throwaway job
+  with `identity { env = true }`, writing `$NOMAD_TOKEN` to the alloc dir), which
+  is how I proved P6. Correct the parenthetical or the operator burns time.
+- **Row 2 needs a token and does not say so.** `GET /v1/agent/self` on this
+  cluster is ACL-gated; unauthenticated it returns a non-JSON error. The field
+  path `config.Server.OIDCIssuer` is correct at 2.0.x (verified). Add the token
+  requirement.
+- **The signed eval decides an open plan question.** The Definition of Done and
+  rows 1, 3 and 4 hard-code `https://nomad.lab.orangecluster.nl`, while plan Q1
+  is still filed under Open questions and ends "Operator still confirms the value
+  itself before subticket 2" (`plan:239-240`). Since the operator signed the
+  marker, the fork is in practice settled at that value. The plan must be brought
+  into line; as it stands an operator who follows the plan and picks a different
+  value fails four 100% rows.
+- **Row 9's justification is now half-false.** "neither of which exists in this
+  repo" — `bootstrap/inventory/group_vars/all.yml` exists (P10). The row still
+  passes a correct implementation that uses the playbook `vars:` block.
+- **Row 10 cannot catch P13.** It scores a `git diff`, so an advertise block
+  already pending in the template rides into the deployed config invisibly.
+- Rows 5, 7 and 15 are the strongest in the set. Row 7's T+10min re-check and
+  row 15's edge-survival check are both genuinely load-bearing.
 
 ## Required fixes
 
-1. **Fix the variable location (P11).** Replace the code-surface line naming
-   `bootstrap/roles/nomad_server/defaults/main.yml` or inventory group vars
-   with the real convention: an inline `vars:` entry on the `nomad_server` role
-   invocation at `bootstrap/playbooks/configure_hashistack_server.yml:41-44`,
-   alongside `nomad_server_ip_address`. Drop "with a default" from requirement
-   1, or say explicitly that this ticket introduces the repo's first role
-   default and accept that it diverges from the convention it cites.
-2. **Correct the blast radius (P10).** State in the risk section that
-   `nomad.hcl.j2:20` makes firebat a combined server and client, that
-   `haproxy.hcl:6-9` pins the edge proxy to it, and that the recommended issuer
-   URL is served by an allocation on the node being restarted. Add the standing
-   coupling: after this change, OIDC discovery and JWKS are available only
-   while HAProxy is up. Add a rollback note for the case where the HAProxy
-   allocation does not reattach.
-3. **Fix the haproxy path (P8).** `services/haproxy.hcl` does not resolve from
-   the repo root. It is `deployments/infrastructure/services/haproxy.hcl`. The
-   three line numbers are correct.
-4. **Move the F1 Q7 relay to subticket 1 (P13).** F1 is `ready` and its Q7
-   tells its implementer to make this exact change. Relay before touching the
-   template, not after.
-5. **Record P9 as settled and demote the hedge.** Q1's closing paragraph tells
-   the implementer to confirm whether `jwks_uri` follows the issuer or the
-   request host. It follows the issuer:
-   `nomad/structs/keyring.go:613-640` at v1.11.3 is `url.JoinPath(issuer,
-   JWKSPath)`, and `nomad/encrypter.go:337-340` sets the token's `iss` to the
-   same configured value. Cite it and keep eval row 3 as the confirmation.
-
-## Eval shape-check (`.loop/evals/F10-foundation-nomad-oidc-issuer.md`)
-
-The eval is mostly well aimed. Row 4 (fetch from a non-server host) and row 7
-(re-check at T+10 minutes) are both genuinely load-bearing and easy to have
-omitted. Row 5 is not vacuous: I confirmed all three named jobs really do use
-Vault workload identity (`haproxy.hcl:39,64`; `memex.hcl:44,52`;
-`grafana.hcl:29,79`), and haproxy really does render the edge TLS PEM. Rows 9
-and 10 are good guardrails. Three problems:
-
-- **Row 8 would fail a correct implementation.** It scores the default against
-  "the defaults or group-vars file". Neither exists in this repo (P11). An
-  implementer who correctly follows
-  `configure_hashistack_server.yml:41-44` fails a 100%-threshold row. Rewrite
-  the scorer to name the playbook `vars:` block.
-- **The eval never tests the defect it says it exists to catch.** Its own lead
-  says "M1 and R1 will compare the `iss` claim on a token against the discovery
-  document's `issuer`, literally." No row decodes a token. Rows 1 to 3 check
-  the discovery document, row 2 adds `agent/self` and the template, row 6
-  checks Vault's config. A build whose discovery `issuer` is correct but whose
-  minted `iss` differs passes all twelve rows and fails opaquely in M1. Per
-  `encrypter.go:339` they will match in practice, which is exactly why the row
-  is cheap to add and wrong to omit: add a row that decodes a freshly issued WI
-  JWT and asserts `iss` is byte-identical to the discovery `issuer`.
-- **The eval hard-codes the answer to an open question.** The Definition of
-  Done and rows 1 and 3 pin `https://nomad.lab.orangecluster.nl`, while plan Q1
-  is still open and ends "Operator confirms the value before subticket 2." A
-  fork the plan leaves open is silently decided in the scorer, and if the
-  operator picks anything else those rows fail a correct implementation.
-  Either close Q1 in the plan or parameterize the rows on the configured value.
-
-The eval is unsigned (`signed-off-by: PENDING`), which is expected at this
-stage.
+1. **Re-anchor every `nomad.hcl.j2` citation (P1).** `server` block is `:29-32`,
+   not `:11-14`; `client { enabled = true }` is `:38-39`, not `:20`;
+   `default_identity` is `:60-63` inside the `vault` stanza at `:55-64`, not
+   `:37-46`. Cause: commit `c744b92`, 2026-07-31 09:55, 2.4 h after the plan was
+   committed.
+2. **Correct the version and the Q1 citation (P4).** The cluster runs Nomad
+   **2.0.4** (`nomad server members`; all five nodes 2.0.4;
+   `group_vars/all.yml:12` pins `2.0.4-1`), not 1.11.3. Replace the v1.11.3
+   source citation in Q1 with the re-verification at 2.0.x recorded under P5 and
+   P6 above: discovery serves, `jwks_uri` derives from the configured issuer and
+   not the request host, and the minted `iss` is byte-identical to the discovery
+   `issuer`.
+3. **Fix the P10 falsehood.** Drop "There is nowhere to put one" from
+   Requirement 1. `bootstrap/inventory/group_vars/all.yml` exists and is read by
+   `install_dependencies.yml:118-121,138`. Keep the playbook `vars:` block as the
+   choice if that is the intent, but justify it as a choice rather than as the
+   absence of an alternative. Update eval row 9's parenthetical to match.
+4. **State the apply scope and name the command (P13).** Subticket 3 must give
+   `ansible-playbook playbooks/configure_hashistack_server.yml`, and the risk
+   section must say that `just bootstrap` (`bootstrap/justfile:40-49`) instead
+   runs nine playbooks and restarts all five Nomad agents, because
+   `nomad_client/tasks/main.yml:56,65` also carries `notify: Restart nomad`.
+5. **Resolve the pending advertise change before the run (P13).** Confirm whether
+   `c744b92`'s advertise block is already deployed in `/etc/nomad.d/nomad.hcl` on
+   192.168.2.30. I could not: ssh returns `Permission denied (publickey)`. If it
+   is not deployed, say so in the risk section — the run then applies two config
+   changes in one restart, and eval row 10 cannot detect it. Note the mitigation
+   too: that block exists to stop a restart advertising the podman bridge
+   (`nomad.hcl.j2:18-22`), so once applied it makes this restart safer.
+6. **Close Q1 in the plan to match the signed eval.** The marker is signed with
+   `https://nomad.lab.orangecluster.nl` in the DoD and rows 1, 3 and 4. Mark Q1
+   settled at that value and delete "Operator still confirms the value itself
+   before subticket 2", or the plan invites a choice the eval will fail.
+7. **Fix the last haproxy path (prior fix 3, half-applied).** Q1 at `plan:214`
+   and `:216` still says `services/haproxy.hcl`; it is
+   `deployments/infrastructure/services/haproxy.hcl`. Line numbers are correct.
+8. **Correct row 14's procedure in the eval.** `nomad alloc fs` refuses to read
+   `secrets/`: `Reading secret file prohibited`. Point the row at the throwaway
+   job with `identity { env = true }` route. Add to row 2 that
+   `/v1/agent/self` needs an ACL token.
+9. **Downgrade the M1/R1 claim (P14).** The frontmatter `summary` and "Triggered
+   by" say this is "the single reason M1 cannot work". M1 also has `F1` unmet and
+   F1 is itself blocked; R1 is blocked on grounds F10 does not touch and its
+   oauth2-proxy premise is under doubt. Keep the honest Non-goals hedge and make
+   the summary match it.
 
 ## Contract hygiene
 
-- **Code surface with resolved anchors:** two defects, P8 (wrong path prefix)
-  and P11 (nonexistent directory). All other anchors resolve byte-exact.
-- **Discovered, not assumed, gates:** correct. `just pre_commit` and
-  `justfile:30-32` both verified, and the plan is honest that there is no CI
-  and no Ansible test harness.
-- **Explicit non-goals:** present and unusually good. Declining to set
-  `bound_issuer` in the same ticket is the right call for the reason given.
-- **Tests homed in the code surface:** the eval names concrete files and
-  commands; rows 5, 8, 9 and 11 tie to real paths.
-- **Forks surfaced, not silently decided:** Q1 and Q2 are surfaced with
-  recommendations in the plan, but Q1's answer is then pre-committed in the
-  eval. See above.
+- **Code surface with resolved anchors:** three stale `nomad.hcl.j2` anchors and
+  one truncated haproxy path. Everything else (`tasks/main.yml:121-128`,
+  `configure_hashistack_server.yml:41-44`, `haproxy.hcl:6-9,101,112,136-137`,
+  `justfile:18-19,30-32`) resolves byte-exact.
+- **Discovered, not assumed, gates:** correct, with the loose "terraform-* will
+  skip" claim noted under P15. The plan is honest that there is no CI and no
+  Ansible test harness.
+- **Explicit non-goals:** present and strong. Declining to set `bound_issuer` in
+  the same ticket remains the right call.
+- **Tests homed in the code surface:** yes; the eval names real paths and
+  commands, and row 4 names the correct MinIO host.
+- **Forks surfaced, not silently decided:** Q1 and Q2 carry recommendations, but
+  Q1's answer is now pre-committed in a signed eval while the plan still calls it
+  open. Required fix 6.
 
-## Attack-surface summary
+## Method
 
-1. **Stale premise:** none found. Every current-state claim reproduces live.
-2. **Inlined conclusion:** the MinIO `jwks_url` removal (P7) is inherited from
-   M1/A1 rather than established here, but I verified it at the deployed tag
-   and it is true.
-3. **Broken dependency edge:** no hard edge missing; an ordering fix is
-   required against F1 (P13).
-4. **Shape-check eval:** three findings, one of which fails a correct
-   implementation (row 8) and one of which is a missing row for the eval's own
-   stated defect.
-5. **Unresolvable anchor:** two. `services/haproxy.hcl` (wrong prefix) and
-   `bootstrap/roles/nomad_server/defaults/main.yml` (does not exist).
-
-All work was read-only. No mutating command was run against the repo, Vault,
-Nomad, or Consul.
+All repo and cluster work was read-only. No mutating git command was run. The
+only process I started was a throwaway `nomad agent -dev` on isolated ports
+(24646/24647/24648) with its own scratch data-dir; its two test jobs were purged
+and the agent stopped, confirmed by `pgrep`. The live cluster's Nomad, Vault,
+Consul and HAProxy were only read. No token value appears in this verdict.

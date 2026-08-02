@@ -740,7 +740,7 @@
       "epic": "foundation",
       "dependencies": [],
       "priority": 44,
-      "summary": "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which is the single reason M1 cannot work and R1's machine bearer path has no owner.",
+      "summary": "Set server.oidc_issuer on the Nomad server so it serves an OIDC discovery document, not just JWKS. Nomad currently signs Workload Identity JWTs but advertises no /.well-known/openid-configuration, which M1 needs. **It does not by itself unblock M1 or R1**: M1's `F1` dependency is unmet and F1 is blocked, and R1 is blocked on unrelated grounds. This removes one blocker, not the last one.",
       "relay_block_nonfork": null,
       "tags": [
         "nomad",
@@ -771,7 +771,7 @@
     },
     "D2-cli-login-broker-tokens": {
       "slug": "D2-cli-login-broker-tokens",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -781,10 +781,11 @@
       "epic": "cli",
       "dependencies": [
         "D1-cli-package-skeleton",
-        "F2-foundation-vault-oidc-provider"
+        "F2-foundation-vault-oidc-provider",
+        "F11-foundation-human-read-role"
       ],
       "priority": 46,
-      "summary": "Add `localstack login|logout|whoami|env|token|config|ui consul`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform, the hashi CLIs and the Consul UI without any static god-mode token.",
+      "summary": "Add `localstack login|logout|whoami|env|token|config`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform and the hashi CLIs via `eval \"$(localstack env)\"` until D6's shims land. The devcontainer still injects root today; retiring that is F8's job, not this ticket's.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -961,7 +962,7 @@
     },
     "G2-nomad-ui-oidc-login": {
       "slug": "G2-nomad-ui-oidc-login",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -1032,11 +1033,11 @@
     },
     "F11-foundation-human-read-role": {
       "slug": "F11-foundation-human-read-role",
-      "stage": "ready",
+      "stage": "done",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "6b87a38c70757dba1c55ddb23b62ca17986195a6",
       "review_verdict": null,
       "dropped": false,
       "epic": "foundation",

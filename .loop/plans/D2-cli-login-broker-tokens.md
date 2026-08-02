@@ -1,9 +1,9 @@
 ---
 epic = "cli"
-depends_on = ["D1-cli-package-skeleton", "F2-foundation-vault-oidc-provider"]
+depends_on = ["D1-cli-package-skeleton", "F2-foundation-vault-oidc-provider", "F11-foundation-human-read-role"]
 priority = 46
 tags = ["cli", "vault", "nomad", "consul", "auth"]
-summary = "Add `localstack login|logout|whoami|env|token|config|ui consul`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform, the hashi CLIs and the Consul UI without any static god-mode token."
+summary = "Add `localstack login|logout|whoami|env|token|config`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform and the hashi CLIs via `eval \"$(localstack env)\"` until D6's shims land. The devcontainer still injects root today; retiring that is F8's job, not this ticket's."
 ---
 
 # D2 — `localstack login`: Vault session, brokered Nomad and Consul tokens
@@ -11,15 +11,22 @@ summary = "Add `localstack login|logout|whoami|env|token|config|ui consul`: auth
 ## 1. Title
 
 Add the auth half of the `localstack` CLI: `login` (Vault `userpass`),
-`logout`, `whoami`, `env`, `token`, `config`, and `ui consul`, so a
-developer holds a short-lived Vault session that brokers short-lived Nomad
-and Consul tokens on demand, and no static god-mode token is needed to
-deploy.
+`logout`, `whoami`, `env`, `token` and `config`. **One command brokers all
+three credentials**: `localstack login` authenticates to Vault and, in the
+same run, brokers the Nomad and Consul tokens (R1, eager by design). No
+per-service login and no static god-mode token to deploy. Re-brokering after
+a lease expires is automatic (R4); that is a refresh, not a second sign-in.
+
+**Getting them into the shell is a separate step until D6 lands.** `login`
+brokers; `eval "$(localstack env)"` delivers. Until D6's shims exist, and
+with the devcontainer injecting root (R5, R11, §12), a bare `vault` after
+`login` alone still runs as root and `nomad` as the bootstrap token. D6 makes
+the delivery step disappear; this ticket must not claim it already has.
 
 ## 2. Size / Effort
 
-**L.** Seven commands (`login`, `logout`, `whoami`, `env`, `token`,
-`config`, `ui consul`), but the weight is elsewhere: a credential cache
+**L.** Six commands (`login`, `logout`, `whoami`, `env`, `token`,
+`config`), but the weight is elsewhere: a credential cache
 with per-credential expiry, three different lease models in one session
 (Vault token, Nomad lease, Consul lease), a revoke-on-logout path that
 must not leave live tokens behind, and an offline test suite that never
@@ -29,7 +36,7 @@ future `--method oidc` without changing shape.
 `token` is small to write and easy to get wrong: it is the backend
 `D6-cli-deps-and-shims` builds its PATH shims on, so its stdout contract
 (the token, nothing else, empty on failure) is load-bearing for another
-ticket. `config` and `ui consul` are thin, and they live here because
+ticket. `config` is thin, and it lives here because
 they read the session file and the resolved addresses this ticket already
 owns.
 
@@ -41,8 +48,9 @@ two static god-mode tokens into `.devcontainer/.env`
 (`.devcontainer/.env.example:2,6,10`). This is the client half of
 `F11-foundation-human-read-role`. D2 builds the client; F11 owns the policy.
 **F7 is retired** — it was dropped on 2026-08-01 after failing plan review
-twice, and this plan named it throughout. F11 replaces it and is `ready` with
-a signed eval marker.
+twice, and this plan named it throughout. F11 replaces it, and as of
+2026-08-01 it is **`done` and applied to the live cluster** — the `developer`
+policy and identity group exist and the operator entity is a member.
 
 ## 4. Context
 
@@ -71,7 +79,8 @@ Static, long-lived, god-mode:
   `CONSUL_HTTP_ADDR=http://192.168.2.30:8500`.
   `N4-netsec-edge-only-service-access` (`planning`, priority 50 against
   D2's 46) moves `.devcontainer/.env` and `.env.example` to the edge
-  hostnames (`.loop/plans/N4-netsec-edge-only-service-access.md:224,231,321-322`).
+  hostnames (`.loop/plans/N4-netsec-edge-only-service-access.md:377-378`, the `.env`
+  edge cutover).
   That cutover is absorbed: every address D2 uses comes from the
   environment or a flag. Two consequences to expect rather than
   re-litigate. Today R2 forces `--insecure` on every login, because the
@@ -141,10 +150,11 @@ Consequences the implementer must design around:
 
 1. `login` will authenticate but every broker call returns 403 until a
    policy binds the operator entity to the creds paths. **That policy is
-   `F11`, which is `ready` and grants exactly `nomad/creds/deploy` and
+   `F11`, which is **`done` and applied** and grants exactly `nomad/creds/deploy` and
    `consul/creds/deploy` as read** — the two paths this client brokers, so
-   the coupling is satisfied once F11 lands. Until then the CLI must fail with
-   a message naming the missing grant, not a bare traceback.
+   the coupling is satisfied once F11 lands. The CLI must still fail with a message naming
+   the missing grant rather than a bare traceback — that path is reachable
+   from a scratch user in no group, or from any other role name.
 2. `logout` can still revoke cleanly: `auth/token/revoke-self` is in the
    `default` policy, and revoking a Vault token revokes the leases that
    token created. Per-lease revocation via `sys/leases/revoke` is not
@@ -265,9 +275,16 @@ consumes what D1 established. See Q1 and §8.
   that adds it. D2 owns only `localstack token`, the contract D6's shims
   call. See R10.
 - **Not multi-cluster profiles.** One cluster, one session. See Q5.
-- **Not `localstack ui nomad`.** `ui consul` ships here because pasting a
-  token into the Consul UI is unavoidable on CE (§12). Nomad UI SSO is a
-  separate story and needs no paste.
+- **Not any `ui` command.** `ui consul` was cut on 2026-08-01; see §12. The
+  operator's locked surface for D2 is `login|logout|whoami|env|token|config`
+  (`ROADMAP.md`, the locked command-surface block — cite **by name**, the
+  file has uncommitted edits so line numbers do not survive into a worktree),
+  and `ui consul` was folded into D3's `service consul --open`. An earlier
+  draft shipped it here on the reasoning
+  that pasting a token into the Consul UI is unavoidable on CE. **That
+  reasoning is refuted in §12**: the UI needs no token at all, and pasting the
+  brokered one cuts the visible catalog from 25 services to 2. Nomad UI SSO is
+  a separate story (G2).
 - **Not ACL management through the brokered Nomad token.** It is
   `type: client` (`nomad_deploy_role.tf:39`).
 
@@ -306,8 +323,11 @@ Schema, one object per credential because their TTLs differ:
   "version": 1,
   "method": "userpass",
   "vault_addr": "https://vault.lab.orangecluster.nl",
-  "vault":  {"token": "", "entity_id": "", "policies": [],
+  "vault":  {"token": "", "accessor": "", "entity_id": "", "policies": [],
              "expires_at": "ISO8601", "renewable": true},
+  # The vault accessor is REQUIRED, not symmetry: it is the input to the
+  # one-action revoke in §9, and the login response already returns it. The
+  # schema recorded every accessor except the one the headline remedy needs.
   "nomad":  {"token": "", "accessor": "", "lease_id": "",
              "expires_at": "ISO8601", "renewable": true},
   "consul": {"token": "", "accessor": "", "lease_id": "",
@@ -362,10 +382,17 @@ change.
 
 **R6 — `localstack whoami` and `localstack logout`.**
 
-- `whoami` reports: username, `entity_id`, Vault token policies, Vault
-  TTL remaining, and per brokered credential the accessor, lease id, and
-  TTL remaining. Never the token values. Exit non-zero when no session
-  exists. `--format json`.
+- `whoami` reports: username, `entity_id`, **the Vault token's own
+  accessor**, Vault token policies, Vault TTL remaining, and per brokered
+  credential the accessor, lease id, and TTL remaining. Never the token
+  values. Exit non-zero when no session exists. `--format json`.
+
+  **The Vault accessor is not symmetry, it is the input to §9's primary
+  remedy.** Revoking a stolen session means revoking every accessor at
+  `auth/userpass/login/operator` **except your own**, and this is the only
+  command that tells a responder which one is theirs. R3 writes it to a `0600`
+  file and R13 rightly forbids `config` from printing it, so without this line
+  it is recorded and unreadable.
 - `logout` calls `auth/token/revoke-self` first, then deletes the cache
   file. Revoking the Vault token revokes the leases it created, so the
   brokered Nomad and Consul tokens die with it. This is a real security
@@ -449,7 +476,7 @@ matters in this container.
 Nothing in this repo writes a Consul token file today, and nothing should
 start. The write was unowned: D2 never mentioned it, and
 `D6-cli-deps-and-shims` disclaims all session and token logic
-(`.loop/plans/D6-cli-deps-and-shims.md:169`, "No session or token
+(`.loop/plans/D6-cli-deps-and-shims.md:188`, "No session or token
 logic"). Per §4 result 2, an unowned `CONSUL_HTTP_TOKEN_FILE` export
 breaks `consul` for everyone the moment it lands.
 
@@ -487,33 +514,25 @@ when asking for help, which is exactly why it must be safe to paste. It
 lands here rather than in D1 because it reads the resolved `vault_addr`
 and the session file, both of which this ticket owns.
 
-**R14 — `localstack ui consul` opens the UI and brokers NOTHING.**
+**R14 — REMOVED. `localstack ui consul` is not part of this ticket.**
 
-The original design brokered a token, copied it to the clipboard and printed
-it, grounded in "Consul's OIDC auth method is Enterprise-only, so pasting a
-token is the only route into the UI." **That premise is false on this
-cluster**, measured 2026-08-01:
+Cut on 2026-08-01 for two independent reasons.
 
-- `bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32` sets
-  `tokens { default = <agent token> }`, so every request arriving without a
-  token resolves to the agent's identity under `agent_policy`, which holds
-  `node_prefix`, `service_prefix`, `agent_prefix` and `session_prefix ""` at
-  **write**. Untokened: 25 services, 5 nodes, 41 health checks, and a 200 on
-  `/ui/`. `default_policy = "deny"` is set and never applies.
-- **Pasting the brokered token makes the UI worse, not better.** An explicit
-  token *replaces* the agent default rather than merging with it, and the live
-  `deploy` Consul policy grants service read on `minio` and `postgres-db`
-  only. So the brokered token cuts the UI from 25 services to 2.
+**It is not in the operator's locked surface.** `ROADMAP.md`'s locked
+command-surface block (by name, not line — the file has uncommitted edits)
+fixes D2's surface at
+`login | logout | whoami | env | token <svc> | config`, and records that
+`ui consul` was folded into `service consul --open`, which is D3's. This plan
+predates that lock and never caught up.
 
-So: open the URL, and stop. No brokering, no clipboard, no printed token.
+**Its premise was false anyway.** It existed to hand you a token to paste into
+the Consul UI. Measured 2026-08-01: the UI needs no token — `tokens.default`
+is the agent token, so unauthenticated requests return the full catalog and
+`/ui/` answers 200. Both directly and through the edge over TLS. Pasting the
+brokered `deploy` token would have made it *worse*, replacing the agent
+default and cutting the visible catalog from 25 services to 2.
 
-- Do not open a browser when there is no session. Exit non-zero with R8.
-- Do not build `localstack ui nomad`.
-- **Record why there is no token step**, so nobody restores it. The Consul UI
-  needing no credential is a *finding about this cluster's configuration*, not
-  a property of Consul — it is an open read surface on the tailnet and is
-  filed separately. If that is ever fixed, this requirement must be revisited
-  and the brokered token will then need a policy wider than `deploy`.
+Nothing replaces it here: `config` (R13) already prints the Consul address.
 
 ### Restrictions the repo states
 
@@ -588,9 +607,6 @@ New files:
   one day print a banner, and nothing else in the file to tempt one.
 - `cli/src/localstack_cli/commands/config.py` — R13. Addresses and edge
   domain, text and JSON, no secrets.
-- `cli/src/localstack_cli/commands/ui.py` — R14. `localstack ui consul`:
-  open the
-  browser.
 - `cli/tests/auth/test_vault.py` — login, lookup, renew, revoke, and the
   R2 plaintext refusal, all against `respx`.
 - `cli/tests/auth/test_vault_token_file.py` — R11. Write at `0600`,
@@ -613,9 +629,6 @@ New files:
 - `cli/tests/commands/test_config_command.py` — R13. No secret material
   in text or JSON output, asserted against a session file whose token
   values are known.
-- `cli/tests/commands/test_ui_command.py` — R14. Prints the token even
-  when the clipboard write succeeds, and does not open a browser when
-  brokering fails.
 - `cli/tests/auth/test_live_login.py` — live-cluster tests carrying D1's
   `cluster` marker (`.loop/plans/D1-cli-package-skeleton.md:137-140,172`),
   excluded by default via `addopts`.
@@ -625,8 +638,16 @@ New files:
   `VAULT_TOKEN` from the environment by default so R11's warning is
   opt-in per test; a fixture building a session file.
 - `docs/cli-login.md` — one page: how to get the password the first time,
-  `localstack login`, `eval "$(localstack env)"`, what `logout` revokes,
-  and the F2/F11 preconditions. Runs the slop scan.
+  `localstack login`, `eval "$(localstack env)"`, what `logout` revokes, the
+  F2/F11 preconditions, and **the revocation shape from §9** — three
+  credentials; `logout` and an accessor revoke each end all three by cascade,
+  and the accessor revoke needs no root; if neither is available it is
+  cut-then-delete in that order, and revocation does not un-disclose what was
+  read. The revocation section of `docs/vault-human-auth.md` says the same
+  thing — cite it **by name**: at the time of writing it is an uncommitted
+  working-tree edit, so a line anchor would not resolve in a worktree, which
+  branches from committed state. Runs the slop
+  scan.
 
 Modified:
 
@@ -634,8 +655,8 @@ Modified:
   `uv add`; register the `cluster` marker and the `addopts` exclusion if
   D1 did not.
 - D1's CLI entry module — register the subcommands: `login`, `logout`,
-  `whoami`, `env`, `token`, `config`, and the `ui` group with its one
-  `consul` subcommand. One line each.
+  `whoami`, `env`, `token` and `config`. One line each. **No `ui` group** —
+  see R14 and §12.
 
 Read-only anchors the implementer will open, and must not edit:
 `deployments/infrastructure/nomad_deploy_role.tf:36-41`,
@@ -646,24 +667,38 @@ Read-only anchors the implementer will open, and must not edit:
 `.devcontainer/devcontainer.json:38-39`,
 `bootstrap/roles/nomad_server/tasks/main.yml:309`,
 `docs/vault-human-auth.md`.
-All of these are on `main` now that F2 is applied; nothing here needs a
-branch checkout.
+All of these are on `main` now that F2 is applied, **except
+`docs/vault-human-auth.md`**, whose revocation section is an uncommitted
+working-tree edit — expect it to be absent in a fresh worktree. Worse than
+absent: the version on `main` still carries a bullet this section's
+measurements falsify, so a worktree shows the **wrong** claim rather than no
+claim. Commit the doc alongside this ticket. Nothing here
+needs a branch checkout.
 
 ## 8. Tests & validation gates
 
 ### Repo gates, discovered
 
 - **Loop gate:** `just pre_commit` (`.loop/config.json:2-3`) runs
-  `pre-commit run --all-files` (`justfile:18-19`). Hooks that touch
-  Python: `check-ast` (`.pre-commit-config.yaml:7`) and
-  `debug-statements` (`:11`). The config excludes `^\.(claude|loop)/`
-  (`:1`). **There is no ruff, mypy, or pytest hook today.** Do not add
-  one here (`.claude/rules/prek-code-quality.md`); it is D1's scope.
-- **Test gate, run explicitly:** `uv run pytest` from the CLI root
-  (`.claude/rules/python-testing.md:21`). Because no pytest hook exists,
-  `just pre_commit` will not run it. The implementer runs it by hand and
-  it must be green before done.
-- **Marked live run:** `uv run pytest -m cluster` (`:24`). Off by default
+  `pre-commit run --all-files` (`justfile:18-19`). The config excludes
+  `^\.(claude|loop)/` (`:1`).
+
+  **This description is written against `main`; D1 changes it.** D1 adds four
+  hooks to the root `.pre-commit-config.yaml`: `ruff` (lint), `ruff-format`,
+  `mypy` and `pytest`. Two consequences for D2:
+
+  - **mypy runs `strict = true`** against `cli/src` and `cli/tests`, so every
+    symbol D2 adds needs annotations. This is not optional and it is not
+    caught late — the hook is in the loop gate.
+  - **`just pre_commit` DOES run the suite.** The old claim that it would not
+    is inverted by D1.
+
+  Still do not add hooks here (`.claude/rules/prek-code-quality.md`) — D1 owns
+  that config, and D2 inherits it.
+- **Inner loop:** `cli/justfile` provides `just check` (lint, typecheck, test)
+  plus `test`, `test_cluster`, `lint` and `typecheck` individually. Use those
+  while working; `just pre_commit` from the repo root is what gates.
+- **Marked live run:** `uv run pytest -m cluster` (`:12-13`). Off by default
   via `addopts` (`:26-32`). The marker name is D1's
   (`.loop/plans/D1-cli-package-skeleton.md:137-140,172`); use it rather than
   inventing a second one.
@@ -742,9 +777,13 @@ Each file below is listed in §7.
     and JSON forms, asserted against a session file whose token and
     accessor values are known strings, plus a check for the `hvs.` and
     `hvo_` prefixes.
-23. `test_ui_command.py::test_ui_consul_prints_token_even_when_clipboard_succeeds`
-    — R14. And a second case: brokering failure exits non-zero and opens
-    no browser.
+23. `test_auth_commands.py::test_whoami_prints_the_vault_accessor` —
+    R6. Asserts the session token's **accessor** appears in `whoami`'s
+    output and in `--format json`. This is the one R6 output clause with
+    no test, it is the input to §9's headline remedy (revoke every
+    accessor at the path except your own), and it has failed to land
+    twice. Test 12 does not cover it — that row asserts token *values*
+    are absent, and an accessor is not a token value.
 
 ### Live-cluster acceptance, runnable now
 
@@ -758,11 +797,20 @@ R7 and Q7. Run these; do not record them as blocked.
     `entity_id` (the whole point of F2's entity, §4).
 25. `whoami` reports the entity and a TTL.
 26. Brokering both creds paths **fails with R8's message naming the
-    missing policy**. This is the one row that is not a success
-    assertion, and it is correct as written: the operator user ships
-    `token_policies = []` and F11 has not applied, so a 403 is the true state
-    of the cluster. Assert the message. If brokering ever succeeds here,
-    F11 landed and this row needs rewriting, not deleting.
+    missing policy**. **`F11` applied on 2026-08-01, so `operator` now
+    brokers successfully and this row can no longer be driven from it.**
+    Create a scratch `userpass` user whose entity is in no identity group,
+    log in as that, and assert the 403 message against it. **Tear it down in
+    this order: revoke the login token by accessor FIRST, then delete the
+    user, its entity and its alias** — it is created on the live cluster and
+    nothing else removes it. The order is not cosmetic. Deleting the user and
+    entity does not revoke what they minted: an earlier run of this row left a
+    `userpass-rowsix` token valid for 30.6 more days with its user gone and its
+    entity id no longer resolving. It had decayed to `default` because the
+    entity was deleted, so it was litter rather than a live grant — but the
+    same teardown on a token still carrying `developer` would not have been. The row still
+    matters — it is the one that is not a success assertion — but its subject
+    changed.
 27. `logout` revokes: after it, `vault token lookup` on the cached token
     fails. Assert against the Vault token, not against the brokered
     accessors, since under row 26 there are none to check.
@@ -786,11 +834,16 @@ worst realistic outcome of this ticket. Tests 3 and 4 exist for that.
 R11 adds a second file, `~/.vault-token`, holding the same Vault token at
 the same mode; tests 18 and 19 cover it.
 
-**What a stolen `session.json` buys, stated plainly.** Today: a
-`default`-policy Vault token, which brokers nothing, so the loss is small.
-**Once F11 grants the creds reads, the same file becomes a bearer
-credential that mints deploy-capable Nomad and Consul tokens on demand for
-up to 32 days** — Vault's built-in `768h` default, since `auth_userpass.tf`
+**What a stolen `session.json` buys, stated plainly. `F11` is applied, so
+this is the present tense.** The file is a bearer credential for the
+`developer` identity, and `developer_group.tf` says in its own header that it
+is **not a containment boundary**: the holder can grant themselves anything
+short of `root` in about three commands. It carries `identity/*`,
+`sys/policies/acl/*` and `auth/userpass/users/*` write, `secret/data/default/*`,
+`auth/token/create`, and both Terraform roots.
+
+So a stolen `session.json` is not "a token that brokers deploy credentials".
+It is the cluster, for up to 32 days — Vault's built-in `768h` default, since `auth_userpass.tf`
 sets no `token_ttl` and `sys/config/state/sanitized` reports
 `default_lease_ttl: 0`. There is no client-side bound and no rotation. Q6
 records the operator's decision that this is the design, modelled on
@@ -799,16 +852,185 @@ recorded here because the `gcloud` analogy understates it: a Google
 refresh token is scoped and centrally revocable, this one is a key to the
 cluster's deploy path.
 
-**And recovery is not in the operator's hands.** The remedies are: the
-holder runs `localstack logout` (`auth/token/revoke-self`, granted by
-`default`), or someone with a management token revokes by accessor, or
-the operator password is rotated at `secret/default/vault/operator` and
-the outstanding token revoked. The operator's own token cannot do the
-second: `default` grants no `sys/leases/revoke` and no token-accessor
-revocation (§4, verified). So a stolen session is revoked by root, not by
-the person who lost it. Note this in `docs/cli-login.md`. Shortening the
-TTL is F11's lever if the operator later wants one; D2 cannot set it from
-the client.
+**`session.json` holds three credentials — a Vault token and two brokered ACL
+tokens. Two single actions end all three; everything else is partial.** Both
+cascade from the parent token: the holder's own `localstack logout`, and a
+revoke by accessor. **Neither needs root.** In order of preference:
+
+1. `localstack logout`, if you still have the file. Below under **"Cascades,
+   no root, but only the holder can run it"**.
+2. A revoke by accessor, which needs `auth/token/revoke-accessor` — reachable
+   without root, but **read the escalation warning before doing it**. Below
+   under **"Closes everything in one action, and does NOT need root"**.
+3. The composite, if you hold Nomad and Consul management tokens. Below under
+   **"A composite closer, when you hold both management tokens"**.
+
+**The blocks below are not in that order.** Each one's bold lead states what
+that action does — closes everything, partial, or not a remedy — so read the
+leads rather than inferring anything from position. The three above are the
+ranking; the headings named there are where each one lives.
+
+**Cascades, no root, but only the holder can run it:** `localstack logout`.
+`auth/token/revoke-self` is granted by `default`, and revoking the parent kills
+the child Nomad and Consul leases. Useless once the thief has the file and the
+holder does not.
+
+**Partial — the Vault token only.** Remove the operator entity from the
+`developer` group. The token demotes to `default` on its next call, because the
+policy arrives through the group at request time (`auth_userpass.tf:34` sets
+`token_policies = []`; `developer_group.tf:141-147`). The floor is real: the
+entity's other group, `oidc-smoke`, carries `policies: []`. But `default`
+grants `sys/leases/renew`, so the demoted holder keeps renewing the two
+brokered leases to their `max_ttl` of 3600.
+
+**Partial — stops use, revokes nothing.** Disable the entity.
+`vault path-help identity/entity/id/<id>` says it verbatim: *"If set true,
+tokens tied to this identity will not be able to be used (**but will not be
+revoked**)."* The brokered tokens are real ACL tokens in Nomad's and Consul's
+own state and live out their lease — up to 30 minutes, or the balance of the
+hour if the thief renewed first.
+
+**Partial — the brokered tokens only, and they can be re-minted.** Delete them
+where they live:
+
+```
+nomad  acl token delete <accessor_id>
+CONSUL_HTTP_TOKEN="$CONSUL_TOKEN" consul acl token delete -accessor-id <accessor>
+```
+
+Both take the accessor `R3` already records and both need a management token.
+**The Consul bridge is not optional**: `.devcontainer/.env` sets `CONSUL_TOKEN`
+and the `consul` binary reads only `CONSUL_HTTP_TOKEN` (§4), so without it the
+call runs as the agent token and fails with a permission error that reads like
+a wrong accessor. And on its own this closes nothing: the stolen Vault token
+still resolves `developer`, which grants read on `nomad/creds/deploy` and
+`consul/creds/deploy` (`developer_group.tf:123-129`), so one `vault read`
+re-mints the pair.
+
+**A composite closer, when you hold both management tokens, and the order
+matters.** Cut the mint path first — group removal or entity disable — **then**
+delete the two ACL tokens. Either half alone leaves a live route. This is not
+*the* non-root closer; the accessor revoke is also non-root and needs no
+management tokens at all.
+
+**Closes everything in one action, and does NOT need root:** revoke by
+accessor. Revoking the parent cascades to both child leases — measured against
+real Consul and Nomad agents, both brokered tokens gone from those services'
+own state.
+
+**An earlier draft called this root-only. It is not**: `developer` grants
+`sys/policies/acl/*` and `identity/*`, so a responder can write themselves the
+policy below and use it. Measured end to end, non-root.
+
+```hcl
+# `sudo` on the list path is REQUIRED. Without it the first command 403s,
+# and the prose form of this policy did exactly that for nine passes.
+path "auth/token/accessors"       { capabilities = ["list", "sudo"] }
+path "auth/token/lookup-accessor" { capabilities = ["update"] }
+path "auth/token/revoke-accessor" { capabilities = ["update"] }
+```
+
+**Attach that policy to a THROWAWAY ENTITY, never to the `developer` group.**
+This bounds the blast radius; it does not lower the thief's ceiling. A
+`developer` can already create its own userpass user, entity and alias
+carrying the same policy in three writes — measured — because `developer`
+holds the same two grants the responder uses. What the throwaway genuinely
+buys is that no *present or future* `developer` picks the grant up
+automatically on their next call, and that a Terraform-managed group is not
+permanently widened.
+An earlier draft said the group. That is dangerous: group policies resolve at
+request time — the same mechanism this section relies on for demotion — and
+**the thief is a `developer`**. Attaching it to the group arms them with
+`auth/token/accessors` (list, with `sudo`) and `revoke-accessor` over every
+token in the cluster. That is **20 accessors, measured 2026-08-02**: 14 `jwt-nomad` workload tokens
+(postgres ×2, minio, mlflow, grafana, loki, prometheus, haproxy, hermes,
+phoenix, memex, bifrost, talat-consumer, talat-shim), the root token, and 5
+`userpass` sessions. It was 21 until the `rowsix` orphan below was revoked. It turns a credential theft into a cluster-wide outage. The
+responder already holds `identity/*` and `auth/userpass/users/*`, so a
+throwaway entity costs two extra commands and contains the grant.
+
+**Four more things the responder must know.**
+
+- **`terraform apply` will strip your grant mid-incident.**
+  `developer_group.tf:144` manages `policies` as a single-element list, so any
+  apply during the incident silently removes it — and afterwards leaves an
+  orphan near-root policy that Terraform does not know about. Delete the
+  policy by hand when you are done.
+- **Revoke every accessor at that path except the one you are using.** Five
+  live accessors share `path auth/userpass/login/operator`, `display_name
+  userpass-operator`, `entity_id 351f302a…` and `policies ['default']`. They
+  carry distinct `creation_time` values, so they *separate* — but two of them
+  were minted **10 seconds apart**, there is no audit device recording when
+  the lost session was created, and "confirm before revoking" names nothing to
+  confirm against. So `creation_time` does not *identify* the target. And all
+  five resolve `identity_policies: ['developer']` with 30 to 32 renewable days
+  left, so revoking one leaves four near-root credentials live for a month.
+  Revoke them all except your own, then log in again.
+- **None of this is logged.** `vault audit list` returns "No audit devices are
+  enabled", and the escalation writes into `identity/entity` and
+  `auth/userpass/users` — the exact two places this section's first residual
+  tells you to audit afterwards.
+- **Deleting the throwaway does not revoke what it minted.** Proven on this
+  cluster on 2026-08-02: a `userpass-rowsix` token from an earlier run of live
+  row 26 was still valid with **30.6 days left**, its user deleted and its
+  entity id no longer resolving. It had decayed to `default` because the
+  entity was gone, so it was litter rather than a live grant — but a throwaway
+  torn down the same way while its token still carried `developer` would not
+  have. **Revoke the throwaway's token by accessor before deleting the user,
+  the entity and the policy.** It has been revoked.
+
+**Why the accessor revoke outranks the composite.** The composite needs a
+Nomad management token **and** a Consul management token. The accessor revoke
+needs only the Vault password, which R7 says the operator already holds. For
+the exact victim this section addresses — laptop gone, password known — the
+composite is the remedy they cannot run. **So after `logout`, this is the
+first thing to reach for.**
+
+**Not a remedy: `vault lease revoke`.** `sys/leases/revoke` is in neither
+`default` nor `developer` — and it is reachable by the same self-elevation as
+the accessor revoke, so calling it "root-only" was wrong for the same reason.
+It is simply dominated by the
+accessor revoke above.
+
+**Does not work: rotating the password.** `secret/default/vault/operator` is
+the KV *record*; the credential lives at `auth/userpass/users/operator`
+(`auth_userpass.tf:29`), so rewriting the KV entry authenticates nothing. The
+thief also holds `secret/data/default/*` and `auth/userpass/users/*` and can
+rotate it back.
+
+**Three residuals survive every remedy above.** A fourth — a child token minted
+via `auth/token/create` — is **closed**, measured on a dev server: the child
+policy subset check reads the parent's `policies`, which is `['default']`, not
+its `identity_policies`, so `auth/token/create policies=developer` returns
+`400 child policies must be subset of parent`. An inherited child is
+non-orphan and carries `entity_id`, so group removal demotes it in the same
+call, disable 403s it, and both cascading revokes reach it. Orphan creation
+needs root or sudo. The identity-group delivery R8 is built around is what
+closes this.
+
+- **A credential minted before you act.** Re-granting afterwards is not
+  possible — a demoted token holds only `default`, which grants no
+  `identity/*`, and a disabled one cannot be used at all — but anything
+  created while the thief still held `developer` stands on its own. Only an
+  audit of `identity/entity` and `auth/userpass/users` finds it, and no audit
+  device is enabled, so there is no log to search.
+- **Every secret they read.** `developer` grants `secret/data/default/*`, and
+  nothing here rotates what was read. Revocation ends access; it does not
+  un-disclose.
+- **A cached grant, for up to 30 seconds — and on Consul, indefinitely.**
+  Measured live: Consul runs `ACLTokenTTL: 30s` with
+  `ACLDownPolicy: extend-cache`, Nomad `ACL.TokenTTL: 30s`; neither template
+  sets these, so they are defaults. After the deletes an agent keeps honoring
+  the token until its cache expires, and Consul keeps honoring it for as long
+  as the ACL servers are unreachable. The deletes are not instantaneous and
+  the runbook should not imply they are.
+
+`docs/cli-login.md` must carry the shape, not a list: three credentials;
+**your own `localstack logout` ends all three on the spot** and is the first
+thing to do if you still have the file; a revoke by accessor does the
+same; without either it is cut-then-delete in that order; rotating the
+password saves nothing; the deletes take up to 30 seconds to bite, and on Consul are ignored entirely while its ACL servers are unreachable; and
+revocation does not un-disclose what was read.
 
 **The `~/.vault-token` write is inert today, by measurement, not by
 design.** `VAULT_TOKEN` is injected into every shell (§4), and the
@@ -831,7 +1053,6 @@ Nothing on the cluster changes except leases that expire within an hour
 anyway.
 
 **Likeliest failure modes.**
-
 1. **Believing the `~/.vault-token` write did something.** It does not, in
    this container (§4 result 1). An implementer who writes the file, runs
    `vault kv get`, sees it work and calls R11 proven has measured the
@@ -867,6 +1088,7 @@ anyway.
    one silently outranks every fresh token (§4 result 2). R12 forbids it
    here and tells D6 to drop it.
 
+
 ## 10. Subtickets (ordered, dependency-aware)
 
 1. **Lock the D1 contract.** Settle Q1 and Q2: package root, CLI
@@ -886,13 +1108,14 @@ anyway.
    Tests 13 to 15, 20 and 21. Depends on 2, 3, 4 and 5.
 7. **`whoami` and `env`.** Both output formats, both Consul names,
    stderr discipline, and `whoami` reporting which token a bare `vault`
-   would use. Tests 10 to 12, and the `whoami` halves of 20 and 21.
+   would use and its own accessor. Tests 10 to 12 and 23, and the `whoami`
+   halves of 20 and 21.
 8. **`token`.** R10, and the first thing `D6-cli-deps-and-shims` needs to
    exist. Its own module, byte-exact stdout, fail-closed on every path.
    Tests 16 and 17. Depends on 4, so it can land right after `broker.py`
    if D6 is waiting; nothing in 5 to 7 blocks it.
-9. **`config` and `ui consul`.** R13 and R14: addresses with no secrets,
-   then broker-copy-print-open. Tests 22 and 23. Depends on 4 and 8.
+9. **`config`.** R13: addresses with no secrets. Test 22. Depends on 4
+   and 8.
 10. **Confirm D6 still writes three shims.** Nothing to relay: D6 took
     the `vault` row independently on 2026-07-31 and its table
     (`.loop/plans/D6-cli-deps-and-shims.md:84-88`) reads **yes** for
@@ -903,8 +1126,12 @@ anyway.
 11. **Live tests and docs.** `test_live_login.py` (tests 24 to 28,
     `cluster`-marked, and rows 24, 25, 27 and 28 are runnable now),
     `docs/cli-login.md` covering the one-time password retrieval, the
-    `VAULT_TOKEN` shadowing and how to get out of it, and who can revoke
-    a stolen session. Slop scan, `just pre_commit`, `uv run pytest`,
+    `VAULT_TOKEN` shadowing and how to get out of it, and **what it takes to
+    revoke a stolen session** — not "who can", which is the wrong question:
+    §9 establishes that `logout` and an accessor revoke each end all three by
+    cascade, that **neither needs root** — a `developer` can write itself the
+    accessor policy in §9 and run it — and that without either it takes the
+    two-step composite. Slop scan, `just pre_commit`, `uv run pytest`,
     adversarial review.
 
 ## 11. Open questions
@@ -912,8 +1139,17 @@ anyway.
 **Q1 → ANSWERED by D1, 2026-07-31.** This question said D1 had no plan file.
 It has one now, and it settles the fork: package under `cli/`, src layout,
 its own `cli/pyproject.toml`, `typer` at runtime. §7's anchors hold. Still
-verify at pickup, since D1 is `planning` and nothing is built — no `cli/`
-directory exists in the tree yet.
+verify at pickup. **D1's code is not on `main`.** As of 2026-08-01
+`git ls-files` matches nothing under `cli/`, and `loopctl ledger` reads
+`D1-cli-package-skeleton: ready`, not `done` — the tree is staged and
+uncommitted in `.loop/worktrees/D1-cli-package-skeleton` behind its review
+gate. D1 is a hard dependency, so the loop will not hand D2 to an implementer
+until it lands: `cli/` will exist by pickup and does not exist now. Confirm
+these four against the merged tree rather than against this paragraph — the
+package root `cli/src/localstack_cli/`, the console script
+`localstack = "localstack_cli.main:main"`, the `cluster` marker with its
+`addopts` exclusion, and the Python hooks D1 adds to the root
+`.pre-commit-config.yaml`.
 
 **Q2 — HTTP client and its mocking tool.** `requirements.txt` lists both
 `httpx` (`:3`) and `hvac` (`:5`), and nothing installs either.
@@ -1053,7 +1289,7 @@ read path to the CLI.
 ## What this ticket settled for F11
 
 F7 was retired on 2026-08-01 and its artifacts moved to `.loop/archive/`;
-`F11-foundation-human-read-role` replaces it and is `ready` with a signed eval
+`F11-foundation-human-read-role` replaces it and is `done` with a signed eval
 marker. Three things this plan established fed into it, each verified here
 rather than assumed:
 
@@ -1156,30 +1392,41 @@ The devcontainer puts `~/.localstack/bin` on PATH ahead of `/usr/bin`, so on
 a configured machine the setup cost is zero. `which nomad` showing the shim is
 the accepted cost.
 
-### `localstack ui consul`
+### Why there is no `ui consul`
 
-**Owned by R14, built in subticket 9, tested by test 23, scored by the eval's
-`ui consul` row.** This section is the reasoning behind it, not a design note
-with no home.
+An earlier draft shipped one. It is cut, and this records why so nobody
+re-adds it.
 
-Consul's OIDC auth method is Enterprise-only and this cluster is CE, verified
-2026-07-31: `consul version` carries no `+ent` and the agent reports
-`Edition: n/a`. The CE `jwt` method is programmatic, with no browser redirect,
-so the Consul UI cannot drive it either. Pasting a token is the only route,
-and no amount of design removes that.
+**It is outside the operator's locked surface.** `ROADMAP.md`'s locked
+command-surface block (by name, not line — the file has uncommitted edits)
+fixes D2's surface at
+`login | logout | whoami | env | token <svc> | config`, and folds `ui consul`
+into `service consul --open`, which belongs to D3.
 
-So make it one command: broker a Consul token, copy it to the clipboard, print
-it as a fallback, and open `https://consul.lab.orangecluster.nl`. The operator
-pastes once per session.
+**Its stated premise was false.** The command existed to broker a Consul token
+and hand it to you for the UI, on the reasoning that Consul's OIDC auth method
+is Enterprise-only so "pasting a token is the only route". The first half is
+true; the conclusion does not follow. Measured 2026-08-01:
 
-- Print the token even when the clipboard write succeeds. Inside a container
-  the clipboard is the part most likely to fail, and a silent failure leaves
-  the operator with a browser and no token.
-- Clipboard needs a helper (`xclip`, `pbcopy`, or an OSC 52 escape). OSC 52
-  travels over SSH and through the devcontainer, so prefer it.
-- The same command shape can serve `localstack ui nomad` later, but do not
-  build that here. Once Nomad UI SSO lands, Nomad needs no token paste at all.
+```
+services with NO token:            25
+services with the brokered token:   2
+UI reachable with no token:        200
+```
 
+`bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32` sets
+`tokens { default = <agent token> }`, so unauthenticated requests run as the
+agent and see everything. An explicit token **replaces** that default rather
+than merging, and the `deploy` policy grants service read on `minio` and
+`postgres-db` only — so the command would have cut the catalog from 25
+services to 2. It degraded the thing it claimed to enable.
+
+**The real finding is not about the command.** Consul authenticates nobody
+here, and this holds through the edge as well as directly:
+`https://consul.lab.orangecluster.nl/v1/catalog/services` returns the full
+catalog over TLS with no credential. So closing port 8500 is not "its only
+control" — there are two paths, and the edge is one of them. Out of scope for
+this ticket, recorded in the roadmap's known gaps, and it needs an owner.
 ### What this does NOT settle
 
 `localstack env` still has a place for `just` recipes and CI, where a shim on
@@ -1196,7 +1443,7 @@ R11's warning points the developer at.
 ### Command surface, settled 2026-07-31
 
 The operator fixed the CLI's whole command surface on the same day as §12's
-decisions. Three commands land in this ticket that were not in its original
+decisions. Two commands land in this ticket that were not in its original
 `login|logout|whoami|env` scope. Each now has a requirement, a file, tests
 and a place in the build order; this list is the index:
 
@@ -1207,7 +1454,6 @@ and a place in the build order; this list is the index:
   Addresses and edge domain, never a secret. It lands here rather than in D1
   because this ticket already resolves `vault_addr` and already owns the
   session file.
-- **`localstack ui consul`** — R14, `commands/ui.py`, test 23, subticket 9.
 
 `login` also writes `~/.vault-token`, per Q4 as re-decided, and `logout`
 removes it. R11 carries that, plus the stderr warning that keeps the write

@@ -68,7 +68,7 @@ So the policy is `path "*"` **plus explicit blocks re-granting the paths
 ## Non-goals
 - **No app-specific groups.** No Grafana, MinIO or Memex names. The map ships
   empty; the eval adds one entry and removes it.
-- **No consumer wiring.** `G1`, `G2`, `M2`, `R1`, `R4` each wire their own
+- **No consumer wiring.** `G1`, `G2`, `L1`, `M2`, `R1`, `R4` each wire their own
   service. This ticket does not claim what any of them does.
 - **No new OIDC clients.**
 - `developer` (`F11`), the breakglass runbook (`D5`), service accounts (`F1`,
@@ -95,8 +95,8 @@ So the policy is `path "*"` **plus explicit blocks re-granting the paths
 5. **`vault_identity_oidc_assignment.smoke.group_ids` reads that local**, which
    makes `oidc.tf` the extension point's first consumer and is the only way to
    prove the wiring — there is one client, and its `assignments` is inline at
-   `oidc.tf:110`. This ticket therefore **does** edit `oidc.tf`, by that one
-   line.
+   `oidc.tf:110`. This ticket therefore **does** edit `oidc.tf` — this line,
+   and the header comment covered by Requirement 12.
    **It must `concat` the local onto the existing smoke group id, not replace
    it.** The map ships empty, so a replacement writes `group_ids = []` and
    breaks F2's live smoke client.
@@ -121,24 +121,85 @@ So the policy is `path "*"` **plus explicit blocks re-granting the paths
    name in `groups` as a real array, confirm the entity reads nothing, remove
    everything. Decoding is required — a malformed template renders
    `{"groups": "null"}` and still issues a valid token.
+
+   **Prove branch 3 on the same run, since the scratch entity already exists.**
+   Point a throwaway client's `assignments` at `["allow_all"]` and complete an
+   authorization with that entity while it is in **no** relevant group. That
+   `allow_all` reads back `entity_ids [*]`, `group_ids [*]` is measured; that
+   it therefore admits a non-member at authorization time is inferred from
+   those values and nothing here has run it. Requirement 2 sets exactly this
+   standard for a flag with a far smaller blast radius. One extra clause on a
+   run already happening closes it. If it is skipped, say so in branch 3 —
+   "Vault-documented, unverified on this cluster" — rather than leaving the
+   reader to assume it was tested.
 10. **`docs/cluster-roles.md`** states the four roles, where each is defined,
     the naming convention, that a group needs an OIDC assignment to grant
     anything, and that neither `developer` nor `admin` is a containment
     boundary. It must also say that **`admin` membership is not managed by
     Terraform**, so leaving yourself in it after an incident is invisible to
     every plan — checking it is a habit, not a gate.
-11. **Update `docs/vault-human-auth.md:71-87`.** Its step 2 tells every
+11. **Update `docs/vault-human-auth.md`** — its numbered step **"`vault_identity_group`, who is allowed in"**.
+    Cite it by name, not line: that file is edited often and line citations
+    into it went stale three times in one night. Its step 2 tells every
     consumer to create its own `vault_identity_group`. With a shared taxonomy
-    that is now the second answer in the repo: a consumer references tier
-    groups and creates its own only when the tiers do not fit.
-12. Plain language (`.claude/rules/plain-language.md`); adversarial sub-agent
+    that is now the second answer in the repo, and the replacement needs
+    **four** branches, not two.
+
+    **Three things in that section change, not one.** Step 2 is the branch
+    list below. But the section's lead ("**Four resources**, then one line in
+    a shared list") and its step 3 ("`vault_identity_oidc_assignment`, which
+    binds **that group** to the client") are both false under branch 3, where
+    a consumer writes **two** resources plus the one line and has no group to
+    bind. Fix all three, and cite each by name rather than line, per this
+    requirement's own argument:
+
+    1. **Reference an existing tier group** when one already names who should
+       get in — `developer` (`F11`) or `admin`.
+    2. **Add a map entry** to the app-user scaffold when the service needs its
+       own tier. This is the branch that matters and an earlier draft omitted
+       it entirely. **The map ships empty (Requirement 6)**, so with only two
+       branches every app consumer falls through to "make your own group" and
+       routes around the scaffold — which is this ticket's product and the
+       failure its risk section ranks first.
+    3. **No group at all** — bind Vault's built-in `allow_all` assignment —
+       when the answer to "who is allowed in" is "anyone who can log in".
+       `assignments` takes a list of names (`oidc.tf:110` passes
+       `vault_identity_oidc_assignment.smoke.name`), so this is
+       `assignments = ["allow_all"]`: no group, no map entry, no Terraform
+       group resource. Live today: `vault read
+       identity/oidc/assignment/allow_all` returns `entity_ids [*]`,
+       `group_ids [*]`. **This is the branch four of the six known consumers
+       need** — `G1` (`G1:140-147`), `R1` (`R1:99-102`), `R4`
+       (`R4:295-300`) and `L1` (`L1:66`) each declare flat access. Without it
+       they either invent a one-member group nobody wanted or gate the service
+       on Vault `developer` by accident.
+    4. **Create a service-specific group** only when none of the three fits.
+12. **Scope the header comment at `oidc.tf:7-10`**, which tells every consumer
+    "each consumer ticket creates its own **group and assignment**".
+    **Both clauses are now conditional, not just the group one.** Under
+    branches 1, 2 and 4 a consumer creates its own assignment — `G2` does
+    (`G2:242-250`), and it stays the worked example. Under branch 3 it creates
+    **neither**: it names the built-in `allow_all` and writes no group and no
+    assignment resource at all. Rewrite the sentence so both clauses carry that
+    condition and point at Requirement 11's four branches. An earlier draft of
+    this requirement said to leave the assignment clause alone; that was
+    written before branch 3 existed and is now false for four of the six known
+    consumers. This is the copy a consumer reads while copying the smoke block,
+    so it matters more than the doc.
+
+13. Plain language (`.claude/rules/plain-language.md`); adversarial sub-agent
     review before done (`.claude/rules/adversarial-reviews.md`).
 
 ## Code surface
 - `deployments/infrastructure/roles.tf` **(new)**: `vault_policy.admin`,
   `vault_identity_group.admin`, the app-user map, the `for_each` groups, the
   marked local.
-- `deployments/infrastructure/oidc.tf` **(edit, one line)**: Requirement 5.
+- `deployments/infrastructure/oidc.tf` **(edit, two places)**: Requirement 5's
+  one line, **and the header comment at `:7-10`**, which tells every consumer
+  "each consumer ticket creates its own group and assignment". That is the
+  same rule as requirement 11's doc edit, in the copy a consumer actually
+  reads while copying the smoke block. `G2` is the first ticket to break it
+  and has disowned it as F14's; if F14 does not take it, nobody owns it.
 - `docs/cluster-roles.md` **(new)**, `docs/vault-human-auth.md` **(edit)**.
 
 ## Tests & validation gates
@@ -184,3 +245,9 @@ The scaffold exists, ships no app-specific groups, and one throwaway entry is
 carried end to end: applied, wired to the smoke assignment, logged in, decoded
 out of the token, and removed. `docs/cluster-roles.md` lays out the four roles
 and `docs/vault-human-auth.md` no longer gives a conflicting answer.
+
+**Both copies of the consumer rule carry the same four branches** — the doc
+step and the `oidc.tf:7-10` header comment — including the map-entry branch and
+the `allow_all` branch, so a consumer reading either is pointed at the scaffold
+rather than around it, and a flat-access consumer is not handed a group it does
+not want.

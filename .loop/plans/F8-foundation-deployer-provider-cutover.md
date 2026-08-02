@@ -545,6 +545,22 @@ resource applicable. But it hands the deployer god-mode on Nomad, which is the
 opposite of what F7 exists to establish, and it would make the `deploy` ACL
 policy decorative.
 
+**Two things changed on 2026-08-02, neither of which overturns the decision
+above — recorded so the next reader re-decides on facts rather than
+re-deriving.** First, the mechanism was measured working: a
+`vault_nomad_secret_role` with `type = "management"` mints a token that writes
+Nomad ACL objects, and a reviewer confirmed offline that a
+resource-to-data-source-to-aliased-provider chain plans clean on empty state
+with no two-phase apply. So "it would make the Terraform resource applicable"
+is now demonstrated, not assumed. Second, **F7 was retired**, and the
+rejection's main reason is stated in terms of what F7 exists to establish. The
+security objection still stands on its own — brokering a management token
+hands anyone who runs `localstack login` god-mode on Nomad — but the sentence
+carrying it now cites a ticket that no longer exists, so it needs rewriting
+either way. G2 takes the management-role route for its own two ACL resources
+and states that cost in its risk section; F8 is free to decide differently for
+`nomad_acl_policy.deploy`.
+
 Consequence for the config-split invariant this repo already follows: the
 thing that needs a management token lives with the thing that holds one.
 Consul's `deploy` policy is already Ansible-side for the same reason
@@ -558,19 +574,24 @@ point" and that `just apply` of the infrastructure root succeeds under it. F7's
 policy, as originally written, forbade `sys/*` and `auth/*`, which that root
 writes. The fork was in neither plan.
 
-**The answer: F7's replan grants those paths, scoped.** F7 now derives its
-policy from the resource graph rather than a KV list, and explicitly grants
-`sys/mounts/secret`, `sys/auth/userpass` (the one path needing `sudo`),
-`sys/policies/acl/` scoped to the policies the deployer owns,
-`auth/jwt-nomad/role/*`, `auth/userpass/users/*`, `identity/*`, `nomad/role/*`
-and `consul/roles/*`. The least-privilege story became "scoped `sys` and
-`auth`", not "no `sys` and `auth`".
+**The answer shipped — as F11, not F7. Corrected 2026-08-02.** This section
+was written against F7's replan. **F7 is retired** (`dropped: true`, plan file
+deleted) and is not in F8's dependency list, which the ledger gives as `F5`,
+`F6`, `F11`, `A1`. The policy it describes exists anyway: `vault_policy.developer`
+in `deployments/infrastructure/developer_group.tf`, applied and live since
+2026-08-01, grants `sys/mounts/secret`, `sys/auth/userpass` (the one path
+needing `sudo`), `sys/policies/acl/*`, `auth/jwt-nomad/role/*`,
+`auth/userpass/users/*`, `identity/*`, `nomad/role/*` and `consul/roles/*`.
+The least-privilege story is "scoped `sys` and `auth`", not "no `sys` and
+`auth`".
 
-So F8's acceptance criterion is achievable **without** widening F7 toward root
-and **without** splitting the infrastructure root. No third option is needed.
-F8's dependency on F7 is now load-bearing in a way it was not before: F8 cannot
-be verified until F7's policy exists, which the existing `depends_on` already
-encodes.
+Two consequences the old text got wrong. F8's acceptance criterion is
+achievable without splitting the infrastructure root — that part stands. But
+**it does not need to wait for anything**: the policy is already applied, so
+the dependency the old text called load-bearing is satisfied, not pending.
+Read every remaining "F7" in this plan as F11 or as stale; F11's own header
+says plainly that it is not a containment boundary, which is the caveat F7's
+least-privilege framing did not carry.
 
 ## Fix 5 — F8 owns the lease TTLs
 

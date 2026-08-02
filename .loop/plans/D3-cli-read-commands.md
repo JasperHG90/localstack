@@ -454,15 +454,22 @@ not author them.
       not an authorization decision.
 12. **`service <name> --open` prints the URL before it tries to open
     anything**, and exits zero when no browser exists. Use stdlib
-    `webbrowser` from `commands/`, never `api/`. For `consul`, also print the
-    brokered Consul token, obtained by calling D2's token interface, and
-    offer to copy it with an OSC 52 escape. Print the token even when the
-    clipboard write reports success: inside a container the clipboard is the
-    part most likely to fail silently, and the operator is then left with a
-    browser and no token. These two requirements are carried verbatim from
-    D2 §12, "`localstack ui consul`"
-    (`.loop/plans/D2-cli-login-broker-tokens.md`), whose
-    `localstack ui consul` this absorbs. See Q4.
+    `webbrowser` from `commands/`, never `api/`.
+
+    **It brokers no token, for Consul or anything else.** An earlier version
+    carried a token-print-and-clipboard requirement verbatim from D2's
+    `ui consul`, on the reasoning that pasting a token is the only way into
+    the Consul UI. **That reasoning is false here**, measured 2026-08-01:
+    `consul_server/templates/consul.hcl.j2:29-32` puts the agent token on
+    `tokens.default`, so unauthenticated requests see everything — 25
+    services, 5 nodes, 41 health checks, and 200 on `/ui/`, directly and
+    through the edge over TLS. And an explicit token **replaces** that default
+    rather than merging, so the brokered `deploy` token, which grants service
+    read on `minio` and `postgres-db` only, would cut the UI from 25 services
+    to 2. It degrades what it claims to enable.
+
+    D2 cut `ui consul` on the same evidence, so there is nothing to absorb.
+    Q4 is settled by that: no token, no clipboard, no OSC 52.
 13. **One failure mode for a missing or dead token, on every command.** Catch
     D2's typed error, plus HTTP 403, and exit non-zero with a single message
     naming the affected service. Separate "not logged in" from "not allowed":

@@ -101,8 +101,98 @@ the policy grants**, not outside what the holder can reach.
 
 What the credential does buy over the root token:
 
-- It is per-person, and revoked by removing you from the group.
+- It is per-person.
 - It cannot be used to unseal or rekey.
+
+**`localstack logout` does not exist yet.** It ships with `D2`; today the
+installed `localstack` is `D1`'s skeleton and the command returns
+`No such command 'logout'`. Until then the equivalent is:
+
+```sh
+VAULT_TOKEN=<the lost session's token> vault token revoke -self
+```
+
+**Set `VAULT_TOKEN` on that line and nowhere else.** `-self` revokes whatever
+`VAULT_TOKEN` currently holds, and in this devcontainer that is the **root
+token** — running it bare would revoke root and take the cluster's admin
+credential with it. Deleting the placeholder instead of filling it is safe:
+an empty `VAULT_TOKEN` returns 403 rather than falling back to
+`~/.vault-token` (measured). Same endpoint and same cascade as `logout` once the token
+is right. Everything below describes the shape once `D2` lands.
+
+**If a session is lost, do this first: `localstack logout`.** It calls
+`auth/token/revoke-self`, which `default` grants, and revoking the parent
+cascades to both brokered Nomad and Consul leases. It ends all three
+credentials in one command, needs no root, and works only while you still have
+the file — so it is the first thing to try and the first thing to lose.
+
+**Everything else is narrower than it looks.** Removing someone from the
+`developer` group demotes their Vault
+token to `default` on its next call, because the policy arrives through the
+group at request time rather than baked into the token. But that is only the
+Vault half. A `localstack` session also holds brokered Nomad and Consul
+tokens, which those services honor without consulting Vault, and removing an
+entity from a group does not revoke a Vault lease. Worse, the `default` policy
+grants `sys/leases/renew` (measured), so a demoted holder can keep renewing
+both brokered leases up to their `max_ttl` of one hour.
+
+**Disabling the entity does not close it either.** `vault path-help
+identity/entity/id/<id>` is explicit: *"tokens tied to this identity will not
+be able to be used (**but will not be revoked**)."* It stops renewal; the
+brokered Nomad and Consul tokens still live out their current lease in those
+services' own state.
+
+Two things do close it:
+
+- **Revoke by accessor.** Revoking the parent cascades to the child Nomad and
+  Consul leases — one action, all three credentials, and it needs only your
+  Vault password. But it needs `auth/token/revoke-accessor`, which `developer`
+  does not have by default, so you must grant it to yourself first. **Do that
+  on a throwaway entity, never on the `developer` group.** Group policies
+  resolve per request and the thief is also a `developer`: granting it to the
+  group hands them `revoke-accessor` over every token in the cluster,
+  including all 14 workload tokens. That turns a stolen laptop into an outage.
+
+  The policy needs `sudo` on the list path, or its first command fails:
+
+  ```hcl
+  path "auth/token/accessors"       { capabilities = ["list", "sudo"] }
+  path "auth/token/lookup-accessor" { capabilities = ["update"] }
+  path "auth/token/revoke-accessor" { capabilities = ["update"] }
+  ```
+
+  Two more traps. A `terraform apply` during the incident silently strips your
+  grant, because `developer_group.tf` manages `policies` as a fixed list — and
+  leaves an orphan policy behind. And you cannot pick the target by path: five
+  live accessors share the same path, display name, entity and policy list.
+  They differ on `creation_time`, but two of them were minted 10 seconds
+  apart, no audit device records when the lost session started, and every one
+  of them carries `developer` for another month. **So revoke every accessor at
+  that path except the one you are using now**, then log in again.
+  `localstack whoami` prints your own accessor (also `D2`; until then use
+  `vault token lookup -format=json` and read `data.accessor`).
+
+  **Tearing the throwaway down: revoke its token by accessor FIRST, then
+  delete the entity, the alias, the user and the policy.** Deleting the user
+  and entity does not revoke what they minted. Measured on this cluster: a
+  scratch `userpass` token survived its own user and entity by 30.6 days. It
+  had decayed to `default` because the entity was gone, so it was litter — but
+  a throwaway torn down the same way while its token still carried the
+  escalation policy would have left that policy live and unattached to
+  anything you could find by listing users.
+- **Cut the mint path, then delete the tokens** — remove the entity from the
+  group or disable it, **then** `nomad acl token delete <accessor>` and
+  `CONSUL_HTTP_TOKEN="$CONSUL_TOKEN" consul acl token delete -accessor-id
+  <accessor>`. **The Consul bridge is not optional**: the CLI reads
+  `CONSUL_HTTP_TOKEN` and ignores `CONSUL_TOKEN`, so without it the delete
+  fails with an error that reads like a wrong accessor. Order matters: the
+  stolen Vault token can re-mint the pair until the group grant is gone. This
+  needs a management token, not root.
+
+**The deletes are not instant.** Consul runs `ACLTokenTTL: 30s` with
+`ACLDownPolicy: extend-cache` and Nomad `ACL.TokenTTL: 30s`, both defaults. An
+agent keeps honoring a deleted token until its cache expires — and Consul
+keeps honoring it for as long as the ACL servers are unreachable.
 
 What it does **not** buy: audit attribution. **No audit device is enabled on
 this cluster**, so nothing records who did what, whichever credential is used.
