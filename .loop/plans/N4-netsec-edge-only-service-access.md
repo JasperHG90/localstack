@@ -571,6 +571,56 @@ whoever writes it; moving the writer into Terraform makes that expressible, but
 it does not make a reschedule re-derive the rule. The edge-only framing above
 sidesteps the coupling regardless of which tool holds the pen.
 
+**On `loafoe/ssh` and on wrapping `ansible-playbook` in a `local-exec`**, both
+raised 2026-08-02 as ways to keep the rules in Terraform: evaluated in full on
+N3, both rejected. The short form for this ticket is that the `ufw --force
+reset` pattern `loafoe/ssh` is proposed with would destroy all three
+provisioners' rules at once, which is the failure this ticket's blast radius
+cannot absorb.
+
+## Evaluated alternative: Consul intentions instead of ufw
+
+Recorded 2026-08-02, raised by the operator. Rejected, and the reason is not
+"intentions are bad" but that the mechanism cannot see this ticket's traffic.
+
+**There is no service mesh here.** `grep -rn connect` across `deployments/`
+and `bootstrap/` returns two hits, both unrelated: `connect_timeout` in
+`deployments/applications/providers.tf:56` and `timeout connect` in
+`deployments/infrastructure/services/haproxy.hcl:83`. No `connect` stanza, no
+`mode = "bridge"`, no sidecar. Every job network block declares a static host
+port (`grafana.hcl:12`, `minio.hcl:18`, `postgres.hcl:12`, `nats.hcl:12`,
+`node-exporter.hcl:7`, `haproxy.hcl:11`). Intentions govern traffic that
+traverses a Connect sidecar proxy, so with no sidecars an intention has
+nothing to enforce and would be a no-op.
+
+**The threat model does not match even with a mesh in place.** This ticket's
+finding is a person on `192.168.0.0/16` running curl against
+`192.168.2.50:5050`. That connection lands on the application's listening
+socket directly and never passes a proxy, so no intention is consulted. A mesh
+default-denies only when the application binds loopback and the host port is
+gone, which means deleting the very ports this ticket is narrowing. The mesh
+would not be enforcing the boundary; the bind address would.
+
+**Five of the thirteen exposed endpoints are not mesh-eligible at all.** Vault
+8200, Nomad 4646 and Consul 8500 are systemd host daemons, not Nomad jobs, and
+Consul cannot place an intention in front of its own API port. The haproxy
+stats page on 8404 is the same shape. Those four rows include the two worst
+findings in the exposure table, so the option does not cover the part of the
+ticket that most needs covering.
+
+**Cost to reach parity.** Connect enabled on every agent, every job moved to
+bridge networking, a sidecar per service, static ports removed, applications
+rebound to loopback, and haproxy itself brought into the mesh. Even then ufw
+still governs the agent ports. That is a mesh *in addition to* ufw, not
+instead of it. It is also orthogonal to N3, which is about a provisioner with
+no Read and no destroy step.
+
+**Where intentions do earn their place, as a later ticket.** East-west authz
+between applications: memex to postgres, bifrost to nats, per-service identity
+and mTLS in place of "anything on the LAN reaches 5432". That is real value
+and worth filing, but it is defense in depth behind a closed edge. It lands
+after this ticket, not instead of it.
+
 ## Open questions (operator must settle)
 
 > **All four questions were resolved on 2026-07-31 in

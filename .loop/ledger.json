@@ -751,11 +751,11 @@
     },
     "D1-cli-package-skeleton": {
       "slug": "D1-cli-package-skeleton",
-      "stage": "ready",
+      "stage": "done",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "577535dcde9b4c511d24f47b75f1578310259ffd",
       "review_verdict": null,
       "dropped": false,
       "epic": "cli",
@@ -782,7 +782,8 @@
       "dependencies": [
         "D1-cli-package-skeleton",
         "F2-foundation-vault-oidc-provider",
-        "F11-foundation-human-read-role"
+        "F11-foundation-human-read-role",
+        "F14-foundation-role-taxonomy"
       ],
       "priority": 46,
       "summary": "Add `localstack login|logout|whoami|env|token|config`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform and the hashi CLIs via `eval \"$(localstack env)\"` until D6's shims land. The devcontainer still injects root today; retiring that is F8's job, not this ticket's.",

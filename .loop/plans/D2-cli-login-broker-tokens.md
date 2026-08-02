@@ -1,6 +1,6 @@
 ---
 epic = "cli"
-depends_on = ["D1-cli-package-skeleton", "F2-foundation-vault-oidc-provider", "F11-foundation-human-read-role"]
+depends_on = ["D1-cli-package-skeleton", "F2-foundation-vault-oidc-provider", "F11-foundation-human-read-role", "F14-foundation-role-taxonomy"]
 priority = 46
 tags = ["cli", "vault", "nomad", "consul", "auth"]
 summary = "Add `localstack login|logout|whoami|env|token|config`: authenticate a developer to Vault with userpass, broker short-lived Nomad and Consul tokens from that session, cache them at 0600, and hand them to terraform and the hashi CLIs via `eval \"$(localstack env)\"` until D6's shims land. The devcontainer still injects root today; retiring that is F8's job, not this ticket's."
@@ -859,9 +859,11 @@ revoke by accessor. **Neither needs root.** In order of preference:
 
 1. `localstack logout`, if you still have the file. Below under **"Cascades,
    no root, but only the holder can run it"**.
-2. A revoke by accessor, which needs `auth/token/revoke-accessor` — reachable
-   without root, but **read the escalation warning before doing it**. Below
-   under **"Closes everything in one action, and does NOT need root"**.
+2. A revoke by accessor, which needs `auth/token/revoke-accessor`. Reachable
+   without root two ways: **join `admin`** (three commands, and membership
+   survives a mid-incident `terraform apply`), or write the policy yourself if
+   you cannot join it. Below under **"Closes everything in one action, and does
+   NOT need root"**.
 3. The composite, if you hold Nomad and Consul management tokens. Below under
    **"A composite closer, when you hold both management tokens"**.
 
@@ -918,9 +920,35 @@ accessor. Revoking the parent cascades to both child leases — measured against
 real Consul and Nomad agents, both brokered tokens gone from those services'
 own state.
 
-**An earlier draft called this root-only. It is not**: `developer` grants
-`sys/policies/acl/*` and `identity/*`, so a responder can write themselves the
-policy below and use it. Measured end to end, non-root.
+**An earlier draft called this root-only. It is not.** Two ways to reach it,
+neither needing root.
+
+**Preferred, since F14 landed: join `admin`.** `vault_policy.admin`
+(`roles.tf`) is `path "*"` with `sudo`, and the live `default` policy names
+none of the three accessor paths, so nothing shadows the glob there — measured
+2026-08-02, a `default`-only token is denied `vault list auth/token/accessors`
+and an `admin` token is allowed. Membership is a `vault write` that **survives
+`terraform apply`**, which the hand-built grant below does not (see the first
+residual). Three commands:
+
+```sh
+# read the current membership first: the write REPLACES the list
+vault write identity/group/name/admin member_entity_ids="<current>,<you>"
+
+vault list auth/token/accessors
+vault token revoke -accessor <the stolen session's accessor>
+
+vault write identity/group/name/admin member_entity_ids="<current-without-you>"
+```
+
+**Leaving afterwards is a habit, not a gate.** Joining `admin` is invisible to
+every `terraform plan`, so nothing will remind you. `docs/cluster-roles.md`
+carries that warning and the commands to read the membership.
+
+**Fallback, for a responder who cannot join `admin`:** write the policy
+yourself. `developer` grants `sys/policies/acl/*` and `identity/*`, so this
+works end to end, non-root — measured. It is the longer path and its teardown
+order matters, so prefer `admin` when you have it.
 
 ```hcl
 # `sudo` on the list path is REQUIRED. Without it the first command 403s,
@@ -1285,6 +1313,59 @@ cannot fetch it (§4).
 branch's `docs/vault-human-auth.md`, which already carries the
 `vault kv get secret/default/vault/operator` recipe. Do not add a KV2
 read path to the CLI.
+
+### Q-relay — should §9's escalation use `admin` rather than a throwaway?
+
+**RESOLVED by the operator, 2026-08-02: use `admin`.** The recommendation
+below was taken, and `F14-foundation-role-taxonomy` was added to this ticket's
+`depends_on` in the same change. §9 leads with the `admin` procedure; the
+throwaway is not the primary path.
+
+**Relayed from `F14-foundation-role-taxonomy`, 2026-08-02. Fork: both answers
+were defensible and they changed what this ticket ships.**
+
+§9 currently tells a responder whose session was stolen to build the escalation
+by hand: write a policy granting `auth/token/{accessors, lookup-accessor,
+revoke-accessor}` with `sudo`, create a throwaway entity, attach it, use it,
+then tear all three down in an order that matters (revoke by accessor before
+deleting the user and entity, or a live orphan survives — measured at 30.6
+days).
+
+F14 shipped `vault_policy.admin` and `vault_identity_group.admin`, which cover
+that escalation outright. Measured on 2026-08-02:
+
+- The live `default` policy names **none** of the three accessor paths, so
+  nothing shadows `admin`'s `path "*"` on them. Vault matches most-specific
+  first, so an exact path in `default` would otherwise cap the holder there.
+- A `default`-only token is denied `vault list auth/token/accessors`; an
+  `admin` token is allowed. That endpoint is `sudo`-protected, so this also
+  confirms the `sudo` reaches.
+- `vault_identity_group.admin` sets `external_member_entity_ids = true`, so
+  membership is a `vault write` that **survives `terraform apply`** — proven
+  against an apply that really writes the group, not a no-op.
+
+That last point is the sharp one. §9 already warns that a `terraform apply`
+mid-incident silently strips the hand-built grant, because
+`developer_group.tf` manages `policies` as a fixed list. `admin` membership has
+no such failure mode.
+
+**The trade, stated honestly.** `admin` is `path "*"` plus `sudo` — the
+responder gets root-equivalent for the duration. The throwaway grants exactly
+three capabilities. Anyone who wants the narrow grant during an incident has a
+real argument, and it is not mine to settle.
+
+*Recommendation:* **use `admin`.** It removes six commands, a teardown order
+whose mistakes leave live credentials behind, and a documented hazard where an
+unrelated apply disarms the responder mid-incident. It does not lower anyone's
+ceiling: `developer` can already self-elevate, which is the only reason the
+throwaway procedure works at all. Keep the throwaway in the doc as the fallback
+for anyone not in `admin`, and add the one property `admin` does not have:
+joining it is invisible to every plan, so leaving afterwards is a habit rather
+than a gate (`docs/cluster-roles.md` says so).
+
+**The dependency edge is now real.** `F14-foundation-role-taxonomy` was added
+to `depends_on` when this question resolved, so §9's `admin` procedure cannot
+be implemented before the role it depends on exists.
 
 ## What this ticket settled for F11
 

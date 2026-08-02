@@ -260,6 +260,102 @@ wholesale, so wherever Terraform schedules a job its port is already permitted.
 That last point stops being true under N4, which narrows to per-service ports.
 See N4's note on the same subject before assuming this conclusion carries.
 
+## Evaluated alternatives: `loafoe/ssh` and Terraform-wrapped Ansible
+
+Recorded 2026-08-02. Both were proposed on the premise that `SimonPrinz/ufw`
+failed because Terraform cannot do SSH key authentication. That premise is
+false, and correcting it changes what a replacement has to supply.
+
+**Key authentication was never the gap.** `remote-exec` has always accepted a
+private key, and this repo already passes one at `services.tf:290`:
+
+```hcl
+private_key = file("${path.root}/../../.ssh/id_rsa")
+```
+
+`SimonPrinz/ufw` was deferred because *its own* schema marks `password`
+Required with no key attribute, and because its host key callback returns
+`nil` unconditionally. Neither is a Terraform limitation. What no option on
+this page supplies is a **read path**: nothing consults the host, so drift
+stays invisible at plan time. Judge candidates on that, not on auth.
+
+### `loafoe/ssh` — rejected
+
+`registry.terraform.io/providers/loafoe/ssh` ships `ssh_resource`, which runs
+commands over SSH and does take `private_key`. It fails here on four counts,
+and the first is disqualifying on its own.
+
+1. **The `ufw --force reset` pattern it is proposed with is the unscoped
+   prune this ticket exists to avoid.** Three provisioners own rules on these
+   hosts (see Context). A reset issued from any one of them destroys the other
+   two: port 22, Vault 8200/8201, Consul 8300/8301/8500/8600, Nomad
+   4646/4647/4648 and the dynamic range `20000:32000`. That is R3 and R4
+   violated in a single command.
+
+2. **`reset` disables the firewall before it rebuilds.** Measured 2026-08-02
+   by reading ufw's own source on firebat, not inferred.
+   `/usr/lib/python3/dist-packages/ufw/frontend.py:941-943`:
+
+   ```python
+   if self.backend.is_enabled():
+       res += self.set_enabled(False)
+   res = self.backend.reset()
+   ```
+
+   `backend_iptables.py:1384` then renames every `*.rules` file to a
+   timestamped backup and copies the distribution defaults into place. ufw
+   itself warns "This may disrupt existing ssh connections" when it detects it
+   is running under SSH, and `--force` exists precisely to skip that prompt.
+   So the sequence is: firewall off, rules replaced by defaults, rules
+   re-added, firewall on. Break it anywhere (dropped SSH, one malformed rule,
+   a board that reboots) and the node is left either open or enabled without
+   the rules it needs. Recovery is physical access to an ARM board.
+
+3. **It moves the cluster SSH key into state.** `private_key` is an ordinary
+   resource attribute, so it persists to `terraform.tfstate`, and this backend
+   is Consul (`backend.tf:2`). The provider's own docs corroborate the
+   concern: they recommend ssh-agent over `private_key`, and route passphrases
+   through an environment variable explicitly "to prevent passphrases from
+   being stored in Terraform state". A `connection` block is provisioner
+   configuration and is **not** persisted, so today's key is not in state.
+   Adopting this would be a regression, not a fix.
+
+4. **It does not close the gap it was proposed to close.** The provider
+   documents no read or refresh behavior, and `triggers` is documented as
+   recreating the resource so all commands re-run. That is `null_resource`'s
+   shape with a different type name. The case that motivated this ticket,
+   Grafana's rule live in the iptables chain and absent from ufw's database
+   while Terraform reported in sync, goes undetected either way.
+
+### Terraform `local-exec` calling `ansible-playbook` — rejected as wiring
+
+The idempotency argument behind it is correct and is already this plan's
+interim answer above: `community.general.ufw` converges by construction. The
+wrapper is what fails.
+
+- `terraform_data` with `triggers_replace` fires only when a trigger changes.
+  That is the fire-once shape being replaced, relocated.
+- It requires `ansible-playbook` on whatever runs Terraform, and puts a second
+  orchestrator inside a graph that cannot see its result. A failure surfaces
+  as a shell exit code, not a diff.
+- It adds the coupling from the other direction. Terraform starts depending on
+  Ansible inventory while Ansible still cannot see Terraform's placement.
+
+If Ansible owns a rule, let it own the rule. Do not shell out to it from a
+`terraform_data`.
+
+### Recommendation
+
+**Build the scoped reconcile as this plan already specifies.** It is the only
+candidate that converges without a prune that can strand a node, and the
+scoping is exactly what the `reset` pattern gets wrong. State the limit
+plainly rather than overselling it: the reconcile converges at *apply* and
+still reports nothing at *plan*, because `null_resource` has no Read.
+
+Closing the plan-time gap needs a provider with a real Read, which keeps the
+`SimonPrinz` contribution (issue #3 plus host key pinning) as the long play,
+on the trigger recorded above. `loafoe/ssh` is not a step toward it.
+
 ## Open questions
 - **Q1 — Terraform or Ansible?** Ansible's `community.general.ufw` already
   converges and the role already exists, so moving service ports there is less
