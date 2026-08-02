@@ -19,9 +19,7 @@ def test_reads_all_three_addresses(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize("missing", sorted(ADDRS))
-def test_names_the_missing_variable(
-    monkeypatch: pytest.MonkeyPatch, missing: str
-) -> None:
+def test_names_the_missing_variable(monkeypatch: pytest.MonkeyPatch, missing: str) -> None:
     for name, value in ADDRS.items():
         monkeypatch.setenv(name, value)
     monkeypatch.delenv(missing)

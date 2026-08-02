@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Cockpit for the localstack home-lab cluster"
 requires-python = ">=3.12"
 dependencies = [
+    "click>=8.0",
+    "rich>=15.0.0",
     "typer>=0.27.0",
 ]
 
@@ -33,6 +35,10 @@ addopts = "-m 'not cluster'"
 
 [tool.ruff]
 target-version = "py312"
+# Matches aim's line-length. `_lazy.py` is a verbatim copy of aim's
+# `src/aim/cli/_lazy.py`, kept byte-identical so it can be re-synced from
+# upstream, and it is formatted for 100.
+line-length = 100
 
 [tool.ruff.lint]
 # Defaults (E, F) plus import ordering. A noisy first gate is a gate people
@@ -42,3 +48,22 @@ select = ["E", "F", "I"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
+
+# `_lazy.py` is a verbatim copy of aim's `src/aim/cli/_lazy.py`. typer ships a
+# vendored fork of click under `typer._click`, and `TyperGroup` is typed
+# against that fork, while the upstream file annotates its overrides with the
+# standalone `click`. The two are different classes, so every override reads
+# as a Liskov violation. It is a typing mismatch only: annotations are strings
+# under `from __future__ import annotations`, and `_USAGE_ERRORS` catches both
+# exception classes at runtime. Two codes cover the rest: `misc` for assigning
+# to `UsageError.message`, which click declares Final and the suggestion logic
+# deliberately rewrites, and `assignment` for the `_USAGE_ERRORS` tuple, whose
+# two members are the standalone and the vendored `UsageError`, which is
+# exactly the point of it.
+#
+# Scoped to this module so the rest of the package stays strict. Remove it
+# once aim's copy is annotated against `typer._click` and re-synced.
+[[tool.mypy.overrides]]
+module = "localstack_cli._lazy"
+disallow_untyped_defs = false
+disable_error_code = ["override", "arg-type", "return-value", "misc", "assignment"]
