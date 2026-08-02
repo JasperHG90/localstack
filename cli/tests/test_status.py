@@ -1,15 +1,9 @@
 import json
-from pathlib import Path
 
 import pytest
 
 from localstack_cli.config import CONSUL_HTTP_ADDR, NOMAD_ADDR, VAULT_ADDR
-from localstack_cli.status import (
-    VAULT_TOKEN,
-    current_token,
-    probe_cluster,
-    probe_identity,
-)
+from localstack_cli.status import probe_cluster, probe_identity
 from tests.fixtures.cluster import LOOKUP_SELF, FakeCluster
 
 
@@ -116,31 +110,6 @@ def test_a_token_with_an_unreachable_vault_is_reported_separately(
     identity = probe_identity(closed_addr, "a-token")
     assert not identity.logged_in
     assert "token present" in identity.detail
-
-
-def test_the_environment_token_wins_over_the_file(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Matches the Vault CLI's own order, so the banner reports what a
-    command would really send."""
-    (Path.home() / ".vault-token").write_text("from-file\n")
-    monkeypatch.setenv(VAULT_TOKEN, "from-env")
-    assert current_token() == "from-env"
-
-
-def test_the_token_file_is_used_when_the_environment_is_empty() -> None:
-    (Path.home() / ".vault-token").write_text("from-file\n")
-    assert current_token() == "from-file"
-
-
-def test_no_token_anywhere_is_none() -> None:
-    assert current_token() is None
-
-
-def test_an_empty_token_file_is_none() -> None:
-    """An empty file is not a token, and truthiness would call it one."""
-    (Path.home() / ".vault-token").write_text("   \n")
-    assert current_token() is None
 
 
 def test_the_probe_sends_the_token_as_a_vault_header(

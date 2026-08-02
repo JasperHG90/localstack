@@ -25,7 +25,7 @@ from importlib.metadata import version
 
 import typer
 
-from localstack_cli._lazy import LazyTyperGroup
+from localstack_cli._lazy import LAZY_SUBCOMMANDS, LazyTyperGroup
 from localstack_cli.branding import print_banner
 from localstack_cli.status import probe_cluster
 
@@ -33,6 +33,21 @@ app = typer.Typer(
     name="localstack",
     cls=LazyTyperGroup,
     help="Cockpit for the localstack home-lab cluster.",
+)
+
+# D2's auth surface. Each module holds a single-command Typer, so it
+# materializes as a top-level command rather than a group, and none of them is
+# imported until one is dispatched. That matters most for `token`, which the
+# PATH shims call on every `nomad`, `consul` and `vault` invocation.
+LAZY_SUBCOMMANDS.update(
+    {
+        "login": "localstack_cli.commands.login:app",
+        "logout": "localstack_cli.commands.logout:app",
+        "whoami": "localstack_cli.commands.whoami:app",
+        "env": "localstack_cli.commands.env:app",
+        "token": "localstack_cli.commands.token:app",
+        "config": "localstack_cli.commands.config:app",
+    }
 )
 
 

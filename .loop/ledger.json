@@ -771,8 +771,8 @@
     },
     "D2-cli-login-broker-tokens": {
       "slug": "D2-cli-login-broker-tokens",
-      "stage": "ready",
-      "attempts": 0,
+      "stage": "self-review",
+      "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
