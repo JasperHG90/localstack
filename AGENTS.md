@@ -105,6 +105,40 @@ just up              # Run migrations forward
 just down            # Roll back migrations
 ```
 
+### CLI (cli/)
+```bash
+just install_cli     # From the repo root: install localstack onto PATH
+just -f cli/justfile check   # Lint, type-check and test
+localstack --help    # after install_cli (global, on PATH)
+uv run --project cli localstack --help   # no install needed, always this checkout
+```
+
+**The two invocations are not interchangeable.** `uv run --project cli` always
+runs the checkout you are standing in. `just install_cli` additionally puts one
+**global** `localstack` on PATH, bound by `--editable` to whichever checkout
+last ran it — so running it from a `.loop/worktrees/` copy leaves the binary
+pointing into a directory that will be deleted. Run `install_cli` from the
+primary checkout.
+
+**If you did run it from a worktree**, the symptom is a bare
+`ModuleNotFoundError: No module named 'localstack_cli'` once that directory is
+pruned — a traceback with nothing in it to search on. Recovery is one command:
+re-run `just install_cli` from the primary checkout. `uv tool install
+--editable` treats a different path as a different requirement and swaps the
+binding in place, with no `--force` and no uninstall, even after the old
+directory is gone. (If you do want to remove it: `uv tool uninstall
+localstack-cli` — the distribution name, not `localstack`.)
+
+Python 3.12, `uv`-managed, src layout under `cli/src/localstack_cli/`. The
+distribution is `localstack-cli` and the import package is `localstack_cli`;
+neither is the unrelated `localstack` on PyPI (the AWS emulator). The console
+script is still `localstack`, which is a name clash only if that package is
+ever installed into the same environment — it is not, and must not be.
+Dependencies go in with `uv add`, never `uv pip`. Tests mirror the source
+tree and run through `uv`, never a bare `pytest`. Tests that hit the live
+cluster carry the `cluster` marker and are excluded from the default run;
+run them on purpose with `-m cluster`.
+
 ## Architecture
 
 Three layers, deployed in order:
@@ -130,7 +164,7 @@ We host the localstack url (*.lab.orangecluster.nl) on TransIP. It is fixed agai
 - **Container runtime**: Podman (not Docker) on the cluster nodes. Dev container uses Docker-in-Docker.
 - **Secrets**: All in Vault KV2. Never hardcode credentials. Bootstrap secrets come from `bootstrap/.env` (see `.env.example`).
 - **Terraform providers**: Nomad, Vault, Consul, MinIO, PostgreSQL, Bifrost — all configured in respective `providers.tf` files.
-- **Pre-commit hooks**: JSON/YAML validation, AST checks, private key detection, Nomad HCL formatting. Run `just pre_commit` before committing.
+- **Pre-commit hooks**: JSON/YAML validation, AST checks, private key detection, Nomad HCL formatting, and for `cli/`: ruff lint, ruff format, mypy in **strict** mode and the pytest suite. Anything you write under `cli/` must pass all four. Run `just pre_commit` before committing.
 - **Python**: 3.12 (see `.python-version`).
 
 <!-- Add code-style notes, testing expectations, deploy steps, etc. Not managed. -->

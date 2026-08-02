@@ -516,6 +516,61 @@ and its verification is deliberately socket-level for the reason in R1.
 10. **8404** per Q2.
 11. Full verification sweep, including the cross-node consumer probes from R5.
 
+## The placement-coupling problem, and a third option
+
+Recorded 2026-08-02, from an operator challenge worth preserving: if Ansible
+owns the firewall rules, it is disjointed from the node selection Terraform
+performs.
+
+**Under N3's scope that objection does not bite. Under N4's it does.**
+
+Today's rules are keyed on host *group*, manager versus worker
+(`bootstrap/playbooks/configure_network.yml:7,28`), and
+`configure_network.yml:24` opens the Nomad dynamic range `20000:32000`
+wholesale. Nomad allocates service ports inside that range, so wherever
+Terraform schedules a job its port is already permitted. Placement and firewall
+are decoupled by construction, and the rules are role-shaped — which is exactly
+what Ansible inventory models.
+
+**This ticket breaks that.** Narrowing to per-service ports — Grafana 3000,
+Postgres 5432, mlflow 5050, bifrost 8080, hermes 8642, loki 3100 — makes each
+rule depend on which node the service landed on, and that is Terraform's
+decision. Ansible cannot see it. Worse, a Nomad reschedule moves a service and
+silently invalidates a rule that nothing re-derives until someone next runs
+`just bootstrap`. A firewall that is wrong and quiet is worse than one that is
+broad and honest. Line 25 of this plan already flags "the narrowing target is
+per-service rather than the edge" as a defect; this is the mechanism behind
+that sentence.
+
+**Third option: constrain the source, not the port.** Every service here is
+reached through HAProxy at a fixed address. So express the rule as *the dynamic
+range accepts traffic only from the HAProxy node*, rather than *port 3000 is
+open on whichever node Grafana happens to occupy*. One rule per node, stable
+under any placement Terraform chooses, and it is what "edge-only service
+access" says on the tin. Rules stay role-shaped, so no Terraform-to-Ansible
+coupling is introduced, and a reschedule changes nothing.
+
+**Unverified, and it is the thing to check before adopting this.** Not every
+listener is necessarily edge-only: the node exporters and NATS look like
+intra-cluster traffic that would need their own allowance, and Consul and Nomad
+gossip certainly do. Enumerate every current listener and classify it
+edge-reached versus peer-reached before committing. If a large share turns out
+to be peer-reached, this option collapses back toward the per-service shape and
+its coupling.
+
+**On the `SimonPrinz/ufw` Terraform provider**, which the operator raised as a
+way to keep firewall rules in Terraform and thus close to placement: it is
+evaluated in full on `N3`, where the convergence argument for it is strongest.
+Summary for this ticket — deferred, not rejected, on two counts: no SSH key
+authentication (upstream
+issue #3, open since 2026-03-28, and this cluster is key-only), and a host
+key callback that accepts every key unconditionally. **Note that adopting it
+would not resolve this section.** A per-service rule still has to know
+Terraform's placement
+whoever writes it; moving the writer into Terraform makes that expressible, but
+it does not make a reschedule re-derive the rule. The edge-only framing above
+sidesteps the coupling regardless of which tool holds the pen.
+
 ## Open questions (operator must settle)
 
 > **All four questions were resolved on 2026-07-31 in

@@ -175,6 +175,91 @@ Run each as a negative control too, so the checks are known to discriminate.
 5. Docs.
 6. Adversarial review.
 
+## Evaluated alternative: the `SimonPrinz/ufw` Terraform provider
+
+Recorded 2026-08-02. Raised by the operator; measured rather than dismissed.
+
+**It addresses this ticket's actual defect.** N3 is blocked because
+`null_resource` provisioners run at create and replace only, so nothing detects
+or corrects drift and the convergence premise has no mechanism. A real provider
+gives CRUD plus a read path, which is convergence by construction.
+`registry.terraform.io/providers/SimonPrinz/ufw` ships `ufw_rule` and
+`ufw_status`, and its own example orders them the right way round:
+
+```terraform
+resource "ufw_status" "status" {
+  enabled    = true
+  depends_on = [ufw_rule.allow_ssh]   # enable only once SSH is allowed
+}
+```
+
+That is a neat answer to the lock-yourself-out problem this ticket has to solve
+somehow.
+
+**Two blockers, one of which we could remove.**
+
+1. **No SSH key authentication.** `host`, `username` and `password` are all
+   Required in the provider schema, and there is no private-key attribute —
+   `PrivateKey` returns zero hits across the source. This cluster is key-only
+   (`bootstrap/` has an `ssh_keygen` recipe). Adopting it as shipped means
+   creating SSH passwords for a privileged user on five boards to fix a
+   Terraform ergonomics problem. Wrong trade.
+
+   Tracked upstream as **`SimonPrinz/terraform-provider-ufw` issue #3**
+   (`github.com/SimonPrinz/terraform-provider-ufw/issues/3`), open since
+   2026-03-28. The requester's motivation is identical to ours,
+   migrating an existing Ansible ufw playbook. The maintainer has agreed it
+   belongs on the roadmap and has been candid that "the project started mainly
+   as a way for me to try and learn Go".
+
+   **The fix is small and we could send it.** `internal/provider/provider.go`
+   builds one `goph.Config` with `Auth: goph.Password(password)`; the key form
+   is `goph.Key(path, passphrase)`. Add `private_key` and `passphrase` to the
+   schema, make `password` optional, validate exactly one is set, swap the
+   `Auth:` line. Roughly 40 lines plus generated docs.
+
+2. **The host key callback accepts every key**, and this one is worse than the
+   missing feature:
+
+   ```go
+   Callback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+       return nil
+   },
+   ```
+
+   No `known_hosts`, no fingerprint pinning, no error path. Anything answering
+   on that address is trusted. Key auth alone does not fix it: you would stop
+   sending a reusable password but still complete a handshake with an
+   unverified server, and here a machine-in-the-middle does not merely observe
+   — it obtains root on the firewall of every cluster node. A contribution
+   should carry `goph.DefaultKnownHosts()` or an explicit `known_hosts`
+   attribute, with any opt-out spelled `insecure_ignore_host_key`. Worth its
+   own upstream issue first, since the maintainer has not been asked for it.
+
+   Also noted, not worth bundling: connection failure calls
+   `log.Fatal(err.Error())`, which kills the provider process instead of
+   returning a Terraform diagnostic. The operator sees a crash, not "could not
+   reach host X".
+
+**Status: deferred with a trigger, not rejected.** Revisit when #3 closes and a
+release ships. Even then, adopting it means a `1.x` community provider (4
+stars, 392 downloads, one maintainer plus dependabot, first commit 2026-01-22)
+in the path of every node's firewall, where the recovery path from a bad
+release is physical access to five ARM boards. That is a blast-radius judgment,
+not a code-quality one.
+
+**Interim answer, and it is enough for N3's scope.** Ansible's
+`community.general.ufw` module is idempotent by construction, so re-running
+converges, and `just bootstrap` is the invocation that already exists. The
+rules this ticket governs are keyed on host *group* — manager versus worker
+(`bootstrap/playbooks/configure_network.yml:7,28`) — which is exactly what
+Ansible inventory models. **No Terraform placement is involved**, because
+`configure_network.yml:24` opens the Nomad dynamic range `20000:32000`
+wholesale, so wherever Terraform schedules a job its port is already permitted.
+
+That last point stops being true under N4, which narrows to per-service ports.
+See N4's note on the same subject before assuming this conclusion carries.
+
 ## Open questions
 - **Q1 — Terraform or Ansible?** Ansible's `community.general.ufw` already
   converges and the role already exists, so moving service ports there is less

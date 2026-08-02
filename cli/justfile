@@ -1,0 +1,25 @@
+# Gates for the localstack CLI. The blessed invocation is `just pre_commit`
+# from the repo root; these are for working inside cli/.
+
+alias t := test
+alias l := lint
+
+# Run the test suite (live-cluster tests excluded by addopts)
+test:
+    uv run pytest
+
+# Run the live-cluster tests on purpose
+test_cluster:
+    uv run pytest -m cluster
+
+# Lint and format check
+lint:
+    uv run ruff check .
+    uv run ruff format --check .
+
+# Type check
+typecheck:
+    uv run mypy --config-file pyproject.toml src tests
+
+# Everything the pre-commit hooks run
+check: lint typecheck test
