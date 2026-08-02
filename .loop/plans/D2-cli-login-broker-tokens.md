@@ -471,6 +471,12 @@ matters in this container.
   healthy session trains the operator to ignore it.
 - `whoami` reports which token a bare `vault` would use, not only which
   token the session holds. That is the question the developer has.
+- **The "which token would a bare `vault` use" logic already exists**, as
+  `status.current_token()` (`status.py:113-126`), which D1 shipped for the
+  banner's session dot. D2 does not re-specify it: it moves that function
+  into `auth/vault_token_file.py` and both callers import it. Writing a
+  second copy here would let the banner and the warning disagree, which is
+  the one thing this requirement cannot afford.
 
 **R12 — Consul gets a shim, not a token file, and D2 owns that call.**
 Nothing in this repo writes a Consul token file today, and nothing should
@@ -510,9 +516,17 @@ the edge domain, in text and with `--format json`. **No secret material
 in either form**: no token, no password, no `hvs.` or `hvo_` value, and
 no session-file field beyond the non-secret ones (`vault_addr`, `method`,
 `version`, expiries). `config` is what a developer pastes into an issue
-when asking for help, which is exactly why it must be safe to paste. It
-lands here rather than in D1 because it reads the resolved `vault_addr`
-and the session file, both of which this ticket owns.
+when asking for help, which is exactly why it must be safe to paste.
+
+**Address resolution is D1's, not this ticket's.** `Config.from_env()`
+(`config.py:20-48`) already reads `VAULT_ADDR`, `NOMAD_ADDR` and
+`CONSUL_HTTP_ADDR` and names every missing one at once. `config` consumes it
+and adds nothing of its own there. An earlier draft justified this command
+living in D2 by claiming it reads addresses "which this ticket owns"; that
+was written before D1 landed and it is false. The real reason it lands here
+is the other half: it reports the **session** — method, `vault_addr` as
+recorded at login, and the three expiries — and the session file is this
+ticket's.
 
 **R14 — REMOVED. `localstack ui consul` is not part of this ticket.**
 
@@ -544,8 +558,12 @@ Nothing replaces it here: `config` (R13) already prints the Consul address.
   Vault, Nomad, or Consul is marked. The default `uv run pytest` is
   offline.
 - **Mock only at true external boundaries**
-  (`.claude/rules/python-testing.md:77-89`); for `httpx`, use `respx`
-  (`:89`). The cache is a real file under `tmp_path`, not a mock.
+  (`.claude/rules/python-testing.md:77-89`). Per the re-answered Q2, D2
+  exercises the real thing instead of mocking it: D1's `FakeCluster`
+  (`cli/tests/fixtures/cluster.py`) is a real HTTP server on a loopback
+  port, and its per-route replies are what drive the error paths. The
+  `respx` clause in that rule applies to `httpx`, which this CLI does not
+  use. The cache is a real file under `tmp_path`.
 - **Redirect global state in tests** (`:63-75`): an autouse fixture sets
   `XDG_CONFIG_HOME` into `tmp_path`. No test may read or write the real
   `~/.config/localstack/`.
@@ -568,11 +586,18 @@ Nothing replaces it here: `config` (R13) already prints the Consul address.
 
 ## 7. Code surface
 
-**Layout assumption.** `D1-cli-package-skeleton` owns the package root
-and is not authored yet, so the paths below assume `cli/` with
-`src/localstack_cli/` and `cli/tests/`. If D1 shipped a different root,
-substitute it throughout. That substitution is part of this ticket, not
-an out-of-scope change. Confirm before pickup (Q1).
+**Layout, no longer an assumption.** `D1-cli-package-skeleton` owns the
+package root and it is on `main` (`132ea79`): `cli/` with
+`src/localstack_cli/` and `cli/tests/`, exactly as the paths below assume.
+Verified 2026-08-02; an earlier version of this paragraph said D1 was not
+authored yet.
+
+**D1 shipped more than the skeleton, so read this list as a delta, not a
+greenfield.** `cli/src/localstack_cli/` already holds `main.py`,
+`config.py`, `branding.py`, `status.py` and `_lazy.py`, and `cli/tests/`
+already holds a `conftest.py` and a real HTTP-server fixture. Several
+entries below are therefore modifications, and each says so. Before creating
+any file named here, check whether it exists.
 
 New files:
 
@@ -598,6 +623,14 @@ New files:
   `$VAULT_TOKEN` is set and differs. Separate from `session.py` because
   it writes a file this CLI does not own, and the next reader should see
   that boundary in the layout.
+
+  **Half of this already exists and D2 must not fork it.**
+  `status.current_token()` (`status.py:113-126`) already implements the READ
+  side, `VAULT_TOKEN` first and `~/.vault-token` second, which is the Vault
+  CLI's own order. D2 owns the file: move that function into this module and
+  have `status.py` import it. Two copies of a precedence rule is how the two
+  drift, and R11's whole warning depends on the CLI agreeing with itself
+  about which token a bare `vault` would use.
 - `cli/src/localstack_cli/commands/auth.py` — `login`, `logout`,
   `whoami`, `env` wired into D1's CLI entry point, plus R11's stderr
   warning on `login`, `whoami` and `logout`.
@@ -608,7 +641,7 @@ New files:
 - `cli/src/localstack_cli/commands/config.py` — R13. Addresses and edge
   domain, text and JSON, no secrets.
 - `cli/tests/auth/test_vault.py` — login, lookup, renew, revoke, and the
-  R2 plaintext refusal, all against `respx`.
+  R2 plaintext refusal, all against D1's `FakeCluster`.
 - `cli/tests/auth/test_vault_token_file.py` — R11. Write at `0600`,
   removal, and the `$VAULT_TOKEN` comparison including the equal case
   that must not warn.
@@ -632,28 +665,55 @@ New files:
 - `cli/tests/auth/test_live_login.py` — live-cluster tests carrying D1's
   `cluster` marker (`.loop/plans/D1-cli-package-skeleton.md:137-140,172`),
   excluded by default via `addopts`.
-- `cli/tests/conftest.py` — autouse fixtures redirecting
-  `XDG_CONFIG_HOME` **and `HOME`** into `tmp_path`, so no test can write
-  the developer's real `~/.vault-token`, and a fixture that clears
-  `VAULT_TOKEN` from the environment by default so R11's warning is
-  opt-in per test; a fixture building a session file.
+- `cli/tests/conftest.py` — **modified, not new.** D1's `isolated_environment`
+  autouse fixture (`conftest.py:52-65`) already redirects `HOME` into
+  `tmp_path` and clears `VAULT_TOKEN`, which is exactly what R11 needs: no
+  test can write the developer's real `~/.vault-token`, and the warning is
+  opt-in per test. D2 extends that one fixture with `XDG_CONFIG_HOME` rather
+  than adding a second autouse fixture beside it, and adds a fixture that
+  builds a session file.
 - `docs/cli-login.md` — one page: how to get the password the first time,
   `localstack login`, `eval "$(localstack env)"`, what `logout` revokes, the
   F2/F11 preconditions, and **the revocation shape from §9** — three
   credentials; `logout` and an accessor revoke each end all three by cascade,
   and the accessor revoke needs no root; if neither is available it is
   cut-then-delete in that order, and revocation does not un-disclose what was
-  read. The revocation section of `docs/vault-human-auth.md` says the same
-  thing — cite it **by name**: at the time of writing it is an uncommitted
-  working-tree edit, so a line anchor would not resolve in a worktree, which
-  branches from committed state. Runs the slop
+  read.
+
+  **The escalation section must lead with joining `admin` and name the
+  throwaway entity as the fallback**, matching §9 and the Q-relay resolution.
+  This is the only thing D2 ships that consumes `F14-foundation-role-taxonomy`,
+  which is why the dependency edge exists. A doc built to an earlier draft of
+  this bullet would describe only the throwaway and leave that edge unjustified.
+
+  Cross-reference `docs/vault-human-auth.md` **by name**, not by line.
+
+- `docs/vault-human-auth.md` — **modified, and D2 owns the correction.** It is
+  committed on `main` (`5469d6c`), so a worktree has it. Two things in its
+  revocation section are wrong and both are D2's to fix, because §9 is where
+  they were found:
+  - It repeats the false claim that `terraform apply` strips the hand-built
+    grant. False for a policy on a throwaway entity; see §9's first residual.
+  - It hardcodes "five live accessors". The same cluster read ten hours later
+    had ten. State the shape and the command, not a number.
+
+  It also leads with the throwaway and never mentions `admin`. Bring it in
+  line with §9 so the two pages do not contradict each other. Runs the slop
   scan.
 
 Modified:
 
-- `cli/pyproject.toml` (D1's file) — add `httpx` and dev `respx` via
-  `uv add`; register the `cluster` marker and the `addopts` exclusion if
-  D1 did not.
+- `cli/pyproject.toml` (D1's file) — **likely no change at all.** Per the
+  re-answered Q2 there is no `httpx` and no `respx` to add, and D1 already
+  registered the `cluster` marker with its `addopts` exclusion
+  (`pyproject.toml:31-34`, confirmed). Add a dependency only if something
+  genuinely needs one, with `uv add`.
+- `cli/tests/fixtures/cluster.py` (D1's file) — record the incoming request
+  per route and expose it, so tests can assert on the `X-Vault-Token` header
+  and the login body. It currently serves fixed replies and drops the
+  request.
+- `cli/src/localstack_cli/status.py` (D1's file) — drop `current_token()` and
+  import it from `auth/vault_token_file.py`, per that module's entry above.
 - D1's CLI entry module — register the subcommands: `login`, `logout`,
   `whoami`, `env`, `token` and `config`. One line each. **No `ui` group** —
   see R14 and §12.
@@ -666,14 +726,15 @@ Read-only anchors the implementer will open, and must not edit:
 `.devcontainer/.env.example:2,6,10-11`,
 `.devcontainer/devcontainer.json:38-39`,
 `bootstrap/roles/nomad_server/tasks/main.yml:309`,
-`docs/vault-human-auth.md`.
-All of these are on `main` now that F2 is applied, **except
-`docs/vault-human-auth.md`**, whose revocation section is an uncommitted
-working-tree edit — expect it to be absent in a fresh worktree. Worse than
-absent: the version on `main` still carries a bullet this section's
-measurements falsify, so a worktree shows the **wrong** claim rather than no
-claim. Commit the doc alongside this ticket. Nothing here
+`deployments/infrastructure/developer_group.tf:123,144,158-164`,
+`deployments/infrastructure/roles.tf`.
+All of these are on `main` and present in a fresh worktree. Nothing here
 needs a branch checkout.
+
+`docs/vault-human-auth.md` is **not** on this list: D2 edits it, per the
+Modified block above. An earlier draft said its revocation section was an
+uncommitted working-tree edit that a worktree would not have. That was true
+when written and is false now — it landed on `main` in `5469d6c`.
 
 ## 8. Tests & validation gates
 
@@ -714,8 +775,9 @@ needs a branch checkout.
 Each file below is listed in §7.
 
 1. `test_vault.py::test_login_userpass_returns_token_and_entity` —
-   respx-stubbed `auth/userpass/login/operator`, asserts token, policies,
-   `entity_id`, and `lease_duration` mapped to an absolute `expires_at`.
+   `FakeCluster` serving `auth/userpass/login/operator`, asserts token,
+   policies, `entity_id`, and `lease_duration` mapped to an absolute
+   `expires_at`.
 2. `test_vault.py::test_plaintext_vault_addr_is_refused` — R2. An
    `http://` non-loopback address exits non-zero and names the HTTPS
    edge; `--insecure` proceeds.
@@ -729,9 +791,11 @@ Each file below is listed in §7.
 7. `test_broker.py::test_parses_nomad_and_consul_creds_responses` —
    parametrized over the two engines' differing field names.
 8. `test_broker.py::test_ensure_fresh_rebrokers_only_stale_entries` — R4.
-   Asserts the fresh entry's request was never made
-   (`respx` route `.call_count == 0`, not a loose not-called assertion,
-   per `.claude/rules/python-testing.md:101-103`).
+   Asserts the fresh entry's request was **never made**, by counting the
+   requests `FakeCluster` recorded for that route and asserting zero — not a
+   loose not-called assertion, per
+   `.claude/rules/python-testing.md:101-103`. This is one of the rows that
+   needs the request recording added to `FakeCluster` (§7).
 9. `test_broker.py::test_403_on_creds_names_the_missing_grant` — R8.
    Asserts the message names the path and points at F11.
 10. `test_auth_commands.py::test_env_emits_both_consul_variable_names` —
@@ -860,7 +924,7 @@ revoke by accessor. **Neither needs root.** In order of preference:
 1. `localstack logout`, if you still have the file. Below under **"Cascades,
    no root, but only the holder can run it"**.
 2. A revoke by accessor, which needs `auth/token/revoke-accessor`. Reachable
-   without root two ways: **join `admin`** (three commands, and membership
+   without root two ways: **join `admin`** (four commands, and membership
    survives a mid-incident `terraform apply`), or write the policy yourself if
    you cannot join it. Below under **"Closes everything in one action, and does
    NOT need root"**.
@@ -880,7 +944,7 @@ holder does not.
 **Partial — the Vault token only.** Remove the operator entity from the
 `developer` group. The token demotes to `default` on its next call, because the
 policy arrives through the group at request time (`auth_userpass.tf:34` sets
-`token_policies = []`; `developer_group.tf:141-147`). The floor is real: the
+`token_policies = []`; `developer_group.tf:158-164`). The floor is real: the
 entity's other group, `oidc-smoke`, carries `policies: []`. But `default`
 grants `sys/leases/renew`, so the demoted holder keeps renewing the two
 brokered leases to their `max_ttl` of 3600.
@@ -905,9 +969,9 @@ Both take the accessor `R3` already records and both need a management token.
 and the `consul` binary reads only `CONSUL_HTTP_TOKEN` (§4), so without it the
 call runs as the agent token and fails with a permission error that reads like
 a wrong accessor. And on its own this closes nothing: the stolen Vault token
-still resolves `developer`, which grants read on `nomad/creds/deploy` and
-`consul/creds/deploy` (`developer_group.tf:123-129`), so one `vault read`
-re-mints the pair.
+still resolves `developer`, which grants read on `nomad/creds/deploy`
+(`developer_group.tf:123`) and `consul/creds/deploy` (`:144`), so one
+`vault read` re-mints the pair.
 
 **A composite closer, when you hold both management tokens, and the order
 matters.** Cut the mint path first — group removal or entity disable — **then**
@@ -928,16 +992,25 @@ neither needing root.
 none of the three accessor paths, so nothing shadows the glob there — measured
 2026-08-02, a `default`-only token is denied `vault list auth/token/accessors`
 and an `admin` token is allowed. Membership is a `vault write` that **survives
-`terraform apply`**, which the hand-built grant below does not (see the first
-residual). Three commands:
+`terraform apply`**, because `roles.tf` sets `external_member_entity_ids =
+true` on the group. Four commands, and the first is not optional:
 
 ```sh
-# read the current membership first: the write REPLACES the list
+# 1. READ the membership first: the write REPLACES the list, it does not append.
+#    `admin` is empty on a fresh cluster, and then this prints nothing -- pass
+#    your id ALONE below, with no leading comma.
+vault read -field=member_entity_ids -format=json identity/group/name/admin \
+  | python3 -c 'import sys,json; print(",".join(json.load(sys.stdin)))'
+
+# 2. join: everyone already in it, plus you. Drop the comma if step 1 was empty.
 vault write identity/group/name/admin member_entity_ids="<current>,<you>"
 
+# 3. find and revoke the stolen session
 vault list auth/token/accessors
 vault token revoke -accessor <the stolen session's accessor>
 
+# 4. leave: everyone in it, minus you. `member_entity_ids=""` empties the
+#    group outright -- correct ONLY if you were its last member.
 vault write identity/group/name/admin member_entity_ids="<current-without-you>"
 ```
 
@@ -947,8 +1020,9 @@ carries that warning and the commands to read the membership.
 
 **Fallback, for a responder who cannot join `admin`:** write the policy
 yourself. `developer` grants `sys/policies/acl/*` and `identity/*`, so this
-works end to end, non-root — measured. It is the longer path and its teardown
-order matters, so prefer `admin` when you have it.
+works end to end, non-root — measured. Prefer `admin` when you have it: the
+fallback is six more commands, it has a teardown order that matters, and it
+leaves an orphan near-root policy Terraform never cleans up.
 
 ```hcl
 # `sudo` on the list path is REQUIRED. Without it the first command 403s,
@@ -969,31 +1043,46 @@ permanently widened.
 An earlier draft said the group. That is dangerous: group policies resolve at
 request time — the same mechanism this section relies on for demotion — and
 **the thief is a `developer`**. Attaching it to the group arms them with
-`auth/token/accessors` (list, with `sudo`) and `revoke-accessor` over every
-token in the cluster. That is **20 accessors, measured 2026-08-02**: 14 `jwt-nomad` workload tokens
-(postgres ×2, minio, mlflow, grafana, loki, prometheus, haproxy, hermes,
-phoenix, memex, bifrost, talat-consumer, talat-shim), the root token, and 5
-`userpass` sessions. It was 21 until the `rowsix` orphan below was revoked. It turns a credential theft into a cluster-wide outage. The
-responder already holds `identity/*` and `auth/userpass/users/*`, so a
+`auth/token/accessors` (list, with `sudo`) and `revoke-accessor` over **every
+token in the cluster**: every `jwt-nomad` workload token, the root token, and
+every human session. It turns a credential theft into a cluster-wide outage.
+The responder already holds `identity/*` and `auth/userpass/users/*`, so a
 throwaway entity costs two extra commands and contains the grant.
+
+Do not trust a count written here. It drifts within a day: this section said
+20 accessors and 5 `userpass` sessions on 2026-08-02 and the same cluster
+read **25 and 10** hours later, because every probe login adds one. Read the
+shape when you need it:
+
+```sh
+vault list -format=json auth/token/accessors \
+  | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))'
+```
 
 **Four more things the responder must know.**
 
-- **`terraform apply` will strip your grant mid-incident.**
-  `developer_group.tf:144` manages `policies` as a single-element list, so any
-  apply during the incident silently removes it — and afterwards leaves an
-  orphan near-root policy that Terraform does not know about. Delete the
-  policy by hand when you are done.
-- **Revoke every accessor at that path except the one you are using.** Five
-  live accessors share `path auth/userpass/login/operator`, `display_name
-  userpass-operator`, `entity_id 351f302a…` and `policies ['default']`. They
-  carry distinct `creation_time` values, so they *separate* — but two of them
-  were minted **10 seconds apart**, there is no audit device recording when
-  the lost session was created, and "confirm before revoking" names nothing to
-  confirm against. So `creation_time` does not *identify* the target. And all
-  five resolve `identity_policies: ['developer']` with 30 to 32 renewable days
-  left, so revoking one leaves four near-root credentials live for a month.
-  Revoke them all except your own, then log in again.
+- **Clean up the throwaway policy yourself; Terraform will not.** A policy
+  attached to a throwaway entity is invisible to Terraform, so nothing
+  removes it and it outlives the incident as an orphan near-root policy.
+  Delete it by hand when you are done.
+
+  An earlier draft said the opposite: that `terraform apply` would strip the
+  grant mid-incident, citing `developer_group.tf:161`, which does manage
+  `policies` as a single-element list. **That is true only of the
+  attach-to-the-group variant this section forbids.** Do not carry it over as
+  an argument for anything; the case for preferring `admin` (below) rests on
+  fewer commands, no teardown order and no orphan left behind, and those hold
+  on their own.
+- **Revoke every accessor at that path except the one you are using.** Every
+  live session at `auth/userpass/login/operator` shares `display_name
+  userpass-operator`, `entity_id 351f302a…` and `policies ['default']`, and
+  resolves `identity_policies: ['developer']` with about a month of renewable
+  TTL left. They carry distinct `creation_time` values, so they *separate* —
+  but sessions minted seconds apart are common, there is no audit device
+  recording when the lost session was created, and "confirm before revoking"
+  names nothing to confirm against. So `creation_time` does not *identify*
+  the target, and revoking one leaves the rest live for a month. Revoke them
+  all except your own, then log in again.
 - **None of this is logged.** `vault audit list` returns "No audit devices are
   enabled", and the escalation writes into `identity/entity` and
   `auth/userpass/users` — the exact two places this section's first residual
@@ -1157,35 +1246,74 @@ anyway.
     `VAULT_TOKEN` shadowing and how to get out of it, and **what it takes to
     revoke a stolen session** — not "who can", which is the wrong question:
     §9 establishes that `logout` and an accessor revoke each end all three by
-    cascade, that **neither needs root** — a `developer` can write itself the
-    accessor policy in §9 and run it — and that without either it takes the
-    two-step composite. Slop scan, `just pre_commit`, `uv run pytest`,
-    adversarial review.
+    cascade, that **neither needs root**, and that without either it takes the
+    two-step composite.
+
+    **The escalation section leads with joining `admin` (F14) and names the
+    throwaway entity as the fallback.** This is the only place D2 consumes
+    F14, so a doc that ships the throwaway alone leaves the `depends_on` edge
+    unearned. Correct `docs/vault-human-auth.md` in the same pass: it repeats
+    the false terraform-strip claim, hardcodes an accessor count that has
+    already drifted, and never mentions `admin`.
+
+    Slop scan, `just pre_commit`, `uv run pytest`, adversarial review.
 
 ## 11. Open questions
 
 **Q1 → ANSWERED by D1, 2026-07-31.** This question said D1 had no plan file.
 It has one now, and it settles the fork: package under `cli/`, src layout,
-its own `cli/pyproject.toml`, `typer` at runtime. §7's anchors hold. Still
-verify at pickup. **D1's code is not on `main`.** As of 2026-08-01
-`git ls-files` matches nothing under `cli/`, and `loopctl ledger` reads
-`D1-cli-package-skeleton: ready`, not `done` — the tree is staged and
-uncommitted in `.loop/worktrees/D1-cli-package-skeleton` behind its review
-gate. D1 is a hard dependency, so the loop will not hand D2 to an implementer
-until it lands: `cli/` will exist by pickup and does not exist now. Confirm
-these four against the merged tree rather than against this paragraph — the
-package root `cli/src/localstack_cli/`, the console script
-`localstack = "localstack_cli.main:main"`, the `cluster` marker with its
-`addopts` exclusion, and the Python hooks D1 adds to the root
-`.pre-commit-config.yaml`.
+its own `cli/pyproject.toml`, `typer` at runtime. §7's anchors hold.
 
-**Q2 — HTTP client and its mocking tool.** `requirements.txt` lists both
-`httpx` (`:3`) and `hvac` (`:5`), and nothing installs either.
-*Recommendation:* `httpx` plus `respx`. `.claude/rules/python-testing.md:89`
-names `respx` as this repo's tool for `httpx` and names nothing for
-`hvac`'s `requests` layer. The five Vault endpoints D2 needs are small
-enough that `hvac` buys little and costs a mocking story the rules do not
-cover. Defer to D1 if D1 already picked.
+**Confirmed against the merged tree, 2026-08-02.** D1 is `done` and on `main`
+(`132ea79`). All four items this question said to check hold: the package root
+`cli/src/localstack_cli/`, the console script
+`localstack = "localstack_cli.main:main"`, the `cluster` marker with its
+`addopts` exclusion (`cli/pyproject.toml:31-34`), and D1's four Python hooks
+in the root `.pre-commit-config.yaml` (ruff, ruff-format, mypy strict,
+pytest). An earlier version of this paragraph said D1's code was not on
+`main`. That was true on 2026-08-01 and is false now.
+
+**The confirmation also turned up more than the skeleton, and it is not
+cosmetic.** `branding.py`, `status.py` and `_lazy.py` are on `main` as well,
+and three things §7 specifies as new already exist there. See the re-answered
+Q2 for the HTTP client, and §7 for who owns `status.current_token()`,
+`Config.from_env()` and the autouse test fixture. Anything this plan
+describes as new, check for on `main` first.
+
+**Q2 → RE-ANSWERED, 2026-08-02, against what D1 actually shipped: stdlib
+`urllib.request`, tested against a real local HTTP server. No `httpx`, no
+`respx`, no `hvac`.**
+
+This question's own tie-breaker was "defer to D1 if D1 already picked", and
+D1 has now landed and picked. `cli/pyproject.toml` carries neither `httpx`
+nor `hvac`. `cli/src/localstack_cli/status.py` reaches Vault, Nomad and
+Consul over `urllib.request`, and `cli/tests/fixtures/cluster.py` stands up a
+real `ThreadingHTTPServer` whose per-route `(status, body)` replies a test
+rewrites to drive the error paths. `cli/tests/conftest.py:1-5` states the
+policy outright: *"Every test runs against a real HTTP server or a real
+closed port, never a mocked urllib."*
+
+The earlier recommendation of `httpx` plus `respx` was written when `cli/`
+did not exist and it anticipated only a collision with `hvac`. Taking it now
+would put two HTTP stacks and two opposed testing philosophies in a CLI of a
+few hundred lines.
+
+`.claude/rules/python-testing.md:77-89` decides it rather than merely
+permitting it. The rule leads with *"Do not mock a dependency you can
+exercise for real cheaply. Mock only at true external boundaries"*; its
+`respx` clause is conditional on having chosen `httpx`. A real HTTP server on
+a loopback port is exercising the dependency for real, which is the outcome
+the rule asks for; `respx` is the fallback for when you cannot.
+
+**Consequences for §8.** The offline rows are written against `respx` and
+must be restated against `FakeCluster`. This is a change of fixture, not of
+what any row proves: every row still drives a real request and a real
+response, and the error paths (403 on a creds path, 404 on the login path,
+expired token) become route rewrites rather than mock side effects.
+`FakeCluster` needs one addition D2 owns — it currently serves fixed replies
+per route and has no way to assert on the REQUEST, which rows about the
+`X-Vault-Token` header and the login body need. Record the request and expose
+it.
 
 **Q3 → RESOLVED (operator, 2026-07-31): a PATH shim. Neither `env` nor
 `exec`.** A third option this question did not list, and it dissolves the
@@ -1344,10 +1472,17 @@ that escalation outright. Measured on 2026-08-02:
   membership is a `vault write` that **survives `terraform apply`** — proven
   against an apply that really writes the group, not a no-op.
 
-That last point is the sharp one. §9 already warns that a `terraform apply`
+**An earlier version of this question rested on a false claim and it is worth
+recording rather than deleting.** It argued that a `terraform apply`
 mid-incident silently strips the hand-built grant, because
-`developer_group.tf` manages `policies` as a fixed list. `admin` membership has
-no such failure mode.
+`developer_group.tf:161` manages `policies` as a fixed list. That is true only
+if the policy is attached to the `developer` **group** — which §9 explicitly
+forbids. Attached to a throwaway entity, as §9 actually instructs, the grant
+is invisible to Terraform and no apply touches it. `auth_userpass.tf:38-44`
+shows `operator` is the only Terraform-managed entity.
+
+The resolution stands on its other reasons. Those are below and they do not
+depend on this one.
 
 **The trade, stated honestly.** `admin` is `path "*"` plus `sudo` — the
 responder gets root-equivalent for the duration. The throwaway grants exactly
@@ -1355,8 +1490,9 @@ three capabilities. Anyone who wants the narrow grant during an incident has a
 real argument, and it is not mine to settle.
 
 *Recommendation:* **use `admin`.** It removes six commands, a teardown order
-whose mistakes leave live credentials behind, and a documented hazard where an
-unrelated apply disarms the responder mid-incident. It does not lower anyone's
+whose mistakes leave live credentials behind, and the orphan near-root policy
+the throwaway leaves behind when nobody remembers to delete it. It does not
+lower anyone's
 ceiling: `developer` can already self-elevate, which is the only reason the
 throwaway procedure works at all. Keep the throwaway in the doc as the fallback
 for anyone not in `admin`, and add the one property `admin` does not have:
@@ -1557,12 +1693,14 @@ against the four-command scope before these decisions.
 Q1, Q3, Q4 and Q6 were settled earlier the same day and are marked inline.
 The other three are resolved on their recorded recommendations:
 
-- **Q2 → `httpx` plus `respx`.** `.claude/rules/python-testing.md` names
-  `respx` as this repo's tool for `httpx` and names nothing for `hvac`'s
-  `requests` layer. The handful of Vault endpoints here does not earn a client
-  library plus a mocking story the rules do not cover. Confirm against D1's
-  shipped `cli/pyproject.toml` at pickup; if D1 already added `hvac`, raise it
-  rather than adding a second HTTP stack.
+- **Q2 → SUPERSEDED 2026-08-02. Stdlib `urllib.request` against D1's real
+  `FakeCluster`. No `httpx`, no `respx`, no `hvac`.** This entry read "`httpx`
+  plus `respx`" and told the implementer to confirm against D1's shipped
+  `cli/pyproject.toml` at pickup. That confirmation ran and inverted the
+  answer: D1 shipped stdlib `urllib` and a real loopback HTTP server, and its
+  `conftest.py` states the no-mocked-urllib policy outright. Adding `httpx`
+  now would be the second HTTP stack this entry warned against, just from the
+  other direction. Full reasoning under Q2 in §11.
 - **Q5 → one session file, no profiles.** One cluster exists. The schema
   already carries `version` and `vault_addr`, so a profile layer stays an
   additive change. Building it now is speculative.

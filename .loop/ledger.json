@@ -968,7 +968,7 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/G2-nomad-ui-oidc-login.adversarial.md, .loop/verdicts/G2-nomad-ui-oidc-login.documentation.md",
+      "review_verdict": ".loop/archive/G2-nomad-ui-oidc-login/verdict.adversarial.md, .loop/archive/G2-nomad-ui-oidc-login/verdict.documentation.md",
       "dropped": false,
       "epic": "rollout",
       "dependencies": [
@@ -1130,7 +1130,7 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/F14-foundation-role-taxonomy.adversarial.md, .loop/verdicts/F14-foundation-role-taxonomy.documentation.md",
+      "review_verdict": ".loop/archive/F14-foundation-role-taxonomy/verdict.adversarial.md, .loop/archive/F14-foundation-role-taxonomy/verdict.documentation.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [

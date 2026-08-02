@@ -1,220 +1,349 @@
 ---
-verdict: pass
-plan: cba65704fdad2c7dd27f334227c03d7d5cf65705eefad8a97e2d2db607798775
+verdict: pass-with-required-fixes
+plan: 120784fa3859f5ac9f2ca67552a649197732c8e966db41e8a107a65a1315b0c2
 ---
 
-# Premise verdict: SOUND
+# D2-cli-login-broker-tokens — plan review (re-run after the 2026-08-02 edits)
 
-Narrow re-bind pass. Fingerprint confirmed by `sha256sum` against
-`.loop/plans/D2-cli-login-broker-tokens.md` before binding. Per the briefing I
-did not re-walk the previous pass's fixes 1 and 2, the `cli-login.md`
-garden-path, the test-23 reallocation, or the eleven live-cluster assumptions
-confirmed two passes ago.
+Fingerprint recomputed with `sha256sum`: matches the briefing
+(`120784fa…b0c2`). The prior passing verdict bound `cba65704…8775` and is
+stale.
 
-All seven claimed edits are applied and, where they assert a fact, the fact
-holds. The one I was asked to check rather than assume — the `vault token
-revoke -self` hazard — is accurate, and stronger than the author claims.
+## Premise verdict: PARTIALLY SOUND
+
+The ticket's core premise is sound and I re-measured all of it against the
+live cluster: a `userpass` Vault session that eagerly brokers
+`nomad/creds/deploy` and `consul/creds/deploy`, caches them, and hands them
+out through `env` and `token`. Every load-bearing measurement in §4 still
+holds today.
+
+The three edits under review are a different story. The `admin` procedure
+itself is correct and non-destructive, which was the sharpest thing to check
+and it passed. But the resolution did not propagate into the two sections
+that decide what actually ships (§7's doc spec and §10's subticket 11), the
+one argument the plan advances for preferring `admin` over the throwaway is
+false, and §9 carries three broken anchors and two stale counts. Separately,
+D1 landed on `main` since the last review and shipped an HTTP and test
+harness that §7, §8 and Q2 do not know exists.
+
+All of it is fixable in prose. None of it blocks implementation once fixed.
 
 ## Per assumption
 
-**P1 — the comma splice at `:282-283` is now one sentence. HOLDS.**
-`.loop/plans/D2-cli-login-broker-tokens.md:278-287`. The clause reads "The
-operator's locked surface for D2 is `login|logout|whoami|env|token|config`
-(…), and `ui consul` was folded into D3's `service consul --open`." That is a
-comma plus the coordinating conjunction "and" joining two independent clauses,
-which is one grammatical sentence, not a splice. The next sentence starts
-cleanly at "An earlier draft shipped it here…". No dangling fragment survives.
+### The three edits under review
 
-**P2 — the dangling comma at `:1116-1117` is now a period. HOLDS.**
-`:1117` reads "R13: addresses with no secrets. Test 22. Depends on 4 and 8."
-The comma is gone and "Test 22" is its own sentence, matching the shape of
-items 4, 5, 6 and 8 in the same list.
+**P1 — F14's `admin` grants what §9 claims (list and revoke token
+accessors). HOLDS.**
+`vault policy read admin` on the live cluster returns `path "*"` with
+`["create","read","update","patch","delete","list","sudo"]`, matching
+`deployments/infrastructure/roles.tf:31-116`. `vault read
+identity/group/name/admin` returns the group live, `policies [admin]`,
+`id d40f1623-…`. `vault policy read default` names none of
+`auth/token/accessors`, `auth/token/lookup-accessor` or
+`auth/token/revoke-accessor` (grep for `accessor` hits only a comment at
+`:84`), so nothing more specific shadows the glob on those three paths.
+§9's claim at plan `:927-931` is correct.
 
-**P3 — the orphaned "That inversion" paragraph is rewritten. HOLDS.**
-`grep "That inversion"` returns nothing in the plan. `:982-987` now opens
-**"Why the accessor revoke outranks the composite."** and states the ranking
-positively: the composite needs a Nomad management token *and* a Consul
-management token, the accessor revoke needs only the Vault password (R7), so
-for the victim this section addresses the composite is the remedy they cannot
-run. No reference to a superseded draft.
+**P2 — `admin` membership survives `terraform apply`. HOLDS.**
+`roles.tf:131` sets `external_member_entity_ids = true`, and the header at
+`roles.tf:118-126` states the intent. `docs/cluster-roles.md:45-51` records
+the same property as measured against an apply that really writes the group.
+The group exists live with the Terraform-set metadata, so the apply
+succeeded against the pinned provider (`providers.tf:7-10`, `~>5.3.0`).
 
-**No contradiction with `:857-863`.** That block ranks 1. `localstack logout`,
-2. accessor revoke, 3. composite. `:986-987` closes "So after `logout`, this is
-the first thing to reach for" — rank 2, exactly. `:865-866` puts the composite
-at 3, and `:912-914` independently says "This is not *the* non-root closer; the
-accessor revoke is also non-root and needs no management tokens at all."
-Three statements, one ranking.
+**P3 — a `default`-only token is denied `vault list auth/token/accessors`,
+an `admin` token is allowed. HOLDS by derivation; the direct probe is
+UNCERTAIN.** I could not re-run the plan's measurement read-only: it needs a
+`default`-only token and minting one is a write. What I can confirm is both
+necessary conditions. `default` grants nothing on that path and Vault is
+default-deny, and `admin`'s glob carries `sudo`, which that endpoint
+requires. Sound but derived, not re-measured.
 
-One thing I checked for and did not find: `:862-863` gates the accessor revoke
-behind "read the escalation warning before doing it", and `:986-987` does not
-repeat that gate. It does not need to — the rewritten paragraph sits at `:982`,
-*after* the policy block (`:925-931`), the throwaway-entity warning
-(`:933-950`) and all four responder residuals (`:952-980`). A reader arriving
-at it in document order has already passed every warning.
+**P4 — §9's join/leave procedure is non-destructive. HOLDS, with one gap.**
+The snippet at plan `:934-942` reads the current membership first and passes
+`member_entity_ids="<current>,<you>"` to join and `"<current-without-you>"`
+to leave. It does not reintroduce the evict-everyone bug: the write does
+replace the list, and the snippet says so in its own comment. It matches
+`docs/cluster-roles.md:70-94`.
 
-**P4 — the carve-out gained the `main`-is-wrong clause. HOLDS, and the claim
-is true.** `:670-676`: "Worse than absent: the version on `main` still carries
-a bullet this section's measurements falsify, so a worktree shows the **wrong**
-claim rather than no claim. Commit the doc alongside this ticket."
+The gap is the empty-group case. `vault read identity/group/name/admin`
+returns `member_entity_ids []` right now, so the first responder to follow
+D2's snippet literally types `member_entity_ids=",<your-id>"` with a leading
+comma. `docs/cluster-roles.md:84-87` handles this explicitly ("If the group
+is empty, pass your id alone, with no leading comma"); D2's snippet does
+not, and D2's snippet is the one a responder reads mid-incident. It also
+says "Three commands" above four commands.
 
-I verified the falsified bullet exists rather than trusting the plan.
-`git show HEAD:docs/vault-human-auth.md` line 104 reads:
+**P5 — the `depends_on` edge to `F14-foundation-role-taxonomy` is real.
+PARTIALLY HOLDS.** It is real in §9, which now leads with a procedure that
+cannot exist without `vault_policy.admin` and `vault_identity_group.admin`.
+F14 is `done` and merged (`5469d6c`), so the edge costs nothing and blocks
+nothing. But D2 ships no `deployments/` change (§5), so the only artifact
+that could consume F14 is `docs/cli-login.md`, and see P6: the spec for that
+doc still describes the throwaway. As written, the edge is real in the
+reasoning and decorative in the deliverable.
 
-    - It is per-person, and revoked by removing you from the group.
+**P6 — the Q-relay resolution is internally consistent and nothing else
+assumes the unresolved state. BREAKS.** Q-relay at plan `:1319-1322` says
+"§9 leads with the `admin` procedure; the throwaway is not the primary
+path". Two places did not get the memo, and both are what an implementer
+builds from:
 
-§9 falsifies the second half at `:878-884`: group removal only *demotes* the
-Vault token to `default` on its next call, and `default` grants
-`sys/leases/renew`, so the holder keeps renewing both brokered leases to their
-`max_ttl` of 3600. The working-tree `:104` has been cut back to "It is
-per-person." The carve-out describes a real hazard, not a hypothetical one.
+- §7's `docs/cli-login.md` bullet (plan `:640-650`) specifies the doc's
+  revocation content as "three credentials; `logout` and an accessor revoke
+  each end all three by cascade, and the accessor revoke needs no root; if
+  neither is available it is cut-then-delete". No mention of `admin`.
+- §10 subticket 11 (plan `:1157-1162`) says the doc must establish "that
+  **neither needs root** — a `developer` can write itself the accessor
+  policy in §9 and run it". That is the throwaway route stated as the
+  answer.
 
-**P5 — the `-self` hazard. HOLDS, and the warning is accurate.**
-`docs/vault-human-auth.md:111-119`. The fenced block is
+An implementer following §7 and §10 ships a doc with no `admin` in it, which
+is the state the operator resolved away from.
 
-    VAULT_TOKEN=<the lost session's token> vault token revoke -self
+**P7 — "a `terraform apply` mid-incident silently strips the hand-built
+grant", the sharp reason Q-relay gives for preferring `admin`. BREAKS.**
+Plan `:982-986` and Q-relay `:1347-1350` both assert this, citing
+`developer_group.tf:144`. The claim only holds if the responder attaches the
+accessor policy to the `developer` **group**, and §9 at plan `:961` forbids
+exactly that: "Attach that policy to a THROWAWAY ENTITY, never to the
+`developer` group." A throwaway policy plus a throwaway entity plus a
+throwaway userpass user are all invisible to Terraform, so no apply touches
+them. `auth_userpass.tf:38-44` shows the only Terraform-managed entity is
+`operator`, and it is not what the procedure uses.
 
-followed by "**Set `VAULT_TOKEN` on that line and nowhere else.** `-self`
-revokes whatever `VAULT_TOKEN` currently holds, and in this devcontainer that
-is the **root token** — running it bare would revoke root and take the
-cluster's admin credential with it."
+This is a leftover from the draft that attached to the group. The resolution
+itself survives: `admin` still wins on fewer commands, no teardown order
+whose mistakes leave live credentials behind, and no orphan policy. But the
+argument as stated is false, and it is the one the plan calls "the sharp
+one".
 
-I confirmed the factual claim with a read-only lookup (no revoke of any kind
-was run). `env | grep -c '^VAULT_TOKEN='` returns 1, and `vault token lookup
--format=json` on the ambient token reports:
+**P8 — §9's `developer_group.tf` anchors resolve. BREAKS, three of them.**
+G2 (`0882560`) added a `nomad/creds/manage` block and shifted the file.
+Measured against `main`:
 
-    display_name: root
-    policies: ['root']
-    identity_policies: None
-    ttl: 0
-    entity_id: ''
+| Plan cites | For | Actually at that line |
+|---|---|---|
+| `developer_group.tf:141-147` (plan `:884`) | the group binding policies at request time | `nomad/creds/manage` and `consul/creds/deploy` blocks |
+| `developer_group.tf:123-129` (plan `:910`) | read on both creds paths | `nomad/creds/deploy` only; consul is at `:144` |
+| `developer_group.tf:144` (plan `:983`) | `policies` managed as a single-element list | `path "consul/creds/deploy" {` |
 
-So the ambient `VAULT_TOKEN` in this devcontainer is the root token, it is
-non-expiring (`ttl: 0`), and it is not entity-backed, which means no group
-demotion or entity disable would soften a revoke of it. The warning's
-consequence clause — "take the cluster's admin credential with it" — is exact.
-`entity_id: ''` also independently confirms the doc's own pre-existing claim at
-`:31`.
+Correct anchors: the group resource is `developer_group.tf:158-164`,
+`policies = [vault_policy.developer.name]` at `:161`, `nomad/creds/deploy`
+at `:123`, `consul/creds/deploy` at `:144`.
 
-**On "impossible to skim past": stronger than claimed.** The block is fail-safe
-against the failure mode that produced the original hazard, which is a
-verbatim copy-paste. Pasted into bash, `VAULT_TOKEN=<the` parses the `<` as an
-input redirect (the metacharacter terminates the assignment word), and
-`session's` opens a single quote that never closes. Bash errors out before it
-ever reaches `vault`. A skimmer who copies the block gets a shell complaint,
-not a revoked root token. Combined with the bolded lead sentence directly
-beneath it and **root token** bolded inside it, this clears the bar.
+**P9 — the accessor counts in §9. BREAKS (drift).** The plan states "20
+accessors, measured 2026-08-02" broken down as 14 workload, 1 root, 5
+`userpass` (plan `:973-976`), and "Five live accessors share `path
+auth/userpass/login/operator`" (`:987-996`). Live right now:
+`vault list auth/token/accessors` returns **25**, and looking each one up by
+accessor gives **10** at `auth/userpass/login/operator`. The argument gets
+stronger, not weaker, so nothing collapses. But these numbers are destined
+for `docs/cli-login.md` and they went stale inside a single day. §9's own
+closing line already says the doc "must carry the shape, not a list"; the
+numbers should follow that rule.
 
-Low-severity, untested, not a required fix: a reader who deletes the
-placeholder and leaves `VAULT_TOKEN= vault token revoke -self` sets the
-variable to empty, and the Vault CLI's fallback to `~/.vault-token` in that
-case is a behavior I did not probe, because probing it means running a revoke.
-I mention it for completeness; the doc's instruction ("set it on that line")
-does not invite that edit.
+**P10 — `docs/vault-human-auth.md` is an uncommitted working-tree edit and
+`main` carries a falsified bullet. BREAKS.** Plan `:645-650` and `:670-676`
+say the revocation section is uncommitted, will be absent from a worktree,
+that `main` shows a claim these measurements falsify, and "Commit the doc
+alongside this ticket". All false now. `git diff HEAD --
+docs/vault-human-auth.md` is empty and the corrected revocation section is
+on `main` at `docs/vault-human-auth.md:130-215`. §11 Q7 (plan `:1569-1572`)
+already says the doc "is now merged on `main`", so the plan contradicts
+itself.
 
-**P6 — the Consul bridge is restored and matches the plan. HOLDS.**
-`docs/vault-human-auth.md:181-188` carries
-`CONSUL_HTTP_TOKEN="$CONSUL_TOKEN" consul acl token delete -accessor-id
-<accessor>` with "**The Consul bridge is not optional**: the CLI reads
-`CONSUL_HTTP_TOKEN` and ignores `CONSUL_TOKEN`, so without it the delete fails
-with an error that reads like a wrong accessor."
+Worse for P6: that merged section leads with the **throwaway**
+(`docs/vault-human-auth.md:176-206`, "Do that on a throwaway entity, never
+on the `developer` group") and never mentions `admin`. §7 instructs the
+implementer to cite it as saying "the same thing" as §9. It no longer does.
+The repo now has two incident runbooks with different primary remedies and
+D2 assigns no owner to the difference. The same false terraform-strip claim
+from P7 sits in that file too.
 
-Against plan `:896-905`: same command byte-for-byte at `:898`, and `:902-905`
-gives the same reason ("`.devcontainer/.env` sets `CONSUL_TOKEN` and the
-`consul` binary reads only `CONSUL_HTTP_TOKEN` (§4), so without it the call
-runs as the agent token and fails with a permission error that reads like a
-wrong accessor"). The doc drops "runs as the agent token" and the word
-"permission"; neither omission changes what the reader does. Ordering matches
-too: both put cut-the-mint-path before the deletes, and both say management
-token, not root (doc `:186-188`, plan `:901`, `:910-912`).
+### The rest of the plan, re-checked given the edits
 
-**P7 — British spellings normalized. HOLDS.** `grep -n "honour\|Honour"` across
-the plan, the doc and `ROADMAP.md` returns zero. Five "honoring" remain, all
-American: `docs/vault-human-auth.md:132,192,193` and
-`.loop/plans/D2-cli-login-broker-tokens.md:1023,1024`. The briefing said one in
-the plan; there are two. Both are correct, so this is a counting nit, not a
-finding.
+**P11 — D1's shipped surface matches §7 and §11's four checks. HOLDS.**
+D1 is merged (`577535d`, `132ea79`) and `done` in the ledger. Package root
+`cli/src/localstack_cli/`, console script
+`localstack = "localstack_cli.main:main"` (`cli/pyproject.toml:12-13`), the
+`cluster` marker with `addopts = "-m 'not cluster'"`, and the four Python
+hooks (`ruff`, `ruff-format`, `mypy` strict, `pytest`) in the root
+`.pre-commit-config.yaml`. Q1's narrative paragraph is stale ("D1's code is
+not on `main`", "`loopctl ledger` reads `ready`") and §7's "not authored
+yet" is stale, but both tell the implementer to confirm against the merged
+tree, and the confirmation passes.
 
-**P8 — `ROADMAP.md` credits F8 with retiring the root token. HOLDS.**
-`ROADMAP.md:107-113` now reads:
+**P12 — Q2's `httpx` plus `respx` decision. BREAKS as a settled fork.** D1
+shipped neither. `cli/pyproject.toml:6-10` lists `click`, `rich`, `typer`
+and nothing else, and `cli/src/localstack_cli/status.py:9-12` does its HTTP
+with stdlib `urllib.request`. More pointed, `cli/tests/conftest.py:1-5`
+states D1's testing stance outright: "Every test runs against a real HTTP
+server or a real closed port, **never a mocked urllib**", backed by
+`cli/tests/fixtures/cluster.py`'s `FakeCluster`. Q2 anticipated a collision
+with `hvac` and got one with `urllib` plus a real local server instead.
 
-    F11 ->  D2 -> D6                  per-person sessions, then the shims
-    F11 ->  F8                        retires the root token: providers off the
-                                      static tokens
+This touches every one of §8's 23 offline rows, all specified "against
+`respx`", and it runs into the rule the plan itself cites:
+`.claude/rules/python-testing.md:77-89` ("do not mock a dependency you can
+exercise for real cheaply") and its instruction to check whether the project
+already standardized on a tool. `respx` is named at `:89` as the tool for
+`httpx`, so it is not wrong. It is a fork the plan believes is closed.
 
-The contradicting `F11 -> D2 -> D6  retires the root token` is gone. Checked
-against the two anchors I was given and one more:
+**P13 — §7's `conftest.py` additions are new. PARTIALLY BREAKS.**
+`cli/tests/conftest.py:52-65` already has an autouse `isolated_environment`
+fixture that redirects `HOME` into `tmp_path` and deletes `VAULT_TOKEN`. §7
+asks for both as if neither exists. Only the `XDG_CONFIG_HOME` redirect and
+the session-file fixture are actually new. The existing fixture also points
+all three addresses at a closed loopback port, which happens to be
+compatible with R2 (loopback is exempt), but the plan should say so rather
+than leave it to be rediscovered.
 
-- `.loop/plans/D6-cli-deps-and-shims.md:106-107` — "F8 would remove the
-  injected token and make the shim redundant, but F8 is blocked, so the shim is
-  what works today." Consistent: D6 owns the shim, F8 owns the retirement.
-- `ROADMAP.md:103` — F8's row, "Points Terraform's providers at brokered
-  tokens, drops the static ones." Consistent with the critical-path gloss.
-- I did not take the D6-to-F8 attribution on trust, because ROADMAP `:103`
-  scopes F8 to Terraform *providers* while the injected root `VAULT_TOKEN` is a
-  devcontainer surface. `.loop/plans/F8-foundation-deployer-provider-cutover.md`
-  settles it: `:280-281` has F8 remove root `VAULT_TOKEN` from
-  `.devcontainer/.env.example` line 10 outright, repeated at `:199`, `:407` and
-  `:477`. F8 really does retire it.
+**P14 — "`config` lands here because it reads the resolved `vault_addr` and
+the session file, both of which this ticket owns" (R13, plan `:513-515`).
+BREAKS.** Address resolution is D1's, on `main`, at
+`cli/src/localstack_cli/config.py:20-48` (`Config.from_env()`). D2 owns the
+session file, not the addresses. Related: §7 proposes `commands/config.py`
+alongside the existing `localstack_cli/config.py`, and `auth/vault.py` is
+specified as "Reads `VAULT_ADDR`" rather than reading `Config`. Also
+unowned: R11's `env_token_differs` duplicates `status.py:113-126`
+`current_token()`, whose docstring already encodes the same precedence rule
+R11 is built on. The plan should say plainly that `status.current_token()`
+stays the single answer to "which token would a bare `vault` use" and that
+`auth/` calls it rather than reimplementing it.
+
+**P15 — the core auth premise. HOLDS, every claim re-measured today.**
+- `vault auth list` returns `jwt-nomad/`, `token/`, `userpass/` with
+  accessor `auth_userpass_ca653bd3` and F2's description.
+- `auth_userpass.tf:13-17` backend, `:24-27` comment, `:28-36` generic
+  endpoint with `token_policies = []` at `:34`, `:38-53` entity and alias.
+  All resolve.
+- `vault policy read default` grants exactly the set §4 lists, and grants no
+  `nomad/creds/*`, no `consul/creds/*`, no KV2 read, no `sys/leases/revoke`.
+- `vault read nomad/role/deploy`: `type client`, `policies [deploy]`
+  (`nomad_deploy_role.tf:36-41`). `vault read nomad/config/lease`:
+  `ttl 30m`, `max_ttl 1h`
+  (`bootstrap/roles/nomad_server/tasks/main.yml:309`).
+- `vault read consul/roles/deploy`: `ttl 1800`, `max_ttl 3600`,
+  `token_type client` (`consul_deploy_role.tf:19-25`).
+- `sys/config/state/sanitized`: `default_lease_ttl 0`, listener
+  `tls_disable true`. `VAULT_ADDR=http://192.168.2.30:8200`. R2's refusal is
+  still needed.
+- `.devcontainer/devcontainer.json:38-39` is `"--env-file",
+  ".devcontainer/.env"`; `.devcontainer/.env:8` is `VAULT_TOKEN`, `:5` is
+  `CONSUL_TOKEN`. `.env.example:2,6,10,11` as cited.
+- `strings /usr/bin/nomad | grep -c NOMAD_TOKEN_FILE` returns 0 against 2
+  for `CONSUL_HTTP_TOKEN_FILE` in `/usr/bin/consul`, and an exact-match grep
+  for `CONSUL_TOKEN` in the consul binary returns 0. Nomad v2.0.3.
+- `~/.vault-token` exists at mode 600 (10 bytes, not the 8 the plan says).
+- `vault audit list`: "No audit devices are enabled".
+- `deployments/infrastructure/justfile:8,12,16` all read
+  `CONSUL_HTTP_TOKEN=${CONSUL_TOKEN}`.
+- `consul.hcl.j2:29-32` sets `tokens { agent, default }` to the agent token,
+  so R14's cut stands on a true premise.
+
+Independent corroboration for R11 and Q4: `status.py:113-118`'s own comment
+says "`VAULT_TOKEN` wins over the file, matching the Vault CLI's own order".
+D1 measured the same thing separately. Note that `ROADMAP.md`'s locked block
+still carries the pre-correction bullet ("It is why the stock `vault` CLI
+needs no shim"); D2 and D6 are right and the roadmap is stale there.
+
+**P16 — R10's byte-exact stdout survives D1's banner. HOLDS.**
+`main.py:59-64` returns early when `ctx.invoked_subcommand is not None`, so
+`print_banner` and `probe_cluster` never run for `localstack token nomad`.
+Worth stating in the plan as a fact rather than luck, since it is the whole
+basis of D6's shim safety. §7 should also acknowledge `LAZY_SUBCOMMANDS` and
+the one-command-collapse rule that `main.py:11-21` documents, since §7 tells
+the implementer to add six registrations "one line each" without naming the
+mechanism.
+
+**P17 — the gates section. HOLDS.** `.loop/config.json` gate is
+`just pre_commit`; the root config runs the four Python hooks with mypy
+`strict = true` over `cli/src cli/tests`; `cli/justfile` provides `check`,
+`test`, `test_cluster` (`:12-13`), `lint`, `typecheck`; `.github/workflows/`
+holds only `claude-ollama.yaml` and `hermes-interactive.yaml`, no Python
+job. Every `.claude/rules/python-testing.md` anchor in §6 resolves.
+
+**P18 — the `ROADMAP.md` locked-surface citation. HOLDS.** The file is
+deleted in the working tree (`git status` shows ` D ROADMAP.md`) but present
+in `HEAD`, so a worktree branched from committed state has it. The committed
+version carries the block: `login | logout | whoami | env | token <svc> |
+config          D2`, and the `ui consul` fold into `service consul --open`.
+Citing it by name was the right call.
 
 ## Most dangerous assumption
 
-P5, the `-self` hazard. It is the only edit where being wrong puts a reader one
-paste away from destroying a non-expiring root token on a cluster with no audit
-device (`:969-972`) and no cheap recovery. It is also the one the briefing
-flagged as the author's own error. I measured it rather than reading it: the
-ambient token is root, so the warning's premise is true, and the fenced form
-cannot fire on a verbatim paste. This is the strongest of the seven.
-
-## Sweep for collateral
-
-- Doc line wrap: `docs/vault-human-auth.md:41,42,43,68` exceed 80 chars, but
-  `git diff -U0` shows only two hunks (`:104` changed, 88 lines inserted after
-  `:106`), so those four are pre-existing and untouched. Every inserted line
-  wraps at 80 or less.
-- No pre-commit hook scans markdown prose. `.pre-commit-config.yaml` lists
-  check-json, check-ast, check-merge-conflict, check-yaml, debug-statements,
-  detect-private-key, end-of-file-fixer, nomad-fmt, terraform-fmt,
-  terraform-validate. So fix 4's "commit the doc alongside this ticket" adds no
-  new gate risk.
-- The doc's newly inserted `:107-109` claim is verbatim-accurate. `which
-  localstack` resolves to `/home/vscode/.local/bin/localstack`, `--help` shows
-  a command table with no subcommands (D1's skeleton), and `localstack logout`
-  prints exactly `No such command 'logout'.`
-- `:278`'s "see §12" resolves: §12 is at `:1319`, and both halves of the `ui
-  consul` claim live there — the no-credential catalog read at `:1426-1427` and
-  the 25-to-2 cut at `:1421`. The same measurement appears at `:530-533`.
-- The doc's revocation block does not contradict §9's ranking anywhere: `:121`
-  puts `logout` first, `:143-180` puts the accessor revoke ahead of
-  cut-then-delete at `:181-188`, matching plan `:858-866`. Counts agree too —
-  five live userpass accessors (doc `:164-165`, plan `:959-961`) and 14 workload
-  tokens (doc `:152`, plan `:945-947`).
-- Nothing else the seven edits touch is broken.
-
-## The two you did not act on
-
-Neither blocks. Plainly:
-
-**The "does buy" / "does not buy" pair, now 93 lines apart** (`:102` and
-`:195`; the 88-line insert widened it from 5). This is real and the insert
-caused it: by `:195`, "What it does **not** buy" has lost its antecedent, and
-the nearest subject a reader is holding is the revocation runbook, not the
-`developer` credential. It is the same class of referent break as the "That
-inversion" paragraph. But the difference matters: that one told an implementer
-the plan was wrong, this one costs a re-read. The sentence is self-carrying —
-"audit attribution… no audit device is enabled on this cluster" is true under
-either antecedent. Structurally the runbook is now wedged inside a
-compare-to-root section it does not belong to, and moving it after `:197` would
-close both issues in one cut. Worth doing when someone next touches the file.
-Not worth holding the ticket for.
-
-**9 em dashes in 1818 words** (4.9 per 1000, against the 0-2 target in
-`.claude/rules/slop-scan-for-docs.md`). Ignore it here. That rule's Layer 2 is
-a scanner for docs you generate, and the plan scopes the slop scan to
-`docs/cli-login.md`, the doc D2 creates (`:649-650`). `vault-human-auth.md` is
-a pre-existing doc receiving an edit, no hook enforces the count, and em dashes
-are not a premise defect. Fixing it would be busywork against a page whose
-value is that its measurements are right.
+**P6.** The plan believes the Q-relay resolution reached the sections that
+decide what ships. It did not. §7 and §10 still specify the throwaway as the
+content of `docs/cli-login.md`, so an implementer who builds to the plan
+produces a doc with no `admin` in it, contradicting §9 on the same page and
+leaving the new `F14` dependency edge with nothing to justify it. P7
+sharpens it: the one argument the plan gives for the switch is false, so a
+reviewer reading only §7 and §10 has no reason to notice anything is
+missing.
 
 ## Required fixes
 
-None.
+1. **Propagate the `admin` resolution into §7 and §10.** §7's
+   `docs/cli-login.md` bullet and §10 subticket 11 must lead with joining
+   `admin` and name the throwaway as the fallback, matching §9 and Q-relay.
+   Otherwise drop the `F14` dependency, because nothing shipped consumes it.
+2. **Fix or scope the terraform-strip claim.** The residual at plan
+   `:982-986` and Q-relay's use of it at `:1347-1350` are false for the
+   throwaway procedure as written: a throwaway policy on a throwaway entity
+   is invisible to Terraform. Either restate it as applying only to the
+   forbidden attach-to-the-group variant, or drop it and rest the `admin`
+   preference on the reasons that do hold: fewer commands, no teardown
+   order, no orphan policy. The same claim in
+   `docs/vault-human-auth.md:196-198` needs an owner.
+3. **Correct the three `developer_group.tf` anchors** per the table under
+   P8: `:161` for the managed `policies` list, `:158-164` for the group
+   binding, `:123` and `:144` for the two creds paths.
+4. **Fix `docs/vault-human-auth.md`'s status in §7.** It is committed on
+   `main`, its revocation section is correct, and there is nothing to commit
+   alongside this ticket. Then resolve the contradiction it now has with §9:
+   it leads with the throwaway and never mentions `admin`, so §7 cannot
+   claim the two say the same thing.
+5. **Re-open Q2 against what D1 actually shipped.** `cli/pyproject.toml` has
+   no `httpx` and no `hvac`; `status.py` uses stdlib `urllib.request` and
+   `cli/tests/conftest.py:1-5` plus `cli/tests/fixtures/cluster.py` build
+   the suite on a real local HTTP server, not a mock. Decide and record
+   whether D2 adds a second HTTP stack plus `respx` or extends
+   `FakeCluster`, and update the 23 offline rows in §8 to match. Cite
+   `.claude/rules/python-testing.md:77-89` either way.
+6. **Name the owner of the code that already exists.**
+   `status.current_token()` (`status.py:113-126`) already answers R11's
+   "which token would a bare `vault` use"; `Config.from_env()`
+   (`config.py:20-48`) already resolves the addresses R13 claims this ticket
+   owns; `cli/tests/conftest.py:52-65` already redirects `HOME` and clears
+   `VAULT_TOKEN`. §7, R11 and R13 must say which side owns each rather than
+   re-specifying them as new. Also correct R13's stated reason for living in
+   D2.
+7. **Handle the empty-group case in §9's join snippet.** `admin` has
+   `member_entity_ids []` today, so the snippet as written produces a
+   leading comma on the first real use. Add the branch
+   `docs/cluster-roles.md:84-87` already has, add the read-membership
+   command inline, and fix "Three commands" over four.
+8. **Replace §9's hardcoded accessor counts with the shape.** Live today: 25
+   accessors, 10 at `auth/userpass/login/operator`, against the plan's 20
+   and 5. §9's own closing line already asks for shape over list.
+
+## Notes, not blocking
+
+- Q1's "D1's code is not on `main`" and §7's "D1 ... is not authored yet"
+  are stale; both instruct confirmation at pickup and the confirmation
+  passes.
+- `~/.vault-token` is 10 bytes, not 8.
+- §7 should note `LAZY_SUBCOMMANDS` and the single-command-collapse rule
+  (`main.py:11-21`), and record that the root callback's banner does not
+  fire for subcommands (`main.py:59-64`), which is what keeps R10's stdout
+  clean.
+- `ROADMAP.md`'s locked block still says the `vault` CLI needs no shim. D2's
+  §12 and D6 are correct and the roadmap is stale; not D2's to fix, but do
+  not let it reopen Q4.
+- New test subdirectories `cli/tests/auth/` and `cli/tests/commands/` need
+  `__init__.py`, following `cli/tests/fixtures/__init__.py`.
+- The signed eval marker (`.loop/evals/D2-cli-login-broker-tokens.md`,
+  `signed-off-by: JasperHG90 2026-07-31`) carries all four guardrails the
+  plan names and does not need re-signing: the Q-relay change moved runbook
+  prose, not shipped behavior.
