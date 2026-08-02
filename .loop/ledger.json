@@ -1124,12 +1124,12 @@
     },
     "F14-foundation-role-taxonomy": {
       "slug": "F14-foundation-role-taxonomy",
-      "stage": "ready",
-      "attempts": 0,
+      "stage": "done",
+      "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/F14-foundation-role-taxonomy.adversarial.md, .loop/verdicts/F14-foundation-role-taxonomy.documentation.md",
       "dropped": false,
       "epic": "foundation",
       "dependencies": [

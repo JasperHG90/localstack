@@ -6,8 +6,24 @@
 ###
 ### Consumer clients (dash/L1, mlflow/R1, phoenix/R4, the MinIO tiers/M2) are
 ### NOT created here. Each consumer ticket creates its own
-### vault_identity_oidc_client, its own group and assignment, and its own
-### vault_identity_oidc_key_allowed_client_id entry pointing at this key.
+### vault_identity_oidc_client and its own vault_identity_oidc_key_allowed_client_id
+### entry pointing at this key.
+###
+### WHETHER IT ALSO CREATES A GROUP AND AN ASSIGNMENT DEPENDS. Four answers to
+### "who is allowed in", in the order to try them (docs/cluster-roles.md and
+### the "Adding a service" section of docs/vault-human-auth.md carry the same
+### list):
+###
+###   1. Reference an existing tier group, `developer` (developer_group.tf)
+###      or `admin` (roles.tf), when one already names who gets in.
+###      You still create your own assignment. G2 does this.
+###   2. Add an entry to `local.app_user_groups` (roles.tf) when the
+###      service needs its own tier. The map ships EMPTY, so this is the branch
+###      that keeps app consumers on the scaffold instead of routing around it.
+###   3. Neither group nor assignment: set `assignments = ["allow_all"]`, the
+###      built-in, when the answer is "anyone who can log in". Four of the six
+###      known consumers (G1, R1, R4, L1) declare flat access and want this.
+###   4. Create a service-specific group only when none of the three fits.
 ###
 ### THE KEY needs no edit here: allowed_client_ids is deliberately NOT set
 ### inline on it, because the standalone
@@ -98,9 +114,19 @@ resource "vault_identity_group" "smoke" {
   member_entity_ids = [vault_identity_entity.operator.id]
 }
 
+### First consumer of the app-user extension point (roles.tf), which is
+### the only way to prove the wiring: there is one client here and its
+### assignments are inline below.
+###
+### CONCAT, never replace. The map ships empty, so a replacement writes
+### group_ids = [] and breaks F2's live smoke client.
 resource "vault_identity_oidc_assignment" "smoke" {
-  name       = "oidc-smoke"
-  group_ids  = [vault_identity_group.smoke.id]
+  name = "oidc-smoke"
+  # DO NOT COPY THIS LINE. `all_app_user_group_ids` is every tier, which is
+  # right only because this is F2's throwaway proof that the extension point is
+  # wired. A real consumer binds its own key:
+  #   group_ids = [local.app_user_group_ids["<your-tier>"]]
+  group_ids  = concat([vault_identity_group.smoke.id], local.all_app_user_group_ids)
   entity_ids = []
 }
 

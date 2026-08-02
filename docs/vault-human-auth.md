@@ -236,13 +236,33 @@ policy is too narrow; breakglass is for when Vault will not answer.
 
 ## Adding a service that logs people in through Vault
 
-Four resources, then one line in a shared list. Copy the smoke-test block in
-`oidc.tf` as the template.
+**Two to four resources, then one line in a shared list.** How many depends
+entirely on your answer to step 2. Copy the smoke-test block in `oidc.tf` as
+the template, and see `docs/cluster-roles.md` for the roles it refers to.
 
 1. `vault_identity_oidc_client`, your service's client, with its real
    `redirect_uris`.
-2. `vault_identity_group`, who is allowed in.
-3. `vault_identity_oidc_assignment`, which binds that group to the client.
+2. **Who is allowed in.** Four answers, in the order to try them:
+
+   1. **An existing tier group** — `developer` (`developer_group.tf`) or
+      `admin` (`roles.tf`) — when one already names who should get in.
+      Create no group; you still create your own assignment in step 3.
+      `nomad_oidc.tf` does this.
+   2. **A new entry in `local.app_user_groups`** (`roles.tf`) when the
+      service needs its own tier. **The map ships empty**, so this is the
+      branch that keeps app consumers on the shared scaffold rather than
+      routing around it. Bind **only your own key**:
+      `group_ids = [local.app_user_group_ids["<your-tier>"]]`. Binding every
+      value admits the other tiers' members to your client.
+   3. **No group and no assignment**: set `assignments = ["allow_all"]` on the
+      client and skip step 3 entirely. That is Vault's built-in assignment
+      (`entity_ids [*]`, `group_ids [*]`), and it is the answer when "who is
+      allowed in" is "anyone who can log in". Four of the six known consumers
+      declare flat access and want this.
+   4. **A service-specific `vault_identity_group`**, only when none of the
+      three fits.
+3. `vault_identity_oidc_assignment`, binding whatever step 2 chose to the
+   client. **Skipped under branch 3**, where you name the built-in instead.
 4. `vault_identity_oidc_key_allowed_client_id`, which registers your client
    against the signing key. This is a standalone resource on purpose, so you
    do not edit the key.
