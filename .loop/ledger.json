@@ -962,12 +962,12 @@
     },
     "G2-nomad-ui-oidc-login": {
       "slug": "G2-nomad-ui-oidc-login",
-      "stage": "ready",
-      "attempts": 0,
+      "stage": "done",
+      "attempts": 3,
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/G2-nomad-ui-oidc-login.adversarial.md, .loop/verdicts/G2-nomad-ui-oidc-login.documentation.md",
       "dropped": false,
       "epic": "rollout",
       "dependencies": [

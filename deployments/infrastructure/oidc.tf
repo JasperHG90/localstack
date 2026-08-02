@@ -63,6 +63,7 @@ resource "vault_identity_oidc_scope" "groups" {
 locals {
   oidc_provider_client_ids = [
     vault_identity_oidc_client.smoke.client_id,
+    vault_identity_oidc_client.nomad.client_id,
   ]
 }
 

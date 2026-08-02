@@ -76,6 +76,35 @@ It covers everything a person does here: both Terraform roots, brokered Nomad
 and Consul tokens, creating users and groups, and every secret under
 `default/`.
 
+**Two of those are bigger than they sound. Read this before adding anyone to
+the group.**
+
+**"Brokered Nomad tokens" now includes a full management token.** It used to
+mean only the deliberately narrow `deploy` role. Since G2 the policy also
+grants `nomad/creds/manage`, which mints a global Nomad **management** token:
+anything in Nomad, including minting more Nomad tokens. This is not a new
+ceiling — a holder could always overwrite `nomad/role/deploy` to
+`type = "management"` and read the creds they already had — but that route
+clobbers a Terraform-managed role and shows as drift on the next plan. This one
+leaves no trace. What changed is detectability, not privilege.
+
+**Signing in to the Nomad UI gives you root over the cluster's data.** The
+binding rule maps this group to Nomad's `developer` ACL policy, which grants
+`alloc-exec` and `alloc-node-exec` on the `default` namespace **and**
+`host_volume "*" { policy = "write" }`. Combined with `submit-job`, that means
+a signed-in developer can attach any host volume read-write and exec into it as
+root. Measured: `nomad alloc exec` into a running container returns
+`uid=0(root)`, and the attachable volumes include `postgres`, `minio_data`,
+`grafana_data`, `loki_data`, `memex_data`, `hermes_data`, `nats_data`,
+`prometheus_data` and `acme_lego_state` — the Postgres data directory, the
+MinIO object store and the ACME account key among them.
+
+None of that is new either; the policy predates the sign-in button and is
+Ansible's (`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`).
+What G2 changed is the route: reaching it used to require someone handing you a
+token, and now it requires logging in. Narrowing it is a change in Ansible, not
+here.
+
 **Check `identity_policies`, not `policies`.** The group carries the policy, so
 a fresh login reports:
 
@@ -235,6 +264,54 @@ Write your client secret to KV2 under your service's own prefix. Do not put it
 in a `.tf` file. Note that the `detect-private-key` pre-commit hook will NOT
 catch a Vault client secret: it matches a fixed list of PEM headers, and
 `hvo_secret_...` is not one of them.
+
+**That applies to a consumer whose service reads the secret at run time,
+through a `template` stanza or a config file.** If your consumer is a Terraform
+resource, pass the secret by reference instead and skip KV2 entirely: Nomad's
+auth method does this at `nomad_oidc.tf`, wiring
+`vault_identity_oidc_client.nomad.client_secret` straight into
+`config.oidc_client_secret`. Both fields are already `sensitive` in the
+providers, so nothing lands in plan output, and there is no second copy of a
+live secret to rotate.
+
+**Two things to expect the first time you use the Nomad sign-in button.**
+
+The redirect sends you to a Vault **UI** path
+(`/ui/vault/identity/oidc/provider/lab/authorize`), not an API endpoint, so
+your browser must already hold a Vault UI session. If it does not, the first
+attempt can fail with a generic "Failed to sign in with SSO" and leave you an
+Anonymous Token. Retrying after logging into the Vault UI succeeds. Observed
+2026-08-02, not yet root-caused.
+
+A genuine refusal looks different and says so:
+`error=access_denied&error_description=identity entity not authorized by client
+assignment`. If you see that, you are not in a group the client's assignment
+admits, and retrying will not help.
+
+From a terminal, `nomad login -method=vault` needs `xdg-open` to launch a
+browser. Without it the command prints the URL and waits, which works fine —
+paste it into any browser. **Its default output prints the issued token's Secret
+ID in full**, so treat that output as a secret. A script can select fields
+instead, with `nomad login -method=vault -t '{{ .AccessorID }}'`. `nomad login`
+also takes `-json`, but that marshals the whole token object and has not been
+checked here for whether it includes the Secret ID, so prefer `-t`. Note
+`nomad acl token self` takes neither flag; both fail there before any network
+call.
+
+**What signing in grants is stated above**, under "What the operator can do:
+the `developer` group" — a shell as root inside any container and write on
+every host volume. It belongs there rather than here, because that is the
+section someone reads when asking what membership buys.
+
+**Nomad is the first real consumer of this provider**, so `nomad_oidc.tf` is
+worth reading as the worked example. It shows **three** of the four resources
+plus the `local.oidc_provider_client_ids` line — it creates no
+`vault_identity_group`, because it reuses F11's existing `developer` group
+rather than inventing its own. It also shows one thing the smoke client does
+not: a service whose own API needs a privileged token can broker it from Vault
+rather than holding a static one. Nomad's ACL auth method and binding rule are
+management-only writes, so that file adds a `vault_nomad_secret_role` with
+`type = "management"` and points a second, aliased `nomad` provider at it.
 
 ## Two claims, and which one your service reads
 

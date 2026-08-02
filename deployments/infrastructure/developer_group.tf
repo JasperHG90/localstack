@@ -119,8 +119,25 @@ resource "vault_policy" "developer" {
 
     # Brokered tokens: `localstack login` (D2) and F8's provider cutover.
     # EXACT paths, not nomad/creds/* -- a wildcard would let any role be
-    # brokered, and `deploy` is the only one intended here.
+    # brokered. Two are intended: `deploy` and, since G2, `manage`.
     path "nomad/creds/deploy" {
+      capabilities = ["read"]
+    }
+
+    # G2's management role, for the two Nomad ACL resources in nomad_oidc.tf.
+    # Wider than `deploy` by design: a management token does anything in Nomad.
+    #
+    # Not a new ceiling, but not for the reason an earlier draft gave. Writing
+    # your own `nomad/role/manage` buys nothing, because the creds grants above
+    # are exact paths -- you could create the role and not read it. The route
+    # that already worked is overwriting `nomad/role/deploy` to
+    # `type = "management"` (permitted by `nomad/role/*`) and reading
+    # `nomad/creds/deploy`, which was already granted.
+    #
+    # So the ceiling is unchanged. What this grant changes is DETECTABILITY:
+    # the old route clobbers a Terraform-managed role and shows up as drift on
+    # the next plan. This one leaves no mark. See G2's risk section.
+    path "nomad/creds/manage" {
       capabilities = ["read"]
     }
 
