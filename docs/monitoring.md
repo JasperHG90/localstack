@@ -43,6 +43,55 @@ Adding authentication would have protected a door with nothing behind it.
 The cost is Prometheus's own web UI. Reach it with an SSH tunnel when you
 need it, as below.
 
+### `localstack monitor`, and what it is not
+
+`localstack monitor` is a terminal panel showing four things: Vault's seal
+state, node status, per-job allocation health, and failing Consul checks. It
+answers "is the cluster fine and is my job running" without opening a
+browser.
+
+It is not part of this stack and does not overlap with it. No metrics, no
+charts, no history, no logs, no alerting. Current control-plane state only,
+read from the Nomad, Vault and Consul APIs. Everything in the list below
+stays Grafana's, Prometheus's and Loki's job.
+
+Each source is fetched on its own with its own timeout, so a sealed Vault
+degrades one panel instead of hanging the screen. A fetch that fails keeps
+the last value and marks it stale. `q` quits, `r` refreshes now.
+
+```bash
+localstack monitor                # refresh every 5 seconds
+localstack monitor --refresh 20   # slower
+localstack monitor --refresh 0    # only when you press r
+```
+
+Run `localstack login` first. The command exits without a session, because
+the Nomad reads need the token it brokers.
+
+It reads its addresses from `VAULT_ADDR`, `NOMAD_ADDR` and
+`CONSUL_HTTP_ADDR`. Point them at the edge:
+
+```
+VAULT_ADDR=https://vault.lab.orangecluster.nl
+NOMAD_ADDR=https://nomad.lab.orangecluster.nl
+CONSUL_HTTP_ADDR=https://consul.lab.orangecluster.nl
+```
+
+Those work from the LAN and over tailscale, and they keep working when the
+plaintext ports 4646, 8200 and 8500 close to the LAN.
+
+The seal-state and Consul reads need no token, so those two panels work for
+anyone. The node and job panels need a Nomad token carrying `list-jobs` and
+`node:read`.
+
+**Today they will say "denied."** `localstack login` brokers
+`nomad/creds/deploy`, whose policy grants neither. Both Nomad panels name the
+capability they are missing instead of showing an empty table, which is the
+designed behavior for a policy gap, but it does mean half the screen is
+unavailable until the CLI also brokers `nomad/creds/manage`. The `developer`
+policy already grants that read, so the change is to the broker, not to
+Terraform.
+
 ### Reaching Prometheus or Loki directly
 
 Grafana covers the day-to-day. Three things it does not give you:

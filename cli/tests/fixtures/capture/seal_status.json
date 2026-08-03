@@ -1,0 +1,16 @@
+{
+  "build_date": "2026-06-17T12:39:45Z",
+  "cluster_id": "id-01",
+  "cluster_name": "vault-cluster-9dfcd3b1",
+  "initialized": true,
+  "migration": false,
+  "n": 5,
+  "nonce": "",
+  "progress": 0,
+  "recovery_seal": false,
+  "sealed": false,
+  "storage_type": "consul",
+  "t": 3,
+  "type": "shamir",
+  "version": "2.0.3"
+}

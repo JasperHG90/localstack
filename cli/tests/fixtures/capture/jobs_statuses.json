@@ -1,0 +1,796 @@
+[
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "loki",
+        "HasPausedTask": false,
+        "ID": "id-01",
+        "JobVersion": 2,
+        "NodeID": "id-02"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "loki",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "loki",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 2
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "grafana",
+        "HasPausedTask": false,
+        "ID": "id-03",
+        "JobVersion": 11,
+        "NodeID": "id-02"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "grafana",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "grafana",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 11
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "talat-shim",
+        "HasPausedTask": false,
+        "ID": "id-04",
+        "JobVersion": 3,
+        "NodeID": "id-02"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "*"
+    ],
+    "GroupCountSum": 1,
+    "ID": "talat-shim",
+    "IsPack": true,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "talat-shim",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 3
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "mlflow",
+        "HasPausedTask": false,
+        "ID": "id-05",
+        "JobVersion": 0,
+        "NodeID": "id-06"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "mlflow",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "mlflow",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 0
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "hermes",
+        "HasPausedTask": false,
+        "ID": "id-07",
+        "JobVersion": 1,
+        "NodeID": "id-06"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "hermes",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "hermes",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 1
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "bifrost",
+        "HasPausedTask": false,
+        "ID": "id-08",
+        "JobVersion": 1,
+        "NodeID": "id-06"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "bifrost",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "bifrost",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 1
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "talat-consumer",
+        "HasPausedTask": false,
+        "ID": "id-09",
+        "JobVersion": 0,
+        "NodeID": "id-02"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "*"
+    ],
+    "GroupCountSum": 1,
+    "ID": "talat-consumer",
+    "IsPack": true,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "talat-consumer",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 0
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "postgres",
+        "HasPausedTask": false,
+        "ID": "id-10",
+        "JobVersion": 10,
+        "NodeID": "id-11"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "postgres",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "postgres",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 10
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "prometheus",
+        "HasPausedTask": false,
+        "ID": "id-12",
+        "JobVersion": 6,
+        "NodeID": "id-02"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "prometheus",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "prometheus",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 6
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "haproxy",
+        "HasPausedTask": false,
+        "ID": "id-13",
+        "JobVersion": 31,
+        "NodeID": "id-11"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "haproxy",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "haproxy",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 31
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "phoenix",
+        "HasPausedTask": false,
+        "ID": "id-14",
+        "JobVersion": 13,
+        "NodeID": "id-15"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "phoenix",
+    "IsPack": false,
+    "LatestDeployment": {
+      "AllAutoPromote": false,
+      "ID": "id-16",
+      "IsActive": false,
+      "JobVersion": 13,
+      "RequiresPromotion": false,
+      "Status": "successful",
+      "StatusDescription": "Deployment completed successfully"
+    },
+    "ModifyIndex": 1000,
+    "Name": "phoenix",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 13
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "minio",
+        "HasPausedTask": false,
+        "ID": "id-17",
+        "JobVersion": 7,
+        "NodeID": "id-15"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "minio",
+    "IsPack": false,
+    "LatestDeployment": {
+      "AllAutoPromote": false,
+      "ID": "id-18",
+      "IsActive": false,
+      "JobVersion": 7,
+      "RequiresPromotion": false,
+      "Status": "successful",
+      "StatusDescription": "Deployment completed successfully"
+    },
+    "ModifyIndex": 1000,
+    "Name": "minio",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 7
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "nats",
+        "HasPausedTask": false,
+        "ID": "id-19",
+        "JobVersion": 2,
+        "NodeID": "id-06"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "nats",
+    "IsPack": false,
+    "LatestDeployment": {
+      "AllAutoPromote": false,
+      "ID": "id-20",
+      "IsActive": false,
+      "JobVersion": 2,
+      "RequiresPromotion": false,
+      "Status": "successful",
+      "StatusDescription": "Deployment completed successfully"
+    },
+    "ModifyIndex": 1000,
+    "Name": "nats",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 2
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "memex",
+        "HasPausedTask": false,
+        "ID": "id-21",
+        "JobVersion": 41,
+        "NodeID": "id-22"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "memex",
+    "IsPack": false,
+    "LatestDeployment": {
+      "AllAutoPromote": false,
+      "ID": "id-23",
+      "IsActive": false,
+      "JobVersion": 41,
+      "RequiresPromotion": false,
+      "Status": "successful",
+      "StatusDescription": "Deployment completed successfully"
+    },
+    "ModifyIndex": 1000,
+    "Name": "memex",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "service",
+    "Version": 41
+  },
+  {
+    "Allocs": null,
+    "ChildStatuses": [],
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "acme",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "acme",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "batch",
+    "Version": 6
+  },
+  {
+    "Allocs": null,
+    "ChildStatuses": [],
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "backup-minio",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "backup-minio",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "batch",
+    "Version": 2
+  },
+  {
+    "Allocs": null,
+    "ChildStatuses": [],
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "backup-postgres",
+    "IsPack": false,
+    "LatestDeployment": null,
+    "ModifyIndex": 1000,
+    "Name": "backup-postgres",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "batch",
+    "Version": 4
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "node-exporter",
+        "HasPausedTask": false,
+        "ID": "id-24",
+        "JobVersion": 3,
+        "NodeID": "id-15"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "node-exporter",
+        "HasPausedTask": false,
+        "ID": "id-25",
+        "JobVersion": 3,
+        "NodeID": "id-02"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "node-exporter",
+        "HasPausedTask": false,
+        "ID": "id-26",
+        "JobVersion": 3,
+        "NodeID": "id-11"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "node-exporter",
+        "HasPausedTask": false,
+        "ID": "id-27",
+        "JobVersion": 3,
+        "NodeID": "id-06"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "node-exporter",
+        "HasPausedTask": false,
+        "ID": "id-28",
+        "JobVersion": 3,
+        "NodeID": "id-22"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "node-exporter",
+    "IsPack": false,
+    "LatestDeployment": {
+      "AllAutoPromote": false,
+      "ID": "id-29",
+      "IsActive": false,
+      "JobVersion": 3,
+      "RequiresPromotion": false,
+      "Status": "successful",
+      "StatusDescription": "Deployment completed successfully"
+    },
+    "ModifyIndex": 1000,
+    "Name": "node-exporter",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "system",
+    "Version": 3
+  },
+  {
+    "Allocs": [
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "promtail",
+        "HasPausedTask": false,
+        "ID": "id-30",
+        "JobVersion": 0,
+        "NodeID": "id-15"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "promtail",
+        "HasPausedTask": false,
+        "ID": "id-31",
+        "JobVersion": 0,
+        "NodeID": "id-11"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "promtail",
+        "HasPausedTask": false,
+        "ID": "id-32",
+        "JobVersion": 0,
+        "NodeID": "id-06"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "promtail",
+        "HasPausedTask": false,
+        "ID": "id-33",
+        "JobVersion": 0,
+        "NodeID": "id-02"
+      },
+      {
+        "ClientStatus": "running",
+        "DeploymentStatus": {
+          "Canary": false,
+          "Healthy": true
+        },
+        "FollowupEvalID": "",
+        "Group": "promtail",
+        "HasPausedTask": false,
+        "ID": "id-34",
+        "JobVersion": 0,
+        "NodeID": "id-22"
+      }
+    ],
+    "ChildStatuses": null,
+    "Datacenters": [
+      "localstack"
+    ],
+    "GroupCountSum": 1,
+    "ID": "promtail",
+    "IsPack": false,
+    "LatestDeployment": {
+      "AllAutoPromote": false,
+      "ID": "id-35",
+      "IsActive": false,
+      "JobVersion": 0,
+      "RequiresPromotion": false,
+      "Status": "successful",
+      "StatusDescription": "Deployment completed successfully"
+    },
+    "ModifyIndex": 1000,
+    "Name": "promtail",
+    "Namespace": "default",
+    "NodePool": "default",
+    "ParentID": "",
+    "Priority": 50,
+    "Status": "running",
+    "Stop": false,
+    "SubmitTime": 1750000000000000000,
+    "Type": "system",
+    "Version": 0
+  }
+]
