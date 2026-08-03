@@ -18,6 +18,20 @@ runner = CliRunner()
 
 RUNBOOK = pytest.importorskip("localstack_cli.commands.breakglass")._load_runbook()
 
+
+@pytest.fixture(autouse=True)
+def probes_stay_local(monkeypatch: pytest.MonkeyPatch, closed_addr: str) -> None:
+    """Point the probes at a closed local port, as the probe suite does.
+
+    Without this, the probe-on tests resolve and dial the real cluster. The
+    probes swallow every exception by design, so the suite stays green while
+    the run has already left the machine.
+    """
+    breakglass = pytest.importorskip("localstack_cli.commands.breakglass")
+    monkeypatch.setattr(breakglass, "EDGE", dict.fromkeys(breakglass.EDGE, closed_addr))
+    monkeypatch.setattr(breakglass, "LAN", dict.fromkeys(breakglass.LAN, closed_addr))
+
+
 # Every failure-mode section from requirement 2, by heading.
 SECTIONS = [
     "Check your own connectivity first",

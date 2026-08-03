@@ -9,9 +9,13 @@ localstack login --vault-addr https://vault.lab.orangecluster.nl
 eval "$(localstack env)"
 ```
 
-The second line is not optional yet. `login` brokers the credentials;
-`eval "$(localstack env)"` is what puts them in your shell. When D6's PATH
-shims land, that step disappears.
+The second line is not optional. `login` brokers the credentials, and
+`eval "$(localstack env)"` is what puts them in your shell.
+
+The PATH shims from `localstack deps --with-shims` cover a bare `nomad`,
+`consul` or `vault` only. Everything else that reads these variables, the
+`just` recipes around Terraform above all, still needs the `eval`. See
+[cli-deps.md](./cli-deps.md).
 
 **`--vault-addr` is not optional yet either.** The default `VAULT_ADDR` in
 this devcontainer is `http://192.168.2.30:8200`, and Vault's own listener runs
@@ -81,7 +85,8 @@ case, naming the policies the environment's token carries. Two ways out:
 
 - `eval "$(localstack env)"` in this shell, which overwrites `VAULT_TOKEN`
   with the session token, or
-- the `vault` shim on PATH, once D6 installs it.
+- the `vault` shim on PATH, which `localstack deps --with-shims` installs
+  and the devcontainer installs for you.
 
 Removing the injected token entirely is F8's job, not this CLI's.
 
@@ -101,9 +106,9 @@ localstack token nomad
 
 Prints the token and nothing else, refreshing it first if stale. On any
 failure it exits non-zero with **empty** stdout. That contract is what makes
-D6's shims safe: they fall through to the unmodified binary when this command
-fails, and a failure that printed an error message on stdout would be
-exported as the token.
+the PATH shims safe: they fall through to the unmodified binary when this
+command fails, and a failure that printed an error message on stdout would
+be exported as the token.
 
 ## `logout` revokes, it does not just forget
 

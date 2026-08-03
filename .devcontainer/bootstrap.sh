@@ -18,3 +18,16 @@ mc alias set minio "${AWS_ENDPOINT_URL_S3}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET
 alias ansible='uv tool run --from=ansible-core ansible'
 
 alias j='just'
+
+# The HashiCorp CLIs at the versions this cluster runs, plus the PATH shims
+# that let a bare `nomad`, `consul` or `vault` see a `localstack login`
+# session. Shims are opt-in on a laptop and passed here, because this
+# container is disposable and a developer's machine is not.
+#
+# Guarded, because neither step is worth failing container creation over: the
+# CLI still works without the pinned binaries, and without the shims the
+# CLIs behave exactly as they did before this ran.
+if ! (just install_cli && localstack deps --install --with-shims); then
+  echo "warning: could not install the pinned CLIs or their shims." >&2
+  echo "  Run 'just install_cli && localstack deps --install --with-shims' by hand." >&2
+fi

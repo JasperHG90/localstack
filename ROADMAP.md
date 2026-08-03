@@ -215,8 +215,11 @@ Settled by the operator on 2026-07-31. Full reasoning in
   measured constraint: `nomad` has no credential file. `NOMAD_TOKEN_FILE` does
   not exist, `nomad login` has no sink flag, and a child process cannot set
   its parent shell's environment.
-- **`localstack login` writes `~/.vault-token`** at 0600. It is why the stock
-  `vault` CLI needs no shim.
+- **`localstack login` writes `~/.vault-token`** at 0600. That file is inert
+  while `VAULT_TOKEN` is set, and this devcontainer sets it for everyone, so
+  `vault` gets a shim too. All three CLIs are shimmed, by `localstack deps
+  --with-shims`. Removing the injected token is F8's job; until then the shim
+  is what works.
 - **The 32-day Vault token TTL is the design, not a defect.** It is the
   refresh token; the 30-minute brokered creds are the access tokens the shim
   refreshes. This withdraws the `token_ttl` task previously handed to the retired `F7` and

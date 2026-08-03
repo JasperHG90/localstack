@@ -36,4 +36,11 @@ RUN curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors https://claude.ai/i
 # Install rtk
 RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 
-ENV PATH="$HOME/.local/bin:$PATH"
+# Shims first, then the pinned binaries, then the system. `localstack deps`
+# writes both directories and never writes to one what belongs in the other.
+# A bare `nomad`, `consul` or `vault` finds its shim, which execs the pinned
+# binary. Anything unshimmed still gets the pinned version, because `bin`
+# sits ahead of the system too. PATH only: no token variable belongs here,
+# and Consul's token-file variable least of all, since it outranks the token
+# the shim exports and nothing writes the file it names.
+ENV PATH="$HOME/.localstack/shims:$HOME/.localstack/bin:$HOME/.local/bin:$PATH"

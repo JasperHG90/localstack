@@ -71,5 +71,5 @@ def warn_if_environment_shadows(session: Session) -> None:
         f"WARNING: VAULT_TOKEN is set in this shell and is NOT this session's token.\n"
         f"  A bare `vault` command runs as that token, not as {session.username}.{detail}\n"
         '  Fix it for this shell:  eval "$(localstack env)"\n'
-        "  Or use the `vault` shim on PATH (installed by D6)."
+        "  Or use the `vault` shim on PATH (`localstack deps --with-shims`)."
     )

@@ -23,7 +23,7 @@ The repo is three deploy layers, plus a CLI:
 | Bootstrap | `bootstrap/` | Ansible playbooks — install Nomad/Vault/Consul/Podman/CNI on the nodes, seed initial secrets |
 | Infrastructure | `deployments/infrastructure/` | Terraform — Vault mounts, dynamic host volumes, core services (PostgreSQL, MinIO, registry) |
 | Applications | `deployments/applications/` | Terraform — databases/roles, MinIO buckets/policies, application Nomad jobs |
-| CLI | `cli/` | Python — the `localstack` cockpit. `login`, `logout`, `whoami`, `env`, `token`, `config` and `breakglass` |
+| CLI | `cli/` | Python — the `localstack` cockpit. `login`, `logout`, `whoami`, `env`, `token`, `config`, `breakglass` and `deps` |
 
 Database schema changes live in `applications/migrations/` and run through [golang-migrate](https://github.com/golang-migrate/migrate).
 
@@ -65,9 +65,17 @@ Pre-commit hooks (JSON/YAML lint, HCL format, private-key detection, and for `cl
 
 `.devcontainer/` has a Dockerfile for a reproducible shell with Terraform, Ansible, Nomad, Vault, Consul, MinIO CLI, and `just` preinstalled. Copy `.devcontainer/.env.example` to `.devcontainer/.env` and fill in your cluster credentials before starting the container.
 
-The container does not build the CLI's virtualenv. Run `just install_cli` once
-inside it — that creates `cli/.venv`, which is what the workspace's Python
-interpreter setting points at, and puts `localstack` on your PATH.
+On create, the container runs `just install_cli` and then `localstack deps
+--install --with-shims`. The first builds `cli/.venv`, which the workspace's
+Python interpreter setting points at, and puts `localstack` on your PATH. The
+second puts `vault`, `nomad` and `consul` at the versions the cluster runs
+under `~/.localstack/bin`, and their PATH shims under `~/.localstack/shims`.
+On a laptop the shims are opt-in. See [docs/cli-deps.md](./docs/cli-deps.md).
+
+Both steps are guarded, so neither failing stops the container from coming
+up. If they did fail, run them by hand. Re-run `localstack deps --install`
+after a version moves in `group_vars`. Creating the container is what
+triggers it, so a restart alone will not fetch new binaries.
 
 ## License
 

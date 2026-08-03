@@ -8,6 +8,7 @@ import socket
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -48,6 +49,47 @@ def closed_addr() -> str:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
     return f"http://127.0.0.1:{port}"
+
+
+@pytest.fixture(autouse=True)
+def no_outbound_network(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[None]:
+    """Refuse any connection that leaves this machine.
+
+    The default suite must be offline. The failure this guards is silent: a
+    seam that looks redirected but is not (a default argument frozen at
+    import, say) still reaches the real host, and the test passes or fails on
+    whether the network happens to be up.
+
+    Blocking is not enough on its own. Probe code that catches broadly, as
+    `breakglass` does by design, swallows the refusal and the test stays
+    green while the run has already tried to reach production. So every
+    refusal is also recorded and re-raised at teardown, where nothing is left
+    to catch it.
+
+    Tests marked `cluster` are exempt, since hitting the real cluster is
+    their job.
+    """
+    if request.node.get_closest_marker("cluster"):
+        yield
+        return
+
+    real_connect = socket.socket.connect
+    refused: list[str] = []
+
+    def guarded(self: socket.socket, address: Any) -> None:
+        if isinstance(address, tuple) and address[0] not in ("127.0.0.1", "::1", "localhost"):
+            refused.append(str(address[0]))
+            raise AssertionError(f"offline suite: refused a connection to {address[0]}")
+        real_connect(self, address)
+
+    monkeypatch.setattr(socket.socket, "connect", guarded)
+    yield
+    assert refused == [], (
+        f"the default suite is offline, but this test tried to reach {sorted(set(refused))}. "
+        "Point the code under test at a local server, or mark the test `cluster`."
+    )
 
 
 @pytest.fixture(autouse=True)
