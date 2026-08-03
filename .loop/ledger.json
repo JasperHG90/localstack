@@ -915,7 +915,7 @@
     },
     "D4-cli-cluster-tui": {
       "slug": "D4-cli-cluster-tui",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -1322,6 +1322,26 @@
         "hermes"
       ],
       "stub": false
+    },
+    "R6-rollout-memex-human-oidc": {
+      "slug": "R6-rollout-memex-human-oidc",
+      "stage": "stub",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "epic": "rollout",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider"
+      ],
+      "priority": 5,
+      "summary": "Give humans SSO into memex instead of a shared static admin key. Split out of R5 after plan review proved the obvious route impossible: Vault's OIDC provider issues an opaque access token, and memex verifies the access token and rejects opaque ones.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": true
     }
   }
 }

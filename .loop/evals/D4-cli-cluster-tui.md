@@ -58,6 +58,8 @@ as broken, which on this cluster would be 11 of 19 rows on day one.
 | No token value ever renders | `test -d cli/src/localstack_cli`, then grep the package source, `cli/tests/fixtures/cluster/`, every snapshot baseline and the rendered output for token values and the `hvs.`/`hvo_` prefixes | The path exists and there is no match. Snapshot fixtures are scrubbed of tokens, node IDs and alloc IDs. `detect-private-key` stays green, though note that hook matches PEM headers only and would not catch a Vault token, which is why this row greps explicitly rather than relying on it | deterministic check (path exists; no token in source, fixtures, baselines or output) | 100% |
 | The repo gate passes | `just worktree_setup <path>`, then `just pre_commit` | All Passed. New deps (`textual`, `pytest-textual-snapshot`, `respx`) added via `uv add`, landing in `cli/pyproject.toml` and `cli/uv.lock`. `httpx` reused rather than adding `requests`. `textual` pinned, since snapshots break on a library bump | deterministic check (`just pre_commit` all Passed; deps in pyproject; textual pinned) | 100% |
 
+signed-off-by: JasperHG90 2026-08-03
+
 **Signature cleared 2026-07-31**, for the second time and on a heavier case
 than the first. The rename from `localstack status` to `localstack monitor`
 changed only the command each row launched. This revision changed what the
