@@ -1,0 +1,710 @@
+[
+  {
+    "CheckID": "_nomad-check-10704b8d461c39481469fb3b0d47855d812c2f23",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "postgres-exporter metrics",
+    "Node": "firebat",
+    "ServiceID": "_nomad-task-19da7b36-4de5-cd8d-a915-559125150686-postgres-exporter-postgres-exporter-exporter",
+    "ServiceName": "postgres-exporter",
+    "ServiceTags": [
+      "prometheus",
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-18051cb77d2c947e69c2c8ea0b2a0e1371ea5689",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "promtail ready",
+    "Node": "firebat",
+    "ServiceID": "_nomad-task-2ad9482c-95f6-2eb7-5d4c-7189a75bc667-promtail-promtail-http",
+    "ServiceName": "promtail",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-540a38d2d401cca78da29bdfb86cac05eb09525b",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Server HTTP Check",
+    "Node": "firebat",
+    "ServiceID": "_nomad-server-2zda64vvfbvk2yhmlmq4iofztrus3bl4",
+    "ServiceName": "nomad",
+    "ServiceTags": [
+      "http"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-5b8010a110a13e4c33a290d0b325630d5b22c036",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "haproxy health",
+    "Node": "firebat",
+    "ServiceID": "_nomad-task-0198ef1b-98c4-6a61-8814-f08ada0533f3-haproxy-haproxy-http",
+    "ServiceName": "haproxy",
+    "ServiceTags": [
+      "http",
+      "proxy"
+    ],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-8001e922038ef281fb137498b9258a4cd2c807b6",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"postgres-db\" check",
+    "Node": "firebat",
+    "ServiceID": "_nomad-task-19da7b36-4de5-cd8d-a915-559125150686-postgres-postgres-db-db",
+    "ServiceName": "postgres-db",
+    "ServiceTags": [
+      "database",
+      "sql"
+    ],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-a3a04e0dee1860b85449f4bdb014e8b4c096db31",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Server RPC Check",
+    "Node": "firebat",
+    "ServiceID": "_nomad-server-hga4kmx7pbbjglxo3oqpmscivhqbu5vn",
+    "ServiceName": "nomad",
+    "ServiceTags": [
+      "rpc"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-d0b2be24f80e070abe07ac4f525fb85edee79358",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Server Serf Check",
+    "Node": "firebat",
+    "ServiceID": "_nomad-server-chydwg5af76q5zhlvwmkkxxxpyjnanyl",
+    "ServiceName": "nomad",
+    "ServiceTags": [
+      "serf"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-ed1a3288c333450b23025ac4218a99af088d0189",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "node-exporter metrics",
+    "Node": "firebat",
+    "ServiceID": "_nomad-task-bf75059c-68c3-a45e-8970-964be8dbb047-node-exporter-node-exporter-metrics",
+    "ServiceName": "node-exporter",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-f25e547e1a7d5c79e946b53084c38a4c27255cac",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Client HTTP Check",
+    "Node": "firebat",
+    "ServiceID": "_nomad-client-sz64b2g64xrpm3fg6mshrdezvq4aklkf",
+    "ServiceName": "nomad-client",
+    "ServiceTags": [
+      "http"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "serfHealth",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "",
+    "ModifyIndex": 1000,
+    "Name": "Serf Health Status",
+    "Node": "firebat",
+    "ServiceID": "",
+    "ServiceName": "",
+    "ServiceTags": [],
+    "Status": "passing",
+    "Timeout": "",
+    "Type": ""
+  },
+  {
+    "CheckID": "vault:192.168.2.30:8200:vault-sealed-check",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "0s",
+    "ModifyIndex": 1000,
+    "Name": "Vault Sealed Status",
+    "Node": "firebat",
+    "ServiceID": "vault:192.168.2.30:8200",
+    "ServiceName": "vault",
+    "ServiceTags": [
+      "active",
+      "initialized"
+    ],
+    "Status": "passing",
+    "Timeout": "0s",
+    "Type": "ttl"
+  },
+  {
+    "CheckID": "_nomad-check-02496df20c8a7a1ace4330af3196aa7df7293170",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Client HTTP Check",
+    "Node": "jetson_nano",
+    "ServiceID": "_nomad-client-zvg4fznc7ok74ha7arcmvqvkzciqqacq",
+    "ServiceName": "nomad-client",
+    "ServiceTags": [
+      "http"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-07db933477d7fcf1acc5092326afc2130245b63d",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "node-exporter metrics",
+    "Node": "jetson_nano",
+    "ServiceID": "_nomad-task-e35336d8-7f0e-fc77-5bba-e6902f644222-node-exporter-node-exporter-metrics",
+    "ServiceName": "node-exporter",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-1c0e96617b6930ef46afa9c86add19872f0abb07",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "promtail ready",
+    "Node": "jetson_nano",
+    "ServiceID": "_nomad-task-fd0e12d0-5959-e39e-4a20-626265b3a0a8-promtail-promtail-http",
+    "ServiceName": "promtail",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-4ff86f497ae5d28b6ffb6e4df3c3fb208c4cb109",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"memex\" check",
+    "Node": "jetson_nano",
+    "ServiceID": "_nomad-task-aa1d07a2-e488-b989-100d-1a7b071f1078-memex-memex-http",
+    "ServiceName": "memex",
+    "ServiceTags": [
+      "http",
+      "memex"
+    ],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "serfHealth",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "",
+    "ModifyIndex": 1000,
+    "Name": "Serf Health Status",
+    "Node": "jetson_nano",
+    "ServiceID": "",
+    "ServiceName": "",
+    "ServiceTags": [],
+    "Status": "passing",
+    "Timeout": "",
+    "Type": ""
+  },
+  {
+    "CheckID": "_nomad-check-138ba9f857ee5d36183e55226a02d9c59272afce",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Client HTTP Check",
+    "Node": "orange_pi_4a",
+    "ServiceID": "_nomad-client-7trnpwdwra4irls24nthwp3yuwo2m5ny",
+    "ServiceName": "nomad-client",
+    "ServiceTags": [
+      "http"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-1f19d36c4e6329c9aa277260659c663faec820e5",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "promtail ready",
+    "Node": "orange_pi_4a",
+    "ServiceID": "_nomad-task-255a2afd-2185-4974-400d-d91b0c231812-promtail-promtail-http",
+    "ServiceName": "promtail",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-58d29fdf5bc441b9999c33ccb968bc9891eaedf6",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"phoenix-grpc\" check",
+    "Node": "orange_pi_4a",
+    "ServiceID": "_nomad-task-eee77327-7428-1e6f-99fb-e7427e43d24c-phoenix-phoenix-grpc-grpc",
+    "ServiceName": "phoenix-grpc",
+    "ServiceTags": [
+      "grpc",
+      "otlp"
+    ],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-6b87af2bf074a873534c50352829b67e4211963c",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"phoenix\" check",
+    "Node": "orange_pi_4a",
+    "ServiceID": "_nomad-task-eee77327-7428-1e6f-99fb-e7427e43d24c-phoenix-phoenix-http",
+    "ServiceName": "phoenix",
+    "ServiceTags": [
+      "http",
+      "llm",
+      "observability"
+    ],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-ad302ffbb9fc89f8b45237e59bcffd7c43e8e58b",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "node-exporter metrics",
+    "Node": "orange_pi_4a",
+    "ServiceID": "_nomad-task-aa4578c2-87a6-d22d-8418-88fa16acee8f-node-exporter-node-exporter-metrics",
+    "ServiceName": "node-exporter",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-b088289b06b3f632b9e422a90b9cbf5031e3ce29",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "minio health check",
+    "Node": "orange_pi_4a",
+    "ServiceID": "_nomad-task-45a3ab30-3cde-4d40-6645-83f070f5af6e-minio-minio-http_api",
+    "ServiceName": "minio",
+    "ServiceTags": [
+      "http",
+      "s3"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "serfHealth",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "",
+    "ModifyIndex": 1000,
+    "Name": "Serf Health Status",
+    "Node": "orange_pi_4a",
+    "ServiceID": "",
+    "ServiceName": "",
+    "ServiceTags": [],
+    "Status": "passing",
+    "Timeout": "",
+    "Type": ""
+  },
+  {
+    "CheckID": "_nomad-check-02b059870d379c2745f9ec791aff72446e904cad",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "15s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"hermes\" check",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-5813b1cf-3143-254a-e93f-17b8ede74cd1-hermes-hermes-gateway",
+    "ServiceName": "hermes",
+    "ServiceTags": [
+      "http",
+      "hermes",
+      "agent"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-0395430231e07775a06342fc3705ffa24868e30c",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"nats\" check",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-85665bdd-bc46-cd89-9609-c4aeb976824a-nats-nats-client",
+    "ServiceName": "nats",
+    "ServiceTags": [
+      "nats",
+      "messaging",
+      "jetstream"
+    ],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "tcp"
+  },
+  {
+    "CheckID": "_nomad-check-1503f550dde1802ca788ce2bdebde3749a417c42",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "nats healthz",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-85665bdd-bc46-cd89-9609-c4aeb976824a-nats-nats-monitor-monitor",
+    "ServiceName": "nats-monitor",
+    "ServiceTags": [
+      "http",
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-20b1e4502dc7a0977f9d0b777fb41e2d33c85675",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "nats-exporter ready",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-85665bdd-bc46-cd89-9609-c4aeb976824a-nats-exporter-nats-exporter-metrics",
+    "ServiceName": "nats-exporter",
+    "ServiceTags": [
+      "http",
+      "monitoring",
+      "prometheus"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-2c9e543af3f23b3ba6d308a8a049dec60cf32d2c",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Client HTTP Check",
+    "Node": "radxa",
+    "ServiceID": "_nomad-client-e43hltzi73zdj77avyzeugzyjrkdl6ii",
+    "ServiceName": "nomad-client",
+    "ServiceTags": [
+      "http"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-4c245d8afd6daf62b8859a8e23303a9603718c4b",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"bifrost\" check",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-2c9d23b0-edf0-784a-4dd9-3da24a81f396-bifrost-bifrost-http",
+    "ServiceName": "bifrost",
+    "ServiceTags": [
+      "http",
+      "llm",
+      "gateway"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-a1a72c559b7e350fc79e813ef84161dad3250148",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"mlflow\" check",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-951b6f02-8098-dea9-cc86-388a5d0af0f4-mlflow-mlflow-http",
+    "ServiceName": "mlflow",
+    "ServiceTags": [
+      "http",
+      "ml",
+      "tracking"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-c3077919ae5201de269059b34ba04fa51c49a598",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "promtail ready",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-4aedb18e-b158-ea7a-7f3d-2d55f0600787-promtail-promtail-http",
+    "ServiceName": "promtail",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-d1dea16bb12859447e77736f2a2d96464a2979f2",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "node-exporter metrics",
+    "Node": "radxa",
+    "ServiceID": "_nomad-task-d5b6d56c-4ded-443f-6927-68835fe95d68-node-exporter-node-exporter-metrics",
+    "ServiceName": "node-exporter",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "serfHealth",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "",
+    "ModifyIndex": 1000,
+    "Name": "Serf Health Status",
+    "Node": "radxa",
+    "ServiceID": "",
+    "ServiceName": "",
+    "ServiceTags": [],
+    "Status": "passing",
+    "Timeout": "",
+    "Type": ""
+  },
+  {
+    "CheckID": "_nomad-check-1757381276aa93604aab56623d87b0da5a37e485",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "promtail ready",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-task-839a76b6-2f5b-ba32-4e2b-556934f55c97-promtail-promtail-http",
+    "ServiceName": "promtail",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-382008705227725022c95aa937dc4f92c69c1b25",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "grafana health",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-task-63ca748b-7631-3234-6a21-f35693e81a47-grafana-grafana-http",
+    "ServiceName": "grafana",
+    "ServiceTags": [
+      "http",
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-5a40c76143fd173252c810aec87d6ed296f1631d",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "30s",
+    "ModifyIndex": 1000,
+    "Name": "node-exporter metrics",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-task-afbe8acc-9fb9-4ba2-0a9f-3c70dfa49767-node-exporter-node-exporter-metrics",
+    "ServiceName": "node-exporter",
+    "ServiceTags": [
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-a33ef5158e034f886064b7045031095023a6fc19",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "service: \"talat-shim\" check",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-task-40f36051-cd79-eaa1-562e-4ff263e51204-group-talat-shim-talat-shim-http",
+    "ServiceName": "talat-shim",
+    "ServiceTags": [],
+    "Status": "passing",
+    "Timeout": "2s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-b2dc48b87179fc5ba8874fe7aba812d2c7358329",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "prometheus ready",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-task-dc6211d4-a3ab-644a-9dab-87a57ffc2693-prometheus-prometheus-http",
+    "ServiceName": "prometheus",
+    "ServiceTags": [
+      "http",
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-bdd2307203819fb72d8244a68e545ff554b338f6",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "15s",
+    "ModifyIndex": 1000,
+    "Name": "loki ready",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-task-6f1fc27d-9101-5aee-ced0-bb5922865f81-loki-loki-http",
+    "ServiceName": "loki",
+    "ServiceTags": [
+      "http",
+      "monitoring"
+    ],
+    "Status": "passing",
+    "Timeout": "3s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "_nomad-check-f8e7bb139196f8ce70248e947165857695205891",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "10s",
+    "ModifyIndex": 1000,
+    "Name": "Nomad Client HTTP Check",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "_nomad-client-g2gufguii4grtoeoxgojmvbt2b4tyfft",
+    "ServiceName": "nomad-client",
+    "ServiceTags": [
+      "http"
+    ],
+    "Status": "passing",
+    "Timeout": "5s",
+    "Type": "http"
+  },
+  {
+    "CheckID": "serfHealth",
+    "CreateIndex": 1000,
+    "ExposedPort": 0,
+    "Interval": "",
+    "ModifyIndex": 1000,
+    "Name": "Serf Health Status",
+    "Node": "raspberry_pi_4b",
+    "ServiceID": "",
+    "ServiceName": "",
+    "ServiceTags": [],
+    "Status": "passing",
+    "Timeout": "",
+    "Type": ""
+  }
+]

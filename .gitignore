@@ -20,3 +20,8 @@ tmp
 
 # APM dependencies
 apm_modules/
+
+# pytest-textual-snapshot writes this on every failing run. It is a report
+# about a run, not content: ~900KB of rendered HTML that is stale the moment
+# the next run finishes.
+cli/snapshot_report.html
