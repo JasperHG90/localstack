@@ -2,19 +2,29 @@ eval: F1-foundation-nomad-wi-jwt-trust
 
 **Definition of Done:** The Nomad Workload Identity to Vault JWT trust chain is
 documented in `docs/workload-identity.md` — JWKS URL, `jwt-nomad` backend, the
-`nomad-workloads` role and **the shared policy's real scope, including its
-`bootstrap/data/*` write grant**, the fixed-claims constraint, the
-Ansible/Terraform ownership split, the one-token-per-task rule, and the
-audience convention — and a scratch Nomad job proves keyless Vault KV reads on
-the live cluster while the existing `vault.io` audience is left intact so every
-running workload keeps authenticating.
+`nomad-workloads` role and **the shared policy's real scope as narrowed by F9
+(job-scoped `secret/data` read plus a namespace-scoped `secret/metadata` list,
+with the prior `bootstrap/data/*` and unscoped `secret/metadata/*` grants
+removed)**, the fixed-claims constraint, the Ansible/Terraform ownership
+split, the one-token-per-task rule, and the audience convention — and a
+scratch Nomad job proves keyless Vault KV reads on the live cluster while the
+existing `vault.io` audience is left intact so every running workload keeps
+authenticating.
 
 *Rows 3, 6 and 8 corrected 2026-07-25. Row 6 previously asserted the policy
 "scopes reads to the caller's own `nomad_job_id` path" — a green check
-licensing a false conclusion, since the shared policy also grants
+licensing a false conclusion, since the shared policy also granted
 `bootstrap/data/*` read/create/update and cluster-wide `secret/metadata/*`
 list to every workload. Row 3 previously required capturing a WI JWT that is
 never written to disk under the plan's original identity stanza.*
+
+*Row 8 corrected 2026-08-02, against F9's landed narrowing.
+`F9-foundation-scope-nomad-workloads-policy` removed the `bootstrap/data/*`
+and unscoped `secret/metadata/*` grants on 2026-07-30; the row previously
+expected a `bootstrap` mount read to SUCCEED, which is now the wrong
+direction — flipped below to expect denial, paired with a new row proving
+the surviving namespace-scoped `secret/metadata` list is still effectively
+cluster-wide (nearly every job runs in the `default` namespace).*
 
 | Behavior | Input | Expected | Scorer | Threshold |
 | --- | --- | --- | --- | --- |
@@ -25,5 +35,8 @@ never written to disk under the plan's original identity stanza.*
 | Reader understands the trust config, the ownership split, and the audience convention without reverse-engineering Ansible | Read `docs/workload-identity.md` | Thesis-first, cites real paths/URLs, and covers: the JWKS URL; the `jwt-nomad` backend; the shared role/policy; the fixed-claims constraint; `secret/data/<namespace>/<job_id>/<entry>`; the Ansible-root-of-trust vs Terraform-per-job-role split with `acme.tf:41-90` as the worked example; the `vault { role = }` selection mechanism; the rule that a dedicated role REPLACES `nomad-workloads` so a job needing both must list both policies; and one audience per verifying service (never per job) | model + rubric (adversarial review agent) | 4/5 |
 | Fixed-claims constraint holds: no custom claims are relied on | `vault read -format=json auth/jwt-nomad/role/nomad-workloads \| jq '.data.claim_mappings'` | Maps exactly `nomad_namespace`, `nomad_job_id`, `nomad_task` and no others; policy scoping keys only on those | deterministic check (`vault read auth/jwt-nomad/role/nomad-workloads`, claim_mappings assertion) | 100% |
 | Another job's secret prefix is denied to a valid WI token | Using the client token minted above, `VAULT_TOKEN=<wi-token> vault kv get -mount=secret default/other-job/probe` | HTTP 403 / permission denied. **Asserts only that a different job's `secret/data/` prefix is denied — NOT that the token is job-scoped generally** | deterministic check (`vault kv get default/other-job/probe` returns 403) | 100% |
-| The doc records the real blast radius: the shared policy is NOT job-scoped | Using the same WI token, `VAULT_TOKEN=<wi-token> vault kv get -mount=bootstrap github`; then read the doc's threat-model section | The read **succeeds**, demonstrating every workload can read (and per the policy, overwrite) the bootstrap credentials — GitHub PAT and Tailscale auth key. The doc states this explicitly rather than describing the policy as per-job scoped. A doc claiming job-scoping while this read succeeds is a FAIL | deterministic check (`vault kv get -mount=bootstrap github` succeeds AND the doc documents it) | 100% |
+| The `bootstrap` mount is no longer reachable through this token | Using the same WI token, `VAULT_TOKEN=<wi-token> vault kv get -mount=bootstrap github` | HTTP 403 / permission denied. F9 removed the shared policy's `bootstrap/data/*` and `bootstrap/metadata/*` grants on 2026-07-30; a read succeeding here would mean the narrowing regressed | deterministic check (`vault kv get -mount=bootstrap github` returns 403) | 100% |
+| The doc records the real blast radius: the shared policy is narrowed but still namespace-wide for listing | Using the same WI token, `VAULT_TOKEN=<wi-token> vault kv list -mount=secret default/other-job`; then read the doc's threat-model section | The `list` **succeeds** (the surviving `secret/metadata/<namespace>/*` grant is namespace-scoped, not job-scoped), demonstrating any workload in the same namespace can enumerate every other job's secret paths (not values) — and since nearly every job runs in `default`, this is cluster-wide path enumeration in practice. The doc states this explicitly rather than describing the policy as per-job scoped. A doc claiming job-scoping while this list succeeds is a FAIL | deterministic check (`vault kv list -mount=secret default/other-job` succeeds AND the doc documents it) | 100% |
 | Existing `vault.io` audience is not renamed, so live workloads keep working | `vault read -format=json auth/jwt-nomad/role/nomad-workloads \| jq -c '.data.bound_audiences'`; confirm an existing workload (e.g. memex) still reads its secret | `bound_audiences` still equals `["vault.io"]`; `default_identity { aud = ["vault.io"] }` in `nomad.hcl.j2` untouched | deterministic check (`vault read auth/jwt-nomad/role/nomad-workloads`, bound_audiences unchanged) | 100% |
+
+signed-off-by: JasperHG90 2026-08-03

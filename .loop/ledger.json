@@ -26,13 +26,10 @@
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "F9 removed the bootstrap/data/*, bootstrap/metadata/* and unscoped secret/metadata/* grants; F1 documents the policy as it was and says 'do not narrow it'. Re-plan against the 3-block policy before implementing."
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -908,10 +905,13 @@
     },
     "U1-upgrade-pin-hashistack-versions": {
       "slug": "U1-upgrade-pin-hashistack-versions",
-      "stage": "implementing",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "out-of-scope-fix-needed",
+        "reason": "Eval/plan files staged as renamed into .loop/archive/U1-upgrade-pin-hashistack-versions/ but ledger stage never advanced past implementing and no commit exists. Pre-existing drift, not from this session. Needs operator to decide: finish lifecycle (loopctl finish) or restore (git restore --staged) and re-run properly."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -930,10 +930,13 @@
     },
     "U2-upgrade-vault-2x": {
       "slug": "U2-upgrade-vault-2x",
-      "stage": "implementing",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "out-of-scope-fix-needed",
+        "reason": "Eval/plan files staged as renamed into .loop/archive/U2-upgrade-vault-2x/ but ledger stage never advanced past implementing and no commit exists. Pre-existing drift, not from this session. Needs operator to decide: finish lifecycle (loopctl finish) or restore (git restore --staged) and re-run properly."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -954,10 +957,13 @@
     },
     "U3-upgrade-nomad-2x": {
       "slug": "U3-upgrade-nomad-2x",
-      "stage": "implementing",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "out-of-scope-fix-needed",
+        "reason": "Eval/plan files staged as renamed into .loop/archive/U3-upgrade-nomad-2x/ but ledger stage never advanced past implementing and no commit exists. Pre-existing drift, not from this session. Needs operator to decide: finish lifecycle (loopctl finish) or restore (git restore --staged) and re-run properly."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -979,10 +985,13 @@
     },
     "U4-upgrade-consul-2x": {
       "slug": "U4-upgrade-consul-2x",
-      "stage": "implementing",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "out-of-scope-fix-needed",
+        "reason": "Eval/plan files staged as renamed into .loop/archive/U4-upgrade-consul-2x/ but ledger stage never advanced past implementing and no commit exists. Pre-existing drift, not from this session. Needs operator to decide: finish lifecycle (loopctl finish) or restore (git restore --staged) and re-run properly."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
