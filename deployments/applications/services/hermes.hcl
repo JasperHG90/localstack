@@ -202,6 +202,9 @@ MEMEX_API_KEY={{ .Data.data.admin_key }}
 {{- end }}
 MEMEX_SERVER_URL=http://${memex_host}:8000
 MEMEX_VAULT=hermes
+MEMEX_OIDC__ISSUER=${nomad_oidc_issuer}
+MEMEX_OIDC__GRANT=token_file
+MEMEX_OIDC__TOKEN_FILE=/secrets/nomad_memex.jwt
 NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
 HERMES_YOLO_MODE=true
@@ -255,6 +258,9 @@ terminal:
     - MEMEX_API_KEY
     - MEMEX_SERVER_URL
     - MEMEX_VAULT
+    - MEMEX_OIDC__ISSUER
+    - MEMEX_OIDC__GRANT
+    - MEMEX_OIDC__TOKEN_FILE
     - NOMAD_TOKEN
     - NOMAD_ADDR
     - CONSUL_ADDR
@@ -266,6 +272,9 @@ code_execution:
     - MEMEX_API_KEY
     - MEMEX_SERVER_URL
     - MEMEX_VAULT
+    - MEMEX_OIDC__ISSUER
+    - MEMEX_OIDC__GRANT
+    - MEMEX_OIDC__TOKEN_FILE
     - NOMAD_TOKEN
     - NOMAD_ADDR
     - CONSUL_ADDR
@@ -386,6 +395,29 @@ EOT
 
       vault {}
 
+      # Workload Identity JWT for memex. `name` is load-bearing: an unnamed
+      # identity writes no file. `aud` names the VERIFIER (memex), not this
+      # job. `filepath` pins the path instead of relying on the
+      # secrets/nomad_<name>.jwt default, so the client config and the file
+      # cannot drift apart.
+      #
+      # change_mode = "noop", NOT "restart": Nomad restarts the task on every
+      # renewal after the first with no materiality test, which at ttl = 1h
+      # would restart the agent gateway hourly. No restart is needed — the
+      # client re-reads this file on every request.
+      #
+      # Do NOT add `user =` to this task. The gateway runs unprivileged and
+      # reads this Nomad-written file only because the task sets no user, so
+      # Nomad skips the chown and leaves it world-readable.
+      identity {
+        name        = "memex"
+        aud         = ["memex"]
+        file        = true
+        filepath    = "secrets/nomad_memex.jwt"
+        ttl         = "1h"
+        change_mode = "noop"
+      }
+
       template {
         data = <<EOF
 {{- with secret "${telegram_secret}" }}
@@ -448,6 +480,9 @@ EOF
         HERMES_YOLO_MODE       = "true"
         MEMEX_SERVER_URL       = "http://${memex_host}:8000"
         MEMEX_VAULT            = "hermes"
+        MEMEX_OIDC__ISSUER     = "${nomad_oidc_issuer}"
+        MEMEX_OIDC__GRANT      = "token_file"
+        MEMEX_OIDC__TOKEN_FILE = "/secrets/nomad_memex.jwt"
         NOMAD_ADDR             = "http://192.168.2.30:4646"
         CONSUL_ADDR            = "http://192.168.2.30:8500"
         TELEGRAM_ALLOWED_USERS = "${telegram_allowed_users}"

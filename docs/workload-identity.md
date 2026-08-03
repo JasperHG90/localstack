@@ -141,9 +141,14 @@ identity {
   name        = "vault_default"
   aud         = ["vault.io"]
   file        = true
-  change_mode = "restart"
+  change_mode = "noop"
 }
 ```
+
+(`noop`, not `restart`. This example writes a file, and Nomad restarts the
+task on every renewal after the first, so `restart` buys nothing a
+file-reading consumer needs. See "Prefer `change_mode = noop` for a file
+identity" below.)
 
 `vault_default` matches the server-side `default_identity` for the `default`
 cluster. `file = true` writes the JWT to `secrets/nomad_vault_default.jwt`
@@ -151,6 +156,41 @@ inside the alloc, which a raw-JWT consumer reads. Confirmed live on Nomad
 2.0.4: an unnamed block populates the task's singular default `Identity`
 field; a named block populates the `Identities` array. Only the named form
 lands a JWT on disk.
+
+### Pin the path with `filepath`, do not discover it
+
+The default path is `secrets/nomad_<name>.jwt`, but do not depend on
+deriving it. Set `filepath` and the jobspec states the path outright, so the
+consumer's config and the file cannot drift apart:
+
+```
+identity {
+  name        = "memex"
+  aud         = ["memex"]
+  file        = true
+  filepath    = "secrets/nomad_memex.jwt"
+  ttl         = "1h"
+  change_mode = "noop"
+}
+```
+
+`filepath` is alloc-relative; the in-container path gains a leading slash
+(`/secrets/nomad_memex.jwt`).
+
+### Prefer `change_mode = "noop"` for a file identity
+
+Nomad restarts the task on **every** renewal after the first, with no test
+for whether anything material changed. At `ttl = "1h"` that is an hourly
+restart. A consumer that re-reads the file per request needs no restart, so
+`noop` is the right default for `file = true`; the restart warning in
+Nomad's own validation is scoped to `Env`, not `File`.
+
+### Do not pin a token-reading task to a non-root user
+
+Nomad skips the chown and leaves the JWT world-readable only when the task
+sets no `user`. Adding `user =` to a task whose process runs unprivileged
+breaks its ability to read its own identity file — and the failure is
+silent if that consumer falls back to another credential.
 
 ### One audience per verifying service, never per job
 
@@ -165,6 +205,18 @@ or provider per client, for no scoping gain.
   (for example `minio` for MinIO STS in M1). Do not add it here; M1 owns its
   own.
 
+Audience registry:
+
+| `aud` | Verifier | Owner |
+|-------|----------|-------|
+| `vault.io` | Vault, via the `jwt-nomad` mount | F1 |
+| `memex` | the memex server, against Nomad's JWKS | R5 |
+| `minio` | MinIO STS | M1 (not yet landed) |
+
+`memex` is the first verifier that is not Vault: memex fetches Nomad's JWKS
+itself and needs no Vault role. Per-job authorization is a `grant_rule` on
+`nomad_job_id` in the memex server's own config, not a separate audience.
+
 ### File vs env token delivery
 
 - **Env** (`template { env = true }`) is the default for Vault-templated
@@ -176,19 +228,26 @@ or provider per client, for no scoping gain.
 ## What F1 delivers for M1, and what it does not
 
 F1 delivers the **JWKS URL** (`http://192.168.2.30:4646/.well-known/jwks.json`)
-M1 points MinIO's `identity_openid` at. F1 does **not** deliver an OIDC
-discovery document: the discovery endpoint is disabled cluster-wide.
+M1 points MinIO's `identity_openid` at. F1's scope was JWKS only; it did not
+deliver an OIDC discovery document.
+
+**F10 has since enabled discovery**, so the rest of this section describes
+history, not current state. Nomad now serves a discovery document at the
+configured issuer:
 
 ```
-curl -s "$NOMAD_ADDR/.well-known/openid-configuration"
-OIDC Discovery endpoint disabled
+curl -sk https://nomad.lab.orangecluster.nl/.well-known/openid-configuration
+{"issuer":"https://nomad.lab.orangecluster.nl",
+ "jwks_uri":"https://nomad.lab.orangecluster.nl/.well-known/jwks.json",
+ "id_token_signing_alg_values_supported":["RS256","EdDSA"], ...}
 ```
 
 MinIO's `identity_openid` consumes a discovery document
-(`MINIO_IDENTITY_OPENID_CONFIG_URL`), not a bare JWKS. Enabling discovery
-means setting `server { oidc_issuer = ... }` in the Nomad server config and
-restarting the single Nomad server. That is owned by
-`F10-foundation-nomad-oidc-issuer`, not F1. F1's scope is JWKS only.
+(`MINIO_IDENTITY_OPENID_CONFIG_URL`), not a bare JWKS, which is why it had to
+wait. Enabling discovery meant setting `server { oidc_issuer = ... }` in the
+Nomad server config and restarting the single Nomad server; that was
+`F10-foundation-nomad-oidc-issuer`, and it is done. A verifier that needs
+discovery (memex in R5, MinIO in M1) can now point at the issuer directly.
 
 ## Operator verification (run on the live cluster)
 

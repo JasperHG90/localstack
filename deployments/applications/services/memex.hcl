@@ -139,6 +139,13 @@ MEMEX_SERVER__AUTH__ENABLED=true
 {{- with secret "${memex_auth_secret}" }}
 MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin","description":"Admin key"},{"key":"{{ .Data.data.writer_key }}","policy":"writer","vault_ids":["global"],"description":"Scoped writer"},{"key":"{{ .Data.data.writer_key_vault_meetings }}","policy":"writer","vault_ids":["meetings"],"description":"Meetings writer"}]'
 {{- end }}
+# Trust Nomad's OIDC issuer so workloads authenticate with a Workload
+# Identity JWT instead of a static key. One provider, one grant rule: only
+# the hermes job. No default_policy, so a token that verifies but matches no
+# rule is refused rather than silently downgraded. `admin` matches the key
+# hermes holds today — the win here is no long-lived secret on the host, NOT
+# less privilege; tightening to writer + vault_ids is a follow-up.
+MEMEX_SERVER__AUTH__OIDC='[{"issuer":"${nomad_oidc_issuer}","audience":["memex"],"grant_rules":[{"claim":"nomad_job_id","value":"hermes","policy":"admin"}]}]'
 MEMEX_SERVER__TRACING__ENABLED=true
 MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8

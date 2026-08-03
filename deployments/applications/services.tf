@@ -18,6 +18,13 @@ ephemeral "vault_kv_secret_v2" "postgres_admin" {
   name  = "default/postgres/localstack"
 }
 
+### Nomad's OIDC issuer (F10). One definition, two consumers: the memex
+### server trusts it, and the hermes client points its OIDC config at it.
+### The string must be byte-identical in both, or provider selection fails.
+locals {
+  nomad_oidc_issuer = "https://nomad.lab.orangecluster.nl"
+}
+
 ### Firewall rules for application services
 locals {
   firewall_rules = {
@@ -121,10 +128,11 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
-      hermes_version  = "0.19.1-memex-v1.0.1"
+      hermes_version  = "0.19.1-memex-v1.1.0"
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       memex_host                     = "192.168.2.46"
+      nomad_oidc_issuer              = local.nomad_oidc_issuer
       memex_auth_secret              = "${var.secret_mount}/data/default/hermes/memex_auth"
       github_secret                  = "${var.secret_mount}/data/default/hermes/github"
       telegram_secret                = "${var.secret_mount}/data/default/hermes/telegram"
@@ -167,6 +175,7 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
+      nomad_oidc_issuer     = local.nomad_oidc_issuer
       bifrost_host          = "192.168.2.50"
       memex_version         = "1.1.0"
       # Bifrost virtual key issued to Memex (default/memex/bifrost). Memex's
