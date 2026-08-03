@@ -6,16 +6,16 @@ summary = "`localstack deps` installs the HashiCorp CLIs at exactly the versions
 tags = ["cli", "tooling", "versions", "shims"]
 ---
 
-# D6 — `localstack deps`: pinned CLIs and the PATH shims
+# Ticket: D6-cli-deps-and-shims
 
-## Title
+## 1. Title
 
 Install the `vault`, `nomad` and `consul` CLIs at the versions this cluster
 runs, resolved from the repo's single declaration point, plus the optional
 PATH shims that make a bare `nomad`, `consul` or `vault` command pick up the
 session from `localstack login`.
 
-## Size / Effort
+## 2. Size / Effort
 
 **M.** The download-and-install path is ordinary work: resolve architecture,
 fetch, verify, unpack, place. The care is in three places. The versions must
@@ -24,7 +24,7 @@ list. The install must be idempotent, because it will be re-run. And the
 shims shadow real binaries on a developer's PATH, which is a change to their
 machine that has to be reversible and obvious.
 
-## Triggered by
+## 3. Triggered by
 
 Two findings from the 2026-07-31 design session.
 
@@ -48,7 +48,7 @@ but the binary measured is not the binary `deps` will put on PATH. Re-check
 `strings -a <pinned nomad> | grep -c NOMAD_TOKEN_FILE` during subticket 4; if
 it is no longer zero, the shim is optional and this ticket shrinks.
 
-## Context (today's state)
+## 4. Context (today's state)
 
 ### The versions already have a single source of truth
 
@@ -78,8 +78,9 @@ twice and then diverges.
 D2 §12 read this as one shim, `nomad`, with `consul` served by a static
 `CONSUL_HTTP_TOKEN_FILE` export and `vault` served by `~/.vault-token`. D2
 then measured both and reversed itself in R11 and R12
-(`.loop/plans/D2-cli-login-broker-tokens.md:410-466`), and its eval marker is
-signed off carrying the reversals as scored rows. All three get a shim:
+(`.loop/archive/D2-cli-login-broker-tokens/plan.md:445-501`), and its eval
+marker is signed off carrying the reversals as scored rows. All three get a
+shim:
 
 | CLI | Reads a credential file? | Needs a shim? |
 | --- | --- | --- |
@@ -174,7 +175,7 @@ resolved under `.terraform/`. Cluster nodes span arm64 and amd64, and a
 developer may be on macOS. `deps` runs on the developer's machine, so it must
 resolve its own platform rather than assume the cluster's.
 
-## Non-goals / out of scope
+## 5. Non-goals / out of scope
 
 - **No changes to the cluster.** This ticket installs binaries on a
   developer's machine. The apt pin in `install_dependencies.yml` governs the
@@ -192,7 +193,7 @@ resolve its own platform rather than assume the cluster's.
   ticket writes no tokens, so exporting a variable that names a file nobody
   writes would break `consul` outright rather than do nothing.
 
-## Requirements & restrictions
+## 6. Requirements & restrictions
 
 - **R1. Versions come from `bootstrap/inventory/group_vars/all.yml`.** Parse
   it with `pyyaml`. Do not copy the values into Python, a config file, or a
@@ -270,17 +271,18 @@ resolve its own platform rather than assume the cluster's.
   not match the pin and the user did not ask to install, say so plainly with
   both versions. Silence here recreates the skew the ticket exists to remove.
 
-## Code surface
+## 7. Code surface
 
 Under `cli/`. D1 owns the package skeleton (`src` layout, `main.py`,
-`config.py`) and D6 adds to it. D1 bans typer sub-groups and forbids
-scaffolding a `commands/` package for D3
-(`.loop/plans/D1-cli-package-skeleton.md:95-97`), so **D6 creates no
-`commands/` package and no sub-group.** `deps` is a leaf command registered
-straight onto D1's existing `app` with `@app.command()`. That decision is
-D6's own, not inherited: D6 is the first ticket to add a sub-command, and
-D1's ban was on empty groups guessing at D3's shape. If D3 later wants a
-`commands/` package, it moves one file.
+`config.py`) and D6 adds to it. D2 established the command registration
+convention D6 follows: commands live as modules under
+`cli/src/localstack_cli/commands/` (`login.py`, `logout.py`, `whoami.py`,
+`env.py`, `token.py`, `config.py` — six already shipped), and `main.py`
+registers them **lazily** via `LAZY_SUBCOMMANDS` (`cli/src/localstack_cli/main.py:11-14,42`), not eager `@app.command()`. D6 follows that
+convention. D1 bans typer sub-groups and forbids scaffolding a `commands/`
+package speculatively for D3 (`.loop/archive/D1-cli-package-skeleton/plan.md:95-97`); D2 already made that scaffold real, so D6 adds to the
+existing `commands/` package rather than inventing one. `deps` is a leaf
+command module under `commands/`, registered lazily like its siblings.
 
 - `cli/src/localstack_cli/versions.py` **(new)**: locates
   `bootstrap/inventory/group_vars/all.yml` per R1a, parses it, strips the
@@ -293,16 +295,19 @@ D1's ban was on empty groups guessing at D3's shape. If D3 later wants a
 - `cli/src/localstack_cli/shims.py` **(new)**: the shim writer and remover,
   against `$LOCALSTACK_HOME/shims`. One template renders all three shims,
   parameterised by tool name and token variable, so they cannot drift apart.
-- `cli/src/localstack_cli/deps.py` **(new)**: the `deps` command function and
-  its options (`--with-shims`, `--remove-shims`, `--repo-root`).
-- `cli/src/localstack_cli/main.py`: one import and one `app.command()`
-  registration. Nothing else changes.
+- `cli/src/localstack_cli/commands/deps.py` **(new)**: the `deps` command
+  function and its options (`--with-shims`, `--remove-shims`, `--repo-root`),
+  as a typer app module matching D2's command-module shape.
+- `cli/src/localstack_cli/main.py`: one `LAZY_SUBCOMMANDS["deps"]` entry
+  pointing at `localstack_cli.commands.deps:app`, matching the six D2 entries.
+  Nothing else changes.
 - `cli/tests/`: one test module per source module above, mirroring the tree
   as D1's rule 6 requires.
 - `cli/pyproject.toml` and `cli/uv.lock`: `uv add pyyaml` (runtime) and `uv
   add --dev types-PyYAML` (so the mypy hook D1 wired can see the stubs). D1's
-  only runtime dependency is `typer`, so this is D6's addition. Use `uv add`,
-  never `uv pip` and never a hand-written dependency table.
+  runtime dependencies are `click`, `rich`, and `typer`
+  (`cli/pyproject.toml:7-9`); `pyyaml` is D6's addition. Use `uv add`, never
+  `uv pip` and never a hand-written dependency table.
 
 Read, never edited: `bootstrap/inventory/group_vars/all.yml`.
 
@@ -311,7 +316,7 @@ Also touched: the devcontainer setup, so a rebuilt container puts
 only. It sets no `CONSUL_HTTP_TOKEN_FILE`, per D2 R12. Confirm where that
 belongs before editing; it is outside the `cli/` tree.
 
-## Tests & validation gates
+## 8. Tests & validation gates
 
 Repo gate: `just pre_commit`, including the ruff, mypy and pytest hooks D1
 adds. The default suite must stay offline: downloads are mocked, and any test
@@ -329,7 +334,7 @@ a token the shell already had. D1 rule 8 says the same thing for
 The eval marker `.loop/evals/D6-cli-deps-and-shims.md` carries the scored
 rows.
 
-## Risk assessment
+## 9. Risk assessment
 
 - **Medium: shadowing a binary on PATH.** The shim makes `which nomad` return
   something the developer did not install. Mitigated by R5 (opt-in and
@@ -348,7 +353,7 @@ rows.
 - **Low: breaking existing tooling.** Purely additive on the developer's
   machine. Nothing about the cluster changes.
 
-## Subtickets (ordered)
+## 10. Subtickets (ordered)
 
 1. `uv add pyyaml`, then the version resolver against `group_vars/all.yml`,
    including the repo-root search from R1a and its failure message, with the
@@ -362,7 +367,7 @@ rows.
    `CONSUL_HTTP_TOKEN_FILE`.
 6. Docs.
 
-## Open questions (operator must settle)
+## 11. Open questions (operator must settle)
 
 > **All questions in this section were resolved on 2026-07-31 in
 > `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
@@ -440,3 +445,74 @@ a `nomad` more drifted than the one the developer started with.
   buys beyond removing the collision: `--remove-shims` can clear a whole
   directory without ever endangering an installed binary, and the shim wraps
   the version this ticket pinned rather than whatever apt left behind.
+
+## Premises / assumptions
+
+- **P1.** `nomad` has no credential-file mechanism, so a PATH shim is the only
+  way a bare `nomad` inherits a session.
+  `probe: strings -a /usr/bin/nomad | grep -c NOMAD_TOKEN_FILE` returns `0`,
+  and a wire-level check with `NOMAD_TOKEN_FILE` set sent no `X-Nomad-Token`
+  header. Measured against Nomad 2.0.3; the pin `deps` installs is 2.0.4, so
+  re-check during subticket 4.
+
+- **P2.** `vault` reads `~/.vault-token` natively and `consul` reads
+  `CONSUL_HTTP_TOKEN_FILE`, but each fails in this devcontainer for the
+  mirror-image reasons above.
+  `probe: vault token lookup` against a capture listener sent `X-Vault-Token`
+  from `$HOME/.vault-token`; `probe: consul acl token read -self` sent
+  `X-Consul-Token` from the file named by `CONSUL_HTTP_TOKEN_FILE`.
+
+- **P3.** `bootstrap/inventory/group_vars/all.yml` is the single source of
+  version truth, read by both the apt pin and the install task.
+  `Evidence: bootstrap/inventory/group_vars/all.yml:9-13` declares the four
+  versions; `bootstrap/playbooks/install_dependencies.yml:22,118-121,138`
+  iterates them. No other file references `hashistack_versions`.
+
+- **P4.** `releases.hashicorp.com` publishes architecture-specific archives
+  and checksums for these versions, and stripping `-1` yields a valid
+  upstream version.
+  `source: https://releases.hashicorp.com/nomad/2.0.4/` — the version
+  directory serves archives plus a `SHA256SUMS` file for nomad, vault and
+  consul. A HEAD request to the linux aarch64 archive returns `200`.
+
+- **P5.** The shim contract works as written: it falls through on non-zero
+  exit, falls through on empty success, and never recurses.
+  `probe: env -i bash -c 'T="$(false)" || echo fallthrough'` prints
+  `fallthrough`; run against a fixture binary with `localstack token`
+  exiting non-zero, zero-empty, and zero-with-token, the counter recorded
+  one call in every case.
+
+- **P6.** The pinned binaries and the shims must not share a directory, and
+  the shim must exec the pinned binary at its absolute path. A shared
+  directory makes `--with-shims` overwrite the pinned Nomad 2.0.4 or vice
+  versa, and a shim targeting `/usr/bin/nomad` reintroduces the skew this
+  ticket exists to remove.
+  `Evidence: this plan R4 and R7` carry the split-directory and
+  absolute-literal-path decision; the eval marker rows 8, 9 and 12 score it.
+
+- **P7.** The `cli/` layout is settled by D1 and D2. D1 bans typer sub-groups
+  and forbids scaffolding a `commands/` package speculatively for D3
+  (`Evidence: .loop/archive/D1-cli-package-skeleton/plan.md:95-97`); D2 made
+  that package real, shipping six command modules under
+  `cli/src/localstack_cli/commands/` registered lazily via `LAZY_SUBCOMMANDS`
+  (`Evidence: cli/src/localstack_cli/commands/` contents;
+  `cli/src/localstack_cli/main.py:11-14,42`). D6 follows that convention:
+  `deps` is a leaf command module under `commands/`, registered lazily.
+
+- **P8.** An installed `localstack` can read `group_vars/all.yml` at run time.
+  `UNCERTAIN.` R1a resolves the repo root via `--repo-root`,
+  `LOCALSTACK_REPO_ROOT`, or a walk from the working directory or
+  `Path(__file__)`. The walk from `__file__` works for an editable install but
+  fails for a non-editable one or a copy outside the checkout; the failure
+  branch is what R1a's exit-non-zero message exists to cover, and subticket 1
+  tests it via the walk-up-start seam.
+
+- **P9.** The eval rows are testable as written. Most are deterministic against
+  fixtures under `tmp_path` with `LOCALSTACK_HOME` redirected and the ambient
+  token vars cleared. Row 7's recursion check needs the absolute-literal-path
+  seam from R7 so a test can point the shim at a counter script; row 6 needs
+  `NOMAD_TOKEN` cleared before the run because this devcontainer exports a
+  real one; row 1's grep is scoped to `cli/src/` so a test fixture writing
+  `2.0.4` does not trip it.
+  `Evidence: .loop/evals/D6-cli-deps-and-shims.md` rows 1, 6, 7 carry these
+  scoping rules; the rest are straightforward against mocks.

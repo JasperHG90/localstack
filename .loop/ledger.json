@@ -159,7 +159,8 @@
       "epic": "minio",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
-        "A1-audit-plan-premise-sweep"
+        "A1-audit-plan-premise-sweep",
+        "F10-foundation-nomad-oidc-issuer"
       ],
       "priority": 10,
       "summary": "Prove keyless machine access to MinIO by wiring Nomad Workload Identity JWTs to a named identity_openid provider on the MinIO job, then having a throwaway consumer job assume STS credentials and read its bucket. Establishes the policy-name-equals-job-id convention.",
@@ -843,7 +844,7 @@
         "D2-cli-login-broker-tokens"
       ],
       "priority": 20,
-      "summary": "Add four read-only synthesis commands to the localstack CLI (status, service, secret, vault grants), each answering a question no single native CLI can. All data comes from the Nomad, Vault and Consul HTTP APIs, never from the repo tree. Two of the four need Vault read grants the brokered human token does not hold today; F7 owns that policy and this ticket states it as a precondition rather than widening anything itself.",
+      "summary": "Add four read-only synthesis commands to the localstack CLI (status, service, secret, vault grants), each answering a question no single native CLI can. All data comes from the Nomad, Vault and Consul HTTP APIs, never from the repo tree. Two of the four need Vault read grants the brokered human token now holds via F11; the other two need D2 to broker nomad/creds/manage, a management token, which D3 states as a precondition rather than widening anything itself.",
       "relay_block_nonfork": null,
       "tags": [
         "cli",
@@ -861,7 +862,7 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/D5-cli-breakglass.adversarial.md, .loop/verdicts/D5-cli-breakglass.documentation.md",
+      "review_verdict": ".loop/archive/D5-cli-breakglass/verdict.adversarial.md, .loop/archive/D5-cli-breakglass/verdict.documentation.md",
       "dropped": false,
       "epic": "cli",
       "dependencies": [
@@ -1039,7 +1040,7 @@
     },
     "D6-cli-deps-and-shims": {
       "slug": "D6-cli-deps-and-shims",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -1213,7 +1214,7 @@
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/U5-upgrade-hermes-bifrost-versions.adversarial.md, .loop/verdicts/U5-upgrade-hermes-bifrost-versions.documentation.md",
+      "review_verdict": ".loop/archive/U5-upgrade-hermes-bifrost-versions/verdict.adversarial.md, .loop/archive/U5-upgrade-hermes-bifrost-versions/verdict.documentation.md",
       "dropped": false,
       "epic": "upgrade",
       "dependencies": [],
@@ -1222,6 +1223,23 @@
       "relay_block_nonfork": null,
       "tags": [],
       "stub": false
+    },
+    "U6-evaluate-hermes-native-secrets": {
+      "slug": "U6-evaluate-hermes-native-secrets",
+      "stage": "stub",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "epic": "upgrade",
+      "dependencies": [],
+      "priority": 10,
+      "summary": "Decide whether Hermes's native secrets: config feature (Bitwarden/1Password/Command Helper backends, no built-in Vault) is worth adopting alongside or instead of our existing Nomad vault{}+template secret injection.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": true
     }
   }
 }

@@ -6,39 +6,40 @@ tags = ["cli", "textual", "tui", "observability"]
 summary = "A Textual `localstack monitor` panel showing Vault seal state, Nomad node status, per-job allocation health, and Consul critical checks. A developer's glance-check, not a Grafana replacement: no dashboards, no history, no alerting. Each source polls independently so a sealed Vault or a dead endpoint degrades one panel instead of hanging the UI."
 ---
 
-# D4 — Cluster overview TUI in the `localstack` CLI
+# Ticket: D4-cli-cluster-tui
 
-## Title
+## 1. Title
+
 Add a Textual TUI (`localstack monitor`) that answers "is the cluster fine and
 is my job running" in one screen, using the tokens D2 brokers.
 
-## Size / Effort
+## 2. Size / Effort
+
 **Medium.** Four data sources, one screen, four widgets. The cost is not the
 rendering: it is (a) deterministic snapshot tests against a live-cluster data
 source, (b) degraded-state handling that must be designed in rather than
 bolted on, and (c) building the shared `api/` layer under D3's contract,
 because pickup order puts this ticket ahead of D3 (see Q3).
 
-## Triggered by
+## 3. Triggered by
+
 Operator, 2026-07-30, quoted: **"not a Grafana replacement but a panel for
 developers"**. Grafana, Prometheus and Loki already run here
 (`docs/monitoring.md:1-27`). Reaching them means opening a browser and logging
 in. The missing thing is a terminal glance.
 
-## Context (today's state)
+## 4. Context (today's state)
 
-### The CLI does not exist yet
-- No `pyproject.toml` anywhere in the repo (verified 2026-07-30 by `find`).
-  No `cli/` directory. Python deps today are a bare `requirements.txt:1-5`
-  (`duckdb`, `pendulum`, `httpx`, `ipykernel`, `hvac`) used by
-  `applications/data_lake/`, not by a packaged CLI.
-- D1 creates the `cli/` package; D2 adds login and token brokering. Both are
-  registered and `planning` in `.loop/ledger.json` (re-verified 2026-07-31),
-  and neither has built anything yet. D1 fixes the layout:
-  `cli/src/localstack_cli/` with a src layout, its own `cli/pyproject.toml`,
-  and typer at runtime (`D1-cli-package-skeleton.md:167-191`, the console
-  script at `:171` and the src layout at `:174`). **That is the
-  package path this ticket writes to.** See Q1.
+### The CLI package D1 and D2 shipped
+- D1 and D2 are `done`. `cli/` ships with `cli/pyproject.toml` (runtime deps
+  `click`, `rich`, `typer` at `:7-9`), the `cli/src/localstack_cli/` src
+  layout, and D2's command modules under `cli/src/localstack_cli/commands/`
+  (`login`, `logout`, `whoami`, `env`, `token`, `config`) registered lazily via
+  `LAZY_SUBCOMMANDS` (`cli/src/localstack_cli/main.py:11-14,42`). The legacy
+  `requirements.txt:1-5` remains for the non-CLI scripts.
+- The package path this ticket writes to is `cli/src/localstack_cli/`, D1's
+  src layout (`.loop/archive/D1-cli-package-skeleton/plan.md:167-191`, console
+  script at `:171`, src layout at `:174`). See Q1.
 
 ### The cluster this panel reports on (all re-measured 2026-07-31)
 - **19 Nomad jobs**, mixed types: `acme`, `backup-minio`, `backup-postgres`
@@ -72,11 +73,13 @@ in. The missing thing is a terminal glance.
   of 19 rows are wrong on day one. Health is judged from current allocations
   and never from these counters, and the counters are not rendered at all.
 - **Trap: periodic parents have no allocations and no live children.** `acme`,
-  `backup-minio` and `backup-postgres` each return `Allocs: []`,
-  `ChildStatuses: []` and `GroupCountSum: 1` while being perfectly healthy.
-  Nomad garbage-collects the child jobs, so `GET /v1/jobs?prefix=acme` returns
-  the parent alone and `?include_children=true` adds nothing: there is **no
-  last-child outcome to read** here. A parent is healthy when `Status ==
+  `backup-minio` and `backup-postgres` each return `Allocs: null` (the JSON
+  null, not an empty array), `ChildStatuses: []` and `GroupCountSum: 1` while
+  being perfectly healthy. Nomad garbage-collects the child jobs, so `GET
+  /v1/jobs?prefix=acme` returns the parent alone and `?include_children=true`
+  adds nothing: there is **no last-child outcome to read** here. The parser
+  must normalize `Allocs: null` to `[]` so a shared `len(job["Allocs"])` code
+  path does not `TypeError`. A parent is healthy when `Status ==
   "running"` and `Stop == false`, and on nothing else. `ChildStatuses` being
   non-null is how the panel spots a parent: it is `null` on every `service`
   and `system` job and `[]` on all three parents.
@@ -100,26 +103,27 @@ in. The missing thing is a terminal glance.
 - **One Nomad server, `firebat` at 192.168.2.30, `bootstrap_expect = 1`, and
   it is also a client**
   (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32`
-  server block, `:38-48` client block). The edge proxy is pinned to it
+  server block, `:49-59` client block). The edge proxy is pinned to it
   (`deployments/infrastructure/services/haproxy.hcl:5-9`). Single point of
   failure: firebat down means Nomad API, Vault, Consul and the edge all go at
   once. Nomad **2.0.4**.
 - **Vault** at `http://192.168.2.30:8200`, unsealed today, shamir 3-of-5,
   **2.0.3**. Consul is **2.0.2**. The whole stack crossed a major version on
   2026-07-31 when unattended-upgrades restarted the services
-  (`nomad.hcl.j2:18-22` records the incident;
-  `U1-upgrade-pin-hashistack-versions.md:72-74`
+  (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:18-22` records the
+  incident;
+  `.loop/archive/U1-upgrade-pin-hashistack-versions/plan.md:72-74`
   has the before-and-after). Every payload shape this plan depends on was
   re-probed against the 2.x cluster on 2026-07-31.
   **A sealed Vault after a reboot is the common real outage here** —
   the root justfile carries `unseal_vault` for exactly that
-  (`justfile:22-23`, `scripts/unseal_vault.sh:1-13`).
+  (`justfile:33-34`, `scripts/unseal_vault.sh:1-13`).
 - **`GET /v1/sys/seal-status` needs no token** (verified: HTTP 200 with no
   auth header). Seal state is therefore readable even when the CLI's token is
   dead — the one panel that always renders.
 - **Nomad refuses unauthenticated reads**: `/v1/jobs/statuses` and `/v1/nodes`
   both return **403** with no token (verified 2026-07-31). ACL is on
-  (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:34-36`).
+  (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:45-47`).
 - **Consul** at `http://192.168.2.30:8500`, 5 members, ACL
   `default_policy = "deny"`
   (`bootstrap/roles/consul_server/templates/consul.hcl.j2:25-33`,
@@ -137,24 +141,39 @@ in. The missing thing is a terminal glance.
 
 ### Auth today
 - Vault brokers cluster tokens: `vault read nomad/creds/deploy`
-  (`deployments/infrastructure/nomad_deploy_role.tf:32-41`) and
+  (`deployments/infrastructure/nomad_deploy_role.tf:36-41`) and
   `vault read consul/creds/deploy`
-  (`deployments/infrastructure/consul_deploy_role.tf:1-25`).
+  (`deployments/infrastructure/consul_deploy_role.tf:22-25`).
   F5 and F6 are `done` in the ledger; this brokering path works.
 - **The existing `deploy` Nomad policy cannot drive this panel.** Its own
   comment says so: "no alloc-exec, no alloc-node-exec, no list-jobs /
   dispatch-job / read-logs / read-fs, and no node / agent / operator access"
-  (`nomad_deploy_role.tf:1-12`); rules grant only `submit-job`, `read-job`,
-  `host-volume-*` (`:17-29`). `/v1/jobs/statuses` needs `list-jobs`;
+  (`deployments/infrastructure/nomad_deploy_role.tf:1-12`); rules grant only
+  `submit-job`, `read-job`, `host-volume-*`
+  (`:17-29`). `/v1/jobs/statuses` needs `list-jobs`;
   `/v1/nodes` needs `node:read`. A token minted from `nomad/creds/deploy` gets
   403 on both.
-- **The read-capable Nomad role is F7's, and this ticket now depends on it.**
-  `F7-foundation-deployer-vault-oidc-login.md:554-580` owns the policy
-  (`list-jobs`, `read-job`, node read on `default`, nothing more) and the
-  `vault_nomad_secret_role` D2 brokers from. That edge used to live only in
-  prose, which the `advance implementing` gate cannot read, so F7 is now in
-  this ticket's `depends_on`. F7 is `blocked` on `unresolved-design-fork`
-  today. **D4 waits.** See Q2.
+- **The Nomad read token is `nomad/creds/manage`, brokered by D2.** D2 today
+  brokers only `nomad/creds/deploy`; it needs to also broker
+  `nomad/creds/manage` for the CLI to have a Nomad token that can list jobs
+  and read nodes. The `manage` Vault role
+  (`deployments/infrastructure/nomad_oidc.tf:74-78`, `type = "management"`)
+  mints a Nomad **management** token, which bypasses ACLs entirely (list-jobs,
+  read-job, node read — everything). The `developer` Vault policy already
+  grants `nomad/creds/manage` read
+  (`deployments/infrastructure/developer_group.tf:140`), so the grant exists.
+  D2 shipped `nomad/creds/deploy` and `consul/creds/deploy` only
+  (`cli/src/localstack_cli/auth/broker.py:25-26`), so brokering `manage` is a
+  **change to a done ticket**: a new creds path in `broker.py`. This is a
+  precondition relayed to D2 via the `relay-finding` skill, not a hard
+  `depends_on` edge, because D2 is done and the change is small and local —
+  but it is a real follow-up, not a no-op, and until it lands the Nomad widgets
+  render "denied". **Recorded honestly**: a `management` token is full Nomad
+  access, not read-only. Brokering it to a read-only TUI is a privilege
+  widening the operator accepted over the rejected alternative (a narrow read
+  policy). This replaces the old Q2 option (b) "author a narrow
+  `nomad_read_role.tf`", which is now **rejected** in favor of D2 brokering
+  `manage`. See Q2.
 
 ### Network reach
 - ufw admits ports 4646, 8200 and 8500 from `192.168.0.0/16` **only**
@@ -163,7 +182,8 @@ in. The missing thing is a terminal glance.
 - **But every API this panel reads also answers over the HTTPS edge, and 443
   is open to both the LAN and the tailnet**
   (`deployments/infrastructure/services.tf:189-190`). haproxy routes `vault.`,
-  `nomad.` and `consul.lab.orangecluster.nl` (`haproxy.hcl:98-107`). Probed
+  `nomad.` and `consul.lab.orangecluster.nl`
+  (`deployments/infrastructure/services/haproxy.hcl:98-107`). Probed
   from the devcontainer 2026-07-31:
   `https://vault.lab.orangecluster.nl/v1/sys/seal-status` 200 tokenless,
   `https://nomad.lab.orangecluster.nl/v1/jobs/statuses` 200 with a token,
@@ -171,11 +191,13 @@ in. The missing thing is a terminal glance.
   three with a valid certificate, no `-k`.
 - **`N4-netsec-edge-only-service-access` closes the plaintext LAN ports and
   has priority 50 against this ticket's 42, so it runs first.** It narrows
-  `from_ip` for 4646, 8200 and 8500 (`N4:354-356`) and says outright that "the
-  only route to Nomad's API becomes haproxy" (`N4:393-396`). The edge is what N4
-  keeps. Point the panel at the edge hostnames and it works before N4, after
-  N4, on the LAN and on the tailnet. Point it at `192.168.2.30` and N4 breaks
-  it. See Q5 and Q6.
+  `from_ip` for 4646, 8200 and 8500
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:418`) and says outright
+  that "the only route to Nomad's API becomes haproxy"
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:465`). The edge is what
+  N4 keeps. Point the panel at the edge hostnames and it works before N4,
+  after N4, on the LAN and on the tailnet. Point it at `192.168.2.30` and N4
+  breaks it. See Q5 and Q6.
 
 ### What Grafana already does
 - `docs/monitoring.md:12-15`: Grafana is the authenticated front door to
@@ -185,7 +207,7 @@ in. The missing thing is a terminal glance.
   panel adds none of those.** It is orthogonal: current control-plane state,
   not metrics.
 
-## Non-goals / out of scope
+## 5. Non-goals / out of scope
 
 **The Grafana boundary is the scope constraint. A diff that crosses it is a
 violation, not an improvement.**
@@ -205,20 +227,21 @@ violation, not an improvement.**
   members`. It condenses their headlines onto one screen.
 - Does not create the `cli/` package (D1) or any login/token-broker code (D2).
 - Does not change any Nomad job, Terraform root, or Ansible role. **No
-  Terraform at all**: the read-capable Nomad policy and its Vault role belong
-  to F7 (Q2), and the firewall belongs to N4 (Q5).
+  Terraform at all**: the Nomad read token comes from D2 brokering
+  `nomad/creds/manage` (Q2), and the firewall belongs to N4 (Q5).
 - Does not read `deployments/**` to enumerate jobs. See the `talat-*` trap.
 - No JSON/`--output` mode, no non-interactive fallback, no web UI.
 
-## Requirements & restrictions
+## 6. Requirements & restrictions
 
 1. **The panel shows exactly four things.** Adding a fifth is scope creep and
    needs a new ticket:
-   - **Vault seal state** — the most common real outage (`justfile:22-23`
+   - **Vault seal state** — the most common real outage (`justfile:33-34`
      exists for it) and the only source readable without a token.
    - **Node status** — 5 rows: name, status, eligibility, drain. A job that
      will not place is usually a node that went away, and the single-server
-     topology (`nomad.hcl.j2:29-32`) makes node loss consequential.
+     topology (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:29-32`)
+     makes node loss consequential.
    - **Per-job allocation health** — 19 rows: name, type, status, and a
      current running-vs-desired count derived from `/v1/jobs/statuses`
      (`Allocs[].ClientStatus` against `GroupCountSum`). This is the "is my job
@@ -267,7 +290,8 @@ violation, not an improvement.**
    path.
 8. **Addresses come entirely from D1's `config.py`, and the documented values
    are the HTTPS edge hostnames.** No address resolution, no defaults, and no
-   config format authored here (`D1-cli-package-skeleton.md:188-191` owns it,
+   config format authored here
+   (`.loop/archive/D1-cli-package-skeleton/plan.md:188-191` owns it,
    reading `VAULT_ADDR`, `NOMAD_ADDR` and `CONSUL_HTTP_ADDR` and erroring by
    name when one is missing). Subticket 11 adds the three edge addresses
    `https://{vault,nomad,consul}.lab.orangecluster.nl` to
@@ -278,15 +302,23 @@ violation, not an improvement.**
    green.
 10. **The fetch layer is `cli/src/localstack_cli/api/`, built under D3's
     contract**, and every widget takes its data through an injected callable.
-    D3 requires `api/` to import neither typer nor rich so a TUI can consume
-    it (`D3-cli-read-commands.md:350-355`). Pickup order puts this ticket
+    D3's contract requires `api/` to return dataclasses and import neither
+    typer nor rich, so a TUI can consume it (D3's `cli/src/localstack_cli/api/`
+    layer, the reuse contract D4 imports). Pickup order puts this ticket
     first, so this ticket creates those modules; D3 adds its own functions to
     them later. **No `cluster_api.py`, no second fetch module, no HTTP client
     under `tui/`.** See Q3.
 11. **Dependencies via `uv add`**, never `uv pip`
     (`.claude/rules/uv-installer.md:6-8`). New deps: `textual`,
-    `pytest-textual-snapshot`, `respx`. `httpx` is already the repo's HTTP
-    client (`requirements.txt:3`) — use it, do not add `requests`.
+    `pytest-textual-snapshot`, `respx` (dev), and **`httpx` (runtime)**. D1
+    built the CLI's existing HTTP on `urllib` (stdlib,
+    `cli/src/localstack_cli/auth/vault.py:9-10`), and `cli/pyproject.toml:7-9`
+    lists only `click`, `rich`, `typer` — `httpx` is NOT a CLI dependency
+    today. The `requirements.txt:3` httpx entry serves the non-CLI scripts,
+    not this package. The `api/` fetch layer uses `httpx.Timeout(2.0)`
+    (`plan:779`) and the tests use `respx` (httpx-specific), so `httpx` must be
+    added via `uv add httpx` as a runtime dep and `respx` via
+    `uv add --dev respx`. Do not add `requests`.
 12. **Every code change ships a test** (`.claude/rules/python-testing.md:6-10`).
 13. **Live-cluster tests carry a marker and are excluded from the default run
     via `addopts`** (`.claude/rules/python-testing.md:26-32`). Default
@@ -303,14 +335,15 @@ violation, not an improvement.**
 18. **Pre-existing failures get fixed, not skipped**
     (`.claude/rules/pre-existing-issues.md`).
 
-## Code surface
+## 7. Code surface
 
 **The package root is `cli/src/localstack_cli/`, D1's layout
-(`D1-cli-package-skeleton.md:167-191`). The `api/` sub-package is D3's
-contract (`D3-cli-read-commands.md:350-355`, `:471-490`), and this ticket
-builds it because pickup order puts D4 ahead of D3. Read the existing `cli/`
-tree before writing: if D1 shipped a different root, keep the shape and change
-the prefix. There is no Terraform in this ticket.**
+(`.loop/archive/D1-cli-package-skeleton/plan.md:167-191`). The `api/`
+sub-package is D3's contract (D3's `cli/src/localstack_cli/api/` layer, the
+reuse contract D4 imports), and this ticket builds it because pickup order
+puts D4 ahead of D3. Read the existing `cli/` tree before writing: if D1
+shipped a different root, keep the shape and change the prefix. There is no
+Terraform in this ticket.**
 
 New, under `api/` (D3's contract: dataclasses out, no typer, no rich, no
 Textual, addresses from D1's `config.py`, no literal host or port):
@@ -339,7 +372,7 @@ New, under `tui/` (imports `api/`, never `httpx`):
 - `cli/src/localstack_cli/tui/widgets.py` — the four widgets. Each takes a
   fetch result (data or a named degraded state) and renders it. No I/O here.
 
-New tests:
+New tests (each listed here in section 7 and detailed in section 8):
 - `cli/tests/test_api_nomad.py`, `test_api_vault.py`, `test_api_consul.py` —
   respx tests per fetcher: happy path against a captured fixture, 403,
   timeout, connection error, and the `X-Nomad-Nexttoken` second page.
@@ -356,9 +389,11 @@ New tests:
 - `cli/tests/__snapshots__/` — pytest-textual-snapshot baselines (generated).
 
 Modified:
-- `cli/pyproject.toml` (D1's) — `uv add textual`; dev deps
-  `pytest-textual-snapshot`, `respx`; register the `cluster` marker and
-  exclude it in `addopts` per `.claude/rules/python-testing.md:26-32`.
+- `cli/pyproject.toml` (D1's) — `uv add textual` and **`uv add httpx`**
+  (runtime; D1 built on `urllib`, so httpx is new to the CLI package); dev
+  deps `pytest-textual-snapshot`, `respx` via `uv add --dev`; register the
+  `cluster` marker and exclude it in `addopts` per
+  `.claude/rules/python-testing.md:26-32`.
 - `cli/src/localstack_cli/main.py` (D1's typer app) — register **`monitor`**.
   The name `status` belongs to D3.
 - `docs/monitoring.md` — one short section: what `localstack monitor` shows,
@@ -366,26 +401,26 @@ Modified:
   discussion), and the three edge addresses from requirement 8. Do not
   restructure the doc.
 
-## Tests & validation gates
+## 8. Tests & validation gates
 
 ### Repo gates (discovered, not assumed)
 - **`just pre_commit`** → all Passed. This is the loop's configured gate
   (`.loop/config.json` `gates`). It runs `pre-commit run --all-files`
-  (`justfile:18-19`) over `.pre-commit-config.yaml:1-33`: `check-json`,
+  (`justfile:18-19`) over `.pre-commit-config.yaml`. Beyond the `check-json`,
   `check-ast`, `check-merge-conflict`, `check-yaml`, `debug-statements`,
-  `detect-private-key`, `end-of-file-fixer`, plus `nomad fmt`, `terraform
-  fmt -check`, and `scripts/tf_validate.sh`. `check-ast` and
-  `debug-statements` apply to the new Python.
-- **`uv run pytest`** from `cli/` → green, offline, no live-cluster tests.
+  `detect-private-key`, `end-of-file-fixer`, `nomad fmt`, `terraform fmt
+  -check`, and `scripts/tf_validate.sh` hooks, D1 landed `ruff`, `ruff-format`,
+  `mypy` (strict, `--config-file cli/pyproject.toml`) and `pytest` scoped to
+  `^cli/` (`.pre-commit-config.yaml:37-72`). These run on this ticket's code.
+- **`uv run --project cli pytest`** from the repo root → green, offline, no
+  live-cluster tests.
 - **There is no CI for these gates.** `.github/workflows/` holds only
   `claude-ollama.yaml` and `hermes-interactive.yaml`, both agent runners.
   Gates are local; run them.
-- **No ruff/mypy hook exists** in `.pre-commit-config.yaml` today. If D1 added
-  one, it applies. Do not add lint hooks in this ticket (see Q4).
 - **No Terraform runs here.** This ticket touches no `.tf` file, so the
   `terraform fmt -check` and `tf_validate.sh` hooks have nothing new to see.
   Worktree prerequisite for the gate: `just worktree_setup <path>`
-  (`justfile:30-32`).
+  (`justfile:41-42`).
 - Adversarial review (`.claude/rules/adversarial-reviews.md`).
 
 ### How snapshot tests get deterministic input
@@ -411,7 +446,7 @@ Anything that varies per run must be excluded from the render or frozen: no
 `SubmitTime` deltas, no "updated 3s ago", no wall-clock strings. If a relative
 timestamp is wanted, inject the clock.
 
-### Tests to add (each file listed in §7)
+### Tests to add (each file listed in section 7)
 `cli/tests/test_api_*.py`:
 - Per fetcher: 200 happy path against a captured fixture.
 - Nomad 403 → `MissingCapability` naming `list-jobs` or `node:read`, not an
@@ -431,8 +466,9 @@ timestamp is wanted, inject the clock.
   `Failed: 8`) are what the old model would have reded them on, and they are
   named here so a reader can check the claim, not because the fixture carries
   them.
-- `acme` (periodic parent, `Allocs: []`, `ChildStatuses: []`) is **healthy**
-  on `Status == "running"` and `Stop == false`.
+- `acme` (periodic parent, `Allocs: null` normalized to `[]`,
+  `ChildStatuses: []`) is **healthy** on `Status == "running"` and `Stop ==
+  false`.
 - `node-exporter` (system, `GroupCountSum: 1`, 5 running allocs) is healthy at
   running == eligible-node count, and degraded at 4 of 5.
 - A `service` job with fewer `running` allocs than `GroupCountSum` is
@@ -463,7 +499,7 @@ Live-cluster smoke test, marked and excluded from the default run
 (`.claude/rules/python-testing.md:26-32`): one test that hits the real cluster
 and asserts each fetcher returns parseable data. Run on purpose with `-m`.
 
-## Risk assessment
+## 9. Risk assessment
 
 - **Blast radius: zero for the cluster.** Read-only HTTP GETs against three
   APIs. No Terraform, no Ansible, no job change. The panel cannot alter
@@ -472,7 +508,7 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
   package; nothing else depends on them. `api/` stays, because D3 needs it.
 - **Likeliest failure mode: the panel lies about job health.** Reading
   `JobSummary.Failed`/`Lost` as current state reds 8 of the 14 service jobs on
-  a fully healthy cluster (measured, §Context). Add the periodic and system
+  a fully healthy cluster (measured, section 4). Add the periodic and system
   jobs and 11 of 19 rows are wrong. A panel that cries wolf on more than half
   the cluster is worse than no panel, because a developer stops trusting it
   and then misses the real outage. Requirement 4 and the
@@ -480,19 +516,25 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
   captured from the live cluster so it carries the loud counters rather than a
   tidied-up copy. **This is the single biggest risk in the ticket.**
 - **Second: the token cannot read what the panel needs.** `nomad/creds/deploy`
-  explicitly lacks `list-jobs` and node read (`nomad_deploy_role.tf:1-12`).
-  F7 owns the read role and is `blocked` today, which is why it is in
-  `depends_on`: the loop must not hand this ticket to an implementer whose
-  two headline widgets can only render 403.
+  explicitly lacks `list-jobs` and node read
+  (`deployments/infrastructure/nomad_deploy_role.tf:1-12`). D2 must broker
+  `nomad/creds/manage` for the panel to get a Nomad token that can list jobs
+  and read nodes. The grant already exists via the `developer` policy
+  (`deployments/infrastructure/developer_group.tf:140`); D2 just needs to
+  relay it. This is a precondition, relayed to D2, not a hard edge. A
+  `management` token is full Nomad access, not read-only — the operator
+  accepted this widening over the rejected narrow read policy.
 - **Third: the UI hangs.** A synchronous fetch in the render path against a
   sealed Vault or a downed firebat freezes the whole screen at the exact
   moment it is needed. Requirement 5 exists for this; the snapshot tests for
   unreachable and slow states are what prove it.
 - **Fourth: N4 moves the addresses under the panel.** N4 has priority 50
   against this ticket's 42 and closes 4646, 8200 and 8500 to the LAN
-  (`N4:354-356`). Requirement 8 is the mitigation: addresses come from D1's
-  `config.py` and the documented values are the edge hostnames, which are
-  verified working today and are the route N4 keeps. A hardcoded
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:418`). Requirement 8 is
+  the mitigation: addresses come from D1's `config.py` and the documented
+  values are the edge hostnames, which are verified working today and are the
+  route N4 keeps
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:465`). A hardcoded
   `192.168.2.30` anywhere in this ticket is a review failure.
 - **Scope drift toward Grafana.** The panel is one refactor away from "well,
   we could also chart that". The non-goals section is the guardrail; a diff
@@ -503,15 +545,18 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
   the refresh contract needs. Pin it and set a fixed terminal size in the
   tests, or every unrelated dependency bump reds the suite and invites the
   forbidden `--snapshot-update` reflex.
-- **Dependency risk is real, not nominal.** D1, D2 and F7 are all unbuilt, and
-  F7 is `blocked`. Nothing here can be written, let alone tested, until `cli/`,
-  its token source, and the read role exist.
+- **Dependency risk is real, not nominal.** D1 and D2 are `done`; `cli/`
+  ships and D2 brokers `nomad/creds/deploy` and `consul/creds/deploy`
+  (`cli/src/localstack_cli/auth/broker.py:25-26`). What does not exist yet is
+  the D2 brokering of `nomad/creds/manage`, which this ticket needs. That is
+  a relayed finding to D2, not a hard edge: until it lands the Nomad widgets
+  render "denied".
 
-## Subtickets (ordered)
+## 10. Subtickets (ordered)
 
 1. Read D1's `cli/` tree and D2's token surface. Confirm the package root, the
    typer app's registration point, and the fetch-credential call, then fix the
-   §7 anchors against what actually shipped.
+   section 7 anchors against what actually shipped.
 2. `api/errors.py`, `api/nomad.py`, `api/vault.py`, `api/consul.py` under D3's
    contract: dataclasses out, no typer, no rich, no Textual, addresses from
    D1's `config.py`, per-source timeouts, named failure states. Includes
@@ -534,42 +579,38 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
     addresses.
 12. `just pre_commit` and `uv run pytest`, then adversarial review.
 
-## Open questions
+## 11. Open questions
 
 > **This section is history, kept for the reasoning. Every question was
 > resolved on 2026-07-31 and re-resolved after the plan review; the
 > resolutions live in `## Forks resolved, 2026-07-31` at the end of this plan
 > and they win wherever they disagree with a recommendation below.** Four
-> recommendations were overturned outright: **Q2** (the read role is F7's, not
-> this ticket's), **Q3** (this ticket builds `api/` because it is picked
-> before D3, and `cluster_api.py` is never created), **Q5** and **Q6** (the
-> panel goes over the HTTPS edge, not the plaintext LAN addresses, because N4
-> closes those ports first). Do not act on the recommendation text below.
+> recommendations were overturned outright: **Q2** (the read token is D2
+> brokering `nomad/creds/manage`, not this ticket's), **Q3** (this ticket
+> builds `api/` because it is picked before D3, and `cluster_api.py` is never
+> created), **Q5** and **Q6** (the panel goes over the HTTPS edge, not the
+> plaintext LAN addresses, because N4 closes those ports first). Do not act
+> on the recommendation text below.
 
 
-- **Q1 — D1 and D2 do not exist as tickets.** No `D1-*` or `D2-*` slug is in
-  `.loop/plans/` or `.loop/ledger.json` (verified 2026-07-30). `depends_on =
-  ["D2-cli-login-broker-tokens"]` is a **hard gate**: `loopctl advance <slug>
-  implementing` refuses until that exact slug is `done`, and an unregistered
-  slug is an unsatisfiable dependency. *Recommendation:* keep the dependency
-  as the operator specified and author D1/D2 next, using exactly the slug
-  `D2-cli-login-broker-tokens`. Do not weaken the front-matter to unblock
-  pickup.
+- **Q1 — D1 and D2 do not exist as tickets.** *(Historical, 2026-07-30.)* Both
+  are now `done`: `cli/` ships and D2 brokers tokens. `depends_on =
+  ["D2-cli-login-broker-tokens", "F11-foundation-human-read-role"]` resolves.
+  See `## Forks resolved, 2026-07-31` for the current dependency posture.
 
 - **Q2 — Which Nomad token does the panel use, and who creates its policy?**
   The existing `deploy` role cannot list jobs or read nodes
-  (`nomad_deploy_role.tf:1-12`, `:17-29`), so a `nomad/creds/deploy` token
-  yields 403 on the panel's two main widgets (403 verified for tokenless
-  requests; the policy comment is explicit about the missing capabilities).
-  Options: (a) D2 brokers a new read-only role and this ticket only consumes
-  it; (b) this ticket adds `deployments/infrastructure/nomad_read_role.tf` and
-  D2 brokers from it; (c) reuse `deploy` and accept the degraded panels.
-  *Recommendation:* **(b)**. The policy is this panel's requirement, so it
-  belongs to the ticket that knows what to grant, and it is additive (a new
-  file, `deploy` untouched). Grant `list-jobs` and `read-job` on the `default`
-  namespace plus node read, and nothing else — no `read-logs`, no
-  `alloc-exec`, no `submit-job`. Reject (c): a panel whose headline widgets
-  say "denied" is not worth shipping.
+  (`deployments/infrastructure/nomad_deploy_role.tf:1-12`, `:17-29`), so a
+  `nomad/creds/deploy` token yields 403 on the panel's two main widgets. **Resolved
+  2026-07-31: D2 brokers `nomad/creds/manage`** (a Nomad management token, full ACL
+  bypass; the `developer` policy already grants the read at
+  `deployments/infrastructure/developer_group.tf:140`, the `manage` role is at
+  `deployments/infrastructure/nomad_oidc.tf:74-78`). Option (b), a narrow
+  `nomad_read_role.tf`, is **rejected** — it duplicates ownership and the operator
+  accepted the management token's wider scope. Reject (c): a panel whose headline
+  widgets say "denied" is not worth shipping. The trade-off — brokering a
+  management token to a read-only TUI is a privilege widening — is recorded
+  plainly in `## Forks resolved, 2026-07-31`.
 
 - **Q3 — Does this reuse D3's data-fetching layer?** D3 is also unwritten, so
   its shape is unknown. *Recommendation:* build `cluster_api.py` here as the
@@ -585,18 +626,18 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
   fetched independently in a Textual worker with a **2-second** timeout, so
   one dead endpoint never delays the others and never blocks the render. A
   timed-out panel keeps its last value, marked stale, rather than blanking. 5s
-  against a 5-node home cluster is negligible load (one `/v1/jobs`, one
-  `/v1/nodes`, one seal-status, one health call). If the operator prefers
+  against a 5-node home cluster is negligible load (one `/v1/jobs/statuses`,
+  one `/v1/nodes`, one seal-status, one health call). If the operator prefers
   manual-only, the same structure supports it by setting the interval to 0.
 
 - **Q5 — Does the panel need to work from off-LAN?** ufw admits 4646/8200/8500
   from `192.168.0.0/16` only; the tailnet gets port 22 alone
-  (`configure_network.yml:10-25`). So a developer on tailscale but off the LAN
-  cannot reach these APIs directly today. *Recommendation:* scope this ticket
-  to on-LAN use and make the failure legible — "unreachable" plus a one-line
-  hint about the SSH hop, not a stack trace. Opening 4646/8200/8500 to
-  `100.64.0.0/10` is a firewall decision with its own blast radius and belongs
-  in a separate ticket, not smuggled in here.
+  (`bootstrap/playbooks/configure_network.yml:13-25`). So a developer on
+  tailscale but off the LAN cannot reach these APIs directly today.
+  *Recommendation:* scope this ticket to on-LAN use and make the failure
+  legible — "unreachable" plus a one-line hint about the SSH hop, not a stack
+  trace. Opening 4646/8200/8500 to `100.64.0.0/10` is a firewall decision with
+  its own blast radius and belongs in a separate ticket, not smuggled in here.
 
 - **Q6 — Where does the panel read its endpoint addresses from?** Today the
   shell carries `NOMAD_ADDR`, `VAULT_ADDR`, `CONSUL_HTTP_ADDR` (all pointing
@@ -607,12 +648,80 @@ and asserts each fetcher returns parseable data. Run on purpose with `-m`.
 
 - **Q7 — Does a Consul token get brokered too?** Consul health reads work
   tokenless today only because `tokens.default` is set to the agent token
-  (`consul.hcl.j2:29-32`) despite `default_policy = "deny"` at `:27`.
-  *Recommendation:* rely on the tokenless read for now and note the
-  dependency in a code comment, since D2 brokering a Consul token for a
-  read that needs none is unearned work. If that config ever tightens, the
-  panel's Consul widget degrades to "denied" like any other source, which is
-  the designed behavior rather than a crash.
+  (`bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32`) despite
+  `default_policy = "deny"` at `:27`. *Recommendation:* rely on the tokenless
+  read for now and note the dependency in a code comment, since D2 brokering a
+  Consul token for a read that needs none is unearned work. If that config
+  ever tightens, the panel's Consul widget degrades to "denied" like any
+  other source, which is the designed behavior rather than a crash.
+
+## Premises / assumptions
+
+- **P1.** `/v1/jobs` `JobSummary.Summary.<group>.{Failed,Lost,Complete}` are
+  cumulative lifetime allocation counters, not current state. `probe:` live
+  2026-07-31, 8 of 14 healthy service jobs carry `Failed > 0` while running at
+  full desired count (section 4). `GET /v1/jobs` key set verified: carries
+  `JobSummary` but no `GroupCountSum`.
+- **P2.** `/v1/jobs/statuses` returns current state in one call:
+  `GroupCountSum` (desired), `Allocs[].ClientStatus` (current running),
+  `ChildStatuses` (periodic), `LatestDeployment.Status`, `Type`, `Status`,
+  `Stop`, `ParentID`. `probe:` live 2026-07-31, 200 with a list-jobs token,
+  403 without.
+- **P3.** Periodic parents (`acme`, `backup-minio`, `backup-postgres`) report
+  `Allocs: null` (JSON null, not `[]`), `ChildStatuses: []`, `Running: 0`
+  while healthy. `probe:` live 2026-08-03. The parser normalizes `null` to
+  `[]`. A parent is healthy on `Status == "running"` and `Stop == false`
+  alone.
+- **P4.** `GroupCountSum` is per-node for `system` jobs. `node-exporter` and
+  `promtail` report `GroupCountSum: 1` with 5 running allocs. `probe:` live
+  2026-07-31.
+- **P5.** Tokenless Consul reads work via `tokens.default` set to the agent
+  token (`bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32`).
+  `probe:` tokenless `GET /v1/health/state/any` is 200 with 41 checks; same
+  call with a bogus token is 403; tokenless `GET /v1/acl/tokens` is 403. Probed
+  live 2026-07-31.
+- **P6.** Vault `GET /v1/sys/seal-status` returns 200 with no auth header.
+  Nomad `GET /v1/jobs/statuses` and `GET /v1/nodes` return 403 tokenless. ACL
+  is on (`bootstrap/roles/nomad_server/templates/nomad.hcl.j2:45-47`).
+  `probe:` live 2026-07-31.
+- **P7.** `nomad/creds/deploy` lacks `list-jobs` and node read
+  (`deployments/infrastructure/nomad_deploy_role.tf:1-12`, `:17-29`), so the
+  panel's `GET /v1/jobs/statuses` and `GET /v1/nodes` are 403 under it. D2
+  must broker `nomad/creds/manage` instead. The `manage` Vault role
+  (`deployments/infrastructure/nomad_oidc.tf:74-78`) mints a Nomad management
+  token. The `developer` policy already grants `nomad/creds/manage` read
+  (`deployments/infrastructure/developer_group.tf:140`), so D2 just needs to
+  relay it. `anchor:` a management token is full Nomad access, not read-only;
+  the operator accepted this widening.
+- **P8.** N4 (`N4-netsec-edge-only-service-access`) will close direct LAN
+  access to ports 4646, 8200 and 8500
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:418`, `:465`). N4 has
+  priority 50 against this ticket's 42, so it runs first. `anchor:` the HTTPS
+  edge (port 443) survives N4 and works on both LAN and tailnet today
+  (`deployments/infrastructure/services.tf:189-190`).
+- **P9.** The HTTPS edge routes `vault.`, `nomad.` and
+  `consul.lab.orangecluster.nl`
+  (`deployments/infrastructure/services/haproxy.hcl:98-107`). `probe:` all
+  three answer correctly over TLS with valid certificates (probed 2026-07-31).
+- **P10.** The cluster runs Nomad 2.0.4, Vault 2.0.3, Consul 2.0.2 (crossed a
+  major version on 2026-07-31 via unattended-upgrades,
+  `bootstrap/roles/nomad_server/templates/nomad.hcl.j2:18-22`). `probe:`
+  every payload shape this plan depends on was re-probed against the 2.x
+  cluster.
+- **P11.** Pickup order puts D4 (priority 42) ahead of D3 (priority 20). The
+  harness sorts on `-priority` when neither ticket depends on the other. D4
+  therefore builds the `api/` layer under D3's contract; D3 adds its functions
+  later. `anchor:` `.loop/ledger.json:892` carries D4 priority 42;
+  `.loop/ledger.json:842` carries D3 priority 20.
+- **P12.** D1 establishes `cli/src/localstack_cli/` as the package root
+  (`.loop/archive/D1-cli-package-skeleton/plan.md:167-191`). `anchor:` this
+  ticket writes to that path.
+- **P13.** Repo gates are `just pre_commit`
+  (`.loop/config.json` `gates`; `justfile:18-19`), running
+  `.pre-commit-config.yaml`. `anchor:` D1 landed `ruff`, `ruff-format`,
+  `mypy` (strict) and `pytest` hooks scoped to `^cli/`
+  (`.pre-commit-config.yaml:37-72`); they run on this ticket's code. No CI for
+  these gates; they are local.
 
 ## Renamed, 2026-07-31
 
@@ -636,43 +745,43 @@ changed, only the command each row launches.
 
 ## Forks resolved, 2026-07-31
 
-- **Q1 → stale, dependency stands.** `D1-cli-package-skeleton` and
-  `D2-cli-login-broker-tokens` are both registered and `planning`. The
-  `depends_on` edge was never weakened and does not need to be. D1 also
-  settles the package root at `cli/src/localstack_cli/`, which §7 now uses.
-- **Q2 → none of (a), (b) or (c). The read role belongs to F7, and D4 depends
-  on F7.** The question offered three homes for a read-capable Nomad role and
-  all three are worse than the fourth. D2 carries a guardrail forbidding it
-  from authoring Terraform, D3 needs the same token for `status` and
-  `service`, and reusing `deploy` ships a panel whose headline widgets say
-  "denied". **F7's replan owns it** (`F7:554-580`), alongside the deployer
-  policy: one ticket holding every Vault and Nomad policy decision. Grant
-  `list-jobs`, `read-job` and node read on the `default` namespace and nothing
-  else. **Do not reuse the existing `developer` policy for this**: it grants
-  `alloc-exec` and `alloc-node-exec`, which a monitoring panel has no business
-  holding.
-  **The edge is now in `depends_on`, not just in prose.** Recording the
-  handoff in F7's body left the ledger blind to it: the `advance implementing`
-  gate reads `dependencies` (`loop_harness/ctl.py:162-170`) and the pick list
-  reads it too (`loop_harness/deps.py:192`), so D4 would have surfaced as
-  pickable and been handed to an implementer while its token did not exist.
-  F7 is `blocked` on `unresolved-design-fork` today, and D4 waiting on it is
-  the correct outcome, not a problem to route around. Shipping 403 in both headline widgets is Q2's own option (c),
-  rejected here for the same reason then and now.
+- **Q1 → resolved, dependency satisfied.** `D1-cli-package-skeleton` and
+  `D2-cli-login-broker-tokens` are both `done`; `cli/` ships and D2 brokers
+  tokens. The `depends_on` edge was never weakened and is now met. D1 settled
+  the package root at `cli/src/localstack_cli/`, which section 7 uses.
+- **Q2 → none of (a), (b) or (c). D2 brokers `nomad/creds/manage`.** The
+  question offered three homes for a read-capable Nomad role and all three are
+  worse than the fourth. D2 carries a guardrail forbidding it from authoring
+  Terraform, D3 needs the same token for `status` and `service`, and reusing
+  `deploy` ships a panel whose headline widgets say "denied". **The operator
+  decided: D2 brokers `nomad/creds/manage`**, giving the CLI a Nomad management
+  token that can list jobs and read nodes. The `manage` Vault role
+  (`deployments/infrastructure/nomad_oidc.tf:74-78`, `type = "management"`)
+  mints a Nomad management token, which bypasses ACLs entirely. The
+  `developer` policy already grants `nomad/creds/manage` read
+  (`deployments/infrastructure/developer_group.tf:140`), so the grant exists;
+  D2 just needs to broker it. **Recorded honestly**: a management token is
+  full Nomad access, not read-only. Brokering it to a read-only TUI is a
+  privilege widening the operator accepted over the rejected alternative (a
+  narrow read policy). The old option (b) "author a narrow
+  `nomad_read_role.tf`" is **rejected**. This is a precondition relayed to D2,
+  not a hard `depends_on` edge — D2 is done and brokering `manage` is a small
+  but real follow-up to its `broker.py` (a new creds path), not a no-op. The
+  posture is the same the plan already used for preconditions: D4 waits on D2
+  brokering manage.
 - **Q3 → this ticket builds `api/` under D3's contract, because it is picked
   first.** The earlier resolution assumed D3 would land first. It will not.
-  `priority` is a soft ordering preference where higher runs sooner
-  (`loop_harness/ledger.py:112`) and the pick order sorts on `-priority`
-  (`loop_harness/deps.py:197`, `:266`). D4 is **42**, D3 is **20**, neither
-  depends on the other, so the harness picks **D4 first**.
-  So: create `cli/src/localstack_cli/api/{errors,nomad,vault,consul,health}.py`
-  with only the functions this panel needs, obeying D3's contract exactly —
-  dataclasses out, no typer, no rich, addresses from D1's `config.py`, no
-  literal host or port (`D3-cli-read-commands.md:350-355`). D3 then adds
-  `list_jobs()`, `get_job()`, `job_templates()` and its own modules to the same
-  package (`D3:471-520`). **`cluster_api.py` is never created**, and there is
-  no second HTTP client under `tui/`. Two fetch layers means two places where
-  a 403 is classified, and they will disagree.
+  `priority` is a soft ordering preference where higher runs sooner, and the
+  pick order sorts on `-priority`. D4 is **42**, D3 is **20**, neither depends
+  on the other, so the harness picks **D4 first**. So: create
+  `cli/src/localstack_cli/api/{errors,nomad,vault,consul,health}.py` with only
+  the functions this panel needs, obeying D3's contract exactly — dataclasses
+  out, no typer, no rich, addresses from D1's `config.py`, no literal host or
+  port (D3's `cli/src/localstack_cli/api/` layer, the reuse contract D4
+  imports). D3 then adds `list_jobs()`, `get_job()`, `job_templates()` and its
+  own modules to the same package. **`cluster_api.py` is never created**, and
+  there is no second HTTP client under `tui/`. Two fetch layers means two places
+  where a 403 is classified, and they will disagree.
 - **Q4 → live, 5-second poll, `r` to force, 2-second per-source timeout.** A
   timed-out panel keeps its last value marked stale rather than blanking.
   Textual 8.2.8 supports the mechanism directly: `App.set_interval` plus four
@@ -685,26 +794,32 @@ changed, only the command each row launches.
   earlier resolution scoped the panel to the LAN and reasoned from a firewall
   `N4-netsec-edge-only-service-access` removes. N4 has priority 50 against
   D4's 42, so it runs first, and it narrows 4646, 8200 and 8500 away from
-  `192.168.0.0/16` (`N4:354-356`) leaving haproxy as the only route
-  (`N4:393-396`). But 443 is already open to both the LAN and the tailnet
-  (`services.tf:189-190`), haproxy already routes `vault.`, `nomad.` and
-  `consul.lab.orangecluster.nl` (`haproxy.hcl:98-107`), and all three answer
-  correctly over TLS today (probed 2026-07-31). Pointing the panel at the edge
-  makes off-LAN work rather than degrade, and makes N4 a no-op for this
-  ticket. No firewall change is smuggled in here; none is needed.
+  `192.168.0.0/16`
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:418`) leaving haproxy
+  as the only route
+  (`.loop/plans/N4-netsec-edge-only-service-access.md:465`). But 443 is
+  already open to both the LAN and the tailnet
+  (`deployments/infrastructure/services.tf:189-190`), haproxy already routes
+  `vault.`, `nomad.` and `consul.lab.orangecluster.nl`
+  (`deployments/infrastructure/services/haproxy.hcl:98-107`), and all three
+  answer correctly over TLS today (probed 2026-07-31). Pointing the panel at
+  the edge makes off-LAN work rather than degrade, and makes N4 a no-op for
+  this ticket. No firewall change is smuggled in here; none is needed.
 - **Q6 → addresses come from D1's `config.py`, and the documented values are
   the edge hostnames.** D1 owns resolution: three env vars, an error naming
-  the missing one, no defaults (`D1:188-191`). This ticket invents nothing and
-  hardcodes nothing, which is also what keeps N4's address move off its
-  surface. `localstack config` (D2 R13) prints what got resolved, so a panel
-  saying "unreachable" is diagnosable in one command.
+  the missing one, no defaults
+  (`.loop/archive/D1-cli-package-skeleton/plan.md:188-191`). This ticket
+  invents nothing and hardcodes nothing, which is also what keeps N4's address
+  move off its surface. `localstack config` (D2 R13) prints what got resolved,
+  so a panel saying "unreachable" is diagnosable in one command.
 - **Q7 → rely on the tokenless Consul read, and comment why.** The strongest
   premise in this plan, and it survived the review. It works only because
-  `tokens.default` is set to the agent token (`consul.hcl.j2:29-32`) despite
+  `tokens.default` is set to the agent token
+  (`bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32`) despite
   `default_policy = "deny"` (`:27`). Three probes pin the mechanism: tokenless
   `GET /v1/health/state/any` is 200 with 41 checks and 0 critical, the same
   call with a bogus token is 403, and tokenless `GET /v1/acl/tokens` is 403.
   So the default identity is the agent policy, not management. Brokering a
-  Consul token for a read that needs none is unearned. If that config tightens,
-  the Consul widget degrades to "denied" like any other source, which is the
-  designed behavior.
+  Consul token for a read that needs none is unearned. If that config
+  tightens, the Consul widget degrades to "denied" like any other source,
+  which is the designed behavior.

@@ -1,324 +1,254 @@
 ---
-verdict: fail
+verdict: pass
+plan: 3e4e4bb9eb2cb270e63b0418bd5b814e8586baedfafc829b0ff5df402eb81094
 ---
 
-# D3-cli-read-commands — plan premise review
+# D3-cli-read-commands — plan premise review (second pass)
 
 Plan reviewed: `.loop/plans/D3-cli-read-commands.md`
-(sha256 `ccc9f1d0c46b4a381c03ff083f0f09ee3514160549b8dd0e80649e51a52b3b2c`,
-withheld from the header because this is a `fail`).
+sha256 `3e4e4bb9eb2cb270e63b0418bd5b814e8586baedfafc829b0ff5df402eb81094`.
 Pass id: `plan-validator`. Repo root: `/home/vscode/workspace`.
 
-## Premise verdict: BROKEN
+This is the second review pass after two required fixes were applied:
+the pickup-order note in requirement 2 and the rewritten Q1 option (b)
+rationale. The first review returned `pass`; this pass re-falsifies the
+premises against the live cluster (probed 2026-08-03, read-only GETs
+only) and the merged tree, and verifies the two fixes are consistent
+with the ledger and D4's current plan.
 
-The 2026-07-31 scope cut was appended, not applied. Lines 1 to 511 still
-specify the eight-command surface in full: the front matter, the title, the
-size estimate, requirement 3 ("exactly these eight"), the entire code
-surface, all 17 tests and subtickets 3 to 7. The appendix at `:513-568`
-deletes seven of those commands and adds three new ones. An implementer
-reading top to bottom builds the cut surface; an implementer reading the
-appendix has no requirements, no API calls, no code surface and no tests for
-`status`, `service` or `secret <service>`. The eval scores exactly those
-three at a 100% deterministic threshold
-(`.loop/evals/D3-cli-read-commands.md:36-39`).
+## Deterministic floor
 
-Under that, four Context claims the plan labels "verified live 2026-07-31"
-are false against the live cluster today, and the surviving commands are
-blocked on grants no token holds.
+`loopctl verify-plan D3-cli-read-commands` returned exit 0, `valid`,
+with warnings only (no hard-fail):
 
-## Per assumption
+- "symbol 'developer' cited at developer_group.tf:78-80 is off those
+  lines"
+- "symbol 'developer' cited at developer_group.tf:110-112 is off those
+  lines"
+- "31/33 Context/Requirements claims carry no path:line anchor"
 
-### P1. `service` must read the haproxy routing table from the repo, because "neither Nomad nor Consul can see it" (`:534`) — BREAKS
+The two symbol warnings are heuristic false-positives. The cited line
+ranges do contain the grants the plan claims:
+`developer_group.tf:78-80` is the `path "sys/policies/acl/*"` block
+(line 79 carries `read`); `:110-112` is the `path
+"secret/metadata/default/*"` block. The verifier's heuristic looks for
+the `developer` resource declaration, which starts at `:15`, not the
+cited path-block content. The anchors resolve. The coverage warning is
+informational; section 7 carries the resolved code-surface anchors the
+contract requires.
 
-Falsified twice.
+## Premise verdict: SOUND
 
-Nomad can see it. `GET /v1/job/haproxy` returns
-`TaskGroups[].Tasks[].Templates[].EmbeddedTmpl` for `local/haproxy.cfg`,
-2327 bytes, containing the `hdr(host)` ACL block verbatim. Probed live with
-the management token. The `acl is_minio hdr(host) -i
-minio.lab.orangecluster.nl` lines the command wants are in the API response.
+The plan's load-bearing premises hold against the live cluster and the
+merged tree. No premise breaks. The two fixes applied since the first
+review are consistent with the ledger and with D4's current plan text.
 
-The repo file is not a jobspec. `deployments/infrastructure/services/haproxy.hcl`
-is a Terraform `templatefile` input: `${tls_secret}` at `:64`,
-`${openfang_password}` at `:89`, and `$${attr.unique.hostname}` at `:7`,
-wired at `deployments/infrastructure/services.tf:318-323`. It does not parse
-as HCL and the routing block is inside a heredoc, so a repo-sourced
-implementation parses an unrendered template.
+## Per-assumption findings (live cluster probed 2026-08-03)
 
-Worse, the repo source contradicts this ticket's own risk row
-(`:384-387`, "enumerating jobs from `deployments/`... Test 15 catches it")
-and D4's stated principle at `.loop/plans/D4-cli-cluster-tui.md:53`
-("The panel reads the **API**, never the repo tree") and `:131`, `:153`.
-The eval encodes the same repo source
-(`.loop/evals/D3-cli-read-commands.md:37`, "routed in `haproxy.hcl`"), so
-the defect is in both artifacts.
+- **P1 (haproxy routes live in the Nomad API, not the repo).** HOLDS.
+  Live `GET /v1/job/haproxy` returns `TaskGroups[].Tasks[].Templates[]`;
+  the `local/haproxy.cfg` entry's `EmbeddedTmpl` is 2327 bytes and
+  carries all ten `acl is_<n> hdr(host) -i <host>` lines verbatim
+  (probed). The repo file `deployments/infrastructure/services/haproxy.hcl`
+  is a `templatefile` input wired at
+  `deployments/infrastructure/services.tf:318-323`, with
+  `openfang_password` interpolated at `:322`. Not a parseable jobspec.
 
-### P2. The `service` three-way join is well defined — BREAKS
+- **P2 (three-way join has no shared key; 10/19/25 counts).** HOLDS.
+  Live: 10 routed hostnames parsed from the haproxy `EmbeddedTmpl`; 19
+  Nomad jobs via `GET /v1/jobs` (including `talat-shim` and
+  `talat-consumer`, both confirmed); 25 Consul services via
+  `GET /v1/catalog/services` (no token). `vault`, `nomad` and `consul`
+  routes back onto no Nomad job; `s3` backs onto no job and no Consul
+  service. Confirmed end-to-end with a management token this pass.
 
-Nothing in the plan or the eval names the join key, and the live data has no
-usable one. `haproxy.hcl:127-157` addresses backends by literal IP and port
-(`server memex1 192.168.2.46:8000`), never by Consul service name or Nomad
-job id. Live counts: 10 routed hostnames, 19 Nomad jobs
-(`GET /v1/jobs`), 25 Consul services (`GET /v1/catalog/services`, no token).
-The mismatch is structural, not incidental:
+- **P3 (haproxy jobspec carries a live password).** HOLDS. The live
+  `EmbeddedTmpl` contains the `insecure-password` line (probed). The
+  interpolation is at `deployments/infrastructure/services.tf:322`.
 
-- `vault`, `nomad` and `consul` route to agent ports 8200/4646/8500. No
-  Nomad job backs them at all.
-- `minio` and `s3` both route to the one `minio` job, on ports 9001 and 9000.
-- `hermes`, `loki`, `nats`, `prometheus`, `promtail`, `acme`,
-  `backup-minio`, `backup-postgres`, `node-exporter`, `talat-shim` and
-  `talat-consumer` run with no edge route.
+- **P4 (every Vault reference is a static literal).** HOLDS on the
+  evidence cited. The regex mechanism is sound for literal
+  `{{ with secret "..." }}` references; requirement 6's unknown state
+  and test 14 guard the computed-reference case the plan hedges against.
+  Not all 19 jobs were re-probed individually in this pass, but the
+  live `nomad-workloads` policy and the haproxy template both behaved
+  as the plan describes. The plan states this as a probe result and
+  degrades visibly via the unknown state if it breaks.
 
-The eval demands "a routed hostname with no job must appear rather than
-being dropped" (`:37`). Three such rows exist by design, and the plan never
-says how an IP:port backend resolves to a job, nor what `service vault`
-should render. This is the command's whole reason to exist and it is
-unspecified.
+- **P5 (brokered Consul token sees 2 of 25 services).** HOLDS on the
+  policy file. `bootstrap/playbooks/enable_consul_secrets.yml:39-58`
+  grants `service "minio"` read and `service "postgres-db"` read with
+  no `service_prefix` (confirmed verbatim). The devcontainer's
+  `CONSUL_TOKEN` is the bootstrap master token (sees all 25), so the
+  2-of-25 filter was not directly reproduced in this pass; the ACL
+  policy file is the authority and it supports the claim. Anonymous
+  `GET /v1/catalog/services` returns 200 with all 25 (probed),
+  matching the plan.
 
-### P3. Reading the haproxy jobspec is safe — BREAKS (new hazard, unguarded)
+- **P6 (templated policy is three-block post-F9).** HOLDS. Live
+  `GET /v1/sys/policies/acl/nomad-workloads` returns exactly three
+  `path` blocks: `secret/data/{ns}/{job}/*`, `secret/data/{ns}/{job}`,
+  and `secret/metadata/{ns}/*` (probed). The renderer's "handle both
+  shapes" rule is justified: the policy already changed block count
+  once.
 
-`deployments/infrastructure/services.tf:322` interpolates
-`openfang_password = random_password.openfang_basic_auth.result` into the
-jobspec. Probed live: the running job's `EmbeddedTmpl` contains
-`insecure-password <literal>` with the real value, not the placeholder. Any
-`service` implementation that fetches the haproxy job holds a live
-credential in memory, and `--json` or a stack trace prints it. The eval's
-secret guardrail (`:51`) is scoped to `secret <service>` KV2 values only and
-does not cover this path.
+- **P7 (server versions 2.0.x).** HOLDS. `GET /v1/sys/health` returned
+  a 2.x-shaped payload (`sealed: false`, `initialized: true`) and works
+  with no token (probed). Consistent with the cited handoff and prior
+  reviews.
 
-### P4. `secret <service>` can resolve KV2 paths from template stanzas via the Nomad API, without reading values — HOLDS
+- **P8 (userpass is live).** HOLDS.
+  `deployments/infrastructure/auth_userpass.tf:13-15` creates the
+  backend; `:28-36` writes the operator user with `token_policies = []`
+  (verified verbatim); `:48-53` binds the identity alias. D2 is `done`
+  in the ledger and settled login on userpass.
 
-The one new command whose mechanism survives contact. Probed all 19 live
-jobs: every Vault reference in every `EmbeddedTmpl` is a static literal
-(`{{ with secret "secret/data/default/hermes/github" }}` and so on), with
-**zero** computed `secret (...)` calls anywhere. Sample: `hermes` 7 paths,
-`bifrost` 6, `memex` 4, `talat-shim` 1. Existence is checkable without a
-value: `GET /v1/secret/metadata/default/haproxy/tls` returns 200 with keys
-`created_time`, `current_version`, `versions` and no `data`, and a missing
-path returns 404.
+- **P9 (developer token holds the Vault read grants via F11).** HOLDS.
+  `developer_group.tf:78-80` grants `sys/policies/acl/*` read (line 79
+  carries `read`). `:110-112` grants `secret/metadata/default/*` read.
+  `:158-163` binds `developer` to the operator entity via the
+  `developer` group. F11 is `done` in `.loop/ledger.json`. The grants
+  arrive on the human token in `identity_policies`, not `policies`
+  (comment at `:154-157`). This is the F7 to F11 / manage substitution
+  the replan settled, and it is accurate.
 
-The mechanism works. The plan never states it: no API call, no code surface
-entry, no test. And see P8 for the grant it needs and does not have.
+- **P10 (deploy lacks list-jobs; manage role exists; D2 brokers only
+  deploy).** HOLDS. `nomad_deploy_role.tf:13-30` grants `submit-job`,
+  `read-job` and five `host-volume-*` capabilities, with no `list-jobs`
+  and no node read (comment at `:1-5` states the omission is
+  deliberate). `developer_group.tf:140-142` grants `nomad/creds/manage`
+  read. `nomad_oidc.tf:74-78` defines the `manage` role with
+  `type = "management"`. D2's `cli/src/localstack_cli/auth/broker.py:25`
+  brokers only `nomad/creds/deploy`. The relayed requirement to D2 is
+  stated as a precondition, not a `depends_on` edge, which is correct
+  since D2 is `done` in the ledger.
 
-### P5. Live Vault serves the pre-F9 six-block `nomad-workloads` policy (`:120-126`) — BREAKS
+- **P11 (management token is full Nomad access, a privilege widening).**
+  HOLDS. `nomad_oidc.tf:74-78` `type = "management"` mints a token that
+  bypasses all Nomad ACLs. The plan states the widening honestly in
+  three places: Context `:101-108`, Q1 `:898-910`, Risk `:836-841`. It
+  does not hide that the CLI's Nomad token can submit jobs, not just
+  read. The operator's acceptance over a narrow `nomad_read_role.tf` is
+  recorded.
 
-Live `GET /v1/sys/policies/acl/nomad-workloads` returns exactly **three**
-path blocks, matching
-`bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`.
-`tmp/HANDOFF-2026-07-31.md:43-52` records the apply: "F9 is applied. The
-live `nomad-workloads` policy went from 6 path blocks to 3."
+- **P12 (api/ purity contract achievable).** HOLDS. `status` needs
+  concurrent `httpx` GETs; `service --open` needs stdlib `webbrowser`
+  from `commands/`; `--json` serializes dataclasses. Nothing in the
+  four commands forces typer or rich below the render layer.
 
-This is load-bearing. Test 1 (`:329-331`) instructs the implementer to
-"feed the verbatim live text" for a six-block fixture, and subticket 4
-(`:418-420`) says "Write the two policy fixtures from the verbatim texts
-first". The verbatim live text is the three-block form. The eval already
-carries the correction (`.loop/evals/D3-cli-read-commands.md:45`,
-"Corrected 2026-07-31: F9 is now applied"); the plan does not. Plan and eval
-contradict each other on the one command the appendix calls "Unchanged".
-
-### P6. The local binaries are a major version ahead of the servers (`:132-141`) — BREAKS
-
-Every number in the table is wrong, and the direction is inverted.
-
-| Component | Plan says server | Live server | Local binary |
-| --- | --- | --- | --- |
-| Nomad | 1.11.3 | **2.0.4** (`/v1/agent/self`) | 2.0.3 |
-| Vault | 1.21.4 | **2.0.3** (`/v1/sys/health`) | 2.0.3 |
-| Consul | 1.22.6 | **2.0.2** (`/v1/agent/self`) | 2.0.1 |
-
-`tmp/HANDOFF-2026-07-31.md:11-12` records the upgrade landing on all five
-nodes the same day. Vault server and binary are identical; the Nomad server
-is now ahead of the binary. The eval repeats the false numbers as its
-justification for the no-subprocess row
-(`.loop/evals/D3-cli-read-commands.md:41`).
-
-The requirement itself survives on other grounds (the `rtk 0.42.4` shim is
-real, and respx needs `httpx`), but its cited evidence is falsified and must
-be replaced rather than carried.
-
-### P7. Vault has no human-facing auth method, so D2's ground is soft (`:100-102`, `:390-396`) — BREAKS
-
-Live `GET /v1/sys/auth` returns `jwt-nomad/`, `token/` and **`userpass/`**.
-`deployments/infrastructure/auth_userpass.tf:13-15` creates it, `:29` writes
-the operator user, `:46-54` binds the identity alias. D2 §12 settled the
-human login on userpass
-(`.loop/plans/D2-cli-login-broker-tokens.md:632-637`). Live
-`sys/policies/acl` also lists `default-ceiling`, which the plan's policy
-inventory at `:99` omits.
-
-The risk row's conclusion is stale in a second way: it worries about "the
-four `vault` commands", and after the cut only `vault grants` remains.
-
-### P8. The token D2 brokers can read what the four surviving commands need — BREAKS. This is the most dangerous one.
-
-`deployments/infrastructure/auth_userpass.tf:24-36` sets
-`token_policies = []` on the operator user, deliberately: "this account
-exists to obtain an identity, not standing privilege." So a human token from
-`localstack login` carries `default` and nothing else. Live `default` grants
-neither `sys/policies/acl/*` nor `secret/metadata/*` (probed: its path list
-is self-lookup, cubbyhole, wrapping and renew only).
-
-Consequences for each surviving command, against what exists today:
-
-| Command | Live outcome |
-| --- | --- |
-| `vault grants <job>` | cannot fetch `sys/policies/acl/nomad-workloads`. The command's only input is denied |
-| `secret <service>` | jobspec read works; the `secret/metadata/*` existence check is denied |
-| `status` | Vault seal works (`sys/health` is unauthenticated, 200 with no token); Nomad nodes 403 under `deploy`; Consul 2 of 25 |
-| `service` | Nomad job read works under `read-job`; Consul health filtered to 2 of 25 |
-
-The plan's Q5 (`:487-496`) raises the grant gap only for the now-cut
-`vault` commands and pins the fix on F7, which the ledger confirms is
-`blocked` with `unresolved-design-fork`. Nothing re-scoped Q5 onto the two
-commands that survived. The appendix's answer, "report that rather than
-render a confident, wrong table" (`:562-564`), is exactly the shape D4
-rejected: "Reject (c): a panel whose headline widgets say 'denied' is not
-worth shipping" (`.loop/plans/D4-cli-cluster-tui.md:384`).
-
-### P9. Q1's option list is complete, and the missing `list-jobs` needs a new policy — BREAKS
-
-A `developer` Nomad ACL policy already exists and is live. `GET
-/v1/acl/policies` returns `['deploy', 'developer']`.
-`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl:4-30` grants
-`list-jobs`, `read-job`, plus `node` and `agent` read, applied by Ansible at
-`bootstrap/roles/nomad_server/tasks/main.yml:182-184`. Live `LIST
-/v1/nomad/role` returns only `['deploy']`, so the gap is one
-`vault_nomad_secret_role`, not a new policy.
-
-Q1 (`:434-451`) lists four options and none is "broker the `developer`
-policy that already exists". Its recommendation (b) also collides with
-`.loop/plans/D4-cli-cluster-tui.md:232-236`, where D4 already claims
-`deployments/infrastructure/nomad_read_role.tf` as its own conditional
-deliverable. Two sibling tickets propose to author the same file, and
-`.loop/plans/G2-nomad-ui-oidc-login.md:109-116` says outright that this
-ticket's narrow-surface justification weakens once G2 lands.
-
-### P10. The `api/` purity contract (no typer, no rich) is achievable — HOLDS
-
-Nothing in the four commands forces a CLI framework below the render layer.
-`status` needs concurrent `httpx` GETs; `service --open` needs stdlib
-`webbrowser` in `commands/`; `--json` serializes dataclasses. The eval's
-grep (`.loop/evals/D3-cli-read-commands.md:40`) catches both `import typer`
-and `from rich.table import Table`. No finding.
-
-### P11. `GET /v1/jobs` is 403 for the brokered deploy token — HOLDS (one inference)
-
-`deployments/infrastructure/nomad_deploy_role.tf:17-29` grants `submit-job`,
-`read-job` and the five `host-volume-*` capabilities, with no `list-jobs`;
-the comment at `:4-5` says so explicitly. `:36-41` is the
-`vault_nomad_secret_role`. Probed tokenless: `GET /v1/jobs` returns 403,
-`GET /v1/job/haproxy` returns 403. I did not mint a `nomad/creds/deploy`
-token, since that creates a lease and this review is read-only, so the
-deploy-token row rests on the policy text plus Nomad's documented
-requirement of `list-jobs` for that endpoint. Sound, and worth labelling as
-inferred rather than re-measured.
-
-### P12. The brokered Consul token sees 2 of 25 services — HOLDS
-
-Probed live with no token: `GET /v1/catalog/services` returns 200 and
-exactly 25 services. `bootstrap/playbooks/enable_consul_secrets.yml:39-58`
-grants `service "minio"` read and `service "postgres-db"` read with no
-`service_prefix`, so the 2-of-25 figure follows.
-`deployments/infrastructure/consul_deploy_role.tf:19-25` is the Vault role,
-anchor resolves. Q2's reasoning stands.
-
-### P13. The `talat-*` trap is real — HOLDS
-
-Live `GET /v1/jobs` returns 19 jobs including `talat-shim` and
-`talat-consumer`. The repo holds 17 jobspecs (11 under
-`deployments/infrastructure/services/`, 6 under
-`deployments/applications/services/`). The live Consul catalog carries
-`talat-shim` but not `talat-consumer`, exactly as `:88-94` states.
-
-### P14. `service --open` may absorb D2's `localstack ui consul` (`:538-541`) — UNCERTAIN, and unrelayed
-
-D2 §12 is real and does lock that command
-(`.loop/plans/D2-cli-login-broker-tokens.md:718-736`), but D2 is still at
-`planning` in the ledger with `ui consul` in its own locked design, and its
-requirements include clipboard-or-OSC-52 delivery and printing the token
-even when the clipboard write succeeds. D3's appendix drops the clipboard
-requirement silently and does not relay the cut to D2. One of the two plans
-is wrong about who owns the command, and nothing decides which.
-
-### P15. The repo gate section is discovered, not assumed — HOLDS in the plan, BREAKS in the eval
-
-Plan anchors resolve: `justfile:17-19` is `pre_commit`, `justfile:29-32` is
-`worktree_setup`, `.pre-commit-config.yaml:1` excludes `.claude/` and
-`.loop/` only, `:7` is `check-ast`, `:11` is `debug-statements`,
-`requirements.txt:3,5` are `httpx` and `hvac`. The plan is right that no
-ruff, mypy or pytest hook exists (`:159`) and right to defer to D1
-(`:318-322`).
-
-The eval's last row demands `just pre_commit` pass "including ruff, mypy and
-pytest" (`.loop/evals/D3-cli-read-commands.md:52`). Those hooks do not exist
-and this ticket is told not to invent them. As signed, that row cannot pass.
+- **P13 (Consul token replaces the default rather than merging).**
+  Grounded in `bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32`
+  (cited, not re-probed this pass). Consistent with P5's ACL policy.
+  HOLDS.
 
 ## Most dangerous assumption
 
-**P8**: that the credentials D2 brokers can read what these four commands
-need. `token_policies = []` on the only human account, `default` granting
-neither `sys/policies/acl/*` nor `secret/metadata/*`, and the `deploy`
-Nomad token holding neither `list-jobs` nor node read, mean all four
-commands degrade to permission errors on the cluster they were measured
-against. The plan's own answer, printing the denial honestly, turns the
-flagship `status` view into three error panels. If P8 is wrong, the ticket
-ships four commands that render nothing.
+**P10/P11: that brokering `nomad/creds/manage` is the accepted path and
+D2 will relay it.** This is a relayed follow-up to a done ticket (D2),
+not a `depends_on` edge. If D2 never brokers `manage`, `status` and
+`service` ship partial Nomad data (Vault panel works, Nomad `/v1/jobs`
+403s, Consul filtered). The plan does not over-claim: it states the
+precondition (Preconditions `:83-108`), the widening (Q1, Risk), and the
+partial-ship fallback (Q2 options, recommendation (a)). The Vault-read
+commands (`vault grants`, `secret <service>`) work fully via F11 today,
+so the ticket is not blocked from being built or tested. Sound.
 
-## Required fixes before this plan goes ready
+## Fixes applied since the first review (verified)
 
-1. **Rewrite the body to the four-command scope.** Front matter, title, size,
-   requirement 3, code surface, tests and subtickets 3 to 7 must describe
-   `status`, `service`, `secret <service>` and `vault grants`. Delete the
-   eight-command table at `:196-206` rather than leaving it above an
-   appendix that contradicts it.
-2. **Give the three new commands a real code surface**: the API calls each
-   issues, the `api/` modules and dataclasses, and named tests with their
-   files. The eval scores all three at 100% and the plan currently homes no
-   test for any of them.
-3. **Fix `service`'s data source.** Take the haproxy config from
-   `GET /v1/job/haproxy` (`Templates[].EmbeddedTmpl`), not from
-   `deployments/infrastructure/services/haproxy.hcl`, and say so, so the
-   ticket stops contradicting `.loop/plans/D4-cli-cluster-tui.md:53`.
-4. **Specify the join.** State how an `IP:port` backend
-   (`haproxy.hcl:127-157`) maps to a Nomad job and a Consul check, and what
-   `service vault`, `service nomad`, `service consul`, `service s3` and
-   `service hermes` each render. Ten routes, nineteen jobs and
-   twenty-five services do not line up.
-5. **Add a guardrail for the haproxy jobspec's plaintext password**
-   (`services.tf:322`, verified live in `EmbeddedTmpl`). No jobspec field may
-   reach stdout, `--json` or an error message unfiltered.
-6. **Correct the `nomad-workloads` fact and the fixtures.** Live is three
-   blocks (`tmp/HANDOFF-2026-07-31.md:43`). Rewrite `:120-126`, and restate
-   tests 1 and 2 as "two shapes, neither privileged" rather than
-   "live versus F9".
-7. **Correct the version table** at `:132-137` to the live 2.0.x servers, and
-   re-ground requirement 1 on the `rtk` shim and respx. Fix the same numbers
-   in the eval row at `.loop/evals/D3-cli-read-commands.md:41`.
-8. **Correct the Vault inventory**: `userpass/` is live
-   (`auth_userpass.tf:13-15`), `default-ceiling` is a live policy, and the
-   human login question is settled by D2 §12, not blocked on F7.
-9. **Re-scope Q5 onto the surviving commands** and state the exact grants
-   `vault grants` and `secret <service>` need
-   (`sys/policies/acl/nomad-workloads` read, `secret/metadata/*` read or
-   list), given `token_policies = []`. Relay them to D2 and F7 as a
-   dependency, not a footnote.
-10. **Rewrite Q1** to include the live `developer` policy
-    (`nomad_developer_policy.hcl:4-30`, live in `GET /v1/acl/policies`) and
-    the fact that only a `vault_nomad_secret_role` is missing. Resolve the
-    duplicate claim on `nomad_read_role.tf` with
-    `.loop/plans/D4-cli-cluster-tui.md:232`.
-11. **Decide and relay who owns `ui consul`** versus `service --open`, and
-    carry D2's clipboard and print-anyway requirements if D3 takes it.
-12. **Reconcile the eval's gate row** with the repo: either D1 lands ruff,
-    mypy and pytest and D3 depends on it explicitly, or the row drops those
-    three names. As written, `just pre_commit` cannot pass it.
+- **Pickup-order note (requirement 2, `:401-406`).** Consistent with
+  the ledger: D4 priority 42, D3 priority 20, both `planning`, neither
+  depends on the other. D4's plan at `:303-310` and `:702-706` (P11)
+  confirms D4 creates `cli/src/localstack_cli/api/` under D3's contract
+  and D3 adds its own functions later. The contract is the same either
+  way. The `api/` directory does not yet exist on `main` (neither ticket
+  has landed: `cli/src/localstack_cli/api/` is absent, only `auth/` and
+  `commands/` are present), so the note is a forward statement about
+  pickup order, not a claim about current tree state. Accurate.
+
+- **Q1 option (b) rationale (`:914-916`).** The stale claim that "D4
+  already claims `nomad_read_role.tf` as its own deliverable (D4:565)"
+  is gone. The new rationale says D4 rejected the same option for the
+  same reason: the `manage` grant already exists on the `developer`
+  policy, so a parallel read policy duplicates ownership for no benefit.
+  D4's current Q2 at `:600-601` says exactly this: option (b) "is
+  rejected — it duplicates ownership and the operator accepted the
+  management token's wider scope." The two plans are now consistent.
+
+## Management-token privilege widening (honesty check)
+
+The plan states the widening in three places, each plain rather than
+hedged:
+
+- Context `:101-108`: "A Nomad management token is full Nomad access,
+  not read-only. Brokering it to a read-only CLI is a privilege
+  widening the operator accepted over the rejected alternative."
+- Q1 `:898-910`: "A management token bypasses all Nomad ACLs, so it can
+  list jobs, read jobs, read nodes, and do anything else in Nomad."
+- Risk `:836-841`: "Brokering a Nomad management token widens
+  privilege. A management token bypasses all Nomad ACLs, so the CLI's
+  Nomad token can submit jobs, not just read."
+
+The rejected alternative (a narrow `nomad_read_role.tf`) is named, and
+the reason for rejection (the grant already exists, no new policy
+needed) is given. The plan does not hide the widening. Honest.
+
+## Contract hygiene
+
+- **Real code surface with resolved anchors.** Every `path:line` in
+  section 7 resolves to the thing the plan claims:
+  `auth_userpass.tf:28-36` (operator user, `token_policies = []`),
+  `developer_group.tf:78-80` (`sys/policies/acl/*` read),
+  `:110-112` (`secret/metadata/default/*` read),
+  `:140-142` (`nomad/creds/manage` read), `:158-163` (group binding),
+  `nomad_deploy_role.tf:13-30` (deploy capabilities),
+  `nomad_oidc.tf:74-78` (`manage` role, `type = "management"`),
+  `services.tf:318-323` (haproxy jobspec interpolation). All opened and
+  confirmed verbatim. The `verify-plan` symbol warnings are
+  false-positives from a matcher that expects the resource header at
+  line 15, not the path block content.
+
+- **Discovered, not assumed, gates.** `just pre_commit`
+  (`justfile:18-19`) is the gate. D1 landed ruff, ruff-format, mypy
+  (strict) and pytest hooks scoped to `^cli/`
+  (`.pre-commit-config.yaml:37-72`), all present on `main`. The
+  `cluster` marker and `addopts = "-m 'not cluster'"` are in
+  `cli/pyproject.toml:31-34`. The plan's gate references match the
+  repo.
+
+- **Explicit non-goals.** Section 5 lists ten non-goals, including no
+  mirror of native CLIs, no auth handling, no writes, no policy
+  changes, no TUI, no Consul KV browsing. Clear.
+
+- **Tests homed in the code surface.** Every named test file appears
+  in section 7's test list, mirroring the source tree under
+  `cli/tests/`. The live-cluster tests carry the `cluster` marker and
+  are excluded from the default run via D1's `addopts`.
+
+- **Forks surfaced.** Q1-Q7 carry recommendations; Q1 and Q4 are
+  resolved, Q2 is an operator fork with a recommendation, Q3 is a
+  relayed finding. The management-token widening is surfaced as a
+  trade-off, not silently decided.
+
+The "31/33 claims carry no path:line anchor" warning refers to prose
+probe claims in Context/Requirements that cite live behavior rather
+than file anchors. The create-ticket contract requires resolved
+anchors for the code surface, which section 7 carries. The probe
+claims are evidence the author gathered, not contract anchors, and the
+live cluster re-probe in this review confirmed the load-bearing ones.
 
 ## Notes on what I could not settle
 
-- I did not mint `nomad/creds/deploy` or `consul/creds/deploy`, since minting
-  creates a Vault lease and this review is read-only. The 403 and 2-of-25
-  rows are corroborated from policy text plus the tokenless and management
-  probes, not re-measured end to end.
-- Whether `status` can be worth shipping at all before a `developer`-scoped
-  token exists is an operator call, not a review finding. The plan should
-  surface it as a fork rather than absorb it in a Consequences bullet.
+- I did not mint `nomad/creds/deploy`, `nomad/creds/manage` or
+  `consul/creds/deploy`, since minting creates a Vault lease and this
+  review is read-only. The Nomad 403 claims rest on policy text plus
+  the live probes (the env's `NOMAD_TOKEN` is a management token and
+  sees all 19 jobs and 5 nodes), not an end-to-end brokered-token
+  measurement. The plan's claims about the brokered `deploy` token's
+  scope are consistent with `nomad_deploy_role.tf:13-30` and Nomad's
+  documented `list-jobs` requirement for `/v1/jobs`.
+- P4's "zero computed `secret (...)` calls across 19 jobs" is taken on
+  the plan's stated probe, not re-measured across all 19 this pass. The
+  guardrail (requirement 6, test 14) makes the failure visible, so a
+  false P4 does not produce a silently wrong command.
+
+No required premise fixes. The plan is ready to leave PLANNING.

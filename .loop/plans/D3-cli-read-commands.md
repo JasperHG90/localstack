@@ -2,20 +2,22 @@
 epic = "cli"
 depends_on = ["D1-cli-package-skeleton", "D2-cli-login-broker-tokens"]
 priority = 20
-summary = "Add four read-only synthesis commands to the localstack CLI (status, service, secret, vault grants), each answering a question no single native CLI can. All data comes from the Nomad, Vault and Consul HTTP APIs, never from the repo tree. Two of the four need Vault read grants the brokered human token does not hold today; F7 owns that policy and this ticket states it as a precondition rather than widening anything itself."
+summary = "Add four read-only synthesis commands to the localstack CLI (status, service, secret, vault grants), each answering a question no single native CLI can. All data comes from the Nomad, Vault and Consul HTTP APIs, never from the repo tree. Two of the four need Vault read grants the brokered human token now holds via F11; the other two need D2 to broker nomad/creds/manage, a management token, which D3 states as a precondition rather than widening anything itself."
 tags = ["cli", "nomad", "vault", "consul", "haproxy"]
 ---
 
-# D3 — Four read-only synthesis commands for `localstack`
+# Ticket: D3-cli-read-commands
 
-## Title
+## 1. Title
+
 Add `status`, `service [<name>] [--open]`, `secret <service>` and
 `vault grants <job>` to the `localstack` CLI, backed by a client layer D4's
 TUI can import, rendered as rich tables with `--json` on every command. Each
 command joins data across Vault, Nomad, Consul and the haproxy edge. The
 commands consume the tokens D2 obtains and add no auth logic of their own.
 
-## Size / Effort
+## 2. Size / Effort
+
 **Medium to large.** Four commands, but only one of them is mechanical. The
 effort is concentrated in three places:
 
@@ -26,11 +28,12 @@ effort is concentrated in three places:
 - `vault grants` has to render a Vault-templated policy without hardcoding
   either the template's variable set or its current path count. The policy has
   already changed shape once (F9 took it from six path blocks to three).
-- Two of the four commands cannot read their own inputs with the credential
-  D2 brokers today. Establishing that, scoping around it, and relaying it is
-  most of the remaining thinking. See Preconditions.
+- Two of the four commands still need D2 to broker `nomad/creds/manage` so the
+  CLI holds a Nomad management token, and that is a relayed precondition, not
+  something D3 owns. See Preconditions.
 
-## Triggered by
+## 3. Triggered by
+
 Operator request: developer conveniences on top of the `localstack` CLI, so
 that everyday cluster questions do not need three separate binaries and a
 management token. Narrowed by the operator on 2026-07-31 to a governing rule:
@@ -41,67 +44,83 @@ were cut under that rule and three synthesis commands replaced them.
 D1 builds the package skeleton and the Python gates. D2 lands login and token
 brokering. D3 is the first batch of commands that consume them.
 
-## Context (verified live 2026-07-31 unless noted)
+## 4. Context (verified live 2026-07-31 unless noted)
 
 ### There is no CLI yet
+
 No `cli/` directory, no `pyproject.toml` at the repo root, and no `typer`
 anywhere in tracked code. `requirements.txt:3,5` already list `httpx` and
 `hvac`, which is the closest thing to prior art. D1 owns the package layout
 (`cli/src/localstack_cli/`, src layout, its own `cli/pyproject.toml`, per its
-code surface in `.loop/plans/D1-cli-package-skeleton.md`), the dependency
-file, the
-`cluster` pytest marker, and the ruff/mypy/pytest pre-commit hooks. D3 adds
-modules inside what D1 built and uses the paths D1 chose.
+code surface in `.loop/archive/D1-cli-package-skeleton/plan.md`), the dependency
+file, the `cluster` pytest marker, and the ruff/mypy/pytest pre-commit hooks.
+D3 adds modules inside what D1 built and uses the paths D1 chose.
 
-### Preconditions: the brokered credentials cannot read two of these commands' inputs
-This is the ticket's most dangerous assumption and it is false as stated in
-earlier drafts. Write it down before anything else.
+### Preconditions: what the brokered credentials can and cannot read
 
-`deployments/infrastructure/auth_userpass.tf:24-36` writes the operator
-userpass account with `token_policies = []`, deliberately: "this account
-exists to obtain an identity, not standing privilege." So a human token from
-`localstack login` carries `default` and nothing else. Live `default` grants
-neither `sys/policies/acl/*` nor `secret/metadata/*`; its path list is
-self-lookup, cubbyhole, wrapping and renew only.
+F11 is done and applied
+(`.loop/archive/F11-foundation-human-read-role/plan.md`). The `developer` Vault
+policy, bound to the operator entity via
+`deployments/infrastructure/developer_group.tf:158-163`, lands on every human
+token D2 brokers. A human token from `localstack login` carries `default` in
+`policies` and `developer` in `identity_policies`, so the reads below work
+today.
 
 `deployments/infrastructure/nomad_deploy_role.tf:13-30` grants the brokered
-Nomad token `submit-job`, `read-job` and five `host-volume-*` capabilities,
-with no `list-jobs` and no `node` read. The comment at `:4-5` says the
-omission is deliberate.
+Nomad `deploy` token `submit-job`, `read-job` and five `host-volume-*`
+capabilities, with no `list-jobs` and no `node` read. The comment at `:4-5`
+says the omission is deliberate.
 
 What each command actually renders against the cluster as it stands today:
 
 | Command | Live outcome with D2's brokered credentials |
 |---|---|
-| `vault grants <job>` | **Dead.** `GET /v1/sys/policies/acl/nomad-workloads` is denied, and that call is the command's only input |
-| `secret <service>` | **Half dead.** The Nomad jobspec read works under `read-job`; every `secret/metadata/<path>` existence check is denied |
-| `status` | **Partial.** Vault seal state works (`sys/health` is unauthenticated: 200 with no token). Nomad nodes and jobs are 403. Consul health is filtered to 2 of 25 services |
-| `service` | **Partial.** `GET /v1/job/<id>` works; `GET /v1/jobs` is 403, so the unrouted-job half of the join is empty. Consul health filtered to 2 of 25 |
+| `vault grants <job>` | **Works.** `sys/policies/acl/*` read is granted by `developer` (`developer_group.tf:78-80`), so the policy fetch succeeds. |
+| `secret <service>` | **Works.** The Nomad jobspec read works under `read-job`; `secret/metadata/default/*` read is granted by `developer` (`developer_group.tf:110-112`), so each existence check succeeds. |
+| `status` | **Partial.** Vault seal state works (`sys/health` is unauthenticated: 200 with no token). Nomad `/v1/jobs` and `/v1/nodes` are 403 under `nomad/creds/deploy`, which lacks `list-jobs` and node read. Consul health is filtered to 2 of 25 services. |
+| `service` | **Partial.** `GET /v1/job/<id>` works; `GET /v1/jobs` is 403, so the unrouted-job half of the join is empty until D2 brokers `nomad/creds/manage`. Consul health filtered to 2 of 25. |
 
 **The grants this ticket needs, and who owns them:**
 
 | Grant | Needed by | Owner |
 |---|---|---|
-| Vault `sys/policies/acl/nomad-workloads` read | `vault grants` | **F7** (the human Vault policy) |
-| Vault `secret/metadata/*` read | `secret <service>` | **F7** |
-| Nomad `list-jobs` plus `node` read | `status`, `service` | D4's conditional `nomad_read_role.tf`, or G2. See Q1 |
+| Vault `sys/policies/acl/*` read | `vault grants` | **F11** (done, on the `developer` policy, `developer_group.tf:78-80`) |
+| Vault `secret/metadata/default/*` read | `secret <service>` | **F11** (done, `developer_group.tf:110-112`) |
+| Nomad `list-jobs` plus `node` read | `status`, `service` | **D2** brokering `nomad/creds/manage`. See Preconditions detail and Q1 |
 
-F7 is `blocked` in the ledger with `unresolved-design-fork`. **F7 is a stated
-precondition, not a `depends_on` edge**, because adding the edge would park
-D3 behind a blocked ticket while two of its four commands are implementable
-and testable offline today. The fork this creates is Q2, and it is an
-operator call, not something this ticket may absorb into a footnote.
+The Nomad read role is a relayed requirement to D2, not a `depends_on` edge on
+a blocked ticket. D2 today brokers only `nomad/creds/deploy`
+(`.loop/archive/D2-cli-login-broker-tokens/plan.md:297`). The `developer`
+policy already grants `nomad/creds/manage` read
+(`developer_group.tf:140-142`), so the grant exists on the human token; D2
+just needs to broker it. The `manage` Vault role
+(`deployments/infrastructure/nomad_oidc.tf:74-78`, `type = "management"`) mints
+a Nomad **management** token, which bypasses ACLs entirely: it can list jobs,
+read jobs, read nodes, do anything in Nomad.
 
-D3 must not widen any policy. Relaying these three grants to F7, D2 and D4 is
-subticket 1.
+**Trade-off recorded plainly.** A Nomad management token is full Nomad access,
+not read-only. Brokering it to a read-only CLI is a privilege widening the
+operator accepted over the rejected alternative: a narrow
+`nomad_read_role.tf` read policy granting only `list-jobs`, `read-job` and
+node read. The operator chose `manage` because the grant already exists on
+the `developer` policy and no new Nomad ACL policy or Vault role is needed;
+the cost is that the CLI's Nomad token can submit jobs, not just read. D3
+states this as a precondition on D2 and does not widen anything itself.
+
+D3 must not widen any policy. Relaying these grants to D2 is subticket 1. The
+Preconditions are stated as preconditions, not `depends_on` edges, because D1
+and D2 are both done and the D2 manage-brokering is a relayed finding on a done
+ticket, not a hard edge. Adding the grant is one line in D2's broker; the
+offline suite runs and every command is implementable and testable without it.
 
 ### The haproxy routing table is in the Nomad API, not in the repo
+
 An earlier draft had `service` parse
 `deployments/infrastructure/services/haproxy.hcl`. That is wrong twice.
 
 **The repo file is not a jobspec.** It is a Terraform `templatefile` input
 wired at `deployments/infrastructure/services.tf:318-323`, with
-`${tls_secret}` at `:64`, `${openfang_password}` at `:89` and
+`${tls_secret}` at `haproxy.hcl:64`, `${openfang_password}` at `:89` and
 `$${attr.unique.hostname}` at `:7`. It does not parse as HCL, and the routing
 block lives inside a heredoc. Anything reading it parses an unrendered
 template.
@@ -113,10 +132,10 @@ template.
 Probed live with a management token.
 
 This also aligns D3 with D4, whose `talat-*` trap bullet says the panel
-"reads the **API**, never the repo tree"
-(`.loop/plans/D4-cli-cluster-tui.md`).
+"reads the **API**, never the repo tree" (`.loop/plans/D4-cli-cluster-tui.md:96`).
 
 ### That jobspec carries a live password
+
 `deployments/infrastructure/services.tf:322` interpolates
 `random_password.openfang_basic_auth.result` into the template. Probed live:
 the running job's `EmbeddedTmpl` contains
@@ -126,6 +145,7 @@ holds a live credential in memory, and one `--json` dump or one stack trace
 prints it. Requirement 8 is the guardrail.
 
 ### The three-way join does not line up, and that is the point
+
 Live counts: **10 routed hostnames, 19 Nomad jobs, 25 Consul services.**
 The haproxy backends address servers by literal IP and port
 (`server memex1 192.168.2.46:8000`), never by Consul service name or Nomad
@@ -150,6 +170,7 @@ Thirteen live jobs carry no edge route at all: `acme`, `backup-minio`,
 Requirement 5 states the join rule that renders all of this.
 
 ### `talat-consumer` and `talat-shim` exist in Nomad and nowhere else
+
 Nomad reports **19 running jobs**. The repo holds 17 jobspecs: 11 under
 `deployments/infrastructure/services/` and 6 under
 `deployments/applications/services/`. `talat-shim` and `talat-consumer` have
@@ -158,6 +179,7 @@ either, so the Consul catalog is not a complete job list. Any command that
 enumerates jobs must call `GET /v1/jobs`.
 
 ### Every Vault reference in every live jobspec is a static literal
+
 This is what makes `secret <service>` possible, and it was never written
 down. Probed all 19 live jobs: every Vault reference inside every
 `EmbeddedTmpl` is a literal path, in the shape
@@ -177,10 +199,12 @@ makes an unparseable or computed reference render as unknown rather than be
 dropped.
 
 ### The brokered Consul token silently under-reports the catalog
+
 `bootstrap/playbooks/enable_consul_secrets.yml:39-58` creates the Consul
-`deploy` policy. It grants `key_prefix "terraform/"` write, `session_prefix
-"terraform/"` write, `service "minio"` read, `service "postgres-db"` read,
-and `node_prefix ""` read. There is no `service_prefix`.
+`deploy` policy. It grants `key_prefix "terraform/"` write (`:43-45`),
+`session_prefix "terraform/"` write (`:46-48`), `service "minio"` read
+(`:49-51`), `service "postgres-db"` read (`:52-54`), and `node_prefix ""`
+read (`:55-57`). There is no `service_prefix`.
 `deployments/infrastructure/consul_deploy_role.tf:19-25` is the Vault role
 that references it by name with a 30m/60m TTL.
 
@@ -197,6 +221,7 @@ data gets a short answer with no error. Requirement 7 is the footer that
 keeps it honest.
 
 ### Vault mounts, auth methods and policies, live
+
 `vault secrets list`: `bootstrap/` (kv), `consul/`, `cubbyhole/`,
 `identity/`, `nomad/`, `secret/` (kv v2), `sys/`.
 `vault policy list`: `acme-tls-write`, `default`, `default-ceiling`,
@@ -204,15 +229,19 @@ keeps it honest.
 `vault auth list`: `jwt-nomad/` (accessor `auth_jwt_649fd6cc`), `token/`
 and **`userpass/`**.
 
-`userpass/` is live, created by `deployments/infrastructure/auth_userpass.tf:13-15`,
-with the operator user at `:29` and the identity alias at `:48-54`. D2
-settled the human login on userpass, under "How this ticket informs F7's
-replan", point 1: "The login method is `userpass`, not OIDC. Operator
-decision" (`.loop/plans/D2-cli-login-broker-tokens.md`). So the question of
-*how* a human authenticates is closed. What remains open is only *what the
-resulting token may read*, which is the Preconditions table above.
+`userpass/` is live, created by
+`deployments/infrastructure/auth_userpass.tf:13-15`, with the operator user at
+`:28-36` (`token_policies = []`, deliberately) and the identity alias at
+`:48-53`. D2 settled the human login on userpass, under "What this ticket
+settled for F11", point 1: "The login method is `userpass`, not OIDC.
+Operator decision" (`.loop/archive/D2-cli-login-broker-tokens/plan.md:1513`).
+So the question of *how* a human authenticates is closed. The `developer`
+policy that grants the Vault reads D3 needs is bound through
+`deployments/infrastructure/developer_group.tf:158-163` and arrives on the
+human token via `identity_policies`.
 
 ### The templated policy, and why a naive print is worthless
+
 `nomad-workloads` is a single policy shared by every workload, templated per
 token. Live it reads:
 
@@ -247,6 +276,7 @@ accessor is not a constant either:
 `auth_jwt_649fd6cc` or a path count.
 
 ### Server versions, live
+
 Corrected. An earlier draft had all six numbers wrong with the direction
 inverted. `tmp/HANDOFF-2026-07-31.md:11-12` records the 2.x upgrade landing
 on all five nodes on 2026-07-31.
@@ -266,6 +296,7 @@ shims on PATH. HTTP plus respx also gives an offline default test suite,
 which `.claude/rules/python-testing.md` requires.
 
 ### N4 reshapes where these commands point
+
 `N4-netsec-edge-only-service-access` is in `planning` and changes three
 things D3 touches:
 
@@ -273,24 +304,26 @@ things D3 touches:
    `https://<name>.lab.orangecluster.nl` the only route in. Its "Measured
    exposure" table shows the edge already answers for all of them today
    (`.loop/plans/N4-netsec-edge-only-service-access.md`); the closure itself
-   is N4's requirement R8. The URL column `service` renders is exactly that
-   hostname, so N4 strengthens the command rather than changing it.
+   is N4's requirement R8 (`:400`). The URL column `service` renders is
+   exactly that hostname, so N4 strengthens the command rather than changing
+   it.
 2. It moves this repo's own addresses onto the edge, including
    `.devcontainer/.env`'s `VAULT_ADDR`, `NOMAD_ADDR` and `CONSUL_HTTP_ADDR`
-   (N4 § "What this repo points at today" for the current values, and N4's
-   requirement R6, "This repo's own addresses move to the edge in the same
-   change"). **Cited by section and quote, not by line: N4 is under active
-   edit and its line numbers move.** D3 must take all
-   three addresses from D1's `config.py` and
+   (N4 requirement R6, "This repo's own addresses move to the edge in the same
+   change", `.loop/plans/N4-netsec-edge-only-service-access.md:376`). **Cited
+   by section and quote, not by line: N4 is under active edit and its line
+   numbers move.** D3 must take all three addresses from D1's `config.py` and
    hardcode no IP, host or port anywhere, so N4 is a config change and not a
    D3 change. Requirement 2 states this.
 3. It may edit `haproxy.hcl` to close or authenticate the stats page on 8404
    (its code surface lists `deployments/infrastructure/services/haproxy.hcl`
-   as a possible edit "for 8404"). Two consequences: `service` must never read the stats page for
-   routing data, and its `EmbeddedTmpl` parser must not depend on byte
-   offsets, line numbers or the current backend count. Test 9 pins that.
+   as a possible edit "for 8404"). Two consequences: `service` must never
+   read the stats page for routing data, and its `EmbeddedTmpl` parser must
+   not depend on byte offsets, line numbers or the current backend count.
+   Test 9 pins that.
 
 ### Auth failure codes, live
+
 | API | no token | bad token | valid but under-scoped |
 |---|---|---|---|
 | Nomad | 403 `Permission denied` | 403 `Permission denied` | 403 |
@@ -304,17 +337,19 @@ unknown job under a token that may read jobs, so "not found" and "not
 allowed" stay distinguishable there too.
 
 ### The repo gate is green today
-`just pre_commit` (`justfile:17-19`) passes on a clean tree. `check python
+
+`just pre_commit` (`justfile:18`) passes on a clean tree. `check python
 ast` and `debug statements (python)` currently report "no files to check"
 and will start running once `cli/` exists (`.pre-commit-config.yaml:7,11`).
-`.pre-commit-config.yaml:1` excludes only `.claude/` and `.loop/`, so `cli/`
+`.pre-commit-config.yaml` excludes only `.claude/` and `.loop/`, so `cli/`
 is in scope. **There is no ruff, mypy or pytest hook in this repo today.**
 D1 adds all three as local hooks scoped `files: '^cli/'`
-(`.loop/plans/D1-cli-package-skeleton.md`, "The three hooks to add"), which
-is why D3 now carries an explicit `depends_on` edge to D1. D3 runs those hooks; it does
-not author them.
+(`.loop/archive/D1-cli-package-skeleton/plan.md`, "The three hooks to add"),
+which is why D3 carries an explicit `depends_on` edge to D1. D3 runs those
+hooks; it does not author them.
 
-## Non-goals / out of scope
+## 5. Non-goals / out of scope
+
 - **No mirror of a native CLI.** The seven commands cut on 2026-07-31
   (`nomad jobs`, `nomad job <id>`, `vault mounts`, `vault policies`,
   `vault policy <name>`, `vault kv [path]`, `consul services`) stay cut. Each
@@ -329,13 +364,12 @@ not author them.
   scaling, no KV writes, no ACL changes.
 - **Never print a secret value.** `secret <service>` prints paths and a
   present, missing or denied marker (requirement 6's three states). Reading a
-  KV2 value is out of scope and is not a
-  follow-up to sneak in. Neither is any other field of the haproxy jobspec.
-- **No policy changes.** Widening the Nomad or Consul `deploy` policy, or
-  the human Vault policy, is infrastructure work under a different owner
-  (Preconditions, Q1, Q3). D3 must not edit `nomad_deploy_role.tf`,
-  `consul_deploy_role.tf`, `auth_userpass.tf` or
-  `enable_consul_secrets.yml`, and must not author `nomad_read_role.tf`.
+  KV2 value is out of scope and is not a follow-up to sneak in. Neither is
+  any other field of the haproxy jobspec.
+- **No policy changes.** Widening the Nomad or Consul `deploy` policy is
+  infrastructure work under a different owner (Preconditions, Q1, Q3). D3
+  must not edit `nomad_deploy_role.tf`, `consul_deploy_role.tf`,
+  `auth_userpass.tf`, `developer_group.tf` or `enable_consul_secrets.yml`.
 - **No TUI.** D4 owns the live Textual view, renamed `localstack monitor`.
   D3's `status` is the one-shot, scriptable renderer. D3's obligation is to
   leave a client layer D4 can import.
@@ -351,7 +385,7 @@ not author them.
   grants` renders what a policy grants. The authoritative per-token answer
   is `sys/capabilities`, which needs the workload's own token.
 
-## Requirements & restrictions
+## 6. Requirements & restrictions
 
 1. **Commands call the HTTP APIs with `httpx`. No `subprocess`.** Driven by
    the `rtk` shim and by D6's shims, and it makes the default suite offline
@@ -363,6 +397,13 @@ not author them.
    nothing else. This is the concrete reuse contract D4 depends on. The
    `api/` layer takes its three addresses from D1's `config.py` and contains
    no literal IP, hostname or port, so N4's address move does not touch it.
+
+   **Pickup order note.** D4's priority (42) beats this ticket's (20), so the
+   harness picks D4 first. D4 therefore **creates** `cli/src/localstack_cli/api/`
+   under this contract, and D3 later adds its own functions to the same package
+   rather than authoring it fresh. The contract above is what D4 builds to; D3
+   conforms to it when it lands second. If D3 lands first (order changes), D3
+   authors `api/` and D4 imports it. Either way the contract is the same.
 3. **Command surface, exactly these four:**
    | Command | API calls |
    |---|---|
@@ -383,7 +424,7 @@ not author them.
    error panel naming the service and the reason, and the command exits
    non-zero. Three green panels produced by a swallowed timeout is the
    failure this exists to prevent. Vault's `sys/health` needs no token, so
-   the Vault panel is the one that works before F7 lands.
+   the Vault panel is the one that always works.
 5. **`service` performs a stated outer join.** Rows are keyed by the union of
    haproxy routes and Nomad job ids. Consul is a column, never a row key.
    - **Routes** come from `GET /v1/job/haproxy`, from the `Templates[]` entry
@@ -426,7 +467,7 @@ not author them.
    list and pointing at Q3's finding.
 8. **No credential from a jobspec template ever reaches output.** The running
    haproxy job's `EmbeddedTmpl` contains the openfang basic-auth password in
-   plaintext (`services.tf:322`, verified live). The parser extracts only the
+   plaintext (`deployments/infrastructure/services.tf:322`, verified live). The parser extracts only the
    route fields named in requirement 5 into its dataclass, and the raw
    template text is never stored on a dataclass, never serialized by
    `--json`, and never included in an exception message or a traceback. The
@@ -460,13 +501,14 @@ not author them.
     carried a token-print-and-clipboard requirement verbatim from D2's
     `ui consul`, on the reasoning that pasting a token is the only way into
     the Consul UI. **That reasoning is false here**, measured 2026-08-01:
-    `consul_server/templates/consul.hcl.j2:29-32` puts the agent token on
-    `tokens.default`, so unauthenticated requests see everything — 25
-    services, 5 nodes, 41 health checks, and 200 on `/ui/`, directly and
-    through the edge over TLS. And an explicit token **replaces** that default
-    rather than merging, so the brokered `deploy` token, which grants service
-    read on `minio` and `postgres-db` only, would cut the UI from 25 services
-    to 2. It degrades what it claims to enable.
+    `bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32` puts the
+    agent token on `tokens.default`, so unauthenticated requests see
+    everything — 25 services, 5 nodes, 41 health checks, and 200 on `/ui/`,
+    directly and through the edge over TLS. And an explicit token
+    **replaces** that default rather than merging, so the brokered `deploy`
+    token, which grants service read on `minio` and `postgres-db` only,
+    would cut the UI from 25 services to 2. It degrades what it claims to
+    enable.
 
     D2 cut `ui consul` on the same evidence, so there is nothing to absorb.
     Q4 is settled by that: no token, no clipboard, no OSC 52.
@@ -476,7 +518,7 @@ not author them.
     - Vault: call `GET /v1/auth/token/lookup-self`. 403 means the session is
       dead, so say "run `localstack login`". 200 plus a 403 on the real call
       means the token lacks the grant, so name the denied path and the ticket
-      that grants it (F7, per Preconditions).
+      that grants it (Preconditions).
     - Nomad: 403 on `/v1/jobs` while `/v1/job/<known>` succeeds means the
       token lacks `list-jobs`. Say that, name the policy, do not say "login".
     - Consul: 403 means the token is bad; a short list is a scope problem
@@ -494,7 +536,7 @@ not author them.
 18. **`.claude/rules/adversarial-reviews.md`: adversarial review before
     done.**
 
-## Code surface
+## 7. Code surface
 
 New, all under the package D1 creates at `cli/src/localstack_cli/`. If D1
 chose a different root, keep the shape and change the prefix.
@@ -580,10 +622,21 @@ Tests, all new, mirroring the source tree per D1's layout:
 
 Read-only, do not edit, but read them:
 
-- `deployments/infrastructure/auth_userpass.tf:24-36`: the empty
-  `token_policies` that makes the Preconditions table true.
+- `deployments/infrastructure/auth_userpass.tf:28-36`: the empty
+  `token_policies` that makes the human token carry `default` and nothing
+  else in `policies` (the `developer` grants arrive via `identity_policies`).
+- `deployments/infrastructure/developer_group.tf:78-80`: the `sys/policies/acl/*`
+  read grant `vault grants` needs.
+- `deployments/infrastructure/developer_group.tf:110-112`: the
+  `secret/metadata/default/*` read grant `secret <service>` needs.
+- `deployments/infrastructure/developer_group.tf:140-142`: the
+  `nomad/creds/manage` read grant D2 must broker.
+- `deployments/infrastructure/developer_group.tf:158-163`: the group binding
+  that puts `developer` on the operator token.
 - `deployments/infrastructure/nomad_deploy_role.tf:13-30`: the capability set
-  the Nomad calls live within.
+  the Nomad `deploy` calls live within (no `list-jobs`, no node read).
+- `deployments/infrastructure/nomad_oidc.tf:74-78`: the `manage` Vault role,
+  `type = "management"`, that mints a Nomad management token.
 - `deployments/infrastructure/services.tf:318-323`: proof the haproxy jobspec
   carries a rendered password, which requirement 8 guards.
 - `bootstrap/playbooks/enable_consul_secrets.yml:39-58`: the Consul ACL rules
@@ -595,19 +648,20 @@ Read-only, do not edit, but read them:
 - `bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl:4-33`: the
   live `developer` Nomad policy, which Q1 turns on.
 
-## Tests & validation gates
+## 8. Tests & validation gates
 
 ### Repo gate (verified green on a clean tree today)
-- `just pre_commit` (`justfile:17-19`). Adding `cli/` activates `check
-  python ast` and `debug statements (python)`
-  (`.pre-commit-config.yaml:7,11`), plus the ruff, mypy and pytest hooks D1
-  appended. All must pass.
-- Worktree prerequisite: `just worktree_setup <path>` (`justfile:29-31`), or
+
+- `just pre_commit` (`justfile:18`). Adding `cli/` activates `check
+  python ast` and `debug statements (python)` (`.pre-commit-config.yaml:7,11`),
+  plus the ruff, mypy and pytest hooks D1 appended. All must pass.
+- Worktree prerequisite: `just worktree_setup <path>` (`justfile:41`), or
   `terraform-validate` fails on the missing tfvars.
 
 ### Python gate
+
 D1 owns it: ruff, mypy and pytest as local hooks scoped `files: '^cli/'`
-(`.loop/plans/D1-cli-package-skeleton.md`, "The three hooks to add").
+(`.loop/archive/D1-cli-package-skeleton/plan.md`, "The three hooks to add").
 D3 runs what D1 landed.
 If D1 landed none, that is a finding for D1 under
 `.claude/rules/pre-existing-issues.md`, not a gate to invent mid-ticket.
@@ -615,6 +669,7 @@ If D1 landed none, that is a finding for D1 under
 Default suite is offline and must stay so: `uv run --project cli pytest`.
 
 ### Tests to add
+
 Offline, respx-backed, in the files listed in the code surface.
 
 **`service` and the join (requirement 5):**
@@ -747,7 +802,7 @@ default run via D1's `addopts`:
     reason, rather than failing, when the token lacks `secret/metadata/*`
     read, since that is the Preconditions gap and not a code defect.
 
-## Risk assessment
+## 9. Risk assessment
 
 - **Blast radius: small and one-directional.** Every call is a GET. Nothing
   here can change cluster state. A bug produces a wrong screen, not a wrong
@@ -759,20 +814,31 @@ default run via D1's `addopts`:
   the template. All three fail by looking correct. Requirements 5, 7 and 11
   and tests 2 to 8, 20 to 24 and 26 exist for this.
 - **Leaking the openfang password.** Verified live in the haproxy job's
-  `EmbeddedTmpl` (`services.tf:322`). One `--json` dump or one unhandled
+  `EmbeddedTmpl` template; the password interpolation is at
+  `deployments/infrastructure/services.tf:322`. One `--json` dump or one unhandled
   parse error prints it. Requirement 8 and tests 10 and 16 are the guard, and
   the reviewer must check the boundary by eye as well.
 - **Enumerating jobs from `deployments/`** because `/v1/jobs` 403s under the
-  brokered token. That silently drops `talat-shim` and `talat-consumer`, and
-  the same shortcut would take the routing table from an unrendered
-  Terraform template. Tests 38 and 39 catch it, but only when the marked
-  suite runs, so the reviewer must check the source of both by eye.
-- **Dependency risk, and it is the big one.** Two of four commands cannot
-  read their inputs under the credential D2 brokers today, and the ticket
-  that fixes that (F7) is blocked. See Preconditions and Q2. The offline
+  brokered `deploy` token. That silently drops `talat-shim` and
+  `talat-consumer`, and the same shortcut would take the routing table from
+  an unrendered Terraform template. Tests 38 and 39 catch it, but only when
+  the marked suite runs, so the reviewer must check the source of both by
+  eye.
+- **Dependency risk, and it is the big one.** `status` and `service` need D2
+  to broker `nomad/creds/manage` so the CLI holds a Nomad management token,
+  and until that lands both render partial Nomad data. The Vault read grants
+  for `vault grants` and `secret <service>` already work via F11. The offline
   suite still runs and every command is implementable and testable, so D3 is
-  not blocked from being built; it is blocked from being useful on this
-  cluster. That distinction belongs to the operator, not to this plan.
+  not blocked from being built; two of its four commands are blocked from
+  being useful on this cluster until D2 brokers `manage`. That distinction
+  belongs to the operator, not to this plan. See Preconditions and Q2.
+- **Brokering a Nomad management token widens privilege.** A management
+  token bypasses all Nomad ACLs, so the CLI's Nomad token can submit jobs,
+  not just read. The operator accepted this over a narrow read-only policy
+  because the `nomad/creds/manage` grant already exists on the `developer`
+  policy and no new Nomad ACL policy is needed. The alternative (a
+  `nomad_read_role.tf` granting only `list-jobs`, `read-job` and node read)
+  was rejected. Record this plainly; do not hide the widening.
 - **The regex over template text is exact only while the fleet stays
   literal.** Verified today: zero computed `secret (...)` calls across 19
   jobs. Requirement 6's unknown state is what keeps a future computed
@@ -785,17 +851,19 @@ default run via D1's `addopts`:
   address in D1's config, so N4 is a config change. Test 9 keeps the haproxy
   parser from breaking on N4's likely stats-page edit.
 
-## Subtickets (ordered)
+## 10. Subtickets (ordered)
 
-1. **Confirm D2's interface, and relay the three grants.** Establish the
-   exact call that returns Vault, Nomad and Consul tokens plus their
-   addresses, and the typed errors it raises. Then relay, with the
-   `relay-finding` skill: `sys/policies/acl/nomad-workloads` read and
-   `secret/metadata/*` read to **F7**; the Nomad `list-jobs` plus node read
-   to **D4** (which already claims `nomad_read_role.tf`); and the
-   `ui consul` absorption to **D2**. Do not build around a missing piece.
+1. **Confirm D2's interface, and relay the grants.** Establish the exact
+   call that returns Vault, Nomad and Consul tokens plus their addresses, and
+   the typed errors it raises. Then relay, with the `relay-finding` skill:
+   the Nomad `list-jobs` plus node read requirement to **D2** as a request to
+   broker `nomad/creds/manage` (the `developer` policy already grants the
+   read; D2 needs to add the broker call); and the `ui consul` absorption to
+   **D2**. The Vault `sys/policies/acl/*` and `secret/metadata/default/*`
+   reads already work via F11, so they need no relay. Do not build around a
+   missing piece.
 2. **Settle Q1, Q2 and Q3 with the operator.** Q2 decides whether `status`
-   and `service` ship before a read-scoped token exists. Building either
+   and `service` ship before D2 brokers `nomad/creds/manage`. Building either
    command first risks rewriting it.
 3. **Client layer, part one:** `api/errors.py`, then `api/nomad.py`,
    `api/vault.py`, `api/consul.py`. Tests 33 to 37 alongside. No typer, no
@@ -819,64 +887,63 @@ default run via D1's `addopts`:
     the reviewer on three things: the quiet-lie failure modes, the source of
     the job list and the routing table, and the password guardrail.
 
-## Open questions
+## 11. Open questions
 
 **Q1: `status` and `service` need a Nomad token that can list jobs and read
 nodes. Who provides it?**
 Verified live: `GET /v1/jobs` returns 403 under the brokered `deploy` token
-because `nomad_deploy_role.tf:13-30` withholds `list-jobs` on purpose. What
-changed since the last draft is that **the policy already exists**. `GET
-/v1/acl/policies` returns `['deploy', 'developer']`, and
-`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl:4-33` grants
-`list-jobs`, `read-job`, `read-logs`, `node` read, `agent` read and
-`operator` read, applied by Ansible at
-`bootstrap/roles/nomad_server/tasks/main.yml:182-184`. Live `LIST
-/v1/nomad/role` returns only `['deploy']`, so the missing piece is one
-`vault_nomad_secret_role`, not a new policy.
+because `nomad_deploy_role.tf:13-30` withholds `list-jobs` on purpose. The
+operator has decided: **D2 brokers `nomad/creds/manage`**, which mints a
+Nomad management token (`nomad_oidc.tf:74-78`, `type = "management"`). The
+`developer` policy already grants `nomad/creds/manage` read
+(`developer_group.tf:140-142`), so the grant exists on the human token; D2
+just needs to add the broker call. A management token bypasses all Nomad
+ACLs, so it can list jobs, read jobs, read nodes, and do anything else in
+Nomad.
 
-Options:
+This resolves the question. The earlier option list is kept for the record:
 
-  a. Add a `vault_nomad_secret_role` bound to the existing `developer`
-     policy, and have D2 broker it. One resource, no new policy text.
+  a. Have D2 broker `nomad/creds/manage`. **Resolved path.** The grant
+     already exists on the `developer` policy. One new broker call in D2, no
+     new policy or Vault role. Cost: the CLI's Nomad token is a management
+     token, which can submit jobs, not just read. The operator accepted this
+     widening.
   b. Author a narrower `nomad_read_role.tf` granting only `list-jobs`,
-     `read-job` and node read. `developer` also carries `submit-job`,
-     `alloc-exec` and `read-logs`, which a read-only CLI has no business
-     holding.
+     `read-job` and node read. **Rejected by the operator.** Would need a new
+     Nomad ACL policy and a new Vault role. D4 considered this same option and
+     rejected it for the same reason (see D4's Q2): the `manage` grant already
+     exists on the `developer` policy, so a parallel read policy duplicates
+     ownership for no benefit.
   c. Add `list-jobs` to the `deploy` policy. Rejected: it blurs a policy
      whose comment states least privilege for the deployer as its purpose.
   d. Read the job list from `deployments/**/services/*.hcl`. Rejected
      outright: it misses `talat-shim` and `talat-consumer`, both verified
      running with no file in this repo, and it contradicts
      D4's `talat-*` trap bullet, "reads the **API**, never the repo tree"
-     (`.loop/plans/D4-cli-cluster-tui.md`).
+     (`.loop/plans/D4-cli-cluster-tui.md:96`).
 
-  *Recommendation: (b), owned by D4, not by D3.*
-  D4's Q2 option (b) already claims
-  `deployments/infrastructure/nomad_read_role.tf` as its own conditional
-  deliverable (`.loop/plans/D4-cli-cluster-tui.md`), so two sibling tickets must not author the same file. D3
-  authors nothing and relays the requirement. Reuse over (a) is tempting, but
-  brokering `alloc-exec` and `submit-job` to a read-only CLI is a real
-  widening, and `developer` was written for humans at a terminal, not for a
-  token a CLI holds for 30 minutes.
-  Note also that G2's "Why this matters beyond the browser"
-  (`.loop/plans/G2-nomad-ui-oidc-login.md`) says this
+  *Resolution: (a), owned by D2.* D3 authors nothing and relays the
+  requirement. Note that G2's "Why this matters beyond the browser"
+  (`.loop/archive/G2-nomad-ui-oidc-login/plan.md:112-117`) says this
   ticket's narrow-surface justification weakens once G2 lands, since G2 gives
   a human a `developer`-scoped Nomad token by another route. Re-read Q1 after
   G2.
 
-**Q2 (operator fork): do `status`, `service` and `secret` ship before F7
-grants the reads they need?**
+**Q2 (operator fork): do `status` and `service` ship before D2 brokers
+`nomad/creds/manage`?**
 Not a review finding and not something this plan may decide. As things
-stand, `vault grants` renders nothing at all, `secret <service>` renders
-every row "denied", and `status` renders one working panel of three. The
+stand, `vault grants` and `secret <service>` work fully via F11, and
+`status` and `service` render partial Nomad data (Vault panel works, Nomad
+panel 403s on `/v1/jobs`, Consul panel filtered to 2 of 25). The
 honest-denial path (requirement 13) makes that legible rather than wrong,
 but D4's Q2 rejects exactly this shape for its own panel: "a panel whose
 headline widgets say 'denied' is not worth shipping"
 (`.loop/plans/D4-cli-cluster-tui.md`).
 
-  Options: (a) implement all four now, ship them denied, and let F7 and Q1
-  light them up; (b) implement and merge all four but register only `service`
-  until the grants land; (c) hold D3 until F7 unblocks.
+  Options: (a) implement all four now, ship `status` and `service` with
+  partial Nomad data, and let D2's manage-brokering light them up;
+  (b) implement and merge all four but register only `vault grants` and
+  `secret` until D2 brokers manage; (c) hold D3 until D2 unblocks.
 
   *Recommendation: (a).* Every command is fully testable offline against
   respx, the code is identical either way, and the denial messages are
@@ -901,9 +968,10 @@ anyone and only truncates the CLI's answer.
 
 **Q4: who owns `ui consul`, D2 or D3?**
 D2 §12 locks `localstack ui consul`
-(`.loop/plans/D2-cli-login-broker-tokens.md`, §12): broker a Consul token,
-copy it with OSC 52, print it as a fallback, open the URL. D3's `service
-<name> --open` covers the same ground for ten services rather than one.
+(`.loop/archive/D2-cli-login-broker-tokens/plan.md:1536`): broker a Consul
+token, copy it with OSC 52, print it as a fallback, open the URL. D3's
+`service <name> --open` covers the same ground for ten services rather than
+one.
 
   *Recommendation: D3 owns it, D2 drops `ui consul`, and D3 carries D2's two
   hard requirements verbatim* (print the token even when the clipboard write
@@ -930,11 +998,11 @@ Verified possible: the alias on `auth_jwt_649fd6cc` is named for the job and
 carries `nomad_job_id`, `nomad_namespace` and `nomad_task`. It would be exact
 rather than approximate.
   *Recommendation: no, not in this ticket.* It needs `identity/entity/id/*`
-  read or `identity/lookup/entity` write, on top of the two grants F7 already
-  owes this ticket. It also only works for jobs that have already logged in,
-  so it would fail on exactly the new job someone is debugging. Revisit if a
-  template variable appears that lexical substitution cannot fill, which test
-  23 will detect.
+  read or `identity/lookup/entity` write, on top of the `sys/policies/acl/*`
+  read F11 already grants this ticket. It also only works for jobs that have
+  already logged in, so it would fail on exactly the new job someone is
+  debugging. Revisit if a template variable appears that lexical
+  substitution cannot fill, which test 23 will detect.
 
 **Q7: should `service` resolve the `s3` row by matching the backend `ip:port`
 against Consul service instances?**
@@ -946,3 +1014,100 @@ It would turn today's one unresolved row into a resolved one, since
   the raw backend, which tells the reader everything the extra 25 calls
   would, and it stays correct for a backend that points somewhere Consul
   never knew about. Revisit only if unresolved rows become common.
+
+## Premises / assumptions
+
+**P1.** The haproxy routing table is in the Nomad API, not in the repo.
+`probe:` `GET /v1/job/haproxy` returns `TaskGroups[].Tasks[].Templates[]`;
+the `local/haproxy.cfg` entry's `EmbeddedTmpl` carries the `acl is_minio
+hdr(host) -i minio.lab.orangecluster.nl` lines verbatim (2327 bytes, probed
+live with a management token). The repo file
+`deployments/infrastructure/services/haproxy.hcl` is a Terraform
+`templatefile` input, not a jobspec: `${tls_secret}` at `:64`,
+`${openfang_password}` at `:89`, wired at
+`deployments/infrastructure/services.tf:318-323`.
+
+**P2.** The three-way join has no shared key. The haproxy backends address
+servers by literal IP and port (`server memex1 192.168.2.46:8000`), never by
+Consul service name or Nomad job id. `probe:` live counts are 10 routed
+hostnames, 19 Nomad jobs (`GET /v1/jobs`), 25 Consul services
+(`GET /v1/catalog/services`). Three routes (`vault`, `nomad`, `consul`)
+back onto no Nomad job; `s3` backs onto no job and no Consul service.
+
+**P3.** The haproxy jobspec carries a live password.
+`deployments/infrastructure/services.tf:322` interpolates
+`random_password.openfang_basic_auth.result` into the template. `probe:`
+the running job's `EmbeddedTmpl` contains
+`user admin insecure-password <24-char literal>`, the real value, not a
+placeholder.
+
+**P4.** Every Vault reference in every live jobspec is a static literal.
+`probe:` all 19 live jobs, every `EmbeddedTmpl`: every reference is a literal
+path (`{{ with secret "secret/data/default/hermes/github" }}`), with zero
+computed `secret (...)` calls. Sample counts: `hermes` 7, `bifrost` 6,
+`memex` 4, `talat-shim` 1. A regex over template text answers "which KV2
+paths does this job read". Existence is checkable without a value:
+`GET /v1/secret/metadata/default/memex/postgres` returns 200 with no `data`
+field; a missing path returns 404.
+
+**P5.** The brokered Consul token sees 2 of 25 services.
+`bootstrap/playbooks/enable_consul_secrets.yml:39-58` grants `service
+"minio"` read and `service "postgres-db"` read with no `service_prefix`.
+`probe:` no token returns 200 with all 25 services; brokered `deploy` token
+returns 200 with exactly `minio` and `postgres-db`; bogus token returns 403.
+
+**P6.** The templated policy is three-block post-F9. `Evidence:`
+`tmp/HANDOFF-2026-07-31.md:43-52` records the apply. `probe:` `GET
+/v1/sys/policies/acl/nomad-workloads` returns exactly three `path` blocks,
+matching `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`.
+The renderer must still handle a six-block shape because the policy has
+already changed block count once.
+
+**P7.** Server versions are 2.0.x. `Evidence:`
+`tmp/HANDOFF-2026-07-31.md:11-12` records the upgrade landing on all five
+nodes. `probe:` Nomad 2.0.4, Vault 2.0.3, Consul 2.0.2 (servers); Nomad 2.0.3,
+Vault 2.0.3, Consul 2.0.1 (binaries). Servers are level with or ahead of the
+binaries.
+
+**P8.** Userpass is live. `deployments/infrastructure/auth_userpass.tf:13-15`
+creates the backend; `:28-36` writes the operator user with
+`token_policies = []`; `:48-53` binds the identity alias. D2 settled the
+human login on userpass
+(`.loop/archive/D2-cli-login-broker-tokens/plan.md:1513`).
+
+**P9.** The developer token now holds the Vault read grants (F11 done).
+`deployments/infrastructure/developer_group.tf:78-80` grants
+`sys/policies/acl/*` read; `:110-112` grants `secret/metadata/default/*`
+read; `:158-163` binds the `developer` policy to the operator entity via the
+`developer` group. The grants arrive on the human token in
+`identity_policies`, not `policies`. F11 is done and applied
+(`.loop/archive/F11-foundation-human-read-role/plan.md`).
+
+**P10.** `nomad/creds/deploy` lacks `list-jobs` and node read, so `status`
+and `service` need D2 to broker `nomad/creds/manage`.
+`deployments/infrastructure/nomad_deploy_role.tf:13-30` grants `submit-job`,
+`read-job` and five `host-volume-*` capabilities, with no `list-jobs` and no
+node read. `deployments/infrastructure/developer_group.tf:140-142` grants
+`nomad/creds/manage` read, so the grant exists on the human token.
+`deployments/infrastructure/nomad_oidc.tf:74-78` defines the `manage` Vault
+role, `type = "management"`, which mints a Nomad management token that
+bypasses all ACLs. D2 today brokers only `nomad/creds/deploy`
+(`.loop/archive/D2-cli-login-broker-tokens/plan.md:297`); brokering
+`manage` is a relayed requirement, not a `depends_on` edge.
+
+**P11.** A Nomad management token is full Nomad access, not read-only. The
+`manage` Vault role (`nomad_oidc.tf:74-78`, `type = "management"`) mints a
+token that can submit jobs, list jobs, read nodes, and do anything in Nomad.
+Brokering it to a read-only CLI is a privilege widening the operator
+accepted over a narrow `nomad_read_role.tf` read policy.
+
+**P12.** The `api/` purity contract (no typer, no rich) is achievable.
+`probe:` `status` needs concurrent `httpx` GETs; `service --open` needs
+stdlib `webbrowser` in `commands/`; `--json` serializes dataclasses. Nothing
+in the four commands forces a CLI framework below the render layer.
+
+**P13.** The brokered Consul token sees 2 of 25 services, and an explicit
+token replaces the default rather than merging. `probe:`
+`bootstrap/roles/consul_server/templates/consul.hcl.j2:29-32` puts the agent
+token on `tokens.default`, so unauthenticated requests see all 25 services.
+Pasting the brokered `deploy` token would cut the UI from 25 to 2.
