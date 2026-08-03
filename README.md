@@ -23,11 +23,11 @@ The repo is three deploy layers, plus a CLI:
 | Bootstrap | `bootstrap/` | Ansible playbooks — install Nomad/Vault/Consul/Podman/CNI on the nodes, seed initial secrets |
 | Infrastructure | `deployments/infrastructure/` | Terraform — Vault mounts, dynamic host volumes, core services (PostgreSQL, MinIO, registry) |
 | Applications | `deployments/applications/` | Terraform — databases/roles, MinIO buckets/policies, application Nomad jobs |
-| CLI | `cli/` | Python — the `localstack` cockpit. `login`, `logout`, `whoami`, `env`, `token` and `config` today; the read commands are D3 |
+| CLI | `cli/` | Python — the `localstack` cockpit. `login`, `logout`, `whoami`, `env`, `token`, `config` and `breakglass` |
 
 Database schema changes live in `applications/migrations/` and run through [golang-migrate](https://github.com/golang-migrate/migrate).
 
-Service-level docs are in `docs/` (HAProxy routing, monitoring, GCS backups, credential rotation, etc.).
+Service-level docs are in `docs/` (HAProxy routing, monitoring, GCS backups, credential rotation, break-glass recovery, etc.).
 
 ## Conventions
 

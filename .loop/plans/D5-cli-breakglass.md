@@ -6,24 +6,24 @@ summary = "`localstack breakglass` prints the recovery runbook for a cluster you
 tags = ["cli", "recovery", "runbook", "security"]
 ---
 
-# D5 — `localstack breakglass`: print the recovery runbook, touch no credentials
+# Ticket: D5-cli-breakglass
 
-## Title
+## 1. Title
 Add `localstack breakglass`, the command a developer runs when auth or
 reachability to the cluster is broken. It prints a runbook, optionally probes
 what is reachable, and handles no credential of any kind.
 
-## Size / Effort
+## 2. Size / Effort
 **Medium.** One command, one text asset, a handful of read-only probes. The
 size comes from the drift tests (every fact in the printed text pinned to the
 repo file that states it) and from probe failure handling, not from line count.
 
-## Triggered by
+## 3. Triggered by
 Operator request, 2026-07-30, as part of the `cli` epic. The break-glass path
 today is tribal knowledge: nothing in the repo tells a developer what to do
 when Vault is sealed, the edge is down, or their token is dead.
 
-## Operator decision, already settled — do NOT re-open
+### Operator decision, already settled — do NOT re-open
 **The command prints the runbook and touches no credentials.** The CLI must
 never read, cache, display, log or export the Vault root token, and never read
 `/opt/vault/init.json`.
@@ -38,19 +38,18 @@ This makes the command less convenient than it could be. That is intended. Any
 argument for automating the privileged step belongs in Open Questions, not in
 the implementation.
 
-## Context (today's state)
+## 4. Context (today's state)
 
 ### Package
-- D1-cli-package-skeleton creates the CLI package. **No tracked
-  `pyproject.toml`, `uv.lock` or test tree exists in this repo today**
-  (`git ls-files '*pyproject.toml'` returns nothing; the copies `find` turns up
-  under `apm_modules/`, `.claude/plugins/` and `.cache/` are all gitignored
-  vendor trees, not this project's). Python deps today are a bare
-  `requirements.txt` (`httpx` at :3, `hvac` at :5), Python pinned to 3.12
-  (`.python-version:1`).
-- This ticket writes `<pkg>` for the package root D1 establishes. Read
-  `.loop/plans/D1-cli-package-skeleton.md` §Code surface for the real path,
-  the CLI framework, and the HTTP client before writing any file.
+- D1-cli-package-skeleton is `done` and the CLI package is tracked. `cli/`
+  holds `cli/pyproject.toml`, `cli/uv.lock`, and the `cli/src/localstack_cli/`
+  src layout D1's plan specified. Python is pinned to 3.12
+  (`.python-version:1`); the legacy `requirements.txt` (`httpx` at :3, `hvac`
+  at :5) remains for the non-CLI scripts. Read
+  `.loop/archive/D1-cli-package-skeleton/plan.md` §Code surface for the exact
+  path, CLI framework, and HTTP client.
+- This ticket writes `<pkg>` for the package root D1 established. Resolve
+  `<pkg>` to `cli/src/localstack_cli` from D1's plan before writing any file.
 - D5 depends on D1 alone. It handles no credentials and reads only local
   files, so it can land before `localstack login` exists.
 
@@ -124,7 +123,7 @@ the implementation.
   (`deployments/infrastructure/backend.tf:2`,
   `deployments/applications/backend.tf:2`). Consul down means Vault down and
   Terraform unusable. Say so in the Consul section.
-- **`just unseal_vault` exists and is the pointed-at path** (`justfile:21-23`
+- **`just unseal_vault` exists and is the pointed-at path** (`justfile:33-34`
   running `scripts/unseal_vault.sh`). Two properties the runbook must state:
   - it requires `VAULT_UNSEAL_KEY_1..3`, `VAULT_ADDR` **and `VAULT_TOKEN`** in
     the environment or it refuses (`scripts/unseal_vault.sh:6-9`), even though
@@ -238,11 +237,11 @@ believing
 a rotation path exists. A1-audit-plan-premise-sweep exists
 because the same failure hit thirteen plans, with the diagnosis that "the
 anchors still resolve, it is the surrounding claims that went false"
-(`.loop/plans/A1-audit-plan-premise-sweep.md:39-40`). A printed runbook is
+(`.loop/archive/A1-audit-plan-premise-sweep/plan.md:39-40`). A printed runbook is
 documentation embedded in code and will rot the same way unless a gate catches
 it. See Requirement 4.
 
-## Non-goals / out of scope
+## 5. Non-goals / out of scope
 
 **The credential boundary, stated hard.** The implementation must NOT:
 - read, open, stat or shell out to anything that touches `/opt/vault/init.json`;
@@ -266,7 +265,7 @@ Also out of scope:
   are stale; both are other tickets.
 - A TUI, an interactive wizard, a pager, or a browser launch.
 
-## Requirements & restrictions
+## 6. Requirements & restrictions
 
 1. **`localstack breakglass` prints a runbook and exits.** No credential path,
    per the operator decision above.
@@ -331,7 +330,7 @@ Also out of scope:
    stays green while the advice goes false. That is A1's diagnosis word for
    word: "The anchors still resolve — it is the surrounding claims that went
    false"
-   (`.loop/plans/A1-audit-plan-premise-sweep.md:39-40`), reproduced by a plan
+   (`.loop/archive/A1-audit-plan-premise-sweep/plan.md:39-40`), reproduced by a plan
    written to prevent it. `haproxy.hcl` is authority for **how the edge reaches
    a backend**. `configure_network.yml` is authority for **whether a developer
    can reach it**. The runbook makes claims of the second kind, so it is pinned
@@ -380,10 +379,10 @@ Also out of scope:
    "unreachable" there sends the reader to fix a cluster that is fine.
 10. **Adversarial review before done** (`.claude/rules/adversarial-reviews.md`).
 
-## Code surface
+## 7. Code surface
 
 `<pkg>` = the CLI package root D1 creates. Resolve it from
-`.loop/plans/D1-cli-package-skeleton.md` before writing.
+`.loop/archive/D1-cli-package-skeleton/plan.md` before writing.
 
 - `<pkg>/src/<module>/commands/breakglass.py` **(new)** — the command. Loads
   the runbook via `importlib.resources`, runs the probes (Q2), prints. Register
@@ -409,9 +408,9 @@ Also out of scope:
 - `docs/breakglass.md` **(new, short)** — pointer page: what the command is,
   the credential boundary, and "the runbook itself lives in the CLI, run
   `localstack breakglass`". No duplicated steps.
-- `README.md:29` — the line listing service docs in `docs/`. Add the pointer.
+- `README.md:30` — the line listing service docs in `docs/`. Add the pointer.
 
-## Tests & validation gates
+## 8. Tests & validation gates
 
 ### Repo gates (discovered, not assumed)
 - **`just pre_commit`** (`justfile:17-19`, and the sole entry in
@@ -423,10 +422,15 @@ Also out of scope:
   the runbook markdown, so no example key material may appear in it.
   `.pre-commit-config.yaml:1` excludes `^\.(claude|loop)/`, so this plan file
   is not linted; the CLI package is.
-- **There is no ruff or mypy hook and no CI workflow gating Python today.** If
-  D1 added either, run it too; do not add one in this ticket.
-- **`uv run pytest`** from the CLI package root, per
-  `.claude/rules/python-testing.md`. D1 owns the pytest configuration.
+- **D1 landed the Python hooks.** `.pre-commit-config.yaml:37-72` now carries
+  `ruff`, `ruff-format`, `mypy` (strict, `--config-file cli/pyproject.toml`)
+  and `pytest`, all scoped `files: '^cli/'` and invoked through
+  `uv run --project cli`. The runbook markdown is outside `^cli/` so ruff and
+  mypy do not touch it, but `pytest` runs the CLI suite including this
+  ticket's tests. `just pre_commit` runs all of them; do not add a duplicate.
+- **`uv run --project cli pytest`** from the repo root, per
+  `.claude/rules/python-testing.md`. D1 owns the pytest configuration
+  (`cli/pyproject.toml`).
 
 ### Tests to add
 In `test_breakglass.py`:
@@ -507,7 +511,7 @@ live request.
 `.claude/rules/slop-scan-for-docs.md` layers, Layer 0 (every backticked path,
 command and URL resolves) first.
 
-## Risk assessment
+## 9. Risk assessment
 - **Blast radius: near zero at runtime.** The command reads local package data
   and, optionally, makes unauthenticated GETs. It changes no cluster state and
   no repo state. Reversibility is deleting one command and one markdown file.
@@ -550,20 +554,21 @@ command and URL resolves) first.
   recipe will fail these tests. That is the intended behavior, and the failure
   message must say so plainly, or the next person will delete the test.
 
-## Subtickets (ordered)
+## 10. Subtickets (ordered)
 1. Runbook markdown: all sections from requirement 2, requirement 3's three-way
-   address model throughout, no probes yet. Read `.loop/plans/N4-...md` first,
-   per §"Relationship to N4". Style per §"House style for this kind of page".
+   address model throughout, no probes yet. Read
+   `.loop/plans/N4-netsec-edge-only-service-access.md` first, per §"Relationship
+   to N4". Style per §"House style for this kind of page".
 2. `breakglass` command: load the package-data file, print it, register it.
    Plus the requirement-4 drift tests, including the `configure_network.yml`
    reachability pin. This is the first shippable state.
 3. Credential-boundary tests: canaries, token-pattern scan, no-open assertion.
 4. Probes (Q2 and Q6), edge-first, with the timeout / refused / non-2xx /
    garbage cases and requirement 9's three findings.
-5. `docs/breakglass.md` pointer plus the `README.md:29` line. Slop scan.
+5. `docs/breakglass.md` pointer plus the `README.md:30` line. Slop scan.
 6. Adversarial review (`.claude/rules/adversarial-reviews.md`).
 
-## Open questions
+## 11. Open questions
 
 > **All questions in this section were resolved on 2026-07-31 in
 > `## Forks resolved, 2026-07-31` at the end of this plan.** Each followed the
@@ -645,7 +650,8 @@ command and URL resolves) first.
   A TCP connect is safe but strictly weaker than the evidence available. It
   cannot tell "Consul answers and has a leader" from "Consul answers with no
   leader", and Consul is Vault's storage backend and both Terraform state
-  backends (`vault.hcl.j2:11-15`, `backend.tf:2`), so a lost leader is the
+  backends (`vault.hcl.j2:11-15`, `deployments/infrastructure/backend.tf:2`),
+  so a lost leader is the
   failure that explains everything else the reader is seeing. Discarding that
   signal to dodge a 403 that does not occur costs real diagnostic value during
   exactly the outage this command serves.
@@ -654,11 +660,10 @@ command and URL resolves) first.
   changing: on 401 or 403 the probe degrades to "reachable, not authorized to
   read the leader" and reports that, rather than inventing an outage. Sending a
   token to get a nicer answer stays forbidden by the non-goals either way.
-- **Q7 — D1's layout is unknown at authoring time.** No tracked
-  `pyproject.toml` exists in the repo yet. Every `<pkg>` anchor in §Code
-  surface is therefore a shape, not a resolved path. *Recommendation: the
-  implementer resolves them
-  from D1's plan and its shipped tree as step 0, and raises
+- **Q7 — D1's layout is settled.** D1 is `done` and `cli/pyproject.toml` is
+  tracked, so every `<pkg>` anchor in §Code surface resolves to
+  `cli/src/localstack_cli`. *Recommendation: the implementer confirms the
+  path against D1's shipped tree as step 0 and raises
   `out-of-scope-fix-needed` if D1 chose a structure where these files have no
   natural home, rather than inventing a parallel one.*
 - **Q8 — Should the runbook cover "I cannot reach the cluster at all" (tailnet
@@ -738,8 +743,87 @@ documentation and a non-zero exit invites a wrapper to swallow the output;
 like a dead cluster — stating what the tailnet actually carries (SSH on 22 and
 the edge on 443, manager only) rather than implying the API ports.
 
-**Q7 → answerable now.** D1 is registered and its plan settles the layout:
-package under `cli/`, src layout, its own `cli/pyproject.toml`, `typer` at
-runtime. Resolve the `<pkg>` anchors against D1's shipped tree at pickup, and
-still raise `out-of-scope-fix-needed` rather than inventing a parallel
-structure if they do not fit.
+**Q7 → resolved.** D1 is `done` and `cli/pyproject.toml` is tracked: package
+under `cli/`, src layout at `cli/src/localstack_cli`, `typer` at runtime.
+Resolve the `<pkg>` anchors to that path at pickup, and raise
+`out-of-scope-fix-needed` rather than inventing a parallel structure if they
+do not fit.
+
+## Premises / assumptions
+
+- **P1.** `scripts/unseal_vault.sh` requires `VAULT_TOKEN` alongside the
+  three unseal keys, so invoking it from the CLI would carry the root token
+  through the CLI's code path.
+  `Evidence: scripts/unseal_vault.sh:6-9` is a five-way `-z` guard including
+  `VAULT_TOKEN`, exiting 1 at `:8`. The three `vault operator unseal` calls
+  (`:11-13`) need no token. `justfile:33-34` runs the script; the root
+  `justfile` has no `set dotenv-load`, so values come from ambient env via
+  `--env-file .devcontainer/.env` (`.devcontainer/devcontainer.json:37-39`).
+
+- **P2.** `/opt/vault/init.json` is the path where Ansible stores both the
+  unseal keys and the root token, and naming it leaks nothing.
+  `Evidence: bootstrap/roles/vault_server/tasks/main.yml:116-123` is the
+  `Store Vault init keys` copy task writing `dest: /opt/vault/init.json`,
+  `owner: vault`, `mode: '0600'`. The unseal keys are at `:158` and the root
+  token via `bootstrap/roles/nomad_server/tasks/main.yml:191,196` (`slurp` +
+  `from_json`). The path appears in six places across two tracked files.
+
+- **P3.** An unauthenticated `GET /v1/sys/health` separates sealed (503) from
+  uninitialized (501) from active (200), so one probe tells the runbook which
+  failure the operator is in without a token.
+  `probe: GET http://192.168.2.30:8200/v1/sys/health -> 200` measured
+  2026-07-31, no token sent, full body returned. The 503-sealed and
+  501-uninitialized codes are the documented `/sys/health` defaults
+  (`sealedcode=503`, `uninitcode=501`); a standby returns 429, so the probe
+  treats any documented code as "answered", not 200 exactly.
+
+- **P4.** Nomad `/v1/agent/health` answers unauthenticated, so the probe can
+  report Nomad's state without a token.
+  `probe: GET http://192.168.2.30:4646/v1/agent/health -> 200` measured
+  2026-07-31, body `{"client":{"ok":true},"server":{"ok":true}}`. Also 200
+  through the edge: `https://nomad.lab.orangecluster.nl/v1/agent/health`.
+
+- **P5.** Consul answers unauthenticated despite `default_policy = "deny"`,
+  so an HTTP GET yields the leader address a TCP connect cannot.
+  `probe: GET http://192.168.2.30:8500/v1/status/leader -> 200` body
+  `"192.168.2.30:8300"` measured 2026-07-31;
+  `GET /v1/agent/self -> 200`. Consul ACLs are on
+  (`bootstrap/roles/consul_server/templates/consul.hcl.j2:25-27`), but the
+  anonymous token carries read policy. The probe falls back to a TCP connect
+  on 401 or 403 for the day the policy tightens.
+
+- **P6.** A TLS handshake against the edge separates "edge down" from
+  "cluster down", so the edge probe is the tier-1 signal.
+  `probe: GET https://vault.lab.orangecluster.nl/v1/sys/health -> 200` with
+  `ssl_verify_result=0` measured 2026-07-31. An unknown Host returns 307, not
+  a fall-through to a backend. The edge proxies the API, not just the UI.
+
+- **P7.** The anti-drift gate is mechanically testable and catches anchor
+  drift, but cannot catch claim drift on its own.
+  `UNCERTAIN.` Pinning a fact to a file that will not change produces a
+  permanently green test. `haproxy.hcl:134` will still read
+  `server vault1 192.168.2.30:8200` after N4 closes 8200 to the LAN, because
+  haproxy dials its backend from the same host. Requirement 4 adds
+  `configure_network.yml` as the second pin so N4 narrowing `from_ip` turns
+  the test red, but the gate remains a spelling check for claims the firewall
+  does not govern. `Evidence: .loop/archive/A1-audit-plan-premise-sweep/plan.md:39-40`
+  — "the anchors still resolve, it is the surrounding claims that went false".
+
+- **P8.** The direct `192.168.2.30:<port>` addresses do not survive
+  `N4-netsec-edge-only-service-access`, so the runbook must not present them
+  as an unqualified escape hatch.
+  `Evidence: .loop/plans/N4-netsec-edge-only-service-access.md` §Code surface
+  narrows `from_ip` for 4646, 8200, 8500; R3 deletes the broad rule; Q3
+  resolved as "no devcontainer exception — direct access is what the
+  runbook's SSH path is for"; §Risk assessment names
+  `NOMAD_ADDR=http://127.0.0.1:4646` over SSH as the escape. Requirement 3's
+  three-way address model and requirement 4's `configure_network.yml` pin
+  carry this.
+
+- **P9.** `tmp/F9-MIGRATION.md` is untracked, so a worktree implementer will
+  not have it.
+  `Evidence: tmp` is the first line of `.gitignore`; `git ls-files
+  --error-unmatch tmp/F9-MIGRATION.md` errors. `git worktree add` checks out
+  tracked files only. The two lessons the plan needs (the `test -s` guard and
+  the non-vacuous assertion) are inlined in §"House style for this kind of
+  page" so the implementer does not need the file.

@@ -47,6 +47,7 @@ LAZY_SUBCOMMANDS.update(
         "env": "localstack_cli.commands.env:app",
         "token": "localstack_cli.commands.token:app",
         "config": "localstack_cli.commands.config:app",
+        "breakglass": "localstack_cli.commands.breakglass:app",
     }
 )
 

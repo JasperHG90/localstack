@@ -856,12 +856,12 @@
     },
     "D5-cli-breakglass": {
       "slug": "D5-cli-breakglass",
-      "stage": "planning",
-      "attempts": 0,
+      "stage": "done",
+      "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/D5-cli-breakglass.adversarial.md, .loop/verdicts/D5-cli-breakglass.documentation.md",
       "dropped": false,
       "epic": "cli",
       "dependencies": [
