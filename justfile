@@ -37,7 +37,11 @@ unseal_vault:
 # fails on the missing SSH key before it ever evaluates the change.
 # The key is symlinked (one source of truth, so rotations follow); the
 # tfvars are copied, so a stray write in a worktree cannot reach the real file.
+# `.claude` is symlinked for the same reason as the key: `.gitignore` drops it,
+# so a worktree has no `.claude/rules/`, and `loopctl verify-plan` refuses any
+# plan that cites one of those rule files.
 # Seed a fresh git worktree with the gitignored inputs the gates need
 worktree_setup path:
     ln -sfn "$(pwd)/.ssh" "{{ path }}/.ssh"
     cp deployments/infrastructure/vars/prod.tfvars "{{ path }}/deployments/infrastructure/vars/prod.tfvars"
+    ln -sfn "$(pwd)/.claude" "{{ path }}/.claude"
