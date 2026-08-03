@@ -121,7 +121,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
-      hermes_version  = "0.12.0-memex-v1.0.1"
+      hermes_version  = "0.19.1-memex-v1.0.1"
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       memex_host                     = "192.168.2.46"
@@ -185,7 +185,7 @@ resource "nomad_job" "bifrost" {
     {
       bifrost_hostname = "radxa-dragon-q6a"
       bifrost_host     = "192.168.2.50"
-      bifrost_version  = "1.6.2"
+      bifrost_version  = "1.6.7"
       # Externally seeded in Vault (not Terraform-managed):
       #   vault kv put secret/default/bifrost/ollama-personal API_KEY=...
       #   vault kv put secret/default/bifrost/ollama-xebia    API_KEY=...

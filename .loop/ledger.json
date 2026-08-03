@@ -1205,6 +1205,23 @@
         "taxonomy"
       ],
       "stub": false
+    },
+    "U5-upgrade-hermes-bifrost-versions": {
+      "slug": "U5-upgrade-hermes-bifrost-versions",
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": ".loop/verdicts/U5-upgrade-hermes-bifrost-versions.adversarial.md, .loop/verdicts/U5-upgrade-hermes-bifrost-versions.documentation.md",
+      "dropped": false,
+      "epic": "upgrade",
+      "dependencies": [],
+      "priority": 20,
+      "summary": "Bump the pinned Hermes base image and Bifrost binary to their current upstream releases, keeping the two independent version schemes (Hermes: calver base image containing a semver pip package; Bifrost: semver binary) straight.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false
     }
   }
 }

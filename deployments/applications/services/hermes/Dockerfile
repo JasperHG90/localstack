@@ -6,7 +6,7 @@
 # the earlier "rootless can't grant CAP_SETGID" concern no longer applies.
 # The image therefore stays root (no trailing USER hermes); do NOT pin the
 # Nomad task to a non-root UID — the wrapper rejects arbitrary UIDs.
-FROM nousresearch/hermes-agent:v2026.7.1
+FROM nousresearch/hermes-agent:v2026.7.30
 
 # Install curl + jq for skill-based HTTP/JSON manipulation, plus chromium so the
 # agent-browser fallback chain finds a system Chrome for browser_vision /
