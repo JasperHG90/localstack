@@ -365,6 +365,19 @@ an operator decision before or during the loop.
   and whether MinIO trusts its TLS chain are F1 outputs not yet in the
   repo. Recommendation: block subticket 2 on F1 providing a concrete,
   reachable URL; do not hardcode a guessed endpoint.
+  **Relayed from F10-foundation-nomad-oidc-issuer (2026-08-03).** F10 owns
+  setting `server { oidc_issuer = "https://nomad.lab.orangecluster.nl" }`
+  in `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`, which makes
+  Nomad serve `/.well-known/openid-configuration`. The discovery URL M1
+  points MinIO's `identity_openid` `config_url` at is therefore
+  `https://nomad.lab.orangecluster.nl/.well-known/openid-configuration`,
+  served over HTTPS through the HAProxy edge (publicly-trusted Let's
+  Encrypt wildcard from T1/T3), reachable from the MinIO node
+  (192.168.2.29). F1 delivers JWKS only and does NOT enable discovery;
+  F10 is the owner. Once F10 is `done`, M1's `config_url` is this concrete
+  value, not a guess. The existing `unresolved-design-fork` block on M1
+  (MinIO removed `jwks_url`, only `config_url` works) is the one this
+  relay resolves: F10 produces the discovery document M1 requires.
 - Q2. **Claim-mode policy-name mapping for a fixed claim.** MinIO claim
   mode expects the mapped claim's value to be a comma-separated list of
   policy names. `nomad_job_id` yields a single job id string. Confirm

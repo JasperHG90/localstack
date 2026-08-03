@@ -42,3 +42,4 @@
       vars:
         nomad_server_ip_address: "192.168.2.30"
         nomad_server_consul_token_secret: "{{ lookup('env', 'NOMAD_CONSUL_TOKEN_SECRET') }}"
+        nomad_oidc_issuer: "https://nomad.lab.orangecluster.nl"
