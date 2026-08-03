@@ -359,13 +359,10 @@
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -866,7 +863,7 @@
     },
     "D3-cli-read-commands": {
       "slug": "D3-cli-read-commands",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -1292,6 +1289,39 @@
       "relay_block_nonfork": null,
       "tags": [],
       "stub": true
+    },
+    "R5-rollout-memex-oidc-auth": {
+      "slug": "R5-rollout-memex-oidc-auth",
+      "stage": "blocked",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "plan review FAIL/BROKEN: the human half is not implementable as designed. Vault OIDC issues an OPAQUE batch token as access_token and puts the signed JWT in id_token; memex verifies the ACCESS token and its docs reject both opaque tokens and id_tokens (\"Only providers that issue signed JWT access tokens work here\"). No overlap, so every human login would 403, and the plan fallback (lean on the Vault assignment) does not survive because an opaque token never reaches provider selection. P14 repeats the same id_token/access_token conflation. The WORKLOAD half is sound end to end (P3,P4,P5,P6,P20 hold). Operator must pick: split workload-only and drop the human path, front it with an IdP that issues JWT access tokens, or change memex upstream to accept the Vault id_token. See .loop/verdicts/R5-rollout-memex-oidc-auth.plan-validator.md"
+      },
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "epic": "rollout",
+      "dependencies": [
+        "F1-foundation-nomad-wi-jwt-trust",
+        "F2-foundation-vault-oidc-provider",
+        "F10-foundation-nomad-oidc-issuer",
+        "A1-audit-plan-premise-sweep"
+      ],
+      "priority": 10,
+      "summary": "Turn on both memex v1.1.0 OIDC paths: humans log in through the Vault lab provider (new public PKCE client gated on the developer group), and the hermes workload authenticates keylessly with a Nomad Workload Identity JWT mapped by nomad_job_id. Two providers coexist on the memex server, selected by iss. Static API keys stay.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "memex",
+        "oidc",
+        "vault",
+        "nomad",
+        "workload-identity",
+        "hermes"
+      ],
+      "stub": false
     }
   }
 }
