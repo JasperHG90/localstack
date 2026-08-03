@@ -60,8 +60,13 @@ def cli_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def run_cli(*args: str, stdin: str = "") -> subprocess.CompletedProcess[str]:
+    # `--no-sync` is load-bearing. `HOME` is redirected to a temp directory
+    # for these rows, so a syncing `uv run` finds an empty cache there and
+    # rebuilds `.venv` underneath the pytest process that is running it. The
+    # parent then loses the certifi bundle mid-suite and every later HTTPS
+    # call dies with a bare FileNotFoundError from `ssl`.
     return subprocess.run(
-        ["uv", "run", "localstack", *args],
+        ["uv", "run", "--no-sync", "localstack", *args],
         input=stdin,
         capture_output=True,
         text=True,

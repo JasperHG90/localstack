@@ -1,0 +1,1 @@
+{"slug": "D3-cli-read-commands", "at": "2026-08-03T21:30:02.078569+00:00", "tree": "1182e1691a4d54d18080583b996cf83b8a8529c4", "failed_gates": [{"command": "just pre_commit", "exit": 1}]}

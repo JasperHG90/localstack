@@ -20,8 +20,6 @@ fixes are listed in its verdict and are **implementation work, not optional**.
 | **F11-foundation-human-read-role** | **`done`.** The `developer` Vault policy and identity group are live and merged. `vault login -method=userpass username=operator` now covers both Terraform roots, brokered Nomad and Consul tokens, and user/group management |
 | **D1-cli-package-skeleton** | Built and green — `cli/` package, `localstack` entrypoint, 8 tests, four new pre-commit hooks. All 14 hooks pass. Commit gate holds pending two tree-bound review verdicts |
 | **F14-foundation-role-taxonomy** | `ready`, eval signed. Depends on F11, which is now done — so it is next after D1 |
-| **G2-nomad-ui-oidc-login** | Premise confirmed sound. Auth method and binding rule moved to Ansible; re-reviewing |
-| **D2-cli-login-broker-tokens** | `ui consul` cut per the locked surface; re-reviewing |
 
 ## Two cluster findings that own no ticket
 
@@ -48,9 +46,7 @@ the port is the only control Consul has, and there are two paths to close.
 
 | Ticket | Note |
 |---|---|
-| **D2-cli-login-broker-tokens** | Rewritten after its failing verdict and never re-reviewed. Also re-pointed off the retired F7 onto F11, which grants exactly the two creds paths D2 brokers |
-| **G2-nomad-ui-oidc-login** | Same. Plus a new non-goal: F14 owns the group convention, G2 consumes a name rather than defining one |
-| **N4-netsec-edge-only-service-access** | Same. Highest blast radius on the board |
+| **N4-netsec-edge-only-service-access** | No plan-validator verdict has ever run. Highest blast radius on the board |
 | **N3-netsec-converging-firewall-provisioner** | First review it has ever had. N4 cannot be implemented without it |
 
 ## Blocked: never reviewed
@@ -85,22 +81,15 @@ does not carry one.
 **Pinned is ahead of live**: Nomad pins `2.0.4-1` and runs 2.0.3; Consul pins
 `2.0.2-1` and runs 2.0.1. The next `just bootstrap` upgrades both.
 
-## Waiting on one re-review round
+## Shipped since the last re-review round
 
-All eight were rewritten against their failing verdicts. The rewrites fixed the
-content; they did not produce a passing verdict, and the verdict is what the
-gate reads.
+Six of the eight have since shipped: D2, D3, D4, D5 and D6 are done and
+G2 with them. Two are left, and neither is waiting on a re-review.
 
 | Ticket | What it does |
 |---|---|
 | **N4-netsec-edge-only-service-access** | Closes direct LAN access so the edge is the only route in. Also closes a live auth bypass: mlflow and phoenix answer 200 with no credentials. Needs N3 first |
-| **D2-cli-login-broker-tokens** | `login/logout/whoami/env/token/config`; brokers Nomad and Consul tokens from one Vault session |
-| **D6-cli-deps-and-shims** | Installs the CLIs at the versions the cluster pins, plus the PATH shims that let a bare `nomad` use your session |
-| **G2-nomad-ui-oidc-login** | Nomad web UI and `nomad login` sign in through Vault |
-| **D3-cli-read-commands** | `status`, `service`, `secret <svc>`, `vault grants` — the synthesis commands |
-| **D4-cli-cluster-tui** | `localstack monitor`, the live Textual panel |
-| **D5-cli-breakglass** | `localstack breakglass`, the recovery runbook |
-| **F8-foundation-deployer-provider-cutover** | Points Terraform's providers at brokered tokens, drops the static ones |
+| **F8-foundation-deployer-provider-cutover** | Points Terraform's providers at brokered tokens, drops the static ones. Blocked on an unresolved design fork |
 
 ## The critical path
 
@@ -351,9 +340,11 @@ before the change.
   Ansible owns the policy (`nomad_server/tasks/main.yml:182-184`), so `G2`
   consumes it by name. Whether `alloc-node-exec`, which is exec on the node
   rather than an allocation, should be in it at all is undecided.
-- **`D3`'s scope was justified by the `deploy` token's 403s.** Once `G2` lets
-  a human hold a `developer`-scoped token, that justification weakens. Re-read
-  `D3` after `G2` lands rather than implementing it as written.
+- **`D3`'s scope was justified by the `deploy` token's 403s.** `G2` has since
+  landed and `D3` shipped as written. The 403s are still real: `login` brokers
+  `nomad/creds/deploy`, which grants neither `list-jobs` nor node read, so
+  `status` and `service` stay partial until the CLI also brokers
+  `nomad/creds/manage`.
 
 ## Superseding this file
 

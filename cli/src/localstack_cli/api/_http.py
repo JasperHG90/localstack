@@ -50,11 +50,17 @@ def get_json(
     if response.status_code == 401:
         raise NotAuthenticated(service)
     if response.status_code == 403:
-        # Nomad answers 403 for both a dead token and a policy gap. The body
-        # is what separates them: it names the missing capability only in the
-        # second case.
+        # Both a dead token and a policy gap answer 403, and the body is the
+        # only hint at this layer. Measured against the live cluster:
+        # Vault sends "permission denied ... invalid token" for a bad token,
+        # Nomad sends "ACL token not found".
+        #
+        # This is a hint, not the verdict. Sniffing a body is brittle, so the
+        # command layer re-asks the service directly before it tells anyone
+        # to log in. See `commands/_session.py`.
         body = response.text.lower()
-        if "acl token not found" in body or "token expired" in body or "not found" in body:
+        dead = ("acl token not found", "token expired", "invalid token", "token not found")
+        if any(marker in body for marker in dead):
             raise NotAuthenticated(service)
         raise MissingCapability(service, capability)
     if response.status_code == 404:

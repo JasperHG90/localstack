@@ -27,6 +27,7 @@ TOKEN_HEADER = "X-Nomad-Token"
 # The grant each call needs, named so a 403 can say which one is missing.
 LIST_JOBS = "list-jobs"
 NODE_READ = "node:read"
+READ_JOB = "read-job"
 
 # Nomad pages `/v1/jobs/statuses` and signals more with this header. Send no
 # per_page and follow it while non-empty, or the panel silently under-reports
@@ -150,3 +151,68 @@ def list_nodes(address: str, token: str | None, timeout: float = TIMEOUT_SECONDS
         for item in body
         if isinstance(item, dict)
     ]
+
+
+@dataclass(frozen=True)
+class Template:
+    """One rendered template a job task carries.
+
+    `text` is the template body, and it is handled carefully: the running
+    haproxy job's body holds a live basic-auth password. Callers extract what
+    they need and never store or print the body itself.
+    """
+
+    task: str
+    dest_path: str
+    text: str
+
+
+def get_job(address: str, token: str | None, job_id: str, timeout: float = TIMEOUT_SECONDS) -> Any:
+    """One job's full specification."""
+    url = f"{address.rstrip('/')}/v1/job/{job_id}"
+    body, _ = get_json(
+        SERVICE, url, READ_JOB, token=token, token_header=TOKEN_HEADER, timeout=timeout
+    )
+    return body
+
+
+def job_templates(
+    address: str, token: str | None, job_id: str, timeout: float = TIMEOUT_SECONDS
+) -> list[Template]:
+    """Every template block in a job, as `(task, dest_path, text)`.
+
+    The single door to `EmbeddedTmpl`. Nothing else may reach for it, so
+    there is one place to audit when asking whether template text can escape.
+    """
+    spec = get_job(address, token, job_id, timeout=timeout)
+    found = []
+    for group in spec.get("TaskGroups") or []:
+        for task in group.get("Tasks") or []:
+            for template in task.get("Templates") or []:
+                found.append(
+                    Template(
+                        task=str(task.get("Name", "")),
+                        dest_path=str(template.get("DestPath", "")),
+                        text=str(template.get("EmbeddedTmpl") or ""),
+                    )
+                )
+    return found
+
+
+def job_service_names(
+    address: str, token: str | None, job_id: str, timeout: float = TIMEOUT_SECONDS
+) -> list[str]:
+    """The Consul service names a job registers.
+
+    Read off the job rather than guessed from its id. A job whose service is
+    named differently would otherwise get a confident, wrong health column.
+    """
+    spec = get_job(address, token, job_id, timeout=timeout)
+    names = []
+    for group in spec.get("TaskGroups") or []:
+        for service in group.get("Services") or []:
+            names.append(str(service.get("Name", "")))
+        for task in group.get("Tasks") or []:
+            for service in task.get("Services") or []:
+                names.append(str(service.get("Name", "")))
+    return sorted({name for name in names if name})

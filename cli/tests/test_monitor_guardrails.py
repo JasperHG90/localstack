@@ -78,12 +78,31 @@ def test_no_cluster_address_is_hardcoded_in_the_panel() -> None:
 
 
 def test_there_is_no_second_auth_path() -> None:
-    """Auth comes entirely from the session `login` brokered."""
-    pattern = re.compile(r"userpass|auth/token|session\.json|VAULT_TOKEN")
+    """Auth comes entirely from the session `login` brokered.
+
+    The rule is that nothing here OBTAINS a token: no login flow, no reading
+    the session file, no falling back to an environment variable. Sending a
+    token the session already handed over is fine, and so is asking Vault
+    whether that token is still live, which is the only way to tell a dead
+    session from a missing grant.
+
+    So the pattern matches acquisition, not use. An earlier version also
+    matched `auth/token` and `VAULT_TOKEN`, which flags
+    `auth/token/lookup-self` and the `X-Vault-Token` header name: both are
+    correct code doing the opposite of what the rule forbids.
+    """
+    pattern = re.compile(
+        r"userpass"
+        r"|session\.json"
+        r"|auth/token/create"
+        r"|os\.environ.*TOKEN"
+        r"|getenv\(.*TOKEN"
+        r"|\.vault-token"
+    )
     offenders = [
-        f"{path.relative_to(PACKAGE)}:{number}"
-        for path in sorted((API, TUI))
-        for source in path.rglob("*.py")
+        f"{source.relative_to(PACKAGE)}:{number}"
+        for path in (API, TUI)
+        for source in sorted(path.rglob("*.py"))
         for number, line in enumerate(source.read_text().splitlines(), start=1)
         if pattern.search(line)
     ]

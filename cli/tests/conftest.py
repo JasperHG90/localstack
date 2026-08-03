@@ -93,13 +93,23 @@ def no_outbound_network(
 
 
 @pytest.fixture(autouse=True)
-def isolated_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, closed_addr: str) -> None:
+def isolated_environment(
+    request: pytest.FixtureRequest,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    closed_addr: str,
+) -> None:
     """Keep tests off the real cluster and out of the real home directory.
 
     `~/.vault-token` is a real file on a developer machine, so `HOME` moves
     to a temp directory. Addresses default to a closed port, so a test that
     forgets to point somewhere fails fast instead of probing production.
+
+    Tests marked `cluster` keep the real environment. Reaching the real
+    cluster is their job, and they need the tokens this otherwise deletes.
     """
+    if request.node.get_closest_marker("cluster"):
+        return
     home = tmp_path / "home"
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))

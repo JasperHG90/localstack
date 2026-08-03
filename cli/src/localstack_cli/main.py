@@ -33,6 +33,11 @@ app = typer.Typer(
     name="localstack",
     cls=LazyTyperGroup,
     help="Cockpit for the localstack home-lab cluster.",
+    # Stated rather than inherited. A jobspec template can hold a rendered
+    # credential, and a traceback printing local variables would print it.
+    # typer already defaults this to False; the guarantee must not rest on
+    # that staying true across an upgrade.
+    pretty_exceptions_show_locals=False,
 )
 
 # D2's auth surface. Each module holds a single-command Typer, so it
@@ -49,6 +54,12 @@ LAZY_SUBCOMMANDS.update(
         "config": "localstack_cli.commands.config:app",
         "breakglass": "localstack_cli.commands.breakglass:app",
         "monitor": "localstack_cli.commands.monitor:app",
+        # D3's read commands. `vault` is a group because it will hold more
+        # than one view; the other three are leaf commands.
+        "status": "localstack_cli.commands.status:app",
+        "service": "localstack_cli.commands.service:app",
+        "secret": "localstack_cli.commands.secret:app",
+        "vault": "localstack_cli.commands.vault:app",
         "deps": "localstack_cli.commands.deps:app",
     }
 )

@@ -1,0 +1,97 @@
+"""The read commands against the real cluster.
+
+Marked `cluster` and excluded from the default run:
+
+    uv run --project cli pytest -m cluster
+
+Over the HTTPS edge, which answers from the LAN and the tailnet and survives
+the firewall change that closes the plaintext ports.
+"""
+
+import os
+
+import pytest
+
+from localstack_cli.api import consul, grants, haproxy, nomad, vault
+from localstack_cli.api.errors import ClusterError
+
+pytestmark = pytest.mark.cluster
+
+EDGE_VAULT = "https://vault.lab.orangecluster.nl"
+EDGE_NOMAD = "https://nomad.lab.orangecluster.nl"
+EDGE_CONSUL = "https://consul.lab.orangecluster.nl"
+
+
+def nomad_token() -> str:
+    token = os.environ.get("NOMAD_TOKEN")
+    if not token:
+        pytest.skip("no NOMAD_TOKEN in the environment")
+    return token
+
+
+def vault_token() -> str:
+    token = os.environ.get("VAULT_TOKEN")
+    if not token:
+        pytest.skip("no VAULT_TOKEN in the environment")
+    return token
+
+
+def test_vault_health_needs_no_token() -> None:
+    assert vault.health(EDGE_VAULT, timeout=10).initialized
+
+
+def test_consul_health_reads_tokenless() -> None:
+    assert consul.list_checks(EDGE_CONSUL, timeout=10)
+
+
+def test_the_routing_table_parses_from_the_job_api() -> None:
+    """Not from `deployments/`: that file is an unrendered Terraform input."""
+    templates = nomad.job_templates(EDGE_NOMAD, nomad_token(), "haproxy", timeout=10)
+    config = next(t for t in templates if t.dest_path == "local/haproxy.cfg")
+
+    routes = haproxy.parse_routes(config.text)
+
+    assert len(routes) >= 10
+    assert {"vault", "nomad", "consul", "s3"} <= {route.name for route in routes}
+
+
+def test_no_live_credential_reaches_a_parsed_route() -> None:
+    """The running jobspec carries the real basic-auth password."""
+    templates = nomad.job_templates(EDGE_NOMAD, nomad_token(), "haproxy", timeout=10)
+    config = next(t for t in templates if t.dest_path == "local/haproxy.cfg")
+    assert "insecure-password" in config.text, "the fixture premise has changed"
+
+    rendered = repr(haproxy.parse_routes(config.text))
+
+    assert "insecure-password" not in rendered
+
+
+def test_the_workload_policy_renders_for_a_real_job() -> None:
+    text = vault.read_policy(EDGE_VAULT, vault_token(), "nomad-workloads", timeout=10)
+
+    resolved = grants.render(text, {"nomad_namespace": "default", "nomad_job_id": "memex"})
+
+    assert resolved
+    assert grants.accessor(text) is not None
+    assert all(not grant.unresolved for grant in resolved)
+
+
+def test_a_jobs_referenced_secret_paths_resolve() -> None:
+    from localstack_cli.api import secrets
+
+    templates = nomad.job_templates(EDGE_NOMAD, nomad_token(), "memex", timeout=10)
+    found = secrets.references([(t.task, t.text) for t in templates])
+    if not found:
+        pytest.skip("memex references no Vault paths")
+
+    for reference in found:
+        state = vault.metadata_exists(
+            EDGE_VAULT, vault_token(), secrets.kv2_metadata_path(reference.path), timeout=10
+        )
+        assert state in {"present", "missing", "denied"}
+
+
+def test_a_denied_read_is_reported_not_raised_as_something_else() -> None:
+    """A token with no grants must produce a typed denial, not a crash."""
+    with pytest.raises(ClusterError):
+        vault.read_policy(EDGE_VAULT, "not-a-real-token", "nomad-workloads", timeout=10)

@@ -257,9 +257,9 @@ named `memex` and carries `{"nomad_job_id": "memex", "nomad_namespace":
 "default", "nomad_task": "memex", "role": "nomad-workloads"}`. Substituting
 the namespace and the job id reproduces what Vault computes.
 
-**Live Vault serves three path blocks.** F9 is applied
-(`tmp/HANDOFF-2026-07-31.md:43-52`: "The live `nomad-workloads` policy went
-from 6 path blocks to 3"), and re-probed today: `GET
+**Live Vault serves three path blocks.** F9 is applied: the live
+`nomad-workloads` policy went from 6 path blocks to 3, and it was re-probed
+on 2026-08-03: `GET
 /v1/sys/policies/acl/nomad-workloads` returns `data.policy` with exactly
 three `path` blocks, matching
 `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`.
@@ -278,8 +278,8 @@ accessor is not a constant either:
 ### Server versions, live
 
 Corrected. An earlier draft had all six numbers wrong with the direction
-inverted. `tmp/HANDOFF-2026-07-31.md:11-12` records the 2.x upgrade landing
-on all five nodes on 2026-07-31.
+inverted. The 2.x upgrade landed on all five nodes on 2026-07-31, and
+`bootstrap/inventory/group_vars/all.yml:9-13` carries the resulting pin.
 
 | Component | Live server | Binary on PATH in the devcontainer |
 |---|---|---|
@@ -411,6 +411,15 @@ hooks; it does not author them.
    | `localstack service [<name>] [--open]` | `GET /v1/job/haproxy` (routes, from `Templates[].EmbeddedTmpl`); `GET /v1/jobs` and `GET /v1/job/<id>` (Nomad); `GET /v1/health/state/any` (Consul) |
    | `localstack secret <service>` | `GET /v1/job/<service>` (Nomad); `GET /v1/secret/metadata/<path>` per referenced path (Vault) |
    | `localstack vault grants <job>` | `GET /v1/sys/policies/acl/nomad-workloads`, rendered |
+
+
+**Amended during implementation, 2026-08-03.** The two rows above named
+`GET /v1/jobs`. The code calls `GET /v1/jobs/statuses` instead. D4 shipped
+first and measured why: `/v1/jobs` carries `JobSummary` lifetime counters
+that read as current state (eight of fourteen healthy jobs show `Failed > 0`)
+and no desired count at all, so a panel built on it needs a per-job read.
+D4's guardrail test forbids `/v1/jobs` in the source. `/v1/jobs/statuses`
+carries the same job list plus current allocation state in one call.
 
    Two further calls are **diagnostic only**, issued by any command after a
    403 so requirement 13 can tell a dead session from a missing grant:
@@ -1057,15 +1066,16 @@ field; a missing path returns 404.
 returns 200 with exactly `minio` and `postgres-db`; bogus token returns 403.
 
 **P6.** The templated policy is three-block post-F9. `Evidence:`
-`tmp/HANDOFF-2026-07-31.md:43-52` records the apply. `probe:` `GET
+`bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`
+carries exactly three `path` blocks. `probe:` `GET
 /v1/sys/policies/acl/nomad-workloads` returns exactly three `path` blocks,
 matching `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2:1-11`.
 The renderer must still handle a six-block shape because the policy has
 already changed block count once.
 
 **P7.** Server versions are 2.0.x. `Evidence:`
-`tmp/HANDOFF-2026-07-31.md:11-12` records the upgrade landing on all five
-nodes. `probe:` Nomad 2.0.4, Vault 2.0.3, Consul 2.0.2 (servers); Nomad 2.0.3,
+`bootstrap/inventory/group_vars/all.yml:9-13` pins the versions the five
+nodes run. `probe:` Nomad 2.0.4, Vault 2.0.3, Consul 2.0.2 (servers); Nomad 2.0.3,
 Vault 2.0.3, Consul 2.0.1 (binaries). Servers are level with or ahead of the
 binaries.
 
