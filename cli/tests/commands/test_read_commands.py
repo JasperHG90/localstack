@@ -69,6 +69,9 @@ def mock_cluster() -> None:
     respx.get(f"{CONSUL}/v1/health/state/any").mock(
         return_value=httpx.Response(200, json=payload("consul_health"))
     )
+    respx.get(f"{CONSUL}/v1/catalog/services").mock(
+        return_value=httpx.Response(200, json=payload("consul_catalog"))
+    )
 
 
 def mock_edge_job() -> None:
@@ -551,3 +554,51 @@ def test_the_probe_does_not_re_issue_the_call_that_just_failed() -> None:
     # The probe went to a different job and succeeded, so this is a policy
     # gap and the message says so.
     assert "the session is live" in result.output
+
+
+@respx.mock
+def test_consul_resolves_from_the_catalog_not_from_health_checks() -> None:
+    """The reported defect, through the command.
+
+    Consul registers itself in the catalog but its only check is a node-level
+    `serfHealth` with an empty `ServiceName`, so a rung keyed on checks misses
+    it and the row falls to `unresolved`.
+
+    This is the red-first row: it goes red against the pre-fix code for the
+    right reason (the `job_source` is wrong, nothing raises). The `join()`
+    level test cannot, because pre-fix `join()` does not accept a catalog
+    argument at all and would only raise `TypeError`.
+    """
+    mock_cluster()
+    mock_edge_job()
+    respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
+        return_value=httpx.Response(200, json={"TaskGroups": []})
+    )
+
+    result = runner.invoke(app, ["service", "--json"])
+
+    rows = {row["name"]: row for row in json.loads(result.stdout)}
+    assert rows["consul"]["job_source"] == "consul-name"
+    # The two that resolve today must keep resolving.
+    assert rows["vault"]["job_source"] == "consul-name"
+    assert rows["nomad"]["job_source"] == "consul-name"
+
+
+@respx.mock
+def test_the_table_says_where_an_unresolved_row_points() -> None:
+    """Row 5. The dataclass carried the backend and `--json` emitted it, but
+    the table dropped it, so the rows with the least resolved information
+    showed the least on screen.
+    """
+    mock_cluster()
+    mock_edge_job()
+    respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
+        return_value=httpx.Response(200, json={"TaskGroups": []})
+    )
+
+    result = runner.invoke(app, ["service"])
+
+    assert "backend" in result.stdout
+    # `s3` is the live unresolved case: MinIO's S3 API port under its own
+    # hostname. The backend is what makes that recognizable.
+    assert "10.0.0.29:9000" in result.stdout.replace(" ", "")

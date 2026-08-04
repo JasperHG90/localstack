@@ -84,7 +84,7 @@ def main() -> int:
     target = Path(__file__).parent / "capture"
     target.mkdir(parents=True, exist_ok=True)
 
-    for name in ("jobs_statuses", "nodes", "seal_status", "consul_health"):
+    for name in ("jobs_statuses", "nodes", "seal_status", "consul_health", "consul_catalog"):
         payload = json.loads((source / f"{name}.json").read_text())
         scrubbed = scrub(payload, Placeholder())
         text = json.dumps(scrubbed, indent=2, sort_keys=True) + "\n"

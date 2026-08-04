@@ -70,8 +70,8 @@ def service(
 
     table(
         "services",
-        ["name", "url", "job", "source", "health"],
-        [[r.name, r.url, r.job, r.job_source.value, r.health] for r in rows],
+        ["name", "url", "job", "source", "health", "backend"],
+        [[r.name, r.url, r.job, r.job_source.value, r.health, r.backend] for r in rows],
         footer=CONSUL_FILTER_FOOTER,
     )
 
@@ -89,6 +89,8 @@ def _collect(config: Config, token: str | None) -> list[services.ServiceRow]:
 
     jobs = nomad.job_statuses(config.nomad_addr, token)
     checks = consul.list_checks(config.consul_addr)
+    # The catalog, not the checks, is what says a Consul service exists.
+    catalog = consul.list_services(config.consul_addr)
 
     # Service names come from each routed job's own spec rather than being
     # guessed from its id, so the health column cannot be confidently wrong.
@@ -97,7 +99,7 @@ def _collect(config: Config, token: str | None) -> list[services.ServiceRow]:
         if any(job.name == route.name for job in jobs):
             names[route.name] = nomad.job_service_names(config.nomad_addr, token, route.name)
 
-    return services.join(routes, jobs, checks, names)
+    return services.join(routes, jobs, checks, names, catalog=catalog)
 
 
 def _open(url: str) -> None:

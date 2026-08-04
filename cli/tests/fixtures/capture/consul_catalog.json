@@ -1,0 +1,99 @@
+{
+  "bifrost": [
+    "http",
+    "llm",
+    "gateway"
+  ],
+  "consul": [],
+  "grafana": [
+    "http",
+    "monitoring"
+  ],
+  "haproxy": [
+    "http",
+    "proxy"
+  ],
+  "haproxy-stats": [
+    "http",
+    "monitoring"
+  ],
+  "hermes": [
+    "hermes",
+    "agent",
+    "http"
+  ],
+  "loki": [
+    "http",
+    "monitoring"
+  ],
+  "memex": [
+    "http",
+    "memex"
+  ],
+  "minio": [
+    "s3",
+    "http"
+  ],
+  "minio-console": [
+    "http"
+  ],
+  "mlflow": [
+    "http",
+    "ml",
+    "tracking"
+  ],
+  "nats": [
+    "nats",
+    "messaging",
+    "jetstream"
+  ],
+  "nats-exporter": [
+    "http",
+    "monitoring",
+    "prometheus"
+  ],
+  "nats-monitor": [
+    "http",
+    "monitoring"
+  ],
+  "node-exporter": [
+    "monitoring"
+  ],
+  "nomad": [
+    "http",
+    "serf",
+    "rpc"
+  ],
+  "nomad-client": [
+    "http"
+  ],
+  "phoenix": [
+    "observability",
+    "http",
+    "llm"
+  ],
+  "phoenix-grpc": [
+    "grpc",
+    "otlp"
+  ],
+  "postgres-db": [
+    "database",
+    "sql"
+  ],
+  "postgres-exporter": [
+    "prometheus",
+    "monitoring"
+  ],
+  "prometheus": [
+    "http",
+    "monitoring"
+  ],
+  "promtail": [
+    "monitoring"
+  ],
+  "talat-shim": [],
+  "vault": [
+    "active",
+    "initialized"
+  ]
+}

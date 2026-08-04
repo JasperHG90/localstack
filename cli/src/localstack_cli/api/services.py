@@ -74,6 +74,8 @@ def join(
     jobs: list[Job],
     checks: list[Check],
     service_names: dict[str, list[str]] | None = None,
+    *,
+    catalog: dict[str, list[str]],
 ) -> list[ServiceRow]:
     """Every route and every job, with health where it is known.
 
@@ -83,10 +85,20 @@ def join(
     guessing the service name from the job id produces a confident wrong
     health column. A job absent from the map has no known service and
     therefore no known health.
+
+    `catalog` maps every registered Consul service name to its tags, and it
+    is what rung (b) resolves against. Required and keyword-only, both
+    deliberately. Required because any default would be either an empty
+    mapping, silently resolving nothing at rung (b), or a set derived from
+    the checks, which is the defect this parameter exists to remove.
+    Keyword-only because it is positionally interchangeable with
+    `service_names`, so a positional form would let an unchanged caller bind
+    its names dict here and type-check clean, shipping the bug green and
+    degrading every `job-id` row's health to `no check`.
     """
     names_for = service_names or {}
     by_id = {job.name: job for job in jobs}
-    consul_services = {check.service for check in checks if check.service}
+    consul_services = set(catalog)
     rows: list[ServiceRow] = []
     routed_jobs: set[str] = set()
 

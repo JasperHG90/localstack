@@ -95,3 +95,29 @@ def test_a_denied_read_is_reported_not_raised_as_something_else() -> None:
     """A token with no grants must produce a typed denial, not a crash."""
     with pytest.raises(ClusterError):
         vault.read_policy(EDGE_VAULT, "not-a-real-token", "nomad-workloads", timeout=10)
+
+
+def test_consul_is_in_the_catalog_but_carries_no_health_check() -> None:
+    """Row 8. The one fact the catalog fix rests on.
+
+    It is a fact about how Consul registers itself, not about this repo, so
+    a future Consul that adds a self-check makes the fix pointless. This
+    goes red then, instead of the fix quietly doing nothing.
+    """
+    catalog = consul.list_services(EDGE_CONSUL, timeout=10)
+    checks = consul.list_checks(EDGE_CONSUL, timeout=10)
+
+    assert "consul" in catalog
+    assert [c for c in checks if c.service == "consul"] == []
+
+
+def test_the_minio_service_still_carries_the_s3_tag() -> None:
+    """Pins the evidence behind the deferred tag rung (ticket Q2).
+
+    If this goes red, the follow-up ticket's premise is gone and it should
+    be re-measured rather than implemented.
+    """
+    catalog = consul.list_services(EDGE_CONSUL, timeout=10)
+
+    assert "s3" in catalog.get("minio", [])
+    assert [name for name, tags in catalog.items() if "s3" in tags] == ["minio"]
