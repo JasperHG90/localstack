@@ -60,3 +60,26 @@ def list_checks(address: str, timeout: float = TIMEOUT_SECONDS) -> list[Check]:
 def failing(checks: list[Check]) -> list[Check]:
     """The checks worth showing. Never the wall of passing ones."""
     return [check for check in checks if check.failing]
+
+
+def list_services(address: str, timeout: float = TIMEOUT_SECONDS) -> dict[str, list[str]]:
+    """Every registered service, mapped to its tags. No token is sent.
+
+    This is what answers "does Consul know about a service by this name",
+    and it is not the same question as "does Consul health-check it".
+    Consul registers itself in the catalog, but its only check is a
+    node-level `serfHealth` with an empty `ServiceName`, so a name set built
+    from checks silently omits `consul`.
+
+    The tags come back rather than being dropped. `minio` carries `s3`,
+    declared by the job on the port label the `s3` route points at, so a
+    later rung could resolve that route from data rather than a guess. A
+    `list[str]` return would foreclose it.
+    """
+    url = f"{address.rstrip('/')}/v1/catalog/services"
+    body, _ = get_json(SERVICE, url, HEALTH_READ, timeout=timeout)
+    return {
+        str(name): [str(tag) for tag in (tags or [])]
+        for name, tags in body.items()
+        if isinstance(tags, list)
+    }

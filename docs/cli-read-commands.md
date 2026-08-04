@@ -39,13 +39,24 @@ a column. The disagreements are the output, so nothing is dropped:
 | `source` | Meaning |
 | --- | --- |
 | `job-id` | A route whose name matches a Nomad job. The common case. |
-| `consul-name` | No such job, but a Consul service by that name. `vault`, `nomad` and `consul` resolve this way: they are agent endpoints. |
-| `unresolved` | A routed hostname with nothing behind it. `s3` is the live example. The row still renders, with its backend. |
+| `consul-name` | No such job, but Consul's catalog lists a service by that name. `vault`, `nomad` and `consul` resolve this way: they are agent endpoints. |
+| `unresolved` | A routed hostname matching no job and no catalog service. `s3` is the live example. The row still renders, with its backend. |
 | `no-route` | A job the edge does not serve. Thirteen exist. |
 
 Health comes from each job's own registered service names, read off the job
 rather than guessed from its id. A job with no check reads `no check`, never
 `passing`.
+
+The `consul-name` rung reads Consul's catalog, not its health checks. That
+distinction is load-bearing: Consul registers itself as a service, but its
+only check is node-level and carries no service name, so a rung keyed on
+checks reports `consul` as unresolved.
+
+The `backend` column shows the `ip:port` the edge sends a hostname to. It is
+blank for a `no-route` row, which has no backend to show. On an `unresolved`
+row it is the piece that lets you place the service yourself: `s3` points at
+`192.168.2.29:9000`, which is recognizably MinIO's S3 API even though nothing
+in Nomad or Consul is named `s3`.
 
 Routes come from the running haproxy job's `local/haproxy.cfg` template, not
 from `deployments/infrastructure/services/haproxy.hcl`. That file is a
