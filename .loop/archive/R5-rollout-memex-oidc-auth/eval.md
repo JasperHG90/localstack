@@ -24,3 +24,26 @@ passes 90% of the time is a row with a hole.
 | G2 (guardrail): static API keys survive | The rendered memex and hermes job specs after apply | `MEMEX_SERVER__AUTH__KEYS` still present in `memex.hcl`, and `MEMEX_API_KEY` still present in `hermes.hcl` at both `:201` and `:405`. Removing either is a follow-up (Q4), never this ticket | Deterministic (grep over the rendered specs) | 100% |
 
 signed-off-by: JasperHG90 2026-08-03
+
+---
+
+## SUPERSESSION NOTE (added by R6-rollout-memex-human-oidc, 2026-08-04)
+
+The rows above are UNCHANGED and remain the signed record of what was true
+when R5 shipped, against memex **v1.1.0** with one OIDC provider. Do not edit
+them. Three are now false about the live system, superseded by R6:
+
+- **Row 1 (S1)** asserts `(1 provider(s))`. R6 adds the Vault human provider,
+  so the live count is `2`. Both must be present.
+- **Row 4 (D2)** asserts the server log emits **NOTHING** on the
+  verified-but-unauthorized path. That polarity INVERTED at memex v1.2.0,
+  which logs `OIDC token verified for issuer ... but matched no grant_rule
+  and the provider has no default_policy ...`. Against a v1.2.0 server,
+  silence is now a FAILURE.
+- **Row 9 (G1)** asserts exactly ONE element in `MEMEX_SERVER__AUTH__OIDC`
+  and no `vault_identity_oidc_client`. R6 adds both, deliberately.
+
+The corrected assertions live in `.loop/evals/R6-rollout-memex-human-oidc.md`
+and in `docs/memex-oidc-verification.md`. If a check here fails against the
+current cluster, read that runbook before concluding anything is broken — and
+do NOT "fix" the runbook backwards to match these rows.

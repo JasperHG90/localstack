@@ -139,13 +139,32 @@ MEMEX_SERVER__AUTH__ENABLED=true
 {{- with secret "${memex_auth_secret}" }}
 MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin","description":"Admin key"},{"key":"{{ .Data.data.writer_key }}","policy":"writer","vault_ids":["global"],"description":"Scoped writer"},{"key":"{{ .Data.data.writer_key_vault_meetings }}","policy":"writer","vault_ids":["meetings"],"description":"Meetings writer"}]'
 {{- end }}
-# Trust Nomad's OIDC issuer so workloads authenticate with a Workload
-# Identity JWT instead of a static key. One provider, one grant rule: only
-# the hermes job. No default_policy, so a token that verifies but matches no
-# rule is refused rather than silently downgraded. `admin` matches the key
-# hermes holds today — the win here is no long-lived secret on the host, NOT
-# less privilege; tightening to writer + vault_ids is a follow-up.
-MEMEX_SERVER__AUTH__OIDC='[{"issuer":"${nomad_oidc_issuer}","audience":["memex"],"grant_rules":[{"claim":"nomad_job_id","value":"hermes","policy":"admin"}]}]'
+# Two trusted issuers, selected by the token's `iss`. Neither sets
+# default_policy, so a token that verifies but matches no rule is refused
+# rather than silently downgraded.
+#
+# ELEMENT 1, Nomad — workloads. A Workload Identity JWT instead of a static
+# key. One grant rule: only the hermes job. `admin` matches the key hermes
+# holds today; the win is no long-lived secret on the host, NOT less
+# privilege. Tightening to writer + vault_ids is a follow-up.
+#
+# ELEMENT 2, Vault — humans, via `memex auth login`. Two differences from
+# element 1, both deliberate:
+#
+#   `audience` is the CLIENT ID, not "memex". Vault signs only the id_token
+#   and an id_token's `aud` carries the client id, so the client sends the
+#   id_token and this must match it.
+#
+#   ORDER IS LOAD-BEARING. memex takes the first matching rule and stops, so
+#   app-memex-admins MUST be listed before app-memex-readers. Swapping them
+#   silently downgrades every admin who is also in the reader tier, and
+#   nothing logs it.
+#
+# Both `value`s are Vault GROUP NAMES, spelled exactly as the keys in
+# local.app_user_groups. The group gate is enforced twice: Vault refuses to
+# issue a token at all to someone outside the assignment, and memex refuses
+# to authorize a token that matches no rule.
+MEMEX_SERVER__AUTH__OIDC='[{"issuer":"${nomad_oidc_issuer}","audience":["memex"],"grant_rules":[{"claim":"nomad_job_id","value":"hermes","policy":"admin"}]},{"issuer":"${vault_oidc_issuer}","audience":["${memex_oidc_client_id}"],"grant_rules":[{"claim":"groups","value":"app-memex-admins","policy":"admin"},{"claim":"groups","value":"app-memex-readers","policy":"reader"}]}]'
 MEMEX_SERVER__TRACING__ENABLED=true
 MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8

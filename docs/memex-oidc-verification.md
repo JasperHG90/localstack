@@ -1,9 +1,14 @@
-# Verifying memex workload OIDC
+# Verifying memex OIDC (workloads and humans)
 
-hermes authenticates to memex with a Nomad Workload Identity JWT instead of
-a static admin key. This runbook holds the checks that prove it, including
-the two denials. Run them after a deploy that touches the memex auth config,
-the hermes `identity` stanza, or the hermes image.
+memex authenticates two kinds of caller without a static key: WORKLOADS
+(hermes, via a Nomad Workload Identity JWT) and HUMANS (via `memex auth
+login` against the Vault `lab` provider). This runbook holds the checks that
+prove both, including the denials. Run them after a deploy that touches the
+memex auth config, the hermes `identity` stanza, the hermes image, or the
+Vault OIDC client.
+
+Checks are grouped: S* server-wide, W*/D*/H* the workload path, V* the human
+path, G* guardrails.
 
 Most failure modes here are **silent**: the request still returns `200`
 because hermes falls back to its API key, which is deliberately still
@@ -15,24 +20,26 @@ fails to resolve at all (no token file, or config that will not validate).
 Once a bearer resolves, the client sends it and nothing else, so a token
 memex rejects is a hard failure with no second credential behind it.
 
-Addresses: memex is `http://192.168.2.46:8000`; the issuer is
-`https://nomad.lab.orangecluster.nl`.
+Addresses: memex is `http://192.168.2.46:8000`. The workload issuer is
+`https://nomad.lab.orangecluster.nl`; the human issuer is
+`https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab`.
 
-## S1: the server loaded exactly one provider
+## S1: the server loaded both providers
 
 ```
 nomad alloc logs <memex-alloc> memex | grep -i 'authentication enabled'
 ```
 
-Expect both lines, and expect the count to be `1`:
+Expect both lines, and expect the count to be `2`:
 
 ```
-OIDC bearer-token authentication enabled (1 provider(s)).
+OIDC bearer-token authentication enabled (2 provider(s)).
 API key authentication enabled (3 key(s) configured, 3 exempt path(s)).
 ```
 
-`1`, not `2`. A second provider would mean the human-login path leaked in
-from `R6-rollout-memex-human-oidc`. A **missing** OIDC line means the JSON in
+`2`, not `1`: element 1 is the Nomad issuer for workloads, element 2 the
+Vault `lab` issuer for humans. BOTH must be present. A count of `1` means one
+element failed to parse and was dropped. A **missing** OIDC line means the JSON in
 `MEMEX_SERVER__AUTH__OIDC` failed to parse and the provider was dropped
 silently. That is the cheapest failure to catch, which is why this check
 runs first.
@@ -134,6 +141,9 @@ Present that token to memex. Expect `403`, **and** the memex log to carry:
 OIDC token rejected for issuer ...
 ```
 
+Match on the message text, not the level word: this line moved from `info` to
+`warning` at v1.2.0, where every refusal logs at `warning`.
+
 (`nomad job validate` warns "identity called vault_default but no vault
 block" on this shape. Expected and harmless.)
 
@@ -150,9 +160,14 @@ signature" and "valid token that maps to no policy" as the identical
 tell you which one you got. The discriminator:
 
 - D1 emits `OIDC token rejected for issuer ...`
-- D2 emits **nothing**
+- D2 emits `OIDC token verified for issuer ... but matched no grant_rule and
+  the provider has no default_policy, so it authorizes nothing.`
 
-A silent `403` is the pass here. A log line means the wrong failure fired.
+**This polarity flipped at memex v1.2.0, and the old rule is now backwards.**
+On v1.1.0 this path returned `None` with no log call, so SILENCE was the
+pass. v1.2.0 logs it explicitly. Against a v1.2.0 server, silence here is a
+FAILURE: it means the request never reached the authorization path, so you
+are looking at a signature or issuer problem wearing the same 403.
 
 This is the check that proves every other job in the cluster is not
 implicitly a memex admin, so do not skip it.
@@ -214,3 +229,184 @@ recoverable: if the bearer never resolves, hermes keeps running on the key.
 They do not rescue a bearer that resolves and is then rejected, so S2 is a
 regression check on the keys themselves, not a safety net for the checks
 above.
+
+## V1: a human in the reader tier can read, and cannot write
+
+Run on your LAPTOP, not in the devcontainer: `memex auth login` binds an
+ephemeral loopback port, and a host browser cannot reach a container's
+`127.0.0.1`.
+
+Config lives at `~/.config/memex/config.yaml`:
+
+```yaml
+oidc:
+  issuer: "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab"
+  client_id: "<the memex client_id>"
+  credential: "id_token"
+  scopes: ["openid", "groups"]
+```
+
+**Log into the Vault UI first, in the same browser.** Vault's
+`authorization_endpoint` is the UI path, so an unauthenticated browser lands
+on the login screen and never redirects back. The CLI does not error: it
+waits out its 300s callback timeout and reports something that names no
+cause.
+
+```
+memex auth login
+memex auth status
+```
+
+Then decode the cached id_token from `token.json` in the memex user config
+dir and assert `iss` matches the issuer above, `aud` equals the client id
+(NOT `memex` — an id_token's `aud` carries the client id), `groups` contains
+`app-memex-readers`, and **`groups` does NOT contain `app-memex-admins`**.
+
+That last clause is the precondition for the write assertion below, and it
+is easy to lose. The resting state after this ticket puts the operator in
+BOTH tiers, so re-running V1 later — as this runbook's header tells you to
+after any memex auth deploy — will correctly resolve to `admin` and the
+write will NOT be refused. Check the claim before reading the result.
+
+- READ `GET /api/v1/vaults` returns `200`.
+- WRITE `PATCH /api/v1/notes/<random-uuid>/title` returns **`403`**, and the
+  `403` is the whole point. That route is guarded by `require_write`, which
+  `reader` does not hold, so the gate fires before the handler and the
+  fabricated uuid mutates nothing. **Given a reader-only token, anything
+  else means the tier resolved ABOVE `reader`**: a `404` or `422` says the
+  handler ran, so the write gate let you through and the grant is wrong. Do
+  not read a non-403 as "the write failed, good". If the token carries
+  `app-memex-admins`, this is V5, not V1.
+
+## V2: the opaque access token is refused
+
+From the same `token.json`, present the `access_token` field as the bearer
+instead of the id_token.
+
+Expect `403` and:
+
+```
+OIDC bearer rejected: not a parseable JWT (2 dot-separated segments).
+```
+
+Two, not one: Vault's batch token is `hvb.` + base64url, and memex logs
+`token.count('.') + 1`. Confirm the count against the token you actually got.
+
+This is the one-line diagnosis of a client that forgot `credential:
+id_token`, and it is the exact failure that made the human path impossible
+before memex v1.2.0.
+
+## V3: the Vault-side gate is live
+
+Read-only, no login needed, but **use a token with NO identity entity (a root
+token)**. The expected `access_denied` fires only where the request carries
+no entity. With your own operator token both the entity and assignment checks
+pass and Vault returns a `code=` redirect instead, which is a false alarm and
+also mints an auth-code entry, so the probe stops being read-only.
+
+```
+curl -sk -H "X-Vault-Token: $VAULT_ROOT_TOKEN" -G \
+  "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/authorize" \
+  --data-urlencode "client_id=<the memex client_id>" \
+  --data-urlencode "redirect_uri=http://127.0.0.1:44444/callback" \
+  --data-urlencode "response_type=code" --data-urlencode "scope=openid groups" \
+  --data-urlencode "state=abcdefghij" --data-urlencode "nonce=abcdefghij" \
+  --data-urlencode "code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" \
+  --data-urlencode "code_challenge_method=S256"
+```
+
+Expect `{"error":"access_denied","error_description":"identity entity must be
+associated with the request"}`. Reaching that error proves the client, the
+redirect, the provider list and the scope all resolved: Vault checks those
+before it checks the entity.
+
+## V4: a human token with NO `groups` claim is refused
+
+Log in a second time with `scopes: ["openid"]` only, dropping `groups`.
+
+**Login SUCCEEDS.** Vault ignores an unsupported scope rather than erroring,
+so you get a perfectly valid signed token that simply carries no `groups`
+claim. That is this design's likeliest silent failure, and nothing else
+detects it: D2 presents a Nomad workload token, so no Vault id_token ever
+travels that path.
+
+Present that id_token. Expect `403`, and confirm on the D2 log line that it
+came from the authorization path, not a signature failure.
+
+Restore `scopes: ["openid", "groups"]` and re-run V1 afterwards, so the
+working config is what is left in place.
+
+## V5: a member of BOTH tiers lands on admin
+
+Add your entity to `app-memex-admins` in `local.app_user_group_members` (a
+reviewed Terraform edit) and apply, so you are in both tiers. Log in again
+and perform an admin-only operation.
+
+Assert all three:
+
+- the decoded `groups` claim contains BOTH `app-memex-admins` and
+  `app-memex-readers`;
+- `PATCH /api/v1/notes/<random-uuid>/title` returns something OTHER than
+  `403` (a `404` or `422` from the handler, since the uuid is fabricated).
+  **A `403` here means the reader rule matched first**, the two rules are the
+  wrong way round in `MEMEX_SERVER__AUTH__OIDC`, and every admin who is also
+  a reader has been silently downgraded;
+- `GET /api/v1/vaults` returns `200`.
+
+memex takes the first matching `grant_rule` and stops, and
+`app-memex-admins` is listed first, which is the only reason dual membership
+resolves to `admin`.
+
+## V6: the session really lasts 30 days
+
+Immediately after login, read `expires_at` from `token.json`.
+
+Expect roughly 30 days out, NOT roughly one hour. The client caches
+`min(now + expires_in, id_token exp)`, and Vault returns `access_token_ttl`
+as `expires_in` — so a short `access_token_ttl` silently truncates the
+session and drops you back to the API key, with every request still `200`.
+Both TTLs are 30 days for this reason.
+
+## G1-G5: guardrails
+
+- **G1 — static keys survive.** `MEMEX_SERVER__AUTH__KEYS` in `memex.hcl`,
+  `MEMEX_API_KEY` in `hermes.hcl` at both sites. Removal is a follow-up.
+- **G2 — the workload element is byte-unchanged.** Element 0 of the rendered
+  `MEMEX_SERVER__AUTH__OIDC` still carries the Nomad issuer,
+  `"audience":["memex"]`, and `"value":"hermes","policy":"admin"`.
+- **G3 — the provider list was appended, not replaced.** Every pre-existing
+  client id is still in `local.oidc_provider_client_ids`. A replace silently
+  unpublishes other consumers' keys from the provider JWKS.
+- **G4 — the shared `lab` key is untouched.** `vault_identity_oidc_key.lab`
+  shows no diff and still reads `rotation_period`/`verification_ttl` of
+  `86400`. Editing it would change rotation for the Nomad UI, Grafana and the
+  smoke client.
+- **G5 — the scaffold edit landed where it should, and only there.** Expect
+  the members map, the two tiers, and `vault_identity_oidc_assignment.smoke`
+  `group_ids` growing from 1 to 3. That growth is EXPECTED, not a mistake:
+  the smoke assignment binds `local.all_app_user_group_ids` by design, and
+  effective access does not change. Nothing else in `roles.tf` or `oidc.tf`
+  should move.
+
+## Revoking a long-lived human token
+
+A 30-day id_token is a stateless bearer. Vault cannot revoke one once issued,
+so know which lever actually works before you need it.
+
+**The complete lever: remove the memex client from
+`local.oidc_provider_client_ids` and apply.** That drops the `memex-human`
+key from the provider's JWKS, so every outstanding memex human token fails
+verification at once. One reversible line, and it touches no other consumer.
+
+**Rotating the key is NOT the complete lever, despite how it reads.**
+`rotate` stamps an expiry on the CURRENT signing key only, then promotes the
+next one. Keys rotated out earlier keep the expiry they were given at their
+own rotation, and nothing revisits them. So repeating the call never
+converges: the second call expires a freshly promoted key that signed
+nothing. Its real reach is "tokens issued since the last rotation". Lowering
+the key's `verification_ttl` does not help either: it does not re-stamp
+existing ring members, and Vault refuses it outright while the client's
+`id_token_ttl` exceeds it.
+
+Either way the change lands within memex's JWKS cache interval (about an
+hour), not instantly.

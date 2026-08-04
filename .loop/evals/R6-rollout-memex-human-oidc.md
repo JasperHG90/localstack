@@ -1,0 +1,34 @@
+eval: R6-rollout-memex-human-oidc
+
+A human runs `memex auth login` once, gets a 30-day identity scoped by Vault
+group, and every other identity is refused. R5's live workload path is
+unchanged except for the log polarity the v1.2.0 bump forces.
+
+Sixteen rows, one per §8 check. All deterministic at 100%: the failure modes
+here are silent (a lapsed bearer, a missing claim, a truncated session all
+return `200` on the API-key fallback), and the security-shaped rows protect
+an invariant, so a row that passes 90% of the time is a row with a hole.
+
+Membership per Q8: the operator entity is in BOTH `app-memex-admins` and
+`app-memex-readers`, which is what makes V5's ordering check real.
+
+| Behavior | Input | Expected | Scorer | Threshold |
+|----------|-------|----------|--------|-----------|
+| memex trusts Vault as well as Nomad | `nomad alloc logs <memex-alloc> memex \| grep -i 'authentication enabled'` after the R6 apply | `OIDC bearer-token authentication enabled (2 provider(s)).` — the count is `2`, not `1`; the API-key line is still present | Deterministic (string match) | 100% |
+| API-key access is unbroken | The P14 triple against `/api/v1/vaults`: no credential, garbage bearer, admin `X-API-Key` | `401` / `403` / `200`, unchanged from R5's baseline | Deterministic (HTTP status triple) | 100% |
+| The workload path still works on the v1.2.0 server | From the hermes alloc, present `/secrets/nomad_memex.jwt` as a bearer to `/api/v1/vaults`, and resolve the client's headers | `200`, and the client resolves `{'Authorization': 'Bearer ...'}` with no `X-API-Key`. This is the only LIVE proof hermes still authenticates after the server bump: the config guardrails check the spec, and S2 would return `200` on the API-key fallback even if the bearer broke | Deterministic (HTTP status + dict key equality) | 100% |
+| A human in the reader tier can read but NOT write | `memex auth login` on the laptop with `~/.config/memex/config.yaml`, entity in `app-memex-readers` only; then `GET /api/v1/vaults` and `PATCH /api/v1/notes/<random-uuid>/title` | `GET` returns `200`. `PATCH` returns exactly `403` — that route is guarded by `require_write`, which `reader` lacks, so the gate fires before the handler. A `404` or `422` means the handler RAN and the tier resolved above `reader`, which is a FAIL, not a passing write-refusal. The id_token's `groups` contains `app-memex-readers` | Deterministic (HTTP status + JSON claim) | 100% |
+| The opaque access token is refused | From the same `token.json`, present the `access_token` field (Vault's `hvb.` batch token) as the bearer | `403`, and the log reads `OIDC bearer rejected: not a parseable JWT (2 dot-separated segments).` Confirm the count against the real token; `hvb.<blob>` is one dot | Deterministic (HTTP status + log string) | 100% |
+| The Vault-side gate is live | The read-only authorize probe with a ROOT token (no identity entity), per §8 V3 | `{"error":"access_denied","error_description":"identity entity must be associated with the request"}`. With an operator token this returns a `code=` redirect instead and MINTS an auth-code entry — that is a false alarm, not a pass | Deterministic (string match on the error body) | 100% |
+| A human token with NO `groups` claim is refused | Log in a second time with `scopes: ["openid"]` only; present that id_token | Login SUCCEEDS (Vault ignores the unsupported scope) and the request is `403` from the AUTHORIZATION path. Confirm on the v1.2.0 log message, not the status. Restore `scopes: ["openid","groups"]` and re-run V1 after | Deterministic (HTTP status + log string) | 100% |
+| A member of BOTH tiers lands on admin | Operator entity in `app-memex-admins` AND `app-memex-readers`; log in, then `PATCH /api/v1/notes/<random-uuid>/title` | NOT `403`. A `404`/`422` from the handler is the PASS: the write gate let the request through, and the uuid is fabricated so nothing mutates. A `403` means the reader rule matched first, so the two rules are the wrong way round and every admin who is also a reader is silently downgraded. Also assert `groups` contains both tier names | Deterministic (HTTP status + JSON claim) | 100% |
+| The session really lasts 30 days, not one hour | Immediately after login, read `expires_at` from the cached `token.json` | `expires_at` is ~30 days out, NOT ~1 hour. The client caches `min(now + expires_in, id_token exp)` and Vault's `expires_in` IS `access_token_ttl`, so a short `access_token_ttl` silently truncates the session and drops back to the API key with every request still `200` | Deterministic (timestamp comparison) | 100% |
+| Machine deny, wrong `aud`, still holds | R5's throwaway Nomad job token with `aud=["vault.io"]` presented to memex | `403`, and the log emits `OIDC token rejected for issuer ...` | Deterministic (HTTP status + log string) | 100% |
+| Machine deny, non-hermes job — POLARITY INVERTED | From the same job, its `aud=["memex"]` token | `403` AND the v1.2.0 log line `OIDC token verified for issuer ... but matched no grant_rule and the provider has no default_policy ...`. On v1.1.0 this path was SILENT; asserting silence against a v1.2.0 server fails a healthy system | Deterministic (HTTP status + log string) | 100% |
+| G1 (guardrail): static keys survive | Rendered memex and hermes specs after apply | `MEMEX_SERVER__AUTH__KEYS` present in `memex.hcl`; `MEMEX_API_KEY` present in `hermes.hcl` at both sites. Removal is a follow-up, never this ticket | Deterministic (grep over rendered specs) | 100% |
+| G2 (guardrail): R5's workload element is byte-unchanged | The rendered `MEMEX_SERVER__AUTH__OIDC` array | Element 0 still carries the Nomad issuer, `audience:["memex"]`, and the literal `"value":"hermes","policy":"admin"` rule. R6 appends only | Deterministic (JSON equality on element 0) | 100% |
+| G3 (guardrail): the provider list was appended, not replaced | `local.oidc_provider_client_ids` after apply | The pre-existing client ids are all still present, plus the memex one. A replace silently unpublishes other consumers' keys from the provider JWKS | Deterministic (set containment) | 100% |
+| G4 (guardrail): the shared `lab` key is untouched | `terraform plan` diff plus the live key read | `vault_identity_oidc_key.lab` shows NO diff, and its `rotation_period`/`verification_ttl` are still `86400`. Editing it would change rotation for Nomad UI, Grafana and the smoke client | Deterministic (plan diff + live read) | 100% |
+| G5 (guardrail): the scaffold edit landed where it should, and only there | `terraform plan` diff over `roles.tf` and `oidc.tf` | Exactly the expected set: the members map, the two tiers, and `vault_identity_oidc_assignment.smoke` `group_ids` growing 1 to 3 (an expected consequence of `local.all_app_user_group_ids`, not a mistake). Nothing else in those files moves | Deterministic (plan diff enumeration) | 100% |
+
+signed-off-by: JasperHG90 2026-08-04
