@@ -36,6 +36,12 @@ RUN curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors https://claude.ai/i
 # Install rtk
 RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 
+# Install codegraph
+RUN curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+
+# Install clx
+RUN curl -fsSL https://raw.githubusercontent.com/JasperHG90/clx/main/install.sh | bash
+
 # Shims first, then the pinned binaries, then the system. `localstack deps`
 # writes both directories and never writes to one what belongs in the other.
 # A bare `nomad`, `consul` or `vault` finds its shim, which execs the pinned

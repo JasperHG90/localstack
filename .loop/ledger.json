@@ -1431,6 +1431,26 @@
       "relay_block_nonfork": null,
       "tags": [],
       "stub": false
+    },
+    "D9-cli-service-one-row-per-job": {
+      "slug": "D9-cli-service-one-row-per-job",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "epic": "cli",
+      "dependencies": [
+        "D8-cli-service-tag-rung"
+      ],
+      "priority": 30,
+      "summary": "`localstack service` renders a job's routes adjacently and blanks a cell only when it repeats the cell directly above, so `minio` and `s3` read as one service with two URLs. Rendering only: the join, the dataclass and the JSON are untouched.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false
     }
   }
 }

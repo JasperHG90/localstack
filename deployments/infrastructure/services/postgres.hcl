@@ -113,10 +113,28 @@ job "postgres" {
         }
       }
 
+      ### v0.16.0 could not read PG17+. PostgreSQL 17 moved the checkpoint
+      ### counters out of `pg_stat_bgwriter` into the new `pg_stat_checkpointer`
+      ### view, and v0.16.0 still issues the flat pre-17 query, so against this
+      ### PG18 server every scrape logged
+      ### `collector failed name=stat_bgwriter err="pq: column
+      ### "checkpoints_timed" does not exist"` and Postgres logged the matching
+      ### ERROR — 3454 times in one allocation's lifetime. Upstream fixed it in
+      ### v0.17.0 (PR #1072); v0.20.1 is CI-tested against PG18.
+      ###
+      ### `--collector.stat_checkpointer` is required, not optional: the
+      ### collector that now owns those counters ships DISABLED by default, so
+      ### upgrading alone trades the error spam for silently missing checkpoint
+      ### metrics. The counters also change name — `pg_stat_bgwriter_
+      ### checkpoints_timed_total` becomes `pg_stat_checkpointer_num_timed_
+      ### total`, and so on. Nothing in this repo graphs or alerts on the old
+      ### names, so no dashboard needed updating; check that again before
+      ### bumping further.
       config {
-        image        = "docker.io/prometheuscommunity/postgres-exporter:v0.16.0"
+        image        = "docker.io/prometheuscommunity/postgres-exporter:v0.20.1"
         ports        = ["exporter"]
         network_mode = "host"
+        args         = ["--collector.stat_checkpointer"]
       }
 
       template {
