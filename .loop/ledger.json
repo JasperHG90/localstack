@@ -1320,12 +1320,12 @@
     },
     "R6-rollout-memex-human-oidc": {
       "slug": "R6-rollout-memex-human-oidc",
-      "stage": "planning",
-      "attempts": 0,
-      "review_cycles": 0,
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/R6-rollout-memex-human-oidc.adversarial.md, .loop/verdicts/R6-rollout-memex-human-oidc.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "epic": "rollout",
@@ -1334,7 +1334,7 @@
         "R5-rollout-memex-oidc-auth"
       ],
       "priority": 5,
-      "summary": "Humans log into memex with `memex auth login` against the Vault lab provider instead of sharing a static admin key. Bumps the memex server to v1.2.0 (whose client-side credential: id_token setting makes this possible at all), adds a PUBLIC PKCE Vault OIDC client gated on the developer group, and appends a second element to MEMEX_SERVER__AUTH__OIDC keyed on the id_token's aud = client_id. Also owns the D1/D2 runbook fix the v1.2.0 log changes force. Static API keys stay.",
+      "summary": "Humans log into memex with `memex auth login` against the Vault lab provider instead of sharing a static admin key. Bumps the memex server to v1.2.0 (whose client-side credential: id_token setting makes this possible at all), adds a PUBLIC PKCE Vault OIDC client signed by its OWN 30-day key, gates it on two NEW app-user tiers (`app-memex-admins` and `app-memex-readers`), completes the app-user membership extension point in roles.tf, and appends a second element to MEMEX_SERVER__AUTH__OIDC keyed on the id_token's aud = client_id with two grant_rules, the admin tier first. Leaves the break-glass `admin` group alone. Also owns the D1/D2 runbook fix the v1.2.0 log changes force. Static API keys stay.",
       "relay_block_nonfork": null,
       "tags": [
         "memex",
@@ -1422,10 +1422,12 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
-      "epic": null,
-      "dependencies": [],
-      "priority": 0,
-      "summary": null,
+      "epic": "cli",
+      "dependencies": [
+        "D7-cli-service-join-consul-catalog"
+      ],
+      "priority": 30,
+      "summary": "`localstack service` resolves a route to a Consul service that carries a tag of the same name, when exactly one service carries it. `s3` stops rendering as unresolved and resolves to `minio`.",
       "relay_block_nonfork": null,
       "tags": [],
       "stub": false

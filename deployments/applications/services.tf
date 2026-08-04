@@ -23,6 +23,19 @@ ephemeral "vault_kv_secret_v2" "postgres_admin" {
 ### The string must be byte-identical in both, or provider selection fails.
 locals {
   nomad_oidc_issuer = "https://nomad.lab.orangecluster.nl"
+
+  ### Vault's `lab` OIDC provider, for HUMAN logins. Byte-identical to what
+  ### Vault advertises and to the issuer in the human's client config, or
+  ### provider selection by `iss` fails.
+  vault_oidc_issuer = "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab"
+}
+
+### The cross-root channel. The memex OIDC client is created in the
+### infrastructure root; this reads its client_id back by static name, with no
+### remote-state link. A public client returns an empty client_secret rather
+### than erroring.
+data "vault_identity_oidc_client_creds" "memex" {
+  name = "memex"
 }
 
 ### Firewall rules for application services
@@ -176,8 +189,10 @@ resource "nomad_job" "memex" {
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
       nomad_oidc_issuer     = local.nomad_oidc_issuer
+      vault_oidc_issuer     = local.vault_oidc_issuer
+      memex_oidc_client_id  = data.vault_identity_oidc_client_creds.memex.client_id
       bifrost_host          = "192.168.2.50"
-      memex_version         = "1.1.0"
+      memex_version         = "1.2.0"
       # Bifrost virtual key issued to Memex (default/memex/bifrost). Memex's
       # default/extraction/reflection models all call Bifrost /v1 with this key.
       bifrost_key_secret = vault_kv_secret_v2.bifrost_memex_key.path

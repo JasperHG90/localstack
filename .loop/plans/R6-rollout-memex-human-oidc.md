@@ -3,7 +3,7 @@ epic = "rollout"
 depends_on = ["F2-foundation-vault-oidc-provider", "R5-rollout-memex-oidc-auth"]
 priority = 5
 stub = false
-summary = "Humans log into memex with `memex auth login` against the Vault lab provider instead of sharing a static admin key. Bumps the memex server to v1.2.0 (whose client-side credential: id_token setting makes this possible at all), adds a PUBLIC PKCE Vault OIDC client signed by its OWN 30-day key, gates it on two tiers (`admin` and a new `app-memex-readers`), and appends a second element to MEMEX_SERVER__AUTH__OIDC keyed on the id_token's aud = client_id with two grant_rules, admin first. Also owns the D1/D2 runbook fix the v1.2.0 log changes force. Static API keys stay."
+summary = "Humans log into memex with `memex auth login` against the Vault lab provider instead of sharing a static admin key. Bumps the memex server to v1.2.0 (whose client-side credential: id_token setting makes this possible at all), adds a PUBLIC PKCE Vault OIDC client signed by its OWN 30-day key, gates it on two NEW app-user tiers (`app-memex-admins` and `app-memex-readers`), completes the app-user membership extension point in roles.tf, and appends a second element to MEMEX_SERVER__AUTH__OIDC keyed on the id_token's aud = client_id with two grant_rules, the admin tier first. Leaves the break-glass `admin` group alone. Also owns the D1/D2 runbook fix the v1.2.0 log changes force. Static API keys stay."
 tags = ["memex", "oidc", "vault", "human-auth", "pkce", "id-token"]
 ---
 
@@ -13,14 +13,17 @@ tags = ["memex", "oidc", "vault", "human-auth", "pkce", "id-token"]
 
 Give humans SSO into memex through the Vault `lab` OIDC provider: memex
 server to v1.2.0, a public PKCE Vault client signed by its OWN 30-day key
-and gated on two tiers (`admin` and a new `app-memex-readers`), and a
-second provider element on `MEMEX_SERVER__AUTH__OIDC` verifying the
-**id_token** with two `grant_rules`. Static API keys stay. R5's workload
-path is untouched except for the log-line changes the version bump forces.
+and gated on two NEW app-user tiers (`app-memex-admins` and
+`app-memex-readers`), and a second provider element on
+`MEMEX_SERVER__AUTH__OIDC` verifying the **id_token** with two
+`grant_rules`, the admin tier first. Completes the app-user membership
+extension point `roles.tf` already promises, and leaves the break-glass
+`admin` group untouched. Static API keys stay. R5's workload path is
+untouched except for the log-line changes the version bump forces.
 
 ## 2. Size / Effort
 
-**M.** Small diff (one new Terraform file with four resources, two edits
+**M.** Small diff (one new Terraform file with four resources, three edits
 to `roles.tf`, one appended list entry, one `local`, one `data` block, one
 env line extended, one version string, three docs). Effort drivers:
 
@@ -41,8 +44,11 @@ env line extended, one version string, three docs). Effort drivers:
   key-registration check, which fires at the TOKEN endpoint and so is
   invisible to §8's V3 probe.
 - TWO tiers means two `grant_rules` whose ORDER decides what a dual
-  member gets (P20), and the reader tier needs a member, which the
-  app-user scaffold has nowhere to put today (P22, Q7).
+  member gets (P20). Both tiers need members, and the app-user scaffold
+  has nowhere to record them today (P22), so this ticket also completes
+  that extension point (R20). That is a SHARED-scaffold edit: adding
+  tiers grows F2's smoke assignment by derivation, without a line of
+  `oidc.tf` changing (P25).
 
 Every blocking premise from the R5 split is now measured. There is no
 probe-first subticket.
@@ -65,6 +71,25 @@ Operator decisions taken 2026-08-04, before this plan: R5 is applied and
 live (P14), the server `memex_version` bump to 1.2.0 belongs to THIS
 ticket, the human session is ~30 days on a DEDICATED signing key, and the
 gate is TWO tiers rather than one. The last two settle Q2 and Q3; see §11.
+
+Two further decisions taken 2026-08-04, after the plan review, which this
+revision carries through §§2 and 4-12:
+
+- **Both tiers are new `local.app_user_groups` entries**,
+  `app-memex-admins` and `app-memex-readers`. The break-glass group
+  `vault_identity_group.admin` is NOT used and NOT touched (R21, Q2).
+- **Q7 is settled: a sibling `local.app_user_group_members` map**, wired
+  to `member_entity_ids` on `vault_identity_group.app_user` (R20). That
+  completes the extension point `roles.tf:158-161` already promises and
+  `docs/cluster-roles.md:140-141` already documents, and every later
+  branch-2 consumer inherits it.
+
+The plan review that forced the rest of this revision is
+`.loop/verdicts/R6-rollout-memex-human-oidc.plan-validator.md`: §9's
+second break-glass lever was wrong (P24 now measures it), §9 understated
+the `roles.tf` blast radius while §5 contradicted it (P25 and §9's
+expected-diff table now agree), and V5's join/restore trusted a live-state
+snapshot (it is a Terraform edit now).
 
 ## 4. Context
 
@@ -129,21 +154,36 @@ gate is TWO tiers rather than one. The last two settle Q2 and Q3; see §11.
   per-client field, and it is the referenced key's `verification_ttl`
   that caps a client's `id_token_ttl` (P17). A dedicated key is what
   buys the 30-day session without touching anyone else.
-- **The gate is TWO tiers**, both named by one assignment:
-  - `vault_identity_group.admin`
-    (`deployments/infrastructure/roles.tf:127-136`) maps to memex
-    `policy: admin`. Branch 1 of the four answers at
-    `docs/vault-human-auth.md:270-288`: reuse an existing tier group. It
-    carries `external_member_entity_ids = true` (`:131`), so Terraform
-    owns the group and NOT its membership, and it has NO members today
-    (P11). Joining is a deliberate `vault write` (`docs/cluster-roles.md:94-105`).
-  - A NEW entry in `local.app_user_groups`
-    (`deployments/infrastructure/roles.tf:152-163`) maps to memex
-    `policy: reader`. Branch 2, the branch that exists for exactly this
-    and ships empty. Bind ONLY that key's id
-    (`local.app_user_group_ids["<tier>"]`, `roles.tf:192-194`), never
-    `local.all_app_user_group_ids` (`:199-201`), per the warning at
-    `docs/vault-human-auth.md:279-281`.
+- **The gate is TWO tiers, and BOTH are new `local.app_user_groups`
+  entries** (`deployments/infrastructure/roles.tf:152-163`), named by one
+  assignment. That is branch 2 of the four answers at
+  `docs/vault-human-auth.md:270-288`, the branch that ships empty and
+  exists for exactly this: `app-memex-admins` maps to memex
+  `policy: admin`, `app-memex-readers` to `policy: reader`. Bind ONLY
+  those two keys (`local.app_user_group_ids["<tier>"]`,
+  `roles.tf:192-194`), never `local.all_app_user_group_ids` (`:199-201`),
+  per the warning at `docs/vault-human-auth.md:279-281`.
+- **`vault_identity_group.admin` is NOT the admin tier**, and that is a
+  decision rather than an oversight. That group is break-glass:
+  `external_member_entity_ids = true`
+  (`deployments/infrastructure/roles.tf:131`) hands membership to a
+  `vault write` no apply reverts (`docs/cluster-roles.md:70-73`,
+  `:84-94`), the file's own warning says leaving yourself in it is
+  invisible to every plan (`deployments/infrastructure/roles.tf:125-126`),
+  and it carries Vault's wildcard policy (`:31-116`). Wiring daily memex
+  admin to it would mean living in break-glass. Two app-user tiers are
+  symmetric, match the scaffold's stated purpose (`:148-151`, "they exist
+  to be named by an OIDC assignment so a service can tell its own tiers
+  apart"), and leave break-glass alone.
+- **The scaffold has no place to record members, and this ticket adds
+  one.** `vault_identity_group.app_user`
+  (`deployments/infrastructure/roles.tf:165-177`) sets no
+  `member_entity_ids`, so a tier created today admits nobody (P22) — even
+  though the comment right above it already promises "Adding a person is
+  a Terraform edit to member_entity_ids on the resource below, which is
+  the point: a tier list should be reviewable" (`:158-161`), and
+  `docs/cluster-roles.md:140-141` documents the same edit. R20 closes
+  that gap.
 - **The `groups` claim is opt-in on the request**, not just the
   template: `docs/vault-human-auth.md:300-306` records that a client
   which does not SEND `scope=openid groups` gets a signed token with no
@@ -159,7 +199,8 @@ gate is TWO tiers rather than one. The last two settle Q2 and Q3; see §11.
 
 memex trusts one issuer (Nomad) and knows nothing about Vault. Humans
 have no path off the shared admin key. The app-user scaffold has no place
-to record who is in a tier (P22), so branch 2 cannot admit anybody today.
+to record who is in a tier (P22), so branch 2 cannot admit anybody today
+and neither memex tier could have a member.
 
 ## 5. Non-goals / out of scope
 
@@ -190,13 +231,30 @@ to record who is in a tier (P22), so branch 2 cannot admit anybody today.
 - **No change to the Vault `lab` provider or scope**
   (`deployments/infrastructure/oidc.tf:55-70`, `:94-100`). The only edit
   to that file is the one-line append at `:79-84`.
-- No change to the smoke client (`deployments/infrastructure/oidc.tf:133-148`)
-  or to `deployments/infrastructure/nomad_oidc.tf`. Grafana and the Nomad
-  UI already consume the id_token and are unaffected.
-- **Do not gate memex on `developer`.** That group carries a real Vault
-  policy (`deployments/infrastructure/developer_group.tf:158-164`) and
-  is the Nomad/cluster tier. memex's tiers are `admin` and the new
-  app-user reader tier; see §6 R6.
+- No EDIT to the smoke client (`deployments/infrastructure/oidc.tf:133-148`),
+  the smoke assignment (`:123-131`), or
+  `deployments/infrastructure/nomad_oidc.tf`. Grafana and the Nomad UI
+  already consume the id_token and are unaffected.
+  **`vault_identity_oidc_assignment.smoke.group_ids` WILL still grow in
+  the plan**, with no line of that file changing: it is
+  `concat([vault_identity_group.smoke.id], local.all_app_user_group_ids)`
+  (`:129`), and `local.all_app_user_group_ids` (`roles.tf:199-201`) is
+  derived from every key in `local.app_user_groups`. Two new tiers means
+  two more ids. That is F2's deliberate design (`oidc.tf:125-128`,
+  `roles.tf:196-198`, P25), not a defect to correct: §9 lists it as an
+  expected diff and §8 G5 checks it.
+- **Do not gate memex on `developer` or on `admin`.** `developer` carries
+  a real Vault policy
+  (`deployments/infrastructure/developer_group.tf:158-164`) and is the
+  Nomad/cluster tier; `admin` carries the wildcard policy
+  (`deployments/infrastructure/roles.tf:31-116`) and is break-glass.
+  Overloading either as a memex label makes a memex grant change a
+  cluster-privilege change. memex's tiers are the two new app-user
+  entries; see §6 R6.
+- **Do not touch `vault_identity_group.admin`
+  (`deployments/infrastructure/roles.tf:127-136`).** Not named by the
+  assignment, not edited, and no check in §8 writes its membership.
+  Detector: G5.
 - No change to `docs/workload-identity.md`. The human path mints no
   Nomad audience; `:213` already registers `memex` for R5.
 - No device-flow support. Vault advertises no
@@ -219,7 +277,7 @@ to record who is in a tier (P22), so branch 2 cannot admit anybody today.
 | R3 | A NEW `vault_identity_oidc_client`, its own assignment, its own key registration, and one appended line to `local.oidc_provider_client_ids` | `deployments/infrastructure/oidc.tf:72-84`; pattern `deployments/infrastructure/nomad_oidc.tf:30-64` |
 | R4 | Append to `local.oidc_provider_client_ids`, never replace. Replacing breaks the live Nomad UI login and F2's smoke client | `deployments/infrastructure/oidc.tf:74-78`, `:104-107` |
 | R5 | `client_type = "public"` with PKCE. A CLI cannot hold a secret; Vault accepts `none` auth and `S256` | P3; contrast `deployments/infrastructure/nomad_oidc.tf:54` |
-| R6 | Gate on TWO groups in ONE assignment: `vault_identity_group.admin` (memex `admin`) and a NEW `local.app_user_groups` tier (memex `reader`). Bind only that tier's own key | `docs/vault-human-auth.md:270-288`, `:279-281`; `deployments/infrastructure/roles.tf:127-136`, `:152-163`, `:192-194` |
+| R6 | Gate on TWO NEW `local.app_user_groups` tiers in ONE assignment: `app-memex-admins` (memex `admin`) and `app-memex-readers` (memex `reader`). Bind each tier's own key from `local.app_user_group_ids`, never the all-tiers list | Operator decision 2026-08-04; `docs/vault-human-auth.md:270-288`, `:279-281`; `deployments/infrastructure/roles.tf:148-151`, `:152-163`, `:192-194`, `:199-201` |
 | R7 | The client must REQUEST `scope=openid groups`, spelled out, because `scopes` replaces the default list | P1, P8; `docs/vault-human-auth.md:300-306` |
 | R8 | Never point at Vault's built-in `default` provider | `deployments/infrastructure/oidc.tf:86-93`, `deployments/infrastructure/nomad_oidc.tf:132-135` |
 | R9 | Leave `default_policy` unset on both provider entries, so an unmatched token is refused rather than downgraded | `deployments/applications/services/memex.hcl:142-147`; §8 D2, V4 |
@@ -232,7 +290,9 @@ to record who is in a tier (P22), so branch 2 cannot admit anybody today.
 | R16 | Do not silence a failing gate; fix the cause | `.claude/rules/prek-code-quality.md`, `.claude/rules/pre-existing-issues.md` |
 | R17 | A DEDICATED `vault_identity_oidc_key` for this client, `rotation_period = 604800` / `verification_ttl = 2592000`, and the client's `key` points at it. `vault_identity_oidc_key.lab` is not edited | P17, P18; §5; contrast `deployments/infrastructure/oidc.tf:42-47` |
 | R18 | `id_token_ttl = 2592000` AND `access_token_ttl = 2592000`. The two are coupled, not independent | P21 (Q3); ceiling P17, P18 |
-| R19 | The Vault-side `admin` rule comes FIRST in `grant_rules`, so a member of both tiers gets `admin` | P20; §8 V5 |
+| R19 | The `app-memex-admins` rule comes FIRST in `grant_rules`, so a member of both tiers gets `admin` | P20; §8 V5 |
+| R20 | Add `local.app_user_group_members` (tier name to entity-id list) and wire it to `member_entity_ids` on `vault_identity_group.app_user`, so a tier can admit somebody and the tier list stays reviewable in the repo | Operator decision 2026-08-04, Q7; `deployments/infrastructure/roles.tf:158-161`, `:165-177`, `:172-174`; `docs/cluster-roles.md:140-141`; P22 |
+| R21 | `vault_identity_group.admin` is not named, not edited, and not written to by any check. It stays break-glass | Operator decision 2026-08-04; `deployments/infrastructure/roles.tf:118-126`, `:125-126`, `:31-116`; `docs/cluster-roles.md:70-73` |
 
 ## 7. Code surface
 
@@ -257,17 +317,19 @@ resources, in dependency order:
 
   ```hcl
   group_ids = [
-    vault_identity_group.admin.id,
+    local.app_user_group_ids["app-memex-admins"],
     local.app_user_group_ids["app-memex-readers"],
   ]
   entity_ids = []
   ```
 
-  Referenced directly, no data source, exactly as
-  `deployments/infrastructure/nomad_oidc.tf:30-34` does. Bind that one
-  map key, never `local.all_app_user_group_ids`
+  Two map keys spelled out, never `local.all_app_user_group_ids`
   (`deployments/infrastructure/roles.tf:199-201`), per the warning at
-  `docs/vault-human-auth.md:279-281`.
+  `docs/vault-human-auth.md:279-281` and the DO-NOT-COPY comment at
+  `deployments/infrastructure/oidc.tf:125-128`.
+  `vault_identity_group.admin` is NOT named here (R21). Structure
+  otherwise as `deployments/infrastructure/nomad_oidc.tf:30-34`:
+  referenced directly, no data source.
 - `vault_identity_oidc_client "memex"` —
   `key = vault_identity_oidc_key.memex_human.name`,
   `assignments = [vault_identity_oidc_assignment.memex.name]`,
@@ -297,37 +359,55 @@ resources, in dependency order:
 
 ### `deployments/infrastructure/roles.tf`
 
-- `:152-163` — add ONE entry to `local.app_user_groups` at the marked
+- `:152-163` — add TWO entries to `local.app_user_groups` at the marked
   line (`:154`):
 
   ```hcl
+  "app-memex-admins"  = "Full access to memex through Vault SSO"
   "app-memex-readers" = "Read-only access to memex through Vault SSO"
   ```
 
-  Name follows `app-<service>-<level>` (`docs/cluster-roles.md:107-114`).
-  This string is also the `value` of the reader `grant_rule` below and
-  the group name Vault emits in the `groups` claim, so the three must
-  match exactly.
+  Names follow `app-<service>-<level>` (`docs/cluster-roles.md:107-114`).
+  Each name appears in THREE places that must match byte for byte: this
+  map key, the `local.app_user_group_ids[...]` lookup in the assignment,
+  and the `value` of its `grant_rule` in `memex.hcl`. A wrong lookup key
+  fails loudly at plan; a wrong `grant_rule` value fails silently at
+  login (§9 mode 11).
+- `:152-163` — beside that block, add a sibling `locals` block,
+  `app_user_group_members`, mapping tier name to a list of entity ids.
+  This is Q7, SETTLED (§11):
+
+  ```hcl
+  locals {
+    app_user_group_members = {
+      "app-memex-readers" = [vault_identity_entity.operator.id]
+    }
+  }
+  ```
+
+  `app-memex-admins` gets no key here and so lands empty; §8 V5 adds it
+  as a reviewed Terraform edit. The entity is
+  `deployments/infrastructure/auth_userpass.tf:38-44`, the only human
+  entity in the cluster (P11). Leave `local.app_user_groups` at the
+  name-to-description shape `docs/cluster-roles.md:118-126` documents, so
+  every existing consumer instruction stays true.
 - `:165-177` — `vault_identity_group.app_user` has **no member field at
   all** today, and the resource writes `member_entity_ids`
   authoritatively (P22), so a tier created now admits nobody and a
-  hand-added member is reverted on the next apply. Add a members source
-  keyed by tier. **Shape is Q7**; recommended form, which keeps
-  `local.app_user_groups` at the name-to-description shape
-  `docs/cluster-roles.md:118-126` documents:
+  hand-added member is reverted on the next apply. Add one line:
 
   ```hcl
   member_entity_ids = lookup(local.app_user_group_members, each.key, [])
   ```
 
-  with a sibling `local.app_user_group_members` holding
-  `{ "app-memex-readers" = [vault_identity_entity.operator.id] }`. The
-  entity is `deployments/infrastructure/auth_userpass.tf:38-44`, the only
-  human entity in the cluster (P11).
-- `:127-136` — READ ONLY. `vault_identity_group.admin` is referenced by
-  the assignment above and not edited. Its
-  `external_member_entity_ids = true` (`:131`) is what lets §8's V5 join
-  and leave without a Terraform diff.
+  The `[]` default is what lets a tier ship with no members. This
+  completes the extension point the comment at `:158-161` already
+  promises and `docs/cluster-roles.md:140-141` already documents, and it
+  keeps membership reviewable in the repo, which is the property
+  `:172-174` protects. Every later branch-2 consumer inherits it.
+- `:127-136` — **NOT TOUCHED AND NOT NAMED.**
+  `vault_identity_group.admin` stays break-glass (R21). No resource here
+  references it and no check in §8 writes its membership.
 
 ### `deployments/infrastructure/oidc.tf`
 
@@ -365,22 +445,24 @@ resources, in dependency order:
   TWO grant rules, **`admin` first**:
 
   ```
-  {"issuer":"${vault_oidc_issuer}","audience":["${memex_oidc_client_id}"],"grant_rules":[{"claim":"groups","value":"admin","policy":"admin"},{"claim":"groups","value":"app-memex-readers","policy":"reader"}]}
+  {"issuer":"${vault_oidc_issuer}","audience":["${memex_oidc_client_id}"],"grant_rules":[{"claim":"groups","value":"app-memex-admins","policy":"admin"},{"claim":"groups","value":"app-memex-readers","policy":"reader"}]}
   ```
 
-  Order is load-bearing, not cosmetic: memex takes the FIRST matching
-  rule and stops (P20), so a person in both groups lands on `admin` only
-  because `admin` is listed first. Swapping them silently downgrades
-  every admin who is also in the reader tier, and nothing logs it.
+  Both `value`s are Vault GROUP NAMES, spelled exactly as the two
+  `local.app_user_groups` keys. Order is load-bearing, not cosmetic:
+  memex takes the FIRST matching rule and stops (P20), so a person in
+  both groups lands on `admin` only because `app-memex-admins` is listed
+  first. Swapping them silently downgrades every admin who is also in the
+  reader tier, and nothing logs it.
 
   `audience` is the **client id**, not `memex`: an id_token's `aud`
   carries the client id (P4). That is the one shape difference from
   R5's element. No `default_policy` (R9). Leave `algorithms` at its
   default `["RS256","ES256"]` — both Vault keys are RS256 (P5, P19).
 - `:142-147` — extend the comment to cover the second element: which
-  issuer, why the audience is a client id, why `admin` is listed first,
-  and that the group gate is enforced twice (Vault refuses to issue at
-  all, memex refuses to authorize). Plain language (R13).
+  issuer, why the audience is a client id, why `app-memex-admins` is
+  listed first, and that the group gate is enforced twice (Vault refuses
+  to issue at all, memex refuses to authorize). Plain language (R13).
 - Quoting is unchanged from R5: `${...}` is Terraform, `$${...}` escapes
   to Nomad (`deployments/applications/services/memex.hcl:7`), `{{ }}` is
   Vault templating. The line needs no `{{ with secret }}` wrapper — the
@@ -399,26 +481,35 @@ resources, in dependency order:
     verified-but-unauthorized case explicitly. Silence is now the
     FAILURE. Replace `:152-155` with the new expected line and delete
     "A silent `403` is the pass here."
-  - Add a `## V1..V6` section for the human path (§8), including the two
-    tiers and the rule-ordering check, and a note that a bearer which is
-    not a JWT now logs `not a parseable JWT` (P6), which is the one-line
-    diagnosis of a client that forgot `credential: id_token`.
+  - Add a `## V1..V6` section for the human path (§8), including both
+    tier names and the rule-ordering check, and a note that a bearer
+    which is not a JWT now logs `not a parseable JWT` (P6), which is the
+    one-line diagnosis of a client that forgot `credential: id_token`.
+  - Add the guardrails G1-G5 verbatim, G5 included: it is the only place
+    the expected smoke-assignment growth is written down for whoever
+    reads the next `terraform plan` (P25).
   - Retitle from "Verifying memex workload OIDC" (`:1`) to cover both
     paths.
 - **`docs/vault-human-auth.md`** — add memex to the consumer list under
   "Adding a service that logs people in through Vault" (`:262-306`) as
-  the first branch-2 consumer, and record three rules every future
+  the first branch-2 consumer, and record four rules every future
   consumer needs: a client that wants a TTL past the shared key's 24h
   brings its OWN `vault_identity_oidc_key` and never edits `lab` (P17,
   P18); Vault matches loopback redirects port-agnostically but the host
-  literal and path exactly (P10); and a Vault relying party that
-  verifies the token itself must read the **id_token** and accept the
-  client id as `aud` (P4), the sharper form of the note at `:361-369`.
+  literal and path exactly (P10); a Vault relying party that verifies the
+  token itself must read the **id_token** and accept the client id as
+  `aud` (P4), the sharper form of the note at `:361-369`; and **how to
+  revoke a long-lived id_token, with its real reach** — copy §9's
+  break-glass wording verbatim, including what `rotate` does NOT do
+  (P24). That paragraph is the one most likely to be believed and acted
+  on during an incident, so a wrong claim there is worse than no claim.
   Include the laptop config snippet (Q1).
 - **`docs/cluster-roles.md`** — `:140-141` claims "Adding a **person** to
-  a tier is an edit to `member_entity_ids`". Today there is nowhere to
-  make that edit (P22). Update it to name whatever Q7 settles, so the
-  doc matches the scaffold.
+  a tier is an edit to `member_entity_ids`", and today there is nowhere
+  to make that edit (P22). R20 creates the place, so extend the "Adding a
+  tier" section (`:116-141`) with the `local.app_user_group_members`
+  entry beside the `local.app_user_groups` one, and keep `:140-141` as
+  the sentence the scaffold now satisfies.
 - **`.loop/archive/R5-rollout-memex-oidc-auth/eval.md`** — a supersession note
   only, appended below the sign-off at `:26`. Do not edit the signed
   rows. Q4.
@@ -502,10 +593,12 @@ Silence here is now a FAILURE, not a pass (P6). This same line is the
 detector for the human path's likeliest fault (a token with no `groups`
 claim), which is why it is worth having.
 
-**V1 — GRANT, the READER tier.** From the operator's own machine with
-the Q1 client config in place, and the operator entity in
-`app-memex-readers` but NOT in `admin` (which is its resting state,
-P11).
+**V1 — GRANT, the READER tier.** From the operator's own machine with the
+Q1 client config in place, and the operator entity in
+`local.app_user_group_members["app-memex-readers"]` but NOT in
+`app-memex-admins`. That is exactly the membership R6a lands, so there is
+no setup step here; confirm it first with
+`vault read identity/group/name/app-memex-admins` reporting no members.
 
 **Precondition, and its failure is silent-ish:** the browser must ALREADY
 hold a Vault UI session. Vault's `authorization_endpoint` is the UI path
@@ -524,7 +617,8 @@ Expect a reported identity and expiry. Then decode the cached id_token
 from `<user_config_dir>/memex/token.json` and assert, do not assume:
 `iss` equals the value in `local.vault_oidc_issuer`, `aud` equals the
 memex client id, and `groups` CONTAINS `app-memex-readers` and does NOT
-contain `admin` (`_rule_matches` does membership on a list claim, P1).
+contain `app-memex-admins` (`_rule_matches` does membership on a list
+claim, P1).
 
 Then, with that bearer:
 
@@ -612,40 +706,49 @@ is what is left in place.
 **V5 — GRANT, the ADMIN tier, and the rule ORDER.** This is the only
 check that proves R19, and the only one that exercises a dual member.
 
-Join `admin` by hand, which is what that group is for
-(`docs/cluster-roles.md:94-105`; Terraform does not manage its
-membership, `deployments/infrastructure/roles.tf:131`). The operator is
-already in `app-memex-readers` from V1, so this makes them a member of
-BOTH tiers:
+**No `vault write` here, and no restore step.** Both tiers are ordinary
+`vault_identity_group.app_user` instances whose `member_entity_ids`
+Terraform owns (R20, P22), so joining is a Terraform edit with a plan you
+can read. The break-glass group is not involved (R21): there is no window
+in which the operator holds Vault's wildcard policy, and nothing to
+restore afterwards.
 
+Add the operator to the second tier in
+`deployments/infrastructure/roles.tf`:
+
+```hcl
+app_user_group_members = {
+  "app-memex-admins"  = [vault_identity_entity.operator.id]
+  "app-memex-readers" = [vault_identity_entity.operator.id]
+}
 ```
-vault write identity/group/id/<admin-group-id> \
-  member_entity_ids=<operator-entity-id>
-```
 
-`admin` has no other members (P11), so nothing else needs listing;
-membership is not merged, it is replaced. Then re-run `memex auth login`
-— the old token is stateless and still says what it said, so a fresh
-login is required for the claim to change — and assert:
+Apply the infrastructure root and read the plan first: it must show
+`vault_identity_group.app_user["app-memex-admins"]` gaining one member
+and nothing else. Then re-run `memex auth login` — the old token is
+stateless and still says what it said, so a fresh login is required for
+the claim to change — and assert:
 
-- the decoded `groups` claim contains BOTH `admin` and
+- the decoded `groups` claim contains BOTH `app-memex-admins` and
   `app-memex-readers`;
 - `PATCH /api/v1/notes/<random-uuid>/title` now returns something OTHER
   than `403` (a `404` or `422` from the handler). A `403` here means the
   reader rule matched first and R19 is broken;
 - `GET /api/v1/vaults` returns `200`.
 
-**Restore, and treat the window as short.** While joined, that entity
-holds Vault's wildcard `admin` policy
-(`deployments/infrastructure/roles.tf:31-116`), which is real
-break-glass privilege and not just a memex label. Leave immediately:
+**Leave the membership as V5 sets it** unless Q8 says otherwise: both
+tiers hold the operator, so every day-to-day login re-exercises the
+ordering. Going back to reader-only is the same map edited back and
+re-applied, which is a reviewed change like any other.
 
-```
-vault write identity/group/id/<admin-group-id> member_entity_ids=
-```
-
-Then re-read the group and confirm `member_entity_ids` is empty, and
-re-run V1 so the resting state is the reader tier.
+**Standing rule for any future check that writes `member_entity_ids` on a
+group Terraform does NOT manage.** No check in this ticket does — under
+R21 the only such group, `vault_identity_group.admin`, is untouched. If
+one ever does, the write REPLACES the list rather than merging it
+(`docs/cluster-roles.md:70-73`, `:84-94`): read the current set
+immediately before writing, restore to exactly that set, never to empty,
+and never from a value read earlier in the session. Nothing in Terraform
+can diff a mistake there.
 
 **V6 — the session really lasts 30 days.** Cheap, and it catches the one
 trap in R18. After the V1 login, read `<user_config_dir>/memex/token.json`
@@ -658,7 +761,7 @@ The memex client caches `min(now + expires_in, id_token exp)`, and
 Vault's `expires_in` IS the `access_token_ttl` (P21). If
 `access_token_ttl` were left at the repo's usual `3600`, the id_token
 would be valid for 30 days while the client threw it away after an hour
-and silently fell back to the API key (§9 mode 5). Requests would still
+and silently fell back to the API key (§9 mode 2). Requests would still
 return `200`, so nothing else in this list would catch it.
 
 **G1 (guardrail) — static keys survive.** `MEMEX_SERVER__AUTH__KEYS`
@@ -671,7 +774,8 @@ memex jobspec, `MEMEX_SERVER__AUTH__OIDC` holds exactly TWO elements,
 and the Nomad one still reads `"issuer":"https://nomad.lab.orangecluster.nl"`,
 `"audience":["memex"]`, one `grant_rule` on
 `"claim":"nomad_job_id","value":"hermes","policy":"admin"`. The Vault
-element holds exactly TWO `grant_rules` with `admin` at index 0.
+element holds exactly TWO `grant_rules`, with
+`"value":"app-memex-admins","policy":"admin"` at index 0.
 
 **G3 (guardrail) — the provider list was appended, not replaced.**
 `terraform plan` on the infrastructure root shows
@@ -692,15 +796,33 @@ Raising the shared key's TTLs is the shortcut §5 forbids, and it would
 extend every Nomad UI and Grafana token by the same amount without
 anything else in this list noticing.
 
+**G5 (guardrail) — the scaffold edit landed where it should, and only
+there.** Read the infrastructure `terraform plan` at R6a against these
+three, and treat anything else in `roles.tf` or `oidc.tf` as a stop:
+
+- exactly TWO new resources under `vault_identity_group.app_user`, keyed
+  `app-memex-admins` and `app-memex-readers`, with `member_entity_ids`
+  holding the operator on readers and nothing on admins;
+- `vault_identity_oidc_assignment.smoke.group_ids` grows from one entry
+  to three, and the two new entries are those tier ids. **This diff is
+  EXPECTED.** It is derived, not edited: `oidc.tf:129` concats
+  `local.all_app_user_group_ids` (`roles.tf:199-201`), which is F2's
+  design (`oidc.tf:125-128`, `roles.tf:196-198`, P25). It changes no
+  effective access today, because `operator` is the only human entity and
+  is already in `oidc-smoke` (P11);
+- NO change to `vault_identity_group.admin`, and after apply
+  `vault read identity/group/name/admin` still reports no members (P11).
+  That is the check that this ticket left break-glass alone (R21).
+
 Every check above is written verbatim into
 `docs/memex-oidc-verification.md`.
 
 The scored acceptance layer is the eval marker,
 `.loop/evals/R6-rollout-memex-human-oidc.md`: one deterministic row per
 check above at a 100% bar. The security-shaped rows (D1, D2, V1's write
-denial, V2, V3, V4, V5's ordering, G1, G2, G3, G4) protect an invariant,
-so a row that passes most of the time is a row with a hole. Nothing
-enforces the plan-to-eval link; keep them in step by hand.
+denial, V2, V3, V4, V5's ordering, G1, G2, G3, G4 and G5) protect an
+invariant, so a row that passes most of the time is a row with a hole.
+Nothing enforces the plan-to-eval link; keep them in step by hand.
 
 ## 9. Risk assessment
 
@@ -716,9 +838,10 @@ enforces the plan-to-eval link; keep them in step by hand.
   Compared with the status quo (a shared, never-expiring admin key in a
   `.env`) it is still a net improvement, because it expires at all and
   it names a person. It is not a small credential.
-- **The break-glass exists BECAUSE the key is dedicated.** Two levers,
-  both memex-only and neither reachable if this client shared `lab`:
-  1. **Fast and total, one line.** Remove
+- **The break-glass exists BECAUSE the key is dedicated.** One complete
+  lever and one partial one, both memex-only and neither reachable if
+  this client shared `lab`:
+  1. **Total, one line. THIS IS THE BREAK-GLASS.** Remove
      `vault_identity_oidc_client.memex.client_id` from
      `local.oidc_provider_client_ids`
      (`deployments/infrastructure/oidc.tf:79-84`) and apply. The
@@ -728,13 +851,25 @@ enforces the plan-to-eval link; keep them in step by hand.
      Grafana and the smoke client are untouched: they reference `lab`,
      which stays in the list. Reversible by re-appending the line; the
      `client_id` does not change.
-  2. **Keep the client, kill the signatures.**
+  2. **Partial. Know its reach before reaching for it.**
      `vault write identity/oidc/key/memex-human/rotate verification_ttl=0`
-     expires the key that was signing at that moment (P18). With a 7-day
-     rotation inside a 30-day window the ring holds several live keys, so
-     ONE rotate is not "all tokens" — repeat, reading
-     `/v1/identity/oidc/provider/lab/.well-known/keys` between calls,
-     until no key that signed a live token remains.
+     revokes the tokens issued SINCE THE LAST ROTATION, not all
+     outstanding tokens. `rotate` stamps `ExpireAt` on the CURRENT
+     signing key only and then promotes the next one (P24). Keys rotated
+     out at earlier rotations keep the `ExpireAt` they were stamped with
+     then, up to 30 days out, and no path revisits them. So calling
+     `rotate` repeatedly does NOT converge: call 2 expires a key that was
+     just promoted and has signed nothing. With a 7-day rotation inside a
+     30-day window, roughly four older ring keys that DID sign live
+     tokens stay verifiable and are unreachable this way. The obvious
+     escape hatch is shut too: lowering the key's `verification_ttl` does
+     not re-stamp existing ring members, and Vault refuses that update
+     outright while the client's `id_token_ttl` exceeds the new value
+     (P24).
+
+  **Reach for lever 1.** It is the only one that stops every outstanding
+  memex human token. Lever 2 is for when you want the client to keep
+  working and are content to invalidate the most recent window.
 
   Either way the effect reaches memex within its JWKS cache TTL of 3600 s
   (P19), or immediately on a memex restart. Neither is instant.
@@ -742,12 +877,25 @@ enforces the plan-to-eval link; keep them in step by hand.
   `lab` provider's `allowed_client_ids`. Replacing instead of appending
   takes down the Nomad UI login and F2's smoke client at once. `:104-107`
   warns about exactly this. Detector: G3.
-- The `roles.tf` edit touches a shared scaffold two other tickets are
-  queued against (M2, F14 follow-ups). The map ships empty, so a
-  CONCAT-shaped edit is safe and a replacement is not. Detector:
-  `terraform plan` shows exactly one new
-  `vault_identity_group.app_user["app-memex-readers"]` and no change to
-  `vault_identity_group.admin`.
+- **The `roles.tf` edit is the widest part of this ticket, and its diff
+  reaches a resource in another file.** The scaffold is shared and two
+  other tickets are queued against it (M2, F14 follow-ups). Keep the map
+  edit additive; a replacement is what breaks other consumers. Then read
+  the whole plan against this expected list:
+
+  | Expected diff | Why |
+  |---|---|
+  | `vault_identity_group.app_user["app-memex-admins"]` created | R6, the admin tier |
+  | `vault_identity_group.app_user["app-memex-readers"]` created | R6, the reader tier |
+  | `member_entity_ids` appears on both new tiers | R20's new field. Readers gets the operator, admins stays empty until V5 |
+  | `vault_identity_oidc_assignment.smoke.group_ids` grows 1 entry to 3 | **DERIVED, not edited.** `oidc.tf:129` concats `local.all_app_user_group_ids` (`roles.tf:199-201`), so every new tier lands in F2's smoke assignment. Deliberate, and both files say so (`oidc.tf:125-128`, `roles.tf:196-198`). No effective access changes today. Full chain and reasoning: P25 |
+  | no change to `vault_identity_group.admin` | R21 |
+  | no change to `vault_identity_oidc_key.lab` | §5, G4 |
+
+  Detector: G5. An implementer who meets the smoke-assignment growth
+  without this table has no way to judge it, and the safe-looking
+  reaction — un-derive the list and bind the tiers explicitly — would
+  rewrite F2's file over a diff that is working as designed.
 - The `memex.hcl` edit plus the version bump redeploy memex, the memory
   backend for hermes and the operator's MCP tooling. A malformed
   `MEMEX_SERVER__AUTH__OIDC` string either fails startup (loud) or loads
@@ -796,10 +944,12 @@ human token. Deleting the key is blocked while the client references it
    `reader`. Every read works, writes `403`, and no log line says why —
    memex logs the no-match case (P6) but not a match on a rule you did
    not intend. Detector: V5, and only V5.
-6. **The reader tier admits nobody.** The tier lands with an empty
-   `member_entity_ids` (P22, Q7). Vault refuses the authorize with
-   `identity entity not authorized by client assignment`
-   (`docs/vault-human-auth.md:331-334`), which is at least loud.
+6. **A tier admits nobody.** The tier lands with an empty
+   `member_entity_ids`, because R20's map has no key for it or the key is
+   misspelled and `lookup` returns its `[]` default (P22). Vault refuses
+   the authorize with `identity entity not authorized by client
+   assignment` (`docs/vault-human-auth.md:331-334`), which is at least
+   loud. `app-memex-admins` sits in this state on purpose until V5.
 7. **Issuer drift** between `local.vault_oidc_issuer` and the human's
    client config. Provider selection is by exact `iss` match, so a
    trailing slash on one side `403`s every human login with `no
@@ -823,39 +973,65 @@ human token. Deleting the key is blocked while the client references it
     no `azp` check, so any service that can obtain an id_token for this
     client can call memex as that user (P1, v1.2.0 how-to lines 140-144).
     Mitigated by construction: this client is registered for memex only.
+11. **A tier name spelled differently in the two places that matter.**
+    Each name is a `local.app_user_groups` key, a
+    `local.app_user_group_ids[...]` lookup, and a `grant_rule` `value`.
+    A wrong lookup key fails LOUDLY at plan (invalid index). A wrong
+    `grant_rule` value fails SILENTLY: Vault issues a token carrying the
+    real group name, memex matches no rule, and with `default_policy`
+    unset the request is refused. It reads exactly like mode 1.
+    Detector: D2's log line names the claims that WERE present, so the
+    token's actual `groups` value is in the log, and V1 and V5 decode the
+    claim and assert it directly.
 
-**One consequence worth stating plainly.** `admin` has no members and
-Terraform does not manage them (P11). So after this lands, the operator's
-day-to-day memex identity through SSO is `reader`, and reaching `admin`
-means joining a break-glass group. That is a real capability cut against
-today's shared admin key, and it is why §5 keeps the static keys and why
-Q5 stays open.
+**One consequence worth stating plainly.** Because both tiers are
+Terraform-managed (R20), the operator's day-to-day memex identity through
+SSO is whatever `local.app_user_group_members` says, and after V5 that is
+`admin`. Reaching memex admin no longer means joining break-glass, which
+was the alternative and would have meant holding Vault's wildcard policy
+(`deployments/infrastructure/roles.tf:31-116`) every day just to write a
+note. The flip side: memex admin is now one reviewed Terraform edit away
+rather than gated behind an incident ritual, so the reviewable tier list
+IS the control. That is the property `roles.tf:172-174` protects and R20
+preserves. Q8 asks where the membership should rest.
 
 ## 10. Subtickets
 
 Ordered and dependency-aware. If these become separate plan files,
 encode this order in each file's `depends_on`.
 
-1. **R6a — the two groups and the dedicated key.** Nothing signs or
-   authorizes yet, so this is inert and safe to land alone.
-   - `deployments/infrastructure/roles.tf`: the `app-memex-readers`
-     entry in `local.app_user_groups`, plus the membership mechanism Q7
-     settles, with the operator entity in it.
+1. **R6a — the members map, then both tiers, then the dedicated key.**
+   That order inside the subticket: the map and the `member_entity_ids`
+   wiring must exist before a tier can carry anybody, and the key must
+   exist before R6b's client references it, because `key` is immutable
+   after create (P17). Nothing signs or authorizes yet, so this is inert
+   and safe to land alone.
+   - `deployments/infrastructure/roles.tf`, in order:
+     `local.app_user_group_members` and the
+     `member_entity_ids = lookup(...)` line on
+     `vault_identity_group.app_user` (R20), then the two
+     `local.app_user_groups` entries, with the operator in
+     `app-memex-readers` ONLY. `app-memex-admins` lands empty on purpose:
+     V1 needs a reader-only login to prove the tiers differ, and V5 adds
+     the second membership afterwards.
    - `deployments/infrastructure/memex_oidc.tf`: the
      `vault_identity_oidc_key.memex_human` resource ONLY.
-   - Apply the infrastructure root. Read back, read-only:
+   - Apply the infrastructure root, reading the plan against G5's
+     expected list first. Read back, read-only:
      `vault read identity/oidc/key/memex-human` reports
      `rotation_period 604800` / `verification_ttl 2592000`;
      `vault read identity/group/name/app-memex-readers` lists the
-     operator entity; `vault read identity/group/name/admin` is
-     unchanged with no members. Run G4.
-   - **Q7 blocks this subticket.** Depends on nothing else.
+     operator entity; `vault read identity/group/name/app-memex-admins`
+     lists none; `vault read identity/group/name/admin` is unchanged with
+     no members. Run G4 and G5.
+   - Depends on nothing else. Q7 is settled (§11), so nothing blocks it.
 2. **R6b — the client, the assignment and the provider append.**
    - The remaining three resources in
      `deployments/infrastructure/memex_oidc.tf`: the assignment naming
-     BOTH group ids, the `public` client pointing `key` at
-     `memex_human` with both TTLs at `2592000`, and the key
-     registration against `memex-human`.
+     BOTH `local.app_user_group_ids` keys, the `public` client pointing
+     `key` at `memex_human` with both TTLs at `2592000`, and the key
+     registration against `memex-human`. The client comes after the key
+     and cannot be repointed later (P17).
    - The one-line append at `deployments/infrastructure/oidc.tf:79-84`.
    - Apply. Run G3, G4 and V3. Confirm the provider JWKS at
      `/v1/identity/oidc/provider/lab/.well-known/keys` GREW, which is
@@ -874,21 +1050,24 @@ encode this order in each file's `depends_on`.
    the config.
 4. **R6d — the second provider element, with two grant rules.** The
    `local`, the `data` block, the two templatefile vars, the extended
-   `:148` array with `admin` FIRST, and its comment. Apply, targeting
+   `:148` array with the `app-memex-admins` rule FIRST, and its comment.
+   Apply, targeting
    memex. Run S1 (now `2 provider(s).`), S2, W1, D1, D2, G1, G2.
    Depends on R6b and R6c.
-5. **R6e — humans log in, both tiers.** Write the Q1 client config on
-   the operator's machine, then V1 (reader, including the write denial),
-   V6, V2 and V4, then V5 (join `admin`, re-login, assert ordering,
-   leave, re-login). Budget for FOUR logins: reader, no-groups, admin,
-   and the restore back to reader. Depends on R6d. This is the only step
-   that cannot be scripted.
+5. **R6e — humans log in, both tiers.** Write the Q1 client config on the
+   operator's machine, then V1 (reader, including the write denial), V6,
+   V2 and V4, then V5. V5 carries a SECOND `roles.tf` edit and a second
+   infrastructure apply — the operator joins `app-memex-admins` — so this
+   subticket touches Terraform as well as a browser. Budget for THREE
+   logins: reader, no-groups, and the dual-member admin login. Depends on
+   R6d. The logins are the only steps that cannot be scripted.
 6. **R6f — docs.** The `docs/memex-oidc-verification.md` S1 count, the
-   new V1-V6 section and the retitle; the `docs/vault-human-auth.md`
-   consumer entry, own-key rule, loopback rule, id_token rule and config
-   snippet; the `docs/cluster-roles.md:140-141` correction; the
-   supersession note on `.loop/archive/R5-rollout-memex-oidc-auth/eval.md`.
-   Depends on R6e.
+   new V1-V6 and G1-G5 section and the retitle; the
+   `docs/vault-human-auth.md` consumer entry, own-key rule, loopback
+   rule, id_token rule, the corrected break-glass paragraph (P24) and the
+   config snippet; the `docs/cluster-roles.md:116-141` update recording
+   `local.app_user_group_members` (R20); the supersession note on
+   `.loop/archive/R5-rollout-memex-oidc-auth/eval.md`. Depends on R6e.
 
 ## 11. Open questions
 
@@ -917,20 +1096,32 @@ without a port forward that cannot be declared in advance. Running it in
 the devcontainer is a fork the operator can take, but it needs its own
 answer for the callback and should not be assumed to work.
 
-**Q2 — SETTLED 2026-08-04 by the operator. Two tiers, not one.**
-Recorded here so it is not re-opened as a fork.
+**Q2 — SETTLED 2026-08-04 by the operator. Two tiers, not one, and BOTH
+are new app-user tiers.** Recorded here so it is not re-opened as a fork.
 
 The single `developer` gate is replaced by two, both named in one
 `vault_identity_oidc_assignment` so both can log in:
 
 | memex policy | Vault group | Branch | Why |
 |---|---|---|---|
-| `admin` | `vault_identity_group.admin` (`roles.tf:127-136`) | 1, an existing tier group | It is the cluster's existing "full rights" label, and it already exists |
+| `admin` | a NEW `local.app_user_groups` entry, `app-memex-admins` | 2, a new app-user tier | Symmetric with the reader tier, and it keeps daily memex admin out of break-glass |
 | `reader` | a NEW `local.app_user_groups` entry, `app-memex-readers` | 2, a new app-user tier | Branch 2 exists for exactly this and ships empty; the tier is explicitly for TESTING that the tiering works end to end |
 
 `reader` is `Permission.READ` only, `admin` is READ + WRITE + DELETE
 (P23), so the two tiers are genuinely different and the difference is
 observable in one HTTP status (§8 V1, V5).
+
+**Why NOT `vault_identity_group.admin` for the admin tier**, revised
+2026-08-04 and worth keeping on the record: that group is break-glass.
+`external_member_entity_ids = true`
+(`deployments/infrastructure/roles.tf:131`) means Terraform owns the
+group and not its membership, joining is a `vault write` no apply reverts
+(`docs/cluster-roles.md:84-94`), and the file warns that leaving yourself
+in it is invisible to every plan
+(`deployments/infrastructure/roles.tf:125-126`). It also carries Vault's
+wildcard policy (`:31-116`). Using it for daily memex admin would mean
+living in break-glass. Two app-user tiers match the scaffold's stated
+purpose (`:148-151`) and leave break-glass alone (R21).
 
 The reader tier is a test instrument first. It proves that a non-admin
 Vault group produces a genuinely reduced memex grant, which no other
@@ -939,8 +1130,9 @@ makes the ORDERING question real. It is not a claim that anyone will
 live on `reader` day to day.
 
 Two consequences the operator should hold in view:
-- Because `admin` has no members and Terraform does not manage them
-  (P11), SSO gives the operator `reader` at rest. See §9's closing note.
+- Membership of both tiers is a reviewed Terraform edit (R20), so who
+  holds memex admin is visible in a plan. That reviewable list IS the
+  control; no incident ritual gates it. See §9's closing note and Q8.
 - `developer` is deliberately NOT one of the two (§5). It is the cluster
   tier with a real Vault policy; overloading it as a memex label would
   make a memex grant change require a cluster-privilege change.
@@ -978,7 +1170,9 @@ COUPLED, and both are `2592000`. §8 V6 is the check; §9 mode 2 is the
 failure.
 
 The cost is honest and recorded in §9: a 30-day stateless bearer sitting
-in a file on a laptop, revocable only by the two key-scoped levers there.
+in a file on a laptop, revocable in full only by §9's FIRST lever, which
+drops the client from the provider's allowed list. Rotation, the second
+lever, reaches only the tokens issued since the last rotation (P24).
 If the operator wants that shorter, 7 days (`604800`) is the obvious
 alternative and needs no key change, only the two client TTLs.
 
@@ -1000,8 +1194,7 @@ make before R6f, and it needs a fresh sign-off line.
 **Q5 — when do the static API keys go?**
 The operator settled *whether*: keep them. Only *when* is open. The
 fallback is what makes §9 mode 9 a degradation rather than an outage,
-and it is what the browser extension uses. It is also what covers the
-gap left by SSO resting at `reader` (Q2).
+and it is what the browser extension uses.
 *Recommendation: a follow-up ticket, after the 30-day TTL has been lived
 through at least once and V1 has held.* Removing `MEMEX_API_KEY` from
 the operator's environment first (leaving the server keys for the
@@ -1015,37 +1208,72 @@ downgrade in §9 mode 9 loud, which is arguably worth doing sooner.
 `LoginError` when that endpoint is absent (P2). Browser login only. Do
 not attempt to add device-flow support to Vault.
 
-**Q7 (blocking on R6a) — how does a person get INTO an app-user tier?**
-Opened by Q2's branch-2 decision, and not answered anywhere in the repo.
+**Q7 — SETTLED 2026-08-04 by the operator. A sibling members map.**
+Recorded here so it is not re-opened as a fork; it was blocking R6a and
+no longer blocks anything.
+
 `docs/cluster-roles.md:140-141` says "Adding a **person** to a tier is an
-edit to `member_entity_ids`", but `vault_identity_group.app_user`
-(`deployments/infrastructure/roles.tf:165-177`) has no such field and
-`local.app_user_groups` is a name-to-description map, so there is
-nowhere to make that edit. The provider writes `member_entity_ids`
-authoritatively for these groups (P22), so a hand-added member is
-reverted on the next apply — by design (`roles.tf:172-174`). The reader
-tier therefore admits nobody as the scaffold stands, and §8 V1 cannot
-run. Three shapes:
+edit to `member_entity_ids`" and
+`deployments/infrastructure/roles.tf:158-161` promises the same, but
+`vault_identity_group.app_user` (`:165-177`) has no such field and
+`local.app_user_groups` is a name-to-description map, so there was
+nowhere to make that edit — and the provider writes `member_entity_ids`
+authoritatively anyway (P22). The decision, which is R20:
 
-1. *A sibling map.* Keep `local.app_user_groups` as-is and add
-   `local.app_user_group_members`, read by the resource with
-   `member_entity_ids = lookup(local.app_user_group_members, each.key, [])`.
-2. *Change the map's value to an object* carrying both description and
-   members, and update `docs/cluster-roles.md:118-126`.
-3. *Flip the group to `external_member_entity_ids = true`* and use
-   `vault_identity_group_member_entity_ids` (present in provider 5.3.0).
+```hcl
+locals {
+  app_user_group_members = {
+    "app-memex-readers" = [vault_identity_entity.operator.id]
+  }
+}
 
-*Recommendation: shape 1.* It leaves the documented map shape
-(`docs/cluster-roles.md:118-126`) and every consumer instruction intact,
-adds one `local` and one line to the resource, defaults cleanly to `[]`
-for a tier with no members yet, and keeps the tier list reviewable in the
-repo, which is the property `roles.tf:172-174` is protecting. Shape 3 is
-the one to avoid: the `for_each` is shared, so the flag would apply to
-every future tier and hand the whole scaffold the opposite property from
-the one it was built for.
+# on vault_identity_group.app_user
+member_entity_ids = lookup(local.app_user_group_members, each.key, [])
+```
 
-This is a shared-scaffold edit, so it wants the operator's sign-off
-before R6a rather than an implementer's judgment call.
+Why this over the two alternatives that were on the table (an
+object-valued `local.app_user_groups` carrying description AND members,
+or `external_member_entity_ids = true` plus
+`vault_identity_group_member_entity_ids`):
+
+- It leaves the documented map shape (`docs/cluster-roles.md:118-126`)
+  and every consumer instruction intact.
+- It is one `local` and one line on the resource, and defaults cleanly to
+  `[]` for a tier with no members yet.
+- It keeps the tier list reviewable in the repo, which is the property
+  `deployments/infrastructure/roles.tf:172-174` protects.
+- The third shape is the one that had to be avoided: the `for_each` is
+  shared, so `external_member_entity_ids = true` would apply to EVERY
+  future tier and hand the whole scaffold the opposite property from the
+  one it was built for.
+
+This is a shared-scaffold change that outlives the ticket. Every later
+branch-2 consumer (M2's MinIO tiers, the F14 follow-ups) gets its member
+list for free, and `docs/cluster-roles.md:140-141` stops being
+aspirational. It is also why §9's expected-diff table matters: the same
+edit grows F2's smoke assignment by derivation (P25).
+
+**Q8 — SETTLED 2026-08-04 by the operator: END 1, both tiers.** Where the
+two tiers' membership rests once §8 has run. Before the
+2026-08-04 revision the answer was forced: `admin` had no members, so SSO
+rested at `reader`. Now both tiers are Terraform-managed and `operator`
+is the only human entity (P11), so the resting state is a choice. §8 runs
+V1 with the operator in `app-memex-readers` only, then V5 adds
+`app-memex-admins`. Three ends:
+
+1. *Both tiers.* Every daily login is a dual-member login that must land
+   on `admin`, so R19's ordering is re-exercised continuously and a
+   regression shows up as a `403` on the first write instead of lying
+   dormant.
+2. *`app-memex-admins` only.* Cleanest reading of intent, but the reader
+   `grant_rule` goes inert and the reader tier sits empty.
+3. *`app-memex-readers` only, admin on demand.* Least privilege at rest,
+   at the cost of a Terraform apply before any memex write.
+
+*Recommendation: end 1, which is where §8 already leaves it, so it costs
+no extra apply.* If the operator prefers 2 or 3, say so before R6e: the
+change is one line in `local.app_user_group_members`. This does NOT block
+R6a.
 
 ## Premises / assumptions
 
@@ -1297,10 +1525,12 @@ The `groups` claim is a LIST of group NAMES, which `_rule_matches`
 handles by membership (P1). Three consequences this plan leans on:
 `operator` is the only entity that can exercise either tier
 (`deployments/infrastructure/auth_userpass.tf:38-44` is the only
-`vault_identity_entity` in the root); `admin` admits nobody until
-somebody joins by hand, which is §8 V5 and §9's closing note; and the
-new reader tier will show up in this same claim once Q7's membership
-lands. Terraform sources:
+`vault_identity_entity` in the root), which is also why the smoke
+assignment's growth changes no effective access (P25); `admin` admits
+nobody and this ticket leaves it that way (R21), so
+`vault read identity/group/name/admin` still reporting no members after
+apply is G5's break-glass check; and both new tiers show up in this same
+claim once R20's membership lands. Terraform sources:
 `deployments/infrastructure/developer_group.tf:158-164`,
 `deployments/infrastructure/roles.tf:127-136`.
 
@@ -1436,12 +1666,12 @@ if key.VerificationTTL > 10*key.RotationPeriod {
 So `604800` / `2592000` is legal (30d is 4.3x 7d) and, for example,
 `86400` / `2592000` is not. On rotation the OUTGOING public key gets
 `ExpireAt = now + verificationTTL` and stays in the key ring
-(`:1708-1722`); the periodic function drops ring members whose
+(`:1715-1722`); the periodic function drops ring members whose
 `ExpireAt` has passed (`:1997-2016`). That is what lets a 30-day token
-survive four intervening 7-day rotations, and it is also the break-glass
-in §9: `rotate` accepts a `verification_ttl` override (`:944-950`), so
-`verification_ttl=0` expires the key that was signing at that moment —
-that key only, which is why §9 says "repeat", not "one command".
+survive four intervening 7-day rotations. `rotate` also accepts a
+`verification_ttl` override (`:944-950`), which §9's second break-glass
+lever uses — but its reach is far narrower than that one line suggests.
+The measurement of that reach is P24; §9 states it.
 Source:
 <https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc.go>
 
@@ -1573,7 +1803,7 @@ reverted, exactly as `roles.tf:172-174` and
 `deployments/infrastructure/.terraform/providers/registry.terraform.io/hashicorp/vault/5.3.0/linux_arm64/terraform-provider-vault_v5.3.0_x5`
 lists it), but using it needs `external_member_entity_ids = true` on the
 group, which the shared `for_each` would apply to every tier. This is
-Q7 and §9 mode 6.
+R20 (Q7, settled) and §9 mode 6.
 Source:
 <https://raw.githubusercontent.com/hashicorp/terraform-provider-vault/v5.3.0/vault/resource_identity_group.go>
 
@@ -1605,3 +1835,92 @@ Source:
 <https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/packages/common/src/memex_common/config.py>,
 <https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/packages/core/src/memex_core/server/auth.py>,
 <https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/packages/core/src/memex_core/server/notes.py>
+
+**P24 — `rotate` stamps `ExpireAt` on the CURRENT signing key ONLY, so
+repeated rotation never reaches older ring keys, and lowering
+`verification_ttl` does not re-stamp them either. VERIFIED (upstream
+source at v2.0.3).**
+
+```go
+// vault/identity_store_oidc.go lines 1715-1722, inside namedKey.rotate (lines 1708-1760)
+if k.SigningKey != nil {
+    // set the previous public key's expiry time
+    for _, key := range k.KeyRing {
+        if key.KeyID == k.SigningKey.KeyID {
+            key.ExpireAt = now.Add(verificationTTL)
+            break
+        }
+    }
+}
+...
+// :1740
+k.SigningKey = k.NextSigningKey
+```
+
+The loop `break`s on the one ring member whose `KeyID` matches the
+CURRENT `SigningKey`, then `:1740` promotes `NextSigningKey`. Keys
+rotated out at earlier rotations already carry the `ExpireAt` they were
+stamped with at the time (up to `verification_ttl`, here 30 days), and no
+path revisits them: the periodic function only DROPS ring members whose
+`ExpireAt` has already passed (`:1997-2016`).
+
+Two consequences §9's break-glass depends on:
+
+- Calling `rotate verification_ttl=0` twice reaches no further back. The
+  second call stamps the key the first call had just promoted, which has
+  signed nothing in between. With `rotation_period = 604800` and
+  `verification_ttl = 2592000` the ring holds roughly four rotated-out
+  keys that DID sign still-live tokens, and rotation cannot expire any of
+  them.
+- The obvious escape hatch is shut. The key UPDATE path (`:568-676`) sets
+  `RotationPeriod`, `VerificationTTL`, `AllowedClientIDs` and `Algorithm`
+  and never touches `KeyRing[i].ExpireAt`, so lowering `verification_ttl`
+  leaves existing ring members exactly as stamped. Vault also refuses
+  that update outright while a referencing client's `id_token_ttl`
+  exceeds the new value: `"unable to update key %q because it is
+  currently referenced by one or more clients with an id_token_ttl
+  greater than %d seconds"` (`:606-621`), which is precisely this
+  client's situation.
+
+So lever 2 revokes tokens issued since the last rotation, not all
+outstanding tokens. Lever 1 — dropping the client from
+`local.oidc_provider_client_ids`, which unpublishes the key from the
+provider JWKS (P19) — is the complete one. This corrects the claim §9
+carried before 2026-08-04, and it is the text §7 publishes into
+`docs/vault-human-auth.md`.
+Source:
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc.go>
+
+**P25 — every `local.app_user_groups` entry lands in F2's smoke
+assignment by derivation, so adding two tiers grows it from one group id
+to three. VERIFIED (repo source, both ends of the chain re-opened
+2026-08-04).**
+`local.all_app_user_group_ids = values(local.app_user_group_ids)`
+(`deployments/infrastructure/roles.tf:199-201`), where
+`local.app_user_group_ids` is
+`{ for k, g in vault_identity_group.app_user : k => g.id }` (`:192-194`).
+Its only consumer is `vault_identity_oidc_assignment.smoke`:
+
+```hcl
+# deployments/infrastructure/oidc.tf:129
+group_ids  = concat([vault_identity_group.smoke.id], local.all_app_user_group_ids)
+```
+
+`local.app_user_groups` is empty today (`roles.tf:152-163`), so that list
+holds exactly `vault_identity_group.smoke.id`. Adding `app-memex-admins`
+and `app-memex-readers` makes it three, with no line of `oidc.tf`
+changing.
+
+The coupling is deliberate and both files say so: "Every tier id, for the
+smoke client only. It is F2's throwaway proof that the extension point is
+wired, so admitting all tiers is what it is for. A real consumer must NOT
+use this." (`roles.tf:196-198`), plus the DO-NOT-COPY comment at
+`oidc.tf:125-128`.
+
+Effective access does not change today. The assignment gates who may
+complete a login against the SMOKE client; `operator` is the only human
+entity (P11) and is already a member of `vault_identity_group.smoke`
+(`oidc.tf:114`, corroborated by P11's live probe, which lists
+`oidc-smoke` among the entity's groups). The growth is real and belongs
+in §9's expected-diff table and in G5. It is not a reason to rewrite F2's
+file.

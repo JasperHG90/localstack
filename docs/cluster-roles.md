@@ -1,11 +1,11 @@
 # Cluster roles
 
-Four roles. Three exist today; the fourth is a scaffold waiting for its first
-consumer.
+Four roles. The application-user role is a per-application scaffold; memex is
+its first consumer.
 
 | Role | Defined in | What it is for |
 |---|---|---|
-| **Application user** | `deployments/infrastructure/roles.tf`, `local.app_user_groups` | Access to one application, at one level. Ships empty. |
+| **Application user** | `deployments/infrastructure/roles.tf`, `local.app_user_groups` | Access to one application, at one level. |
 | **Developer** | `deployments/infrastructure/developer_group.tf` | Everything a person does here: both Terraform roots, brokered Nomad and Consul tokens, users and groups, secrets under `default/`. |
 | **Admin** | `deployments/infrastructure/roles.tf`, `vault_policy.admin` | Wildcard mode, for when `developer` refuses legitimate work. |
 | **Service account** | per-service, via `jwt-nomad` workload identity | Machines. Not a human role and not managed here. |
@@ -137,8 +137,25 @@ not bind every value: with one tier that happens to be correct, and with two it
 silently admits the other consumer's members to your client, with nothing
 changing in your own file to show it.
 
-Adding a **person** to a tier is an edit to `member_entity_ids`, which means a
-pull request. That is intended.
+Adding a **person** to a tier is an edit to `local.app_user_group_members`,
+the map beside `local.app_user_groups`:
+
+```hcl
+locals {
+  app_user_group_members = {
+    "app-minio-readers" = [vault_identity_entity.operator.id]
+  }
+}
+```
+
+It is wired to `member_entity_ids` on `vault_identity_group.app_user` with a
+`lookup(..., each.key, [])`, so a tier with no key here lands empty, which is
+a valid resting state. Membership is therefore a pull request. That is
+intended.
+
+`member_entity_ids` is authoritative, not additive: whatever the map says
+replaces the group's membership, so a member added by hand shows as a diff on
+the next plan and is reverted.
 
 ## Which of the four to reach for
 

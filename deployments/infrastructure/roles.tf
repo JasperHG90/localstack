@@ -137,8 +137,9 @@ resource "vault_identity_group" "admin" {
 
 ### --- the app-user scaffold ---------------------------------------------------
 
-### Per-application user tiers. SHIPS EMPTY, on purpose: this ticket builds the
-### extension point, not its contents. A consumer ticket adds its own entry.
+### Per-application user tiers. F2 built the extension point and shipped it
+### empty; memex (R6) is its first consumer. A consumer ticket adds its own
+### entry here and its own members below.
 ###
 ### Naming convention is `app-<service>-<level>`, documented in
 ### docs/cluster-roles.md and NOT enforced here. Whether a level is per-app or
@@ -156,9 +157,23 @@ locals {
     #   "app-minio-readers" = "Read-only access to MinIO buckets"
     #
     # Then bind it in your own vault_identity_oidc_assignment. Adding a person
-    # is a Terraform edit to member_entity_ids on the resource below, which is
-    # the point: a tier list should be reviewable. `admin` is the deliberate
-    # exception.
+    # is a Terraform edit to app_user_group_members below, which is the point:
+    # a tier list should be reviewable. `admin` is the deliberate exception.
+    "app-memex-admins"  = "Full access to memex through Vault SSO"
+    "app-memex-readers" = "Read-only access to memex through Vault SSO"
+  }
+}
+
+### Who is in each tier. Keyed by the same group name as the map above.
+###
+### This map is the other half of the extension point. Without it the tiers
+### exist but admit nobody: `vault_identity_group.app_user` sets no members, so
+### every tier ships empty and no OIDC assignment naming one can ever match.
+###
+### A tier with no key here lands empty, which is a valid resting state.
+locals {
+  app_user_group_members = {
+    "app-memex-readers" = [vault_identity_entity.operator.id]
   }
 }
 
@@ -171,6 +186,8 @@ resource "vault_identity_group" "app_user" {
 
   # No external_member_entity_ids here. member_entity_ids is authoritative, so
   # a member added by hand shows as a diff on the next plan and is reverted.
+  member_entity_ids = lookup(local.app_user_group_members, each.key, [])
+
   metadata = {
     description = each.value
   }
