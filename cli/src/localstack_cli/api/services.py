@@ -12,9 +12,13 @@ recorded on the row:
 - `consul-name`: no such job, but a Consul service by that name. This is how
   `vault`, `nomad` and `consul` resolve; they are agent endpoints backed by
   no Nomad job at all.
-- `unresolved`: neither. The row still renders, with the hostname and the raw
-  backend, and both other columns marked not found. `s3` is the live example,
-  and rendering it that way is correct output rather than a bug.
+- `consul-tag`: no service by that name, but exactly one Consul service
+  carries a TAG of that name. The job declared the tag itself, so this reads
+  what the job said rather than guessing from an address. Only a unique
+  carrier resolves: two carriers is a guess, so the row stays unresolved.
+- `unresolved`: none of the three. The row still renders, with the hostname
+  and the raw backend, and both other columns marked not found. That is
+  correct output rather than a bug.
 
 Missing means missing throughout. A job with no Consul check renders "no
 check", never healthy. A route with no job is never dropped.
@@ -33,6 +37,9 @@ class JobSource(Enum):
 
     JOB_ID = "job-id"
     CONSUL_NAME = "consul-name"
+    # Matched on a tag rather than a name, and only when exactly one service
+    # carries it. Distinct from CONSUL_NAME because the name did not match.
+    CONSUL_TAG = "consul-tag"
     UNRESOLVED = "unresolved"
     # A job with no route at all. Thirteen exist live.
     NO_ROUTE = "no-route"
@@ -69,6 +76,18 @@ def _check_state(names: list[str], checks: list[Check]) -> str:
     return "passing"
 
 
+def _sole_tag_carrier(name: str, catalog: dict[str, list[str]]) -> str | None:
+    """The one service carrying `name` as a tag, or `None`.
+
+    `None` for zero carriers and for two or more. Resolving on two would mean
+    picking whichever sorts first, which is the guess this rung exists to
+    avoid, and no live input would reveal it: every route-name tag on this
+    cluster has exactly one carrier today.
+    """
+    carriers = [service for service, tags in catalog.items() if name in tags]
+    return carriers[0] if len(carriers) == 1 else None
+
+
 def join(
     routes: list[Route],
     jobs: list[Job],
@@ -86,8 +105,9 @@ def join(
     health column. A job absent from the map has no known service and
     therefore no known health.
 
-    `catalog` maps every registered Consul service name to its tags, and it
-    is what rung (b) resolves against. Required and keyword-only, both
+    `catalog` maps every registered Consul service name to its tags. Rung
+    (b) resolves against its keys and the tag rung against its values.
+    Required and keyword-only, both
     deliberately. Required because any default would be either an empty
     mapping, silently resolving nothing at rung (b), or a set derived from
     the checks, which is the defect this parameter exists to remove.
@@ -129,6 +149,25 @@ def join(
                     health=_check_state([route.name], checks),
                     backend=backend,
                     services=[route.name],
+                )
+            )
+        elif (tagged := _sole_tag_carrier(route.name, catalog)) is not None:
+            # The job named the tag itself. `minio` carries `s3` on the port
+            # label the `s3` route points at, so this reads a declaration
+            # rather than inferring from an address.
+            #
+            # The matched service goes in the job column, and the rung does
+            # NOT mark it routed: a tag can be the only thing pointing at a
+            # job, and suppressing that job's own row would lose it.
+            rows.append(
+                ServiceRow(
+                    name=route.name,
+                    url=route.url,
+                    job=tagged,
+                    job_source=JobSource.CONSUL_TAG,
+                    health=_check_state([tagged], checks),
+                    backend=backend,
+                    services=[tagged],
                 )
             )
         else:

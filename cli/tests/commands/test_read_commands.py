@@ -74,7 +74,21 @@ def mock_cluster() -> None:
     )
 
 
-def mock_edge_job() -> None:
+# An eleventh route matching no job, no catalog name and no tag. Appended to
+# this module's own copy rather than to the shared `LIVE_SHAPE`, which
+# `test_haproxy.py` pins at exactly ten routes by name.
+ORPHAN_ROUTE = """
+    acl is_orphan     hdr(host) -i orphan.lab.example
+    use_backend orphan     if is_orphan
+
+backend orphan
+    server orphan1 10.0.0.99:1234 check
+"""
+
+EDGE_WITH_AN_ORPHAN = LIVE_SHAPE + ORPHAN_ROUTE
+
+
+def mock_edge_job(config: str | None = None) -> None:
     """The haproxy job, carrying the routing table AND a credential."""
     respx.get(f"{NOMAD}/v1/job/haproxy").mock(
         return_value=httpx.Response(
@@ -86,7 +100,10 @@ def mock_edge_job() -> None:
                             {
                                 "Name": "haproxy",
                                 "Templates": [
-                                    {"DestPath": "local/haproxy.cfg", "EmbeddedTmpl": LIVE_SHAPE}
+                                    {
+                                        "DestPath": "local/haproxy.cfg",
+                                        "EmbeddedTmpl": config or LIVE_SHAPE,
+                                    }
                                 ],
                             }
                         ]
@@ -158,7 +175,8 @@ def test_service_renders_the_join() -> None:
 
     assert result.exit_code == 0, result.output
     assert "s3" in result.stdout
-    assert "unresolved" in result.stdout
+    # `s3` resolves by tag now, so the unresolved case needs its own route.
+    assert "consul-tag" in result.stdout
 
 
 @respx.mock
@@ -179,7 +197,9 @@ def test_service_never_prints_the_jobspec_credential() -> None:
 @respx.mock
 def test_service_json_is_parseable() -> None:
     mock_cluster()
-    mock_edge_job()
+    # The orphan config, so `unresolved` is still exercised somewhere: `s3`
+    # resolves by tag now and was this suite's only unresolved row.
+    mock_edge_job(EDGE_WITH_AN_ORPHAN)
     respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
         return_value=httpx.Response(200, json={"TaskGroups": []})
     )
@@ -187,7 +207,12 @@ def test_service_json_is_parseable() -> None:
     result = runner.invoke(app, ["service", "--json"])
 
     rows = json.loads(result.stdout)
-    assert {row["job_source"] for row in rows} >= {"job-id", "unresolved", "no-route"}
+    assert {row["job_source"] for row in rows} >= {
+        "job-id",
+        "consul-tag",
+        "no-route",
+        "unresolved",
+    }
 
 
 @respx.mock
@@ -591,14 +616,39 @@ def test_the_table_says_where_an_unresolved_row_points() -> None:
     showed the least on screen.
     """
     mock_cluster()
+    # `s3` used to be this test's subject, but it now resolves by tag, which
+    # would leave this passing while exercising no unresolved row at all.
+    mock_edge_job(EDGE_WITH_AN_ORPHAN)
+    respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
+        return_value=httpx.Response(200, json={"TaskGroups": []})
+    )
+
+    result = runner.invoke(app, ["service", "--json"])
+    rows = {row["name"]: row for row in json.loads(result.stdout)}
+
+    assert rows["orphan"]["job_source"] == "unresolved"
+    assert rows["orphan"]["backend"] == "10.0.0.99:1234"
+
+    table = runner.invoke(app, ["service"])
+    assert "backend" in table.stdout
+    assert "10.0.0.99:1234" in table.stdout.replace(" ", "")
+
+
+@respx.mock
+def test_s3_resolves_to_minio_by_tag() -> None:
+    """Row 5. `s3` is MinIO's S3 API port; the job declares the tag."""
+    mock_cluster()
     mock_edge_job()
     respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
         return_value=httpx.Response(200, json={"TaskGroups": []})
     )
 
-    result = runner.invoke(app, ["service"])
+    result = runner.invoke(app, ["service", "--json"])
 
-    assert "backend" in result.stdout
-    # `s3` is the live unresolved case: MinIO's S3 API port under its own
-    # hostname. The backend is what makes that recognizable.
-    assert "10.0.0.29:9000" in result.stdout.replace(" ", "")
+    rows = {row["name"]: row for row in json.loads(result.stdout)}
+    assert rows["s3"]["job_source"] == "consul-tag"
+    assert rows["s3"]["job"] == "minio"
+    # The `minio` route is untouched, and the job is neither suppressed nor
+    # duplicated by the tag match.
+    assert rows["minio"]["job_source"] == "job-id"
+    assert len([r for r in json.loads(result.stdout) if r["job"] == "minio"]) == 2

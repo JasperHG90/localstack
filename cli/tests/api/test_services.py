@@ -211,3 +211,56 @@ def test_the_catalog_argument_is_required() -> None:
     is the bug."""
     with pytest.raises(TypeError):
         join(ROUTES, JOBS, CHECKS, NAMES)  # type: ignore[call-arg]
+
+
+def test_a_route_named_after_a_unique_tag_resolves_to_that_service() -> None:
+    """Row 1. `s3` is MinIO's S3 API port under its own hostname.
+
+    The job declares the tag itself, so this is reading what the job said
+    rather than guessing from an address.
+    """
+    catalog = {**CATALOG, "minio": ["s3", "http"]}
+    checks = [*CHECKS, check("minio")]
+
+    rows = {r.name: r for r in join(ROUTES, JOBS, checks, NAMES, catalog=catalog)}
+
+    assert rows["s3"].job_source is JobSource.CONSUL_TAG
+    assert rows["s3"].job == "minio"
+    assert rows["s3"].health == "passing"
+
+
+def test_a_tag_carried_by_two_services_resolves_nothing() -> None:
+    """Row 2. Written as "at least one carrier" this picks whichever sorts
+    first, and no live input would catch it."""
+    catalog = {**CATALOG, "one": ["s3"], "two": ["s3"]}
+
+    rows = {r.name: r for r in join(ROUTES, JOBS, CHECKS, NAMES, catalog=catalog)}
+
+    assert rows["s3"].job_source is JobSource.UNRESOLVED
+    assert rows["s3"].backend == "10.0.0.1:9000"
+
+
+def test_a_job_id_match_beats_a_tag_match() -> None:
+    """Row 3. The tag is the weakest signal and is consulted last."""
+    catalog = {**CATALOG, "something-else": ["memex"]}
+
+    rows = {r.name: r for r in join(ROUTES, JOBS, CHECKS, NAMES, catalog=catalog)}
+
+    assert rows["memex"].job_source is JobSource.JOB_ID
+
+
+def test_a_catalog_name_match_beats_a_tag_match() -> None:
+    """Row 3, the other half."""
+    catalog = {**CATALOG, "something-else": ["vault"]}
+
+    rows = {r.name: r for r in join(ROUTES, JOBS, CHECKS, NAMES, catalog=catalog)}
+
+    assert rows["vault"].job_source is JobSource.CONSUL_NAME
+
+
+def test_a_route_matching_nothing_at_all_still_renders() -> None:
+    """Row 4. Adding a rung must not remove the honest fallback."""
+    rows = {r.name: r for r in join(ROUTES, JOBS, CHECKS, NAMES, catalog=CATALOG)}
+
+    assert rows["s3"].job_source is JobSource.UNRESOLVED
+    assert rows["s3"].job == NOT_FOUND

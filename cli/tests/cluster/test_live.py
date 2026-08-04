@@ -112,12 +112,49 @@ def test_consul_is_in_the_catalog_but_carries_no_health_check() -> None:
 
 
 def test_the_minio_service_still_carries_the_s3_tag() -> None:
-    """Pins the evidence behind the deferred tag rung (ticket Q2).
+    """The tag the `s3` route resolves on, and its uniqueness.
 
-    If this goes red, the follow-up ticket's premise is gone and it should
-    be re-measured rather than implemented.
+    If this goes red the `s3` row reverts to `unresolved`, which is the
+    honest answer, but it should be a known change rather than a mystery.
     """
     catalog = consul.list_services(EDGE_CONSUL, timeout=10)
 
     assert "s3" in catalog.get("minio", [])
     assert [name for name, tags in catalog.items() if "s3" in tags] == ["minio"]
+
+
+def test_every_live_route_name_has_at_most_one_tag_carrier() -> None:
+    """The tag rung is unambiguous for every route the edge actually serves.
+
+    A tag carried by two services resolves nothing by design, so this going
+    red means a row silently stopped resolving. Better to say so here.
+    """
+    templates = nomad.job_templates(EDGE_NOMAD, nomad_token(), "haproxy", timeout=10)
+    config = next(t for t in templates if t.dest_path == "local/haproxy.cfg")
+    routes = haproxy.parse_routes(config.text)
+    catalog = consul.list_services(EDGE_CONSUL, timeout=10)
+
+    ambiguous = {
+        route.name: [name for name, tags in catalog.items() if route.name in tags]
+        for route in routes
+    }
+
+    assert {name: c for name, c in ambiguous.items() if len(c) > 1} == {}
+    assert ambiguous["s3"] == ["minio"]
+
+
+def test_s3_resolves_to_minio_against_the_real_cluster() -> None:
+    """The whole point of the ticket, end to end."""
+    from localstack_cli.api import services
+
+    templates = nomad.job_templates(EDGE_NOMAD, nomad_token(), "haproxy", timeout=10)
+    config = next(t for t in templates if t.dest_path == "local/haproxy.cfg")
+    routes = haproxy.parse_routes(config.text)
+    jobs = nomad.job_statuses(EDGE_NOMAD, nomad_token(), timeout=10)
+    checks = consul.list_checks(EDGE_CONSUL, timeout=10)
+    catalog = consul.list_services(EDGE_CONSUL, timeout=10)
+
+    rows = {r.name: r for r in services.join(routes, jobs, checks, {}, catalog=catalog)}
+
+    assert rows["s3"].job_source is services.JobSource.CONSUL_TAG
+    assert rows["s3"].job == "minio"
