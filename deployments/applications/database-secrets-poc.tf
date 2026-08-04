@@ -62,6 +62,17 @@ locals {
   ### `allowed_roles` and the role's `db_name` would otherwise form a cycle.
   s2_poc_role_name = "s2-poc"
   s2_poc_job_id    = "s2-poc-dynamic-creds"
+
+  ### Every owner role the minting admin must be able to GRANT. S2 needed only
+  ### `memex` and granted only `memex`, which left a trap for the ticket that
+  ### converts the second service: from PostgreSQL 16 on, a CREATEROLE role may
+  ### grant only memberships it holds ADMIN OPTION on, so a role minting for
+  ### phoenix, mlflow or bifrost would fail with
+  ### `permission denied to grant role ... (SQLSTATE 42501)` — and fail at
+  ### `vault read` time, long after the terraform apply that set it up reported
+  ### success. Derived from `local.databases` so a new application database
+  ### cannot be added without the admin gaining the right to mint for it.
+  s2_poc_grantable_owners = distinct([for db in local.databases : db.owner])
 }
 
 ### The identity the database engine mints users AS. Deliberately NOT the
@@ -92,11 +103,50 @@ ephemeral "random_password" "s2_poc_admin" {
 ### the next `vault read database/creds/s2-poc` — long after the apply that
 ### broke it reported success. Naming the membership in both places keeps the
 ### two resources agreeing instead of fighting.
+###
+### KNOWN TRANSIENT DRIFT, and R3 must decide what to do about it at
+### production TTLs. From PostgreSQL 16 on, a CREATEROLE role is automatically
+### granted ADMIN OPTION on every role it creates, so each LIVE minted
+### credential shows up as an extra entry in this authoritative `roles` list:
+###
+###   ~ roles = [ - "v-root-s2-poc-XdfbJMoftDuDfsUaZuQV-1785818970", ... ]
+###
+### `terraform plan` reports `No changes` only while no credential is
+### outstanding. Applying that diff revokes the admin's membership in a live
+### minted role, which is what lets it drop that role later, so the correction
+### is worse than the drift. It is harmless at S2's 120s TTL because the window
+### is short; at the 24h or 7d TTLs R3 is choosing, a credential is live
+### essentially always and every plan will show it.
+###
+### DO NOT set `inherit = false` here, however much least privilege argues for
+### it. Granting this one login membership in every owner role does hand it
+### every application's data privileges, and `noinherit` looks like the fix:
+### a noinherit member holding ADMIN OPTION can still GRANT, and loses the
+### ability to read the owner's tables until it runs SET ROLE. Both measured
+### on 2026-08-04, and both true.
+###
+### It still breaks the engine, because Vault's revocation needs the
+### privileges, not the admin option. Applied live and measured, the three
+### revocation steps behave like this under `noinherit`:
+###
+###   REVOKE ALL PRIVILEGES ... FROM "<minted>"  ERROR: permission denied for
+###                                              table audit_logs
+###   DROP OWNED BY "<minted>"                   ERROR: permission denied to
+###                                              drop objects
+###     DETAIL: Only roles with privileges of role "<minted>" may drop objects
+###     owned by it.
+###   DROP ROLE "<minted>"                       succeeds
+###
+### Vault reports `All revocation operations queued successfully!` throughout,
+### and the role survives. That is precisely the silent-revocation failure this
+### spike exists to document, reintroduced by the tightening. `SET ROLE` cannot
+### rescue it either: Vault issues those statements itself and there is nowhere
+### to inject one.
 resource "postgresql_role" "s2_poc_admin" {
   name        = "vault-dbengine-admin"
   login       = true
   create_role = true
-  roles       = [postgresql_role.role[local.s2_poc_owner_role].name]
+  roles       = [for owner in local.s2_poc_grantable_owners : postgresql_role.role[owner].name]
 
   password_wo         = ephemeral.random_password.s2_poc_admin.result
   password_wo_version = local.s2_poc_admin_password_version
@@ -104,9 +154,12 @@ resource "postgresql_role" "s2_poc_admin" {
 
 ### WITH ADMIN OPTION is load-bearing, and only this resource can set it.
 ### From PostgreSQL 16 on, a CREATEROLE role may only grant memberships it
-### holds ADMIN on, and the creation_statements below grant `memex` to every
-### user they mint. `roles` above re-grants the plain membership on update but
-### drops the admin option with it, so this must apply after.
+### holds ADMIN on, and the creation_statements below grant an owner role to
+### every user they mint. `roles` above re-grants the plain membership on
+### update but drops the admin option with it, so this must apply after.
+###
+### One instance per owner role. S2 needed only `memex` and so granted only
+### `memex`; that is the trap described on `local.s2_poc_grantable_owners`.
 ###
 ### `depends_on` alone does NOT cover the case that comment names. It orders
 ### the two when both are being applied; it does nothing when a later apply
@@ -117,8 +170,10 @@ resource "postgresql_role" "s2_poc_admin" {
 ### `replace_triggered_by` closes it: any change to the role forces this grant
 ### to be recreated in the same apply.
 resource "postgresql_grant_role" "s2_poc_admin_owner" {
+  for_each = toset(local.s2_poc_grantable_owners)
+
   role              = postgresql_role.s2_poc_admin.name
-  grant_role        = postgresql_role.role[local.s2_poc_owner_role].name
+  grant_role        = postgresql_role.role[each.value].name
   with_admin_option = true
 
   lifecycle {
