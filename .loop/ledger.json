@@ -364,7 +364,7 @@
       "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/S2-spike-postgres-vault-creds.adversarial.md, .loop/verdicts/S2-spike-postgres-vault-creds.documentation.md",
+      "review_verdict": ".loop/archive/S2-spike-postgres-vault-creds/verdict.adversarial.md, .loop/archive/S2-spike-postgres-vault-creds/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "epic": "spike",
@@ -868,7 +868,7 @@
       "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/D3-cli-read-commands.adversarial.md, .loop/verdicts/D3-cli-read-commands.documentation.md",
+      "review_verdict": ".loop/archive/D3-cli-read-commands/verdict.adversarial.md, .loop/archive/D3-cli-read-commands/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "epic": "cli",
@@ -920,7 +920,7 @@
       "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/D4-cli-cluster-tui.adversarial.md, .loop/verdicts/D4-cli-cluster-tui.documentation.md",
+      "review_verdict": ".loop/archive/D4-cli-cluster-tui/verdict.adversarial.md, .loop/archive/D4-cli-cluster-tui/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "epic": "cli",
@@ -1085,7 +1085,7 @@
       "review_cycles": 2,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/D6-cli-deps-and-shims.adversarial.md, .loop/verdicts/D6-cli-deps-and-shims.documentation.md",
+      "review_verdict": ".loop/archive/D6-cli-deps-and-shims/verdict.adversarial.md, .loop/archive/D6-cli-deps-and-shims/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "epic": "cli",
@@ -1297,7 +1297,7 @@
       "review_cycles": 3,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": ".loop/verdicts/R5-rollout-memex-oidc-auth.adversarial.md, .loop/verdicts/R5-rollout-memex-oidc-auth.documentation.md",
+      "review_verdict": ".loop/archive/R5-rollout-memex-oidc-auth/verdict.adversarial.md, .loop/archive/R5-rollout-memex-oidc-auth/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "epic": "rollout",
@@ -1320,6 +1320,80 @@
     },
     "R6-rollout-memex-human-oidc": {
       "slug": "R6-rollout-memex-human-oidc",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "epic": "rollout",
+      "dependencies": [
+        "F2-foundation-vault-oidc-provider",
+        "R5-rollout-memex-oidc-auth"
+      ],
+      "priority": 5,
+      "summary": "Humans log into memex with `memex auth login` against the Vault lab provider instead of sharing a static admin key. Bumps the memex server to v1.2.0 (whose client-side credential: id_token setting makes this possible at all), adds a PUBLIC PKCE Vault OIDC client gated on the developer group, and appends a second element to MEMEX_SERVER__AUTH__OIDC keyed on the id_token's aud = client_id. Also owns the D1/D2 runbook fix the v1.2.0 log changes force. Static API keys stay.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "memex",
+        "oidc",
+        "vault",
+        "human-auth",
+        "pkce",
+        "id-token"
+      ],
+      "stub": false
+    },
+    "R7-rollout-postgres-consumer-cutover": {
+      "slug": "R7-rollout-postgres-consumer-cutover",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "epic": "rollout",
+      "dependencies": [
+        "R3-rollout-postgres-vault-db-creds"
+      ],
+      "priority": 3,
+      "summary": "Convert every remaining application Postgres consumer (the three of memex, phoenix, mlflow, bifrost that R3 did not take) onto per-job Vault JWT roles reading database/creds/<role>. R3 proves the pattern on one; R7 finishes the set. Excludes the two localstack-root consumers (postgres-exporter, backup-postgres), the ducklake roles, and the golang-migrate runner.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "postgres",
+        "vault",
+        "secrets",
+        "nomad",
+        "rollout"
+      ],
+      "stub": false
+    },
+    "D7-cli-service-join-consul-catalog": {
+      "slug": "D7-cli-service-join-consul-catalog",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "epic": "cli",
+      "dependencies": [
+        "D3-cli-read-commands"
+      ],
+      "priority": 30,
+      "summary": "`localstack service` resolves its Consul rung from the catalog rather than from health checks, so `consul` stops rendering as unresolved, and the table renders the backend column requirement 5 already mandates, so an unresolved row says where it points.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false
+    },
+    "R8-rollout-postgres-root-consumers": {
+      "slug": "R8-rollout-postgres-root-consumers",
       "stage": "stub",
       "attempts": 0,
       "review_cycles": 0,
@@ -1330,10 +1404,10 @@
       "drop_reason": null,
       "epic": "rollout",
       "dependencies": [
-        "F2-foundation-vault-oidc-provider"
+        "R7-rollout-postgres-consumer-cutover"
       ],
-      "priority": 5,
-      "summary": "Give humans SSO into memex instead of a shared static admin key. Split out of R5 after plan review proved the obvious route impossible: Vault's OIDC provider issues an opaque access token, and memex verifies the access token and rejects opaque ones.",
+      "priority": 3,
+      "summary": "Convert the three consumers that authenticate as the `localstack` Postgres root \u2014 the postgres-exporter sidecar, backup-postgres's pg_dumpall, and the applications-root postgresql provider \u2014 off that shared root, so Vault-managed root rotation becomes possible at all.",
       "relay_block_nonfork": null,
       "tags": [],
       "stub": true

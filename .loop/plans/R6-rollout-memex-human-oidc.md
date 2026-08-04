@@ -1,93 +1,1008 @@
 ---
 epic = "rollout"
-depends_on = ["F2-foundation-vault-oidc-provider"]
+depends_on = ["F2-foundation-vault-oidc-provider", "R5-rollout-memex-oidc-auth"]
 priority = 5
-summary = "Give humans SSO into memex instead of a shared static admin key. Split out of R5 after plan review proved the obvious route impossible: Vault's OIDC provider issues an opaque access token, and memex verifies the access token and rejects opaque ones."
-stub = true
+stub = false
+summary = "Humans log into memex with `memex auth login` against the Vault lab provider instead of sharing a static admin key. Bumps the memex server to v1.2.0 (whose client-side credential: id_token setting makes this possible at all), adds a PUBLIC PKCE Vault OIDC client gated on the developer group, and appends a second element to MEMEX_SERVER__AUTH__OIDC keyed on the id_token's aud = client_id. Also owns the D1/D2 runbook fix the v1.2.0 log changes force. Static API keys stay."
+tags = ["memex", "oidc", "vault", "human-auth", "pkce", "id-token"]
 ---
 
 # Ticket: R6-rollout-memex-human-oidc
 
-## Triggered by
+## 1. Title
 
-Split out of `R5-rollout-memex-oidc-auth` on 2026-08-03. R5 originally
-covered both memex OIDC paths. Its plan review
-(`.loop/verdicts/R5-rollout-memex-oidc-auth.plan-validator.md`, verdict
-`fail`) proved the human half impossible as designed. R5 kept the workload
-half and this ticket carries the human half forward.
+Give humans SSO into memex through the Vault `lab` OIDC provider: memex
+server to v1.2.0, a public PKCE Vault client gated on `developer`, and a
+second provider element on `MEMEX_SERVER__AUTH__OIDC` verifying the
+**id_token**. Static API keys stay. R5's workload path is untouched
+except for the log-line changes the version bump forces.
 
-Humans share one static memex admin key today. That is the thing to fix.
+## 2. Size / Effort
 
-## Vision & rough premises
+**M.** Small diff (one new Terraform file, one appended list entry, one
+`local`, one `data` block, one env line extended, one version string,
+two docs). Effort drivers:
 
-Goal: a developer runs `memex auth login` and gets an identity, instead of
-holding a shared admin key.
+- Two Terraform roots, applied in order, joined by a cross-root read
+  (`data "vault_identity_oidc_client_creds"`). Wrong order fails loud;
+  see §9.
+- The memex server version bump rides along and must be isolated from
+  the config change, or a failure is unattributable (§10 R6b/R6c).
+- v1.2.0 INVERTS R5's D2 check. `docs/memex-oidc-verification.md` and
+  R5's eval both assert the old polarity and are wrong the moment the
+  bump lands (P6).
+- The grant proof is a browser login. It cannot be scripted, so §8's V1
+  is an operator step, not a command in a runner.
+- `client_type` is immutable after create (P12). Getting `public` wrong
+  means destroy + recreate, a new `client_id`, and a matching server
+  `audience` edit.
 
-The blocking fact, VERIFIED during R5's review and not to be re-litigated:
+Every blocking premise from the R5 split is now measured. There is no
+probe-first subticket.
 
-- Vault's OIDC provider issues an **opaque batch token** as `access_token`
-  and puts the signed JWT in `id_token`.
-- memex verifies the **access** token and its docs reject both opaque
-  tokens and id_tokens: "Only providers that issue signed JWT access
-  tokens work here, because the server verifies tokens locally against the
-  provider's JWKS. Providers with opaque access tokens (Google, GitHub)
-  are not supported on this path."
-  (<https://raw.githubusercontent.com/JasperHG90/memex/main/docs/how-to/configuring-server/oidc.md>)
-- No overlap. Pointing memex at the Vault `lab` provider 403s every login.
+## 3. Triggered by
 
-So this ticket is a fork, not an implementation. Three routes, each
-UNVERIFIED:
+Split out of `R5-rollout-memex-oidc-auth` on 2026-08-03. R5's plan review
+(`.loop/archive/R5-rollout-memex-oidc-auth/verdict.plan-validator.md`) proved
+the human half impossible as designed: Vault's OIDC provider issues an
+**opaque batch token** as `access_token` and signs the JWT into the
+`id_token`, while memex v1.1.0 verified only the access token. R5 shipped
+the workload half alone and left this ticket a stub.
 
-1. **Teach memex to verify Vault's `id_token`.** The operator owns memex,
-   so this is available in a way it would not normally be. Largest scope
-   (upstream feature plus a release), but the only route that reaches Vault
-   SSO with no new component in the cluster. UNVERIFIED: whether accepting
-   an id_token as a bearer credential is acceptable upstream, and what it
-   costs.
-2. **Front memex with something that issues signed JWT access tokens.**
-   oauth2-proxy (`L1-landing-oauth2-proxy`, currently blocked) or Bifrost.
-   UNVERIFIED: whether either issues a JWT access token memex would accept,
-   and whether it can carry a `groups`-equivalent claim for the developer
-   gate.
-3. **Drop human OIDC.** Humans keep static API keys. Cheapest; leaves the
-   shared-key problem standing.
+memex **v1.2.0** (2026-08-04, closing
+<https://github.com/JasperHG90/memex/issues/277>) fixed it upstream with
+a client-side `credential: "id_token"` setting and names HashiCorp Vault
+explicitly (P1). The blocker is gone. This is now a normal rollout.
 
-Two findings from R5's review that survive and apply here, both VERIFIED,
-so route 1 or 2 does not need to re-derive them:
+Operator decisions taken 2026-08-04, before this plan: R5 is being
+applied first (memex-first, on v1.1.0), and the server `memex_version`
+bump to 1.2.0 belongs to THIS ticket, not a separate upgrade ticket.
 
-- Vault matches loopback redirect URIs **port-agnostically** (it strips the
-  port from both sides when the host is `localhost`, `127.0.0.1`, or
-  `::1`), but the host literal and path must match exactly. memex binds an
-  ephemeral port, so a naive registration would fail at authorize time.
-- The `developer` group gate works upstream of the token: Vault refuses to
-  issue a token at all to an entity outside the assignment, with
-  `{"error":"access_denied","error_description":"identity entity must be
-  associated with the request"}`.
+## 4. Context
 
-## Non-goals
+### Humans share one static admin key today
 
-- The workload path. R5 owns hermes and Nomad Workload Identity.
-- Removing static API keys. The memex browser extension uses them, and
-  they are the fallback that makes R5's failure modes recoverable. A
-  separate ticket retires them, once something has replaced them.
-- Changing the Vault `lab` provider (F2) itself, or any other consumer of
-  it. Grafana and the Nomad UI use the id_token and are unaffected.
+- The memex admin key is generated by `random_id.memex_admin_key`
+  (`deployments/applications/secrets.tf:71`) and written to Vault KV by
+  `vault_kv_secret_v2.memex_auth_keys`
+  (`deployments/applications/secrets.tf:79-86`).
+- The operator's own memex client reads it from a `MEMEX_API_KEY` line in
+  the gitignored `.devcontainer/.env` (gitignored at `.gitignore:2`;
+  `.devcontainer/.env.example` never listed it, so it was added by hand).
+  That is the credential this ticket replaces.
+- Server-side the key path is `MEMEX_SERVER__AUTH__KEYS`
+  (`deployments/applications/services/memex.hcl:140`), inside a
+  `{{- with secret ... }}` / `{{- end }}` pair (`:139`, `:141`).
 
-## Open questions
+### What R5 already landed, and what this extends
 
-- **Which route?** Operator decision, and the reason this is a stub. Flesh
-  it out only once the route is picked, since the code surface, the gates,
-  and the risk are entirely different per route.
-- If route 1: does memex accept an id_token as a bearer credential, or does
-  it need a distinct config field to say "this provider's credential is the
-  id_token"? Does that weaken anything for providers that do issue JWT
-  access tokens?
-- If route 2: does the fronting proxy issue a JWT access token memex
-  accepts, and can it carry the developer-group claim? Does it change how
-  the memex CLI logs in, or only the browser path?
-- What policy level do humans get (`reader` / `writer` / `admin`), and
-  scoped to which vaults? R5 left this open; the operator holds the admin
-  key today, so anything narrower is a capability cut that needs stating.
-- Does the CLI need a headless login? Vault advertises no
+- `MEMEX_SERVER__AUTH__ENABLED=true`
+  (`deployments/applications/services/memex.hcl:138`) and a ONE-element
+  `MEMEX_SERVER__AUTH__OIDC` array at
+  `deployments/applications/services/memex.hcl:148`, with its rationale
+  comment at `:142-147`. That element trusts the Nomad issuer,
+  `audience: ["memex"]`, one `grant_rule` on `nomad_job_id=hermes`,
+  `policy: admin`, no `default_policy`. This ticket appends a second
+  element; it changes nothing in the first.
+- `local.nomad_oidc_issuer` at
+  `deployments/applications/services.tf:24-26`, consumed by
+  `nomad_job.memex` (`:166-188`) and `nomad_job.hermes` (`:125-156`).
+  This ticket adds a sibling `local` for the Vault issuer.
+- `memex_version = "1.1.0"` at
+  `deployments/applications/services.tf:180`, rendered into
+  `ghcr.io/jasperhg90/memex-jetson:${memex_version}` at
+  `deployments/applications/services/memex.hcl:38`.
+- `docs/memex-oidc-verification.md` is R5's live runbook. S1 asserts
+  `1 provider(s).` (`:21-38`), D1 asserts a log line (`:118-138`), D2
+  asserts log SILENCE (`:140-160`). The second and third are wrong on
+  v1.2.0 (P6); the first is wrong once a second provider lands.
+- `.loop/archive/R5-rollout-memex-oidc-auth/eval.md` carries the same three
+  assertions at `:15` (S1), `:18` (D2), `:23` (G1, "exactly ONE
+  element", "no `vault_identity_oidc_client`"). R5 is `done` and the
+  marker is operator-signed (`:26`). See Q4.
+
+### The Vault half this rebuilds
+
+- **F2's consumer contract**, stated in the file:
+  `deployments/infrastructure/oidc.tf:72-78` tells a consumer to create
+  its own client, assignment and key registration, then append one line
+  to `local.oidc_provider_client_ids`
+  (`deployments/infrastructure/oidc.tf:79-84`). The key is
+  `deployments/infrastructure/oidc.tf:42-47`, the `groups` scope
+  `:55-70`, the provider `:94-100`, the key-registration pattern
+  `:145-148`.
+- **The closest precedent is `deployments/infrastructure/nomad_oidc.tf`**
+  (G2): assignment on the `developer` group at `:30-34`, client at
+  `:44-57`, key registration at `:61-64`. Copy the structure, NOT the
+  `client_type` — `:54` is `confidential` because the Nomad server holds
+  a secret. A CLI on a laptop cannot, so this client is `public` (P3).
+- **The gate** is `vault_identity_group.developer`
+  (`deployments/infrastructure/developer_group.tf:158-164`), whose only
+  member is the operator entity (P11). Branch 1 of the four answers at
+  `docs/vault-human-auth.md:270-288`: reuse an existing tier group.
+  Branch 2's map `local.app_user_groups`
+  (`deployments/infrastructure/roles.tf:153`) ships empty, so it admits
+  nobody today.
+- **The `groups` claim is opt-in on the request**, not just the
+  template: `docs/vault-human-auth.md:300-306` records that a client
+  which does not SEND `scope=openid groups` gets a signed token with no
+  `groups` claim and nothing errors. Vault confirms it by ignoring
+  unsupported scopes rather than rejecting them (P8).
+- `deployments/infrastructure/nomad_oidc.tf:154` already binds
+  `bound_audiences = [vault_identity_oidc_client.nomad.client_id]`
+  against this same provider, in production. That is the repo's own
+  evidence that a Vault id_token's `aud` is the client id; P4 confirms
+  it at Vault's source.
+
+### What is missing
+
+memex trusts one issuer (Nomad) and knows nothing about Vault. Humans
+have no path off the shared admin key.
+
+## 5. Non-goals / out of scope
+
+- **The workload path.** R5 owns hermes and the Nomad Workload Identity
+  JWT. Do not touch `deployments/applications/services/hermes.hcl`, the
+  hermes `identity` stanza, either `env_passthrough` list, or the first
+  element of `MEMEX_SERVER__AUTH__OIDC`
+  (`deployments/applications/services/memex.hcl:148`).
+- **No hermes image or wheel bump.** `hermes_version` at
+  `deployments/applications/services.tf:131` and the wheel URLs at
+  `deployments/applications/services/hermes/Dockerfile:28-30` stay at
+  `1.1.0`. The v1.1.0 client is wire-compatible with a v1.2.0 server
+  (P7), and rebuilding the agent gateway buys nothing here.
+- **Do NOT remove static API keys.** `MEMEX_SERVER__AUTH__KEYS`
+  (`deployments/applications/services/memex.hcl:140`) stays for the
+  browser extension; `MEMEX_API_KEY` stays in hermes
+  (`deployments/applications/services/hermes.hcl:201`, `:437`) and in
+  the operator's environment. Without a refresh token the human bearer
+  expires and the client falls back to the key (P9), so removing it
+  turns an expiry into an outage. Removal is Q5's follow-up.
+- **No change to the Vault `lab` provider, key, or scope**
+  (`deployments/infrastructure/oidc.tf:42-47`, `:55-70`, `:94-100`).
+  The only edit to that file is the one-line append at `:79-84`.
+- No change to the smoke client (`deployments/infrastructure/oidc.tf:133-148`)
+  or to `deployments/infrastructure/nomad_oidc.tf`. Grafana and the Nomad
+  UI already consume the id_token and are unaffected.
+- No new Vault group and no `local.app_user_groups` entry. Reuse
+  `developer`.
+- No change to `docs/workload-identity.md`. The human path mints no
+  Nomad audience; `:213` already registers `memex` for R5.
+- No device-flow support. Vault advertises no
   `device_authorization_endpoint`, so `memex auth login --device` cannot
-  work against it. Only matters if a non-browser login is a real need.
+  work against it (P2). SETTLED, not open.
+- No repo-managed laptop config. The memex CLI on a developer machine is
+  outside this repo; the deliverable is the documented snippet in
+  `docs/vault-human-auth.md`.
+- Do not fix the `writer_key_vault_meetings` drift R5 put out of scope.
+- No HAProxy, TLS, or DNS change. The redirect target is loopback on the
+  operator's own machine.
+
+## 6. Requirements & restrictions
+
+| # | Requirement | Where the repo states it |
+|---|---|---|
+| R1 | Two OIDC providers on the memex server, selected by `iss`: Nomad (R5's, unchanged) and the Vault `lab` provider | Operator decision; mechanism P1, issuer strings P2 and P5 |
+| R2 | The client sends the **id_token**, so the server entry's `audience` is the **client_id**, not `memex` | P1, P4; contrast `deployments/applications/services/memex.hcl:148` |
+| R3 | A NEW `vault_identity_oidc_client`, its own assignment, its own key registration, and one appended line to `local.oidc_provider_client_ids` | `deployments/infrastructure/oidc.tf:72-84`; pattern `deployments/infrastructure/nomad_oidc.tf:30-64` |
+| R4 | Append to `local.oidc_provider_client_ids`, never replace. Replacing breaks the live Nomad UI login and F2's smoke client | `deployments/infrastructure/oidc.tf:74-78`, `:104-107` |
+| R5 | `client_type = "public"` with PKCE. A CLI cannot hold a secret; Vault accepts `none` auth and `S256` | P3; contrast `deployments/infrastructure/nomad_oidc.tf:54` |
+| R6 | Gate on `vault_identity_group.developer`; create no new group | `docs/vault-human-auth.md:270-288`; `deployments/infrastructure/developer_group.tf:158-164`; `deployments/infrastructure/roles.tf:153` |
+| R7 | The client must REQUEST `scope=openid groups`, spelled out, because `scopes` replaces the default list | P1, P8; `docs/vault-human-auth.md:300-306` |
+| R8 | Never point at Vault's built-in `default` provider | `deployments/infrastructure/oidc.tf:86-93`, `deployments/infrastructure/nomad_oidc.tf:132-135` |
+| R9 | Leave `default_policy` unset on both provider entries, so an unmatched token is refused rather than downgraded | `deployments/applications/services/memex.hcl:142-147`; §8 D2 |
+| R10 | Static API keys preserved on server and clients | §5; memex v1.2.0 OIDC how-to line 75 |
+| R11 | Nomad HCL `nomad fmt`-clean; Terraform `fmt`-clean and `validate`-clean per root | `.pre-commit-config.yaml:16-21`, `:22-27`, `:28-33`; `scripts/tf_validate.sh:8-20` |
+| R12 | Surgical changes only; match surrounding style; no adjacent refactors | `CLAUDE.md` §3 |
+| R13 | Plain language in every comment and doc line added | `.claude/rules/plain-language.md` |
+| R14 | Docs edited must clear the slop scan | `.claude/rules/slop-scan-for-docs.md` |
+| R15 | An adversarial sub-agent review runs before this is reported done | `.claude/rules/adversarial-reviews.md`; `.loop/config.json` `require_review` |
+| R16 | Do not silence a failing gate; fix the cause | `.claude/rules/prek-code-quality.md`, `.claude/rules/pre-existing-issues.md` |
+
+## 7. Code surface
+
+### New file: `deployments/infrastructure/memex_oidc.tf`
+
+Mirror `deployments/infrastructure/nomad_oidc.tf:22-64` (Vault half
+only; there is no ACL half here and no aliased provider). Three
+resources:
+
+- `vault_identity_oidc_assignment "memex"` —
+  `group_ids = [vault_identity_group.developer.id]`, `entity_ids = []`.
+  Referenced directly, no data source, exactly as
+  `deployments/infrastructure/nomad_oidc.tf:30-34` does.
+- `vault_identity_oidc_client "memex"` —
+  `key = vault_identity_oidc_key.lab.name`,
+  `assignments = [vault_identity_oidc_assignment.memex.name]`,
+  **`client_type = "public"`** (R5; immutable after create, P12),
+  `redirect_uris = ["http://127.0.0.1:8250/callback",
+  "http://localhost:8250/callback"]`, plus `id_token_ttl` and
+  `access_token_ttl` per Q3.
+
+  The port in both URIs is arbitrary and never matched. memex binds an
+  ephemeral port (P10) and Vault strips the port from BOTH sides when
+  the incoming host is loopback, while comparing scheme, host literal
+  and path exactly (P10). memex sends only `127.0.0.1`; the `localhost`
+  entry costs nothing and covers a future client that sends it.
+  `id_token_ttl` may not exceed the key's `verification_ttl = 86400`
+  (`deployments/infrastructure/oidc.tf:46`; enforced by Vault, P12).
+- `vault_identity_oidc_key_allowed_client_id "memex"` — pattern at
+  `deployments/infrastructure/oidc.tf:145-148` and
+  `deployments/infrastructure/nomad_oidc.tf:61-64`.
+
+### `deployments/infrastructure/oidc.tf`
+
+- `:79-84` — APPEND `vault_identity_oidc_client.memex.client_id` to
+  `local.oidc_provider_client_ids`. One added line. The file's own
+  comment at `:72-78` marks this as the contract. Never replace the
+  list (R4).
+
+### `deployments/applications/services.tf`
+
+- `:1-9` (the `data` block cluster) — add
+  `data "vault_identity_oidc_client_creds" "memex" { name = "memex" }`.
+  This is the cross-root channel: the client is created in the
+  infrastructure root and read back by static name, with no remote-state
+  link. The data source handles a public client and returns an empty
+  `client_secret` rather than erroring (P13).
+- `:24-26` (`locals`) — add
+  `vault_oidc_issuer = "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab"`,
+  beside `nomad_oidc_issuer`. Byte-identical to what Vault advertises
+  (P5) and to what the human's client config carries, or provider
+  selection by `iss` fails.
+- `:166-188` (`nomad_job.memex`) — add two templatefile vars:
+  `vault_oidc_issuer = local.vault_oidc_issuer` and
+  `memex_oidc_client_id = data.vault_identity_oidc_client_creds.memex.client_id`.
+- `:180` — `memex_version` from `"1.2.0"`. The tag exists in the
+  registry (P7).
+
+### `deployments/applications/services/memex.hcl`
+
+- `:148` — extend the JSON array from one element to two. Keep the
+  Nomad object FIRST and byte-unchanged; append the Vault object:
+
+  ```
+  {"issuer":"${vault_oidc_issuer}","audience":["${memex_oidc_client_id}"],"grant_rules":[{"claim":"groups","value":"developer","policy":"<Q2>"}]}
+  ```
+
+  `audience` is the **client id**, not `memex`: an id_token's `aud`
+  carries the client id (P4). That is the one shape difference from
+  R5's element. No `default_policy` (R9). Leave `algorithms` at its
+  default `["RS256","ES256"]` — Vault's `lab` JWKS is RS256 only (P5).
+- `:142-147` — extend the comment to cover the second element: which
+  issuer, why the audience is a client id, and that the group gate is
+  enforced twice (Vault refuses to issue at all, memex refuses to
+  authorize). Plain language (R13).
+- Quoting is unchanged from R5: `${...}` is Terraform, `$${...}` escapes
+  to Nomad (`deployments/applications/services/memex.hcl:7`), `{{ }}` is
+  Vault templating. The line needs no `{{ with secret }}` wrapper — the
+  client id is not a secret.
+
+### Docs (the declared home for every §8 artifact)
+
+- **`docs/memex-oidc-verification.md`** — the runbook. Three edits and
+  one addition:
+  - `:21-38` (S1): the expected count moves from `1` to `2`, and the
+    "a second provider would mean R6 leaked in" note at `:34-35`
+    inverts into "both must be present".
+  - `:118-138` (D1): the line still fires but has moved from `info` to
+    `warning` (P6). Match on message text, not level word.
+  - `:140-160` (D2): **REWRITE, it is inverted.** v1.2.0 logs the
+    verified-but-unauthorized case explicitly. Silence is now the
+    FAILURE. Replace `:152-155` with the new expected line and delete
+    "A silent `403` is the pass here."
+  - Add a `## V1..V3` section for the human path (§8), and a note that
+    a bearer which is not a JWT now logs `not a parseable JWT` (P6),
+    which is the one-line diagnosis of a client that forgot
+    `credential: id_token`.
+  - Retitle from "Verifying memex workload OIDC" (`:1`) to cover both
+    paths.
+- **`docs/vault-human-auth.md`** — add memex to the consumer list under
+  "Adding a service that logs people in through Vault" (`:262-306`),
+  and record two rules every future CLI consumer needs: Vault matches
+  loopback redirects port-agnostically but the host literal and path
+  exactly (P10), and a Vault relying party that verifies the token
+  itself must read the **id_token** and accept the client id as `aud`
+  (P4), which is the sharper form of the note already at `:361-369`.
+  Include the laptop config snippet (Q1).
+- **`.loop/archive/R5-rollout-memex-oidc-auth/eval.md`** — a supersession note
+  only, appended below the sign-off at `:26`. Do not edit the signed
+  rows. Q4.
+
+## 8. Tests & validation gates
+
+No unit-test surface: Terraform, Nomad HCL and docs. The repo's Python
+gates are scoped `files: '^cli/'` (`.pre-commit-config.yaml:37-53`),
+which this ticket does not touch. Verification is the static gates plus
+live checks.
+
+### Static gates (must pass)
+
+| Gate | Command | Source |
+|---|---|---|
+| All hooks | `just pre_commit` | `justfile:18-19`; `.loop/config.json` `gates` |
+| Nomad HCL format | hook `nomad-fmt` | `.pre-commit-config.yaml:16-21` |
+| Terraform format | hook `terraform-fmt` | `.pre-commit-config.yaml:22-27` |
+| Terraform validate, per root | hook `terraform-validate` | `.pre-commit-config.yaml:28-33`; `scripts/tf_validate.sh:8-20` |
+| Plan review, infrastructure root | read the plan before `just apply` | `deployments/infrastructure/justfile:11-13` |
+| Plan review, applications root | read the plan before `just apply` | `deployments/applications/justfile:13-24` |
+
+Worktree note: `just worktree_setup <path>` (`justfile:44`) seeds the
+gitignored SSH key and tfvars that `terraform validate` needs.
+
+### Live checks
+
+Baseline is R5's, re-measured before starting: no credential `401`,
+garbage bearer `403`, admin API key `200` (P14).
+
+**S1 — the server loaded exactly two providers.** After the memex
+redeploy at R6c:
+
+```
+nomad alloc logs <memex-alloc> memex | grep -i 'authentication enabled'
+```
+
+Expect `OIDC bearer-token authentication enabled (2 provider(s)).`
+alongside `API key authentication enabled (3 key(s) configured, 3 exempt
+path(s)).`. `2`, not `1`: a silently dropped provider (bad JSON in the
+env var) is the cheapest failure to catch. The INFO level is visible in
+this deployment (P14).
+
+**S2 — API-key regression.** Re-run the P14 triple against
+`http://192.168.2.46:8000/api/v1/vaults`. Still `401` / `403` / `200`.
+
+**W1 — R5's workload path still works.** From the hermes alloc:
+
+```
+nomad alloc exec -task hermes <hermes-alloc> \
+  /opt/hermes/.venv/bin/python -c "import asyncio;\
+from memex_common.config import MemexConfig;\
+from memex_common.auth_client import resolve_client_headers;\
+print(asyncio.run(resolve_client_headers(MemexConfig())))"
+```
+
+Expect `{'Authorization': 'Bearer eyJ...'}`, then a `200` from
+`/api/v1/vaults` with that bearer. This is the regression guard on the
+version bump and the second provider element. `resolve_client_headers`
+and `_read_workload_token` are byte-identical across the two tags (P7),
+so a failure here means the SERVER changed, not the client.
+
+**D1 — DENY, wrong `aud`.** R5's throwaway Nomad job carrying
+`identity { name = "vault_default", aud = ["vault.io"], file = true,
+filepath = "secrets/nomad_vault_default.jwt" }`; present that token.
+Expect `403` and the log line `OIDC token rejected for issuer ...`. On
+v1.2.0 that record is `warning`, not `info` (P6). Tear the job down, as
+`docs/workload-identity.md:195-198` requires.
+
+**D2 — DENY, non-hermes `nomad_job_id`. POLARITY INVERTED.** From the
+same job, present its `aud = ["memex"]` token. Expect `403`, AND expect
+the server log to carry:
+
+```
+OIDC token verified for issuer ... but matched no grant_rule and the
+provider has no default_policy, so it authorizes nothing. Claims present
+on the token: [...]
+```
+
+Silence here is now a FAILURE, not a pass (P6). This same line is the
+detector for the human path's likeliest fault (a token with no `groups`
+claim), which is why it is worth having.
+
+**V1 — GRANT, a human logs in.** From the operator's own machine with
+the Q1 client config in place.
+
+**Precondition, and its failure is silent-ish:** the browser must ALREADY
+hold a Vault UI session. Vault's `authorization_endpoint` is the UI path
+(`docs/vault-human-auth.md:322-329`), so an unauthenticated browser lands
+on the login screen and never redirects back. The CLI does not error — it
+waits out its 300 s callback timeout (`memex_cli/auth.py`) and reports a
+timeout with nothing pointing at the cause. Log into the Vault UI first,
+in the same browser, then run the command.
+
+```
+memex auth login      # opens a browser; Authorization Code + PKCE
+memex auth status
+```
+
+Expect a reported identity and expiry. Then decode the cached id_token
+from `<user_config_dir>/memex/token.json` and assert, do not assume:
+`iss` equals the value in `local.vault_oidc_issuer`, `aud` equals the
+memex client id, and `groups` CONTAINS `developer` (P11 —
+`_rule_matches` does membership on a list claim, P1). Then a read
+against `/api/v1/vaults` returns `200`.
+
+**V2 — DENY, the opaque access token.** From the same `token.json`,
+present the `access_token` field (Vault's opaque batch token) as the
+bearer instead. Expect `403` and the log line `OIDC bearer rejected: not
+a parseable JWT (2 dot-separated segments).` (P6).
+
+**Two, not one.** Vault's batch token is `hvb.` + base64url
+(`sdk/helper/consts/token_consts.go`, `vault/token_store.go`), and memex
+logs `token.count('.') + 1` (`server/oidc.py`), so a `hvb.<blob>` token
+counts 2. Asserting `1` fails a correct system at a 100% bar — the same
+defect class this ticket exists to fix in R5's D2. Confirm the count
+against the token you actually get rather than trusting either number.
+
+This is the exact
+failure that made the human path impossible before v1.2.0, and it is the
+one-line diagnosis of a client that forgot `credential: id_token`.
+
+**V4 — DENY, a human token with NO `groups` claim.** This is the check
+that exercises §9's likeliest failure mode, and nothing else does: D2
+presents a *Nomad workload* token, so no Vault id_token ever travels the
+no-matching-grant path.
+
+Run `memex auth login` a SECOND time with `scopes` set to `["openid"]`
+only (drop `groups`), then present that id_token to `/api/v1/vaults`.
+
+Expect `403`. Per P8 Vault ignores the unsupported scope rather than
+erroring, so login SUCCEEDS and returns a perfectly valid signed token
+that simply carries no `groups` claim — which matches no `grant_rule`,
+and with `default_policy` unset authorizes nothing. Confirm on the log
+that this is the authorization path, not a signature failure, using the
+v1.2.0 message named in P6.
+
+Restore `scopes: ["openid","groups"]` and re-run V1 afterwards, so the
+working config is what is left in place.
+
+**V3 — the Vault-side gate is live and reached.** Read-only, no login
+needed:
+
+```
+curl -sk -H "X-Vault-Token: $VAULT_TOKEN" -G \
+  "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/authorize" \
+  --data-urlencode "client_id=<memex client id>" \
+  --data-urlencode "redirect_uri=http://127.0.0.1:44444/callback" \
+  --data-urlencode "response_type=code" --data-urlencode "scope=openid groups" \
+  --data-urlencode "state=abcdefghij" --data-urlencode "nonce=abcdefghij" \
+  --data-urlencode "code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" \
+  --data-urlencode "code_challenge_method=S256"
+```
+
+Expect `{"error":"access_denied","error_description":"identity entity
+must be associated with the request"}`. `access_denied` is the PASS:
+Vault checks the redirect URI, the client, the provider's
+`allowed_client_ids` and the scope BEFORE the entity, so this one
+response proves all four are wired (P10, and the ordering at
+`vault-oidc-v2.0.3.go` per P10's source). An `invalid_redirect_uri`
+means the loopback registration is wrong; `unauthorized_client` means
+the `oidc.tf:79-84` append is missing. Note the arbitrary port `44444`:
+that it passes is the port-agnostic match, proved live.
+
+What V3 does NOT prove: that a member of some OTHER group is refused.
+Vault emits a different string for that case, `identity entity not
+authorized by client assignment`, already recorded at
+`docs/vault-human-auth.md:331-334`. Proving it live needs a second Vault
+entity, which is a mutation this ticket does not make.
+
+**G1 (guardrail) — static keys survive.** `MEMEX_SERVER__AUTH__KEYS`
+still present in the rendered memex jobspec, `MEMEX_API_KEY` still
+present in the rendered hermes jobspec at
+`deployments/applications/services/hermes.hcl:201` and `:437`.
+
+**G2 (guardrail) — R5's element is byte-unchanged.** In the rendered
+memex jobspec, `MEMEX_SERVER__AUTH__OIDC` holds exactly TWO elements,
+and the Nomad one still reads `"issuer":"https://nomad.lab.orangecluster.nl"`,
+`"audience":["memex"]`, one `grant_rule` on
+`"claim":"nomad_job_id","value":"hermes","policy":"admin"`.
+
+**G3 (guardrail) — the provider list was appended, not replaced.**
+`terraform plan` on the infrastructure root shows
+`vault_identity_oidc_provider.lab.allowed_client_ids` growing from two
+entries to three, with the smoke and nomad client ids unchanged. A
+shrink or a replacement breaks the live Nomad UI login.
+
+Every check above is written verbatim into
+`docs/memex-oidc-verification.md`.
+
+The scored acceptance layer is the eval marker,
+`.loop/evals/R6-rollout-memex-human-oidc.md`: one deterministic row per
+check above at a 100% bar. The security-shaped rows (D1, D2, V2, V3,
+G1, G2, G3) protect an invariant, so a row that passes most of the time
+is a row with a hole. Nothing enforces the plan-to-eval link; keep them
+in step by hand.
+
+## 9. Risk assessment
+
+**Blast radius.**
+
+- The `deployments/infrastructure/oidc.tf:79-84` edit touches the shared
+  `lab` provider's `allowed_client_ids`. Replacing instead of appending
+  takes down the Nomad UI login and F2's smoke client at once. `:104-107`
+  warns about exactly this. Detector: G3.
+- The `memex.hcl` edit plus the version bump redeploy memex, the memory
+  backend for hermes and the operator's MCP tooling. A malformed
+  `MEMEX_SERVER__AUTH__OIDC` string either fails startup (loud) or loads
+  with a provider missing (quiet). S1 is the detector for the quiet case.
+- `terraform apply` on either root refreshes every resource in it. Read
+  the plan.
+- The version bump also re-runs the prestart `database upgrade` task
+  (`deployments/applications/services/memex.hcl:39`). The v1.1.0-to-v1.2.0
+  compare carries no migration or schema file (P7), so this is a no-op —
+  but it is the step that would hurt if that ever stopped being true.
+
+**Reversibility.** Good on config, weaker on the Vault client. The
+`local`, the `data` block, the second array element and the version
+string all revert cleanly, and the static keys are never removed.
+Destroying the Vault client must be paired with removing its entry from
+`local.oidc_provider_client_ids` in the SAME change
+(`deployments/infrastructure/oidc.tf:104-107`), or the provider
+references a client id that no longer exists. Re-creating it mints a NEW
+`client_id`, which invalidates the server's `audience` and every cached
+human token.
+
+**Likeliest failure modes, in order.**
+
+1. **The `groups` claim never reaches the id_token.** The client did not
+   spell out `scope: ["openid","groups"]`, so Vault silently drops the
+   scope it was not asked for (P8) and issues a token with no `groups`.
+   Login succeeds, then every request is `403`. This is the single most
+   likely fault and it is invisible from the response. Detector: D2's
+   new log line, which names the claims that WERE present.
+2. **Applications applied before infrastructure.** The `data` source
+   fails with `no client found at "identity/oidc/client/memex"` (P13).
+   Loud, and fixed by applying in order.
+3. **Issuer drift** between `local.vault_oidc_issuer` and the human's
+   client config. Provider selection is by exact `iss` match, so a
+   trailing slash on one side `403`s every human login with `no
+   configured provider matches issuer` (P6) — which, on v1.2.0, names
+   the configured issuers in the log.
+4. **`client_type` set to `confidential` by copying
+   `deployments/infrastructure/nomad_oidc.tf:54`.** Vault then requires
+   client authentication the CLI cannot provide, and `client_type` is
+   immutable (P12), so the fix is destroy + recreate + a new client id +
+   a server `audience` edit.
+5. **Hourly silent downgrade to the API key.** Vault issues no refresh
+   token (P2), so at expiry the client warns `Cached OIDC token expired
+   and no refresh token is available.` and falls back to `X-API-Key`
+   when one is set (P9). Requests keep returning `200` while the
+   identity quietly reverts to the shared admin key. Detector: `memex
+   auth status` plus that warning. Q3 is the lever.
+6. **The client id shared with a second relying party.** memex applies
+   no `azp` check, so any service that can obtain an id_token for this
+   client can call memex as that user (P1, v1.2.0 how-to lines 140-144).
+   Mitigated by construction: this client is registered for memex only.
+
+## 10. Subtickets
+
+Ordered and dependency-aware. If these become separate plan files,
+encode this order in each file's `depends_on`.
+
+1. **R6a — the Vault client.** New
+   `deployments/infrastructure/memex_oidc.tf` plus the append at
+   `deployments/infrastructure/oidc.tf:79-84`. Apply the infrastructure
+   root. Run G3 and V3. Inert: nothing consumes the client yet, so it is
+   safe to land alone. Depends on nothing in this ticket.
+2. **R6b — memex server to v1.2.0, still ONE provider.**
+   `deployments/applications/services.tf:180` to `"1.2.0"`, then
+   `just apply true nomad_job.memex` from
+   `deployments/applications`. Run S1 (still `1 provider(s).`), S2, W1,
+   D1, D2. **Rewrite `docs/memex-oidc-verification.md` D1 and D2 in this
+   subticket**, because that is where they become true; leaving it to
+   R6e leaves the runbook wrong in between. Depends on nothing; keep it
+   separate from R6c so a regression is attributable to the version, not
+   the config.
+3. **R6c — the second provider element.** The `local`, the `data` block,
+   the two templatefile vars, the extended `:148` array and its comment.
+   Apply, targeting memex. Run S1 (now `2 provider(s).`), S2, W1, D1,
+   D2, G1, G2. Depends on R6a and R6b.
+4. **R6d — a human logs in.** Write the Q1 client config on the
+   operator's machine, run `memex auth login`, then V1 and V2. Depends
+   on R6c. This is the only step that cannot be scripted.
+5. **R6e — docs.** The `docs/memex-oidc-verification.md` S1 count, the
+   new V1-V3 section and the retitle; the `docs/vault-human-auth.md`
+   consumer entry, loopback rule, id_token rule and config snippet; the
+   supersession note on `.loop/archive/R5-rollout-memex-oidc-auth/eval.md`.
+   Depends on R6d.
+
+## 11. Open questions
+
+**Q1 — where does the human's client config live, and in what form?**
+Not settled by the request. memex reads client config from
+`~/.config/memex/config.yaml`, from a `.memex.yaml` found by walking CWD
+and its parents, or from `MEMEX_OIDC__*` env vars (P1). `scopes` is a
+`list[str]`, and the env form of a list field is a JSON string, which is
+easy to get wrong by hand.
+*Recommendation: a YAML snippet at `~/.config/memex/config.yaml`,
+documented in `docs/vault-human-auth.md`, run on the LAPTOP and not in
+the devcontainer.*
+
+```yaml
+oidc:
+  issuer: "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab"
+  client_id: "<from terraform output or vault read>"
+  credential: "id_token"
+  scopes: ["openid", "groups"]
+```
+
+Laptop, not devcontainer, for a concrete reason: `memex auth login`
+binds an ephemeral loopback port INSIDE whatever machine runs it (P10),
+and a host browser cannot reach a container's `127.0.0.1:<random>`
+without a port forward that cannot be declared in advance. Running it in
+the devcontainer is a fork the operator can take, but it needs its own
+answer for the callback and should not be assumed to work.
+
+**Q2 (blocking on R6c) — what policy and vault scope does the human
+grant get?**
+Not settled by the request. memex policies are `reader`/`writer`/`admin`
+and a grant may carry `vault_ids` / `read_vault_ids` (P1). The operator
+holds the unscoped memex **admin** key today
+(`deployments/applications/secrets.tf:79-86`), so anything narrower is a
+capability cut relative to the status quo.
+*Recommendation: `admin`, unscoped, and say plainly in the comment what
+that buys.* The win here is "no shared long-lived secret", not "less
+privilege". Changing the mechanism and the privilege level in one step
+makes any failure ambiguous, and the operator's real memex usage is not
+measured. R5 took the same call for hermes for the same reason. If the
+operator prefers `writer` now, say so before R6c: it is one string and
+it moves the failure from deploy time to run time.
+
+**Q3 — what `id_token_ttl` and `access_token_ttl` does the client get?**
+The repo's two existing clients both use `3600`
+(`deployments/infrastructure/oidc.tf:139-140`,
+`deployments/infrastructure/nomad_oidc.tf:55-56`). Vault issues no
+refresh token here (P2), so the TTL is literally how often a human
+re-runs `memex auth login` before silently reverting to the API key
+(§9 mode 5). Nomad's human sessions already use `max_token_ttl = "8h"`
+(`deployments/infrastructure/nomad_oidc.tf:142`).
+*Recommendation: `28800` (8h) for both, matching Nomad's human-session
+convention rather than the machine-facing 3600.* Ceiling is the key's
+`verification_ttl = 86400` (`deployments/infrastructure/oidc.tf:46`),
+enforced by Vault (P12). Set both to the same value: memex takes the
+earlier of `expires_in` (which describes the ACCESS token) and the
+id_token's own `exp` (P9), so a mismatch just shortens the session
+silently.
+
+**Q4 — how are R5's now-false eval rows handled?**
+R5 is `done` and its marker is operator-signed
+(`.loop/archive/R5-rollout-memex-oidc-auth/eval.md:26`). Three rows go false
+when this lands: `:15` (S1, "1 provider(s)"), `:18` (D2, "the server log
+emits NOTHING"), `:23` (G1, "exactly ONE element", "no
+`vault_identity_oidc_client`").
+*Recommendation: do not edit the signed rows.* An eval marker is a
+point-in-time acceptance record of work already accepted, not a suite
+that gets re-run; rewriting it erases what was actually signed off.
+Append one supersession note below `:26` naming R6 and the three row
+numbers, and carry the corrected assertions in R6's own eval and in
+`docs/memex-oidc-verification.md`, which IS the artifact re-run. If the
+operator would rather amend R5's marker in place, that is their call to
+make before R6e, and it needs a fresh sign-off line.
+
+Note also that `loopctl archive` relocates a done ticket's artifacts
+into `.loop/archive/<slug>/`. If R5 is archived before R6e runs, the
+eval path moves and the anchors in this section move with it.
+
+**Q5 — when do the static API keys go?**
+The operator settled *whether*: keep them. Only *when* is open. The
+fallback is what makes §9 mode 5 a degradation rather than an outage,
+and it is what the browser extension uses.
+*Recommendation: a follow-up ticket, after Q3's TTL has been lived with
+for a while and V1 has held.* Removing `MEMEX_API_KEY` from the
+operator's environment first (leaving the server keys for the
+extension) is the smaller, reversible half and makes the silent
+downgrade in §9 mode 5 loud, which is arguably worth doing sooner.
+
+**Q6 — SETTLED, recorded so it is not re-opened.** `memex auth login
+--device` cannot work against Vault. The `lab` provider advertises
+`grant_types_supported: ["authorization_code"]` and no
+`device_authorization_endpoint` (P2), and the memex CLI raises
+`LoginError` when that endpoint is absent (P2). Browser login only. Do
+not attempt to add device-flow support to Vault.
+
+## Premises / assumptions
+
+Evidence is a resolved `path:line`, a probe command with captured
+output, or an explicit UNCERTAIN. Every probe below is read-only and was
+run on 2026-08-04 against the live cluster unless marked otherwise.
+
+**Do NOT verify any memex premise against a vendored `apm_modules` tree.**
+That directory was deleted on 2026-08-03 precisely because it was a
+stale pre-OIDC snapshot whose files resolved by bare basename to real
+code saying something else. memex premises below cite upstream at tag
+`v1.2.0` (or `v1.1.0` for the comparison) by URL. Vault's and Nomad's Go
+sources are not vendored here either; those cite upstream tags.
+
+**P1 — memex v1.2.0 adds a client-side `credential` setting, names
+HashiCorp Vault, and requires the server's `audience` to be the
+client_id. VERIFIED (upstream source, both the field and its
+validation).**
+`OidcClientConfig.credential` is
+`Literal['access_token', 'id_token'] = Field(default='access_token', ...)`.
+Its validator raises unless `grant == 'interactive'` ("Service-account
+and keyless grants never receive an id_token") and unless `'openid' in
+self.scopes`. The v1.2.0 how-to states it directly: "An id_token's `aud`
+is the **client id**, not a separate API identifier, so the server's
+`audience` must list the client id" (line 115), and "Setting `scopes`
+replaces the default list rather than adding to it, so spell out
+everything you need" (line 113). Provider selection is by `iss`, then
+signature, `aud`, `iss` and `exp` (how-to line 40). `_rule_matches` does
+membership on a list claim and equality on a scalar (how-to line 44).
+Source:
+<https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/packages/common/src/memex_common/config.py>,
+<https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/docs/how-to/configuring-server/oidc.md>,
+<https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/docs/reference/configuration-options.md>
+
+**P2 — the Vault `lab` provider offers authorization_code only, no
+device endpoint, and no refresh-token grant. VERIFIED (live,
+read-only).**
+probe:
+`curl -sk https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/.well-known/openid-configuration`
+
+```
+issuer                          : https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab
+grant_types_supported           : ["authorization_code"]
+scopes_supported                : ["groups", "openid"]
+code_challenge_methods_supported: ["plain", "S256"]
+token_endpoint_auth_methods_supported: ["none", "client_secret_basic", "client_secret_post"]
+(no device_authorization_endpoint key)
+```
+
+The memex CLI raises `LoginError('provider does not advertise a
+device_authorization_endpoint.')` when that key is absent
+(`memex_cli/auth.py` at v1.2.0, the `_device_login` path). Vault's token
+response is built as
+`{"token_type", "access_token", "id_token", "expires_in"}` with no
+`refresh_token` key (Vault v2.0.3 `identity_store_oidc_provider.go`, the
+`pathOIDCToken` return). Together: browser login only, and re-login at
+expiry rather than refresh. This settles Q6 and drives §9 mode 5.
+Source:
+<https://github.com/JasperHG90/memex/blob/v1.2.0/packages/cli/src/memex_cli/auth.py>,
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>
+
+**P3 — a PUBLIC PKCE client is accepted by this provider. VERIFIED
+(live, same probe as P2).**
+`token_endpoint_auth_methods_supported` contains `none`, which is what
+makes `client_type = "public"` viable, and
+`code_challenge_methods_supported` contains `S256`. Vault also REQUIRES
+PKCE for a public client: `if !okCodeChallenge && client.Type == public
+{ return ... "PKCE is required for public clients" }` (Vault v2.0.3
+`pathOIDCAuthorize`). The memex CLI always sends
+`code_challenge_method: 'S256'` with a fresh verifier
+(`memex_cli/auth.py` at v1.2.0, `_loopback_login`). Contrast
+`deployments/infrastructure/nomad_oidc.tf:54`, which is `confidential`
+because the Nomad server holds the secret.
+Source:
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>
+
+**P4 — a Vault id_token's `aud` IS the client id, and its `iss` is the
+provider issuer. VERIFIED (upstream source) and corroborated in this
+repo.**
+Vault builds the token as `idToken{ Issuer: provider.effectiveIssuer,
+Subject: authCodeEntry.entityID, Audience: authCodeEntry.clientID, ... }`
+(Vault v2.0.3 `pathOIDCToken`). The repo already depends on this in
+production: `deployments/infrastructure/nomad_oidc.tf:154` binds
+`bound_audiences = [vault_identity_oidc_client.nomad.client_id]` against
+this same provider, and that login works. This is what makes R2's
+`audience` differ from R5's `["memex"]`.
+Source:
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>
+
+**P5 — the memex container reaches the Vault `lab` discovery and JWKS
+over TLS with its own trust store, and that JWKS is RS256. VERIFIED
+(live, from inside the running alloc).**
+probe: `nomad alloc exec -task memex <alloc> python3 -c
+"urllib.request.urlopen(...)"`, no `verify=False`:
+
+```
+200 https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/.well-known/openid-configuration
+200 https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/.well-known/keys
+200 https://nomad.lab.orangecluster.nl/.well-known/openid-configuration
+keys: [{'kty':'RSA','alg':'RS256','use':'sig'} x3]
+```
+
+So the private CA is trusted in-container for the Vault host as well as
+the Nomad one, which is the requirement memex's how-to states (line
+242). RS256 is inside memex's default
+`algorithms: ["RS256","ES256"]` (P1), so no override is needed. The
+issuer string above is what `local.vault_oidc_issuer` must carry
+byte-for-byte. Note Vault's `jwks_uri` ends `/.well-known/keys`, not
+`jwks.json`; memex discovers it rather than assuming (P1).
+
+**P6 — v1.2.0 changes four server log paths, and one of them INVERTS
+R5's D2 check. VERIFIED (upstream source, both tags compared).**
+At v1.1.0 `OidcVerifier.verify` had four `logger.info` calls (a fifth
+sits outside it, on the module-level startup path) and
+was SILENT on both the unparseable-token path (`return None` with no
+log) and the unknown-issuer path, and `_claims_to_context` returned
+`None` with no log when no `grant_rule` matched. That silence is exactly
+what R5's D2 asserts (`docs/memex-oidc-verification.md:152-155`).
+
+At v1.2.0 the same function logs, at `warning`:
+
+- `OIDC bearer rejected: not a parseable JWT (%d dot-separated segments). ...`
+  (new)
+- `OIDC bearer rejected: no configured provider matches issuer %s. Configured issuers: %s.`
+  (new)
+- `OIDC token rejected for issuer %s: %s` (was `info`; D1's line)
+- `OIDC token verified for issuer %s but matched no grant_rule and the
+  provider has no default_policy, so it authorizes nothing. Claims
+  present on the token: %s.` (new; D2's line)
+
+So on v1.2.0 a healthy D2 EMITS a line and D2-as-written fails a working
+system. §7 rewrites it and §8 carries the new assertion.
+Source:
+<https://raw.githubusercontent.com/JasperHG90/memex/v1.1.0/packages/core/src/memex_core/server/oidc.py>,
+<https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/packages/core/src/memex_core/server/oidc.py>
+
+**P7 — the v1.2.0 bump is safe for R5's workload path, the image exists,
+and no migration rides along. VERIFIED (upstream diff, plus a live
+registry probe).**
+The v1.1.0-to-v1.2.0 compare returns 71 files over 9 commits, of which
+exactly FOUR are non-test source: `packages/cli/src/memex_cli/auth.py`,
+`packages/common/src/memex_common/auth_client.py`,
+`packages/common/src/memex_common/config.py`, and
+`packages/core/src/memex_core/server/oidc.py`. The rest are their tests
+and harness artifacts. No
+migration, schema, or API file. In `auth_client.py`,
+`resolve_client_headers` and `_read_workload_token` are byte-identical
+across the two tags, and `_resolve_bearer` changes only its interactive
+branch — its `if oidc.grant in ('token_file', 'token_env')` branch is
+first and unchanged. In `config.py` the ONLY change is the `credential`
+field and its validator, which fires only when `credential ==
+'id_token'`, so R5's `grant: token_file` config validates unchanged.
+probe (registry, read-only, credentials from `.devcontainer/.env`):
+
+```
+GET https://ghcr.io/v2/jasperhg90/memex-jetson/tags/list  ->  ... "1.1.0","1.2.0"
+```
+
+So `ghcr.io/jasperhg90/memex-jetson:1.2.0` exists, and hermes's bundled
+v1.1.0 client needs no bump (§5).
+Source: <https://github.com/JasperHG90/memex/compare/v1.1.0...v1.2.0>
+
+**P8 — Vault IGNORES unsupported scopes rather than rejecting them, so a
+missing `groups` scope fails silently. VERIFIED (upstream source, plus a
+live probe that could not distinguish and is reported as such).**
+`pathOIDCAuthorize` requires `openid` and then filters:
+`for _, scope := range requestedScopes { if
+strutil.StrListContains(provider.ScopesSupported, scope) && scope !=
+openIDScope { scopes = append(scopes, scope) } }`. Only the surviving
+scopes reach `populateScopeTemplates`, which is what emits the `groups`
+claim. So memex's default scope list `["openid","profile","email",
+"offline_access"]` (P1) authorizes fine and yields a token with NO
+`groups` claim.
+probe: four authorize calls varying only `scope`
+(`openid`; `openid groups`; `openid profile email offline_access`;
+`openid groups offline_access`) all returned the identical
+`{"error":"access_denied","error_description":"identity entity must be
+associated with the request"}`. That is consistent with the source and
+NOT a proof of it: the entity check sits after the scope filter, so the
+probe cannot discriminate. The source is the evidence; the probe only
+rules out an outright scope rejection. This drives R7 and §9 mode 1.
+Source:
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>,
+`docs/vault-human-auth.md:300-306`
+
+**P9 — with no refresh token the client falls back to the API key at
+expiry, and it takes the earlier of the two expiries. VERIFIED (upstream
+source).**
+`_resolve_bearer` at v1.2.0: when the cache is stale and
+`not cache.refresh_token`, it logs `Cached OIDC token expired and no
+refresh token is available.` and returns `None`;
+`resolve_client_headers` then returns `{'X-API-Key': ...}` when
+`config.api_key` is set, else `{}`. `token_cache_from_response` under
+`credential='id_token'` sets `expires_at = min(time.time() +
+expires_in, id_exp)`, with the comment that "`expires_in` describes the
+ACCESS token". It also raises rather than falling back when the response
+carries no id_token. This drives §9 mode 5 and Q3.
+Source:
+<https://raw.githubusercontent.com/JasperHG90/memex/v1.2.0/packages/common/src/memex_common/auth_client.py>
+
+**P10 — Vault matches loopback redirects port-agnostically on BOTH
+sides, exactly on scheme, host literal and path; memex binds an
+ephemeral port. VERIFIED (live probe for the denial, upstream source for
+the grant).**
+probe, against the existing `nomad` client
+(`client_id=CFIY4Ai7WsIUIJBDAgPNStfeCn6wAiAG`, registered URIs at
+`deployments/infrastructure/nomad_oidc.tf:48-51`), using a root token so
+`access_denied` means the redirect check PASSED:
+
+```
+http://localhost:4649/oidc/callback   => access_denied
+http://localhost:59999/oidc/callback  => access_denied
+http://127.0.0.1:4649/oidc/callback   => invalid_redirect_uri
+```
+
+Row 2 is the port-agnostic match; row 3 is the exact host-literal match.
+R5's review left open whether a REGISTERED `127.0.0.1` URI is itself
+treated as loopback. It is: `validRedirect` keys the loopback branch on
+the INPUT's hostname and then strips the port from the registered side
+too (`allowedURI.Host = allowedURI.Hostname()`) before comparing. The
+ordering in `pathOIDCAuthorize` also matters for §8's V3: client,
+redirect, provider `allowed_client_ids`, and scope are all checked
+BEFORE `req.EntityID == ""`. memex's side: the CLI binds
+`http.server.HTTPServer(('127.0.0.1', 0), _Handler)` and builds
+`redirect_uri = f'http://127.0.0.1:{port}/callback'`, so the port cannot
+be registered in advance.
+Source:
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider_util.go>,
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>,
+<https://github.com/JasperHG90/memex/blob/v1.2.0/packages/cli/src/memex_cli/auth.py>
+
+**P11 — the operator entity is in `developer`, so a `groups` grant_rule
+on `developer` matches. VERIFIED (live, read-only).**
+probe: `vault read identity/entity/name/operator` then
+`vault read identity/group/name/<g>` for each group:
+
+```
+operator entity 351f302a-... -> groups [64780816-..., e86ec229-...]
+developer   members [351f302a-...]
+oidc-smoke  members [351f302a-...]
+admin       members  null
+```
+
+So the id_token's `groups` claim will be a LIST containing `developer`,
+which `_rule_matches` handles by membership (P1). The `admin` group has
+no members, so gating on it would admit nobody. Terraform source:
+`deployments/infrastructure/developer_group.tf:158-164`.
+
+**P12 — `client_type` is immutable and `id_token_ttl` is capped by the
+key. VERIFIED (upstream source).**
+`pathOIDCCreateUpdateClient` returns
+`"client_type modification is not allowed"` on an update that changes
+it, and
+`"a client's id_token_ttl cannot be greater than the verification_ttl of
+the key it references"` when the TTL exceeds the key's. The `lab` key
+sets `verification_ttl = 86400`
+(`deployments/infrastructure/oidc.tf:46`), so Q3's ceiling is 24h.
+Source:
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>
+
+**P13 — `data "vault_identity_oidc_client_creds"` is available in the
+applications root and handles a PUBLIC client. VERIFIED (provider binary
+probe, plus the provider's source).**
+probe: `strings` over
+`deployments/applications/.terraform/providers/registry.terraform.io/hashicorp/vault/5.3.0/linux_arm64/terraform-provider-vault_v5.3.0_x5`
+lists `vault_identity_oidc_client_creds` alongside
+`vault_identity_oidc_client`. Its read function branches on the client
+type: `clientSecret := ""; if clientType != "public" { clientSecret =
+creds.Data["client_secret"].(string) ... }`, and errors with
+`no client found at %q` when the client is absent, which is §9 mode 2's
+loud failure. Vault itself omits `client_secret` from a public client's
+read response (`pathOIDCReadClient`: `if client.Type == confidential`).
+Neither root has an `outputs.tf` or a `terraform_remote_state` block, so
+this data source is the cross-root channel.
+Source:
+<https://github.com/hashicorp/terraform-provider-vault/blob/v5.3.0/vault/data_identity_oidc_client_creds.go>,
+<https://github.com/hashicorp/vault/blob/v2.0.3/vault/identity_store_oidc_provider.go>
+
+**P14 — memex is running, healthy, key-only today, and emits INFO
+records to its log. VERIFIED (live, read-only).**
+probe: `nomad job status memex` reports `Status = running`; the running
+jobspec carries NO `MEMEX_SERVER__AUTH__OIDC`
+(`nomad job inspect memex | grep -c MEMEX_SERVER__AUTH__OIDC` returns
+`0`), so R5 was committed but not yet applied when this plan was
+written; the coordinator has since scheduled that apply, and §10 assumes
+it landed. `nomad alloc logs <alloc> memex | grep -i 'authentication
+enabled'` returns
+`info API key authentication enabled (3 key(s) configured, 3 exempt
+path(s)). [memex.core.server]`, which is what makes S1's INFO line
+observable at all (the v1.2.0 how-to notes it is below the default
+WARNING level, line 73). R5's baseline triple against
+`http://192.168.2.46:8000/api/v1/vaults` was `401` / `403` / `200`;
+re-measure it before starting rather than trusting this line.
+
+**P15 — the repo's gates here are the pre-commit hooks plus per-root
+`terraform validate`, with no Python gate. VERIFIED.**
+`.pre-commit-config.yaml:16-21` is `nomad-fmt`, `:22-27`
+`terraform-fmt`, `:28-33` `terraform-validate` running
+`scripts/tf_validate.sh`, which validates
+`deployments/infrastructure`, `deployments/applications` and
+`deployments/applications/modules/bucket` offline
+(`scripts/tf_validate.sh:8-20`). The Python hooks are scoped
+`files: '^cli/'` (`.pre-commit-config.yaml:37-53`).
+`.pre-commit-config.yaml:1` excludes `.loop/`, so the eval note in §7 is
+not gated. `.loop/config.json` sets `gates: ["just pre_commit"]`,
+`require_review: true`, `require_eval: true`. `just pre_commit` is
+`justfile:18-19`; `just worktree_setup` is `justfile:44`; the
+applications apply recipe takes positional `refresh` then `target`
+(`deployments/applications/justfile:13-24`) and the infrastructure one
+takes neither (`deployments/infrastructure/justfile:11-13`).
+
+**P16 — the cluster runs Vault 2.0.3, which is the tag every Vault
+source citation above uses. VERIFIED (live).**
+probe: `vault status` reports `Version 2.0.3`, matching the pin at
+`bootstrap/inventory/group_vars/all.yml:11` (`vault: 2.0.3-1`). Note
+this differs from Nomad, which R5 measured at 2.0.4
+(`bootstrap/inventory/group_vars/all.yml:12`) — do not conflate the two
+when re-checking a source citation.
