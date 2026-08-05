@@ -170,6 +170,39 @@ groups:
           summary: "Postgres on firebat is unreachable"
           description: "postgres_exporter pg_up=0 for 5m. Check postgres alloc, port 5432, disk on firebat."
 
+      - uid: alert-postgres-scrape-down
+        title: PostgresScrapeDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job="postgres"} == bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: postgres }
+        annotations:
+          summary: "Postgres exporter scrape is failing"
+          description: "Prometheus cannot scrape postgres-exporter on firebat:9187 for 5m (up=0). This fires when the scrape itself times out or the exporter is down — PostgresDown (pg_up) stays silent in that case because pg_up is absent without a successful scrape. Check the exporter sidecar alloc, the listen binding on 192.168.2.30:9187, and firebat ufw (allow 192.168.2.47 to 9187, known to drift after a ufw apply)."
+
       - uid: alert-minio-degraded
         title: MinIOClusterDegraded
         condition: C
@@ -502,6 +535,41 @@ groups:
         annotations:
           summary: "Bifrost key {{ $labels.key_name }} ({{ $labels.provider }}) is down"
           description: "Bifrost reports key {{ $labels.key_name }} for provider {{ $labels.provider }} unhealthy for 10m. Weighted fallback keys still cover traffic, so this is degraded-not-down. Check the upstream account/API key."
+
+      - uid: alert-bifrost-memory-high
+        title: BifrostMemoryHigh
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              # Peak RSS for the bifrost alloc vs its 512 MiB limit. max_usage
+              # is the high-water mark, so this is leading not flapping.
+              expr: 'nomad_client_allocs_memory_max_usage{exported_job="bifrost"} / (512 * 1024 * 1024) * 100 > 80'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: bifrost }
+        annotations:
+          summary: "Bifrost alloc memory > 80% of limit"
+          description: "Peak RSS on the bifrost alloc is {{ printf \"%.0f\" $values.A.Value }}% of its 512 MiB limit for 10m. Raise resources.memory in bifrost.hcl before it OOMs (exit 137)."
 
       - uid: alert-scrape-job-missing
         title: ScrapeJobMissing

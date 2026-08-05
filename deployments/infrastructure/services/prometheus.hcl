@@ -83,6 +83,18 @@ job "prometheus" {
               format: ["prometheus"]
             static_configs:
               - targets: ["192.168.2.30:4646"]
+                labels: {node: firebat}
+              - targets: ["192.168.2.29:4646"]
+                labels: {node: orangepi4a}
+              - targets: ["192.168.2.46:4646"]
+                labels: {node: jetson-orin-nano}
+              - targets: ["192.168.2.47:4646"]
+                labels: {node: ubuntu}
+              - targets: ["192.168.2.50:4646"]
+                labels: {node: radxa-dragon-q6a}
+            relabel_configs:
+              - source_labels: [node]
+                target_label: instance
 
           - job_name: consul
             metrics_path: /v1/agent/metrics
