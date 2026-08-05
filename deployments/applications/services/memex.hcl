@@ -170,7 +170,7 @@ MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8
 MEMEX_SERVER__MEMORY__INBOX_ROUTER__ENABLED=true
 MEMEX_SERVER__MEMORY__INBOX_ROUTER__MIN_DECISIONS_BEFORE_AUTO_APPLY=30
-MEMEX_SERVER__DEFAULT_MODEL__MODEL=openai/ollama/deepseek-v4-flash:cloud
+MEMEX_SERVER__DEFAULT_MODEL__MODEL=openai/ollama/deepseek-v4-flash:0731
 MEMEX_SERVER__DEFAULT_MODEL__BASE_URL=http://${bifrost_host}:8080/v1
 MEMEX_SERVER__DEFAULT_MODEL__API_KEY={{ with secret "${bifrost_key_secret}" }}{{ .Data.data.API_KEY }}{{ end }}
 # Per-stage model routing, both via the Bifrost gateway. Extraction (~20% of
@@ -180,7 +180,7 @@ MEMEX_SERVER__DEFAULT_MODEL__API_KEY={{ with secret "${bifrost_key_secret}" }}{{
 MEMEX_SERVER__MEMORY__EXTRACTION__MODEL__MODEL=openai/gemini/gemini-3.1-flash-lite
 MEMEX_SERVER__MEMORY__EXTRACTION__MODEL__BASE_URL=http://${bifrost_host}:8080/v1
 MEMEX_SERVER__MEMORY__EXTRACTION__MODEL__API_KEY={{ with secret "${bifrost_key_secret}" }}{{ .Data.data.API_KEY }}{{ end }}
-MEMEX_SERVER__MEMORY__REFLECTION__MODEL__MODEL=openai/ollama/deepseek-v4-flash:cloud
+MEMEX_SERVER__MEMORY__REFLECTION__MODEL__MODEL=openai/ollama/deepseek-v4-flash:0731
 MEMEX_SERVER__MEMORY__REFLECTION__MODEL__BASE_URL=http://${bifrost_host}:8080/v1
 MEMEX_SERVER__MEMORY__REFLECTION__MODEL__API_KEY={{ with secret "${bifrost_key_secret}" }}{{ .Data.data.API_KEY }}{{ end }}
 MEMEX_WORKERS=1

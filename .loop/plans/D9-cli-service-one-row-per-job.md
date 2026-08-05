@@ -74,7 +74,9 @@ collapses the three of them into one group. Verified live: it yields
 ## 6. Requirements & restrictions
 
 - **R1. Rows reaching the same job render adjacently**, in route-name order
-  within the group.
+  within the group. Groups keep their existing relative order: a group sits
+  where its first row sat, so the table stays sorted as it is today and only
+  the strays move up to join their group.
 - **R2. A `job`, `source` or `health` cell is blanked ONLY when its value is
   identical to the cell directly above it inside the same group.** The first
   row of a group prints all three, and a value that differs from the row
@@ -159,7 +161,10 @@ Tests to add:
    rather than a real job. Red against an implementation that groups on the
    raw `job` string.
    (`cli/tests/commands/test_read_commands.py`)
-3. Unresolved rows do not group with each other, for the same reason.
+3. Two unresolved rows do not group with each other, for the same reason.
+   Needs a two-orphan edge config: the fixture has one (`ORPHAN_ROUTE`,
+   `cli/tests/commands/test_read_commands.py:80-88`), so build a second and
+   pass it through `mock_edge_job(config)` (`:91`).
    (`cli/tests/commands/test_read_commands.py`)
 4. Both rungs stay visible: the `minio` group's rendered output contains
    `job-id` AND `consul-tag`.
@@ -170,11 +175,13 @@ Tests to add:
    `Console(width=120)` (`cli/src/localstack_cli/commands/render.py:59-72`)
    and live hostnames are longer than the fixtures'.
    (`cli/tests/commands/test_read_commands.py`)
-6. `--json` is untouched, asserted structurally: the list handed to
-   `emit_json` is the same object `join()` returned. The real guarantee is the
-   early `return` at `cli/src/localstack_cli/commands/service.py:69`, which
+6. `--json` is untouched, asserted structurally on the no-name path: the
+   list handed to `emit_json` is the same object `join()` returned. Scoped to
+   the no-name path because `cli/src/localstack_cli/commands/service.py:56-61`
+   rebinds `rows = [row]` when a name is given, so identity does not hold
+   there. The real guarantee either way is the early `return` at `:69`, which
    runs before the table is built at `:71`, so no grouping code executes on
-   the JSON path.
+   the JSON path at all.
    (`cli/tests/commands/test_read_commands.py`)
 7. Live, `cluster`-marked: `_grouped()` over the live join puts `minio` and
    `s3` adjacent and does not group the agent endpoints. A join-level

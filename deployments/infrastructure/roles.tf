@@ -173,7 +173,7 @@ locals {
 ### A tier with no key here lands empty, which is a valid resting state.
 locals {
   app_user_group_members = {
-    "app-memex-readers" = [vault_identity_entity.operator.id]
+    "app-memex-admins" = [vault_identity_entity.operator.id]
   }
 }
 

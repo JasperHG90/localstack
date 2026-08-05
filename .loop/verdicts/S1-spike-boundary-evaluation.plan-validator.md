@@ -1,342 +1,270 @@
 ---
-verdict: fail
+verdict: pass
+plan: 5eb310c25e6822229393a92423a55cc60ffee870512353efb7b9d529e300a42c
 ---
 
-# Plan review — S1-spike-boundary-evaluation (pass `plan-validator`)
+# Plan review: S1-spike-boundary-evaluation (cycle 3, pass id `plan-validator`)
 
-Plan: `.loop/plans/S1-spike-boundary-evaluation.md`
-Fingerprint verified with `sha256sum`:
-`3fa73dddaf2d425475ddd09b52b4e926768fd3bca9022dac3353758cb47c74d3` (matches
-the briefing). The `plan:` line is deliberately omitted: this is a `fail` and
-must not authorize the flip to `ready`.
+Reviewed 2026-08-04 against `/home/vscode/workspace`. This verdict replaces the
+cycle-2 verdict, which bound the pre-fix plan fingerprint
+`2ec1a0c9a87c9d3cc23bac9a8f431866faf46317b88664c39cb9bb5d2b703174`.
 
-## Premise verdict: BROKEN
+## Premise verdict
 
-Gate verdict: **fail**.
+**SOUND.**
 
-The spike's *question* survives (no other ticket has answered it — see P12).
-What does not survive is the world the plan describes. The Context's front-door
-premise was falsified by F3/T1-T3 on 2026-07-24/25, the deliverable path was
-deleted from the repo on 2026-07-26, the plan contradicts its own operator
-resolution about where the deliverable lives, the authoritative eval targets the
-deleted path with two scorers that cannot pass, and the `depends_on` edge to S2
-cannot deliver what the resolved fork claims it delivers.
+All twelve stated premises hold. Every load-bearing anchor resolves. All four
+deterministic scorers in the marker were run verbatim against throwaway good and
+bad documents; each passes the good doc and fails the matching bad one. Row 8's
+new form was probed against nine mutation shapes. The two premises the plan
+could previously only assert from Terraform (P8, P9) were confirmed against the
+live Vault. The four fixes from cycle 2 are correctly and completely applied.
 
-## Load-bearing assumptions
+This is a clean pass. I found no defect that changes a gate command, an eval
+row, a threshold, or a conclusion. The three residues listed at the end are
+editorial and explicitly not required fixes.
 
-### P1 — The browser front door is HAProxy on plain HTTP:80 with no TLS, at `haproxy.hcl:48` — **BREAKS**
+## Deterministic floor
 
-Plan lines 39-41 and 146: "HAProxy on plain HTTP:80 with static backends and no
-TLS: `deployments/infrastructure/services/haproxy.hcl:48` (`frontend http_in` /
-`bind *:80`)", called out at line 146 as "Load-bearing for the 'front door
-already covered' premise".
+`loopctl verify-plan S1-spike-boundary-evaluation` returns `valid`, with two
+warnings only (`ambiguous file basename 'providers.tf'`, `'secrets.tf'`). Both
+are disambiguated by full path everywhere the plan cites them, e.g.
+`deployments/infrastructure/providers.tf:7-10`. No hard-fail.
 
-Repo now: `haproxy.hcl:48` is a comment line
-(`### blank lines, HAProxy cannot parse `crt`, and every routed service goes`).
-`frontend http_in` is at `haproxy.hcl:91` and its body is
-`bind *:80` plus `http-request redirect scheme https code 301 unless { ssl_fc }`
-(`haproxy.hcl:92-93`). A second frontend exists:
-`frontend https_in` / `bind *:443 ssl crt /secrets/haproxy.pem`
-(`haproxy.hcl:95-96`), fed by a Vault KV2 template at `haproxy.hcl:62-73` and a
-static `https` port at `haproxy.hcl:15-17`.
+## Per-assumption findings
 
-Live cluster: `http://192.168.2.30:80` returns `301`;
-`https://192.168.2.30:443` completes a TLS handshake; the served certificate is
-`subject=CN = *.lab.orangecluster.nl`, `issuer=... Let's Encrypt ... CN = YE2`,
-valid `Jul 26 2026` to `Oct 24 2026`. `https://vault.lab.orangecluster.nl/v1/sys/health`
-returns `200`. Corroborated by `docs/haproxy_reverse_proxy.md:3-10` ("single
-HTTPS entry point ... Plain HTTP on port 80 answers only with a 301") and
-`docs/tls-certificates.md:1-7`.
+### P1 — HOLDS. The front door terminates TLS.
 
-This is the classic pattern: the anchor is *stale by line* and *false by claim*.
+`deployments/infrastructure/services/haproxy.hcl:95-96` is `frontend https_in` /
+`bind *:443 ssl crt /secrets/haproxy.pem`. `:91-93` is `frontend http_in` /
+`bind *:80` / `http-request redirect scheme https code 301 unless { ssl_fc }`.
+Read verbatim; both match.
 
-### P2 — `haproxy.hcl:84-121` is the static-backend inventory, and it includes prometheus and loki — **BREAKS**
+### P2 — HOLDS. Ten routed services, Prometheus and Loki excluded.
 
-Plan lines 41-43 and 146. Two separate failures.
+ACLs begin at `haproxy.hcl:98` (`acl is_minio`) and `use_backend` ends at `:118`
+(`use_backend bifrost`), so `98-118` is exact. Backends run `:127` (`backend
+minio`) to `:156-157` (`backend bifrost`), so `127-157` is exact. The routed set
+is minio, s3, vault, nomad, consul, phoenix, memex, grafana, mlflow, bifrost —
+ten, with no prometheus or loki backend in the file.
+`docs/haproxy_reverse_proxy.md:30` reads "**Prometheus and Loki are deliberately
+not routed here.**"
 
-Location: `haproxy.hcl:84-121` is the `defaults` tail, the `userlist`, and the
-two frontends. The `backend` blocks are at `haproxy.hcl:127-157`.
+### P3 — HOLDS. Wire targets are raw host:port.
 
-Membership: the routed set is minio, s3, vault, nomad, consul, phoenix, memex,
-grafana, mlflow, bifrost (`haproxy.hcl:109-118`, `127-157`). Prometheus and Loki
-are **not** routed. `docs/haproxy_reverse_proxy.md:29` states it explicitly:
-"**Prometheus and Loki are deliberately not routed here.**" N1
-(`N1-netsec-restrict-prometheus-loki-to-cluster`) is `done` in the ledger. The
-plan names both as front-door backends.
+`postgres.hcl:12-14` is `network {` / `port "db" {` / `static = 5432`.
+`nats.hcl:14` is `static = 4222`. `haproxy.hcl:130-131` is `backend s3` /
+`server s3_1 192.168.2.29:9000 check`; `:127-128` is `backend minio` /
+`server minio1 192.168.2.29:9001 check`.
 
-This matters to the spike directly: Prometheus and Loki are precisely the
-LAN-exposed, non-front-doored services a session broker would be weighed
-against, and the plan files them on the wrong side of the line.
+### P4 — HOLDS. `vault_server` is the closest role model; services run plain HTTP.
 
-### P3 — MinIO console at `haproxy.hcl:84-85`, S3 API at `haproxy.hcl:87-88` — **BREAKS**
-
-Plan lines 47-49. Actual: `backend minio` / `server minio1 192.168.2.29:9001` at
-`haproxy.hcl:127-128`; `backend s3` / `server s3_1 192.168.2.29:9000` at
-`haproxy.hcl:130-131`. The host:port facts are right; both anchors point at
-`defaults`/`userlist` lines.
-
-### P4 — Postgres static 5432 (`postgres.hcl:13`) and NATS static 4222 (`nats.hcl:14`) are raw host:port today — **HOLDS**
-
-`deployments/infrastructure/services/nats.hcl:14` is exactly `static = 4222`.
-`deployments/infrastructure/services/postgres.hcl:13` is `port "db" {` with
-`static = 5432` on line 14 — off by one, inside the block it names. Both jobs
-run (`nomad job status`: `postgres`, `nats` both `running`). Neither is routed
-through HAProxy. Substantively sound.
-
-### P5 — Vault runs plain HTTP (`vault.hcl.j2:19-20`, `tls_disable = true`) and `vault_server` is the closest model for a new controller role — **HOLDS**
-
+`bootstrap/roles/vault_server/tasks/main.yml` exists (4.2K).
 `bootstrap/roles/vault_server/templates/vault.hcl.j2:19-20` is
-`address = "0.0.0.0:8200"` / `tls_disable = true`. Live: `https://192.168.2.30:8200`
-fails the handshake, `http://192.168.2.30:8200/v1/sys/health` returns `200`,
-`VAULT_ADDR=http://192.168.2.30:8200`. `bootstrap/roles/vault_server/tasks/main.yml`
-exists. `bootstrap/roles/nomad_server/` has `files/ handlers/ tasks/ templates/`
-as described (plan lines 154-156).
+`address = "0.0.0.0:8200"` / `tls_disable = true`.
+`bootstrap/roles/nomad_server/` contains `files/ handlers/ tasks/ templates/`
+exactly as claimed.
 
-Note for the doc, not a break: F3 shipped TLS *at the edge only*. Vault's own
-listener is still plain HTTP behind HAProxy. The plan gets this right; P1 is
-where it goes wrong.
+### P5 — HOLDS. The wiring points exist.
 
-### P6 — `vault_server` is invoked from `configure_hashistack_server.yml:28-35` against `manager`/firebat (`cluster.ini:1-3`) — **HOLDS**
+`bootstrap/playbooks/configure_hashistack_server.yml:28-35` is `Configure Vault
+manager` / `hosts: manager` / `- role: vault_server`; `:37-45` is the sibling
+Nomad play. `bootstrap/inventory/cluster.ini:1-3` is `[manager]` /
+`firebat ansible_host=192.168.2.30`.
 
-`bootstrap/playbooks/configure_hashistack_server.yml:28-35` is exactly the
-"Configure Vault manager" play with `hosts: manager`;
-`:37-44` is the `nomad_server` play, so the `:28-44` span at plan line 157 also
-resolves. `bootstrap/inventory/cluster.ini:1-3` is `[manager]` / `firebat
-ansible_host=192.168.2.30` / `firebat ansible_user=firebat`.
+### P6 — HOLDS, and the corrected count is exact.
 
-### P7 — No `hashicorp/boundary` provider; zero matches for `boundary`, `oidc`, `zitadel`, `transit` under `bootstrap/` and `deployments/` — **HOLDS**
+`grep -rin boundary bootstrap deployments` returns exactly four hits, at exactly
+the four anchors the plan now names:
+`deployments/applications/database-secrets-poc.tf:10`,
+`deployments/infrastructure/developer_group.tf:6`, `developer_group.tf:104`,
+`deployments/infrastructure/roles.tf:9`. All four are prose; three are the
+English word in containment-boundary comments. `zitadel` returns zero.
+`providers.tf:1-24` declares nomad, vault, null and google (plus a commented-out
+consul block at `:19-22`, which is not a declared provider); `:28` is
+`provider "vault" {}`. **Fix 2 is correct.**
 
-`deployments/infrastructure/providers.tf:7-10` is the `vault` required_provider
-block, `:28` is `provider "vault" {}`. A case-insensitive recursive grep for
-`boundary|oidc|zitadel|transit` over `bootstrap/` and `deployments/` returns
-zero hits. `bootstrap/roles/tailscale/` exists (Q5's premise holds).
+### P7 — HOLDS. Dynamic credentials are already live.
 
-### P8 — The only Vault engine configured in Terraform is a single KV2 mount; the dynamic-credential benefit "depends on Vault credential engines that do not yet exist" — **BREAKS (partially)**
+`consul_deploy_role.tf:19` is `resource "vault_consul_secret_backend_role"
+"deploy"`; `nomad_deploy_role.tf:36` is `vault_nomad_secret_role "deploy"`;
+`nomad_oidc.tf:74` is `vault_nomad_secret_role "manage"`; `acme.tf:66` is
+`vault_jwt_auth_backend_role "acme"`; `oidc.tf:95` is
+`vault_identity_oidc_provider "lab"`. All five resolve to the declared type.
 
-Plan lines 67-73. The *database*, *PKI*, and *Transit* half holds: live
-`vault secrets list` shows no `database/`, no `pki/`, no `transit/`. (F3's slug
-says `vault-pki`, but it shipped ACME/Let's Encrypt into KV2 instead — see
-`docs/tls-certificates.md:1-7` and the `haproxy.hcl:46` comment "a PKI issue
-response *did*". So "no PKI" survives F3 by accident.)
+### P8 — HOLDS, confirmed live.
 
-What breaks is the absolute claim. Live `vault secrets list` returns
-`bootstrap/ (kv)`, `consul/ (consul)`, `nomad/ (nomad)`, `secret/ (kv2)`, plus
-`cubbyhole/ identity/ sys/`, and `vault auth list` returns `jwt-nomad/ (jwt)`.
-F5 (`F5-foundation-vault-nomad-secrets-engine`) and F6
-(`F6-foundation-vault-consul-secrets-engine`) are both `done` in the ledger.
-Terraform itself now manages roles on those backends:
-`deployments/infrastructure/consul_deploy_role.tf:19`
-(`vault_consul_secret_backend_role.deploy`) and
-`deployments/infrastructure/acme.tf:66` (`vault_jwt_auth_backend_role.acme`).
+`deployments/applications/database-secrets-poc.tf:200-204` declares
+`vault_mount "database"` with `type = "database"`; `:212` is
+`name = "postgres-poc"`; `:288` is `role_name = "s2-poc"`.
+`docs/postgres-vault-dynamic-creds-spike.md:387-396` is the "What this spike
+left running" list, and `:354` carries the quoted handover sentence verbatim.
+Against the live Vault (`http://192.168.2.30:8200`, `sealed:false`):
+`LIST database/roles` returns `["s2-poc"]` and `LIST database/config` returns
+`["postgres-poc"]`. The inherited credential path is real, not described.
 
-So two dynamic credential engines *do* exist, and Terraform is no longer
-KV2-only. For a spike whose whole thesis is "Boundary's main benefit depends on
-credential engines that do not exist", that is load-bearing: the correct framing
-is that Vault dynamic credentials are already a live, proven pattern in this
-cluster, which *strengthens* the "Boundary is redundant" side of the ledger the
-spike is weighing. The plan hands the spike the opposite starting point.
+### P9 — HOLDS, confirmed live and stronger than claimed.
 
-### P9 — The deliverable lives at `docs/notes/boundary-evaluation.md`, and the repo has `docs/notes/` with `feat/` and `main/` subdirs — **BREAKS**
+No `vault_mount` of type `transit` or `pki` anywhere under `deployments/`. The
+live mount table is `agent-registry/ bootstrap/ consul/ cubbyhole/ database/
+identity/ nomad/ secret/ sys/` — no `transit/`, no `pki/`. A KEEP verdict does
+add a Transit mount.
 
-Plan lines 143, 206, 292-296. `docs/notes/` **does not exist**. `ls docs/`
-returns `architecture/ bootable_nvme_guide.md credential-rotation.md
-delete_nomad_dynamic_host_volume.md dns.md gcs-backups.md
-haproxy_reverse_proxy.md jetson_nano_orin_init.md monitoring.md nats.md
-nats-postgres-cdc-bridge.md observability-python.md riscv-integration.md
-tls-certificates.md` — no `notes/`, no `rfcs/`. `git ls-files | grep -E 'notes/|rfcs/'`
-returns nothing.
+### P10 — HOLDS.
 
-It existed at authoring time and was deleted after:
-`git log --diff-filter=D --name-only -- docs/notes` shows commit `cc22050`
-("docs: update plans", **2026-07-26 22:27 +0200**) removing
-`docs/notes/.gitignore`, `docs/notes/config.json`, `docs/notes/main/2025*.md`.
-The plan was authored 2026-07-24. Textbook stale premise.
+`ls docs/` shows `architecture/` and `notes/`, and no `rfcs/`.
 
-### P10 — The eval at `.loop/evals/S1-spike-boundary-evaluation.md` is a usable authoritative DoD — **BREAKS (three ways)**
+### P11 — HOLDS, counts exact.
 
-Plan line 242 declares the eval "the binding Definition of Done ... what the
-loop-reviewer scores against". It cannot be satisfied.
+Case-insensitive `boundary` matches exactly seven plans (F8, N4, R1, R2, R3, R7,
+S1) and five docs (breakglass, cluster-roles, notes/audit/plan-premise-sweep,
+postgres-vault-dynamic-creds-spike, vault-human-auth).
+`.loop/plans/R1-rollout-mlflow-oauth2-proxy.md:74` reads "is the sibling plan
+`.loop/plans/S1-spike-boundary-evaluation.md`" and
+`.loop/plans/R7-rollout-postgres-consumer-cutover.md:153` reads "previously
+handed them to `S1-spike-boundary-evaluation` and cited". Both are pointers back
+at S1. No ticket pre-decides KEEP or DROP.
 
-**(a) Wrong path, contradicting the plan's own operator resolution.** Five of
-seven eval rows (`evals/…:10, 12, 13, 14, 15`) target
-`docs/notes/boundary-evaluation.md`, and row 7 (`evals/…:16`) asserts "The only
-added/modified product path is `docs/notes/boundary-evaluation.md`". But the
-plan's own **Resolved forks (operator, 2026-07-23)** at plan lines 319-321 says
-"**Q1 → `docs/rfcs/boundary-evaluation.md`.** Operator chose an RFC location
-rather than `docs/notes/`." The plan's section 7 (line 143) and Q1 (line 295)
-were never updated either. An implementer who obeys the operator fails five
-100%-threshold DoD rows; one who obeys the eval overrides an operator decision
-and writes into a directory that no longer exists.
+### P12 — HOLDS.
 
-**(b) Row 3's scorer can never pass.** `evals/…:12` scores with
-`grep -Eq 'boundary_controller\|boundary_worker' <doc>`. Under `-E`, `\|` is an
-*escaped literal pipe*, not alternation. Probed:
+`justfile:18-19` is `pre_commit:` / `pre-commit run --all-files`.
+`.pre-commit-config.yaml:1` is `exclude: '^\.(claude|loop)/'`.
 
-    printf 'a boundary_controller role\n' > t.md
-    grep -Eq 'boundary_controller\|boundary_worker' t.md   # NOMATCH
-    grep -Eq 'boundary_controller|boundary_worker'  t.md   # MATCH
+### P13 (implicit, added by me) — HOLDS. The Boundary resource names in §5 are real.
 
-A correct doc scores 0 on a 100% threshold row; only a doc containing the
-literal string `boundary_controller|boundary_worker` passes.
+Checked against the Terraform registry API for `hashicorp/boundary` (latest
+1.6.1): `boundary_scope`, `boundary_auth_method_oidc`, `boundary_target`,
+`boundary_host_catalog_static`, `boundary_host_catalog_plugin`,
+`boundary_credential_store_vault`, `boundary_credential_library_vault` and
+`boundary_role` all resolve as resources. The `boundary_host_catalog_*` glob
+covers both real variants. §9's mitigation to label these prospective is sound.
 
-**(c) Row 6's guardrail exits non-zero on success.** `evals/…:15` scores
-`grep -ci zitadel <doc>` and expects output `0`. `grep -c` returns **exit
-status 1** when the count is zero (probed: `grep -ci zitadel t.md` prints `0`,
-`exit=1`). Any exit-code-based harness marks the clean case as a failure.
+## The four cycle-2 fixes, verified
 
-**Shape-check findings (attack surface 4), as required.** Row 1 (`test -f`) is
-pure file-existence: an empty file at the path scores 100%. Rows 3 and 4 are
-greps for tokens the plan itself already lists, so a doc that merely copies the
-plan's Non-goals block satisfies both without producing a single finding. Row 4
-(`evals/…:13`) is worse than a shape check: its *Expected* column instructs the
-doc to cite `secrets.tf:2-7` "as the sole engine that exists today", which P8
-shows is now false — the DoD would certify a factual error. Only rows 2 and 5
-(model + rubric) actually test whether the spike answered its question. For a
-spike, that ratio is the wrong way round.
+### Fix 1 — row 8's untracked hole. CLOSED.
 
-### P11 — S2 is a hard blocker because S1 must "test the real 'keep' path (Vault credential engines) end-to-end" — **BREAKS**
+I ran the row's exact predicate (`git status --porcelain -- bootstrap
+deployments` empty AND `git diff --name-only HEAD -- bootstrap deployments`
+empty AND `test -f` on the deliverable) across nine throwaway repos:
 
-Plan lines 322-324 (Resolved forks Q2). The dependency edge cannot deliver.
+| case | result | status output |
+| --- | --- | --- |
+| doc-only baseline | PASS | (empty) |
+| staged new `.tf` | FAIL | `A  deployments/infrastructure/boundary.tf` |
+| untracked new `.tf` | FAIL | `?? deployments/infrastructure/boundary.tf` |
+| untracked `bootstrap/roles/boundary_controller/` | FAIL | `?? bootstrap/roles/boundary_controller/` |
+| deleted tracked, unstaged | FAIL | ` D …/secrets.tf` |
+| deleted tracked, staged | FAIL | `D  …/secrets.tf` |
+| renamed within `deployments/` | FAIL | `R  …/secrets.tf -> …/renamed.tf` |
+| modified tracked, unstaged | FAIL | ` M …/providers.tf` |
+| modified tracked, staged | FAIL | `M  …/providers.tf` |
+| submodule added under `deployments/` | FAIL | `A  deployments/vendored` |
 
-*S1 cannot test anything.* Plan lines 80-82: "**No infrastructure ships.**"
-Plan lines 206-207: "No live cluster calls: there is no deployed Boundary to
-assert against." There is no end-to-end path in S1's scope for S2 to enable.
+The four cases the plan's history claims to have reproduced reproduce exactly.
+The three shapes the briefing asked me to attack — deletes, renames, submodules
+— are all caught, because `git status --porcelain` reports `D`, `R` and `A`, and
+the diff catches them independently.
 
-*S2 leaves nothing behind.* `.loop/plans/S2-spike-postgres-vault-creds.md:353-354`:
-"**Cleanup.** After the live checks, tear down the PoC engine, role, and job",
-repeated at `:417` ("Tear down PoC resources"). S2's deliverable is a decision
-doc, not a persistent Vault database secrets engine.
-`.loop/plans/S2-spike-postgres-vault-creds.md:107-108` confirms the other
-direction: "**No Boundary work.** S1 owns Boundary."
+**Bounded residual, not a fix.** `git status --porcelain` without `--ignored`
+does not list gitignored files, so a file matching a `.gitignore` rule under
+`bootstrap/` or `deployments/` slips both checks. I reproduced this: an ignored
+`boundary.tf` PASSes. In this repo the reachable ignore rules are
+`**/vars/prod.tfvars` (root `.gitignore`), `deployments/.gitignore`
+(`.terraform`, `.terraform.lock.hcl`) and `bootstrap/.gitignore` (`.env`). None
+can hold an Ansible role or a Terraform resource: a new role is tracked YAML and
+a new resource is a tracked `.tf`, and row 8 fails on both (cases c, d, and the
+ignore-variant with a non-matching `.tf` all FAIL). The hole is real in the
+abstract and unreachable by the failure mode row 8 exists to catch. Adding
+`--ignored` would trade it for false failures on every `.terraform/` directory a
+`terraform init` leaves behind. Leave it as is.
 
-*The plan contradicts itself on the same fork.* Open Question Q2 at plan lines
-299-301 recommends the opposite of the resolution: "let S1 proceed now — ...
-The spike should not wait on S2." Both texts ship in the same file.
+### Fix 2 — F3's count. CORRECT.
 
-*And S2 is unrun.* Ledger: `S2-spike-postgres-vault-creds` is `stage: ready`,
-`attempts: 0`. Serializing a doc-only spike behind an unrun, review-defective
-spike buys nothing that a citation would not.
+See P6. Four hits, three of them the English word, at exactly
+`developer_group.tf:6`, `:104` and `roles.tf:9`. §4 and P6 agree with each other
+and with the repo.
 
-### P12 — The spike's question is still open; no other ticket has answered it — **HOLDS**
+### Fix 3 — F5's hook count. CORRECT on substance.
 
-A grep for `\bboundary\b` across `.loop/plans/`, `.loop/evals/`, and
-`.loop/reflections/` (excluding S1's own files) returns only:
-`plans/S2-…:41,107-108` (defers to S1), `plans/R1-…:74` (points at S1 as the
-sibling plan), and unrelated uses of "boundary" as a common noun in
-`plans/R3-…:337` and `plans/R2-…:176,247`. `grep -ri boundary docs/` returns
-nothing. No ticket pre-decides KEEP or DROP.
+From the cached upstream `.pre-commit-hooks.yaml`
+(`~/.cache/prek/repos/321271af841bb4e8/`): `check-merge-conflict` is
+`types: ['text']`, `detect-private-key` is `types: ['text']`, and
+`end-of-file-fixer` is `types: ['text']` — exactly three reach a `docs/`
+markdown. The four typed away are `check-json` (`json`), `check-ast` (`python`),
+`check-yaml` (`yaml`) and `debug-statements` (`python`). All fourteen hook line
+numbers cited in §8 resolve correctly against `.pre-commit-config.yaml`
+(`:6 :7 :8 :9 :11 :12 :13 :16 :22 :28 :37 :46 :52 :66`), and fourteen is the
+right total. `prek` is not on PATH in this environment, so I verified the type
+filters from the hook definitions rather than by re-running the plan's cited
+command; the conclusion is the same.
 
-This is the one place S1 differs from dropped-S3: **S1 is not redundant.** Its
-question is genuinely unanswered, and F3 shipping TLS at the edge does not
-answer "is a session broker worth it at the wire/SSH layer". The plan should be
-fixed, not dropped.
+### Fix 4 — §8 item 4. CORRECT.
 
-### P13 — "No session-brokering layer today; wire-level and SSH access is direct-to-host" — **HOLDS**
+§8:280-287 now says "That is four terms the marker's row greps", matching marker
+row 4, which greps exactly four: `S2`, `database/creds/s2-poc`, `transit/` and
+`secrets.tf`. The stale three-term description is gone.
 
-No `boundary` anywhere in the repo (P7), none in the live Nomad job list
-(`acme backup-minio backup-postgres bifrost grafana haproxy hermes loki memex
-minio mlflow nats node-exporter phoenix postgres prometheus promtail
-talat-consumer talat-shim`). `bootstrap/roles/tailscale/` is the only adjacent
-access layer, correctly surfaced as Q5 (plan lines 311-315).
+## Deterministic scorers, run verbatim
 
-### P14 — "Vault confirmed as the OIDC provider for humans" (plan line 28), so Boundary's OIDC auth method has an IdP to consume — **UNCERTAIN**
+| row | good doc | bad doc | result |
+| --- | --- | --- | --- |
+| 1 `test -f` | exit 0 | — | correct |
+| 3 `grep -q -e boundary_controller -e boundary_worker … && grep -q 'hashicorp/boundary' …` | exit 0 | exit 1 with `hashicorp/boundary` removed | correct; the `-e` alternation also passes a worker-only doc, as intended |
+| 4 four-term chain | exit 0 | exit 1 when `` `transit/` `` is replaced by "encrypted in transit" | correct; the trailing-slash defense works as documented |
+| 7 `! grep -qi zitadel` | exit 0 | exit 1 with a Zitadel line appended | correct |
 
-As a *design decision* this is fine and matches the epic. As a *state* it is not
-yet true, and the plan never says which. Live: `vault list identity/oidc/provider`
-returns only the built-in `default`; `identity/oidc/client` returns a single
-`test` client; `vault auth list` has no OIDC method for humans. The enabling
-ticket `F2-foundation-vault-oidc-provider` is `stage: ready`, `attempts: 0`.
+No dead scorer, no false pass, no false fail. This is the first cycle in three
+where every deterministic row behaves.
 
-The plan carefully ties the credential-engine prerequisite to S2 (requirement 4,
-plan lines 118-120) but never ties the OIDC-auth-method prerequisite to F2, even
-though `boundary_auth_method_oidc` is named in Non-goals at plan line 84. A KEEP
-verdict inherits an unrun F2 as a second hard prerequisite. Not a break on its
-own; a gap the fix list should close.
+## Contract hygiene
 
-### P15 — The tests-and-gates section matches this repo — **HOLDS**
-
-Root `justfile:17-19` defines `pre_commit: pre-commit run --all-files`.
-`.pre-commit-config.yaml:1` is `exclude: '^\.(claude|loop)/'`; hooks are
-`pre-commit-hooks` v5.0.0 (check-json, check-ast, check-merge-conflict,
-check-yaml `--unsafe`, debug-statements, detect-private-key, end-of-file-fixer)
-plus local nomad-fmt (`types: [hcl]`), terraform-fmt
-(`terraform fmt -check -recursive`), terraform-validate
-(`scripts/tf_validate.sh`). Every detail at plan lines 177-191 checks out.
-Non-goals (section 5) are explicit and the doc gates are homed on the
-deliverable file. Contract hygiene is otherwise fine — which is exactly why the
-existing gates saw nothing wrong.
+- **Real code surface, resolved anchors.** Every `path:line` in §4, §7 and the
+  Premises block was opened and matched. Zero broken anchors.
+- **Discovered gates.** `just pre_commit` verified at `justfile:18-19`; the hook
+  inventory verified against `.pre-commit-config.yaml` and the upstream hook
+  definitions.
+- **Explicit non-goals.** §5, six of them.
+- **Tests homed.** Every eval row targets `docs/rfcs/boundary-evaluation.md`,
+  which §7 lists as the single CREATE.
+- **Forks surfaced.** Q3-Q5 open with recommendations; Q1-Q2 settled in
+  "Resolved forks". Both `depends_on` targets
+  (`S2-spike-postgres-vault-creds`, `A1-audit-plan-premise-sweep`) are stage
+  `done` in `.loop/ledger.json`.
+- **Path consistency.** `docs/notes/` appears in the marker only at line 10,
+  where it says "No row names `docs/notes/`", and in the plan only at :375, :487
+  and :508, all rejecting or historical.
 
 ## Most dangerous assumption
 
-**P10(a) — that the eval's `docs/notes/boundary-evaluation.md` is the agreed
-deliverable path.** It is the single one that, if wrong, sinks the plan, because
-it is wrong three times over at once: the directory no longer exists in the repo
-(P9), the operator explicitly resolved the fork the other way to `docs/rfcs/`
-(plan lines 319-321), and the *authoritative* DoD (plan line 242) hardcodes the
-superseded path into five 100%-threshold rows including a guardrail that forbids
-touching any other path. There is no way to run this ticket to a passing DoD.
-P1 is the more embarrassing staleness; P10(a) is the one that makes the ticket
-unexecutable.
+**P8** — that the `database/creds/s2-poc` path S2 left standing is actually
+live, not merely declared. It is the one premise resting on cluster state rather
+than repo text, and requirement 4, eval row 4 and subticket 3 all depend on it.
+I confirmed it directly: `LIST database/roles` returns `["s2-poc"]` and
+`LIST database/config` returns `["postgres-poc"]` against the live Vault. It
+holds today. If S2's resources were torn down, this premise and three downstream
+sections go with it.
 
-## Required fixes before this plan leaves PLANNING
+## Not required fixes (editorial; do not re-plan for these)
 
-1. **Rewrite the front-door premise (P1, P2, P3).** Section 4 must say the edge
-   is HAProxy terminating TLS on `*:443` with a Let's Encrypt wildcard
-   (`haproxy.hcl:95-96`, cert templated from Vault KV2 at `haproxy.hcl:62-73`),
-   with `*:80` a 301 redirect (`haproxy.hcl:91-93`). Re-anchor the backend
-   inventory to `haproxy.hcl:127-157`, minio console to `:127-128`, s3 to
-   `:130-131`. Drop prometheus and loki from the routed set and note they are
-   deliberately unrouted (`docs/haproxy_reverse_proxy.md:29`, N1 `done`).
-2. **Correct the Vault-engine claim (P8).** Replace "the only Vault engine
-   configured in Terraform ... no database secrets engine, no PKI, no Transit"
-   with the live state: `nomad/` and `consul/` dynamic secrets engines exist
-   (F5, F6 `done`), `jwt-nomad/` auth exists, Terraform manages
-   `vault_consul_secret_backend_role` (`consul_deploy_role.tf:19`) and
-   `vault_jwt_auth_backend_role` (`acme.tf:66`); what is absent is `database/`,
-   `pki/`, and `transit/`. State that existing dynamic-credential coverage is an
-   input to the cost/benefit, not just a missing prerequisite.
-3. **Settle the deliverable path once (P9, P10a).** Pick `docs/rfcs/boundary-evaluation.md`
-   per the operator resolution, note that `docs/rfcs/` must be created and that
-   `docs/notes/` was deleted in `cc22050` (2026-07-26), then update plan line
-   143, Q1 (lines 292-296), section 8 (lines 193, 206), and **every row of
-   `.loop/evals/S1-spike-boundary-evaluation.md`** to the same path. One path,
-   one place.
-4. **Fix the two broken eval scorers (P10b, P10c).** Row 3: drop the backslash —
-   `grep -Eq 'boundary_controller|boundary_worker'`. Row 6: score on output or
-   invert — e.g. `! grep -qi zitadel <doc>`, or `[ "$(grep -ci zitadel <doc>)" = 0 ]`.
-5. **Repair eval row 4's Expected (P10d).** Stop requiring the doc to call
-   `secrets.tf:2-7` "the sole engine that exists today". Require instead that it
-   name the *missing* engines (`database`, `transit`) against the live inventory
-   and tie the database engine to S2.
-6. **Resolve or drop the S2 edge (P11).** Either delete the `depends_on` on S2
-   and cite S2 as a documented prerequisite (which is what the doc-only scope
-   and S2's teardown at `S2-…:353-354` actually support), or state a concrete
-   artifact S2 leaves behind that S1 consumes. Delete the contradicting Q2
-   recommendation at plan lines 299-301 so only one answer ships.
-7. **Name F2 as the second KEEP prerequisite (P14).** `boundary_auth_method_oidc`
-   needs a Vault OIDC provider; live Vault has only the built-in `default`
-   provider and a stray `test` client, and `F2-foundation-vault-oidc-provider`
-   is `ready`/unrun. Say "confirmed as the design decision, not yet deployed
-   (F2)" rather than "confirmed".
-8. **Strengthen the eval's finding checks.** Rows 1, 3, and 4 all pass against a
-   doc that copies the plan's own Non-goals block. Add at least one rubric-scored
-   row that the doc's verdict cites evidence *not already present in the plan*
-   (e.g. the Tailscale-SSH overlap from Q5, or the existing `nomad/`/`consul/`
-   dynamic-credential precedent), so "the spike produced a document" cannot be
-   mistaken for "the spike produced a finding".
+Reported because the briefing asked for a contradiction sweep. None changes a
+command, a threshold or a conclusion, and none justifies a fourth cycle.
 
-## Note on scope
+1. **§8:241 says "those twelve stay green" six lines after §8:235 says "The
+   other eleven".** Fix 3 moved `check-merge-conflict` out of the typed-away
+   group and updated the first count (14 − 3 = 11, and the enumeration that
+   follows lists exactly eleven) but left the summarizing clause at "twelve".
+   The operative statement — that the typed-away hooks never run against
+   anything this ticket writes — is correct either way. Correct the word the
+   next time the file is touched for another reason.
+2. **§7:189 over-claims that "every row" of the marker names the deliverable
+   path.** Marker row 6 names only `.loop/plans/S1-spike-boundary-evaluation.md`
+   in its Input. The claim's substance — no row names `docs/notes/` — holds.
+3. **The history section at :500 writes "ACLs to `:99-118`"** where §4:50 and
+   P2:400 both write the correct `98-118` (`acl is_minio` is at line 98). The
+   two load-bearing statements are right; the historical narration is off by one
+   line.
 
-P12 holds: this spike is **not** redundant and should not be dropped the way S3
-was. The question it asks is unanswered by F3, by the TLS chain, and by every
-other plan in `.loop/plans/`. Fix the premise and the eval, and it is worth
-running.
-
-## Method
-
-Read-only throughout. Repo reads under
-`/home/vscode/workspace/.loop/worktrees/A1-audit-plan-premise-sweep`; live reads
-were `vault status`, `vault secrets list`, `vault auth list`,
-`vault list identity/oidc/{provider,client,key}`, `nomad job status`, `curl`,
-and `openssl s_client`. No mutating command was issued against Vault, Nomad,
-Consul, Terraform, or git. The only file written is this verdict.
+**Operational note, not a plan defect:** `.loop/ledger.json` records S1 at stage
+`blocked`, not `planning`. Both `depends_on` targets are `done`, so the block
+should clear, but the operator may need to move the stage before the
+`PLANNING -> READY` flip is attempted.
