@@ -279,8 +279,13 @@ locals {
 resource "null_resource" "firewall" {
   for_each = local.firewall_rules
 
+  # timestamp() changes every plan, so every apply re-runs the ufw commands.
+  # ufw allow is idempotent on an existing rule, so this is safe. This
+  # self-heals drift caused by other ufw writes rebuilding the chain from
+  # ufw's DB and dropping rules this resource declared (the N1 hazard).
   triggers = {
-    rules = jsonencode(each.value.rules)
+    rules      = jsonencode(each.value.rules)
+    always_run = timestamp()
   }
 
   provisioner "remote-exec" {
