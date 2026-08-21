@@ -1,0 +1,26 @@
+eval: D10-cli-broker-nomad-manage
+
+**Definition of Done:** `localstack status`, `service`, and `monitor` read
+Nomad job/node state through the newly brokered `nomad_manage` credential
+and no longer 403 with "lacks node:read"/"lacks list-jobs"; `secret` keeps
+using the existing `deploy` credential unchanged; the `manage` credential
+never reaches the shell, `whoami`, `config`, or `token`; and a session
+written before this change is refused cleanly rather than silently missing
+the new field.
+
+| Behavior | Input | Expected | Fails-when | Scorer | Threshold |
+|----------|-------|----------|------------|--------|-----------|
+| `status` reads Nomad node/job state without a permission denial | `localstack status` against a fixture where `/v1/nodes` and `/v1/jobs/statuses` only succeed for the `nomad_manage`-scoped token | The Nomad section renders node/job data with no "lacks node:read"/"lacks list-jobs" error | The request under test carries the `deploy`-scoped token instead of the `nomad_manage` one | deterministic check (respx route sees the `nomad_manage` token, per `cli/tests/commands/test_read_commands.py`) | 100% |
+| `service <name>` reads job statuses via the manage credential | `localstack service haproxy` against the same fixture | The `/v1/jobs/statuses` request carries the `nomad_manage` token | The request carries the `deploy` token instead | deterministic check | 100% |
+| `monitor` (TUI) reads nodes/jobs via the manage credential | `localstack monitor` with `_FakeSession.credential("nomad_manage")` stubbed | `nomad.list_nodes`/`job_statuses` are called with the manage credential | `monitor.py` still calls `session.credential("nomad")` | deterministic check (`cli/tests/commands/test_monitor_command.py`) | 100% |
+| Guardrail: `secret` keeps using the `deploy` credential | `localstack secret memex` against the fixture | `get_job`'s request carries the `deploy`-scoped token, unchanged from today | The request carries the `nomad_manage` token instead (over-widening) | deterministic check | 100% |
+| `login` eagerly brokers the new credential | Fresh `localstack login` against the fixture cluster | Exactly one request each to `/v1/nomad/creds/deploy`, `/v1/nomad/creds/manage`, `/v1/consul/creds/deploy`; the saved session has a non-null `nomad_manage` entry | `/v1/nomad/creds/manage` is never requested at login (first `status` call would then have no credential to broker from) | deterministic check | 100% |
+| Guardrail: the manage credential never reaches the shell or informational commands | Captured stdout of `localstack env`, `whoami`, `config`, `token` after login | None of the four mentions the `nomad_manage` token or accessor; `env`'s `NOMAD_TOKEN` still equals the `deploy` credential's token | Any of the four commands' output contains the manage credential's token or accessor | deterministic check (string match on captured stdout) | 100% |
+| A 403 on the manage path names that path | Mocked 403 on `GET /v1/nomad/creds/manage` | `BrokerError` names `nomad/creds/manage` and lists the caller's actual policies | The message still says "the two creds paths" (stale wording) or names the wrong path | deterministic check (`cli/tests/auth/test_broker.py`) | 100% |
+| `ensure_fresh` re-brokers the manage credential independently | A session where only `nomad_manage` is stale; `nomad`/`consul` are fresh | Exactly one new request, to `/v1/nomad/creds/manage`; `nomad`/`consul` untouched | All three re-broker together, or `nomad_manage` never refreshes on its own skew | deterministic check | 100% |
+| Guardrail: a pre-change session file is refused, not silently missing the new field | A session JSON written before this change (`version: 1`, no `nomad_manage` key) loaded by `load()` | `load()` refuses with the existing "Run `localstack logout` and log in again" message | The old file loads successfully with `nomad_manage=None` and a later `status` call then crashes or silently 403s instead of prompting re-login | deterministic check (`cli/tests/auth/test_session.py`) | 100% |
+| `logout`'s revocation fallback reports the manage credential's accessor | `logout` where the Vault-token revoke call fails | stderr's list of orphaned accessors includes the `nomad_manage` credential's accessor alongside `vault`/`nomad`/`consul` | The `nomad_manage` accessor is missing from that list (a full-admin token's accessor goes unreported) | deterministic check (`cli/tests/commands/test_auth_commands.py`) | 100% |
+| The `nomad/creds/manage` response shape matches `deploy`'s (P1) | `vault read nomad/creds/manage` against the live cluster, compared to the already-measured `deploy` shape | Response carries `data.secret_id`/`data.accessor_id`, same field names `broker.py`'s `_FIELDS` table assumes | The live response uses different field names, so `broker()` reads `None` and raises the shape-mismatch `BrokerError` at `localstack login` instead of authenticating | human, live probe (extend `cli/tests/auth/test_live_login.py`, `pytest -m cluster`, before relying on the mocked-fixture rows alone) | must run once against the live cluster before merge; `verdict: pending-operator` (no live-cluster access from the planning/implementation environment) |
+
+signed-off-by: JasperHG90 2026-08-21
+plan: cf835911cbbbcbafb3ed5ebb6bb0eb694cc6fd58f6fe831bba9de4d7471df79a

@@ -45,3 +45,11 @@ worktree_setup path:
     ln -sfn "$(pwd)/.ssh" "{{ path }}/.ssh"
     cp deployments/infrastructure/vars/prod.tfvars "{{ path }}/deployments/infrastructure/vars/prod.tfvars"
     ln -sfn "$(pwd)/.claude" "{{ path }}/.claude"
+
+# Retrieve all secrets in a namespace
+list_secrets namespace:
+    vault kv list -mount=secret "{{ namespace }}"
+
+# Get the value for a specific secret
+get_secret path:
+    vault kv get -mount=secret "{{ path }}"

@@ -263,6 +263,15 @@ locals {
       ssh_user = "firebat"
       rules    = ["allow from 192.168.2.47 to any port 9187 proto tcp"]
     }
+    # Redis cache on radxa-dragon-q6a. LAN-wide for now: no caller is wired
+    # up yet (redis_secrets_engine.tf), so tighten this once one exists.
+    redis = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 6379 proto tcp",
+      ]
+    }
     # NATS+JetStream on radxa-dragon-q6a (LAN-only; no auth in v1)
     nats = {
       host     = "192.168.2.50"
@@ -382,4 +391,22 @@ resource "nomad_job" "promtail" {
 resource "nomad_job" "nats" {
   jobspec    = templatefile("${path.module}/services/nats.hcl", {})
   depends_on = [nomad_dynamic_host_volume.nats_data]
+}
+
+### Redis — shared cache. Callers never receive a static password: a
+### consumer job in `local.redis_cache_consumers` (redis_secrets_engine.tf)
+### opts in with `vault { role = "redis-cache-<job>" }` and reads its own
+### `redis/creds/cache-<job>` for a credential minted fresh per render and
+### revoked on lease expiry.
+###
+### `detach = false`: the default (`true`) returns as soon as the job is
+### REGISTERED, not once its alloc is actually up. redis_secrets_engine.tf's
+### Vault connection dials this job's address at apply time and needs it
+### reachable by then, not just accepted by the scheduler.
+resource "nomad_job" "redis" {
+  jobspec = templatefile(
+    "${path.module}/services/redis.hcl",
+    { redis_admin_secret = vault_kv_secret_v2.redis_admin_credentials.path }
+  )
+  detach = false
 }

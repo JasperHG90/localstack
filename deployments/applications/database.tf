@@ -4,7 +4,6 @@ locals {
     "ducklake_reader",
     "memex",
     "phoenix",
-    "mlflow",
     "bifrost",
   ]
   databases = {
@@ -20,11 +19,6 @@ locals {
     }
     phoenix = {
       owner      = "phoenix"
-      readers    = []
-      extensions = []
-    }
-    mlflow = {
-      owner      = "mlflow"
       readers    = []
       extensions = []
     }

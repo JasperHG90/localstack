@@ -83,14 +83,6 @@ locals {
         "allow from 192.168.2.50 to any port 3100 proto tcp",
       ]
     }
-    # MLflow on radxa-dragon-q6a (firebat CPU is fully reserved; port 5050 since 5000/5001 are reserved for the Docker registry on firebat)
-    mlflow = {
-      host     = "192.168.2.50"
-      ssh_user = "radxa"
-      rules = [
-        "allow from 192.168.0.0/16 to any port 5050 proto tcp",
-      ]
-    }
     # Bifrost LLM gateway on radxa-dragon-q6a — single OpenAI-compatible endpoint for all agent consumers (ADR-001)
     bifrost = {
       host     = "192.168.2.50"
@@ -380,20 +372,4 @@ resource "bifrost_virtual_key" "memex" {
   ]
 
   depends_on = [null_resource.bifrost_ready]
-}
-
-### MLflow — experiment + model tracking, Postgres backend + MinIO artifacts
-resource "nomad_job" "mlflow" {
-  jobspec = templatefile(
-    "${path.module}/services/mlflow.hcl",
-    {
-      mlflow_postgres_secret = vault_kv_secret_v2.mlflow_db_credentials.path
-      mlflow_minio_secret    = vault_kv_secret_v2.mlflow_minio_credentials.path
-      postgres_host          = data.consul_service.postgres.service[0].node_address
-      minio_host             = data.consul_service.minio.service[0].node_address
-      mlflow_host            = "192.168.2.50"
-      mlflow_version         = "2.20.0"
-    }
-  )
-  depends_on = [postgresql_database.database, module.buckets]
 }

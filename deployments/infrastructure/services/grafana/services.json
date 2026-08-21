@@ -22,10 +22,10 @@
       "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"})", "refId": "A", "instant": true, "format": "table", "legendFormat": "running"},
-        {"expr": "max by (exported_job) (increase(nomad_client_allocs_restart{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"}[24h]))", "refId": "B", "instant": true, "format": "table"},
-        {"expr": "max by (exported_job) (nomad_client_allocs_memory_rss_value{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"})", "refId": "C", "instant": true, "format": "table"},
-        {"expr": "max by (exported_job) (nomad_client_allocs_cpu_total_percent_value{exported_job=~\"vault|registry|phoenix|mlflow|hermes|memex\"})", "refId": "D", "instant": true, "format": "table"}
+        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"})", "refId": "A", "instant": true, "format": "table", "legendFormat": "running"},
+        {"expr": "max by (exported_job) (increase(nomad_client_allocs_restart{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"}[24h]))", "refId": "B", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_memory_rss_value{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"})", "refId": "C", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_cpu_total_percent_value{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"})", "refId": "D", "instant": true, "format": "table"}
       ],
       "transformations": [
         {"id": "joinByField", "options": {"byField": "exported_job", "mode": "outer"}},
@@ -64,7 +64,7 @@
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [
-        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|mlflow.*|hermes.*|memex.*\"}[1m]))", "legendFormat": "{{task}}", "refId": "A"}
+        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|hermes.*|memex.*|redis.*\"}[1m]))", "legendFormat": "{{task}}", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
@@ -78,7 +78,7 @@
       "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [
-        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|mlflow.*|hermes.*|memex.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "legendFormat": "{{task}}", "refId": "A"}
+        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|hermes.*|memex.*|redis.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "legendFormat": "{{task}}", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
@@ -164,7 +164,7 @@
     {
       "id": 400,
       "type": "row",
-      "title": "MLflow",
+      "title": "Redis",
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 40},
       "collapsed": false,
       "panels": []
@@ -172,30 +172,30 @@
     {
       "id": 401,
       "type": "logs",
-      "title": "mlflow logs",
+      "title": "redis logs",
       "gridPos": {"h": 10, "w": 16, "x": 0, "y": 41},
       "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [{"expr": "{job=\"nomad\", task=~\"mlflow.*\"}", "refId": "A"}],
+      "targets": [{"expr": "{job=\"nomad\", task=~\"redis.*\"}", "refId": "A"}],
       "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
-      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=mlflow&${__url_time_range}", "targetBlank": false}]
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=redis&${__url_time_range}", "targetBlank": false}]
     },
     {
       "id": 402,
       "type": "stat",
-      "title": "mlflow error rate (5m)",
+      "title": "redis error rate (5m)",
       "gridPos": {"h": 5, "w": 8, "x": 16, "y": 41},
       "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"mlflow.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
+      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"redis.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
       "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
     },
     {
       "id": 403,
       "type": "stat",
-      "title": "mlflow memory RSS",
+      "title": "redis memory RSS",
       "gridPos": {"h": 5, "w": 8, "x": 16, "y": 46},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"mlflow\"})", "refId": "A"}],
+      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"redis\"})", "refId": "A"}],
       "fieldConfig": {"defaults": {"unit": "bytes"}},
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
     },

@@ -1746,6 +1746,29 @@
       "measured_against": {},
       "eval_amendments": [],
       "plan_rebinds": []
+    },
+    "D10-cli-broker-nomad-manage": {
+      "slug": "D10-cli-broker-nomad-manage",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "cli",
+      "dependencies": [],
+      "priority": 30,
+      "summary": "`localstack status`/`service`/`monitor` 403 on Nomad list-jobs/node:read\nbecause broker.py only brokers `nomad/creds/deploy`. D4 already decided\n(2026-07-31) the CLI should also broker `nomad/creds/manage`; this ticket\nimplements that decided-but-unshipped follow-up to D2.\n",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     }
   }
 }

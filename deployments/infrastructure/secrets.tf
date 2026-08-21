@@ -87,6 +87,31 @@ resource "vault_kv_secret_v2" "postgres_root_credentials" {
   }
 }
 
+### Redis admin password: the `default` user's password, which Vault's
+### redis-database-plugin authenticates with to mint and revoke every
+### caller's short-lived ACL user (redis_secrets_engine.tf). No caller ever
+### reads this secret directly.
+resource "random_password" "redis_admin" {
+  length  = 24
+  special = false
+}
+
+resource "vault_kv_secret_v2" "redis_admin_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/redis/admin"
+  data_json = jsonencode({
+    username = "default"
+    password = random_password.redis_admin.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Bifrost admin creds — synced copy for Prometheus /metrics basic_auth.
 ### The bifrost admin creds live at default/bifrost/credentials (externally
 ### seeded). Prometheus's nomad-workloads role grants read on default/prometheus/*

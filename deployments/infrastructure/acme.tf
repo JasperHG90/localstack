@@ -91,23 +91,24 @@ resource "vault_jwt_auth_backend_role" "acme" {
 
 ### The TransIP API credential. Written by hand rather than by Terraform: it
 ### is issued from the TransIP control panel and shown once, so there is no
-### resource that could generate it. Terraform only reads the path.
+### resource that could generate it. Terraform never reads its value, only
+### its path — the acme job's own `vault {}` block reads the value at
+### deploy time with its own Vault token — so the path is a plain string,
+### not a `data "vault_kv_secret_v2"` source (deprecated in favor of the
+### ephemeral resource, which cannot flow into templatefile's non-write-only
+### vars map anyway; a literal string sidesteps that rather than fighting
+### it, matching hermes's external secrets in services.tf).
 ###
 ### The key pair is created with 'whitelisted IP' unchecked, so lego's client
 ### (which requests a global token by default) works from any address. A
 ### whitelisted key would mint tokens that authenticate but fail on every
 ### subsequent call.
-data "vault_kv_secret_v2" "acme_transip" {
-  mount = var.secret_mount
-  name  = "default/acme/transip"
-}
-
 resource "nomad_job" "acme" {
   jobspec = templatefile(
     "${path.module}/services/acme.hcl",
     {
       vault_role     = vault_jwt_auth_backend_role.acme.role_name
-      transip_secret = data.vault_kv_secret_v2.acme_transip.path
+      transip_secret = "${var.secret_mount}/data/default/acme/transip"
       secret_mount   = var.secret_mount
       tls_path       = "default/haproxy/tls"
       acme_domain    = var.acme_domain

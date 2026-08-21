@@ -137,10 +137,15 @@ MEMEX_SERVER__META_STORE__POOL_SIZE=20
 MEMEX_SERVER__META_STORE__MAX_OVERFLOW=30
 # The key list is services/memex/auth_keys.json (parsed and re-injected by
 # services.tf's memex_auth_keys local): three entries, each carrying a
-# `{{ .Data.data.* }}` placeholder for the actual key material. Those
-# placeholders are opaque strings to Terraform, which round-trips them
+# Nomad template placeholder for the actual key material (see that file).
+# Those placeholders are opaque strings to Terraform, which round-trips them
 # unchanged, and are only resolved by Nomad's own template engine here,
 # inside this `with secret` scope, at render time on the client.
+#
+# NOTE: this whole template.data block is a live Nomad/consul-template
+# source, not HCL — a `#` line is plain text here, not a comment. Never
+# write a literal double-curly-brace template action in one of these
+# lines (as prose or otherwise); it gets parsed, not read.
 MEMEX_SERVER__AUTH__ENABLED=true
 {{- with secret "${memex_auth_secret}" }}
 MEMEX_SERVER__AUTH__KEYS='${memex_auth_keys}'

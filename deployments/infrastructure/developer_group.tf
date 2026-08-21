@@ -34,6 +34,27 @@ resource "vault_policy" "developer" {
       capabilities = ["create", "read", "update", "delete"]
     }
 
+    # Same shape as sys/mounts/secret above: an exact path, added when
+    # redis_secrets_engine.tf first needed a `database`-type mount. A new
+    # mount always needs its own line here -- there is no wildcard grant
+    # over sys/mounts/*, deliberately, matching every other exact-path
+    # grant in this policy.
+    path "sys/mounts/redis" {
+      capabilities = ["create", "read", "update", "delete"]
+    }
+
+    # Runtime paths INSIDE that mount (connections, roles) are a separate
+    # grant from mounting/tuning it, same split as nomad/role/* and
+    # consul/roles/* below being separate from any sys/mounts/* grant for
+    # those two (Ansible-owned) mounts.
+    path "redis/config/*" {
+      capabilities = ["create", "read", "update", "delete"]
+    }
+
+    path "redis/roles/*" {
+      capabilities = ["create", "read", "update", "delete"]
+    }
+
     path "sys/auth" {
       capabilities = ["read", "list"]
     }
