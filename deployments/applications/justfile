@@ -7,28 +7,27 @@ alias a := apply
 alias d := destroy
 
 init:
-    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    eval "$(localstack env)"
     terraform init -backend-config=./vars/backend-config.hcl
 
 apply refresh="true" target="":
     #!/usr/bin/env bash
     set -euo pipefail
+    eval "$(localstack env)"
     if [ -z "{{target}}" ]; then
         echo ">> No target specified, applying all resources"
-        CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
         terraform apply -var-file=./vars/prod.tfvars -refresh={{refresh}}
     else
         echo ">> Applying target: {{target}}"
-        CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
         terraform apply -var-file=./vars/prod.tfvars -refresh={{refresh}} -target={{target}}
     fi
 
 destroy:
-    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    eval "$(localstack env)"
     terraform destroy -var-file=./vars/prod.tfvars
 
 state_rm resource:
-    CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} \
+    eval "$(localstack env)"
     terraform state rm {{resource}}
 
 # Rebuild and push the custom Hermes image (Hermes base + Memex wheels).

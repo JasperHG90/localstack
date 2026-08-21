@@ -371,9 +371,31 @@ Both TTLs are 30 days for this reason.
 
 - **G1 — static keys survive.** `MEMEX_SERVER__AUTH__KEYS` in `memex.hcl`,
   `MEMEX_API_KEY` in `hermes.hcl` at both sites. Removal is a follow-up.
-- **G2 — the workload element is byte-unchanged.** Element 0 of the rendered
-  `MEMEX_SERVER__AUTH__OIDC` still carries the Nomad issuer,
-  `"audience":["memex"]`, and `"value":"hermes","policy":"admin"`.
+- **G2 — hermes's own grant is unchanged.** As of the auth-config extraction
+  (`deployments/applications/services/memex/auth_oidc.json`, parsed and
+  re-injected by a `services.tf` local), Terraform's `jsonencode` sorts
+  object keys, so a byte/substring match against the rendered
+  `MEMEX_SERVER__AUTH__OIDC` no longer holds even when nothing changed.
+  Assert JSON equality instead: element 0 still carries the Nomad issuer and
+  `"audience":["memex"]`, and its `grant_rules` still contains
+  `{"claim":"nomad_job_id","policy":"admin","value":"hermes"}` (key order
+  aside) as one of its entries.
+- **G2b — element 0 now also grants `leo-consumer`.** A second `grant_rule`,
+  `{"claim":"nomad_job_id","policy":"writer","value":"leo-consumer"}`, was
+  added alongside hermes's. No `vault_ids` field: per memex's own config
+  schema, that means unrestricted, i.e. `writer` on every vault. `writer`
+  bundles read with write (`POLICY_PERMISSIONS` in memex's
+  `memex_common/config.py` has no write-only policy, and `vault_ids` /
+  `read_vault_ids` only scope *which* vaults a policy's permission bundle
+  applies to, never *which* permissions apply) — so this grant can also
+  **read** every vault, not just write. That's a deliberate tradeoff: a
+  scoped, write-only grant isn't expressible in memex 1.2.0's policy model.
+  **No W-series check exists for this yet** — the leo-consumer Nomad job
+  doesn't exist in this repo or cluster today. Before relying on this
+  grant: confirm the actual job id matches the `value` here (a mismatch
+  fails safe — D2's silent-403 path — but is easy to miss without a check),
+  and once the job's `identity` stanza lands, add a W-series check
+  mirroring W1 against its token.
 - **G3 — the provider list was appended, not replaced.** Every pre-existing
   client id is still in `local.oidc_provider_client_ids`. A replace silently
   unpublishes other consumers' keys from the provider JWKS.

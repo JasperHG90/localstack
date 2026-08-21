@@ -1,0 +1,28 @@
+# Server connection is configured in the main memex config (~/.config/memex/config.yaml)
+# Uncomment to override which vault notes are synced to:
+vault_id = "localstack"
+
+[sync]
+state_file = ".memex-sync.db"
+batch_size = 1
+note_key_prefix = "obsidian"
+default_tags = ["obsidian"]
+# File extensions to include in sync (non-.md files are converted server-side)
+include_extensions = [".md", ".pdf", ".docx", ".pptx", ".xlsx", ".csv", ".json", ".xml", ".html", ".msg", ".eml"]
+
+[sync.exclude]
+base = [".obsidian", ".trash", ".git", "node_modules"]
+extends_exclude = []
+ignore_folders = []
+frontmatter_skip_key = "agents"
+frontmatter_skip_value = "skip"
+
+[sync.assets]
+enabled = true
+max_size_mb = 50
+extends_include = []
+
+[watch]
+mode = "events"
+debounce_seconds = 5
+poll_interval_seconds = 300

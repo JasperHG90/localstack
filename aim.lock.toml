@@ -369,11 +369,50 @@ flavor = "claude"
 source_path = "packages/claude-code-plugin"
 target_dir = ".claude/plugins/aim-8b8de8ec329cb5d5/memex"
 marketplace_name = "aim-8b8de8ec329cb5d5"
-history = []
 content_hash = "506a7126e557ab90f15477f7a24459eafbc6b80cabdf4ee94eac964e75be8b08"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:44:56.882997Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:44:49.567979Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:44:41.173743Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:44:30.682332Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:43:24.466958Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:43:18.275979Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:43:10.090951Z"
+
+[[plugin.history]]
+tag = "1.1.1"
+sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
+installed_at = "2026-08-21T10:43:02.754991Z"
+
+[[plugin.history]]
 tag = "1.1.1"
 sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
 installed_at = "2026-07-06T18:25:45.137931Z"
@@ -385,10 +424,15 @@ flavor = "claude"
 source_path = ""
 target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
 marketplace_name = "aim-ef9f6a17bd3105b7"
-content_hash = "ae39db1e9c4cc655d5c139254fc3f6ee30fbc9e69c6f551099ec509e526ca1c2"
+content_hash = "e6130b2201ae4bacb61f48c7b3bf7f10a430e1a6975abcceda135590dff6df4e"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "1.5.0"
+sha = "bd25eee0cca90963841433cc53a3ea44972d2f03"
+installed_at = "2026-08-21T10:42:57.638586Z"
+
+[[plugin.history]]
 tag = "1.2.0"
 sha = "d2e826ce42b0be4615b35e6e2dd8ab3991df1a47"
 installed_at = "2026-08-03T18:09:17.319769Z"
@@ -437,11 +481,6 @@ installed_at = "2026-07-23T09:09:50.016377Z"
 tag = "0.3.1"
 sha = "646bdbf0fc7bb6214ccc514f1be49a64b39a3cad"
 installed_at = "2026-07-22T15:04:11.812958Z"
-
-[[plugin.history]]
-tag = "0.2.0"
-sha = "0200aa5920d132c58f96da0f9f7a45eb77fbe006"
-installed_at = "2026-07-22T10:03:27.904431Z"
 
 [[plugin]]
 qualified_name = "10ae737f6885d841/caveman"

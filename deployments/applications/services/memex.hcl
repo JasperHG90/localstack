@@ -135,36 +135,25 @@ MEMEX_SERVER__META_STORE__INSTANCE__PASSWORD={{ .Data.data.password }}
 {{ end }}
 MEMEX_SERVER__META_STORE__POOL_SIZE=20
 MEMEX_SERVER__META_STORE__MAX_OVERFLOW=30
+# The key list is services/memex/auth_keys.json (parsed and re-injected by
+# services.tf's memex_auth_keys local): three entries, each carrying a
+# `{{ .Data.data.* }}` placeholder for the actual key material. Those
+# placeholders are opaque strings to Terraform, which round-trips them
+# unchanged, and are only resolved by Nomad's own template engine here,
+# inside this `with secret` scope, at render time on the client.
 MEMEX_SERVER__AUTH__ENABLED=true
 {{- with secret "${memex_auth_secret}" }}
-MEMEX_SERVER__AUTH__KEYS='[{"key":"{{ .Data.data.admin_key }}","policy":"admin","description":"Admin key"},{"key":"{{ .Data.data.writer_key }}","policy":"writer","vault_ids":["global"],"description":"Scoped writer"},{"key":"{{ .Data.data.writer_key_vault_meetings }}","policy":"writer","vault_ids":["meetings"],"description":"Meetings writer"}]'
+MEMEX_SERVER__AUTH__KEYS='${memex_auth_keys}'
 {{- end }}
 # Two trusted issuers, selected by the token's `iss`. Neither sets
 # default_policy, so a token that verifies but matches no rule is refused
-# rather than silently downgraded.
-#
-# ELEMENT 1, Nomad — workloads. A Workload Identity JWT instead of a static
-# key. One grant rule: only the hermes job. `admin` matches the key hermes
-# holds today; the win is no long-lived secret on the host, NOT less
-# privilege. Tightening to writer + vault_ids is a follow-up.
-#
-# ELEMENT 2, Vault — humans, via `memex auth login`. Two differences from
-# element 1, both deliberate:
-#
-#   `audience` is the CLIENT ID, not "memex". Vault signs only the id_token
-#   and an id_token's `aud` carries the client id, so the client sends the
-#   id_token and this must match it.
-#
-#   ORDER IS LOAD-BEARING. memex takes the first matching rule and stops, so
-#   app-memex-admins MUST be listed before app-memex-readers. Swapping them
-#   silently downgrades every admin who is also in the reader tier, and
-#   nothing logs it.
-#
-# Both `value`s are Vault GROUP NAMES, spelled exactly as the keys in
-# local.app_user_groups. The group gate is enforced twice: Vault refuses to
-# issue a token at all to someone outside the assignment, and memex refuses
-# to authorize a token that matches no rule.
-MEMEX_SERVER__AUTH__OIDC='[{"issuer":"${nomad_oidc_issuer}","audience":["memex"],"grant_rules":[{"claim":"nomad_job_id","value":"hermes","policy":"admin"}]},{"issuer":"${vault_oidc_issuer}","audience":["${memex_oidc_client_id}"],"grant_rules":[{"claim":"groups","value":"app-memex-admins","policy":"admin"},{"claim":"groups","value":"app-memex-readers","policy":"reader"}]}]'
+# rather than silently downgraded. The provider list and grant rules are
+# defined in services/memex/auth_oidc.json (parsed and re-injected by
+# services.tf's memex_auth_oidc local), not inline here — see that file for
+# ELEMENT 1 (Nomad workloads: hermes, leo-consumer) and ELEMENT 2 (Vault
+# humans, whose `audience` is the CLIENT ID, not "memex": Vault signs only
+# the id_token, and an id_token's `aud` carries the client id).
+MEMEX_SERVER__AUTH__OIDC='${memex_auth_oidc}'
 MEMEX_SERVER__TRACING__ENABLED=true
 MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8

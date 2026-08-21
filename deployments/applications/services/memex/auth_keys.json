@@ -1,0 +1,19 @@
+[
+  {
+    "key": "{{ .Data.data.admin_key }}",
+    "policy": "admin",
+    "description": "Admin key"
+  },
+  {
+    "key": "{{ .Data.data.writer_key }}",
+    "policy": "writer",
+    "vault_ids": ["global"],
+    "description": "Scoped writer"
+  },
+  {
+    "key": "{{ .Data.data.writer_key_vault_meetings }}",
+    "policy": "writer",
+    "vault_ids": ["meetings"],
+    "description": "Meetings writer"
+  }
+]

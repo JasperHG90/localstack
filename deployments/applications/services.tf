@@ -176,6 +176,83 @@ resource "nomad_job" "loki" {
   )
 }
 
+### Memex's auth config lives in services/memex/*.json, not inline in the job
+### template (mirrors the services/hermes/ subfolder pattern), so changing a
+### key or a grant is a plain-JSON edit. Both locals round-trip their file
+### through jsondecode/jsonencode: that catches a syntax error in the JSON at
+### plan time instead of handing memex broken config, and jsonencode always
+### emits compact single-line output, which the surrounding KEY='...' env
+### line requires regardless of how the source file is formatted. One side
+### effect: jsonencode sorts object keys, so the rendered JSON's key order
+### no longer matches either source file byte-for-byte — only array order
+### (grant_rules, providers) is preserved and load-bearing.
+###
+### auth_keys.json needs no substitution: every `{{ .Data.data.* }}` entry is
+### a Nomad/Consul-template placeholder, opaque to Terraform, resolved by
+### Nomad's own template engine inside memex.hcl's `with secret` scope.
+###
+### auth_oidc.json carries `{{...}}` placeholders for the three values only
+### Terraform knows (both issuer URLs, the human client_id); `lookup(...,
+### token, token)` substitutes a known placeholder and passes any other
+### string through unchanged (e.g. the literal `"memex"` audience).
+### Substitution only runs over `issuer` and `audience` — a `{{...}}` token
+### anywhere else in the file (e.g. a grant_rule `value`) passes through
+### unchanged and would reach Nomad's own `{{ }}` template engine unresolved.
+###
+### Within each OIDC provider's grant_rules, ORDER IS LOAD-BEARING: memex
+### takes the first matching rule and stops. The Vault provider's admin
+### group must stay listed before its reader group, or a dual-tier human
+### silently downgrades. See docs/memex-oidc-verification.md's V5 check.
+### Both `value`s there are Vault GROUP NAMES, spelled exactly as the keys in
+### `local.app_user_groups` in the OTHER Terraform root
+### (deployments/infrastructure/roles.tf) — Terraform cannot enforce that
+### coupling across roots.
+###
+### hermes holds `admin`, unscoped, deliberately: the win R5 shipped was no
+### long-lived secret on the host, NOT less privilege, and narrowing it to
+### writer + vault_ids was left as an explicit follow-up
+### (.loop/archive/R5-rollout-memex-oidc-auth/plan.md, Q3).
+locals {
+  memex_auth_keys = jsonencode(jsondecode(file("${path.module}/services/memex/auth_keys.json")))
+
+  memex_auth_oidc_substitutions = {
+    "{{nomad_oidc_issuer}}"    = local.nomad_oidc_issuer
+    "{{vault_oidc_issuer}}"    = local.vault_oidc_issuer
+    "{{memex_oidc_client_id}}" = data.vault_identity_oidc_client_creds.memex.client_id
+  }
+
+  memex_auth_oidc = jsonencode([
+    for provider in jsondecode(file("${path.module}/services/memex/auth_oidc.json")) : merge(
+      provider,
+      {
+        issuer   = lookup(local.memex_auth_oidc_substitutions, provider.issuer, provider.issuer)
+        audience = [for a in provider.audience : lookup(local.memex_auth_oidc_substitutions, a, a)]
+      }
+    )
+  ])
+}
+
+### No-op output whose only job is a plan-time guard on auth_oidc.json's
+### grant_rule field names. memex's own OidcGrantRule model ignores unknown
+### keys (pydantic's extra='ignore' default) rather than rejecting them, and
+### a rule with no vault_ids is unrestricted — so a typo like "vault_id"
+### for "vault_ids" is silently dropped server-side and silently widens that
+### grant to every vault. Terraform can't see memex's schema, but it can
+### refuse to plan a key name outside it.
+output "memex_auth_oidc_shape_check" {
+  value       = null
+  description = "No-op: exists to carry the precondition below."
+  precondition {
+    condition = alltrue([
+      for provider in jsondecode(local.memex_auth_oidc) : alltrue([
+        for rule in provider.grant_rules :
+        length(setsubtract(keys(rule), ["claim", "value", "policy", "vault_ids", "read_vault_ids"])) == 0
+      ])
+    ])
+    error_message = "A grant_rule in services/memex/auth_oidc.json has a key outside memex's OidcGrantRule schema (claim, value, policy, vault_ids, read_vault_ids). memex ignores unknown keys rather than rejecting them, so this is very likely a typo that would silently change the grant's scope — fix the field name."
+  }
+}
+
 ### Memex
 resource "nomad_job" "memex" {
   jobspec = templatefile(
@@ -188,9 +265,8 @@ resource "nomad_job" "memex" {
       minio_host            = data.consul_service.minio.service[0].node_address
       phoenix_host          = "192.168.2.29"
       memex_host            = "192.168.2.46"
-      nomad_oidc_issuer     = local.nomad_oidc_issuer
-      vault_oidc_issuer     = local.vault_oidc_issuer
-      memex_oidc_client_id  = data.vault_identity_oidc_client_creds.memex.client_id
+      memex_auth_keys       = local.memex_auth_keys
+      memex_auth_oidc       = local.memex_auth_oidc
       bifrost_host          = "192.168.2.50"
       memex_version         = "1.2.0"
       # Bifrost virtual key issued to Memex (default/memex/bifrost). Memex's

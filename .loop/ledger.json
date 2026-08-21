@@ -13,6 +13,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cicd",
       "dependencies": [],
       "priority": 0,
@@ -23,7 +24,11 @@
         "tailscale",
         "networking"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F1-foundation-nomad-wi-jwt-trust": {
       "slug": "F1-foundation-nomad-wi-jwt-trust",
@@ -31,10 +36,11 @@
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "cbeae91b104851f33a5e34467e0ba1429a64f204",
       "review_verdict": ".loop/verdicts/F1-foundation-nomad-wi-jwt-trust.adversarial.md, .loop/verdicts/F1-foundation-nomad-wi-jwt-trust.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 40,
@@ -46,7 +52,11 @@
         "jwt",
         "docs"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F2-foundation-vault-oidc-provider": {
       "slug": "F2-foundation-vault-oidc-provider",
@@ -54,10 +64,11 @@
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "0add1f5a7dce44343964545f949fe7d6962c6205",
       "review_verdict": ".loop/archive/F2-foundation-vault-oidc-provider/verdict.adversarial.md, .loop/archive/F2-foundation-vault-oidc-provider/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "T3-tls-edge-cutover-lab-domain",
@@ -71,7 +82,11 @@
         "oidc",
         "terraform"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F3-foundation-haproxy-tls-vault-pki": {
       "slug": "F3-foundation-haproxy-tls-vault-pki",
@@ -79,17 +94,22 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "99bc2100d09d5568226e2663e66e8c9b318c5ad2",
       "review_verdict": ".loop/archive/F3-foundation-haproxy-tls-vault-pki/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 55,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
@@ -104,6 +124,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "landing",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -119,7 +140,11 @@
         "oidc",
         "vault"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
@@ -134,6 +159,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "landing",
       "dependencies": [
         "L1-landing-oauth2-proxy",
@@ -148,7 +174,11 @@
         "haproxy",
         "oauth2-proxy"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
@@ -163,6 +193,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "minio",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
@@ -178,7 +209,11 @@
         "jwt",
         "sts"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
@@ -193,6 +228,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "minio",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -207,7 +243,11 @@
         "oidc",
         "terraform"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R1-rollout-mlflow-oauth2-proxy": {
       "slug": "R1-rollout-mlflow-oauth2-proxy",
@@ -222,6 +262,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "L1-landing-oauth2-proxy",
@@ -236,7 +277,11 @@
         "oidc",
         "haproxy"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R2-rollout-nats-auth-callout": {
       "slug": "R2-rollout-nats-auth-callout",
@@ -251,6 +296,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
@@ -266,7 +312,11 @@
         "jwt",
         "vault"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R3-rollout-postgres-vault-db-creds": {
       "slug": "R3-rollout-postgres-vault-db-creds",
@@ -281,6 +331,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
@@ -296,7 +347,11 @@
         "secrets",
         "nomad"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R4-rollout-phoenix-oauth2-proxy": {
       "slug": "R4-rollout-phoenix-oauth2-proxy",
@@ -311,6 +366,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -327,7 +383,11 @@
         "terraform",
         "otlp"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "S1-spike-boundary-evaluation": {
       "slug": "S1-spike-boundary-evaluation",
@@ -342,6 +402,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "spike",
       "dependencies": [
         "S2-spike-postgres-vault-creds",
@@ -355,7 +416,11 @@
         "boundary",
         "docs"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "S2-spike-postgres-vault-creds": {
       "slug": "S2-spike-postgres-vault-creds",
@@ -363,10 +428,11 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "d394306bdf699b19cf723883b2c75755da7a53d8",
       "review_verdict": ".loop/archive/S2-spike-postgres-vault-creds/verdict.adversarial.md, .loop/archive/S2-spike-postgres-vault-creds/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "spike",
       "dependencies": [],
       "priority": 35,
@@ -378,7 +444,11 @@
         "vault",
         "secrets"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "S3-spike-oidc-version-claims": {
       "slug": "S3-spike-oidc-version-claims",
@@ -390,13 +460,18 @@
       "review_verdict": null,
       "dropped": true,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "spike",
       "dependencies": [],
       "priority": 15,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F4-foundation-dnsmasq-localstack-dns": {
       "slug": "F4-foundation-dnsmasq-localstack-dns",
@@ -408,13 +483,18 @@
       "review_verdict": null,
       "dropped": true,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 20,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F5-foundation-vault-nomad-secrets-engine": {
       "slug": "F5-foundation-vault-nomad-secrets-engine",
@@ -422,17 +502,22 @@
       "attempts": 2,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "a539d645dec5af93a1598d7fc8cd1ab9af3e84e1",
       "review_verdict": ".loop/archive/F5-foundation-vault-nomad-secrets-engine/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 60,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F6-foundation-vault-consul-secrets-engine": {
       "slug": "F6-foundation-vault-consul-secrets-engine",
@@ -440,17 +525,22 @@
       "attempts": 2,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "21044c0009a51698ef4940953e5a3ff8cf6d841b",
       "review_verdict": ".loop/archive/F6-foundation-vault-consul-secrets-engine/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 59,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F7-foundation-deployer-vault-oidc-login": {
       "slug": "F7-foundation-deployer-vault-oidc-login",
@@ -465,6 +555,7 @@
       "review_verdict": null,
       "dropped": true,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -479,7 +570,11 @@
         "terraform",
         "policy"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F8-foundation-deployer-provider-cutover": {
       "slug": "F8-foundation-deployer-provider-cutover",
@@ -494,6 +589,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "F5-foundation-vault-nomad-secrets-engine",
@@ -511,7 +607,11 @@
         "terraform",
         "secrets"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "T1-tls-acme-letsencrypt-transip": {
       "slug": "T1-tls-acme-letsencrypt-transip",
@@ -519,17 +619,22 @@
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "46cb2a2ced47c0240d5508b5032b3008c23926be",
       "review_verdict": ".loop/archive/T1-tls-acme-letsencrypt-transip/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "tls",
       "dependencies": [],
       "priority": 70,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "T2-tls-dnsmasq-lab-zone-dns": {
       "slug": "T2-tls-dnsmasq-lab-zone-dns",
@@ -537,17 +642,22 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "8e6e878c0607051139266450532253275244644f",
       "review_verdict": ".loop/archive/T2-tls-dnsmasq-lab-zone-dns/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "tls",
       "dependencies": [],
       "priority": 65,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "T3-tls-edge-cutover-lab-domain": {
       "slug": "T3-tls-edge-cutover-lab-domain",
@@ -555,10 +665,11 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "a6cc9c69f3a60018116a176839abc655ea6d46a4",
       "review_verdict": ".loop/archive/T3-tls-edge-cutover-lab-domain/verdict.adversarial.md, .loop/archive/T3-tls-edge-cutover-lab-domain/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "tls",
       "dependencies": [
         "T1-tls-acme-letsencrypt-transip",
@@ -573,7 +684,11 @@
         "dns",
         "vault"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F9-foundation-scope-nomad-workloads-policy": {
       "slug": "F9-foundation-scope-nomad-workloads-policy",
@@ -581,10 +696,11 @@
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "51b98520d43c227287c531b45bede638b1f05bd1",
       "review_verdict": ".loop/archive/F9-foundation-scope-nomad-workloads-policy/verdict.adversarial.md, .loop/archive/F9-foundation-scope-nomad-workloads-policy/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "A1-audit-plan-premise-sweep"
@@ -598,7 +714,11 @@
         "policy",
         "security"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "A1-audit-plan-premise-sweep": {
       "slug": "A1-audit-plan-premise-sweep",
@@ -606,10 +726,11 @@
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "60b47c6bcfef55fd23e46108db6dd2e0e66da857",
       "review_verdict": ".loop/archive/A1-audit-plan-premise-sweep/verdict.adversarial.md, .loop/archive/A1-audit-plan-premise-sweep/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "audit",
       "dependencies": [],
       "priority": 52,
@@ -620,7 +741,11 @@
         "planning",
         "process"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "T4-tls-fix-podman-image-digest-refs": {
       "slug": "T4-tls-fix-podman-image-digest-refs",
@@ -628,17 +753,22 @@
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "5262abc7897c045a11f18365105d33f6fc3095a3",
       "review_verdict": ".loop/archive/T4-tls-fix-podman-image-digest-refs/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "tls",
       "dependencies": [],
       "priority": 80,
       "summary": null,
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "N1-netsec-restrict-prometheus-loki-to-cluster": {
       "slug": "N1-netsec-restrict-prometheus-loki-to-cluster",
@@ -646,10 +776,11 @@
       "attempts": 1,
       "review_cycles": 4,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "5ebccb861602b76d0f54c8ef2aa683a82973c77e",
       "review_verdict": ".loop/archive/N1-netsec-restrict-prometheus-loki-to-cluster/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "netsec",
       "dependencies": [],
       "priority": 150,
@@ -662,7 +793,11 @@
         "security",
         "terraform"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "G1-grafana-native-oidc-login": {
       "slug": "G1-grafana-native-oidc-login",
@@ -677,6 +812,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F2-foundation-vault-oidc-provider"
@@ -690,7 +826,11 @@
         "vault",
         "terraform"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "N2-netsec-remove-dnsmasq-for-public-dns": {
       "slug": "N2-netsec-remove-dnsmasq-for-public-dns",
@@ -698,10 +838,11 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "5062342da7bd31f9b5e28ae9a3274c376c1e2802",
       "review_verdict": ".loop/archive/N2-netsec-remove-dnsmasq-for-public-dns/verdict.adversarial.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "netsec",
       "dependencies": [],
       "priority": 160,
@@ -713,7 +854,11 @@
         "cleanup",
         "revert"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "T5-tls-certificate-expiry-alert": {
       "slug": "T5-tls-certificate-expiry-alert",
@@ -728,6 +873,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "tls",
       "dependencies": [],
       "priority": 10,
@@ -740,7 +886,11 @@
         "prometheus",
         "blackbox-exporter"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "N3-netsec-converging-firewall-provisioner": {
       "slug": "N3-netsec-converging-firewall-provisioner",
@@ -755,6 +905,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "netsec",
       "dependencies": [],
       "priority": 10,
@@ -767,7 +918,11 @@
         "provisioner",
         "drift"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "B1-bifrost-native-auth-and-virtual-keys": {
       "slug": "B1-bifrost-native-auth-and-virtual-keys",
@@ -775,17 +930,22 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "ac3267bc466c3e41c46bfb52ef61c3e18f077e1a",
       "review_verdict": ".loop/archive/B1-bifrost-native-auth-and-virtual-keys/verdict.adversarial.md, .loop/archive/B1-bifrost-native-auth-and-virtual-keys/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "bifrost",
       "dependencies": [],
       "priority": 200,
       "summary": "Replace HAProxy basic-auth gating Bifrost with Bifrost's native\ngovernance.auth_config, gate inference via enforce_auth_on_inference +\na Terraform-managed virtual key for Hermes, and move the Prometheus\n/metrics scrape to basic_auth. Prerequisite for API keys.\n",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F10-foundation-nomad-oidc-issuer": {
       "slug": "F10-foundation-nomad-oidc-issuer",
@@ -793,10 +953,11 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "eb66e925a64114698431985490bd4e9ffa9e051c",
       "review_verdict": ".loop/verdicts/F10-foundation-nomad-oidc-issuer.adversarial.md, .loop/verdicts/F10-foundation-nomad-oidc-issuer.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 44,
@@ -808,7 +969,11 @@
         "bootstrap",
         "ansible"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D1-cli-package-skeleton": {
       "slug": "D1-cli-package-skeleton",
@@ -820,6 +985,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [],
       "priority": 47,
@@ -830,7 +996,11 @@
         "python",
         "tooling"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D2-cli-login-broker-tokens": {
       "slug": "D2-cli-login-broker-tokens",
@@ -842,6 +1012,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D1-cli-package-skeleton",
@@ -859,7 +1030,11 @@
         "consul",
         "auth"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D3-cli-read-commands": {
       "slug": "D3-cli-read-commands",
@@ -867,10 +1042,11 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "b9fea6adf5fb676590b7bb0e82790809042d5374",
       "review_verdict": ".loop/archive/D3-cli-read-commands/verdict.adversarial.md, .loop/archive/D3-cli-read-commands/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D1-cli-package-skeleton",
@@ -886,7 +1062,11 @@
         "consul",
         "haproxy"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D5-cli-breakglass": {
       "slug": "D5-cli-breakglass",
@@ -894,10 +1074,11 @@
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "3c44b6cb4590e3aa501f6d7faa1dd5631b491068",
       "review_verdict": ".loop/archive/D5-cli-breakglass/verdict.adversarial.md, .loop/archive/D5-cli-breakglass/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D1-cli-package-skeleton"
@@ -911,7 +1092,11 @@
         "runbook",
         "security"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D4-cli-cluster-tui": {
       "slug": "D4-cli-cluster-tui",
@@ -919,10 +1104,11 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "b5252f84541b8914667e9950a602c69e0f9602a1",
       "review_verdict": ".loop/archive/D4-cli-cluster-tui/verdict.adversarial.md, .loop/archive/D4-cli-cluster-tui/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D2-cli-login-broker-tokens",
@@ -937,7 +1123,11 @@
         "tui",
         "observability"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "U1-upgrade-pin-hashistack-versions": {
       "slug": "U1-upgrade-pin-hashistack-versions",
@@ -952,6 +1142,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "upgrade",
       "dependencies": [],
       "priority": 49,
@@ -963,7 +1154,11 @@
         "versioning",
         "hashistack"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "U2-upgrade-vault-2x": {
       "slug": "U2-upgrade-vault-2x",
@@ -978,6 +1173,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "upgrade",
       "dependencies": [
         "U1-upgrade-pin-hashistack-versions"
@@ -991,7 +1187,11 @@
         "bootstrap",
         "storage"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "U3-upgrade-nomad-2x": {
       "slug": "U3-upgrade-nomad-2x",
@@ -1006,6 +1206,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "upgrade",
       "dependencies": [
         "U1-upgrade-pin-hashistack-versions",
@@ -1020,7 +1221,11 @@
         "bootstrap",
         "podman"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "U4-upgrade-consul-2x": {
       "slug": "U4-upgrade-consul-2x",
@@ -1035,6 +1240,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "upgrade",
       "dependencies": [
         "U1-upgrade-pin-hashistack-versions",
@@ -1050,7 +1256,11 @@
         "storage",
         "terraform"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "G2-nomad-ui-oidc-login": {
       "slug": "G2-nomad-ui-oidc-login",
@@ -1058,10 +1268,11 @@
       "attempts": 3,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "0882560f3763e54344cc17db0643e5e34ba6e657",
       "review_verdict": ".loop/archive/G2-nomad-ui-oidc-login/verdict.adversarial.md, .loop/archive/G2-nomad-ui-oidc-login/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F2-foundation-vault-oidc-provider"
@@ -1076,7 +1287,11 @@
         "terraform",
         "sso"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D6-cli-deps-and-shims": {
       "slug": "D6-cli-deps-and-shims",
@@ -1084,10 +1299,11 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "ad2c157fbe69530d653d52dae936161c983ee815",
       "review_verdict": ".loop/archive/D6-cli-deps-and-shims/verdict.adversarial.md, .loop/archive/D6-cli-deps-and-shims/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D1-cli-package-skeleton"
@@ -1101,7 +1317,11 @@
         "versions",
         "shims"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "N4-netsec-edge-only-service-access": {
       "slug": "N4-netsec-edge-only-service-access",
@@ -1113,6 +1333,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "netsec",
       "dependencies": [
         "N3-netsec-converging-firewall-provisioner"
@@ -1127,7 +1348,11 @@
         "tls",
         "runbook"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F11-foundation-human-read-role": {
       "slug": "F11-foundation-human-read-role",
@@ -1139,6 +1364,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "F2-foundation-vault-oidc-provider"
@@ -1152,7 +1378,11 @@
         "terraform",
         "rbac"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F12-foundation-deployer-privilege-split": {
       "slug": "F12-foundation-deployer-privilege-split",
@@ -1164,6 +1394,7 @@
       "review_verdict": null,
       "dropped": true,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [],
       "priority": 45,
@@ -1174,7 +1405,11 @@
         "terraform",
         "deployer"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F13-foundation-infrastructure-deployer": {
       "slug": "F13-foundation-infrastructure-deployer",
@@ -1186,6 +1421,7 @@
       "review_verdict": null,
       "dropped": true,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "F11-foundation-human-read-role",
@@ -1200,7 +1436,11 @@
         "deployer",
         "ansible"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F14-foundation-app-user-groups": {
       "slug": "F14-foundation-app-user-groups",
@@ -1212,6 +1452,7 @@
       "review_verdict": null,
       "dropped": true,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -1226,7 +1467,11 @@
         "rbac",
         "taxonomy"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "F14-foundation-role-taxonomy": {
       "slug": "F14-foundation-role-taxonomy",
@@ -1234,10 +1479,11 @@
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "5469d6c4305e818a8371400140f238ee0dae26f8",
       "review_verdict": ".loop/archive/F14-foundation-role-taxonomy/verdict.adversarial.md, .loop/archive/F14-foundation-role-taxonomy/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "foundation",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -1252,7 +1498,11 @@
         "rbac",
         "taxonomy"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "U5-upgrade-hermes-bifrost-versions": {
       "slug": "U5-upgrade-hermes-bifrost-versions",
@@ -1260,17 +1510,22 @@
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "971c257575d61c68c2299a77f7896661cc358fbd",
       "review_verdict": ".loop/archive/U5-upgrade-hermes-bifrost-versions/verdict.adversarial.md, .loop/archive/U5-upgrade-hermes-bifrost-versions/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "upgrade",
       "dependencies": [],
       "priority": 20,
       "summary": "Bump the pinned Hermes base image and Bifrost binary to their current upstream releases, keeping the two independent version schemes (Hermes: calver base image containing a semver pip package; Bifrost: semver binary) straight.",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "U6-evaluate-hermes-native-secrets": {
       "slug": "U6-evaluate-hermes-native-secrets",
@@ -1282,13 +1537,18 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "upgrade",
       "dependencies": [],
       "priority": 10,
       "summary": "Decide whether Hermes's native secrets: config feature (Bitwarden/1Password/Command Helper backends, no built-in Vault) is worth adopting alongside or instead of our existing Nomad vault{}+template secret injection.",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": true
+      "stub": true,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R5-rollout-memex-oidc-auth": {
       "slug": "R5-rollout-memex-oidc-auth",
@@ -1296,10 +1556,11 @@
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "14e56ff67e0e8cf04089f10ab535efc0b73776a6",
       "review_verdict": ".loop/archive/R5-rollout-memex-oidc-auth/verdict.adversarial.md, .loop/archive/R5-rollout-memex-oidc-auth/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F1-foundation-nomad-wi-jwt-trust",
@@ -1316,7 +1577,11 @@
         "workload-identity",
         "hermes"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R6-rollout-memex-human-oidc": {
       "slug": "R6-rollout-memex-human-oidc",
@@ -1324,10 +1589,11 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "bc659a47c034058d5a9714d708068be569e07bea",
       "review_verdict": ".loop/archive/R6-rollout-memex-human-oidc/verdict.adversarial.md, .loop/archive/R6-rollout-memex-human-oidc/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "F2-foundation-vault-oidc-provider",
@@ -1344,7 +1610,11 @@
         "pkce",
         "id-token"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R7-rollout-postgres-consumer-cutover": {
       "slug": "R7-rollout-postgres-consumer-cutover",
@@ -1356,6 +1626,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "R3-rollout-postgres-vault-db-creds"
@@ -1370,7 +1641,11 @@
         "nomad",
         "rollout"
       ],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D7-cli-service-join-consul-catalog": {
       "slug": "D7-cli-service-join-consul-catalog",
@@ -1378,10 +1653,11 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "22520cf335f8ca919fa369fb8ce483cc5fc79cb0",
       "review_verdict": ".loop/archive/D7-cli-service-join-consul-catalog/verdict.adversarial.md, .loop/archive/D7-cli-service-join-consul-catalog/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D3-cli-read-commands"
@@ -1390,7 +1666,11 @@
       "summary": "`localstack service` resolves its Consul rung from the catalog rather than from health checks, so `consul` stops rendering as unresolved, and the table renders the backend column requirement 5 already mandates, so an unresolved row says where it points.",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "R8-rollout-postgres-root-consumers": {
       "slug": "R8-rollout-postgres-root-consumers",
@@ -1402,6 +1682,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
         "R7-rollout-postgres-consumer-cutover"
@@ -1410,7 +1691,11 @@
       "summary": "Convert the three consumers that authenticate as the `localstack` Postgres root \u2014 the postgres-exporter sidecar, backup-postgres's pg_dumpall, and the applications-root postgresql provider \u2014 off that shared root, so Vault-managed root rotation becomes possible at all.",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": true
+      "stub": true,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D8-cli-service-tag-rung": {
       "slug": "D8-cli-service-tag-rung",
@@ -1418,10 +1703,11 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "27d08629e0c53a7c529f8fe55e7e4830e45a4f5c",
       "review_verdict": ".loop/archive/D8-cli-service-tag-rung/verdict.adversarial.md, .loop/archive/D8-cli-service-tag-rung/verdict.documentation.md",
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D7-cli-service-join-consul-catalog"
@@ -1430,7 +1716,11 @@
       "summary": "`localstack service` resolves a route to a Consul service that carries a tag of the same name, when exactly one service carries it. `s3` stops rendering as unresolved and resolves to `minio`.",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     },
     "D9-cli-service-one-row-per-job": {
       "slug": "D9-cli-service-one-row-per-job",
@@ -1442,6 +1732,7 @@
       "review_verdict": null,
       "dropped": false,
       "drop_reason": null,
+      "carried_over_finding": null,
       "epic": "cli",
       "dependencies": [
         "D8-cli-service-tag-rung"
@@ -1450,7 +1741,11 @@
       "summary": "`localstack service` renders a job's routes adjacently and blanks a cell only when it repeats the cell directly above, so `minio` and `s3` read as one service with two URLs. Rendering only: the join, the dataclass and the JSON are untouched.",
       "relay_block_nonfork": null,
       "tags": [],
-      "stub": false
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     }
   }
 }

@@ -1,0 +1,22 @@
+[
+  {
+    "issuer": "{{nomad_oidc_issuer}}",
+    "audience": ["memex"],
+    "grant_rules": [
+      { "claim": "nomad_job_id", "value": "hermes", "policy": "admin" },
+      {
+        "claim": "nomad_job_id",
+        "value": "leo-consumer",
+        "policy": "writer"
+      }
+    ]
+  },
+  {
+    "issuer": "{{vault_oidc_issuer}}",
+    "audience": ["{{memex_oidc_client_id}}"],
+    "grant_rules": [
+      { "claim": "groups", "value": "app-memex-admins", "policy": "admin" },
+      { "claim": "groups", "value": "app-memex-readers", "policy": "reader" }
+    ]
+  }
+]

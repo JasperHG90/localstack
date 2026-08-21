@@ -10,7 +10,16 @@
 ### are distinct from the `host_volume` mount policy (mount-readonly /
 ### mount-readwrite), which governs a job mounting a volume — the deployer
 ### creates volumes but does not mount them, so no mount policy is granted.
+###
+### `provider = nomad.manage`, not the default provider. Nomad requires a
+### `management`-type token to write an ACL Policy at all — no capability
+### inside a policy can grant that, so the operator's own session token
+### (which `localstack env` deliberately demotes off root/management, per
+### its own docstring) 403s here. `nomad.manage` (nomad_oidc.tf) is a
+### Vault-brokered, freshly-minted Nomad management token; every other
+### ACL-management resource in this root already uses it.
 resource "nomad_acl_policy" "deploy" {
+  provider    = nomad.manage
   name        = "deploy"
   description = "Least-privilege policy for the Terraform deployer"
 
@@ -25,6 +34,17 @@ resource "nomad_acl_policy" "deploy" {
         "host-volume-write",
         "host-volume-delete",
       ]
+    }
+
+    # Mounting a volume in a job is a separate grant from managing the volume
+    # resource above. Every job this deployer submits that mounts a host
+    # volume (memex, hermes, loki, prometheus, minio, grafana, nats, acme,
+    # postgres) needs this, and the paired host-volume-* capabilities above
+    # are already unscoped across the whole default namespace, so scoping
+    # this one by name would only buy a false sense of isolation while
+    # guaranteeing the next new or renamed volume 403s here again.
+    host_volume "*" {
+      capabilities = ["mount-readwrite"]
     }
   EOT
 }
