@@ -20,6 +20,16 @@ locals {
       ],
       readers = []
     }
+    # mlflow the service is gone (services.tf, secrets.tf, database.tf), but
+    # this bucket is kept on request rather than destroyed along with it —
+    # whatever's in it stays reachable until it's deliberately emptied and
+    # this entry removed.
+    "mlflow-artifacts" = {
+      writers = [
+        { "name" = "mlflow", generate_access_key = true }
+      ],
+      readers = []
+    }
   }
 
   all_minio_users = distinct(flatten([
