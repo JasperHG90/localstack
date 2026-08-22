@@ -282,6 +282,14 @@ locals {
         "allow from 192.168.2.47 to any port 7777 proto tcp",
       ]
     }
+    # oauth2-proxy on radxa-dragon-q6a (L1). Only HAProxy (firebat) calls it
+    # directly; no direct LAN access is needed since the gate's whole point
+    # is that traffic goes through HAProxy first.
+    oauth2_proxy = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules    = ["allow from 192.168.2.30 to any port 4180 proto tcp"]
+    }
   }
 }
 
