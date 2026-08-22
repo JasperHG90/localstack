@@ -145,10 +145,13 @@
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "eval-missing",
+        "reason": "Plan reworked and passed plan-validator (2 rounds, SOUND/pass) \u2014 unblocked to ready. Eval marker at .loop/evals/L2-landing-homepage.md is fully drafted, rebuilt against HTTPS, and schema/substance-valid (loopctl eval / verify-eval-substance both pass) but carries no signed-off-by line. Operator was asleep; per standing instruction, not self-signing on their behalf. NOTE ALSO: oauth2-proxy's HAProxy dash backend is currently DOWN live (check_status=L4TOUT on the stats page) -- job itself is healthy per Consul, almost certainly the UFW firewall rule fell out of effect; see plan section 9's new precondition. Review the eval and sign with create-eval, then re-run: loopctl advance L2-landing-homepage ready (already there) then implement-ticket. Fix the live dash outage (likely just re-running terraform apply in deployments/infrastructure/) before trusting any gate-dependent eval row."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
