@@ -420,13 +420,6 @@ Set up the `mc` admin alias once from the root credentials in Vault
 actual tier policy / client / assignment names from §7 if they differ
 from `minio-admin` / `minio-writer` / `minio-reader` below.
 
-**Eval row 4 has no numbered step of its own below on purpose.** `aws`
-is not on PATH and `mc` has no OIDC/web-identity flow in this
-environment, so there is no way to script a full authorize-to-S3
-session the way step 4 below scripts a bare `curl` authorize call.
-Row 4 is satisfied by step 5's reader sub-part (the manual browser
-close-out) instead — see the eval file itself for the exact wording.
-
 1. **Three OIDC role providers exist on MinIO with the right
    `role_policy`, no `redirect_uri` expected.**
    Command (per tier): `mc admin config get minio identity_openid:ADMIN`
@@ -500,28 +493,22 @@ close-out) instead — see the eval file itself for the exact wording.
      put/upload is denied);
    - the same user clicks the **Admin** login button and is refused at
      the Vault consent/authorize step;
-   - a `minio-writers` member clicks the **Writer** login button and
-     has put/get/list access, but not delete-bucket or policy actions;
    - a `minio-admins` member clicks the **Admin** button and has full
      access.
    Expected: three login buttons render (all through the ONE shared
-   callback), reader is read-only, reader is refused on admin, writer
-   can write but not delete/administer, admin has full access. **Only
-   one human identity exists on this cluster** (§4, §11), so this row
-   SPANS all three of §11's sequencing windows — it is not a single
-   post-promotion check, and it is the only row that touches the
-   Writer tier at all. *(Corrected 2026-08-22, fifth plan review: an
-   earlier version of this section only ever exercised Reader and
-   Admin, coequal tiers with Writer in this ticket's own Definition of
-   Done, and also over-claimed that step 4 spans both windows — it
-   does not: step 4's curl checks both run entirely inside the
-   reader-only window, since both use "an entity in app-minio-readers
-   only.")* Run the first two sub-parts (reader clicks Reader; same
-   session clicks Admin, refused) in §11 step 1's window, while
-   `operator` is `app-minio-readers`-only. Run the third sub-part
-   (writer clicks Writer) in §11's new step 2 window, while `operator`
-   is `app-minio-writers`-only. Run the fourth sub-part (admin clicks
-   Admin, full access) in §11 step 3's window, after `operator` is
+   callback), reader is read-only, reader is refused on admin, admin
+   has full access. **Only one human identity exists on this cluster**
+   (§4, §11), so this row SPANS both of §11's sequencing windows, the
+   same way step 4 does — it is not a single post-promotion check.
+   *(Corrected 2026-08-22, third plan review: an earlier version of
+   this section deferred the whole row to §11 undivided, and §11's own
+   text then mislabeled all three sub-parts as one "admin-tier check"
+   run after promotion — which would run the reader/refused sub-parts
+   while `operator` is no longer reader-only, proving nothing.)*
+   Run the first two sub-parts (reader clicks Reader; same session
+   clicks Admin, refused) in §11 step 1's window, while `operator` is
+   `app-minio-readers`-only. Run the third sub-part (admin clicks
+   Admin, full access) in §11 step 2's window, after `operator` is
    promoted to `app-minio-admins`. Record the result, and the exact
    window each sub-part ran in, in the ticket's acceptance notes.
 
@@ -628,12 +615,11 @@ takes its place as subticket 1.)*
 ## 11. Open questions
 
 1. **How does the single-operator-identity constraint (§4) map onto a
-   three-tier acceptance run?** Only one Vault userpass identity,
-   `operator`, exists on this cluster. Eval step 5 (and, to exercise
-   step 4's "should succeed" half, step 4 too) describes "a
-   `minio-readers` member," "a `minio-writers` member," and "a
-   `minio-admins` member" as if they are three different people. Two
-   ways to make that concrete:
+   three-way cross-tier-denial acceptance run?** Only one Vault
+   userpass identity, `operator`, exists on this cluster. Eval step 5
+   (and, to exercise step 4's "should succeed" half, step 4 too)
+   describes "a `minio-readers` member" and "a `minio-admins` member"
+   as if they are different people. Two ways to make that concrete:
    - **(a) Sequential membership changes on the single `operator`
      entity.** Temporarily edit `local.app_user_group_members`
      (`roles.tf:174-178`) to move `operator` into `app-minio-readers`
@@ -667,37 +653,29 @@ takes its place as subticket 1.)*
    creating throwaway per-tier entities is disproportionate to a
    proof-of-concept ticket. This ticket's own Terraform (§7) ships the
    steady state — `operator` in `app-minio-admins`, the other two
-   tiers empty — so the sequence below is a temporary, THREE-window
+   tiers empty — so the sequence below is a temporary, two-apply
    detour from and back to that state, run by the operator at
-   close-out, not by the loop. *(Expanded 2026-08-22, fifth plan
-   review: an earlier version of this sequence had only two windows,
-   reader and admin, and never exercised Writer at all — coequal with
-   the other two in this ticket's own Definition of Done.)*
-   1. **Reader window.** Edit `local.app_user_group_members` to move
-      `operator` into `app-minio-readers` ONLY (remove the
-      `app-minio-admins` entry for this step), apply. Run the
-      reader-tier positive check (row 4, satisfied via row 6's reader
-      sub-part), the cross-tier-deny check (row 5), AND row 6's first
-      two sub-parts (reader clicks Reader; same session clicks Admin,
+   close-out, not by the loop:
+   1. Edit `local.app_user_group_members` to move `operator` into
+      `app-minio-readers` ONLY (remove the `app-minio-admins` entry
+      for this step), apply. Run the reader-tier positive check (row 4),
+      the cross-tier-deny check (row 5), AND row 6's first two
+      sub-parts (reader clicks Reader; same session clicks Admin,
       refused) in this window — `operator` is genuinely reader-only
       here, so a refused admin-client authorize call is a real result,
-      not a vacuous one.
-   2. **Writer window.** Edit `local.app_user_group_members` again to
-      move `operator` into `app-minio-writers` ONLY (remove the
-      `app-minio-readers` entry from step 1). Run row 6's third
-      sub-part (writer clicks Writer, has write access, not
-      delete/policy) in this window.
-   3. **Admin window (final, steady state).** Revert
-      `local.app_user_group_members` to this ticket's shipped state —
-      `operator` back in `app-minio-admins`, no entry for
-      `app-minio-readers` or `app-minio-writers` — and apply again.
-      Run ONLY row 6's fourth sub-part here (admin clicks Admin, full
-      access). This restores exactly the steady state §7 ships, not a
-      new or different one.
+      not a vacuous one. *(Corrected 2026-08-22, third plan review:
+      row 6 is not a single post-promotion check — see §8 step 5. Two
+      of its three sub-parts belong HERE, not in step 2.)*
+   2. Revert `local.app_user_group_members` to this ticket's shipped
+      state — `operator` back in `app-minio-admins`, no entry for
+      `app-minio-readers` — and apply again. Run ONLY row 6's third
+      sub-part here (admin clicks Admin, full access). This restores
+      exactly the steady state §7 ships, not a new or different one.
    Document the exact sequence, the group membership at each step, and
-   the three applies in the acceptance notes, since the checks are not
-   simultaneous and a reader re-running them later needs to see why.
-   Confirm before running §8.
+   the two applies in the acceptance notes, since the two checks are
+   not simultaneous and a reader re-running them later needs to see
+   why. Confirm before
+   running §8.
 
 ## Resolved forks (operator, 2026-07-23)
 
@@ -919,25 +897,6 @@ this section.)*
   state, and §11's acceptance sequence is corrected to describe the
   reader-tier detour as two real, temporary Terraform edits and
   applies, not a live toggle.
-
-- **P18.** The Writer tier, coequal with Admin and Reader in this
-  ticket's Definition of Done, was never dynamically exercised by any
-  eval row or §11 sequencing window — only Reader and Admin were.
-  `Evidence:` §11's sequence had exactly two windows and §8 step 5's
-  three sub-parts named only reader and admin clicks, before this
-  review. Fixed by expanding §11 to three windows (reader, writer,
-  admin) and §8 step 5 / eval row 6 to four sub-parts, one per tier
-  transition plus the cross-tier-deny check.
-
-- **P19.** Eval row 4 (a scripted reader OIDC session) had no
-  execution mechanism anywhere in §8, and the obvious one — a full
-  authorize-to-S3 round trip via `AssumeRoleWithWebIdentity` — cannot
-  be scripted in this environment. `Evidence:` `aws --version` is not
-  on PATH; `mc admin --help` has no OIDC/web-identity subcommand.
-  Fixed by redefining row 4 as satisfied by row 6's reader sub-part
-  (the manual browser close-out), which already produces and checks
-  the identical session, rather than inventing a second, unrunnable
-  mechanism for the same fact.
 
 **Note on upstream citations.** Every premise above that cites MinIO's
 own Go source (the ones naming `cmd/` or `internal/config/` files)

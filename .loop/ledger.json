@@ -214,13 +214,10 @@
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "plan review PARTIALLY SOUND/fail: MinIO per-target redirect_uri deprecated and replacement is server-global, so 3 tiers cannot have 3 callbacks; no X-Forwarded-Proto so callback derives http. See .loop/verdicts/M2-minio-poc-human-tiers.plan-validator.md"
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -232,7 +229,7 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 10,
-      "summary": "Give humans tiered MinIO console access (Admin, Reader, Writer) via three Vault-gated OIDC providers on the MinIO job, each bound to a matching MinIO role policy. Spans both Terraform layers, so the cross-layer ordering constraint is the real cost.",
+      "summary": "Give humans tiered MinIO console access (Admin, Reader, Writer) via three Vault OIDC clients this ticket creates itself, one shared browser-redirect callback (MinIO's per-tier redirect_uri is deprecated and server-global instead), and matching MinIO role policies.",
       "relay_block_nonfork": null,
       "tags": [
         "minio",
@@ -1769,7 +1766,7 @@
       "epic": "switchyard",
       "dependencies": [],
       "priority": 0,
-      "summary": "Deploy NVIDIA-NeMo/Switchyard (`switchyard-server`) as a new Nomad job that\npassthrough-routes to the existing Bifrost gateway, with its own inbound\nauth at the HAProxy edge. Base deployment + auth only: no Hermes/opencode\ncutover, no multi-tier routing config. Two real forks gate implementation\n(how the binary/image gets built and run; what inbound-auth mechanism\ngates the edge route), both left as Open Questions with recommendations.\n",
+      "summary": "Deploy NVIDIA-NeMo/Switchyard (`switchyard-server`) as a new Nomad job that\npassthrough-routes to the existing Bifrost gateway, with its own inbound\nauth at the HAProxy edge. Base deployment + auth only: no Hermes/opencode\ncutover, no multi-tier routing config. Both design forks (build/run\nmechanism; inbound-auth mechanism) are resolved as of 2026-08-22: build\noff-cluster, publish once to a new private MinIO bucket, fetch via Nomad's\n`artifact` + `secret` job-spec stanzas; gate the edge with a second,\nSwitchyard-scoped oauth2-proxy instance mirroring L1 (now `done`). Node\nplacement stays a live-cluster check, not a blocking fork.\n",
       "relay_block_nonfork": null,
       "tags": [
         "switchyard",
@@ -1778,6 +1775,7 @@
         "haproxy",
         "vault",
         "bifrost",
+        "minio",
         "prometheus",
         "grafana"
       ],

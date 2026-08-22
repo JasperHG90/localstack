@@ -1,289 +1,327 @@
 ---
-verdict: fail
+verdict: pass-with-required-fixes
+plan: 3225faf977ce46fc997ec4d407c562aadff37039f3af1d088961490d659fbee2
+bound_paths: front-matter, 5, 6, 7, 8, 9, 10, premises
+scope: b9af3c5bc44988a2b5a9de3b8331783196d208130d6138d01c9608d683d9ad1c
+fix_sections: 8, premises
+citations:
+  deployments/infrastructure/roles.tf:153-165 = "app-memex-admins"  = "Full access to memex through Vault SSO"
+  deployments/infrastructure/roles.tf:174-178 = app_user_group_members = { "app-memex-admins" = [vault_identity_entity.operator.id] }
+  deployments/infrastructure/roles.tf:187-189 = member_entity_ids = lookup(local.app_user_group_members, each.key, [])
+  deployments/infrastructure/oidc.tf:79-86 = oidc_provider_client_ids = [ vault_identity_oidc_client.smoke.client_id, ... ]
+  deployments/infrastructure/services.tf:328-333 = resource "nomad_job" "minio" { jobspec = templatefile(...) }
+  deployments/infrastructure/services/minio.hcl:32-40 = template { data = <<-EOH ... MINIO_PROMETHEUS_AUTH_TYPE="public" EOH destination = "secrets/file.env" env = true }
+  deployments/applications/modules/bucket/main.tf:11-27 = resource "minio_iam_policy" "policy_read_write" { ... "Action": ["s3:*"] ... }
+  .loop/plans/M2-minio-poc-human-tiers.md:209-211 = "writer = put/get/list + multipart + delete (Resolved fork Q5); reader = get/list."
+  .loop/plans/M2-minio-poc-human-tiers.md:381-388 = "Mirror the JSON statement shape in deployments/applications/modules/bucket/main.tf:11-45."
+  .loop/plans/M2-minio-poc-human-tiers.md:498-506 = the four §8 step-5 / row-6 sub-parts (reader, admin-refused, writer, admin)
+  .loop/plans/M2-minio-poc-human-tiers.md:509-526 = the parenthetical explaining the fifth-review expansion to three windows / four sub-parts
+  .loop/plans/M2-minio-poc-human-tiers.md:528-529 = "Steps 1-4 are runnable now once this ticket's Terraform is applied and the job redeployed; step 5 is the manual residual."
+  .loop/plans/M2-minio-poc-human-tiers.md:619-621 = "run the scripted evals (steps 1-4) and the manual browser check (step 5), and record the reader-refused-by-admin result."
+  .loop/plans/M2-minio-poc-human-tiers.md:676 = "1. **Reader window.** Edit `local.app_user_group_members` to move"
+  .loop/plans/M2-minio-poc-human-tiers.md:685 = "2. **Writer window.** Edit `local.app_user_group_members` again to"
+  .loop/plans/M2-minio-poc-human-tiers.md:690 = "3. **Admin window (final, steady state).** Revert"
+  .loop/plans/M2-minio-poc-human-tiers.md:892-905 = P16, unchanged text: "three sub-parts... §8 step 5 and §11 step 2 now split the row's sub-parts across both windows"
+  .loop/plans/M2-minio-poc-human-tiers.md:923-931 = P18 text
+  .loop/plans/M2-minio-poc-human-tiers.md:932-940 = P19 text
+  .loop/evals/M2-minio-poc-human-tiers.md:10 = "Same check as the row below's Reader sub-part. (No independent scripted mechanism exists...)"
+  .loop/evals/M2-minio-poc-human-tiers.md:12 = "(c) writer window — a `minio-writers` member clicks Writer, has put/get/list but not delete-bucket/policy actions"
+  .loop/verdicts/M2-minio-poc-human-tiers.plan-validator.snapshot.md:892-905 = P16, byte-identical to the current plan's P16 (confirms no fix was made here across the two rounds)
 ---
 
-# Plan verdict — M2-minio-poc-human-tiers (pass `plan-validator`)
-
-Plan fingerprint verified locally: `sha256sum .loop/plans/M2-minio-poc-human-tiers.md`
-returns `9487c738a8e997e2d1031decc14c297ba072a3eb8ed3b933144f44cbb4fa241f`,
-matching the briefing. Per the contract a `fail` carries no `plan:` line, so this
-verdict cannot authorize the `PLANNING -> READY` flip.
+# Plan review, pass 5: M2-minio-poc-human-tiers
 
 ## Premise verdict: PARTIALLY SOUND
 
-The load-bearing core holds. Vault really does serve an OIDC discovery document
-(unlike Nomad — M1's trap does **not** transfer), MinIO's `identity_openid`
-subsystem really does support multiple named targets with `role_policy`, and the
-console really does still serve on this release. The approach is buildable.
+`loopctl verify-plan M2-minio-poc-human-tiers` → `valid` (same ambiguous-basename
+warnings as last pass on `secrets.tf`/`services.tf`/`providers.tf`, no hard
+fail). `loopctl verify-eval-substance M2-minio-poc-human-tiers` → `valid`.
+Plan fingerprint confirmed two ways: `sha256sum .loop/plans/M2-minio-poc-human-tiers.md`
+→ `3225faf977ce46fc997ec4d407c562aadff37039f3af1d088961490d659fbee2`, matching
+what I was given, and a scratch replica of `loop_harness.stamp.plan_fingerprint`
+(no `sections=` argument) reproduced the identical whole-file hash from source,
+which also cross-validates the section-keyed `scope:` digest computed by the
+same script (see "What I did this pass"). Both deterministic gates are clean,
+so this is a semantic pass, not a mechanical one.
 
-What fails is the layer just above the approach: the plan's stated primary cost
-driver is false, one required env var it names is deprecated (and the one that
-replaces it is absent from the plan entirely), the close-out is gated on a
-**dropped** ticket, and two of the eval file's deterministic 100%-threshold rows
-would fail a *correct* implementation. Those last two are why this is a `fail`
-rather than `pass-with-required-fixes`: the fixes have to land in
-`.loop/evals/M2-minio-poc-human-tiers.md` as well as the plan, and a passing
-verdict would flip the ticket to `ready` with an acceptance gate that cannot be
-satisfied.
+**P18 and P19, this pass's headline items, are genuinely closed.** The
+Writer tier is now dynamically exercised (a real login, a real policy check)
+and eval row 4's dead-end mechanism is honestly retired in favor of row 6's
+reader sub-part, which the plan's own non-goals independently corroborate
+(§5's STS non-goal names the exact mechanism that would have been needed and
+places it out of scope, so there was never a way to build row 4 as originally
+conceived). The three-window sequence in §11 is internally consistent: no
+membership overlap, no gap, and it returns to exactly the steady state §7
+ships.
 
-## Assumptions attacked
+**But two defects survive this round**, one carried over and one newly
+introduced as a side effect of this round's own fix. Required fix #3 from
+my own prior verdict (`.loop/plans/M2-minio-poc-human-tiers.md:528-529`,
+the "Steps 1-4 are runnable now" line) was on the required-fix list and was
+not applied — the operator's own summary of "fixes made" for this round
+does not mention it, and the line is byte-identical to the version I
+reviewed last pass. And **P16**, a premise this round's diff never touched,
+now asserts something false about the plan's own current text: it says the
+close-out "has three sub-parts" split across "both windows" with "§11 step
+2" as the admin window, when the plan's own §8/§11 (edited THIS round to
+fix P18) now have four sub-parts across three windows, and §11 step 2 is
+the *Writer* window, not Admin. Neither defect is architecturally
+load-bearing and neither blocks an implementer from building or running a
+correct acceptance pass — the substantive text (§8, §11) is self-consistent
+on its own — but both are real, both are confined to §8 and Premises, and
+both are cheap fixes an operator should not have to re-discover a sixth
+time. Hence `pass-with-required-fixes`, not `pass`.
 
-### P1 — The env template at `minio.hcl:32-40` is the only env injection point and holds exactly the three named variables. **HOLDS**
-`deployments/infrastructure/services/minio.hcl:32-40` is the `template { env = true }`
-block with `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_PROMETHEUS_AUTH_TYPE`.
-Confirmed against the *running* job: `nomad job inspect minio` shows `Env: null`
-and exactly that one embedded template. Nothing else injects env.
+## What I did this pass
 
-### P2 — Console + OIDC survive on `RELEASE.2025-09-07T16-13-09Z`. **HOLDS**
-Re-verified independently rather than trusting the relayed finding.
-`http://192.168.2.29:9001/` returns HTTP 200; `https://minio.lab.orangecluster.nl/`
-returns HTTP 200. `mc admin config get <alias> identity_openid` against the live
-server returns the key set including `role_policy`. The relayed finding's
-instruction not to re-litigate from release notes is correct.
+Read the full plan fresh, end to end, treating §5/§6/§7/§8/§10/§11 as one
+unit per the brief. Diffed the current plan against the 4th-round snapshot
+(`.loop/verdicts/M2-minio-poc-human-tiers.plan-validator.snapshot.md`) at
+the section level (`csplit` on `^## ` headings, then `diff` each pair) to
+scope exactly what changed: only §8, §11, and Premises differ; front-matter,
+§5, §6, §7, §9, §10, and both "Resolved forks" blocks are byte-identical to
+the version I already reviewed and passed last round. This let me spend the
+budget on the actual delta (P18/P19's fix, plus a fresh full read for a
+sixth defect) rather than re-deriving sections nothing touched.
 
-### P3 — Three named `identity_openid:<tier>` providers, env-addressable as `MINIO_IDENTITY_OPENID_<KEY>_<tier>`, each rendering a console button. **HOLDS (mechanism) with a case defect**
-- Multi-target is real: `cmd/config-current.go:129-132` declares
-  `IdentityOpenIDSubSys` with `MultipleTargets: true`.
-- Env naming is real: `internal/config/config.go:1128-1147` derives targets by
-  stripping the prefix `MINIO_IDENTITY_OPENID_<PARAM>_`, and
-  `internal/config/config.go:1157-1164` (`getEnvVarName`) reconstructs the env
-  name with the target appended **verbatim, with no case folding**.
-- Live probe: `mc admin config get lab identity_openid:admin` returns
-  ``there is no target `admin` for subsystem `identity_openid` `` — the error is
-  about the *target* not existing, which itself proves named targets are parsed.
-- Per-tier role ARNs are distinct because the ARN resource id is a SHA-1 of the
-  **client id**, not of the issuer domain
-  (`internal/config/identity/openid/openid.go:352-366`). Three clients on one
-  Vault issuer therefore yield three distinct ARNs. The design works.
-- **Defect:** Code surface says "`<tier>` uppercased as the provider suffix",
-  which produces targets `ADMIN`/`WRITER`/`READER`. Every eval command in the
-  plan and in the eval file queries lowercase `identity_openid:admin`. Given the
-  no-case-folding evidence above, those queries return
-  ``there is no target `admin` `` against a correct implementation.
+Re-read `roles.tf:153-165,174-178,187-189`, `oidc.tf:79-86`,
+`services.tf:328-333`, `minio.hcl:32-40`, and
+`modules/bucket/main.tf:11-45` directly (not trusting last pass's read) to
+confirm the repo hasn't drifted under the plan since the last review — it
+hasn't; `git log -- .loop/plans/M2-minio-poc-human-tiers.md` shows no
+commits since `A1-audit-plan-premise-sweep`, and none of these files
+changed. Ran `mc --help`, `mc admin --help`, `mc admin accesskey --help`,
+and `which aws` fresh this pass (not reusing last pass's captured output)
+to re-verify P19's environment claim independently.
 
-### P4 — `MINIO_IDENTITY_OPENID_REDIRECT_URI_<tier>` is a valid per-tier setting. **BREAKS**
-`internal/config/identity/openid/help.go:107-108` for this exact release tag:
+To compute the `scope:` digest without running `loopctl plan-snapshot`
+(which writes a snapshot file outside my read-only contract), I wrote a
+scratch script that reproduces `loop_harness.stamp.plan_fingerprint` /
+`_plan_section_bytes` / `plan_check._split_sections` from the harness's own
+source (`src/loop_harness/stamp.py:637-675`, `src/loop_harness/plan_check.py:304-343`),
+read directly from this repo's vendored plugin. Its whole-plan-fingerprint
+output matched the independently-computed `sha256sum` exactly
+(`3225faf977ce...`), which cross-validates that the section-keyed digest it
+also printed (`b9af3c5bc4498...`) is a faithful reproduction of the
+harness's own algorithm, not a guess.
 
-    Key:         RedirectURI,
-    Description: `[DEPRECATED use env 'MINIO_BROWSER_REDIRECT_URL'] Configure custom redirect_uri for OpenID login flow callback`
+Scratch used: `.loop/scratch/M2-minio-poc-human-tiers.plan-validator/`
+(`compute_scope.py`, the section-digest replica). Removed at end of pass.
 
-The replacement is **server-global**, not per-provider:
-`cmd/common-main.go:715-725` reads `config.EnvBrowserRedirectURL` once into
-`globalBrowserRedirectURL` (`cmd/globals.go:196`), `logger.Fatal` on a bad value.
-The key is also `HiddenIfEmpty: true`
-(`internal/config/identity/openid/openid.go:112-116`), which is why the live
-`mc admin config get` output omits it — the plan's relayed finding read that
-omission as "the key list", and its Code surface then named a key that release
-documents as deprecated.
+## Per-assumption findings
 
-Three consequences the plan does not carry:
-1. All three tiers necessarily share **one** redirect URI. Eval step 4's
-   `<reader-redirect-uri>` / `<admin-redirect-uri>` implies per-tier URIs.
-2. `MINIO_BROWSER_REDIRECT_URL` must be added to the `minio.hcl` env template.
-   The plan never mentions it.
-3. HAProxy terminates TLS and sets **no** `X-Forwarded-Proto` / `forwardfor`
-   (`deployments/infrastructure/services/haproxy.hcl` — grep for
-   `X-Forwarded|forwardfor|option http` returns nothing). Without
-   `MINIO_BROWSER_REDIRECT_URL`, MinIO derives the callback from the Host header
-   and will build an `http://` redirect that cannot match F2's `https://`
-   registration. This is the concrete mechanism by which the browser flow
-   silently fails, and it is exactly the caveat the plan flagged but left open.
+- **P1, P2, P7, P8, P9, P11, P12, P13 — no change in scope, still hold.**
+  None of these premises' underlying repo anchors changed since last pass
+  (confirmed via `git log`, no commits touch this plan or the cited
+  infrastructure files), and the plan's own prose for §4/§9 (where most of
+  them are grounded) is outside this round's diff (only §8/§11/Premises
+  changed). Re-read `roles.tf:153-165`, `services.tf:328-333`,
+  `minio.hcl:32-40` fresh this pass as a spot check (see "What I did"
+  above) and confirmed all three resolve exactly as last pass reported.
 
-### P5 — "MinIO validates each `role_policy` name at startup; the policies must be applied first." **BREAKS**
-This is the plan's stated effort driver ("Size / Effort": *"Effort is driven by
-the cross-layer ordering constraint"*), its "likeliest failure" risk, and the
-entire justification for subticket 3. The source says otherwise:
-- `internal/config/identity/openid/openid.go:336-338` comments
-  *"RolePolicy is validated by IAM System during its initialization"* and does
-  no check itself.
-- `cmd/iam.go:369-376` is that initialization. It is
-  `sys.rolesMap = make(...)` followed by `maps.Copy(sys.rolesMap, sys.OpenIDConfig.GetRoleInfo())`
-  and `sys.printIAMRoles()`. There is **no** lookup of the policy name against
-  the policy store, and no error path. Policy resolution happens per-request via
-  `GetRolePolicy` (`cmd/iam.go:578-588`).
+- **P3, P4, P5, P6 — no change in scope, still hold.** These are upstream
+  MinIO source claims (symbol-cited, not line-cited, per the plan's own
+  convention) about a pinned release tag that has not changed. Not
+  re-fetched this pass; nothing in this round's diff touches them or the
+  claims they support.
 
-So a missing tier policy denies access at login time; it does not reject the
-config and does not crash-loop the job. The plan's own "Resolved fork Q2"
-already asserts the opposite of its Risk section ("server-up-then-policies is
-the natural, existing order"), and neither side cites evidence. The source
-settles it in Q2's favor — which means subticket 3 ("Wire the ordering") has no
-work in it and the Size/Effort rationale is wrong.
+- **P10 — UNCERTAIN, unchanged, as the plan itself discloses.** Still an
+  inference (the `access_denied` shape for an assignment mismatch), still
+  flagged by the plan as such, still requires this ticket's own Terraform
+  applied to reproduce live. Not re-attempted this pass for the same reason
+  as last pass: out of scope for a plan-only review.
 
-### P6 — Vault's OIDC provider exposes a usable discovery document (the M1 trap). **HOLDS**
-`curl http://192.168.2.30:8200/v1/identity/oidc/provider/default/.well-known/openid-configuration`
-returns HTTP 200 with `issuer`, `jwks_uri`, `authorization_endpoint`,
-`token_endpoint`, `response_types_supported: ["code"]`. This is categorically
-unlike Nomad's `OIDC Discovery endpoint disabled`. M1's broken edge does not
-transfer to M2. `vault list identity/oidc/provider` → `default`;
-`vault list identity/oidc/key` → `default`; Vault 1.21.4, unsealed.
+- **P17 — HOLDS, no change in scope.** `roles.tf:174-178` and `:187-189`
+  re-read fresh this pass:
+  > "app-memex-admins" = [vault_identity_entity.operator.id]
+  > member_entity_ids = lookup(local.app_user_group_members, each.key, [])
+  Exactly as last pass confirmed. §7's bullet adding the `app-minio-admins`
+  entry (unchanged this round, part of the byte-identical §7) is still the
+  only membership producer, and §11's now-three-window sequence (see P18
+  below) still routes every membership change through this exact local.
 
-Two riders the plan should carry:
-- MinIO fetches the discovery doc **at config load**
-  (`internal/config/identity/openid/openid.go:296`, `parseDiscoveryDoc`, whose
-  error is returned straight out of `LookupConfig`). An issuer unreachable at
-  MinIO boot fails the whole `identity_openid` subsystem. That is a larger
-  blast-radius risk than the ordering risk the plan does name, and it is absent.
-- The live provider's issuer is `http://192.168.2.30:8200/v1/identity/oidc/provider/default`,
-  not the `https://vault.lab.orangecluster.nl` F2 promises. F2 must set
-  `issuer_host` + `https_enabled`; M2's config URL is only as good as that.
-  `https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/default/.well-known/openid-configuration`
-  returns 200 today, so the path exists once F2 sets the issuer.
+- **P18 — HOLDS. The Writer-tier acceptance gap is closed.**
+  `.loop/plans/M2-minio-poc-human-tiers.md:498-506`:
+  > - a `minio-readers` member clicks the **Reader** login button, ...
+  > - the same user clicks the **Admin** login button and is refused ...
+  > - a `minio-writers` member clicks the **Writer** login button and
+  >   has put/get/list access, but not delete-bucket or policy actions;
+  > - a `minio-admins` member clicks the **Admin** button and has full
+  >   access.
+  Four sub-parts, one per tier transition plus the reader→admin refusal,
+  where last pass found only two tiers named. `.loop/plans/M2-minio-poc-human-tiers.md:676,685,690`:
+  > 1. **Reader window.** ...
+  > 2. **Writer window.** ...
+  > 3. **Admin window (final, steady state).** ...
+  Three windows, where last pass found two. I independently walked the
+  sequence for overlap/gap rather than trusting the labels: window 1 sets
+  `app-minio-readers` = [operator] with the admins entry removed (line
+  676-681, "remove the `app-minio-admins` entry for this step"); window 2
+  explicitly removes the window-1 reader entry before adding the writer one
+  (line 685-687, "remove the `app-minio-readers` entry from step 1"); window
+  3 explicitly reverts to "no entry for `app-minio-readers` or
+  `app-minio-writers`" and restores `app-minio-admins` (line 690-693). At no
+  point does the map hold two tier keys at once, and the final state is
+  textually identical to §7's shipped `local.app_user_group_members` bullet
+  (`operator` in `app-minio-admins` only) — confirmed by direct comparison,
+  not inference. No overlap, no gap, ends at the exact steady state §7
+  ships.
+  On the operator's specific cross-check (does the writer window's positive
+  check verify against real IAM policy semantics for `minio-writer`): §6.2
+  (`.loop/plans/M2-minio-poc-human-tiers.md:209-211`)
+  > writer = put/get/list + multipart + delete (Resolved fork Q5)
+  and Q5 (`:728-730`)
+  > Full write including `s3:DeleteObject`
+  give an unambiguous semantic requirement, but §7's applications-layer
+  bullet (`:381-388`) gives NO independent action-set enumeration of its
+  own — it only says to mirror `modules/bucket/main.tf:11-45`'s JSON
+  *shape* and match `role_policy` name strings. `modules/bucket/main.tf:11-27`
+  itself uses `"Action": ["s3:*"]` for its own read-write policy — a
+  wildcard that, if copied literally into the writer tier instead of
+  translated from §6.2's specific list, WOULD include `s3:DeleteBucket` and
+  contradict row 6's own expectation ("not delete-bucket ... actions").
+  This is a real specificity gap — §7 never pins the exact IAM action
+  strings the way it pins, e.g., the exact env var names and URL literals
+  elsewhere in this same ticket — but I do not rate it a required fix: the
+  three tiers' whole point is different action sets, so a competent
+  implementer reading §6.2 right next to §7 has no plausible reading that
+  copies `s3:*` for all three; and even if they did, `mc admin policy info`
+  (eval step 2, deterministic, 100% threshold) and row 6's manual
+  delete-bucket check would catch it at acceptance time rather than pass
+  silently. Reported as an observation, not folded into required fixes.
 
-### P7 — F2 writes each tier's client id/secret to KV `default/minio/oidc/<tier>`. **BREAKS (inlined conclusion)**
-M2's "Resolved forks" states this as settled and adds "Flag as an F2 interface
-requirement". It was never flagged. `grep -n "minio/oidc|default/minio"
-.loop/plans/F2-foundation-vault-oidc-provider.md` returns **no match**. F2's own
-Code surface (§7) says only *"add `vault_kv_secret_v2` entries writing each
-client's `client_id` / `client_secret` to `vault_mount.kvv2.path`"* with no path
-convention, and F2 is `ready`, never run. Subticket 2 tells the implementer to
-reference "the F2 Vault paths" that no artifact defines.
+- **P19 — HOLDS. Row 4's mechanism gap is honestly, non-circularly
+  resolved.** `.loop/evals/M2-minio-poc-human-tiers.md:10`:
+  > Same check as the row below's Reader sub-part. (No independent
+  > scripted mechanism exists: `aws` is not on PATH and `mc` has no
+  > OIDC/web-identity flow in this environment ...)
+  Re-probed this pass, not reused from last pass: `which aws` → no output
+  (absent); `mc admin --help` (captured fresh) lists no OIDC/STS/web-identity
+  subcommand; `mc admin accesskey --help` (captured fresh) lists
+  `sts-revoke` (revoking an existing STS session) but no create/obtain
+  command — there is no way to mint a web-identity session with `mc` alone,
+  confirming the plan's claim rather than assuming it. The redefinition is
+  not circular: row 4's Input/Expected/Scorer cells now literally point at
+  row 6's reader sub-part rather than asserting a second, independent
+  measurement of the same fact, and this is additionally consistent with
+  §5's own non-goal
+  (`.loop/plans/M2-minio-poc-human-tiers.md:184-185`, unchanged, not part of
+  this round's diff): "The machine/service (STS `AssumeRoleWithWebIdentity`
+  or access-key) path... is out of scope" — the one mechanism that could
+  have scripted row 4 was already excluded by the plan's own design, not
+  merely unavailable in this sandbox. Nothing row 4 originally wanted (a
+  reader obtains a session and gets read-only S3) is dropped: it is
+  observed exactly once, by row 6, instead of twice by two mechanisms one
+  of which never existed.
 
-### P8 — F2 produces clients readable at `identity/oidc/client/<tier>` and assignments `<tier-assignment>`. **UNCERTAIN**
-Live Vault has one client (`test`) and two assignments (`allow_all`, `test`) —
-`vault list identity/oidc/client`, `vault list identity/oidc/assignment`. F2's
-plan names neither the client names nor the assignment names. Eval row 3 and
-plan step 3 hard-code a naming convention that no upstream artifact commits to.
-I cannot settle whether F2 will produce these names; that is the point.
+- **P16 — BREAKS, as literally written, against the plan's own current
+  text.** `.loop/plans/M2-minio-poc-human-tiers.md:892-903`:
+  > The manual browser close-out (§8 step 5, eval row 6) has
+  > three sub-parts, and they do not all belong to the same §11
+  > sequencing window: two (reader clicks Reader; same session clicks
+  > Admin, refused) require `operator` to still be `app-minio-readers`-
+  > only, and one (admin clicks Admin, full access) requires `operator`
+  > already promoted to `app-minio-admins`. ... §8 step 5 and §11 step 2
+  > now split the row's sub-parts across both windows explicitly
+  This is false against the plan's own current §8/§11: row 6 now has FOUR
+  sub-parts (reader-positive, reader-denied-admin, writer-positive,
+  admin-positive — see P18 above), split across THREE windows, not two;
+  and `.loop/plans/M2-minio-poc-human-tiers.md:685` shows §11 step 2 is now
+  the **Writer** window, not the Admin window P16 describes. I confirmed
+  this is not a stale reading on my part by diffing P16's exact text
+  against the 4th-round snapshot
+  (`.loop/verdicts/M2-minio-poc-human-tiers.plan-validator.snapshot.md:892-905`):
+  byte-identical. P16 was accurate when written (against that round's
+  two-window, three-sub-part §8/§11) and was simply never revisited when
+  this round's P18 fix rewrote the sections it describes. The underlying
+  MECHANISM claim inside P16 — Vault's `/authorize` assignment check reads
+  group membership fresh per request, with no cache — is untouched by this
+  and I have no reason to doubt it still holds (it is a claim about Vault's
+  own code, not about this plan's structure, and nothing in this round
+  touched Vault or its cited source). Only the plan's self-descriptive
+  cross-reference (sub-part count, window numbering) is what's false. This
+  is confined and mechanical to fix — rewrite lines 892-903 to say "four
+  sub-parts" across "three windows" and correct "§11 step 2" to name the
+  Writer window (with a corresponding mention of step 3 for Admin) — but it
+  is a premise, in the reviewed floor, and it is currently a false
+  statement about this plan's own content, so it is marked `BREAKS` rather
+  than softened.
 
-### P9 — Q4's redirect `https://minio.lab.orangecluster.nl/oauth_callback` reaches the console. **HOLDS, with a scheme mismatch against F2**
-`deployments/infrastructure/services/haproxy.hcl:98` (`acl is_minio`), `:109`
-(`use_backend minio`), and `:127-128` (`backend minio` / `server minio1
-192.168.2.29:9001 check`) route the hostname to the **console** port, not the S3
-port (`s3.lab.orangecluster.nl` → `:9000`). HTTPS to that host returns 200.
-Note for the fix list: F2's Q4 placeholder is
-`http://minio.lab.orangecluster.nl/oauth_callback` (F2 plan line 345) while M2
-resolves to `https://`. M2 itself says these "must match exactly"; MinIO enforces
-exact match (`invalid_redirect_uri`, observed live — see P13).
+- **Additional required fix, carried over from last pass, still
+  unaddressed.** `.loop/plans/M2-minio-poc-human-tiers.md:528-529`:
+  > Steps 1-4 are runnable now once this ticket's Terraform is applied and
+  > the job redeployed; step 5 is the manual residual.
+  This was required fix #3 in my prior verdict (bound to plan hash
+  `2d4dbd37ec655...`). It is byte-identical in the current plan (confirmed
+  by the section diff in "What I did this pass" — §8's opening "Repo gate"
+  paragraph and this closing line both fall outside the lines the P18/P19
+  fix touched). The underlying issue is unchanged: read literally, this
+  says step 4 needs nothing beyond the initial shipped-state apply, which
+  is false on the plan's own terms since step 4's "should succeed" half
+  needs `operator` in `app-minio-readers`, a state only §11 step 1's
+  temporary edit produces. §11 step 1 itself already gets this right
+  (`.loop/plans/M2-minio-poc-human-tiers.md:676-684` names row 5 — this
+  ticket's own numbering for the cross-tier-deny check — as run in that
+  window). The operator's summary of "fixes made" for this round lists four
+  items and this line is not among them, consistent with the diff showing
+  no edit here.
 
-### P10 — "M2 must not be marked done until F4 lands, so the MinIO console resolves from non-Mac LAN devices, not just via the operator's `/etc/hosts`." **BREAKS (stale premise + broken dependency edge)**
-Every clause is now false:
-- **F4 is dropped.** `.loop/ledger.json` entry `F4-foundation-dnsmasq-localstack-dns`
-  has `"dropped": true`. It will never land, so the plan's close-out condition
-  can never be met as written.
-- **`.localstack` is retired.** T3 (`stage: done`, commit `a6cc9c6`, 2026-07-26)
-  renamed all twelve hostnames; its own message states *"After this applies, no
-  .localstack name is served."* N2 (`stage: done`) then removed dnsmasq entirely
-  in favor of public DNS.
-- **The `/etc/hosts` premise is dead.** `grep -c orangecluster /etc/hosts` → `0`,
-  and `dig +short minio.lab.orangecluster.nl @1.1.1.1` → `192.168.2.30`. The name
-  resolves from public DNS, for every LAN device, with no local resolver.
+## Additional observations (not required fixes)
 
-This is the residue the T3 commit warned about in its own message ("left three
-downstream plans describing resources this apply destroys"). T3 surgically
-rewrote only M2's Q4 line (`git show a6cc9c6 -- .loop/plans/M2-...md` is a
-one-line diff) and left the closing Dependencies paragraph untouched. The ledger
-edge for M2 is only `[F2, A1]`, so the harness will not block — but an
-implementer following the plan text will.
-
-### P11 — Every `path:line` anchor resolves to the thing described. **BREAKS (three of them)**
-| Plan claim | Actual | Status |
-|---|---|---|
-| `services.tf:301-306` — the `nomad_job "minio"` resource | `nomad_job "minio"` is at **306-311**; 301-306 is the tail of `nomad_job "postgres"` plus the `### Minio` comment | shifted +5 |
-| `services.tf:333-355` — "input-map convention used by the `grafana` job" | 333-343 is `nomad_job "prometheus"`; grafana starts at **346** | shifted +13 |
-| `deployments/applications/providers.tf:40-44` — the `minio` provider | provider is at **44-48**; 40-44 is the tail of `provider "consul"` | shifted +4 |
-| `minio.hcl:32-40`, `:34-35`, `:42-46`, `:66` | all exact | holds |
-| `modules/bucket/main.tf:11-45` | exact (11 = `policy_read_write`, 45 = close of `policy_read_only`) | holds |
-| `deployments/applications/services.tf:11-14` | exact (`ephemeral "vault_kv_secret_v2" "minio_admin"`) | holds |
-
-The three shifts trace to `services.tf` and `providers.tf` gaining the HAProxy
-job and provider blocks after M2 was authored (`git log` on those files:
-`a6cc9c6` T3 2026-07-26, `ac3267b` B1 2026-07-29).
-
-### P12 — `just pre_commit` is the gate and covers HCL fmt + Terraform fmt/validate over three roots. **HOLDS**
-`justfile:18-19` (`pre_commit: pre-commit run --all-files`);
-`.pre-commit-config.yaml:16-21` `nomad-fmt`, `:22-27` `terraform-fmt`,
-`:28-33` `terraform-validate` → `scripts/tf_validate.sh`, whose `roots=()` array
-is exactly `deployments/infrastructure`, `deployments/applications`,
-`deployments/applications/modules/bucket`. `detect-private-key` at `:12`.
-The plan's gate section is discovered, not assumed. No CI workflow exists —
-also correct.
-
-### P13 — Eval step 4 / eval row 5 can observe `access_denied` via `vault read .../authorize`. **BREAKS**
-Probed read-only against the live `test` client with a deliberately invalid
-redirect so nothing could be issued:
-- `vault read identity/oidc/provider/default/authorize client_id=... redirect_uri=https://invalid.example/none ...`
-  prints `Code: 400. Errors:` — **with the error list empty**. The CLI drops the
-  OIDC error body.
-- The same request via `curl` returns
-  `{"error":"invalid_redirect_uri","error_description":"redirect_uri is not allowed for the client","state":"abc123xyz"}`.
-
-So the deterministic scorer as written ("`vault read .../authorize` returns
-`access_denied`") observes nothing to match against. It must use `curl` and parse
-the JSON body. This also incidentally confirms MinIO/Vault enforce exact
-redirect-URI matching, which sharpens P9.
-
-### P14 — Eval row 1's `redirect_uri` expectation is satisfiable. **BREAKS**
-Row 1 and plan step 1 require each tier block to show "non-empty `config_url`,
-`client_id`, and `redirect_uri`", scorer `deterministic`, threshold `100%`. Per
-P4, `redirect_uri` is deprecated and `HiddenIfEmpty`; a correct implementation
-using `MINIO_BROWSER_REDIRECT_URL` leaves it empty and `mc admin config get`
-will not print it. A deterministic 100% row that fails correct work is worse than
-no row.
-
-### Shape-check eval (required surface item 4)
-`.loop/evals/M2-minio-poc-human-tiers.md` has six rows. **No row uses `ls`,
-`grep`, or file-existence as its scorer** — the deterministic rows are
-`mc admin config get`, `mc admin policy info`, and `vault read`, all content-
-checking, and the two judgment rows are `model + rubric` and `human + rubric` at
-4/5. On shape the eval is sound. It fails on content: rows 1 and 5 (P14, P13)
-cannot pass a correct implementation, and row 1's lowercase `identity_openid:admin`
-contradicts the plan's uppercase-suffix instruction (P3).
+- `.loop/plans/M2-minio-poc-human-tiers.md:619-621` (§10 subticket 4) still
+  says "record the reader-refused-by-admin result" with no mention of the
+  writer-tier result or the now-three-apply sequence. This phrase is
+  byte-identical across all reviewed rounds (confirmed against the 4th-round
+  snapshot), so it is not a regression introduced by this round's fix, and
+  §11's own text (unaffected) already requires the fuller record ("Document
+  the exact sequence, the group membership at each step, and the three
+  applies in the acceptance notes"). §10 is a decomposition summary, not the
+  operative instruction, so I do not require this be fixed, but the operator
+  may want to tidy it while touching §8/Premises for the two required fixes
+  above.
+- Neither the scripted cross-tier-deny check (row 5 / §8 step 4) nor the
+  manual close-out (row 6) ever tests a Writer entity being refused by the
+  Admin or Reader clients, or an Admin/Reader entity being refused by the
+  Writer client — only Reader-refused-by-Admin is dynamically proven. The
+  underlying Vault mechanism (`pathOIDCAuthorize`/`entityHasAssignment`,
+  per P16) is generic and not tier-specific code, so one dynamic proof
+  gives real, if not exhaustive, confidence the same code path holds for
+  every tier pair; row 3's static `group_ids` check covers the rest. This
+  is the same level of rigor a prior round already accepted for the
+  two-tier case, extended unchanged to three, so I treat it as an
+  acceptable POC-scope simplification rather than a gap to fix.
+- Row 6's writer sub-part checks the negative (no delete-bucket, no policy
+  admin) but never affirmatively exercises the "delete" grant Q5 gives
+  writer (`s3:DeleteObject`). The security-relevant half (no privilege
+  escalation) is tested; the purely-affirmative half is not. Minor, and
+  consistent with the same asymmetry already present (and accepted) in the
+  reader/admin sub-parts before this round.
 
 ## Most dangerous assumption
 
-**P4** — that the redirect URI is a per-tier `identity_openid` setting.
+Unchanged from what actually underlies this round's fix: **the load-bearing
+half of P16** — that Vault's `/authorize` assignment check
+(`pathOIDCAuthorize`/`entityHasAssignment`) reads group membership fresh on
+every request, with nothing cached or snapshotted at login time. Every
+window in §11's sequence, old or new, depends on this: if Vault instead
+cached membership at token-issuance or session-start, the three-window
+dance would prove nothing — a session could retain admin-level access after
+a membership edit, and the "reader refused by admin client" and "writer
+refused by delete/policy actions" checks could pass against a broken
+implementation for the wrong reason. This premise's mechanism claim still
+holds; only its self-descriptive counts are stale (see P16 above).
 
-P10 is the loudest stale finding and P5 falsifies the most plan text, but both
-fail *visibly*: a dropped dependency gets noticed, and a non-existent ordering
-problem simply costs nothing. P4 fails *silently and late*. The implementer sets
-`MINIO_IDENTITY_OPENID_REDIRECT_URI_ADMIN`, MinIO accepts it as a config key,
-`terraform apply` succeeds, the job starts, the buttons render — and the browser
-flow dies at the callback with a scheme or URI mismatch that surfaces only in
-step 5, the one step that cannot be scripted. The per-tier-redirect assumption is
-also baked into F2's client registrations, so discovering it late means
-re-planning F2's `redirect_uris` variables too. Everything upstream of it looks
-green.
+## Required fixes (for `pass-with-required-fixes`)
 
-## Required fixes before this plan can leave PLANNING
+1. Fix `.loop/plans/M2-minio-poc-human-tiers.md:528-529` ("Steps 1-4 are
+   runnable now...") to state that step 4's "should succeed" half
+   additionally requires §11 step 1's window — carried over, unaddressed,
+   from the prior verdict. Touches §8.
+2. Update P16 (`:892-905`) to match the plan's own current §8/§11: four
+   sub-parts, not three; three windows, not two; and correct "§11 step 2"
+   to name the Writer window (adding a corresponding reference to step 3
+   for Admin). Touches Premises.
 
-1. **Redirect URI (P4).** Drop `MINIO_IDENTITY_OPENID_REDIRECT_URI_<tier>` from
-   Code surface. Add the global `MINIO_BROWSER_REDIRECT_URL` to the `minio.hcl`
-   env template and state that all three tiers share one callback. Record that
-   HAProxy sets no `X-Forwarded-Proto`, so this variable is what makes the
-   `https://` callback correct.
-2. **Ordering (P5).** Delete the "MinIO validates `role_policy` at startup"
-   claim, rewrite the Size/Effort rationale (the cross-layer ordering is not the
-   cost), and drop or repurpose subticket 3. Cite `cmd/iam.go:369-376`. Resolve
-   the standing contradiction with Resolved-Q2 in Q2's favor.
-3. **F4 (P10).** Delete the closing Dependencies paragraph. F4 is dropped,
-   `.localstack` is retired, and `minio.lab.orangecluster.nl` resolves from
-   public DNS. Nothing about DNS gates M2's close-out.
-4. **Eval row 1 (P14, P3).** Remove the `redirect_uri` expectation; assert
-   `role_policy`, `config_url`, `client_id` only. Settle the target-name case
-   and make the plan's Code surface and every eval command agree.
-5. **Eval row 5 (P13).** Re-express the cross-tier-deny check as a `curl`
-   against `/v1/identity/oidc/provider/<provider>/authorize` parsing
-   `.error == "access_denied"`. `vault read` swallows the body.
-6. **F2 interface (P7, P8).** Either land `default/minio/oidc/<tier>` and the
-   client/assignment naming in F2's plan, or restate them in M2 as Open
-   Questions rather than Resolved forks. Reconcile F2's `http://` redirect
-   placeholder with M2's `https://`.
-7. **Anchors (P11).** Repoint `services.tf:301-306` → `:306-311`,
-   `services.tf:333-355` → the grafana map at `:346-...`, and
-   `providers.tf:40-44` → `:44-48`.
-8. **Boot-time discovery risk (P6).** Add to Risk assessment: MinIO parses the
-   OIDC discovery document during config load
-   (`internal/config/identity/openid/openid.go:296`), so an unreachable Vault
-   issuer at MinIO start fails the `identity_openid` subsystem. This is a larger
-   blast radius than the ordering risk currently named.
-
-## Method note
-
-Read-only throughout. Cluster interaction was limited to `vault status`,
-`vault list`, `vault read`, `curl` GETs, `nomad job inspect`, and
-`mc admin config get` / `admin info` via `MC_HOST_*` with `--config-dir` pointed
-at a scratch directory (no alias written to the user's `~/.mc`). MinIO behavior
-was verified against the exact release the job runs
-(`RELEASE.2025-09-07T16-13-09Z`) by reading that tag's source from
-`raw.githubusercontent.com`, not from intuition or release notes. No mutating
-command was run and no repo file was modified; the only write is this verdict.
+Both fixes are confined, mechanical, and do not touch the underlying
+architecture, which I independently re-confirmed against the unchanged repo
+state this pass.
