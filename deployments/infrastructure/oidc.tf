@@ -81,6 +81,7 @@ locals {
     vault_identity_oidc_client.smoke.client_id,
     vault_identity_oidc_client.nomad.client_id,
     vault_identity_oidc_client.memex.client_id,
+    vault_identity_oidc_client.oauth2_proxy.client_id,
   ]
 }
 
@@ -146,4 +147,41 @@ resource "vault_identity_oidc_client" "smoke" {
 resource "vault_identity_oidc_key_allowed_client_id" "smoke" {
   key_name          = vault_identity_oidc_key.lab.name
   allowed_client_id = vault_identity_oidc_client.smoke.client_id
+}
+
+### --- L1: oauth2-proxy (landing page gate) ---------------------------------
+### Flat access: anyone who completes Vault login is let through. Branch 3 of
+### the documented procedure (docs/vault-human-auth.md:282-290) — the built-in
+### "allow_all" assignment, no group, no vault_identity_oidc_assignment
+### resource. Confidential client: oauth2-proxy holds a real client secret,
+### and Vault issues none to a public client (see the ticket's requirement 7a).
+###
+### The redirect URL is a local, not a literal repeated here and in
+### services.tf's templatefile call: Vault rejects a callback whose URL is not
+### in redirect_uris with "unauthorized redirect_uri", so the client
+### registration and the jobspec's OAUTH2_PROXY_REDIRECT_URL must never drift
+### apart.
+locals {
+  oauth2_proxy_redirect_url = "https://dash.lab.orangecluster.nl/oauth2/callback"
+}
+
+resource "vault_identity_oidc_client" "oauth2_proxy" {
+  name = "oauth2-proxy"
+  key  = vault_identity_oidc_key.lab.name
+
+  redirect_uris = [
+    local.oauth2_proxy_redirect_url,
+  ]
+
+  assignments      = ["allow_all"]
+  client_type      = "confidential"
+  id_token_ttl     = 3600
+  access_token_ttl = 3600
+}
+
+### Registers the client against the key without editing the key resource,
+### copying the smoke client's pattern.
+resource "vault_identity_oidc_key_allowed_client_id" "oauth2_proxy" {
+  key_name          = vault_identity_oidc_key.lab.name
+  allowed_client_id = vault_identity_oidc_client.oauth2_proxy.client_id
 }

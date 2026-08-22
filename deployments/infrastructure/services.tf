@@ -387,6 +387,19 @@ resource "nomad_job" "promtail" {
   jobspec = templatefile("${path.module}/services/promtail.hcl", {})
 }
 
+### oauth2-proxy — OIDC forward-gate for the landing page (dash). Reusable
+### pattern: R1 and R4 copy this job.
+resource "nomad_job" "oauth2_proxy" {
+  jobspec = templatefile(
+    "${path.module}/services/oauth2-proxy.hcl",
+    {
+      oidc_secret   = vault_kv_secret_v2.oauth2_proxy_oidc_client.path
+      cookie_secret = vault_kv_secret_v2.oauth2_proxy_cookie_secret.path
+      redirect_url  = local.oauth2_proxy_redirect_url
+    }
+  )
+}
+
 ### NATS+JetStream
 resource "nomad_job" "nats" {
   jobspec    = templatefile("${path.module}/services/nats.hcl", {})

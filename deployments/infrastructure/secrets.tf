@@ -178,3 +178,48 @@ resource "vault_kv_secret_v2" "oidc_smoke_client" {
     }
   }
 }
+
+### oauth2-proxy OIDC client credentials, under the service's own prefix.
+### Same shape as oidc_smoke_client above: client_secret is provider-generated
+### and must reach KV2, never a .tf literal. detect-private-key does NOT catch
+### this — it matches PEM headers, not `hvo_secret_...`.
+resource "vault_kv_secret_v2" "oauth2_proxy_oidc_client" {
+  mount = vault_mount.kvv2.path
+  name  = "default/oauth2-proxy/oidc"
+  data_json = jsonencode({
+    client_id     = vault_identity_oidc_client.oauth2_proxy.client_id
+    client_secret = vault_identity_oidc_client.oauth2_proxy.client_secret
+    issuer        = "https://${var.vault_issuer_host}/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}"
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+### oauth2-proxy cookie secret. 32 raw ASCII characters, passed straight
+### through with no base64 wrapping: oauth2-proxy's SecretBytes
+### base64url-decodes the value before measuring it, so 32 alphanumerics
+### arrive as 24 bytes — one of its three legal sizes (16/24/32).
+resource "random_password" "oauth2_proxy_cookie_secret" {
+  length  = 32
+  special = false
+}
+
+resource "vault_kv_secret_v2" "oauth2_proxy_cookie_secret" {
+  mount = vault_mount.kvv2.path
+  name  = "default/oauth2-proxy/cookie"
+  data_json = jsonencode({
+    secret = random_password.oauth2_proxy_cookie_secret.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}

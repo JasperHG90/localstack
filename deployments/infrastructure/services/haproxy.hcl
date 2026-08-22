@@ -104,6 +104,7 @@ frontend https_in
     acl is_memex      hdr(host) -i memex.lab.orangecluster.nl
     acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
     acl is_bifrost    hdr(host) -i bifrost.lab.orangecluster.nl
+    acl is_dash       hdr(host) -i dash.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -114,6 +115,7 @@ frontend https_in
     use_backend memex      if is_memex
     use_backend grafana    if is_grafana
     use_backend bifrost    if is_bifrost
+    use_backend dash       if is_dash
 
 frontend stats
     bind *:8404
@@ -149,6 +151,9 @@ backend grafana
 
 backend bifrost
     server bifrost1 192.168.2.50:8080 check
+
+backend dash
+    server dash1 192.168.2.50:4180 check
         EOH
         destination = "local/haproxy.cfg"
       }

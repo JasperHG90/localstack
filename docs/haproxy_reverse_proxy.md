@@ -21,10 +21,13 @@ to the HTTPS URL.
 | `memex.lab.orangecluster.nl` | jetson-orin-nano (192.168.2.46) | 8000 |
 | `grafana.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 3000 |
 | `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
+| `dash.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4180 |
 
 `phoenix` sits behind HTTP basic auth. `bifrost` authenticates
 with its own native `governance.auth_config` (admin creds from Vault), so
-HAProxy no longer gates it. The rest are open to anyone who reaches the edge.
+HAProxy no longer gates it. `dash` sits behind oauth2-proxy, gated by Vault
+SSO with flat any-authenticated-user access. The rest are open to anyone who
+reaches the edge.
 
 **Prometheus and Loki are deliberately not routed here.** Both serve their
 query APIs with no authentication, and nothing needs them through the proxy:
