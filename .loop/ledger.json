@@ -113,13 +113,10 @@
     },
     "L1-landing-oauth2-proxy": {
       "slug": "L1-landing-oauth2-proxy",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "plan review PARTIALLY SOUND/fail: eval redirect/cookie expectations wrong for oauth2-proxy so correct code fails a 100% row; L1<->L2 dependency cycle. See .loop/verdicts/L1-landing-oauth2-proxy.plan-validator.md"
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
