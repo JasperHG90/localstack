@@ -214,10 +214,13 @@
     },
     "M2-minio-poc-human-tiers": {
       "slug": "M2-minio-poc-human-tiers",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "eval-missing",
+        "reason": "Plan reworked and passed plan-validator (5 rounds, pass-with-required-fixes) \u2014 unblocked to ready. Eval marker at .loop/evals/M2-minio-poc-human-tiers.md is fully drafted and schema/substance-valid (loopctl eval / verify-eval-substance both pass) but carries no signed-off-by line. Operator was asleep; per standing instruction, not self-signing on their behalf. Review the eval (6 rows covering config/policy/client-scoping/cross-tier-deny/browser close-out across a 3-tier reader-writer-admin sequence) and sign with create-eval, or edit if anything should change, then re-run: loopctl advance M2-minio-poc-human-tiers ready (already there) then implement-ticket."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
