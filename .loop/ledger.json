@@ -145,13 +145,10 @@
     },
     "L2-landing-homepage": {
       "slug": "L2-landing-homepage",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "plan review BROKEN/fail: body mandates an ungated dash backend contradicting its own resolved fork; security eval row passes against an empty cluster. See .loop/verdicts/L2-landing-homepage.plan-validator.md"
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -163,7 +160,7 @@
         "A1-audit-plan-premise-sweep"
       ],
       "priority": 5,
-      "summary": "Deploy gethomepage as a Nomad job with static config on a dynamic host volume, routed through HAProxy behind L1's forward-auth, so an authenticated operator gets one themed landing page with tiles and live-status widgets instead of memorizing hostnames.",
+      "summary": "Deploy gethomepage as a Nomad job in deployments/applications with static tile config, then wire its address into L1's already-deployed oauth2-proxy as the reverse-proxy upstream (replacing the static://200 placeholder), so an authenticated operator gets one themed landing page instead of memorizing hostnames.",
       "relay_block_nonfork": null,
       "tags": [
         "homepage",
