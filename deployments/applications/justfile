@@ -41,3 +41,23 @@ rebuild_hermes:
     echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
     docker build --pull --platform linux/arm64 -t "${image}" -f services/hermes/Dockerfile services/hermes
     docker push "${image}"
+
+# Rebuild and push the dash (landing page) image.
+# Tag is read from services.tf so the Dockerfile and Terraform stay in lockstep.
+# Unlike rebuild_hermes, the build context is the REPO ROOT, not a
+# services/<name>/ subdirectory: the app depends on cli/ via a uv path
+# dependency, so both trees must be in the build. `just` pins this recipe's
+# starting cwd to this justfile's own directory (deployments/applications/),
+# never the repo root, so the explicit `cd` below is load-bearing -- without
+# it the build context resolves to the wrong directory and `COPY cli/`
+# fails in the Dockerfile.
+rebuild_dash:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tag=$(grep -E '^\s*dash_version\s*=' services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    image="ghcr.io/jasperhg90/dash:${tag}"
+    echo ">> building ${image}"
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    cd "$(git rev-parse --show-toplevel)"
+    docker build --pull --platform linux/arm64 -t "${image}" -f deployments/applications/services/dash/Dockerfile .
+    docker push "${image}"

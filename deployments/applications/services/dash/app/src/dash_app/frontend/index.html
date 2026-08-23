@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>localstack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    /* light (default) */
+    --bg: oklch(97% 0.005 340);
+    --panel: oklch(99% 0.003 340);
+    --panel-raised: oklch(95.5% 0.006 340);
+    --border: oklch(88% 0.01 340);
+    --border-soft: oklch(92% 0.008 340);
+    --text: oklch(24% 0.012 340);
+    --text-muted: oklch(45% 0.014 340);
+    --text-faint: oklch(58% 0.012 340);
+
+    /* localstack brand: light theme reads BRAND_PLUM directly (branding.py) */
+    --accent: #592742;
+    --accent-deep: #592742;
+    --logo-window: oklch(97% 0.016 80);
+
+    --up: oklch(48% 0.14 150);
+    --degraded: oklch(52% 0.15 75);
+    --down: oklch(52% 0.19 25);
+    --up-bg: oklch(48% 0.14 150 / 0.1);
+    --degraded-bg: oklch(52% 0.15 75 / 0.1);
+    --down-bg: oklch(52% 0.19 25 / 0.08);
+    --degraded-border: oklch(52% 0.15 75 / 0.35);
+    --down-border: oklch(52% 0.19 25 / 0.35);
+
+    --shadow-card: 0 1px 2px oklch(30% 0.02 340 / 0.05);
+    --backdrop: oklch(20% 0.02 340 / 0.4);
+
+    --font-display: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --font-label: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: oklch(15% 0.008 340);
+    --panel: oklch(19% 0.01 340);
+    --panel-raised: oklch(23% 0.012 340);
+    --border: oklch(30% 0.014 340);
+    --border-soft: oklch(25% 0.012 340);
+    --text: oklch(93% 0.004 340);
+    --text-muted: oklch(64% 0.012 340);
+    --text-faint: oklch(46% 0.01 340);
+
+    /* dark theme swaps in MARK, the lifted tint branding.py uses because
+       BRAND_PLUM is too dark to read on a dark background */
+    --accent: #a34c76;
+    --logo-window: oklch(94% 0.014 80);
+
+    --up: oklch(72% 0.15 150);
+    --degraded: oklch(80% 0.15 80);
+    --down: oklch(68% 0.2 25);
+    --up-bg: oklch(72% 0.15 150 / 0.08);
+    --degraded-bg: oklch(80% 0.15 80 / 0.06);
+    --down-bg: oklch(68% 0.2 25 / 0.07);
+    --degraded-border: oklch(80% 0.15 80 / 0.4);
+    --down-border: oklch(68% 0.2 25 / 0.4);
+
+    --shadow-card: none;
+    --backdrop: oklch(8% 0.01 340 / 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-label);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :root:not([data-theme="dark"]) body {
+    background:
+      radial-gradient(1200px 520px at 8% -12%, oklch(90% 0.02 340 / 0.6), transparent 62%),
+      var(--bg);
+  }
+  :root[data-theme="dark"] body {
+    background:
+      radial-gradient(1200px 520px at 8% -12%, oklch(28% 0.03 340 / 0.3), transparent 62%),
+      repeating-linear-gradient(0deg, oklch(100% 0 0 / 0.014) 0px, oklch(100% 0 0 / 0.014) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(90deg, oklch(100% 0 0 / 0.014) 0px, oklch(100% 0 0 / 0.014) 1px, transparent 1px, transparent 40px),
+      var(--bg);
+  }
+
+  a { color: var(--accent); }
+  a:hover { color: var(--text); }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 48px 32px 72px;
+  }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 44px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 14px; }
+
+  .logo-mark { display: block; }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .wordmark .cursor { color: var(--accent); }
+
+  .tagline {
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .summary { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+
+  .stat { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; min-width: 8px; border-radius: 50%; display: inline-block; }
+  .stat-count { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); }
+  .stat-label { font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .vrule { width: 1px; height: 28px; background: var(--border); }
+
+  .synced { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .synced-time { font-size: 12px; color: var(--text-muted); }
+  .synced-src { font-size: 10px; color: var(--text-faint); letter-spacing: 0.02em; }
+
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .theme-toggle .icon-moon { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+  .section-eyebrow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+  .section-eyebrow .label {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .section-eyebrow .hint { font-size: 11px; color: var(--text-faint); }
+
+  .section { margin-bottom: 40px; }
+  .section:last-of-type { margin-bottom: 0; }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
+    .card:hover { transform: translateY(-2px); }
+  }
+  .card:hover {
+    border-color: var(--accent);
+    background: var(--panel-raised);
+  }
+  .card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .card.state-degraded { box-shadow: var(--shadow-card), inset 3px 0 0 var(--degraded); background: var(--degraded-bg); }
+  .card.state-down { box-shadow: var(--shadow-card), inset 3px 0 0 var(--down); background: var(--down-bg); }
+  .card.state-degraded:hover, .card.state-down:hover { background: var(--panel-raised); }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; }
+
+  .icon-chip {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .external-icon {
+    color: var(--text-faint);
+    opacity: 0.7;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+  .card:hover .external-icon { opacity: 1; color: var(--accent); }
+
+  .card-name {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    width: fit-content;
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .badge.state-up { background: var(--up-bg); color: var(--text-muted); }
+  .badge.state-up .dot { background: var(--up); }
+  .badge.state-degraded { background: var(--degraded-bg); border: 1px solid var(--degraded-border); color: var(--degraded); }
+  .badge.state-degraded .dot { background: var(--degraded); }
+  .badge.state-down { background: var(--down-bg); border: 1px solid var(--down-border); color: var(--down); }
+  .badge.state-down .dot { background: var(--down); }
+  .badge.state-unknown { background: var(--panel-raised); color: var(--text-faint); }
+  .badge.state-unknown .dot { background: var(--text-faint); }
+
+  .card-node { font-family: var(--font-display); font-size: 11px; color: var(--text-faint); text-align: right; }
+
+  .footnote {
+    margin-top: 32px;
+    font-size: 11px;
+    color: var(--text-faint);
+    line-height: 1.6;
+    max-width: 640px;
+  }
+
+  dialog.connect-modal {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0;
+    background: var(--panel);
+    color: var(--text);
+    width: min(440px, 92vw);
+    box-shadow: 0 20px 60px oklch(20% 0.02 340 / 0.25);
+  }
+  dialog.connect-modal::backdrop { background: var(--backdrop); }
+
+  .modal-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .modal-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); }
+  .modal-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .modal-close {
+    margin-left: auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .modal-close:hover { background: var(--panel-raised); color: var(--text); }
+
+  .modal-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 18px; }
+
+  .connect-list { display: grid; grid-template-columns: 84px 1fr; row-gap: 10px; column-gap: 12px; margin: 0; }
+  .connect-list dt { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; padding-top: 2px; }
+  .connect-list dd { margin: 0; font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  .example-label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .example-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .example-row code {
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre;
+    flex: 1;
+  }
+  .copy-btn {
+    font-family: var(--font-label);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--panel-raised);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 480px) {
+    .summary { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<script>
+  (function () {
+    var stored = 'light';
+    try { stored = localStorage.getItem('ls-theme') || 'light'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', stored);
+  })();
+</script>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="brand">
+      <svg class="logo-mark" width="40" height="42" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <path d="M50 4 L98 52 L82 52 L82 96 L18 96 L18 52 L2 52 Z" fill="var(--accent)"/>
+        <rect x="33" y="54" width="34" height="26" rx="6" fill="var(--logo-window)"/>
+        <path d="M42 60 L49 67 L42 74" stroke="var(--accent-deep)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M52 74 L61 74" stroke="var(--accent-deep)" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="wordmark">localstack<span class="cursor">_</span></div>
+        <div class="tagline">home-lab cluster</div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="stat"><span class="dot" style="background:var(--up)"></span><span class="stat-count tabular" id="count-up">0</span><span class="stat-label">up</span></div>
+      <div class="stat"><span class="dot" style="background:var(--degraded)"></span><span class="stat-count tabular" id="count-degraded">0</span><span class="stat-label">degraded</span></div>
+      <div class="stat"><span class="dot" style="background:var(--down)"></span><span class="stat-count tabular" id="count-down">0</span><span class="stat-label">down</span></div>
+      <div class="vrule"></div>
+      <div class="synced">
+        <div class="synced-time" id="synced-time">loading&hellip;</div>
+        <div class="synced-src">nomad &middot; consul</div>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" type="button">
+        <svg class="icon-sun" width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M10 1.5V4M10 16V18.5M18.5 10H16M4 10H1.5M15.8 4.2L14 6M6 14L4.2 15.8M15.8 15.8L14 14M6 6L4.2 4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <svg class="icon-moon" width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M17 11.5A7.5 7.5 0 1 1 8.5 3a6 6 0 0 0 8.5 8.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">
+      <span class="label">Dashboards</span>
+      <span class="hint">degraded first, then alphabetical &middot; click to open</span>
+    </div>
+    <div class="card-grid" id="dashboard-grid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">
+      <span class="label">Backend services</span>
+      <span class="hint">no browser UI &middot; click for connection details</span>
+    </div>
+    <div class="card-grid" id="backend-grid"></div>
+  </div>
+
+  <div class="footnote">Status comes from Nomad job and allocation state, cross-checked against Consul health checks. Vault, Nomad and Consul run as agents rather than Nomad jobs, so their health reads from Consul's own catalog. Per-service history and latency live in Grafana.</div>
+
+</div>
+
+<dialog class="connect-modal" id="connect-modal">
+  <div class="modal-head">
+    <div class="icon-chip" id="modal-icon"></div>
+    <div>
+      <div class="modal-name" id="modal-name"></div>
+      <div class="modal-desc" id="modal-desc"></div>
+    </div>
+    <button class="modal-close" id="modal-close" aria-label="Close" type="button">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3L13 13M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <dl class="connect-list" id="connect-list"></dl>
+    <div>
+      <div class="example-label">Example</div>
+      <div class="example-row">
+        <code id="modal-example"></code>
+        <button class="copy-btn" id="modal-copy" type="button">copy</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const CONNECT_ICON = '<svg class="external-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 3V6M11 3V6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4 6H12V8C12 10.2 10.2 12 8 12C5.8 12 4 10.2 4 8V6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 12V14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  const EXTERNAL_ICON = '<svg class="external-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6.5 4H4.5C3.67 4 3 4.67 3 5.5V11.5C3 12.33 3.67 13 4.5 13H10.5C11.33 13 12 12.33 12 11.5V9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M9 3H13V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 3L7 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+
+  const badgeLabel = { up: 'UP', degraded: 'DEGRADED', down: 'DOWN', unknown: 'UNKNOWN' };
+
+  function cardHtml(s, kind) {
+    const tag = kind === 'link' ? 'a' : 'button';
+    const attrs = kind === 'link'
+      ? `href="${s.url}" target="_blank" rel="noopener noreferrer"`
+      : `type="button" data-key="${s.key}"`;
+    const cornerIcon = kind === 'link' ? EXTERNAL_ICON : CONNECT_ICON;
+    return `
+    <${tag} class="card state-${s.status} ${kind === 'modal' ? 'connect-card' : ''}" ${attrs}>
+      <div class="card-top">
+        <div class="icon-chip" style="background:${s.color}22; color:${s.color};">${s.icon}</div>
+        ${cornerIcon}
+      </div>
+      <div>
+        <div class="card-name">${escapeHtml(s.name)}</div>
+        <div class="card-desc">${escapeHtml(s.desc)}</div>
+      </div>
+      <div class="card-foot">
+        <div class="badge state-${s.status}"><span class="dot"></span>${badgeLabel[s.status] || s.status.toUpperCase()}</div>
+        <div class="card-node tabular">${escapeHtml(s.node)}${s.counts ? ' &middot; ' + s.counts : ''}</div>
+      </div>
+    </${tag}>
+  `;
+  }
+
+  const modal = document.getElementById('connect-modal');
+  let backendTiles = [];
+
+  function openConnect(s) {
+    const iconEl = document.getElementById('modal-icon');
+    iconEl.innerHTML = s.icon;
+    iconEl.style.background = s.color + '22';
+    iconEl.style.color = s.color;
+    document.getElementById('modal-name').textContent = s.name;
+    document.getElementById('modal-desc').textContent = s.desc;
+    document.getElementById('connect-list').innerHTML = `
+      <dt>Protocol</dt><dd>${escapeHtml(s.connect.protocol)}</dd>
+      <dt>Address</dt><dd class="tabular">${escapeHtml(s.connect.address)}</dd>
+      <dt>Auth</dt><dd>${escapeHtml(s.connect.auth)}</dd>
+    `;
+    document.getElementById('modal-example').textContent = s.connect.example;
+    document.getElementById('modal-copy').textContent = 'copy';
+    modal.showModal();
+  }
+
+  document.getElementById('backend-grid').addEventListener('click', (event) => {
+    const card = event.target.closest('.connect-card');
+    if (!card) return;
+    const service = backendTiles.find((s) => s.key === card.dataset.key);
+    if (service) openConnect(service);
+  });
+
+  document.getElementById('modal-close').addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) modal.close();
+  });
+
+  document.getElementById('modal-copy').addEventListener('click', async () => {
+    const btn = document.getElementById('modal-copy');
+    const text = document.getElementById('modal-example').textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'copied';
+      setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+    } catch (e) {
+      // Clipboard access can be blocked; fail quietly.
+    }
+  });
+
+  const themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('ls-theme', next); } catch (e) {}
+  });
+
+  const STATUS_ORDER = { down: 0, degraded: 1, up: 2, unknown: 3 };
+  function sortTiles(tiles) {
+    return tiles.slice().sort((a, b) => {
+      const rank = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      return rank !== 0 ? rank : a.name.localeCompare(b.name);
+    });
+  }
+
+  let lastSyncedAt = null;
+
+  function renderSyncedTime() {
+    const el = document.getElementById('synced-time');
+    if (!lastSyncedAt) return;
+    const seconds = Math.max(0, Math.round((Date.now() - lastSyncedAt) / 1000));
+    el.textContent = seconds < 1 ? 'synced just now' : `synced ${seconds}s ago`;
+  }
+
+  async function refresh() {
+    let data;
+    try {
+      const response = await fetch('/api/status', { cache: 'no-store' });
+      data = await response.json();
+    } catch (e) {
+      document.getElementById('synced-time').textContent = 'could not reach the status endpoint';
+      return;
+    }
+
+    const tiles = data.tiles || [];
+    const dashboards = sortTiles(tiles.filter((t) => t.category === 'dashboard'));
+    backendTiles = sortTiles(tiles.filter((t) => t.category === 'backend'));
+
+    document.getElementById('dashboard-grid').innerHTML = dashboards.map((s) => cardHtml(s, 'link')).join('');
+    document.getElementById('backend-grid').innerHTML = backendTiles.map((s) => cardHtml(s, 'modal')).join('');
+
+    const counts = tiles.reduce((acc, s) => {
+      acc[s.status] = (acc[s.status] || 0) + 1;
+      return acc;
+    }, { up: 0, degraded: 0, down: 0, unknown: 0 });
+    document.getElementById('count-up').textContent = counts.up;
+    document.getElementById('count-degraded').textContent = counts.degraded;
+    document.getElementById('count-down').textContent = counts.down;
+
+    lastSyncedAt = Date.now();
+    renderSyncedTime();
+  }
+
+  refresh();
+  setInterval(refresh, 15000);
+  setInterval(renderSyncedTime, 1000);
+</script>
+</body>
+</html>

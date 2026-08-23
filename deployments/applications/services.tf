@@ -91,6 +91,17 @@ locals {
         "allow from 192.168.0.0/16 to any port 8080 proto tcp",
       ]
     }
+    # Dash (landing page) on radxa-dragon-q6a (L3), colocated with
+    # oauth2-proxy. oauth2-proxy reaches it over loopback
+    # (127.0.0.1:8000), which never crosses this firewall; this rule is
+    # the single-caller shape from infrastructure/services.tf's
+    # oauth2_proxy rule, admitting only this same host in case that
+    # ever changes.
+    dash = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules    = ["allow from 192.168.2.50 to any port 8000 proto tcp"]
+    }
   }
 }
 
@@ -165,6 +176,32 @@ resource "nomad_job" "loki" {
   jobspec = templatefile(
     "${path.module}/services/loki.hcl",
     { loki_minio_secret = vault_kv_secret_v2.loki_minio_credentials.path }
+  )
+}
+
+### Dash — the cluster landing page (L3). The tile list lives in
+### services/dash/tiles.json, round-tripped through jsondecode/jsonencode
+### so a syntax error fails `terraform plan` rather than reaching the job,
+### the same pattern memex's auth_keys.json/auth_oidc.json already use
+### (see this file's `locals.memex_auth_keys` comment).
+locals {
+  dash_tiles_json = jsonencode(jsondecode(file("${path.module}/services/dash/tiles.json")))
+}
+
+resource "nomad_job" "dash" {
+  jobspec = templatefile(
+    "${path.module}/services/dash.hcl",
+    {
+      dash_version = "0.1.0"
+      # Direct IP, not the `dash.lab.orangecluster.nl` edge hostname: this
+      # is an internal, server-side read of Nomad's/Consul's own API, the
+      # same convention prometheus.hcl's `consul_address` var already uses
+      # (infrastructure/services.tf's prometheus resource) rather than the
+      # devcontainer-only `localstack.local` convenience hostname.
+      nomad_addr  = "http://192.168.2.30:4646"
+      consul_addr = "http://192.168.2.30:8500"
+      tiles_json  = local.dash_tiles_json
+    }
   )
 }
 
