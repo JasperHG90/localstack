@@ -51,7 +51,7 @@ job "oauth2-proxy" {
         OAUTH2_PROXY_COOKIE_SECURE="true"
         OAUTH2_PROXY_REDIRECT_URL="${redirect_url}"
         OAUTH2_PROXY_EMAIL_DOMAINS="*"
-        OAUTH2_PROXY_UPSTREAMS="static://200"
+        OAUTH2_PROXY_UPSTREAMS="${dash_upstream}"
         OAUTH2_PROXY_OIDC_EMAIL_CLAIM="sub"
         OAUTH2_PROXY_SCOPE="openid"
         OAUTH2_PROXY_SKIP_PROVIDER_BUTTON="false"

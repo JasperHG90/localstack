@@ -71,3 +71,31 @@ repos:
         # only hide the hook when the manifest or lock changes.
         files: '^cli/'
         pass_filenames: false
+      # Python gates for the dash app (deployments/applications/services/dash/app/).
+      # A standalone uv project, not a cli/ subpackage (L3, §11 Q3), so it
+      # inherits none of the four hooks above by default -- these mirror them
+      # line for line, scoped to its own path.
+      - id: dash-app-ruff
+        name: Ruff (lint, dash app)
+        entry: uv run --project deployments/applications/services/dash/app ruff check --force-exclude
+        language: system
+        types: [python]
+        files: '^deployments/applications/services/dash/app/'
+      - id: dash-app-ruff-format
+        name: Ruff (format, dash app)
+        entry: uv run --project deployments/applications/services/dash/app ruff format --check --force-exclude
+        language: system
+        types: [python]
+        files: '^deployments/applications/services/dash/app/'
+      - id: dash-app-mypy
+        name: Mypy (strict, dash app)
+        entry: uv run --project deployments/applications/services/dash/app mypy --config-file deployments/applications/services/dash/app/pyproject.toml deployments/applications/services/dash/app/src deployments/applications/services/dash/app/tests
+        language: system
+        files: '^deployments/applications/services/dash/app/'
+        pass_filenames: false
+      - id: dash-app-pytest
+        name: Pytest (dash app)
+        entry: uv run --project deployments/applications/services/dash/app pytest deployments/applications/services/dash/app/tests
+        language: system
+        files: '^deployments/applications/services/dash/app/'
+        pass_filenames: false
