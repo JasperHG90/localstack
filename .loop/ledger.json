@@ -1738,7 +1738,7 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "55b180d565f2c6b3516cd2ce55294bf84cab6f95",
       "review_verdict": ".loop/verdicts/D10-cli-broker-nomad-manage.adversarial.md, .loop/verdicts/D10-cli-broker-nomad-manage.documentation.md",
       "dropped": false,
       "drop_reason": null,
