@@ -154,8 +154,8 @@
       },
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false,
-      "drop_reason": null,
+      "dropped": true,
+      "drop_reason": "superseded by L3-landing-dash-app: custom app with config-driven tiles, connect-info modals, and cli-backed live status; L2's gethomepage design cannot produce any of the three and has zero commits",
       "carried_over_finding": null,
       "epic": "landing",
       "dependencies": [
@@ -1757,7 +1757,7 @@
     },
     "SY1-switchyard-deployment": {
       "slug": "SY1-switchyard-deployment",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
@@ -1786,6 +1786,47 @@
       "premise": {},
       "measured_against": {},
       "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "L3-landing-dash-app": {
+      "slug": "L3-landing-dash-app",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "landing",
+      "dependencies": [
+        "L1-landing-oauth2-proxy"
+      ],
+      "priority": 10,
+      "summary": "Build and deploy a custom 'dash' Nomad job as the cluster homepage: config-driven (JSON) service tiles (dashboards row + backend-service connect-info-modal row), live per-service health computed by reusing cli/'s existing judge_all()/join() logic via a path dependency, fronted by L1's already-deployed oauth2-proxy, built and pushed as a container image following the Hermes recipe. Supersedes L2-landing-homepage, which the operator has resolved to drop.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "dash",
+        "homepage",
+        "nomad",
+        "vault",
+        "cli",
+        "oauth2-proxy"
+      ],
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [
+        {
+          "row_title": "plan:",
+          "before": "plan: 0a8b16c80feeb7d40adb93968aa46d575aa18d35c8afe27f3b7e73d233db73a0",
+          "after": "plan: e998446c52f7e011f3029675e0d3a89551f52d28a7f0b12c540c57bff69a6f9e",
+          "reason": "Plan updated to apply plan-validator's 3 required fixes (P18: rebuild_dash needs an explicit repo-root cd since just pins recipe cwd; P19: corrected pyproject.toml citation line range; P20: L2-drop status text updated to reflect the ledger action that already ran). None of the 13 eval rows reference the corrected details -- re-read confirms no row drifted.",
+          "counter_signer": "operator (delegated during authoring session \u2014 \"You're in control of the loop. I'm not here.\")",
+          "when": "2026-08-23"
+        }
+      ],
       "plan_rebinds": []
     }
   }
