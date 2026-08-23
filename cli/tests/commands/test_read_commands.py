@@ -128,6 +128,31 @@ def test_status_renders_every_source() -> None:
         assert source in result.stdout
 
 
+def _last_request_header(path: str, header: str) -> str:
+    """The named header on the last request to `path`, from respx's global
+    call log.
+
+    Deliberately NOT `respx.get(path)` a second time: re-registering an
+    already-mocked route resets its response to the unconfigured default
+    (200, empty body), silently breaking whatever mocked it first.
+    """
+    calls = [call for call in respx.calls if call.request.url.path == path]
+    assert calls, f"no request was made to {path!r}"
+    return str(calls[-1].request.headers[header])
+
+
+@respx.mock
+def test_status_uses_the_manage_credential_for_nodes_and_jobs() -> None:
+    """`deploy` excludes `list-jobs`/`node:read`; only `manage` grants them."""
+    mock_cluster()
+
+    result = runner.invoke(app, ["status"])
+
+    assert result.exit_code == 0, result.output
+    assert _last_request_header("/v1/nodes", "X-Nomad-Token") == "a-nomad_manage-token"
+    assert _last_request_header("/v1/jobs/statuses", "X-Nomad-Token") == "a-nomad_manage-token"
+
+
 @respx.mock
 def test_status_exits_non_zero_when_one_source_fails() -> None:
     """Three green panels from a swallowed timeout is the failure guarded."""
@@ -161,6 +186,21 @@ def test_status_json_is_parseable() -> None:
 
 
 # -- service -----------------------------------------------------------------
+
+
+@respx.mock
+def test_service_uses_the_manage_credential_for_job_statuses() -> None:
+    """`deploy` excludes `list-jobs`; only `manage` grants it."""
+    mock_cluster()
+    mock_edge_job()
+    respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
+        return_value=httpx.Response(200, json={"TaskGroups": []})
+    )
+
+    result = runner.invoke(app, ["service"])
+
+    assert result.exit_code == 0, result.output
+    assert _last_request_header("/v1/jobs/statuses", "X-Nomad-Token") == "a-nomad_manage-token"
 
 
 @respx.mock
@@ -281,6 +321,18 @@ def mock_job_with_secrets() -> None:
     respx.get(f"{VAULT}/v1/secret/metadata/default/hermes/hidden").mock(
         return_value=httpx.Response(403, text="permission denied")
     )
+
+
+@respx.mock
+def test_secret_still_uses_the_deploy_credential() -> None:
+    """Regression guard: `secret` only needs `read-job`, which `deploy`
+    already grants, so it must not widen to `manage`."""
+    mock_job_with_secrets()
+
+    result = runner.invoke(app, ["secret", "hermes"])
+
+    assert result.exit_code == 0, result.output
+    assert _last_request_header("/v1/job/hermes", "X-Nomad-Token") == "a-nomad-token"
 
 
 @respx.mock

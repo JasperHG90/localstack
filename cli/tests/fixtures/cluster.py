@@ -57,6 +57,13 @@ NOMAD_CREDS = {
     "data": {"secret_id": "nomad-secret-id", "accessor_id": "nomad-accessor-id"},
 }
 
+NOMAD_MANAGE_CREDS = {
+    "lease_id": "nomad/creds/manage/Q02OQvOPvwMdTTgVrnOVsOtE",
+    "lease_duration": 1800,
+    "renewable": True,
+    "data": {"secret_id": "nomad-manage-secret-id", "accessor_id": "nomad-manage-accessor-id"},
+}
+
 CONSUL_CREDS = {
     "lease_id": "consul/creds/deploy/eeJyUe15gUdzFNQ6wh2PHNCE",
     "lease_duration": 1800,
@@ -82,6 +89,7 @@ HEALTHY_ROUTES: dict[str, tuple[int, bytes]] = {
         json.dumps({"auth": {"lease_duration": 2764800, "renewable": True}}).encode(),
     ),
     "/v1/nomad/creds/deploy": (200, json.dumps(NOMAD_CREDS).encode()),
+    "/v1/nomad/creds/manage": (200, json.dumps(NOMAD_MANAGE_CREDS).encode()),
     "/v1/consul/creds/deploy": (200, json.dumps(CONSUL_CREDS).encode()),
 }
 

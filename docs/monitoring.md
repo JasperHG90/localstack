@@ -84,13 +84,11 @@ The seal-state and Consul reads need no token, so those two panels work for
 anyone. The node and job panels need a Nomad token carrying `list-jobs` and
 `node:read`.
 
-**Today they will say "denied."** `localstack login` brokers
-`nomad/creds/deploy`, whose policy grants neither. Both Nomad panels name the
-capability they are missing instead of showing an empty table, which is the
-designed behavior for a policy gap, but it does mean half the screen is
-unavailable until the CLI also brokers `nomad/creds/manage`. The `developer`
-policy already grants that read, so the change is to the broker, not to
-Terraform.
+`localstack login` brokers a second Nomad credential, `nomad/creds/manage`,
+for exactly this: `nomad/creds/deploy`'s policy grants neither `list-jobs`
+nor `node:read`, so the node and job panels read through `manage` instead.
+A denial still names the capability it is missing rather than showing an
+empty table, which is the designed behavior for a genuine policy gap.
 
 ### Reaching Prometheus or Loki directly
 

@@ -38,7 +38,7 @@ def service(
         raise fail(str(error)) from error
 
     session = refreshed_session(require_session())
-    entry = session.credential("nomad")
+    entry = session.credential("nomad_manage")
     token = entry.token if entry else None
 
     try:

@@ -104,17 +104,13 @@ them from arguments. The output says so.
 
 ## What the token can and cannot read today
 
-`localstack login` brokers `nomad/creds/deploy`, whose policy deliberately
-withholds `list-jobs` and node read. Until the CLI also brokers
-`nomad/creds/manage`:
-
-- `status` renders its Nomad rows as `ERROR` and exits non-zero. The Vault
-  and Consul rows still fill.
-- `service` cannot build its join at all, so it exits with the denial rather
-  than printing a half table.
-
-`secret` and `vault grants` work now, on grants the `developer` policy
-already carries.
+`localstack login` brokers two Nomad credentials: `nomad/creds/deploy`,
+whose policy deliberately withholds `list-jobs` and node read, and
+`nomad/creds/manage`, a full Nomad management token, for exactly the reads
+`deploy` withholds. `status`, `service` and `monitor` use `manage`; `secret`
+and `env` still use `deploy`, since neither needs more than `read-job` and
+Terraform's own `terraform apply` must never receive a management-scoped
+token.
 
 When a read is refused, the message says which of the two problems you have.
 A dead session says to log in. A missing grant names the capability and says

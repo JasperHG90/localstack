@@ -47,6 +47,9 @@ def a_session() -> Session:
             policies=("default",),
         ),
         nomad=credential(30, token="nomad-token", accessor="nomad-accessor", lease_id="nl"),
+        nomad_manage=credential(
+            30, token="nomad-manage-token", accessor="nomad-manage-accessor", lease_id="nml"
+        ),
         consul=credential(30, token="consul-token", accessor="consul-accessor", lease_id="cl"),
     )
 
@@ -160,6 +163,7 @@ def test_expires_at_is_absolute_and_computed_from_the_lease() -> None:
 def test_credential_lookup_by_service_name() -> None:
     session = a_session()
     assert session.credential("nomad") is session.nomad
+    assert session.credential("nomad_manage") is session.nomad_manage
     assert session.credential("consul") is session.consul
     assert session.credential("vault") is session.vault
     assert session.credential("postgres") is None

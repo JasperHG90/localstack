@@ -60,7 +60,7 @@ def logout() -> None:
         revoked = False
         warn(f"error: could not revoke the Vault token: {error}")
         warn("These credentials are still live. Revoke them by accessor:")
-        for name in ("vault", "nomad", "consul"):
+        for name in ("vault", "nomad", "nomad_manage", "consul"):
             entry = session.credential(name)
             if entry is not None and entry.accessor:
                 warn(f"  {name}: {entry.accessor}")

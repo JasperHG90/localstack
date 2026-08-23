@@ -111,6 +111,7 @@ def login(
             username=who,
             vault=vault_credential,
             nomad=broker("nomad", addr, vault_credential.token),
+            nomad_manage=broker("nomad_manage", addr, vault_credential.token),
             consul=broker("consul", addr, vault_credential.token),
         )
     except BrokerError as error:

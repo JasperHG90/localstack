@@ -41,7 +41,7 @@ def monitor(
     # long time, so starting on a token that is already near expiry would
     # turn every Nomad row into "not authenticated" minutes later.
     session = refreshed_session(require_session())
-    entry = session.credential("nomad")
+    entry = session.credential("nomad_manage")
 
     build(
         vault_addr=config.vault_addr,

@@ -40,6 +40,9 @@ def logged_in(cluster_addr: str) -> Session:
             policies=("default",),
         ),
         nomad=Credential("nomad-tok", "nomad-acc", now + timedelta(minutes=25), True),
+        nomad_manage=Credential(
+            "nomad-manage-tok", "nomad-manage-acc", now + timedelta(minutes=25), True
+        ),
         consul=Credential("consul-tok", "consul-acc", now + timedelta(minutes=25), True),
     )
     save(session, session_path())
@@ -214,6 +217,7 @@ def test_logout_prints_the_accessors_when_revocation_fails(
     result = runner.invoke(app, ["logout"])
     stderr = plain(result.stderr)
     assert "vault-acc" in stderr and "nomad-acc" in stderr and "consul-acc" in stderr
+    assert "nomad-manage-acc" in stderr
 
 
 def test_logout_without_a_session_exits_non_zero() -> None:
@@ -248,6 +252,8 @@ def test_login_writes_the_session_and_the_token_file(cluster_addr: str) -> None:
     assert session.username == "operator"
     assert session.vault.entity_id == "351f302a"
     assert session.nomad is not None and session.nomad.token == "nomad-secret-id"
+    assert session.nomad_manage is not None
+    assert session.nomad_manage.token == "nomad-manage-secret-id"
     assert session.consul is not None and session.consul.token == "consul-token"
     assert token_path().read_text() == "hvs.session-token"
 
@@ -257,6 +263,7 @@ def test_login_brokers_eagerly(cluster_addr: str, cluster: FakeCluster) -> None:
     later `terraform apply`."""
     runner.invoke(app, ["login", "--vault-addr", cluster_addr], input="hunter2\n")
     assert len(cluster.requests_for("/v1/nomad/creds/deploy")) == 1
+    assert len(cluster.requests_for("/v1/nomad/creds/manage")) == 1
     assert len(cluster.requests_for("/v1/consul/creds/deploy")) == 1
 
 

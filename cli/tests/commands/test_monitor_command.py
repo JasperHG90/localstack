@@ -87,4 +87,4 @@ class _FakeCredential:
 
 class _FakeSession:
     def credential(self, service: str) -> Any:
-        return _FakeCredential() if service == "nomad" else None
+        return _FakeCredential() if service == "nomad_manage" else None

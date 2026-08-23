@@ -17,7 +17,12 @@ from tests.fixtures.cluster import LOGIN_RESPONSE, FakeCluster
 NOW = datetime(2026, 8, 2, 12, 0, tzinfo=UTC)
 
 
-def session_at(cluster_addr: str, nomad_minutes: int, consul_minutes: int) -> Session:
+def session_at(
+    cluster_addr: str,
+    nomad_minutes: int,
+    consul_minutes: int,
+    nomad_manage_minutes: int = 30,
+) -> Session:
     return Session(
         method="userpass",
         vault_addr=cluster_addr,
@@ -32,6 +37,12 @@ def session_at(cluster_addr: str, nomad_minutes: int, consul_minutes: int) -> Se
             token="old-nomad",
             accessor="old-nomad-accessor",
             expires_at=NOW + timedelta(minutes=nomad_minutes),
+            renewable=True,
+        ),
+        nomad_manage=Credential(
+            token="old-nomad-manage",
+            accessor="old-nomad-manage-accessor",
+            expires_at=NOW + timedelta(minutes=nomad_manage_minutes),
             renewable=True,
         ),
         consul=Credential(
@@ -51,6 +62,13 @@ def test_the_two_engines_use_different_field_names(cluster_addr: str) -> None:
     consul = broker("consul", cluster_addr, "hvs.session-token", NOW)
     assert (nomad.token, nomad.accessor) == ("nomad-secret-id", "nomad-accessor-id")
     assert (consul.token, consul.accessor) == ("consul-token", "consul-accessor")
+
+
+def test_manage_creds_broker_from_the_manage_path(cluster_addr: str) -> None:
+    """`nomad/creds/manage` is a separate role on the same Nomad secrets
+    engine as `deploy`, so it shares the engine's field names."""
+    manage = broker("nomad_manage", cluster_addr, "hvs.session-token", NOW)
+    assert (manage.token, manage.accessor) == ("nomad-manage-secret-id", "nomad-manage-accessor-id")
 
 
 def test_the_lease_becomes_an_absolute_expiry(cluster_addr: str) -> None:
@@ -87,6 +105,18 @@ def test_a_403_names_the_path_the_policies_and_the_ticket(
     assert "nomad/creds/deploy" in message
     assert "developer" in message, "must report identity_policies, not just policies"
     assert "F11" in message
+
+
+def test_a_403_on_manage_names_the_manage_path(cluster_addr: str, cluster: FakeCluster) -> None:
+    cluster.routes["/v1/nomad/creds/manage"] = (
+        403,
+        json.dumps({"errors": ["1 error occurred: permission denied"]}).encode(),
+    )
+    with pytest.raises(BrokerError) as caught:
+        broker("nomad_manage", cluster_addr, "hvs.session-token", NOW)
+    message = str(caught.value)
+    assert "nomad/creds/manage" in message
+    assert "developer" in message, "must report identity_policies, not just policies"
 
 
 def test_a_403_still_reports_when_the_policy_lookup_also_fails(
@@ -150,6 +180,20 @@ def test_ensure_fresh_rebrokers_only_the_stale_one(cluster_addr: str, cluster: F
     assert cluster.requests_for("/v1/consul/creds/deploy") == []
     assert updated.nomad is not None and updated.nomad.token == "nomad-secret-id"
     assert updated.consul is not None and updated.consul.token == "old-consul"
+
+
+def test_ensure_fresh_rebrokers_manage_independently(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    session = session_at(cluster_addr, nomad_minutes=30, consul_minutes=30, nomad_manage_minutes=2)
+    updated, changed = ensure_fresh(session, NOW)
+    assert changed is True
+    assert cluster.requests_for("/v1/nomad/creds/deploy") == []
+    assert len(cluster.requests_for("/v1/nomad/creds/manage")) == 1
+    assert cluster.requests_for("/v1/consul/creds/deploy") == []
+    assert updated.nomad is not None and updated.nomad.token == "old-nomad"
+    assert updated.nomad_manage is not None
+    assert updated.nomad_manage.token == "nomad-manage-secret-id"
 
 
 def test_brokered_credentials_are_rebrokered_never_renewed(

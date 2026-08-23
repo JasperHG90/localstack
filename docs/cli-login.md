@@ -49,16 +49,23 @@ stores it.
 
 ## What you get
 
-Three credentials in one `0600` file at
+Four credentials in one `0600` file at
 `${XDG_CONFIG_HOME:-$HOME/.config}/localstack/session.json`:
 
 | Credential | Lives for | Refresh |
 | --- | --- | --- |
 | Vault session token | weeks | renewed in place |
 | Nomad `deploy` token | 30 minutes, capped at 1 hour | re-brokered |
+| Nomad `manage` token | 30 minutes, capped at 1 hour | re-brokered |
 | Consul `deploy` token | 30 minutes, capped at 1 hour | re-brokered |
 
-The brokered pair are re-brokered rather than renewed, because their leases
+`deploy` is scoped for Terraform's own job submission; `manage` is a full
+Nomad management token, brokered only so `status`, `service` and `monitor`
+can read `list-jobs` and node state that `deploy` withholds. It is never
+exported to your shell: `eval "$(localstack env)"` and `localstack token`
+only ever hand out `deploy`.
+
+The three brokered leases are re-brokered rather than renewed, because they
 cap at `max_ttl 3600`: renewing one buys a single extra window and then fails
 anyway. Any command needing them refreshes them first, so you do not manage
 this.
@@ -118,7 +125,7 @@ localstack logout
 
 Calls `auth/token/revoke-self` first, then deletes the session file and
 `~/.vault-token`. Revoking the Vault token revokes the leases it created, so
-all three credentials die together. Deleting the file alone would leave live
+every credential dies together. Deleting the file alone would leave live
 tokens on the cluster for up to an hour.
 
 If revocation fails, the files still go and the accessors print to stderr so
@@ -126,11 +133,11 @@ you can revoke them by hand.
 
 ## If a session is stolen
 
-You have three credentials out there and revoking the Vault token cascades to
-the other two. In order of preference:
+You have four credentials out there and revoking the Vault token cascades to
+the other three. In order of preference:
 
 **1. `localstack logout`**, if you still have the session. One command, ends
-all three.
+all four.
 
 **2. Revoke by accessor**, if you do not. This needs
 `auth/token/revoke-accessor`, which `developer` does not grant. **Join
@@ -194,8 +201,9 @@ password does not end a live session.
 ## Preconditions
 
 The `userpass` backend and the `operator` entity come from F2. The policy that
-lets your session read `nomad/creds/deploy` and `consul/creds/deploy` comes
-from F11, which binds `developer` through an identity group. Both are applied.
+lets your session read `nomad/creds/deploy`, `nomad/creds/manage` and
+`consul/creds/deploy` comes from F11, which binds `developer` through an
+identity group. Both are applied.
 
 If brokering fails with a 403, the message names the path that was denied and
 the policies your token actually carries. It reads `identity_policies`, not

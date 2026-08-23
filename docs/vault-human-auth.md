@@ -134,8 +134,9 @@ What the credential does buy over the root token:
 - It cannot be used to unseal or rekey.
 
 **`localstack logout` ships with `D2` and is the way to do this.** It revokes
-the Vault token, and with it the brokered Nomad and Consul leases, then
-deletes the session file and `~/.vault-token`. See `docs/cli-login.md`.
+the Vault token, and with it the three brokered leases (Nomad `deploy`,
+Nomad `manage`, Consul `deploy`), then deletes the session file and
+`~/.vault-token`. See `docs/cli-login.md`.
 
 If you have the lost session's token but not its session file, the equivalent
 is:
@@ -154,19 +155,21 @@ is right.
 
 **If a session is lost, do this first: `localstack logout`.** It calls
 `auth/token/revoke-self`, which `default` grants, and revoking the parent
-cascades to both brokered Nomad and Consul leases. It ends all three
-credentials in one command, needs no root, and works only while you still have
-the file — so it is the first thing to try and the first thing to lose.
+cascades to all three brokered leases (Nomad `deploy`, Nomad `manage`, Consul
+`deploy`). It ends all four credentials in one command, needs no root, and
+works only while you still have the file — so it is the first thing to try
+and the first thing to lose.
 
 **Everything else is narrower than it looks.** Removing someone from the
 `developer` group demotes their Vault
 token to `default` on its next call, because the policy arrives through the
 group at request time rather than baked into the token. But that is only the
 Vault half. A `localstack` session also holds brokered Nomad and Consul
-tokens, which those services honor without consulting Vault, and removing an
-entity from a group does not revoke a Vault lease. Worse, the `default` policy
-grants `sys/leases/renew` (measured), so a demoted holder can keep renewing
-both brokered leases up to their `max_ttl` of one hour.
+tokens (two Nomad roles, `deploy` and `manage`), which those services honor
+without consulting Vault, and removing an entity from a group does not
+revoke a Vault lease. Worse, the `default` policy grants `sys/leases/renew`
+(measured), so a demoted holder can keep renewing all three brokered leases
+up to their `max_ttl` of one hour.
 
 **Disabling the entity does not close it either.** `vault path-help
 identity/entity/id/<id>` is explicit: *"tokens tied to this identity will not
@@ -176,9 +179,9 @@ services' own state.
 
 Two things do close it:
 
-- **Revoke by accessor.** Revoking the parent cascades to the child Nomad and
-  Consul leases — one action, all three credentials, and it needs only your
-  Vault password. But it needs `auth/token/revoke-accessor`, which `developer`
+- **Revoke by accessor.** Revoking the parent cascades to the child leases —
+  one action, all four credentials, and it needs only your Vault password.
+  But it needs `auth/token/revoke-accessor`, which `developer`
   does not have by default, so you must grant it to yourself first. **Do that
   on a throwaway entity, never on the `developer` group.** Group policies
   resolve per request and the thief is also a `developer`: granting it to the
@@ -235,13 +238,16 @@ Two things do close it:
   escalation policy would have left that policy live and unattached to
   anything you could find by listing users.
 - **Cut the mint path, then delete the tokens** — remove the entity from the
-  group or disable it, **then** `nomad acl token delete <accessor>` and
-  `CONSUL_HTTP_TOKEN="$CONSUL_TOKEN" consul acl token delete -accessor-id
-  <accessor>`. **The Consul bridge is not optional**: the CLI reads
-  `CONSUL_HTTP_TOKEN` and ignores `CONSUL_TOKEN`, so without it the delete
-  fails with an error that reads like a wrong accessor. Order matters: the
-  stolen Vault token can re-mint the pair until the group grant is gone. This
-  needs a management token, not root.
+  group or disable it, **then delete BOTH Nomad tokens**: `nomad acl token
+  delete <deploy-accessor>` and `nomad acl token delete <manage-accessor>`.
+  A session mints one of each, and the `manage` token is a full Nomad
+  management token — missing it leaves the more dangerous of the two live.
+  Then `CONSUL_HTTP_TOKEN="$CONSUL_TOKEN" consul acl token delete
+  -accessor-id <accessor>`. **The Consul bridge is not optional**: the CLI
+  reads `CONSUL_HTTP_TOKEN` and ignores `CONSUL_TOKEN`, so without it the
+  delete fails with an error that reads like a wrong accessor. Order
+  matters: the stolen Vault token can re-mint all three until the group
+  grant is gone. This needs a management token, not root.
 
 **The deletes are not instant.** Consul runs `ACLTokenTTL: 30s` with
 `ACLDownPolicy: extend-cache` and Nomad `ACL.TokenTTL: 30s`, both defaults. An

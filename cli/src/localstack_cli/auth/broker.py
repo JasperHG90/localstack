@@ -23,6 +23,7 @@ from localstack_cli.auth.session import (
 )
 
 NOMAD_CREDS_PATH = "nomad/creds/deploy"
+NOMAD_MANAGE_CREDS_PATH = "nomad/creds/manage"
 CONSUL_CREDS_PATH = "consul/creds/deploy"
 
 # Which response field holds the token and which holds the accessor, per
@@ -30,6 +31,7 @@ CONSUL_CREDS_PATH = "consul/creds/deploy"
 # engine is a row.
 _FIELDS = {
     "nomad": (NOMAD_CREDS_PATH, "secret_id", "accessor_id"),
+    "nomad_manage": (NOMAD_MANAGE_CREDS_PATH, "secret_id", "accessor_id"),
     "consul": (CONSUL_CREDS_PATH, "token", "accessor"),
 }
 
@@ -44,7 +46,7 @@ def _denied_message(service: str, path: str, policies: list[str], detail: str) -
         f"  Vault said: {detail}\n"
         f"  Your policies are: {', '.join(policies) if policies else '(none beyond default)'}\n"
         "  The grant lives in F11-foundation-human-read-role, which binds "
-        "`developer` to the two creds paths through an identity group."
+        "`developer` to the three creds paths through an identity group."
     )
 
 
@@ -148,7 +150,7 @@ def ensure_fresh(
         changed = True
 
     refreshed: dict[str, Credential | None] = {}
-    for service in ("nomad", "consul"):
+    for service in ("nomad", "nomad_manage", "consul"):
         entry = session.credential(service)
         if entry is not None and not entry.is_stale(moment, skew):
             refreshed[service] = entry
@@ -161,6 +163,7 @@ def ensure_fresh(
             session,
             vault=vault_entry,
             nomad=refreshed["nomad"],
+            nomad_manage=refreshed["nomad_manage"],
             consul=refreshed["consul"],
         ),
         changed,

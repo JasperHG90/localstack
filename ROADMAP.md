@@ -341,10 +341,9 @@ before the change.
   consumes it by name. Whether `alloc-node-exec`, which is exec on the node
   rather than an allocation, should be in it at all is undecided.
 - **`D3`'s scope was justified by the `deploy` token's 403s.** `G2` has since
-  landed and `D3` shipped as written. The 403s are still real: `login` brokers
-  `nomad/creds/deploy`, which grants neither `list-jobs` nor node read, so
-  `status` and `service` stay partial until the CLI also brokers
-  `nomad/creds/manage`.
+  landed and `D3` shipped as written. `D10` closed the gap: `login` now also
+  brokers `nomad/creds/manage`, and `status`/`service`/`monitor` use it for
+  the `list-jobs`/node-read capabilities `deploy` withholds.
 
 ## Superseding this file
 

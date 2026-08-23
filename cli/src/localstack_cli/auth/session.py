@@ -1,9 +1,10 @@
 """The credential cache: one file holding the Vault session and what it brokered.
 
-One file, three entries, because their lifetimes differ. The Vault token lives
-for days; the brokered Nomad and Consul leases cap at an hour. `expires_at` is
-absolute, computed from each response's `lease_duration` at receipt, so a
-clock read decides freshness rather than a countdown nobody is running.
+One file, four entries, because their lifetimes differ. The Vault token lives
+for days; the brokered Nomad (`deploy` and `manage`) and Consul leases cap at
+an hour. `expires_at` is absolute, computed from each response's
+`lease_duration` at receipt, so a clock read decides freshness rather than a
+countdown nobody is running.
 
 Nothing here talks to the network. Every function takes the path, so tests
 point it at a temp directory instead of the developer's real config.
@@ -17,7 +18,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # A credential inside this window is treated as already gone. Re-brokering
 # costs one request; handing out a token that dies mid-`terraform apply`
@@ -59,19 +60,25 @@ class Credential:
 
 @dataclass(frozen=True)
 class Session:
-    """A login and the two credentials brokered from it."""
+    """A login and the credentials brokered from it."""
 
     method: str
     vault_addr: str
     username: str
     vault: Credential
     nomad: Credential | None = None
+    nomad_manage: Credential | None = None
     consul: Credential | None = None
     version: int = SCHEMA_VERSION
 
     def credential(self, service: str) -> Credential | None:
         """The credential for a service name, or None when not brokered."""
-        return {"vault": self.vault, "nomad": self.nomad, "consul": self.consul}.get(service)
+        return {
+            "vault": self.vault,
+            "nomad": self.nomad,
+            "nomad_manage": self.nomad_manage,
+            "consul": self.consul,
+        }.get(service)
 
 
 def session_path() -> Path:
@@ -136,6 +143,7 @@ def save(session: Session, path: Path) -> None:
             "username": session.username,
             "vault": _encode(session.vault),
             "nomad": _encode(session.nomad),
+            "nomad_manage": _encode(session.nomad_manage),
             "consul": _encode(session.consul),
         },
         indent=2,
@@ -194,6 +202,7 @@ def load(path: Path) -> Session | None:
         username=str(data.get("username", "")),
         vault=vault,
         nomad=_decode(data.get("nomad"), "nomad"),
+        nomad_manage=_decode(data.get("nomad_manage"), "nomad_manage"),
         consul=_decode(data.get("consul"), "consul"),
         version=SCHEMA_VERSION,
     )

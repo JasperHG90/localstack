@@ -31,7 +31,7 @@ def status(
         raise fail(str(error)) from error
 
     session = refreshed_session(require_session())
-    nomad_entry = session.credential("nomad")
+    nomad_entry = session.credential("nomad_manage")
 
     result = api_status.fetch(
         vault_addr=config.vault_addr,
