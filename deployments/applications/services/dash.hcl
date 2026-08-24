@@ -69,7 +69,7 @@ job "dash" {
       env {
         NOMAD_ADDR       = "${nomad_addr}"
         CONSUL_HTTP_ADDR = "${consul_addr}"
-        NOMAD_TOKEN_FILE = "secrets/nomad-token"
+        NOMAD_TOKEN_FILE = "/secrets/nomad-token"
         DASH_TILES_PATH  = "/local/tiles.json"
         PORT             = "8001"
       }
@@ -111,8 +111,21 @@ job "dash" {
       ### (services.tf) so a syntax error fails `terraform plan`, not this
       ### job -- same pattern memex's auth_keys.json/auth_oidc.json use
       ### (services.tf's own comment on that local).
+      ### A heredoc, not a quoted string: tiles_json is raw JSON text
+      ### (jsonencode output), which carries embedded double quotes.
+      ### Splicing that into a plain quoted data string breaks Nomad's own
+      ### jobspec parser the moment the first embedded quote closes the
+      ### HCL string early -- caught only at terraform apply (the nomad
+      ### provider's jobspec parse step), since neither terraform validate
+      ### nor nomad fmt parse the rendered jobspec, only the template
+      ### source. A heredoc needs no quote-escaping, and tiles.json
+      ### contains no dollar-sign characters (confirmed by grep), so
+      ### Nomad's own interpolation syntax cannot misfire on the
+      ### substituted content.
       template {
-        data        = "${tiles_json}"
+        data        = <<-EOH
+        ${tiles_json}
+        EOH
         destination = "local/tiles.json"
       }
 

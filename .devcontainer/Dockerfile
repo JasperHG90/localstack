@@ -42,6 +42,15 @@ RUN curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/ins
 # Install clx
 RUN curl -fsSL https://raw.githubusercontent.com/JasperHG90/clx/main/install.sh | bash
 
+# Install memex cli
+RUN uv tool install --refresh "memex-cli[server,mcp] @ git+https://github.com/JasperHG90/memex.git@latest#subdirectory=packages/cli"
+
+# Install aim
+RUN uv tool install git+https://github.com/JasperHG90/agent-integrations-manager.git
+
+# Install loop engineering harness control CLI
+RUN uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.git
+
 # Shims first, then the pinned binaries, then the system. `localstack deps`
 # writes both directories and never writes to one what belongs in the other.
 # A bare `nomad`, `consul` or `vault` finds its shim, which execs the pinned

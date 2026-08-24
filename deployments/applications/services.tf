@@ -198,8 +198,8 @@ resource "nomad_job" "dash" {
       # Two images, one per task (L4's frontend/backend split) — pinned
       # independently since the two build contexts are now separate
       # directories with no shared version.
-      dash_frontend_version = "0.1.0"
-      dash_backend_version  = "0.1.0"
+      dash_frontend_version = "0.2.0"
+      dash_backend_version  = "0.2.0"
       # Direct IP, not the `dash.lab.orangecluster.nl` edge hostname: this
       # is an internal, server-side read of Nomad's/Consul's own API, the
       # same convention prometheus.hcl's `consul_address` var already uses

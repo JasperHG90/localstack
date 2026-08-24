@@ -1826,7 +1826,7 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "b32546d65a921db293bb544ff68f5251012c86a2",
       "review_verdict": ".loop/verdicts/L4-landing-dash-fe-be-split.adversarial.md, .loop/verdicts/L4-landing-dash-fe-be-split.documentation.md",
       "dropped": false,
       "drop_reason": null,

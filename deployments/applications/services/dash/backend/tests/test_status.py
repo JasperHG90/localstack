@@ -100,6 +100,21 @@ def test_an_agent_endpoint_tile_falls_back_to_consul_check_state() -> None:
     assert states[0].status == "up"
 
 
+def test_an_agent_endpoint_tile_with_no_registered_check_still_reports_up() -> None:
+    """Consul's own agent is the standing example: it registers itself in
+    the catalog, but its only check (serfHealth) carries no ServiceName, so
+    no check is ever found for it. Catalog presence alone is the health
+    signal for an agent endpoint, not "unknown"."""
+    tiles = [_tile("consul", "consul")]
+    catalog: dict[str, list[str]] = {"consul": []}
+
+    states = compute_tile_states(
+        tiles, jobs=[], nodes=[], checks=[], catalog=catalog, service_names={}
+    )
+
+    assert states[0].status == "up"
+
+
 def test_a_node_argument_change_never_touches_dashboard_tile_matching() -> None:
     """Regression guard: node list only feeds `eligible_nodes` for system jobs."""
     tiles = [_tile("grafana", "grafana")]

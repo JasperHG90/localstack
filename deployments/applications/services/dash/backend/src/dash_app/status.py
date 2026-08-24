@@ -69,10 +69,21 @@ def _status_from_consul(check_state: str) -> TileStatus:
     check", "not found", or a joined set of failing statuses (e.g.
     "critical"). Only used for agent-endpoint tiles (Vault, Nomad,
     Consul), which carry no Nomad job for `judge_all` to assess.
+
+    "no check" only reaches here already carrying `JobSource.CONSUL_NAME`
+    (`compute_tile_states` calls this function only in that branch): join()
+    has already confirmed the tile's job name is a real service in
+    Consul's own catalog, it just has no check registered against it --
+    Consul's own agent is the standing example, since its only check
+    (`serfHealth`) carries no `ServiceName` (`consul_client.py`'s own
+    docstring). Catalog presence is itself the health signal here, so this
+    reads "up", not "unknown". "not found" is kept distinct and still
+    unknown: it means join() could not confirm the tile in Consul's
+    catalog at all, a strictly weaker signal than "no check".
     """
-    if check_state == "passing":
+    if check_state in ("passing", "no check"):
         return "up"
-    if check_state in ("no check", "not found"):
+    if check_state == "not found":
         return "unknown"
     return "down"
 

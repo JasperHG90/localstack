@@ -7,17 +7,17 @@ alias d := destroy
 init:
     #!/usr/bin/env bash
     set -euo pipefail
-    eval "$(localstack env)"
+    eval "$(uv run localstack env)"
     terraform init -backend-config=./vars/backend-config.hcl
 
 apply:
     #!/usr/bin/env bash
     set -euo pipefail
-    eval "$(localstack env)"
+    eval "$(uv run localstack env)"
     terraform apply -var-file=./vars/prod.tfvars
 
 destroy:
     #!/usr/bin/env bash
     set -euo pipefail
-    eval "$(localstack env)"
+    eval "$(uv run localstack env)"
     terraform destroy -var-file=./vars/prod.tfvars
