@@ -1,13 +1,15 @@
-"""The deployed dash job, over the network.
+"""The deployed dash backend task, over the network.
 
 Marked `cluster` and excluded from the default run. Run on purpose:
 
-    uv run --project deployments/applications/services/dash/app pytest -m cluster
+    uv run --project deployments/applications/services/dash/backend pytest -m cluster
 
-Talks to dash's own address directly (not through oauth2-proxy's edge
-gate, which needs an authenticated browser session and is L1's concern,
-already covered there) -- the same shape as cli/tests/test_api_live.py's
-direct-service reads.
+Talks to the backend task's own port directly (not through oauth2-proxy's
+edge gate, which needs an authenticated browser session and is L1's
+concern, already covered there) -- the same shape as
+cli/tests/test_api_live.py's direct-service reads. Since the frontend/
+backend split (L4), `/api/status` answers on the backend task's own port,
+not the frontend's.
 """
 
 import os
@@ -21,7 +23,7 @@ STATUS_VALUES = {"up", "degraded", "down", "unknown"}
 
 
 def _dash_addr() -> str:
-    return os.environ.get("DASH_ADDR", "http://192.168.2.50:8000")
+    return os.environ.get("DASH_ADDR", "http://192.168.2.50:8001")
 
 
 def test_status_endpoint_answers_with_live_tiles() -> None:

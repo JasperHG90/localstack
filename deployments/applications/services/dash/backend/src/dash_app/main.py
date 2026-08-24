@@ -1,29 +1,29 @@
-"""The dash app: serves the landing page and its live status endpoint.
+"""The dash backend: serves the live status endpoint only.
 
 `create_app` takes its config and tiles as arguments rather than reading
 the environment itself, so tests can build a real Starlette app against
 fake data without an env var in sight. `main()` is the only place that
 reads the environment and starts a server.
+
+The frontend's static files are served by a separate task
+(`deployments/applications/services/dash/frontend/`) -- this app no longer
+mounts them; see `dash.hcl` for the two-task split.
 """
 
 from __future__ import annotations
 
 import os
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
-from starlette.routing import Mount, Route
-from starlette.staticfiles import StaticFiles
+from starlette.routing import Route
 
 from dash_app.config import Config
 from dash_app.live import fetch_tile_states
 from dash_app.status import TileState
 from dash_app.tiles import Tile, load_tiles
-
-FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 
 def _tile_json(state: TileState) -> dict[str, Any]:
@@ -76,7 +76,6 @@ def create_app(config: Config, tiles: list[Tile]) -> Starlette:
 
     routes = [
         Route("/api/status", status_endpoint),
-        Mount("/", app=StaticFiles(directory=FRONTEND_DIR, html=True), name="static"),
     ]
     return Starlette(routes=routes)
 
@@ -87,7 +86,7 @@ def main() -> None:
     config = Config.from_env()
     tiles = load_tiles(config.tiles_path)
     app = create_app(config, tiles)
-    port = int(os.environ.get("PORT", "8000"))
+    port = int(os.environ.get("PORT", "8001"))
     uvicorn.run(app, host="0.0.0.0", port=port)  # noqa: S104
 
 

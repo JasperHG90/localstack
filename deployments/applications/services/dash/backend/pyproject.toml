@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Status backend and frontend for the localstack cluster landing page"
 requires-python = ">=3.12"
 dependencies = [
-    "localstack-cli",
+    "httpx>=0.28.1",
     "starlette>=1.6.0",
     "uvicorn>=0.52.4",
 ]
@@ -23,6 +23,7 @@ packages = ["src/dash_app"]
 dev = [
     "mypy>=2.3.0",
     "pytest>=9.1.1",
+    "respx>=0.23.1",
     "ruff>=0.16.1",
 ]
 
@@ -45,15 +46,3 @@ select = ["E", "F", "I"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-
-# cli/ ships no py.typed marker and this ticket does not touch cli/ (its
-# code surface is elsewhere), so mypy cannot see localstack_cli's own
-# (separately strict-checked) annotations from here. This scopes the
-# exemption to that one package rather than weakening strict mode for
-# this project's own code.
-[[tool.mypy.overrides]]
-module = "localstack_cli.*"
-ignore_missing_imports = true
-
-[tool.uv.sources]
-localstack-cli = { path = "../../../../../cli", editable = true }

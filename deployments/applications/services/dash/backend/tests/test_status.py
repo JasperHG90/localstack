@@ -1,8 +1,8 @@
 import pytest
-from localstack_cli.api.consul import Check
-from localstack_cli.api.health import Health
-from localstack_cli.api.nomad import Alloc, Job, Node
 
+from dash_app.consul_client import Check
+from dash_app.health import Health
+from dash_app.nomad_client import Alloc, Job, Node
 from dash_app.status import compute_tile_states, status_for
 from dash_app.tiles import Tile
 

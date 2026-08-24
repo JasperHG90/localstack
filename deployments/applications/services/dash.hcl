@@ -12,14 +12,43 @@ job "dash" {
       port "http" {
         static = 8000
       }
+      port "backend" {
+        static = 8001
+      }
     }
 
-    task "dash" {
+    task "frontend" {
       driver = "podman"
 
       service {
-        name = "dash"
+        name = "dash-frontend"
         port = "http"
+
+        check {
+          type     = "http"
+          path     = "/"
+          interval = "30s"
+          timeout  = "5s"
+        }
+      }
+
+      config {
+        image        = "ghcr.io/jasperhg90/dash-frontend:${dash_frontend_version}"
+        network_mode = "host"
+      }
+
+      resources {
+        cpu    = 50
+        memory = 32
+      }
+    }
+
+    task "backend" {
+      driver = "podman"
+
+      service {
+        name = "dash-backend"
+        port = "backend"
 
         check {
           type     = "http"
@@ -30,7 +59,7 @@ job "dash" {
       }
 
       config {
-        image        = "ghcr.io/jasperhg90/dash:${dash_version}"
+        image        = "ghcr.io/jasperhg90/dash-backend:${dash_backend_version}"
         network_mode = "host"
         volumes = [
           "local/tiles.json:/local/tiles.json",
@@ -42,7 +71,7 @@ job "dash" {
         CONSUL_HTTP_ADDR = "${consul_addr}"
         NOMAD_TOKEN_FILE = "secrets/nomad-token"
         DASH_TILES_PATH  = "/local/tiles.json"
-        PORT             = "8000"
+        PORT             = "8001"
       }
 
       ### The dash-read Nomad token, minted by Vault's nomad secrets engine
@@ -51,6 +80,12 @@ job "dash" {
       ### template syntax, just against the nomad backend instead of
       ### database. Read-only: read-job, list-jobs, node:read. No
       ### submit-job, no host-volume-*, no management capability.
+      ###
+      ### This stanza lives on the backend task only, not the frontend
+      ### (L4: the frontend serves static files alone and needs no
+      ### credential at all). nomad_dash_read_role.tf's bound_claims check
+      ### the job id, not the task name, so moving this stanza between
+      ### tasks in the same job needs no Terraform change.
       vault {
         role = "dash"
       }
@@ -61,9 +96,9 @@ job "dash" {
       ### its payload in an extra `data` key to carry versioning, which no
       ### other secrets engine does. `vault read nomad/creds/deploy`
       ### returns `secret_id` one level under `data`, confirmed against
-      ### this repo's own working code: cli/src/localstack_cli/auth/broker.py
-      ### reads it as `response["data"]["secret_id"]` (found in adversarial
-      ### review, AR2).
+      ### this repo's own working code (originally cli/src/localstack_cli/
+      ### auth/broker.py, which reads it as `response["data"]["secret_id"]`;
+      ### found in adversarial review, AR2, under L3).
       template {
         data        = <<-EOH
         {{ with secret "nomad/creds/dash_read" }}{{ .Data.secret_id }}{{ end }}

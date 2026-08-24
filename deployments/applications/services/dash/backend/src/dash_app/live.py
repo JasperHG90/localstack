@@ -1,17 +1,17 @@
 """Fetch live Nomad/Consul state and compute tile status.
 
-Thin glue over cli's own read functions (`localstack_cli.api.nomad`,
-`localstack_cli.api.consul`) plus this app's `status.compute_tile_states`.
-No health-rule logic lives here -- see `status.py`'s module docstring for
-why, and for why this never fetches HAProxy's own routing config.
+Thin glue over this app's own read functions (`dash_app.nomad_client`,
+`dash_app.consul_client`, copied down from `cli` per Requirement 2) plus
+this app's `status.compute_tile_states`. No health-rule logic lives here --
+see `status.py`'s module docstring for why, and for why this never fetches
+HAProxy's own routing config.
 """
 
 from __future__ import annotations
 
-from localstack_cli.api.consul import list_checks, list_services
-from localstack_cli.api.nomad import job_service_names, job_statuses, list_nodes
-
 from dash_app.config import Config
+from dash_app.consul_client import list_checks, list_services
+from dash_app.nomad_client import job_service_names, job_statuses, list_nodes
 from dash_app.status import TileState, compute_tile_states
 from dash_app.tiles import Tile
 

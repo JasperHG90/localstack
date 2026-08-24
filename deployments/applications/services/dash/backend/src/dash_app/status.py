@@ -1,10 +1,12 @@
-"""Map cli's health/join results onto tile status.
+"""Map this app's own health/join results onto tile status.
 
-Calls `localstack_cli.api.health.judge_all` and `localstack_cli.api.services.join`
-directly -- the same tested, pure functions the `localstack service` command
-already uses (see `cli/src/localstack_cli/commands/service.py:79-102`). This
-app never shells out to the `localstack` CLI itself: every read command hard
--requires a session file from an interactive human Vault login
+Calls `dash_app.health.judge_all` and `dash_app.services.join` directly --
+this app's own copies of the pure functions `cli`'s `localstack service`
+command uses (see `cli/src/localstack_cli/commands/service.py:79-102`),
+copied down rather than imported so the backend carries no runtime
+dependency on `cli` at all (Requirement 2). This app never shells out to
+the `localstack` CLI itself: every read command hard-requires a session
+file from an interactive human Vault login
 (`cli/src/localstack_cli/commands/_common.py:26-34`), which a Nomad job has
 no way to hold.
 
@@ -22,14 +24,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from localstack_cli.api.consul import Check
-from localstack_cli.api.haproxy import Route
-from localstack_cli.api.health import Health
-from localstack_cli.api.health import judge_all as judge_all
-from localstack_cli.api.nomad import Job, Node
-from localstack_cli.api.services import JobSource
-from localstack_cli.api.services import join as join
-
+from dash_app.consul_client import Check
+from dash_app.health import Health
+from dash_app.health import judge_all as judge_all
+from dash_app.nomad_client import Job, Node
+from dash_app.services import JobSource, Route
+from dash_app.services import join as join
 from dash_app.tiles import Tile
 
 TileStatus = str  # "up" | "degraded" | "down" | "unknown"

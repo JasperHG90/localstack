@@ -179,11 +179,14 @@ resource "nomad_job" "loki" {
   )
 }
 
-### Dash — the cluster landing page (L3). The tile list lives in
+### Dash — the cluster landing page (L3), split into a frontend and a
+### backend task in the same job (L4). The tile list lives in
 ### services/dash/tiles.json, round-tripped through jsondecode/jsonencode
 ### so a syntax error fails `terraform plan` rather than reaching the job,
 ### the same pattern memex's auth_keys.json/auth_oidc.json already use
-### (see this file's `locals.memex_auth_keys` comment).
+### (see this file's `locals.memex_auth_keys` comment). Still feeds the
+### backend task only -- the frontend has no separate tile-metadata source
+### (L4 P15).
 locals {
   dash_tiles_json = jsonencode(jsondecode(file("${path.module}/services/dash/tiles.json")))
 }
@@ -192,7 +195,11 @@ resource "nomad_job" "dash" {
   jobspec = templatefile(
     "${path.module}/services/dash.hcl",
     {
-      dash_version = "0.1.0"
+      # Two images, one per task (L4's frontend/backend split) — pinned
+      # independently since the two build contexts are now separate
+      # directories with no shared version.
+      dash_frontend_version = "0.1.0"
+      dash_backend_version  = "0.1.0"
       # Direct IP, not the `dash.lab.orangecluster.nl` edge hostname: this
       # is an internal, server-side read of Nomad's/Consul's own API, the
       # same convention prometheus.hcl's `consul_address` var already uses

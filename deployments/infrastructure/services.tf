@@ -404,15 +404,19 @@ resource "nomad_job" "oauth2_proxy" {
       oidc_secret   = vault_kv_secret_v2.oauth2_proxy_oidc_client.path
       cookie_secret = vault_kv_secret_v2.oauth2_proxy_cookie_secret.path
       redirect_url  = local.oauth2_proxy_redirect_url
-      # L3: the dash job (deployments/applications), colocated with
-      # oauth2-proxy on radxa-dragon-q6a, so this is a loopback address
-      # rather than a computed cross-root reference -- the applications
+      # L3/L4: the dash job (deployments/applications), colocated with
+      # oauth2-proxy on radxa-dragon-q6a, so these are loopback addresses
+      # rather than computed cross-root references -- the applications
       # and infrastructure roots hold separate state with no link between
       # them (same cross-root shape as the memex client lookup in
-      # deployments/applications/services.tf). A literal, like every
+      # deployments/applications/services.tf). Literals, like every
       # other node address in this repo (e.g. applications/services.tf's
-      # phoenix_host = "192.168.2.29").
-      dash_upstream = "http://127.0.0.1:8000"
+      # phoenix_host = "192.168.2.29"). Two upstreams since L4 split dash
+      # into a frontend task (port 8000) and a backend task (port 8001);
+      # the backend one is path-scoped to `/api/status` in
+      # oauth2-proxy.hcl's own OAUTH2_PROXY_UPSTREAMS value.
+      dash_frontend_upstream = "http://127.0.0.1:8000"
+      dash_backend_upstream  = "http://127.0.0.1:8001/api/status"
     }
   )
 }

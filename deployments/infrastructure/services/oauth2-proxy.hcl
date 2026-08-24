@@ -41,6 +41,18 @@ job "oauth2-proxy" {
 
       vault {}
 
+      ### OAUTH2_PROXY_UPSTREAMS below carries two upstreams for dash's
+      ### frontend/backend split (L4): a catch-all to the frontend's
+      ### loopback port, and a path-scoped one to the backend's
+      ### `/api/status`. Verified against a real oauth2-proxy v7.13.0
+      ### container (L4 implementation, 2026-08-24): the path-scoped
+      ### upstream matches the given path EXACTLY, not as a prefix (`GET
+      ### /api/status` routes to the backend; `GET /api/status/nested`
+      ### falls through to the catch-all, logged as matching mapping key
+      ### "/"). `index.html`'s one fetch call is an exact, unparameterized
+      ### `/api/status`, so exact-match is exactly what this needs --
+      ### resolves P10's prefix-vs-exact uncertainty from the planning
+      ### pass.
       template {
         data        = <<-EOH
         OAUTH2_PROXY_PROVIDER="oidc"
@@ -51,7 +63,7 @@ job "oauth2-proxy" {
         OAUTH2_PROXY_COOKIE_SECURE="true"
         OAUTH2_PROXY_REDIRECT_URL="${redirect_url}"
         OAUTH2_PROXY_EMAIL_DOMAINS="*"
-        OAUTH2_PROXY_UPSTREAMS="${dash_upstream}"
+        OAUTH2_PROXY_UPSTREAMS="${dash_frontend_upstream},${dash_backend_upstream}"
         OAUTH2_PROXY_OIDC_EMAIL_CLAIM="sub"
         OAUTH2_PROXY_SCOPE="openid"
         OAUTH2_PROXY_SKIP_PROVIDER_BUTTON="false"

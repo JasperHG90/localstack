@@ -71,31 +71,33 @@ repos:
         # only hide the hook when the manifest or lock changes.
         files: '^cli/'
         pass_filenames: false
-      # Python gates for the dash app (deployments/applications/services/dash/app/).
+      # Python gates for the dash backend (deployments/applications/services/dash/backend/).
       # A standalone uv project, not a cli/ subpackage (L3, §11 Q3), so it
       # inherits none of the four hooks above by default -- these mirror them
-      # line for line, scoped to its own path.
-      - id: dash-app-ruff
-        name: Ruff (lint, dash app)
-        entry: uv run --project deployments/applications/services/dash/app ruff check --force-exclude
+      # line for line, scoped to its own path. The dash frontend
+      # (deployments/applications/services/dash/frontend/) holds no Python
+      # at all (L4: static files only), so it needs no hooks here.
+      - id: dash-backend-ruff
+        name: Ruff (lint, dash backend)
+        entry: uv run --project deployments/applications/services/dash/backend ruff check --force-exclude
         language: system
         types: [python]
-        files: '^deployments/applications/services/dash/app/'
-      - id: dash-app-ruff-format
-        name: Ruff (format, dash app)
-        entry: uv run --project deployments/applications/services/dash/app ruff format --check --force-exclude
+        files: '^deployments/applications/services/dash/backend/'
+      - id: dash-backend-ruff-format
+        name: Ruff (format, dash backend)
+        entry: uv run --project deployments/applications/services/dash/backend ruff format --check --force-exclude
         language: system
         types: [python]
-        files: '^deployments/applications/services/dash/app/'
-      - id: dash-app-mypy
-        name: Mypy (strict, dash app)
-        entry: uv run --project deployments/applications/services/dash/app mypy --config-file deployments/applications/services/dash/app/pyproject.toml deployments/applications/services/dash/app/src deployments/applications/services/dash/app/tests
+        files: '^deployments/applications/services/dash/backend/'
+      - id: dash-backend-mypy
+        name: Mypy (strict, dash backend)
+        entry: uv run --project deployments/applications/services/dash/backend mypy --config-file deployments/applications/services/dash/backend/pyproject.toml deployments/applications/services/dash/backend/src deployments/applications/services/dash/backend/tests
         language: system
-        files: '^deployments/applications/services/dash/app/'
+        files: '^deployments/applications/services/dash/backend/'
         pass_filenames: false
-      - id: dash-app-pytest
-        name: Pytest (dash app)
-        entry: uv run --project deployments/applications/services/dash/app pytest deployments/applications/services/dash/app/tests
+      - id: dash-backend-pytest
+        name: Pytest (dash backend)
+        entry: uv run --project deployments/applications/services/dash/backend pytest deployments/applications/services/dash/backend/tests
         language: system
-        files: '^deployments/applications/services/dash/app/'
+        files: '^deployments/applications/services/dash/backend/'
         pass_filenames: false
