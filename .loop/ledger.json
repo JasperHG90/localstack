@@ -1794,7 +1794,7 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": "43d4061ab5a35b861f530626003f1dd177b3b705",
+      "commit_sha": "2bb164153540da78cda1c34cfd24c13d697e833b",
       "review_verdict": ".loop/verdicts/L3-landing-dash-app.adversarial.md, .loop/verdicts/L3-landing-dash-app.documentation.md",
       "dropped": false,
       "drop_reason": null,
@@ -1813,6 +1813,38 @@
         "vault",
         "cli",
         "oauth2-proxy"
+      ],
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "L4-landing-dash-fe-be-split": {
+      "slug": "L4-landing-dash-fe-be-split",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "landing",
+      "dependencies": [
+        "L3-landing-dash-app"
+      ],
+      "priority": 10,
+      "summary": "Revise the done L3 dash job: split its single task into a frontend task (static files only, no Python) and a backend task (status computation), and remove the backend's uv path dependency on cli/ entirely by copying the narrow subset of cli's health/nomad/services/consul logic it uses into the backend's own tree, with a provenance comment. Operator-decided, not up for debate: the split, and the no-cli-dependency rule.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "dash",
+        "homepage",
+        "nomad",
+        "vault",
+        "refactor",
+        "fe-be-split"
       ],
       "stub": false,
       "premise": {},
