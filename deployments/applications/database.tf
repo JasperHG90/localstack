@@ -5,6 +5,7 @@ locals {
     "memex",
     "phoenix",
     "bifrost",
+    "openviking"
   ]
   databases = {
     ducklake = {
@@ -29,6 +30,11 @@ locals {
       owner      = "bifrost"
       readers    = []
       extensions = []
+    }
+    openviking = {
+      owner      = "openviking"
+      readers    = []
+      extensions = ["vector"]
     }
   }
 

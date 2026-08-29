@@ -30,6 +30,12 @@ locals {
       ],
       readers = []
     }
+    openviking = {
+      writers = [
+        { "name" = "openviking", generate_access_key = true }
+      ]
+      readers = []
+    }
   }
 
   all_minio_users = distinct(flatten([
