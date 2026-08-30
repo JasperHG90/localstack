@@ -222,7 +222,7 @@ EOF
         data = <<EOF
 model:
   provider: "bifrost"
-  default: "ollama/glm-5.2"
+  default: "ollama/glm-5.3-flash"
   context_length: 128000
 
 fallback_model:
@@ -293,16 +293,16 @@ approvals:
 auxiliary:
   compression:
     provider: "bifrost"
-    model: "ollama/deepseek-v4-flash:0731"
+    model: "ollama/gemma4:31b"
   session_search:
     provider: "bifrost"
-    model: "ollama/deepseek-v4-flash:0731"
+    model: "ollama/gemma4:31b"
   flush_memories:
     provider: "bifrost"
-    model: "ollama/deepseek-v4-flash:0731"
+    model: "ollama/glm-5.3-flash"
   title_generation:
     provider: "bifrost"
-    model: "ollama/deepseek-v4-flash:0731"
+    model: "ollama/gemma4:31b"
 
 platform_toolsets:
   email:
