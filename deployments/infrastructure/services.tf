@@ -139,6 +139,29 @@ resource "nomad_dynamic_host_volume" "loki_data" {
   }
 }
 
+### Tempo's WAL and local block staging. Completed blocks go to MinIO (the
+### `tempo` bucket, deployments/applications/storage.tf), so this only ever
+### holds what has not been flushed yet — same split as loki_data.
+resource "nomad_dynamic_host_volume" "tempo_data" {
+  name      = "tempo_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "10 GiB"
+  capacity_min = "2 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "ubuntu"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 resource "nomad_dynamic_host_volume" "nats_data" {
   name      = "nats_data"
   namespace = "default"
@@ -389,10 +412,12 @@ resource "nomad_job" "grafana" {
   depends_on = [nomad_dynamic_host_volume.grafana_data]
 }
 
-### Promtail (system job, all nodes) — Loki itself lives in the applications layer
-### because it depends on the Loki MinIO bucket creds (provisioned there).
-resource "nomad_job" "promtail" {
-  jobspec = templatefile("${path.module}/services/promtail.hcl", {})
+### Alloy (system job, all nodes) — ships journald and Nomad task logs to Loki.
+### Replaced Promtail, which reached end of life on 2 March 2026. Loki itself
+### lives in the applications layer because it depends on the Loki MinIO bucket
+### creds (provisioned there).
+resource "nomad_job" "alloy" {
+  jobspec = templatefile("${path.module}/services/alloy.hcl", {})
 }
 
 ### oauth2-proxy — OIDC forward-gate for the landing page (dash). Reusable

@@ -116,6 +116,10 @@ job "prometheus" {
             static_configs:
               - targets: ["192.168.2.29:9000"]
 
+          - job_name: tempo
+            static_configs:
+              - targets: ["192.168.2.47:3200"]
+
           # Bifrost /metrics requires basic_auth now that governance.auth_config
           # is enabled (whitelisting /metrics is not supported). Creds come from
           # the synced copy at default/prometheus/bifrost-admin. Not scraped via

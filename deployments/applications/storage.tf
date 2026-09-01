@@ -20,6 +20,12 @@ locals {
       ],
       readers = []
     }
+    tempo = {
+      writers = [
+        { "name" = "tempo", generate_access_key = true }
+      ],
+      readers = []
+    }
     # mlflow the service is gone (services.tf, secrets.tf, database.tf), but
     # this bucket is kept on request rather than destroyed along with it —
     # whatever's in it stays reachable until it's deliberately emptied and

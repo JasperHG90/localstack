@@ -29,13 +29,14 @@ HAProxy no longer gates it. `dash` sits behind oauth2-proxy, gated by Vault
 SSO with flat any-authenticated-user access. The rest are open to anyone who
 reaches the edge.
 
-**Prometheus and Loki are deliberately not routed here.** Both serve their
-query APIs with no authentication, and nothing needs them through the proxy:
-Grafana's datasources dial `192.168.2.47` directly from the same node, and
-promtail pushes straight to Loki. Routing them would have meant every metric
-and every log line readable by anyone who can reach the edge, to save a
-browser tab. To reach either one while debugging, use an SSH tunnel: see
-*Reaching Prometheus or Loki directly* in `docs/monitoring.md`.
+**Prometheus, Loki and Tempo are deliberately not routed here.** All three
+serve their query APIs with no authentication, and nothing needs them through
+the proxy: Grafana's datasources dial `192.168.2.47` directly from the same
+node, Alloy pushes straight to Loki, and apps export traces straight to Tempo.
+Routing them would have meant every metric, log line and trace readable by
+anyone who can reach the edge, to save a browser tab. To reach one while
+debugging, use an SSH tunnel: see *Reaching Prometheus or Loki directly* in
+`docs/monitoring.md`.
 
 The stats dashboard is at `http://192.168.2.30:8404`, outside the TLS
 frontend.

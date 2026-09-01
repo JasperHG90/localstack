@@ -2,22 +2,24 @@
 
 ## How to reach the monitoring stack today
 
-Prometheus and Loki are reachable only from inside the cluster. Both serve
-their query APIs with no authentication, so there are two barriers rather
-than one: their firewall rules admit only the callers that need them, and
-neither is routed through the edge proxy. Going to `192.168.2.47:9090` or
-`192.168.2.47:3100` from an ordinary LAN device fails, and so does asking
-HAProxy for them.
+Prometheus, Loki and Tempo are reachable only from inside the cluster. All
+three serve their query APIs with no authentication, so there are two barriers
+rather than one: their firewall rules admit only the callers that need them,
+and none is routed through the edge proxy. Going to `192.168.2.47:9090`,
+`192.168.2.47:3100` or `192.168.2.47:3200` from an ordinary LAN device fails,
+and so does asking HAProxy for them.
 
-**You read both through Grafana.** Its Explore view queries the Prometheus and
-Loki datasources, which dial `192.168.2.47` directly from the same node.
-Grafana requires a login, so it is the authenticated front door to data that
-has no authentication of its own.
+**You read all three through Grafana.** Its Explore view queries the
+Prometheus, Loki and Tempo datasources, which dial `192.168.2.47` directly
+from the same node. Grafana requires a login, so it is the authenticated front
+door to data that has no authentication of its own.
 
 | Service | Port | Who may connect |
 |---|---|---|
 | Prometheus | 9090 | `192.168.2.47` only, which is Grafana's datasource on the same node |
-| Loki | 3100 | all five node addresses, because promtail is a `system` job and ships from every node |
+| Loki | 3100 | all five node addresses, because Alloy is a `system` job and ships from every node |
+| Tempo | 3200 | `192.168.2.47` (Grafana) and `192.168.2.30` (the edge) |
+| Tempo OTLP | 4317, 4318 | all five node addresses, since any workload may export traces |
 | Grafana | 3000 | `192.168.0.0/16` and `100.64.0.0/10`, unchanged |
 
 Grafana is unchanged. It requires a login, so it keeps its LAN and tailnet
@@ -36,12 +38,45 @@ asked it, over a publicly-trusted certificate, with no password. The
 `phoenix` in the same file.
 
 The ACLs and backends were removed rather than given a password. Nothing
-needed them: Grafana's datasources dial the node directly and promtail pushes
+needed them: Grafana's datasources dial the node directly and Alloy pushes
 directly, so the only consumer of those routes was a human typing the URL.
 Adding authentication would have protected a door with nothing behind it.
 
 The cost is Prometheus's own web UI. Reach it with an SSH tunnel when you
 need it, as below.
+
+### Sending traces
+
+Tempo stores traces. Point an OpenTelemetry SDK at it and traces show up in
+Grafana's Tempo datasource:
+
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4317   # gRPC
+OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4318   # HTTP
+```
+
+There is no collector in between. Apps speak OTLP straight to Tempo, the same
+way they log to stdout and let Alloy pick it up. Alloy runs on every node but
+handles logs only, so adding an OTLP hop there is a later change, not a
+prerequisite.
+
+Traces and logs cross-link in both directions once an app emits a `trace_id`
+on its log lines:
+
+- From a log line to the trace: Grafana's Loki datasource reads `trace_id`
+  from structured metadata and renders it as a link into Tempo. Loki attaches
+  that metadata itself for logs ingested over OTLP.
+- From a span to the logs: the Tempo datasource's trace-to-logs link queries
+  Loki for the same trace ID, over the span's time range widened by five
+  minutes either side.
+
+Retention is 30 days, matching Loki, so a trace and the logs that reference it
+expire together. Completed blocks live in the `tempo` MinIO bucket. The
+`tempo_data` host volume holds only the write-ahead log and blocks not yet
+flushed.
+
+Tempo's own gRPC server runs on 9096 rather than its default 9095, which Loki
+already holds on that node.
 
 ### `localstack monitor`, and what it is not
 

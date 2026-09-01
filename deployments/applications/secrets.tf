@@ -48,6 +48,17 @@ resource "vault_kv_secret_v2" "loki_minio_credentials" {
   })
 }
 
+### Tempo
+
+resource "vault_kv_secret_v2" "tempo_minio_credentials" {
+  mount = var.secret_mount
+  name  = "default/tempo/minio"
+  data_json = jsonencode({
+    access_key = minio_accesskey.users["tempo"].access_key
+    secret_key = minio_accesskey.users["tempo"].secret_key
+  })
+}
+
 resource "random_id" "memex_admin_key" {
   byte_length = 32
 }

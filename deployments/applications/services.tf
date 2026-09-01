@@ -67,7 +67,7 @@ locals {
         "allow from 192.168.2.46 to any port 8642 proto tcp",
       ]
     }
-    # Loki on ubuntu (rpi4b) — cluster nodes only. Promtail is a system job, so
+    # Loki on ubuntu (rpi4b) — cluster nodes only. Alloy is a system job, so
     # it ships from every node and each node address must stay on this list;
     # dropping one stops that node's logs silently. 192.168.2.30 doubles as the
     # HAProxy edge, which is how browsers reach Loki. The push and query APIs
@@ -81,6 +81,30 @@ locals {
         "allow from 192.168.2.46 to any port 3100 proto tcp",
         "allow from 192.168.2.47 to any port 3100 proto tcp",
         "allow from 192.168.2.50 to any port 3100 proto tcp",
+      ]
+    }
+    # Tempo on ubuntu (rpi4b), colocated with the rest of the observability
+    # stack. Same shape as the loki rule above and for the same reason: any
+    # workload on any node may export traces, so every node address has to
+    # stay on the OTLP list. 3200 is the query API, which only Grafana (same
+    # host) and the HAProxy edge dial. Like Loki, none of these APIs
+    # authenticate, so nothing here is LAN-wide.
+    tempo = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules = [
+        "allow from 192.168.2.47 to any port 3200 proto tcp",
+        "allow from 192.168.2.30 to any port 3200 proto tcp",
+        "allow from 192.168.2.30 to any port 4317 proto tcp",
+        "allow from 192.168.2.29 to any port 4317 proto tcp",
+        "allow from 192.168.2.46 to any port 4317 proto tcp",
+        "allow from 192.168.2.47 to any port 4317 proto tcp",
+        "allow from 192.168.2.50 to any port 4317 proto tcp",
+        "allow from 192.168.2.30 to any port 4318 proto tcp",
+        "allow from 192.168.2.29 to any port 4318 proto tcp",
+        "allow from 192.168.2.46 to any port 4318 proto tcp",
+        "allow from 192.168.2.47 to any port 4318 proto tcp",
+        "allow from 192.168.2.50 to any port 4318 proto tcp",
       ]
     }
     # Bifrost LLM gateway on radxa-dragon-q6a — single OpenAI-compatible endpoint for all agent consumers (ADR-001)
@@ -176,6 +200,16 @@ resource "nomad_job" "loki" {
   jobspec = templatefile(
     "${path.module}/services/loki.hcl",
     { loki_minio_secret = vault_kv_secret_v2.loki_minio_credentials.path }
+  )
+}
+
+### Tempo — trace store on ubuntu (rpi4b), MinIO-backed. Lives here rather
+### than in the infrastructure root for the same reason Loki does: it needs
+### the MinIO bucket creds, which are provisioned in this root.
+resource "nomad_job" "tempo" {
+  jobspec = templatefile(
+    "${path.module}/services/tempo.hcl",
+    { tempo_minio_secret = vault_kv_secret_v2.tempo_minio_credentials.path }
   )
 }
 

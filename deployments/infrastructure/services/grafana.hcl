@@ -100,6 +100,31 @@ job "grafana" {
             access: proxy
             url: http://192.168.2.47:3100
             editable: false
+            jsonData:
+              # Turns a trace_id on a log line into a link into Tempo. Loki
+              # writes trace_id as structured metadata for logs it ingests over
+              # OTLP, hence matcherType `label` rather than a regex over the
+              # message body. Logs with no trace_id are unaffected.
+              derivedFields:
+                - name: TraceID
+                  matcherType: label
+                  matcherRegex: trace_id
+                  datasourceUid: tempo
+                  url: "$${__value.raw}"
+          - name: Tempo
+            uid: tempo
+            type: tempo
+            access: proxy
+            url: http://192.168.2.47:3200
+            editable: false
+            jsonData:
+              # The other half of the round trip: from a span, jump to the logs
+              # written while it was open.
+              tracesToLogsV2:
+                datasourceUid: loki
+                spanStartTimeShift: "-5m"
+                spanEndTimeShift: "5m"
+                filterByTraceID: true
         EOF
 
         destination = "local/provisioning/datasources/datasources.yml"

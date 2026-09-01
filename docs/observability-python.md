@@ -1,13 +1,14 @@
 # Instrumenting Python apps for the observability stack
 
-How to wire a Python service deployed on this cluster into Prometheus, Loki, and Grafana. Assumes the monitoring stack from `docs/monitoring.md` is up.
+How to wire a Python service deployed on this cluster into Prometheus, Loki, Tempo, and Grafana. Assumes the monitoring stack from `docs/monitoring.md` is up.
 
 ## TL;DR
 
 1. Expose `/metrics` on a dedicated port using `prometheus_client`.
 2. Register the Nomad service in Consul with the tag `prometheus` and a `metrics_port` meta — Prometheus picks it up automatically via Consul SD.
-3. Log structured JSON to stdout. Promtail tails Nomad alloc logs; no per-app config.
-4. View in Grafana: pre-provisioned Prometheus and Loki datasources are already there.
+3. Log structured JSON to stdout. Alloy tails Nomad alloc logs; no per-app config.
+4. Send traces over OTLP to Tempo: two environment variables, no agent.
+5. View in Grafana: pre-provisioned Prometheus, Loki and Tempo datasources are already there.
 
 ---
 
@@ -100,7 +101,7 @@ Open the chosen metrics port to `192.168.2.47` (Prometheus) on whichever node th
 
 ### Just log JSON to stdout
 
-Promtail runs as a `system` job on every node and tails `/opt/nomad/data/alloc/*/alloc/logs/*` — Nomad's per-task log files. Anything your app writes to stdout/stderr ends up in Loki. No HTTP push, no extra dependency.
+Alloy runs as a `system` job on every node and tails `/opt/nomad/data/alloc/*/alloc/logs/*` — Nomad's per-task log files. Anything your app writes to stdout/stderr ends up in Loki. No HTTP push, no extra dependency.
 
 ```bash
 uv add python-json-logger
@@ -126,25 +127,57 @@ This produces:
 {"timestamp": "...", "level": "INFO", "name": "myapp", "message": "started", "port": 8080, "version": "1.2.3"}
 ```
 
-Promtail's pipeline parses JSON automatically — every top-level key becomes a Loki label or extracted field, so you can query `{job_name="myapp"} |= "error" | json | level="ERROR"`.
+Alloy ships the line as-is and labels it with the job, task, alloc and node it came from. LogQL parses the JSON at query time, so `{job="nomad"} |= "error" | json | level="ERROR"` works with no shipper-side config.
 
 ### Don't log to files
 
-Logging to a file inside the container loses the logs when the alloc restarts and bypasses Promtail entirely. Stdout only.
+Logging to a file inside the container loses the logs when the alloc restarts and bypasses Alloy entirely. Stdout only.
 
 ### Direct Loki push (avoid)
 
-`python-logging-loki` lets the app push directly to `http://192.168.2.47:3100/loki/api/v1/push`. Skip it: it adds a network failure mode, complicates secrets, and costs you the alloc/job/node labels Promtail attaches automatically.
+`python-logging-loki` lets the app push directly to `http://192.168.2.47:3100/loki/api/v1/push`. Skip it: it adds a network failure mode, complicates secrets, and costs you the alloc/job/node labels Alloy attaches automatically.
 
 ---
 
-## 3. Grafana
+## 3. Traces
+
+Tempo accepts OTLP directly, so there is no agent to configure and no per-app
+Nomad wiring. Install the SDK:
+
+```bash
+uv add opentelemetry-distro opentelemetry-exporter-otlp
+```
+
+Set two environment variables in the job's `env` block:
+
+```hcl
+env {
+  OTEL_EXPORTER_OTLP_ENDPOINT = "http://192.168.2.47:4317"
+  OTEL_SERVICE_NAME           = "myapp"
+}
+```
+
+`OTEL_SERVICE_NAME` becomes the service name Tempo indexes and the one you
+search on in Grafana, so set it per app rather than letting it default.
+
+Auto-instrumentation covers most libraries without code changes:
+
+```bash
+opentelemetry-instrument python -m myapp
+```
+
+To link a trace back to its logs, log the trace ID under `trace_id` (see
+Conventions below). Grafana turns that field into a link into Tempo, and the
+Tempo datasource links the other way.
+
+## 4. Grafana
 
 ### Querying
 
 - **Metrics:** `Explore` → Prometheus datasource. The `job` label equals the Consul service name (`myapp-metrics`), `instance` is the Consul node name. Example: `rate(myapp_requests_total{status="500"}[5m])`.
-- **Logs:** `Explore` → Loki datasource. Filter by Nomad task: `{nomad_task="myapp"} | json | level="ERROR"`.
-- **Correlation:** with `derived fields` configured on the Loki datasource, a `trace_id` field in logs becomes a clickable link. Configure once in Grafana UI.
+- **Logs:** `Explore` → Loki datasource. Filter by Nomad task: `{task="myapp"} | json | level="ERROR"`.
+- **Traces:** `Explore` → Tempo datasource. Search by service name, or paste a trace ID.
+- **Correlation:** the Loki datasource ships with a derived field on `trace_id`, so that field in a log line is already a link into Tempo. It is provisioned in `services/grafana.hcl`, not configured in the UI.
 
 ### Dashboards
 
@@ -152,7 +185,7 @@ For a new app, start with the Grafana "New dashboard from query" flow against th
 
 ---
 
-## 4. Conventions
+## 5. Conventions
 
 - Metric port: pick a free static port per app (registry: keep a list in `docs/notes/` if it grows).
 - Metrics endpoint always at `/metrics` — leave the path default. Override only via the `metrics_path` Consul meta if forced.
@@ -163,4 +196,4 @@ For a new app, start with the Grafana "New dashboard from query" flow against th
 
 - `docs/monitoring.md` — stack deployment.
 - Prometheus Consul SD: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#consul_sd_config>
-- Promtail JSON pipeline: <https://grafana.com/docs/loki/latest/send-data/promtail/stages/json/>
+- Alloy `loki.source.file`: <https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.file/>

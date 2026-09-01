@@ -204,7 +204,7 @@
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
         {"expr": "up{job=~\"nomad|consul|haproxy|postgres|minio|prometheus|nats\"}", "refId": "A", "instant": true, "format": "table"},
-        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|hermes|memex|loki|grafana|promtail|redis\"})", "refId": "B", "instant": true, "format": "table"}
+        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|hermes|memex|loki|grafana|alloy|tempo|redis\"})", "refId": "B", "instant": true, "format": "table"}
       ],
       "transformations": [
         {"id": "filterFieldsByName", "options": {"include": {"names": ["job", "instance", "Value", "exported_job", "Value #A", "Value #B"]}}}
