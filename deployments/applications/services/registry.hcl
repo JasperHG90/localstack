@@ -86,6 +86,17 @@ job "registry" {
 
         http:
           addr: 0.0.0.0:5000
+          # Emit relative Location headers on the chunked upload flow.
+          # Without this the registry builds absolute URLs from the scheme it
+          # sees, which is http behind HAProxy's TLS termination. The client
+          # then follows a redirect back to https, and every correct HTTP
+          # client DROPS Authorization on a scheme change because that is a
+          # different origin -- so the retried PATCH arrives anonymous and
+          # the push dies with "authentication required". Small blobs survive
+          # (single monolithic POST, no Location followed); anything large
+          # enough to chunk fails. A relative Location is resolved against
+          # the origin the client is already on, so the scheme never changes.
+          relativeurls: true
           debug:
             addr: 0.0.0.0:5001
 

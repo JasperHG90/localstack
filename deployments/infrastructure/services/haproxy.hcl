@@ -163,6 +163,13 @@ backend grafana
 # long server-side pause. 1800s covers a model-sized layer.
 backend registry
     timeout server 1800s
+    # Tell the registry it is fronted by TLS. It is otherwise blind to that
+    # and builds absolute URLs with the scheme it sees on the wire (http),
+    # which breaks chunked blob uploads. The registry also sets
+    # `relativeurls: true`, which fixes this independently; both are here
+    # because the header is correct for any proxied backend and the
+    # relative-URL setting is what actually carries the guarantee.
+    http-request set-header X-Forwarded-Proto https
     server registry1 192.168.2.47:5000 check
 
 backend bifrost
