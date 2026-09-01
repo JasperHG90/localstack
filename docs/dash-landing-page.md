@@ -3,9 +3,10 @@
 `dash` is a small Nomad job that serves `https://dash.lab.orangecluster.nl`:
 a grid of tiles for every user-facing dashboard (Grafana, MinIO, Vault,
 Nomad, Consul, Phoenix, Bifrost) and every backend service worth knowing how
-to reach (Postgres, NATS, Redis, Hermes, Memex). Dashboard tiles link out.
-Backend tiles open a modal with connection details. Every tile's status is
-computed live from Nomad job state and Consul health checks.
+to reach (Postgres, NATS, Redis, Hermes, Memex, Tempo, Registry). Dashboard
+tiles link out. Backend tiles open a modal with connection details. Every
+tile's status is computed live from Nomad job state and Consul health
+checks.
 
 The job holds two tasks: a `frontend` task (static files only, no Python)
 and a `backend` task (status computation). The backend carries its own

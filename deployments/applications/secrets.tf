@@ -59,6 +59,43 @@ resource "vault_kv_secret_v2" "tempo_minio_credentials" {
   })
 }
 
+### Registry
+
+resource "vault_kv_secret_v2" "registry_minio_credentials" {
+  mount = var.secret_mount
+  name  = "default/registry/minio"
+  data_json = jsonencode({
+    access_key = minio_accesskey.users["registry"].access_key
+    secret_key = minio_accesskey.users["registry"].secret_key
+  })
+}
+
+### The registry's push/pull credential. `bcrypt_hash` is a computed
+### attribute the random provider generates ONCE and keeps in state, unlike
+### the `bcrypt()` function, which re-salts on every plan and would rewrite
+### this secret (and restart the registry) on every apply.
+###
+### The registry reads htpasswd as a FILE at startup, so it cannot consume
+### Vault dynamic credentials: rotating this means tainting the resource and
+### letting the job restart. That is a deliberate step back from the
+### short-lived-credential direction the rest of the cluster is moving in,
+### accepted because the OCI distribution spec offers only htpasswd or a
+### Docker-specific token server, and no OIDC.
+resource "random_password" "registry_push" {
+  length  = 32
+  special = false
+}
+
+resource "vault_kv_secret_v2" "registry_auth" {
+  mount = var.secret_mount
+  name  = "default/registry/auth"
+  data_json = jsonencode({
+    username = "push"
+    password = random_password.registry_push.result
+    htpasswd = "push:${random_password.registry_push.bcrypt_hash}"
+  })
+}
+
 resource "random_id" "memex_admin_key" {
   byte_length = 32
 }

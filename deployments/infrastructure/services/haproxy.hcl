@@ -105,6 +105,7 @@ frontend https_in
     acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
     acl is_bifrost    hdr(host) -i bifrost.lab.orangecluster.nl
     acl is_dash       hdr(host) -i dash.lab.orangecluster.nl
+    acl is_registry   hdr(host) -i registry.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -116,6 +117,7 @@ frontend https_in
     use_backend grafana    if is_grafana
     use_backend bifrost    if is_bifrost
     use_backend dash       if is_dash
+    use_backend registry   if is_registry
 
 frontend stats
     bind *:8404
@@ -148,6 +150,20 @@ backend memex
 
 backend grafana
     server grafana1 192.168.2.47:3000 check
+
+# The registry runs on ubuntu, not here: it is stateless (blobs live in
+# MinIO) and firebat had no CPU headroom left. It carries its own auth
+# (htpasswd), so no `http-request auth` here: podman and docker cannot
+# answer HAProxy's challenge, and the registry's own 401 is what drives
+# `docker login`.
+#
+# The default 300s `timeout server` is an INACTIVITY timer, so a streaming
+# push resets it and is safe. What is not safe is the silence while the
+# registry finalizes a multi-GB multipart upload into MinIO, which is one
+# long server-side pause. 1800s covers a model-sized layer.
+backend registry
+    timeout server 1800s
+    server registry1 192.168.2.47:5000 check
 
 backend bifrost
     server bifrost1 192.168.2.50:8080 check

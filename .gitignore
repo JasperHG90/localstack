@@ -14,6 +14,9 @@ tmp
 # Per-ticket loop worktrees are linked checkouts, not content to track.
 .loop/worktrees/
 
+# Gate output from `loopctl stamp`: a report about a run, not content.
+.loop/stamp-logs/
+
 .DS_Store
 
 .claude

@@ -107,6 +107,17 @@ locals {
         "allow from 192.168.2.50 to any port 4318 proto tcp",
       ]
     }
+    # OCI registry on ubuntu (rpi4b). Single-caller shape: only HAProxy on
+    # firebat dials it, because podman and docker refuse a plain-HTTP
+    # registry and no node manages registries.conf, so the edge is the only
+    # way in. Port 5001 is the unauthenticated debug/health listener and is
+    # deliberately absent: ubuntu's own Consul agent checks it over
+    # loopback, so nothing off-node should reach it.
+    registry = {
+      host     = "192.168.2.47"
+      ssh_user = "raspberry"
+      rules    = ["allow from 192.168.2.30 to any port 5000 proto tcp"]
+    }
     # Bifrost LLM gateway on radxa-dragon-q6a — single OpenAI-compatible endpoint for all agent consumers (ADR-001)
     bifrost = {
       host     = "192.168.2.50"
@@ -210,6 +221,30 @@ resource "nomad_job" "tempo" {
   jobspec = templatefile(
     "${path.module}/services/tempo.hcl",
     { tempo_minio_secret = vault_kv_secret_v2.tempo_minio_credentials.path }
+  )
+}
+
+### OCI registry — container images and, via KitOps ModelKits, model
+### weights. Blobs live in the `registry` MinIO bucket, so this belongs in
+### this root alongside Loki and Tempo.
+###
+### Runs on ubuntu. It holds no local state, so placement is a capacity
+### question, and firebat -- HAProxy's own node, which would have made the
+### proxy hop loopback -- had no CPU headroom left behind Postgres.
+###
+### Every client reaches it through registry.lab.orangecluster.nl. The edge
+### is required rather than optional: podman and docker refuse a plain-HTTP
+### registry, and no node manages registries.conf, so TLS termination at
+### HAProxy is what makes clients trust it at all. The stale LAN-wide rule
+### for 5000/5001 that predated this job is removed in the infrastructure
+### root, replaced by the single-caller rule in local.firewall_rules above.
+resource "nomad_job" "registry" {
+  jobspec = templatefile(
+    "${path.module}/services/registry.hcl",
+    {
+      registry_minio_secret = vault_kv_secret_v2.registry_minio_credentials.path
+      registry_auth_secret  = vault_kv_secret_v2.registry_auth.path
+    }
   )
 }
 

@@ -155,5 +155,37 @@
       "auth": "API key, issued per client.",
       "example": "curl -H \"Authorization: Bearer <api-key>\" https://memex.lab.orangecluster.nl/v1/..."
     }
+  },
+  {
+    "key": "tempo",
+    "name": "tempo",
+    "desc": "trace store",
+    "color": "#3fa9a0",
+    "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M4 4.5 V16.5\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><path d=\"M4 6.5 H14\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><path d=\"M7 11 H18\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><path d=\"M10 15.5 H15.5\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>",
+    "category": "backend",
+    "job": "tempo",
+    "node": "ubuntu",
+    "connect": {
+      "protocol": "OTLP over gRPC (4317) and HTTP (4318). No collector in between — apps export straight to Tempo.",
+      "address": "ubuntu:4317 or ubuntu:4318. Query API on ubuntu:3200.",
+      "auth": "None. Cluster-internal only: the firewall admits all five nodes on the OTLP ports, and only Grafana and the edge on 3200. Tempo has no UI — read traces through Grafana's Tempo datasource.",
+      "example": "OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4317 OTEL_SERVICE_NAME=myapp"
+    }
+  },
+  {
+    "key": "registry",
+    "name": "registry",
+    "desc": "oci images & models",
+    "color": "#7a8cd1",
+    "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M11 2.5 L18.5 6.5 V15.5 L11 19.5 L3.5 15.5 V6.5 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M3.5 6.5 L11 10.5 L18.5 6.5\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linejoin=\"round\"/><path d=\"M11 10.5 V19.5\" stroke=\"currentColor\" stroke-width=\"1.4\"/></svg>",
+    "category": "backend",
+    "job": "registry",
+    "node": "ubuntu",
+    "connect": {
+      "protocol": "OCI Distribution API over HTTPS. Blobs are stored in the `registry` MinIO bucket, not on local disk.",
+      "address": "https://registry.lab.orangecluster.nl",
+      "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC — the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
+      "example": "podman login registry.lab.orangecluster.nl -u push"
+    }
   }
 ]

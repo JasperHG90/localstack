@@ -216,14 +216,10 @@ locals {
       ]
     }
     # Docker registry on firebat
-    registry = {
-      host     = "192.168.2.30"
-      ssh_user = "firebat"
-      rules = [
-        "allow from 192.168.0.0/16 to any port 5000 proto tcp",
-        "allow from 192.168.0.0/16 to any port 5001 proto tcp",
-      ]
-    }
+    # The registry job (deployments/applications/services/registry.hcl) runs
+    # on ubuntu, and its firewall rule lives with it in the applications
+    # root. The rule that used to sit here opened 5000/5001 LAN-wide on this
+    # host for a service that never ran.
     # Prometheus on ubuntu (rpi4b) — cluster-internal only. Grafana's datasource
     # dials the node address from this same host; browsers arrive via HAProxy,
     # which already admits the LAN and the tailnet on 80/443. The query API has

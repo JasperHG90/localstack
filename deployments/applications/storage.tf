@@ -26,6 +26,30 @@ locals {
       ],
       readers = []
     }
+    # Model weights (LLMs, embedding models). Split reader/writer like
+    # datalake rather than single-writer like the service buckets above:
+    # models are pushed rarely by an operator and pulled often by jobs, so
+    # a puller gets a read-only key and cannot overwrite a model it loads.
+    # No Vault KV entry yet -- the convention here is that creds land in
+    # Vault when a job consumes them (memex, loki, tempo), not at bucket
+    # creation (datalake, openviking, mlflow-artifacts have none).
+    models = {
+      writers = [
+        { "name" = "models_writer", generate_access_key = true }
+      ],
+      readers = [
+        { "name" = "models_reader", generate_access_key = true }
+      ]
+    }
+    # Blob store for the OCI registry. Its own bucket, not shared with
+    # `models`: the registry owns the layout under this prefix and addresses
+    # everything by digest, so nothing else should be writing into it.
+    registry = {
+      writers = [
+        { "name" = "registry", generate_access_key = true }
+      ],
+      readers = []
+    }
     # mlflow the service is gone (services.tf, secrets.tf, database.tf), but
     # this bucket is kept on request rather than destroyed along with it —
     # whatever's in it stays reachable until it's deliberately emptied and
