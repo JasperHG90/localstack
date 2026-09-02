@@ -61,6 +61,12 @@ variable "vault_operator_username" {
   default     = "operator"
 }
 
+variable "vault_operator_email" {
+  description = "Email address published as the operator entity's `email` claim. Grafana refuses an SSO login whose resolved email is empty, so this is load-bearing rather than descriptive."
+  type        = string
+  default     = "jasperginn@gmail.com"
+}
+
 variable "oidc_smoke_redirect_uris" {
   description = "Redirect URIs for F2's throwaway smoke-test OIDC client. A placeholder is fine: the client exists to prove the issuer completes an auth-code flow, not to serve a real app. Consumer tickets set their own. WARNING: the default hardcodes the issuer host, because Terraform forbids interpolation in a default. Change vault_issuer_host and this must be changed with it, or the redirect silently stops matching."
   type        = list(string)

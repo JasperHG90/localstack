@@ -32,7 +32,7 @@ Every Postgres consumer holds a long-lived static password. Terraform generates
 it, writes it to Vault KV2, and each job reads it back through a `vault {}`
 block and a `template { env = true }`:
 
-- the admin role, `deployments/infrastructure/secrets.tf:74-88`
+- the admin role, `deployments/infrastructure/secrets.tf:98-112`
 - the per-application roles, `deployments/applications/database.tf:56-67`
 - a job consuming one, `deployments/applications/services/memex.hcl:44-54`
 

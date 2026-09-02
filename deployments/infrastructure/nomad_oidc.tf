@@ -157,7 +157,7 @@ resource "nomad_acl_auth_method" "oidc" {
     allowed_redirect_uris = vault_identity_oidc_client.nomad.redirect_uris
 
     # No `claim_mappings`. `preferred_username` is a `profile`-scope claim, and
-    # this provider advertises `scopes_supported = [groups]` only, so mapping it
+    # this provider does not advertise `profile`, so mapping it
     # would bind an always-empty value. `token_name_format` is left at its
     # default, which reads neither.
     list_claim_mappings = {

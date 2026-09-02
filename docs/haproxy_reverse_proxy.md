@@ -26,8 +26,10 @@ to the HTTPS URL.
 `phoenix` sits behind HTTP basic auth. `bifrost` authenticates
 with its own native `governance.auth_config` (admin creds from Vault), so
 HAProxy no longer gates it. `dash` sits behind oauth2-proxy, gated by Vault
-SSO with flat any-authenticated-user access. The rest are open to anyone who
-reaches the edge.
+SSO with flat any-authenticated-user access. `grafana` reaches that same Vault
+SSO through its own built-in OIDC client, with no proxy in between, and keeps
+its local admin account as the way in when Vault is down. The rest are open to
+anyone who reaches the edge.
 
 **Prometheus, Loki and Tempo are deliberately not routed here.** All three
 serve their query APIs with no authentication, and nothing needs them through

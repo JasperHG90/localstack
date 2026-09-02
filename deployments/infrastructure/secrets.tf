@@ -65,6 +65,30 @@ resource "vault_kv_secret_v2" "grafana_admin_credentials" {
   }
 }
 
+### Grafana's OIDC client credentials. No `random_password` here, unlike the
+### admin password above: Vault mints the secret when it creates the client,
+### so this resource only publishes what already exists.
+###
+### `detect-private-key` will NOT catch one of these if it leaks into a tracked
+### file — it matches a fixed list of PEM headers, and `hvo_secret_...` is not
+### one (docs/vault-human-auth.md:315-318). The hook staying green is not
+### evidence the secret stayed out of the repo.
+resource "vault_kv_secret_v2" "grafana_oidc_client" {
+  mount = vault_mount.kvv2.path
+  name  = "default/grafana/oidc"
+  data_json = jsonencode({
+    client_id     = vault_identity_oidc_client.grafana.client_id
+    client_secret = vault_identity_oidc_client.grafana.client_secret
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Postgres root password
 resource "random_password" "postgres_root" {
   length  = 16

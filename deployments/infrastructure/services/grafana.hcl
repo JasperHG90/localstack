@@ -64,19 +64,57 @@ job "grafana" {
         destination = "/var/lib/grafana"
       }
 
+      ### GF_SERVER_ROOT_URL is the single input Grafana derives its OIDC
+      ### redirect URI from, so it must be the edge hostname registered in
+      ### `local.grafana_redirect_url` (oidc.tf), not a node address. A
+      ### mismatch fails at the provider with an opaque error, not at Grafana.
       env {
         GF_SECURITY_ADMIN_USER         = "admin"
         GF_SERVER_HTTP_PORT            = "3000"
-        GF_SERVER_ROOT_URL             = "http://192.168.2.47:3000"
+        GF_SERVER_ROOT_URL             = "https://grafana.lab.orangecluster.nl"
         GF_USERS_ALLOW_SIGN_UP         = "false"
         GF_ANALYTICS_REPORTING_ENABLED = "false"
         GF_ANALYTICS_CHECK_FOR_UPDATES = "false"
         GF_UNIFIED_ALERTING_ENABLED    = "true"
+
+        ### Vault SSO through Grafana's own generic OAuth client. No proxy.
+        ###
+        ### Four of these look optional and are not:
+        ###
+        ###   AUTH_URL/TOKEN_URL/API_URL are spelled out because 11.5.2's generic
+        ###   OAuth client does NO OIDC discovery — it never reads the
+        ###   well-known document, so an issuer URL alone configures nothing.
+        ###   AUTH_URL is a Vault *UI* path; that is what discovery advertises.
+        ###
+        ###   SCOPES must be set and must contain `openid`. Grafana's default is
+        ###   `user:email`, and Vault's authorize handler hard-rejects a request
+        ###   whose scope omits `openid`, so the default cannot reach the token
+        ###   endpoint at all. `email` is the claim Grafana refuses to log a user
+        ###   in without; Vault drops an unrequested scope silently.
+        ###
+        ###   ROLE_ATTRIBUTE_PATH is a JMESPath raw-string literal, quotes
+        ###   included, and it resolves against any input. Without it Grafana
+        ###   falls back to auto_assign_org_role, which ships as Viewer — every
+        ###   SSO user lands read-only while nothing errors.
+        ###
+        ### GF_USERS_ALLOW_SIGN_UP = "false" above does NOT block these logins:
+        ### the OAuth path consults the per-connector allow_sign_up, which
+        ### defaults to true.
+        GF_AUTH_GENERIC_OAUTH_ENABLED              = "true"
+        GF_AUTH_GENERIC_OAUTH_NAME                 = "Vault"
+        GF_AUTH_GENERIC_OAUTH_AUTH_URL             = "https://vault.lab.orangecluster.nl/ui/vault/identity/oidc/provider/lab/authorize"
+        GF_AUTH_GENERIC_OAUTH_TOKEN_URL            = "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/token"
+        GF_AUTH_GENERIC_OAUTH_API_URL              = "https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/userinfo"
+        GF_AUTH_GENERIC_OAUTH_SCOPES               = "openid email"
+        GF_AUTH_GENERIC_OAUTH_EMAIL_ATTRIBUTE_PATH = "email"
+        GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH  = "'Editor'"
       }
 
       template {
         data = <<-EOF
         GF_SECURITY_ADMIN_PASSWORD="{{ with secret "${grafana_secret}" }}{{ .Data.data.password }}{{ end }}"
+        GF_AUTH_GENERIC_OAUTH_CLIENT_ID="{{ with secret "${grafana_oidc_secret}" }}{{ .Data.data.client_id }}{{ end }}"
+        GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET="{{ with secret "${grafana_oidc_secret}" }}{{ .Data.data.client_secret }}{{ end }}"
         EOF
 
         destination = "secrets/file.env"

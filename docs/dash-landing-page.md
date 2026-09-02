@@ -27,7 +27,7 @@ itself. Nothing here repeats it.
 **One quirk to expect.** The first SSO attempt from a browser with no
 existing Vault UI session can fail with a generic error and leave you
 unauthenticated. Retrying after logging into the Vault UI succeeds. This is
-the same behavior `docs/vault-human-auth.md:328-335` documents for the
+the same behavior `docs/vault-human-auth.md:329-336` documents for the
 Nomad sign-in button. It has been observed but not root-caused, and fixing
 it is out of scope here.
 

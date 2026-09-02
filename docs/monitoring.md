@@ -12,7 +12,8 @@ and so does asking HAProxy for them.
 **You read all three through Grafana.** Its Explore view queries the
 Prometheus, Loki and Tempo datasources, which dial `192.168.2.47` directly
 from the same node. Grafana requires a login, so it is the authenticated front
-door to data that has no authentication of its own.
+door to data that has no authentication of its own. That login is Vault SSO.
+See *Signing in* below.
 
 | Service | Port | Who may connect |
 |---|---|---|
@@ -27,6 +28,41 @@ reach on port 3000.
 
 Prometheus scraping is unaffected. It dials outward to its targets, and no
 inbound rule touches that.
+
+### Signing in
+
+Go to `https://grafana.lab.orangecluster.nl` and press **Sign in with Vault**.
+Grafana speaks OIDC itself, so there is no proxy in front of it: it redirects
+to Vault's `lab` provider, and you come back as an Editor. Every user who
+completes a Vault login gets in, and gets the same role.
+
+Two behaviors are worth knowing before you meet them.
+
+**The first attempt can fail if your browser holds no Vault session.** Vault's
+authorization endpoint is a UI path, so a cold browser can bounce with a
+generic "Failed to sign in with SSO". Log in to the Vault UI, then retry.
+If the retry also fails, stop retrying: the Grafana client admits anyone who
+completes a Vault login, so a repeated failure is a configuration or claim
+fault, not a permission one. The likeliest cause is a missing `email` on your
+Vault entity.
+
+**Your Vault entity needs an `email`.** Grafana refuses a login whose email is
+empty and offers no setting to turn that off. The operator entity carries one
+(`vault_operator_email` in `deployments/infrastructure/variables.tf`), and any
+entity added later needs the same metadata key or its owner cannot sign in.
+
+### If Vault is down
+
+The local admin account still works. Go to
+`https://grafana.lab.orangecluster.nl/login`, skip the Vault button, and sign
+in as `admin` with the password from Vault KV2 at `default/grafana/admin`.
+
+Read that path before you need it. If Vault is sealed you cannot fetch the
+password from Vault, and Grafana is the tool you want open while you diagnose
+why. When Vault will not answer at all, `localstack breakglass` prints the
+runbook for getting it back. It names `/opt/vault/init.json` on firebat as
+where the unseal keys live, and deliberately never opens it: you read that
+file yourself, as root on the manager.
 
 ### Why they are not behind the edge proxy
 

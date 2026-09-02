@@ -428,6 +428,7 @@ resource "nomad_job" "grafana" {
     "${path.module}/services/grafana.hcl",
     {
       grafana_secret             = vault_kv_secret_v2.grafana_admin_credentials.path
+      grafana_oidc_secret        = vault_kv_secret_v2.grafana_oidc_client.path
       cluster_overview_dashboard = file("${path.module}/services/grafana/cluster-overview.json")
       logs_dashboard             = file("${path.module}/services/grafana/logs.json")
       services_dashboard         = file("${path.module}/services/grafana/services.json")
@@ -441,7 +442,11 @@ resource "nomad_job" "grafana" {
       alert_rules                = file("${path.module}/services/grafana/alert-rules.yaml")
       telegram_secret            = "${var.secret_mount}/data/default/grafana/telegram"
       telegram_alert_chat_id     = var.telegram_alert_chat_id
-      grafana_external_url       = "http://192.168.2.47:3000"
+      ### Only consumer is the "Open Grafana" link in the Telegram alert
+      ### template. It does NOT feed the OIDC redirect URI — GF_SERVER_ROOT_URL
+      ### does — but a node address here ships alerts pointing somewhere the
+      ### edge no longer matches.
+      grafana_external_url = "https://grafana.lab.orangecluster.nl"
     }
   )
   depends_on = [nomad_dynamic_host_volume.grafana_data]

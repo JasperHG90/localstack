@@ -38,8 +38,8 @@ All of it lives in `deployments/infrastructure/`:
 
 | File | Contents |
 | --- | --- |
-| `auth_userpass.tf` | The `userpass` auth mount, the operator user, and the identity entity and alias that bind a login to an identity |
-| `oidc.tf` | The OIDC signing key, the shared `groups` scope, the provider, and one throwaway smoke-test client |
+| `auth_userpass.tf` | The `userpass` auth mount, the operator user, and the identity entity and alias that bind a login to an identity. The entity's `email` metadata is what the `email` scope reads |
+| `oidc.tf` | The OIDC signing key, the shared `groups` and `email` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (oauth2-proxy, grafana) |
 | `secrets.tf` | Two KV2 writes: the operator password, and the smoke client's credentials |
 
 Two secrets land in KV2:
@@ -303,8 +303,9 @@ one line is unavoidable: Vault gates the provider on its `allowed_client_ids`
 and offers no standalone resource for it, unlike the key. Omit it and Vault
 refuses the authorization request.
 
-Finally, make your client **request** the `groups` scope, not just read it.
-Send `scope=openid groups`; oauth2-proxy calls this `--scope`. Only `openid`
+Finally, make your client **request** every scope it needs, not just read it.
+Send `scope=openid` plus the scopes you want: `groups` for group names,
+`email` for an email address. oauth2-proxy calls this `--scope`. Only `openid`
 is required, so a client that sets `--oidc-groups-claim` and leaves its
 default scope alone gets a signed token with no `groups` claim, however
 correct the scope template is. Nothing errors. Verified live on 2026-07-31:
@@ -454,13 +455,27 @@ oidc:
 than erroring, so a client that omits it logs in successfully and receives a
 valid token carrying no `groups` claim, which then matches no grant rule.
 
-## Two claims, and which one your service reads
+## The claims, and which one your service reads
 
 The shared `groups` scope emits the entity's Vault group names. oauth2-proxy
 consumes that through `--oidc-groups-claim`.
 
-Not every service uses it. MinIO tiers on `role_policy`, which bypasses the
-claim and gates on the per-client assignment instead. Decide which mechanism
+The `email` scope emits the entity's `email` metadata key. Grafana requires
+it: its generic OAuth client refuses a login whose resolved email is empty and
+offers no setting to turn that off. An entity with no `email` key yields an
+empty string, not an error, and the login fails at the callback. **Every human
+entity needs that metadata key**, or its owner cannot sign in to Grafana. The
+operator's is set from `vault_operator_email` (`auth_userpass.tf`,
+`variables.tf`).
+
+Whether your service needs it depends on the service, not on a rule. Grafana
+does. oauth2-proxy does not: it identifies a user from `sub`
+(`OAUTH2_PROXY_OIDC_EMAIL_CLAIM="sub"`), so dash logs people in with no
+`email` scope at all. Phoenix will need it, for the same reason Grafana does.
+
+Not every service reads the `groups` claim either. MinIO tiers on
+`role_policy`, which bypasses the claim and gates on the per-client assignment
+instead. Decide which mechanism
 your service uses and say so in its ticket, rather than assuming the claim is
 read everywhere.
 

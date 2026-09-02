@@ -35,11 +35,16 @@ resource "vault_generic_endpoint" "operator" {
   })
 }
 
+### `email` is not decoration: it is the only source for the `email` scope's
+### claim (oidc.tf), and Grafana refuses a login whose resolved email is empty.
+### An entity with no `email` key renders the claim as an empty string, and the
+### failure surfaces at the OIDC callback, not here.
 resource "vault_identity_entity" "operator" {
   name = var.vault_operator_username
   metadata = {
     managed_by = "terraform"
     kind       = "human"
+    email      = var.vault_operator_email
   }
 }
 

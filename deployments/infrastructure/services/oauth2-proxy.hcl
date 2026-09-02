@@ -10,8 +10,10 @@
 ### Seven settings decide whether this job works at all, and each one passes
 ### `nomad fmt`/`terraform validate` while being wrong: EMAIL_DOMAINS and
 ### UPSTREAMS are PLURAL in env form though their flags are singular
-### (--email-domain, --upstream); OIDC_EMAIL_CLAIM must be `sub` because
-### Vault's ID token carries no `email` claim; PROVIDER must be `oidc`
+### (--email-domain, --upstream); OIDC_EMAIL_CLAIM is `sub` because THIS job
+### requests only `openid`, so its token carries no `email` claim. The provider
+### does offer an `email` scope (G1 added it); a copy of this job that requests
+### it can read `email` instead, and R4/Phoenix must. PROVIDER must be `oidc`
 ### (default is `google`); HTTP_ADDRESS must bind 0.0.0.0, not the 4180
 ### loopback default; SKIP_PROVIDER_BUTTON is pinned `false`; and the health
 ### check below must probe /ping, never /.

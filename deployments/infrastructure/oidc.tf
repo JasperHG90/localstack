@@ -1,7 +1,7 @@
 ### Vault OIDC identity provider — the singleton half.
 ###
 ### F2 owns only what is genuinely one per cluster: the signing key, the shared
-### scope, the provider itself, and ONE throwaway smoke-test client that proves
+### scopes, the provider itself, and ONE throwaway smoke-test client that proves
 ### a human can complete a login end to end.
 ###
 ### Consumer clients (dash/L1, mlflow/R1, phoenix/R4, the MinIO tiers/M2) are
@@ -69,6 +69,26 @@ resource "vault_identity_oidc_scope" "groups" {
   template = "{\"groups\":{{identity.entity.groups.names}}}"
 }
 
+### The email claim contract. Grafana refuses a login whose resolved email is
+### empty and offers no setting to disable that check, so Grafana cannot work
+### without this scope. Most consumers can: memex and the Nomad client both
+### speak OIDC with no proxy and log people in on `groups` alone. R4 (Phoenix)
+### is the other that needs it; G1 created it, and R4 consumes it rather than
+### declaring a second one.
+###
+### The placeholder must NOT be quoted, for the same reason the `groups`
+### template above must not be. Vault's identity templating emits fully-formed
+### JSON per substitution, so a metadata lookup arrives already quoted; adding
+### quotes yields {"email":""a@b.com""}. Unlike the `groups` case, this one
+### fails LOUDLY at apply, because scope creation validates the template
+### against a zero-value entity. Do not "fix" that error by adding quotes.
+resource "vault_identity_oidc_scope" "email" {
+  name        = "email"
+  description = "Email address of the authenticated entity"
+
+  template = "{\"email\":{{identity.entity.metadata.email}}}"
+}
+
 ### Consumer clients permitted to use this provider.
 ###
 ### >>> CONSUMER TICKETS: APPEND YOUR CLIENT HERE. <<<
@@ -82,6 +102,7 @@ locals {
     vault_identity_oidc_client.nomad.client_id,
     vault_identity_oidc_client.memex.client_id,
     vault_identity_oidc_client.oauth2_proxy.client_id,
+    vault_identity_oidc_client.grafana.client_id,
   ]
 }
 
@@ -98,7 +119,10 @@ resource "vault_identity_oidc_provider" "lab" {
   https_enabled      = true
   issuer_host        = var.vault_issuer_host
   allowed_client_ids = local.oidc_provider_client_ids
-  scopes_supported   = [vault_identity_oidc_scope.groups.name]
+  scopes_supported = [
+    vault_identity_oidc_scope.groups.name,
+    vault_identity_oidc_scope.email.name,
+  ]
 }
 
 ### --- Smoke test -----------------------------------------------------------
@@ -184,4 +208,42 @@ resource "vault_identity_oidc_client" "oauth2_proxy" {
 resource "vault_identity_oidc_key_allowed_client_id" "oauth2_proxy" {
   key_name          = vault_identity_oidc_key.lab.name
   allowed_client_id = vault_identity_oidc_client.oauth2_proxy.client_id
+}
+
+### --- G1: Grafana (native generic OAuth client) -----------------------------
+### Grafana speaks OIDC itself, so nothing proxies it. Flat access: branch 3 of
+### the documented procedure (docs/vault-human-auth.md:288-292) — the built-in
+### "allow_all" assignment, no group and no vault_identity_oidc_assignment.
+### Confidential, because Vault issues no secret to a public client.
+###
+### Copies the smoke and nomad clients, NOT memex: `client_type` and `key` are
+### immutable after create, so a public client or a private key here would cost
+### a destroy, a new client_id, and an edit everywhere the old one is named.
+###
+### The redirect URL is a local for the same reason oauth2-proxy's is: Vault
+### rejects a callback whose URL is not in redirect_uris, so this registration
+### and GF_SERVER_ROOT_URL must never drift apart. Grafana does not take the
+### URL as a setting — it derives it from root_url plus the fixed
+### /login/generic_oauth path, so the two are wired together only by agreeing.
+locals {
+  grafana_redirect_url = "https://grafana.lab.orangecluster.nl/login/generic_oauth"
+}
+
+resource "vault_identity_oidc_client" "grafana" {
+  name = "grafana"
+  key  = vault_identity_oidc_key.lab.name
+
+  redirect_uris = [
+    local.grafana_redirect_url,
+  ]
+
+  assignments      = ["allow_all"]
+  client_type      = "confidential"
+  id_token_ttl     = 3600
+  access_token_ttl = 3600
+}
+
+resource "vault_identity_oidc_key_allowed_client_id" "grafana" {
+  key_name          = vault_identity_oidc_key.lab.name
+  allowed_client_id = vault_identity_oidc_client.grafana.client_id
 }
