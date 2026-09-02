@@ -18,6 +18,33 @@ tags = ["phoenix", "oidc", "vault", "terraform", "otlp"]
 >
 > **The slug still says `oauth2-proxy` and now misdescribes the ticket.** See
 > §12.
+>
+> **Relayed from `G1-grafana-native-oidc-login` (done, commit `1a57356`,
+> 2026-09-03). Two of this plan's premises are now false, and part of §7 is
+> already built.** G1 hit the identical email-claim wall and resolved it at the
+> Vault end, so:
+>
+> - **The `email` scope EXISTS.** `oidc.tf` now declares
+>   `vault_identity_oidc_scope.email` with the unquoted template
+>   `{"email":{{identity.entity.metadata.email}}}`, and the `lab` provider's
+>   `scopes_supported` is `[groups, email]`. **Consume it. Do not declare a
+>   second one** — G1 created it as shared infrastructure precisely so R4 would
+>   not. Declaring another is a duplicate-resource error on first plan.
+> - **The operator entity DOES carry an email.**
+>   `vault_identity_entity.operator` has an `email` metadata key, sourced from
+>   the new `vault_operator_email` variable. Any NEW human entity needs the
+>   same key or its owner cannot complete an OIDC login.
+> - Consequently the first two bullets of §7's Vault-side work are **done**,
+>   and §4's "The provider advertises exactly one scope, and it is not `email`"
+>   is superseded. The rest of §7 stands.
+> - **This plan's existing `unresolved-design-fork` blocker is stale.** Its
+>   stated reason is that Vault emits no email and drops the scope silently, so
+>   the callback dies after a successful login. G1 fixed exactly that. Re-run
+>   the plan reviewer before dispatching R4 rather than simply unblocking it:
+>   these premise edits were relayed, not re-reviewed.
+> - **`depends_on` does NOT list G1.** Left alone deliberately, since adding a
+>   dependency edge is the operator's call. G1 is `done`, so the edge would
+>   gate nothing today; it would only record the lineage.
 
 ## 1. Title
 
