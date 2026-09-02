@@ -107,6 +107,25 @@ locals {
         "allow from 192.168.2.50 to any port 4318 proto tcp",
       ]
     }
+    # embark on jetson-orin-nano. Commented out with the job itself (see
+    # `nomad_job.embark` below) -- uncomment BOTH together, or the service
+    # starts and nothing can reach it.
+    #
+    # Cluster nodes only: any workload may want embeddings, and which one does
+    # changes as memex moves off this host. Narrower than LAN-wide even though
+    # embark requires an API key, matching how loki and tempo are scoped.
+    #
+    # embark = {
+    #   host     = "192.168.2.46"
+    #   ssh_user = "localstack"
+    #   rules = [
+    #     "allow from 192.168.2.30 to any port 8000 proto tcp",
+    #     "allow from 192.168.2.29 to any port 8000 proto tcp",
+    #     "allow from 192.168.2.46 to any port 8000 proto tcp",
+    #     "allow from 192.168.2.47 to any port 8000 proto tcp",
+    #     "allow from 192.168.2.50 to any port 8000 proto tcp",
+    #   ]
+    # }
     # OCI registry on ubuntu (rpi4b). Single-caller shape: only HAProxy on
     # firebat dials it, because podman and docker refuse a plain-HTTP
     # registry and no node manages registries.conf, so the edge is the only
@@ -247,6 +266,91 @@ resource "nomad_job" "registry" {
     }
   )
 }
+
+### embark — OpenAI-compatible embedding and reranker serving.
+###
+### Models are NOT baked into the image. Each is a KitOps ModelKit in the
+### cluster registry, pulled by a prestart task into the embark_data host
+### volume. services/embark/models.json is the single source of truth for
+### which ones: it drives both the pull and what embark is told to serve, so
+### the two cannot drift. Round-tripped through jsondecode/jsonencode so a
+### syntax error fails `terraform plan` rather than reaching the job, the same
+### guard memex's auth_keys.json gets.
+###
+### config.toml is NOT round-tripped, because Terraform has no tomldecode: a
+### typo there reaches the job and fails at embark's own startup validation
+### instead of at plan time. That is why [models] lives in the JSON and only
+### embark's own settings live in the TOML.
+locals {
+  embark_registry = "registry.lab.orangecluster.nl"
+
+  # Served name -> ModelKit reference in the registry.
+  embark_models = jsondecode(file("${path.module}/services/embark/models.json"))
+
+  # Served name -> where the prestart task unpacks it. EMBARK_MODELS merges
+  # with config.toml per key rather than replacing it (embark's docs are
+  # explicit that no env var can unset a key the file declares).
+  embark_models_env = jsonencode({
+    for name, _ in local.embark_models : name => "/var/lib/embark/artifacts/${name}"
+  })
+
+  # The work list services/embark/pull.sh reads: one record per line, served
+  # name then full registry reference. Data only -- the pull logic itself is
+  # that script, not a string assembled here.
+  embark_models_list = join("\n", [
+    for name, ref in local.embark_models : "${name} ${local.embark_registry}/${ref}"
+  ])
+}
+
+### NOT DEPLOYED YET. Commented out on purpose, together with the `embark`
+### entry in local.firewall_rules above -- uncomment both, or the service
+### comes up unreachable.
+###
+### Two things must be true first:
+###   1. memex has moved off jetson-orin-nano. It holds ~6.5 GB there, so
+###      this job would sit in a blocked evaluation with `DimensionExhausted`
+###      rather than fail visibly.
+###   2. A node-local OTLP collector exists (O1-observability-otlp-llm-routing).
+###      Today's Alloy ships logs only and runs no receiver, so the telemetry
+###      endpoint below currently points at nothing.
+###
+### Everything around it -- the bucket-less host volume, the Vault API key,
+### the Redis consumer role -- is created regardless, so uncommenting is a
+### one-step change rather than a fresh dependency hunt.
+#
+# resource "nomad_job" "embark" {
+#   jobspec = templatefile(
+#     "${path.module}/services/embark.hcl",
+#     {
+#       # Target node. embark is built for the Orin Nano's GPU.
+#       embark_hostname = "jetson-orin-nano"
+#       embark_host     = "192.168.2.46"
+#       # NOT the image embark's release workflow publishes. That one is the
+#       # portable build and carries the CPU onnxruntime wheel, and config.toml
+#       # asks for the TensorRT and CUDA providers -- embark refuses to start
+#       # when a requested provider is missing. This tag has to be built on the
+#       # device and pushed by hand; see services/embark/README.md.
+#       embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.1.0"
+#
+#       registry_host        = local.embark_registry
+#       # embark's OWN copy of the registry credential. The nomad-workloads
+#       # role grants a job read only under secret/data/default/<job_id>/*,
+#       # so reading the registry's own path would 403.
+#       registry_auth_secret = vault_kv_secret_v2.embark_registry_credentials.path
+#       embark_auth_secret   = vault_kv_secret_v2.embark_auth.path
+#
+#       embark_models = local.embark_models_env
+#       models_list   = local.embark_models_list
+#       pull_script   = file("${path.module}/services/embark/pull.sh")
+#       config_toml   = file("${path.module}/services/embark/config.toml")
+#
+#       # Node-local Alloy, not Tempo directly: embark should not have to know
+#       # where the trace backend lives.
+#       otlp_endpoint = "http://127.0.0.1:4317"
+#       redis_host    = "192.168.2.50"
+#     }
+#   )
+# }
 
 ### Dash — the cluster landing page (L3), split into a frontend and a
 ### backend task in the same job (L4). The tile list lives in

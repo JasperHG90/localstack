@@ -1,0 +1,61 @@
+# embark settings. Rendered into the job by services.tf and named by
+# EMBARK_CONFIG_FILE, so this is the whole config file embark reads.
+#
+# NOT here: [models], [auth] and [telemetry].
+#
+# [models] is derived from models.json in this directory, because the same
+# list drives the prestart task that pulls each ModelKit. Two copies of "which
+# model" would drift, and the one that drifts silently is the one that decides
+# what gets served. services.tf turns models.json into EMBARK_MODELS, which
+# merges with this file per key rather than replacing it.
+#
+# [auth] and [telemetry] carry a credential and a node address, so they are set
+# as environment variables in the job. embark's own docs say the same: a config
+# file is the copy that gets committed by accident.
+
+[logging]
+level = "info"
+# Explicit rather than "auto": auto renders for a human when it sees a
+# terminal, and Alloy ships these lines to Loki, which wants one JSON object
+# per line. See docs/observability-python.md.
+format = "json"
+
+[server]
+host = "0.0.0.0"
+port = 8000
+
+[runtime]
+# Requires the Jetson image. embark REFUSES to start when a requested provider
+# is missing, so the portable image -- which carries the CPU onnxruntime wheel
+# -- will not run this config. That refusal is the point: onnxruntime's own
+# behavior is to fall through silently, which is how a Jetson ends up serving
+# from CPU at a tenth of the speed, reporting itself healthy, with nothing in
+# the log. See README.md in this directory: building and pushing that image is
+# an operator step, not something CI does.
+#
+# No CPUExecutionProvider in the list, matching embark's own documented Jetson
+# config: onnxruntime appends the CPU provider implicitly as a last resort for
+# operators the GPU providers cannot take, so naming it here would only blur
+# the startup check that catches a missing GPU provider.
+providers = ["TensorrtExecutionProvider", "CUDAExecutionProvider"]
+# The Orin Nano's 6 cores also run the OS and the HTTP server; onnxruntime's
+# default of one thread per core oversubscribes them.
+intra_op_threads = 4
+
+# Under the host volume, so the built engine survives a restart. Building one
+# takes minutes, and it is rebuilt from scratch whenever this path is empty --
+# which is also why the health check probes /healthz rather than /readyz.
+[runtime.provider_options.TensorrtExecutionProvider]
+trt_engine_cache_enable = "1"
+trt_engine_cache_path = "/var/lib/embark/trt"
+trt_fp16_enable = "1"
+
+[batching]
+embedding_batch_size = 16
+rerank_batch_size = 8
+max_delay_ms = 50
+max_queue_depth = 256
+
+[limits]
+max_body_bytes = 4194304
+max_items_per_request = 128

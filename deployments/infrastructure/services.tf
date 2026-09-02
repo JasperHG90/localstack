@@ -162,6 +162,35 @@ resource "nomad_dynamic_host_volume" "tempo_data" {
   }
 }
 
+### embark's model artifacts and its own cache. Sized for ONNX weights: the
+### embeddinggemma-q8 ModelKit alone is ~300 MiB unpacked, and a reranker sits
+### beside it. Not a cache that can be thrown away cheaply -- losing it means
+### re-pulling every model from the registry on the next start, and on the
+### Jetson rebuilding the TensorRT engine, which takes minutes.
+###
+### Pinned to the same node as the embark job (deployments/applications's
+### `embark_hostname`). The two are a pair: move one and the job stops
+### placing, because a host volume does not follow it.
+resource "nomad_dynamic_host_volume" "embark_data" {
+  name      = "embark_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "50 GiB"
+  capacity_min = "5 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "jetson-orin-nano"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 resource "nomad_dynamic_host_volume" "nats_data" {
   name      = "nats_data"
   namespace = "default"
@@ -215,7 +244,6 @@ locals {
         "allow from 100.64.0.0/10 to any port 8404 proto tcp",
       ]
     }
-    # Docker registry on firebat
     # The registry job (deployments/applications/services/registry.hcl) runs
     # on ubuntu, and its firewall rule lives with it in the applications
     # root. The rule that used to sit here opened 5000/5001 LAN-wide on this
@@ -282,13 +310,15 @@ locals {
       ssh_user = "firebat"
       rules    = ["allow from 192.168.2.47 to any port 9187 proto tcp"]
     }
-    # Redis cache on radxa-dragon-q6a. LAN-wide for now: no caller is wired
-    # up yet (redis_secrets_engine.tf), so tighten this once one exists.
+    # Redis cache on radxa-dragon-q6a. Narrowed from LAN-wide now that a
+    # caller exists: embark is registered in redis_cache_consumers
+    # (redis_secrets_engine.tf) and runs on jetson-orin-nano. Add a node here
+    # when its job joins that list, or it fails to reach the cache.
     redis = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
       rules = [
-        "allow from 192.168.0.0/16 to any port 6379 proto tcp",
+        "allow from 192.168.2.46 to any port 6379 proto tcp",
       ]
     }
     # NATS+JetStream on radxa-dragon-q6a (LAN-only; no auth in v1)

@@ -97,6 +97,7 @@ resource "vault_database_secret_backend_connection" "redis" {
 locals {
   redis_cache_consumers = toset([
     # "memex",
+    "embark",
   ])
 }
 

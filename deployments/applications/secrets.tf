@@ -59,6 +59,46 @@ resource "vault_kv_secret_v2" "tempo_minio_credentials" {
   })
 }
 
+### embark
+###
+### embark ships auth ON and refuses to start when it is enabled with no keys,
+### so this is a precondition for the job, not a hardening step. One `read`
+### key for cluster callers; embark also supports JWT via JWKS, which would let
+### it verify Nomad workload identities the way memex does, but that is a
+### bigger change than standing the service up.
+resource "random_id" "embark_api_key" {
+  byte_length = 32
+}
+
+resource "vault_kv_secret_v2" "embark_auth" {
+  mount = var.secret_mount
+  name  = "default/embark/auth"
+  data_json = jsonencode({
+    api_key = random_id.embark_api_key.b64_url
+  })
+}
+
+### The registry credential embark's model-pull task reads, copied under
+### embark's OWN KV prefix rather than read from default/registry/auth.
+###
+### The nomad-workloads role grants a job read on
+### `secret/data/<namespace>/<job_id>/*` and nothing else
+### (bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2), so
+### job `embark` reading the registry's own path gets a 403 and the prestart
+### task never renders. Same reason bifrost_hermes_key and bifrost_memex_key
+### above are copies under their consumers' prefixes.
+###
+### Same values as vault_kv_secret_v2.registry_auth, minus the htpasswd hash:
+### a puller needs the plaintext password, never the server's hash.
+resource "vault_kv_secret_v2" "embark_registry_credentials" {
+  mount = var.secret_mount
+  name  = "default/embark/registry"
+  data_json = jsonencode({
+    username = "push"
+    password = random_password.registry_push.result
+  })
+}
+
 ### Registry
 
 resource "vault_kv_secret_v2" "registry_minio_credentials" {
