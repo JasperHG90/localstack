@@ -179,15 +179,12 @@
     },
     "M1-minio-poc-service-account": {
       "slug": "M1-minio-poc-service-account",
-      "stage": "blocked",
-      "attempts": 0,
-      "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "premise BROKEN: MinIO RELEASE.2025-09-07 removed jwks_url, only config_url works; Nomad discovery disabled and no ticket owns oidc_issuer. See .loop/verdicts/M1-minio-poc-service-account.plan-validator.md"
-      },
+      "stage": "done",
+      "attempts": 1,
+      "review_cycles": 2,
+      "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
+      "review_verdict": ".loop/verdicts/M1-minio-poc-service-account.adversarial.md, .loop/verdicts/M1-minio-poc-service-account.documentation.md",
       "dropped": false,
       "drop_reason": null,
       "carried_over_finding": null,
