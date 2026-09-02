@@ -83,6 +83,42 @@ locals {
   ])
 }
 
+### Workload-identity policy for the tempo job.
+###
+### The NAME is the mechanism. MinIO's `NOMAD` OIDC target runs in claim
+### mode, so it applies the policy named by the JWT's `nomad_job_id` claim.
+### `tempo` here must stay spelled exactly like the job id in
+### services/tempo.hcl. The bucket module's `tempo_read_write` does NOT
+### match: claim mode compares the whole string.
+###
+### This is deliberately NOT in modules/bucket/. That module is shared by
+### every bucket, and this convention has one consumer. Promote it there
+### once a second job proves it. The bucket is a plain string for the same
+### reason M1 used one: `minio_s3_bucket.bucket` lives inside
+### `module.buckets`, which exports nothing.
+###
+### No `minio_iam_user_policy_attachment`, unlike the policies the bucket
+### module emits: this one is assumed through STS by a workload identity,
+### never attached to a standing user. The `tempo` user below keeps its own
+### static key and its own attachment, deliberately, as the rollback path.
+resource "minio_iam_policy" "tempo_wi" {
+  name   = "tempo"
+  policy = <<EOF
+{
+  "Version":"2012-10-17",
+  "Statement": [
+    {
+      "Sid":"TempoOwnBucketOnly",
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Principal":"*",
+      "Resource": ["arn:aws:s3:::tempo", "arn:aws:s3:::tempo/*"]
+    }
+  ]
+}
+EOF
+}
+
 resource "minio_iam_user" "users" {
   for_each = toset(local.all_minio_users)
   name     = each.key

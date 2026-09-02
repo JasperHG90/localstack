@@ -233,14 +233,25 @@ resource "nomad_job" "loki" {
   )
 }
 
-### Tempo — trace store on ubuntu (rpi4b), MinIO-backed. Lives here rather
-### than in the infrastructure root for the same reason Loki does: it needs
-### the MinIO bucket creds, which are provisioned in this root.
+### Tempo — trace store on ubuntu (rpi4b), MinIO-backed. It belongs in this
+### root because minio_iam_policy.tempo_wi, in storage.tf, is provisioned
+### here.
+###
+### Takes no secret path: tempo exchanges its Workload Identity JWT for
+### MinIO credentials rather than being handed a key. The Vault entry
+### (vault_kv_secret_v2.tempo_minio_credentials) and the static key behind
+### it stay provisioned as the rollback path, and are simply not rendered
+### into the job.
 resource "nomad_job" "tempo" {
   jobspec = templatefile(
     "${path.module}/services/tempo.hcl",
-    { tempo_minio_secret = vault_kv_secret_v2.tempo_minio_credentials.path }
+    {}
   )
+
+  # Claim mode resolves `nomad_job_id` to this policy. Without it the STS
+  # exchange fails and tempo falls back to anonymous, which surfaces as an
+  # ordinary permission error rather than as a missing policy.
+  depends_on = [minio_iam_policy.tempo_wi]
 }
 
 ### OCI registry — container images and, via KitOps ModelKits, model

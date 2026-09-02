@@ -38,7 +38,40 @@ job "tempo" {
       driver = "podman"
       user   = "root"
 
-      vault {}
+      ### Keyless MinIO access. The field-by-field rationale lives in
+      ### docs/workload-identity.md, under "The `identity`-stanza and
+      ### audience convention". Only what is specific to tempo is here.
+      ###
+      ### There is no `vault {}` block because the MinIO key was this job's
+      ### only Vault use, so tempo needs no Vault access at all. `user =
+      ### "root"` above is safe: the documented hazard is a NON-root user,
+      ### where Nomad's chown puts the JWT out of the task's reach.
+      identity {
+        name        = "minio"
+        aud         = ["minio"]
+        file        = true
+        filepath    = "secrets/nomad_minio.jwt"
+        ttl         = "1h"
+        change_mode = "noop"
+      }
+
+      ### These two send tempo down minio-go's web-identity path.
+      ###
+      ### THE SCHEME ON TEST_IAM_ENDPOINT IS LOAD-BEARING and deliberately
+      ### unlike the schemeless `endpoint:` the storage config further down
+      ### this file gives the S3 client. Drop the scheme here and minio-go
+      ### makes no STS call at all: no error, no log line, just silent
+      ### anonymous S3. Verified by probing the pinned image in plan review.
+      ###
+      ### AWS_ROLE_ARN is deliberately ABSENT. Setting it would send a
+      ### RoleArn and select role-policy mode, pinning every workload on the
+      ### target to one shared policy. Omitting it sends none, which is
+      ### claim mode, which is what makes the `tempo` policy apply to tempo
+      ### alone.
+      env {
+        AWS_WEB_IDENTITY_TOKEN_FILE = "/secrets/nomad_minio.jwt"
+        TEST_IAM_ENDPOINT           = "http://192.168.2.29:9000"
+      }
 
       service {
         name = "tempo"
@@ -58,10 +91,9 @@ job "tempo" {
 
       config {
         image = "docker.io/grafana/tempo:2.10.8"
-        args = [
-          "-config.file=/local/tempo-config.yaml",
-          "-config.expand-env=true",
-        ]
+        # No -config.expand-env: nothing in the config template interpolates
+        # a variable any more, now that the MinIO keys are gone.
+        args         = ["-config.file=/local/tempo-config.yaml"]
         ports        = ["http", "grpc", "otlp_grpc", "otlp_http"]
         network_mode = "host"
       }
@@ -69,18 +101,6 @@ job "tempo" {
       volume_mount {
         volume      = "tempo_data"
         destination = "/var/tempo"
-      }
-
-      template {
-        data = <<-EOF
-        {{- with secret "${tempo_minio_secret}" }}
-        MINIO_ACCESS_KEY="{{ .Data.data.access_key }}"
-        MINIO_SECRET_KEY="{{ .Data.data.secret_key }}"
-        {{- end }}
-        EOF
-
-        destination = "secrets/minio.env"
-        env         = true
       }
 
       template {
@@ -116,8 +136,6 @@ job "tempo" {
             s3:
               bucket: tempo
               endpoint: 192.168.2.29:9000
-              access_key: $${MINIO_ACCESS_KEY}
-              secret_key: $${MINIO_SECRET_KEY}
               forcepathstyle: true
               insecure: true
             wal:

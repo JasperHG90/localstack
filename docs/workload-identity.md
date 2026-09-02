@@ -265,8 +265,8 @@ discovery (memex in R5, MinIO in M1) can now point at the issuer directly.
 M1 landed this. A Nomad job can now read its bucket with no static S3 key: it
 trades its Workload Identity JWT for short-lived MinIO credentials. The
 static keys in `deployments/applications/storage.tf` still exist and still
-work, and no existing consumer was moved off them. Moving them is a separate
-piece of work.
+work. Tempo has since been moved off its own (R9), and keeps its key
+provisioned as a rollback path. loki, registry and memex still use theirs.
 
 **What MinIO trusts.** Three env vars on the MinIO job
 (`deployments/infrastructure/services/minio.hcl`) define the `NOMAD` target:
@@ -290,10 +290,9 @@ job id rather than a custom claim is deliberate: Vault's `nomad-workloads`
 role maps only three claims (see "The fixed-claims constraint" above), and
 using the same key for MinIO keeps one scoping story across both verifiers.
 
-**To give a new job keyless access**, two things must line up. Note that
-NOTHING in this repo currently does, because M1 proved the mechanism with a
-throwaway job and policy and then removed both. The first real consumer is
-the one that creates these:
+**To give a new job keyless access**, two things must line up. A job whose
+client library does the exchange needs two more. Tempo is that case, and is
+the worked example below:
 
 1. The job carries a named identity for the `minio` audience, per the
    convention above:
@@ -310,13 +309,23 @@ the one that creates these:
    ```
 
 2. A `minio_iam_policy` exists whose `name` is exactly the job id, scoped to
-   that job's bucket. Without it the exchange itself fails, before any
-   credential is minted, with `None of the given policies are defined`. It
-   does not hand back a credential that is then denied, so a job that cannot
-   get credentials at all is the symptom of a missing policy.
+   that job's bucket.
 
-The job then exchanges the JWT itself. The request carries its parameters in
-the query string and needs no SDK, so `curl` is enough:
+   **What a missing policy looks like depends on how you reach MinIO, and
+   the two symptoms are opposites.** Exchanging by hand with `curl`, the
+   request fails before any credential is minted, with `None of the given
+   policies (...) are defined`. Through a client library it is the reverse:
+   minio-go's credential chain DISCARDS the provider error and falls back
+   to anonymous, so the service logs a plain `Access Denied` and its
+   requests go out unsigned. Every real consumer takes the second route, so
+   expect the misleading symptom. A service that suddenly cannot read its
+   own bucket is more often a missing policy than a revoked permission.
+
+A job can exchange the JWT itself. The request carries its parameters in the
+query string and needs no SDK, so `curl` is enough. This form is for proving
+the mechanism by hand from a container that has a shell. It is NOT how a real
+consumer works, and you cannot run it against another job's token, because
+Nomad refuses to read files under `secrets/` through `alloc fs`:
 
 ```
 curl -sS -X POST "http://<minio>:9000/?Action=AssumeRoleWithWebIdentity\
@@ -331,6 +340,49 @@ one URL:
 MC_HOST_sts="http://<AccessKeyId>:<SecretAccessKey>:<SessionToken>@<minio>:9000"
 mc ls sts/<bucket>
 ```
+
+### Worked example: tempo
+
+Tempo is the first service to run keyless, and it never calls `curl`. Its
+client library does the exchange, which takes four things rather than the two
+above. The pattern generalizes to any minio-go-based service.
+
+1. The named identity block, exactly as above, with `aud = ["minio"]`.
+2. A `minio_iam_policy` named `tempo`, in
+   `deployments/applications/storage.tf`.
+3. Two environment variables on the task
+   (`deployments/applications/services/tempo.hcl`):
+
+   ```
+   AWS_WEB_IDENTITY_TOKEN_FILE = "/secrets/nomad_minio.jwt"
+   TEST_IAM_ENDPOINT           = "http://192.168.2.29:9000"
+   ```
+
+   The endpoint variable is tempo's knob for minio-go's STS endpoint. **Its
+   scheme is load-bearing**, and deliberately unlike the schemeless
+   `endpoint:` the same file gives the S3 client. Omit `http://` and
+   minio-go makes no STS call at all: no error, no log line, just silent
+   anonymous access.
+
+   `AWS_ROLE_ARN` must stay UNSET. Setting it sends a `RoleArn`, which
+   selects role-policy mode and pins every workload on the target to one
+   shared policy. Unset means claim mode, which is what makes a per-job
+   policy work.
+
+4. **Every static credential removed, not just the one in the config file.**
+   minio-go tries providers in order: static config, `EnvAWS`, `EnvMinio`,
+   files, and only then web identity. Six variable names have to be absent,
+   not two. `EnvMinio` checks `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
+   FIRST, then `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY`; `EnvAWS` reads
+   `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Leave any of the six set
+   and the service keeps using its old key while every check looks green:
+   the job runs, the bucket reads, nothing errors. Delete the config keys
+   AND whatever renders those variables.
+
+The check that catches step 4 is `nomad job inspect <job>`: a
+`template { env = true }` stanza is itself part of the submitted jobspec, so
+grepping the jobspec for those six names covers both the `env` block and
+anything rendered from Vault. Expect no matches.
 
 **A second target already exists.** `POC2` (`aud = minio-poc2`) is configured
 alongside `NOMAD`, on the same discovery document under a different client
