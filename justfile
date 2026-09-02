@@ -44,6 +44,7 @@ unseal_vault:
 worktree_setup path:
     ln -sfn "$(pwd)/.ssh" "{{ path }}/.ssh"
     cp deployments/infrastructure/vars/prod.tfvars "{{ path }}/deployments/infrastructure/vars/prod.tfvars"
+    cp deployments/applications/vars/prod.tfvars "{{ path }}/deployments/applications/vars/prod.tfvars"
     ln -sfn "$(pwd)/.claude" "{{ path }}/.claude"
 
 # Retrieve all secrets in a namespace

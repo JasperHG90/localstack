@@ -32,7 +32,9 @@ follow when they need their own audience.
    curl -s "$NOMAD_ADDR/.well-known/jwks.json" | jq '.keys | length'
    ```
 
-   This is the URL M1 points MinIO's `identity_openid` at.
+   MinIO does NOT consume this URL. Its `identity_openid` takes a discovery
+   document, not a bare JWKS, and the pinned release strips `jwks_url`
+   outright. See "Keyless MinIO access" below for the URL it does use.
 3. **The `nomad-workloads` role maps claims to a policy.** The role
    (`bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json`)
    binds `aud = ["vault.io"]`, takes `nomad_job_id` as the user claim, and
@@ -202,8 +204,8 @@ or provider per client, for no scoping gain.
 - Keep `vault.io` for the existing Vault path. Renaming breaks every running
   workload at once.
 - Add a distinct audience only per new consumer class that verifies tokens
-  (for example `minio` for MinIO STS in M1). Do not add it here; M1 owns its
-  own.
+  (for example `minio` for MinIO STS). M1 has since added that one; see
+  "Keyless MinIO access" below.
 
 Audience registry:
 
@@ -211,7 +213,15 @@ Audience registry:
 |-------|----------|-------|
 | `vault.io` | Vault, via the `jwt-nomad` mount | F1 |
 | `memex` | the memex server, against Nomad's JWKS | R5 |
-| `minio` | MinIO STS | M1 (not yet landed) |
+| `minio` | MinIO STS, `NOMAD` target | M1 |
+| `minio-poc2` | MinIO STS, `POC2` target | M1, replace in the human ticket |
+
+The last two rows share a verifier, which the rule above forbids. They are
+the documented exception, not a precedent: MinIO refuses more than one
+claim-mode target, so proving it can serve a second identity provider at all
+requires a second target with its own client id, and a client id is matched
+against `aud`. Nothing else may add an audience to a verifier it already has.
+See "Keyless MinIO access" below.
 
 `memex` is the first verifier that is not Vault: memex fetches Nomad's JWKS
 itself and needs no Vault role. Per-job authorization is a `grant_rule` on
@@ -227,9 +237,10 @@ itself and needs no Vault role. Per-job authorization is a `grant_rule` on
 
 ## What F1 delivers for M1, and what it does not
 
-F1 delivers the **JWKS URL** (`http://192.168.2.30:4646/.well-known/jwks.json`)
-M1 points MinIO's `identity_openid` at. F1's scope was JWKS only; it did not
-deliver an OIDC discovery document.
+F1 delivered the **JWKS URL** (`http://192.168.2.30:4646/.well-known/jwks.json`)
+and nothing more. Its scope was JWKS only; it did not deliver an OIDC
+discovery document, which is what MinIO actually needs, so M1 could not
+proceed on F1 alone.
 
 **F10 has since enabled discovery**, so the rest of this section describes
 history, not current state. Nomad now serves a discovery document at the
@@ -248,6 +259,97 @@ wait. Enabling discovery meant setting `server { oidc_issuer = ... }` in the
 Nomad server config and restarting the single Nomad server; that was
 `F10-foundation-nomad-oidc-issuer`, and it is done. A verifier that needs
 discovery (memex in R5, MinIO in M1) can now point at the issuer directly.
+
+## Keyless MinIO access
+
+M1 landed this. A Nomad job can now read its bucket with no static S3 key: it
+trades its Workload Identity JWT for short-lived MinIO credentials. The
+static keys in `deployments/applications/storage.tf` still exist and still
+work, and no existing consumer was moved off them. Moving them is a separate
+piece of work.
+
+**What MinIO trusts.** Three env vars on the MinIO job
+(`deployments/infrastructure/services/minio.hcl`) define the `NOMAD` target:
+
+```
+MINIO_IDENTITY_OPENID_CONFIG_URL_NOMAD=https://nomad.lab.orangecluster.nl/.well-known/openid-configuration
+MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD=minio
+MINIO_IDENTITY_OPENID_CLAIM_NAME_NOMAD=nomad_job_id
+```
+
+The config URL is the discovery document F10 turned on, not a bare JWKS: the
+pinned release removed `jwks_url`. The client id is why a consumer's identity
+block must carry `aud = ["minio"]`, because MinIO validates the audience
+against it in every mode. The trailing `_NOMAD` names the target and MinIO
+reads it verbatim, so the target is `NOMAD` and never `nomad`.
+
+**How access is decided.** `claim_name = nomad_job_id` tells MinIO to apply
+the policy whose NAME matches the JWT's `nomad_job_id` claim. So a job called
+`foo` gets the MinIO policy called `foo`, and nothing else. Keying off the
+job id rather than a custom claim is deliberate: Vault's `nomad-workloads`
+role maps only three claims (see "The fixed-claims constraint" above), and
+using the same key for MinIO keeps one scoping story across both verifiers.
+
+**To give a new job keyless access**, two things must line up. Note that
+NOTHING in this repo currently does, because M1 proved the mechanism with a
+throwaway job and policy and then removed both. The first real consumer is
+the one that creates these:
+
+1. The job carries a named identity for the `minio` audience, per the
+   convention above:
+
+   ```
+   identity {
+     name        = "minio"
+     aud         = ["minio"]
+     file        = true
+     filepath    = "secrets/nomad_minio.jwt"
+     ttl         = "1h"
+     change_mode = "noop"
+   }
+   ```
+
+2. A `minio_iam_policy` exists whose `name` is exactly the job id, scoped to
+   that job's bucket. Without it the exchange itself fails, before any
+   credential is minted, with `None of the given policies are defined`. It
+   does not hand back a credential that is then denied, so a job that cannot
+   get credentials at all is the symptom of a missing policy.
+
+The job then exchanges the JWT itself. The request carries its parameters in
+the query string and needs no SDK, so `curl` is enough:
+
+```
+curl -sS -X POST "http://<minio>:9000/?Action=AssumeRoleWithWebIdentity\
+&Version=2011-06-15&WebIdentityToken=$(cat /secrets/nomad_minio.jwt)"
+```
+
+It returns XML holding an `<AccessKeyId>`, `<SecretAccessKey>`,
+`<SessionToken>` and an `<Expiration>` one hour out. `mc` takes all three in
+one URL:
+
+```
+MC_HOST_sts="http://<AccessKeyId>:<SecretAccessKey>:<SessionToken>@<minio>:9000"
+mc ls sts/<bucket>
+```
+
+**A second target already exists.** `POC2` (`aud = minio-poc2`) is configured
+alongside `NOMAD`, on the same discovery document under a different client
+id, and proves MinIO can hold two IdPs at once for the human-access work.
+Its `role_policy` names `poc2-intentionally-undefined`, a policy that does
+not exist and must not be created. MinIO's only principal check is `aud`
+matching `client_id`, and any jobspec author chooses their own `aud`, so a
+real policy here would grant that bucket to anyone who asked for the
+audience. Pointing at nothing costs nothing at startup and fails per
+request, which is what keeps the target safe to leave standing. Whoever
+wires Vault in should REPLACE it rather than add a third target.
+
+**Two MinIO behaviors worth knowing before editing its config.** Only one
+provider may run in claim mode. A token arriving with no `RoleArn` has to
+resolve to exactly one, so every other provider needs a `role_policy`, which
+is why `POC2` carries one and `NOMAD` does not. And `LookupConfig` aborts the
+WHOLE OIDC config load, every provider, if any
+one provider's discovery document fails to parse, so pointing a new provider
+at a URL that is not live takes down the working ones with it.
 
 ## Operator verification (run on the live cluster)
 

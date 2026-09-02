@@ -377,7 +377,16 @@ resource "nomad_job" "postgres" {
 resource "nomad_job" "minio" {
   jobspec = templatefile(
     "${path.module}/services/minio.hcl",
-    { minio_secret = vault_kv_secret_v2.minio_credentials.path }
+    {
+      minio_secret = vault_kv_secret_v2.minio_credentials.path
+      # Nomad's own OIDC discovery document, which F10 turned on by setting
+      # `server { oidc_issuer = ... }` in
+      # bootstrap/roles/nomad_server/templates/nomad.hcl.j2. That Ansible
+      # variable is the source of truth for the host; change it there and
+      # this must follow. Served through the HAProxy edge on the public
+      # Let's Encrypt wildcard, so MinIO needs no extra trust bundle.
+      nomad_oidc_config_url = "https://nomad.lab.orangecluster.nl/.well-known/openid-configuration"
+    }
   )
 }
 

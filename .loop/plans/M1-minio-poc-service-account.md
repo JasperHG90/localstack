@@ -296,21 +296,22 @@ anchor and all STS calls fail with an OIDC/JWKS error. The per-eval
 
 - E3 — STS AssumeRoleWithWebIdentity, role-policy mode (phase one).
   Needs: F1 + subtickets 2, 3.
-  Command (from inside the alloc, aws-cli form):
-  `nomad alloc exec <alloc> aws sts assume-role-with-web-identity
-  --role-arn <RoleArn-from-E1> --role-session-name m1
-  --web-identity-token "$(cat secrets/nomad_minio.jwt)"
-  --endpoint-url http://<minio>:9000`
-  Expected: JSON with `Credentials` (`AccessKeyId`, `SecretAccessKey`,
-  `SessionToken`) and a short `Expiration`. This isolates that
-  Nomad-to-MinIO trust works before any per-job RBAC. Do not proceed to
-  claim mode until E3 passes.
+  Command (from inside the alloc; `curl` form, resolving Q6):
+  `curl -sS -X POST
+  "http://<minio>:9000/?Action=AssumeRoleWithWebIdentity&Version=2011-06-15&RoleArn=<RoleArn-from-E1>&WebIdentityToken=$(cat
+  secrets/nomad_minio.jwt)"`
+  Expected: XML `<Credentials>` carrying `<AccessKeyId>`,
+  `<SecretAccessKey>`, `<SessionToken>` and a short `<Expiration>`. This
+  isolates that Nomad-to-MinIO trust works before any per-job RBAC. Do
+  not proceed to claim mode until E3 passes.
 
 - E4 — read own bucket with the STS creds (phase one). Needs: F1 +
   subtickets 2, 3.
-  Command (export the E3 creds as `AWS_ACCESS_KEY_ID` /
-  `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN`, then):
-  `aws s3 ls s3://memex --endpoint-url http://<minio>:9000`
+  Command (carry the E3 credential triple in a session-token alias —
+  `mc` reads all three from one `MC_HOST_<alias>` URL, which is why this
+  needs no AWS environment variables — then):
+  `MC_HOST_sts="http://<AccessKeyId>:<SecretAccessKey>:<SessionToken>@<minio>:9000"
+  mc ls sts/memex`
   Expected: the object listing returns (exit 0). Proves the assumed
   identity can read its target bucket.
 
@@ -319,16 +320,17 @@ anchor and all STS calls fail with an OIDC/JWKS error. The per-eval
   exactly `m1-poc` (the job id) scoped to the `memex` bucket exists
   (R4/R5), and MinIO is switched to `CLAIM_NAME_NOMAD=nomad_job_id`
   (`ROLE_POLICY_NOMAD` removed).
-  Command: repeat E3 with **no** `--role-arn` (claim mode derives the
-  policy from `nomad_job_id`), export the returned creds, then
-  `aws s3 ls s3://memex --endpoint-url http://<minio>:9000`
+  Command: repeat E3 with **no** `RoleArn` parameter (claim mode derives
+  the policy from `nomad_job_id`), carry the returned creds, then
+  `MC_HOST_sts=... mc ls sts/memex`
   Expected: listing succeeds, proving the job id mapped to a same-named
   policy with no `RoleArn`.
 
 - E6 — cross-bucket denial (phase two, proves per-job scoping). Needs:
   F1 + subtickets 2, 3, 4, 5.
   Command (reusing the E5 claim-mode creds):
-  `aws s3 ls s3://<other-bucket> --endpoint-url http://<minio>:9000`
+  `MC_HOST_sts="http://<AccessKeyId>:<SecretAccessKey>:<SessionToken>@<minio>:9000"
+  mc ls sts/<other-bucket>`
   Expected: `AccessDenied`. Together E5 + E6 prove the per-job policy
   (name == `nomad_job_id`) grants exactly its own bucket and nothing
   else.
@@ -457,11 +459,15 @@ an operator decision before or during the loop.
   match. Confirmed via `jwt.go`'s `Validate` (called unconditionally in
   both role-policy and claim modes): MinIO always validates `aud`, in
   every mode. Set client id to `minio` in subticket 2.
-- Q6. **STS tooling inside the throwaway job.** Which client performs
-  `AssumeRoleWithWebIdentity` (mc, aws-cli, a small script). The repo has
-  no established pattern. Recommendation: use the smallest client that the
-  POC image already ships; record the exact call for reuse in later
-  epic tickets.
+- Q6. **STS tooling inside the throwaway job — resolved.** Which client
+  performs `AssumeRoleWithWebIdentity` (mc, aws-cli, a small script). The
+  repo has no established pattern. **Resolved 2026-09-02 on the
+  operator's instruction: `curl` for the STS exchange, `mc` for the
+  bucket reads; the POC image ships no aws-cli.** The exchange is a plain
+  form POST, so `curl` needs no SDK, and `mc` carries the credential
+  triple (access key, secret key, session token) in one
+  `MC_HOST_<alias>` URL. E3-E6 and the eval marker's rows 3-6 record the
+  exact calls for reuse in later epic tickets.
 
 ## Premises / assumptions
 
