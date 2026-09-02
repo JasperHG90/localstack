@@ -183,7 +183,7 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "a34e562281c0b7b66230b7f4de5ac3651942dcab",
       "review_verdict": ".loop/verdicts/M1-minio-poc-service-account.adversarial.md, .loop/verdicts/M1-minio-poc-service-account.documentation.md",
       "dropped": false,
       "drop_reason": null,
@@ -795,13 +795,10 @@
     },
     "G1-grafana-native-oidc-login": {
       "slug": "G1-grafana-native-oidc-login",
-      "stage": "blocked",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": {
-        "code": "unresolved-design-fork",
-        "reason": "No plan-validator verdict has ever run. Advanced to ready before the planning-review pass was wired in, so its premise has never been attacked. Every plan reviewed on 2026-08-01 carried a defect and several were fatal; treat never-reviewed as weaker than reviewed, not stronger. Unblock by running the plan reviewer."
-      },
+      "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
       "dropped": false,
@@ -1864,6 +1861,131 @@
       "dependencies": [],
       "priority": 15,
       "summary": "Put a per-node Alloy OTLP collector in front of the trace backends so apps\nemit once: everything to Tempo, and only services that opt in with\nOTEL_RESOURCE_ATTRIBUTES=trace.sink=llm also reach the LLM backend (Phoenix\ntoday, Langfuse Cloud a possible later swap). Additive and reversible;\nPhoenix stays deployed.\n",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": true,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "R9-rollout-tempo-keyless-minio": {
+      "slug": "R9-rollout-tempo-keyless-minio",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "rollout",
+      "dependencies": [
+        "M1-minio-poc-service-account"
+      ],
+      "priority": 20,
+      "summary": "Move the tempo job off its static MinIO access key onto Nomad Workload Identity, using minio-go's web-identity provider against MinIO's STS in claim mode. First real consumer of M1's mechanism; env-vars only, no code.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {
+        "Q1": "Tempo v2.10.8's credential chain reaches minio-go's IAM provider with an operator-settable STS endpoint, and minio-go v7.1.0's IAM provider performs AssumeRoleWithWebIdentity against it"
+      },
+      "measured_against": {
+        "Q1": {
+          "kind": "package",
+          "version": "tempo v2.10.8 / minio-go v7.1.0",
+          "ref": "tempodb/backend/s3/s3.go:686-706, pkg/credentials/iam_aws.go:123-186"
+        }
+      },
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "559fe0ece2ddf6234ae8fc1d096ce114c8141a7cf176e1a16fc5776f0c9b7193",
+          "after_plan": "fb2eb449a218132ffc9b9a13774d631e6bc0e5e6827dcefbdaafa403b98f2d67",
+          "before_scope": "95fc79f3a342405649c8def7c476deef411685c1cebf30b7df42928e0193ce2c",
+          "after_scope": "c9def7d624802b68588c00c38641bd544f77cfc1e235a1410366c819c8a4c12d",
+          "sections": [
+            "6",
+            "7",
+            "9",
+            "premises"
+          ],
+          "reason": "applied all 7 required fixes from the plan-validator verdict; every change confined to the declared fix_sections (6, 7, 8, 9, premises)",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-02T16:50:08Z"
+        }
+      ]
+    },
+    "R10-rollout-loki-keyless-minio": {
+      "slug": "R10-rollout-loki-keyless-minio",
+      "stage": "stub",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "rollout",
+      "dependencies": [
+        "R9-rollout-tempo-keyless-minio"
+      ],
+      "priority": 15,
+      "summary": "Move the loki job off its static MinIO access key onto Workload Identity. Mechanism UNVERIFIED: loki carries three S3 clients and the reachable one may not allow a custom STS endpoint.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": true,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "R11-rollout-registry-keyless-minio": {
+      "slug": "R11-rollout-registry-keyless-minio",
+      "stage": "stub",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "rollout",
+      "dependencies": [
+        "R9-rollout-tempo-keyless-minio"
+      ],
+      "priority": 12,
+      "summary": "Move the OCI registry off its static MinIO access key onto Workload Identity. Config-only is ruled OUT: registry vendors aws-sdk-go v1, which cannot be pointed at a non-AWS STS. Needs a credential_process helper.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": true,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "R12-rollout-memex-keyless-minio": {
+      "slug": "R12-rollout-memex-keyless-minio",
+      "stage": "stub",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": true,
+      "drop_reason": "operator: skip memex; its fix needs application changes in another repo and is not worth the coordination cost now",
+      "carried_over_finding": null,
+      "epic": "rollout",
+      "dependencies": [
+        "R9-rollout-tempo-keyless-minio"
+      ],
+      "priority": 8,
+      "summary": "Move memex off its static MinIO access key onto Workload Identity. Unlike the others this needs application changes in the memex repo, not just jobspec config, so it is the slowest of the four despite being the one we own.",
       "relay_block_nonfork": null,
       "tags": [],
       "stub": true,
