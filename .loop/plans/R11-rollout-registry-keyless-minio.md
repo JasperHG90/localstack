@@ -36,12 +36,12 @@ The mechanism differs from R9 and is the reason this is a stub.
   when the returned credentials expire, giving refresh with no restarts.
   Because the helper performs the exchange itself, MinIO's claim mode works
   unchanged and no new OIDC target is needed.
-- **UNVERIFIED, and the blocker for planning** — `credential_process` runs
-  INSIDE the container, so the registry image needs a shell and an HTTP
-  client. `docker.io/library/registry:3.1.1` has not been inspected. If it
-  ships neither, the options are a thin derived image (the repo already
-  builds custom images and runs its own OCI registry) or a different
-  approach entirely.
+- **VERIFIED (2026-09-02, after R9 shipped)** — the image can run a helper.
+  distribution's Dockerfile at tag `v3.1.1` builds its final stage
+  `FROM alpine` (line 62), not `scratch`, so `/bin/sh` and busybox (with
+  `wget` for the HTTPS call) are present. `credential_process` is viable
+  and no derived image is needed, which also kills the circularity Q2
+  worried about.
 
 ## Non-goals
 
@@ -51,15 +51,14 @@ The mechanism differs from R9 and is the reason this is a stub.
 
 ## Open questions
 
-- Q1. Does `registry:3.1.1` contain a shell and an HTTP client?
-  Recommendation: settle this FIRST, before any planning. It decides
-  between a small config change and an image build, which is the
-  difference between a Small and a Medium ticket.
-- Q2. If the image is minimal, is a derived image acceptable for the
-  registry specifically? Note the circularity: the registry is where this
-  cluster's custom images live, so an image built to fix the registry has
-  to be pullable while the registry is degraded. Recommendation: operator
-  call, and prefer any path that avoids it.
+- Q1. **Answered: yes.** The final image is Alpine-based, so a
+  `credential_process` helper can run in it. This is a Small ticket, not a
+  Medium one.
+- Q2. **Moot.** No derived image is needed, so the circularity (the
+  registry being where this cluster's custom images live) does not arise.
+  The remaining design choice is where the helper script comes from: a
+  Nomad `template` rendering it into `local/` is the obvious answer and
+  needs no image change at all.
 - Q3. Blast radius is higher than tempo's. A broken registry blocks every
   image pull that is not already cached, including the recovery path.
   Recommendation: schedule this deliberately, not at the end of a session,

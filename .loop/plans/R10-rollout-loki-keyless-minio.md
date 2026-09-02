@@ -32,20 +32,35 @@ work.
   aws-sdk-go v1, which has no environment variable for redirecting STS to
   a non-AWS endpoint. If that is the reachable path, the R9 approach does
   not transfer.
-- **UNVERIFIED** — Loki 3.x can route object storage through
-  `thanos-io/objstore`, which uses minio-go underneath. If that path is
-  reachable AND exposes the IAM provider's endpoint the way tempo does,
-  this becomes an R9 copy. Thanos may hardcode an empty endpoint, in which
-  case minio-go falls back to `sts.<region>.amazonaws.com` and the call
-  leaves the LAN.
+- **VERIFIED (2026-09-02, after R9 shipped)** — the thanos route exists and
+  exposes the endpoint properly. Loki 3.4.2 carries
+  `use_thanos_objstore` (`pkg/storage/factory.go` lines 298 and 329,
+  default `false`), which routes object storage through
+  `thanos-io/objstore`. That library's S3 provider has a first-class
+  `sts_endpoint` config field (`providers/s3/s3.go` line 138) which it
+  passes straight to minio-go's IAM provider (lines 238-242), the same
+  provider R9 drives for tempo. So the auth mechanism is proven available,
+  and through a REAL config field rather than tempo's `TEST_IAM_ENDPOINT`,
+  which is the nicer of the two.
+- **NEW RISK, and the reason this is still a stub** — turning on
+  `use_thanos_objstore` swaps Loki's entire storage client, and moves
+  configuration from `storage_config.aws` to
+  `storage_config.object_store`. That makes this a client migration with
+  keyless auth as a side effect, NOT the auth-only change R9 was. Whether
+  thanos reads the existing objects in the `loki` bucket identically, and
+  what happens to data written by the old client, has to be settled before
+  planning. Getting this wrong loses logs.
 - **UNVERIFIED** — the `credential_process` fallback. aws-sdk-go v1
   supports it in the shared config file, which would let a small helper
   perform the exchange regardless of SDK limits. Needs a shell and an HTTP
   client inside the loki image, neither confirmed.
-- **VERIFIED, upstream** — Loki has no native support for this today:
-  `grafana/loki#8014`, the feature request for AssumeRoleWithWebIdentity
-  against S3, is still open. So any path here is a configuration trick, not
-  a supported feature, and should be pinned and re-checked on upgrade.
+- **VERIFIED, upstream, and NOT a contradiction of the thanos finding
+  above** — `grafana/loki#8014` is still open, but it asks for web identity
+  in Loki's OWN S3 client, the `storage_config.aws` path built on
+  aws-sdk-go v1. That request being open is why the default path cannot do
+  this. The thanos route sidesteps it by using a different client
+  entirely, so it is a supported configuration of a supported library, not
+  a trick. Pin the Loki version regardless and re-check on upgrade.
 
 ## Non-goals
 
@@ -56,11 +71,11 @@ work.
 
 ## Open questions
 
-- Q1. Which of the three clients actually serves the configured storage
-  path, and does it allow a custom STS endpoint? This is the whole ticket.
-  Recommendation: settle it by reading the pinned source before writing
-  the plan, the way R9's premises were settled, rather than by trying
-  configurations against the live cluster.
+- Q1. **Answered.** The thanos path allows a custom STS endpoint; see the
+  verified premise above. The open question is no longer "can it" but "what
+  does switching clients cost". Recommendation: treat the storage-client
+  swap as the risk to plan around, and confirm read compatibility against
+  the existing `loki` bucket before cutting over.
 - Q2. If no config-only path exists, is a `credential_process` helper
   acceptable here, or does loki stay on a static key until upstream ships
   the feature? Recommendation: operator call. Losing log ingestion is worse

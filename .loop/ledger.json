@@ -799,7 +799,7 @@
       "attempts": 1,
       "review_cycles": 3,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "1a573568a9de47a443066395c13d5ad49b0f469e",
       "review_verdict": ".loop/verdicts/G1-grafana-native-oidc-login.adversarial.md, .loop/verdicts/G1-grafana-native-oidc-login.documentation.md",
       "dropped": false,
       "drop_reason": null,
@@ -1875,7 +1875,7 @@
       "attempts": 1,
       "review_cycles": 2,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "dc644f54838c71f417e3fcf540c7080848ecff0d",
       "review_verdict": ".loop/verdicts/R9-rollout-tempo-keyless-minio.adversarial.md, .loop/verdicts/R9-rollout-tempo-keyless-minio.documentation.md",
       "dropped": false,
       "drop_reason": null,
@@ -1896,7 +1896,7 @@
         "Q1": {
           "kind": "package",
           "version": "tempo v2.10.8 / minio-go v7.1.0",
-          "ref": "tempodb/backend/s3/s3.go:686-706, pkg/credentials/iam_aws.go:123-186"
+          "ref": "tempodb/backend/s3/s3.go L686-706; pkg/credentials/iam_aws.go L123-186"
         }
       },
       "eval_amendments": [],
