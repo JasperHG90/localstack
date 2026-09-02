@@ -1,0 +1,86 @@
+set shell := ["bash", "-uc"]
+
+set dotenv-filename := "../../../../.devcontainer/.env"
+
+alias b := build
+alias p := push
+alias r := release
+
+# Both tags come from the ONE `embark_image` line in services.tf, so the image
+# this builds and the image Terraform deploys cannot drift -- the same lockstep
+# rebuild_hermes and rebuild_dash_backend use.
+#
+# The grep tolerates a leading `#` because that line is currently commented
+# out: the embark job is not deployed yet (memex still holds the Jetson). The
+# image is worth building before then, so this keeps working either way.
+_tag := ```
+    grep -E '^\s*#?\s*embark_image\s*=' ../../services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/'
+    ```
+
+# Show what the recipes below would act on, without building anything.
+show:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    echo "jetson image : ${image}"
+    echo "base image   : ${image/-jetson/}"
+
+# Build the Jetson image: the published portable image plus the GPU wheel.
+#
+# --platform linux/arm64 so this works from the devcontainer under emulation as
+# well as natively on the Jetson. The layer is a single pip install, so even
+# emulated it is minutes rather than an afternoon.
+#
+# --pull matters more here than usual: the whole point is layering onto the
+# CURRENT portable image, and a stale local copy of the base would produce a
+# Jetson tag built on last month's embark.
+
+# Build the Jetson image from the published portable one.
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    base="${image/-jetson/}"
+    if [ "${base}" = "${image}" ]; then
+        echo "!! embark_image in services.tf does not contain '-jetson', so the" >&2
+        echo "!! base image cannot be derived from it. Fix that line first." >&2
+        exit 1
+    fi
+    echo ">> building ${image}"
+    echo ">>     from ${base}"
+    docker build --pull --platform linux/arm64 \
+        --build-arg "BASE_IMAGE=${base}" \
+        -t "${image}" \
+        -f Dockerfile.embark .
+
+# Nodes already authenticate to ghcr.io for pulls
+# (bootstrap/playbooks/configure_podman.yml). This login is for the write.
+
+# Push the built Jetson image to ghcr.io.
+push:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    echo ">> pushing ${image}"
+    docker push "${image}"
+
+# Build and push in one go.
+release: build push
+
+# What the Jetson will actually run, without a Jetson: does the GPU wheel load,
+# and does embark see the providers config.toml asks for?
+#
+# Reports CPUExecutionProvider only when run anywhere without an NVIDIA runtime,
+# including this devcontainer -- that is expected. What it proves is that the
+# wheel imports at all and that TensorRT/CUDA are compiled in, which is what a
+# wrong --target path or a cp310/cp312 mismatch would break.
+
+# Check the GPU wheel imports and which providers it carries.
+verify:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    echo ">> inspecting ${image}"
+    docker run --rm --platform linux/arm64 --entrypoint python "${image}" -c \
+        "import onnxruntime as ort; print('onnxruntime', ort.__version__); print('available:', ort.get_available_providers())"

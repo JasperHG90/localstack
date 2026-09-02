@@ -49,7 +49,10 @@ job "embark" {
       }
 
       config {
-        image        = "ghcr.io/jozu-ai/kitops:v1.2.2"
+        # kitops-ml, not jozu-ai: the project moved orgs and the old GHCR
+        # namespace still serves images, frozen at v1.2.2. Querying it looks
+        # like a current pin and is thirteen minors behind.
+        image        = "ghcr.io/kitops-ml/kitops:v1.15.0"
         entrypoint   = ["/bin/sh"]
         args         = ["/local/pull.sh"]
         network_mode = "host"

@@ -1,0 +1,41 @@
+# Jetson (aarch64/Tegra) variant — layers onnxruntime-gpu on top of the
+# published embark image.
+#
+# Build and push with the justfile beside this file:
+#
+#   just build
+#   just push
+#
+# Same shape as memex's docker/memex/Dockerfile.jetson, and for the same
+# reason: embark's own Dockerfile.jetson starts from nvcr.io/nvidia/l4t-jetpack,
+# which needs NGC access and a multi-gigabyte pull, and its release workflow
+# therefore does not build it at all. Starting from the portable image instead
+# makes this one layer — a wheel swap — that an ordinary arm64 builder can
+# produce.
+#
+# CUDA and cuDNN are injected at runtime by nvidia-container-runtime rather
+# than baked in, so this image stays small and carries no CUDA of its own.
+
+ARG BASE_IMAGE=ghcr.io/jasperhg90/embark:v0.1.0
+FROM ${BASE_IMAGE}
+
+# pip writes into /app, which the base image chowns to the `embark` user.
+USER root
+
+# Replace CPU-only onnxruntime with onnxruntime-gpu.
+#
+# PyPI has no aarch64 GPU wheels, hence NVIDIA's Jetson AI Lab index.
+# --no-deps: every transitive dependency is already in the venv from the base
+# image, and resolving them again here would pull CPU wheels back in.
+# --target: the base image's interpreter is uv's Python 3.12 under /app/.venv,
+# not a system site-packages, so pip has to be pointed at it explicitly.
+#
+# The version is pinned because it has to be: the Jetson index publishes cp310
+# and cp312 wheels at different versions, and its newest release is cp310-only.
+# An unpinned install resolves a version with no wheel for this interpreter.
+RUN pip install --no-deps --upgrade --target /app/.venv/lib/python3.12/site-packages \
+    onnxruntime-gpu==1.23.0 \
+    --extra-index-url https://pypi.jetson-ai-lab.io/jp6/cu129/+simple/
+
+# Back to the unprivileged user the base image defines (uid 10001).
+USER embark

@@ -7,44 +7,58 @@ What each file here is, and the one thing this repo cannot do for you.
 | `models.json` | Served name to ModelKit reference. The single source of truth for which models exist. |
 | `config.toml` | embark's settings. Rendered into the job and named by `EMBARK_CONFIG_FILE`. |
 | `pull.sh` | Prestart script: unpacks each ModelKit from the cluster registry. |
+| `Dockerfile.embark` | The Jetson image: the published portable image plus the GPU wheel. |
+| `justfile` | Builds and pushes that image. |
 
 ## You build and push the Jetson image
 
-**The image this job runs is not built by CI, and nothing in this repo builds
-it. Building and pushing it is an operator step.**
+**The image this job runs is not built by CI. Building and pushing it is an
+operator step.**
 
-embark's release workflow builds `Dockerfile`, the portable image, for amd64
-and arm64. It does not build `Dockerfile.jetson`, whose base is
-`nvcr.io/nvidia/l4t-jetpack` and which carries `onnxruntime-gpu` from the
-Jetson AI Lab index rather than the CPU wheel from the lock.
-
-That matters here because `config.toml` asks for `TensorrtExecutionProvider`
-and `CUDAExecutionProvider`, and **embark refuses to start when a requested
-provider is missing.** Point this job at the portable image and it will not
+`config.toml` asks for `TensorrtExecutionProvider` and
+`CUDAExecutionProvider`, and **embark refuses to start when a requested
+provider is missing.** Point the job at the portable image embark's release
+workflow publishes, which carries the CPU onnxruntime wheel, and it will not
 run. That refusal is deliberate on embark's part: onnxruntime otherwise falls
 through to CPU silently, and a Jetson serving from CPU at a tenth of the speed
 reports itself healthy with nothing in the log.
 
-Build it on the device and push it to `ghcr.io`, following the naming memex
-already uses (`ghcr.io/jasperhg90/memex-jetson`):
+`Dockerfile.embark` builds that image, and the `justfile` beside it drives the
+build:
 
 ```console
-$ docker build -t ghcr.io/jasperhg90/embark-jetson:<version> -f Dockerfile.jetson .
-$ docker push ghcr.io/jasperhg90/embark-jetson:<version>
+$ just show      # which tags this would act on
+$ just build     # portable image + the GPU wheel
+$ just verify    # does the wheel import, and which providers does it carry
+$ just push      # to ghcr.io
+$ just release   # build and push
 ```
 
-Then set that tag as `embark_image` in
-`deployments/applications/services.tf`. Nodes already authenticate to
-`ghcr.io` via `bootstrap/playbooks/configure_podman.yml`, so no per-job pull
-credential is needed.
+Both tags come from the single `embark_image` line in
+`deployments/applications/services.tf`, so what gets built and what Terraform
+deploys cannot drift. Change the version there, not here.
 
-Worth knowing: memex's own `docker/memex/Dockerfile.jetson` takes a different
-route and CI *can* build it. That one layers `onnxruntime-gpu` onto the
-ordinary memex image with `pip install --no-deps` and lets
-`nvidia-container-runtime` inject CUDA at runtime, so it needs no CUDA base
-image. If embark adopted that shape its Jetson image could be built in CI
-too, and this manual step would go away. That is a change to the embark
-repository, not to this one.
+Nodes already authenticate to `ghcr.io` via
+`bootstrap/playbooks/configure_podman.yml`, so no per-job pull credential is
+needed.
+
+### Why not embark's own Dockerfile.jetson
+
+That one starts from `nvcr.io/nvidia/l4t-jetpack`, which needs NGC access and
+a multi-gigabyte pull, and embark's release workflow does not build it for
+exactly that reason. `Dockerfile.embark` takes memex's route instead
+(`docker/memex/Dockerfile.jetson`): layer `onnxruntime-gpu` onto the ordinary
+image with `pip install --no-deps` and let `nvidia-container-runtime` inject
+CUDA at runtime. That reduces the build to a single wheel swap an ordinary
+arm64 builder can produce, emulated or native.
+
+One caveat worth testing on the hardware before trusting it. embark's own
+deployment notes give a reason for the heavier base: the TensorRT execution
+provider loads TensorRT *from the image*, and a base without it falls short.
+The memex route assumes the container runtime supplies TensorRT along with
+CUDA. If `just verify` shows the providers but the Jetson refuses them at
+startup, that assumption is the thing that broke, and the l4t-jetpack base is
+the fallback.
 
 ## Adding or changing a model
 
