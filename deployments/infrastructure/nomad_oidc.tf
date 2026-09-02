@@ -7,7 +7,7 @@
 ###   Nomad side  — the ACL auth method and its binding rule.
 ###
 ### The Nomad half needs a MANAGEMENT token. `nomad/role/deploy` is
-### `type = "client"` (nomad_deploy_role.tf:39), which is why an earlier draft
+### `type = "client"` (nomad_deploy_role.tf:59), which is why an earlier draft
 ### of this ticket concluded the work had to move to Ansible. It does not:
 ### `type` is a field on the role, not a ceiling. `vault_nomad_secret_role.manage`
 ### below mints a management token, and the aliased provider uses it. Measured
