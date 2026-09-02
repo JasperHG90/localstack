@@ -128,6 +128,10 @@ the policy NAMED for the requesting job. No policy named `tempo` exists;
   `tempo` immediately above `minio_iam_user.users` (R3), matching where M1
   put its throwaway equivalent. Leaves every other resource in the file
   alone, which is R5.
+- `docs/workload-identity.md` — the "Keyless MinIO access" section. Two of
+  its sentences become false the moment this lands, and its two-step recipe
+  is wrong for a client-library consumer, which every real one is. Added on
+  the documentation reviewer's required fix; R10 and R11 read this section.
 - `.loop/evals/R9-rollout-tempo-keyless-minio.md` — the eval marker, home
   of every scored check named in section 8.
 
@@ -173,18 +177,27 @@ submitted jobspec, the alloc filesystem, or MinIO instead.
   `Access Denied` and no `AUTH: None`, and its blocklist poll completes.
   A successful LIST against the bucket is the earliest observable proof
   that the STS credentials work.
-- E3b — a durable write lands. A new object appears under the `tempo`
-  bucket (`mc ls --recursive m1lab/tempo`). Allow up to
-  `max_block_duration` (`tempo.hcl:105` sets `30m`): tempo issues no PUT
-  until it cuts a block, so this row is scored on a 30-minute horizon, not
-  immediately after the apply.
-- E4 — cross-bucket denial, checked INDEPENDENTLY of tempo. Perform the
-  STS exchange directly with tempo's JWT (curl, as in
-  `docs/workload-identity.md`), then use the returned credentials to list
-  another bucket and expect `AccessDenied`. This must not be judged from
-  tempo's own logs: per section 9(b), a missing policy and a real denial
-  look identical from inside tempo, so only an independent exchange
-  separates them.
+- E3b — a durable write lands, scored for real. The bucket held nothing
+  before this ticket because nothing sends traces to tempo, so it never
+  cut a block. That makes the row unscoreable PASSIVELY, not unscoreable:
+  push one OTLP span to tempo's receiver, wait out the block duration
+  (`tempo.hcl` sets 30m), then list the bucket. The sender must be a
+  cluster node or a job, because the firewall rule at
+  `deployments/applications/services.tf:92-109` admits only cluster
+  addresses to the OTLP ports.
+- E4 — enforcement of the grant. The plan assumed an independent STS
+  exchange using tempo's own JWT. That is not available in band: Nomad's
+  `alloc fs` API refuses reads under `secrets/` ("Reading secret file
+  prohibited") and the image is distroless, so no route through the
+  cluster API reaches the token. Extracting it would need root on the
+  client node, which this ticket does not do. Score instead by binding a
+  THROWAWAY MinIO user to the `tempo` policy and nothing else, listing the
+  `tempo` bucket and another, then deleting the user. That tests whether
+  MinIO ENFORCES this policy document, which neither reading the document
+  nor E3a covers. Still a proxy for tempo's own identity, but a strictly
+  stronger one. Judging the denial from tempo's own logs stays forbidden
+  per section 9(b): a missing policy and a real denial are
+  indistinguishable from inside tempo.
 - E5 — guardrail, rollback path intact. The `tempo` MinIO user, its access
   key, and the Vault KV entry at `default/tempo/minio` all still exist.
 - E6 — guardrail, no collateral damage. loki and registry jobs are still
@@ -235,7 +248,8 @@ submitted jobspec, the alloc filesystem, or MinIO instead.
 
 - Q1. **`TEST_IAM_ENDPOINT` as the supported endpoint knob — resolved,
   with a watch.** The variable name suggests a test hook. Verified as real
-  shipped behavior in the pinned release: `tempodb/backend/s3/s3.go` lines 698-702
+  shipped behavior in the pinned release:
+  `tempodb/backend/s3/s3.go` lines 698-702
   passes it as the IAM provider's `Endpoint`, and `iam_aws.go` lines 152-154
   uses a non-empty endpoint directly instead of the AWS fallback.
   Recommendation: proceed, pin the tempo image (already pinned at
