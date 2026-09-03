@@ -226,11 +226,22 @@ resource "nomad_job" "hermes" {
 }
 
 ### Loki — central log aggregator on ubuntu (rpi4b), MinIO-backed
+### Takes no secret path: loki exchanges its Workload Identity JWT through
+### the credential_process helper instead of being handed a key. The Vault
+### entry (vault_kv_secret_v2.loki_minio_credentials) and the static key
+### behind it stay provisioned as the rollback path, and are simply not
+### rendered into the job. Restoring loki to its key means restoring the
+### template, the two YAML keys AND the `vault {}` block this removed.
 resource "nomad_job" "loki" {
   jobspec = templatefile(
     "${path.module}/services/loki.hcl",
-    { loki_minio_secret = vault_kv_secret_v2.loki_minio_credentials.path }
+    { minio_host = data.consul_service.minio.service[0].node_address }
   )
+
+  # Claim mode resolves `nomad_job_id` to this policy. Without it the STS
+  # exchange returns no credential and the helper exits non-zero, which the
+  # SDK reports as a credential-process failure.
+  depends_on = [minio_iam_policy.loki_wi]
 }
 
 ### Tempo — trace store on ubuntu (rpi4b), MinIO-backed. It belongs in this
@@ -268,14 +279,22 @@ resource "nomad_job" "tempo" {
 ### HAProxy is what makes clients trust it at all. The stale LAN-wide rule
 ### for 5000/5001 that predated this job is removed in the infrastructure
 ### root, replaced by the single-caller rule in local.firewall_rules above.
+### Keeps registry_auth_secret but not registry_minio_secret: the htpasswd
+### still comes from Vault, while MinIO credentials now come from the
+### credential_process helper. The Vault entry
+### (vault_kv_secret_v2.registry_minio_credentials) and the static key behind
+### it stay provisioned as the rollback path.
 resource "nomad_job" "registry" {
   jobspec = templatefile(
     "${path.module}/services/registry.hcl",
     {
-      registry_minio_secret = vault_kv_secret_v2.registry_minio_credentials.path
-      registry_auth_secret  = vault_kv_secret_v2.registry_auth.path
+      registry_auth_secret = vault_kv_secret_v2.registry_auth.path
+      minio_host           = data.consul_service.minio.service[0].node_address
     }
   )
+
+  # Claim mode resolves `nomad_job_id` to this policy.
+  depends_on = [minio_iam_policy.registry_wi]
 }
 
 ### embark — OpenAI-compatible embedding and reranker serving.

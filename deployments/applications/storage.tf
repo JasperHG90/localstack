@@ -119,6 +119,51 @@ resource "minio_iam_policy" "tempo_wi" {
 EOF
 }
 
+### Workload-identity policies for loki and registry, the same shape as
+### tempo's above and for the same reason: claim mode applies the policy NAMED
+### by the JWT's `nomad_job_id`, so each name must match its job id exactly.
+###
+### Unlike tempo, these two reach MinIO through an AWS `credential_process`
+### helper rather than minio-go's web-identity provider, because both vendor
+### aws-sdk-go v1, which cannot be pointed at a non-AWS STS. The policy side is
+### identical either way: the exchange still arrives with no RoleArn and is
+### resolved by the job id.
+resource "minio_iam_policy" "loki_wi" {
+  name   = "loki"
+  policy = <<EOF
+{
+  "Version":"2012-10-17",
+  "Statement": [
+    {
+      "Sid":"LokiOwnBucketOnly",
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Principal":"*",
+      "Resource": ["arn:aws:s3:::loki", "arn:aws:s3:::loki/*"]
+    }
+  ]
+}
+EOF
+}
+
+resource "minio_iam_policy" "registry_wi" {
+  name   = "registry"
+  policy = <<EOF
+{
+  "Version":"2012-10-17",
+  "Statement": [
+    {
+      "Sid":"RegistryOwnBucketOnly",
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Principal":"*",
+      "Resource": ["arn:aws:s3:::registry", "arn:aws:s3:::registry/*"]
+    }
+  ]
+}
+EOF
+}
+
 resource "minio_iam_user" "users" {
   for_each = toset(local.all_minio_users)
   name     = each.key

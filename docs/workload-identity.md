@@ -265,8 +265,11 @@ discovery (memex in R5, MinIO in M1) can now point at the issuer directly.
 M1 landed this. A Nomad job can now read its bucket with no static S3 key: it
 trades its Workload Identity JWT for short-lived MinIO credentials. The
 static keys in `deployments/applications/storage.tf` still exist and still
-work. Tempo has since been moved off its own (R9), and keeps its key
-provisioned as a rollback path. loki, registry and memex still use theirs.
+work. Tempo (R9), loki and registry (R13) have since been moved off theirs,
+and each keeps its key provisioned as a rollback path. memex is the only one
+of those four still using one. Other holders exist outside this set: the
+`backup-minio` job runs on the root credential, and `storage.tf` still mints
+keys for buckets no job consumes.
 
 **What MinIO trusts.** Three env vars on the MinIO job
 (`deployments/infrastructure/services/minio.hcl`) define the `NOMAD` target:
@@ -314,18 +317,27 @@ the worked example below:
    **What a missing policy looks like depends on how you reach MinIO, and
    the two symptoms are opposites.** Exchanging by hand with `curl`, the
    request fails before any credential is minted, with `None of the given
-   policies (...) are defined`. Through a client library it is the reverse:
-   minio-go's credential chain DISCARDS the provider error and falls back
-   to anonymous, so the service logs a plain `Access Denied` and its
-   requests go out unsigned. Every real consumer takes the second route, so
-   expect the misleading symptom. A service that suddenly cannot read its
-   own bucket is more often a missing policy than a revoked permission.
+   policies (...) are defined`.
+
+   **Through a client library the symptom depends on which route the service
+   takes.** On the minio-go route (tempo),
+   minio-go's credential chain DISCARDS the provider error and falls back to
+   anonymous, so the service logs a plain `Access Denied` and its requests go
+   out unsigned: a quiet, misleading failure. On the `credential_process`
+   route (loki, registry), aws-sdk-go installs a chain that ERRORS rather
+   than an anonymous signer, so the failure is loud and names itself:
+   `ProcessProviderExecutionError` when the helper exits non-zero, or
+   `NoCredentialProviders` when the SDK never found the helper at all.
+
+   Either way, a service that suddenly cannot read its own bucket is more
+   often a missing policy than a revoked permission.
 
 A job can exchange the JWT itself. The request carries its parameters in the
-query string and needs no SDK, so `curl` is enough. This form is for proving
-the mechanism by hand from a container that has a shell. It is NOT how a real
-consumer works, and you cannot run it against another job's token, because
-Nomad refuses to read files under `secrets/` through `alloc fs`:
+query string and needs no SDK, so `curl` is enough. Use this form to prove
+the mechanism by hand from a container that has a shell. It is also, in
+essence, what the `credential_process` route below automates. You cannot run
+it against ANOTHER job's token, because Nomad refuses to read files under
+`secrets/` through `alloc fs`:
 
 ```
 curl -sS -X POST "http://<minio>:9000/?Action=AssumeRoleWithWebIdentity\
@@ -371,18 +383,80 @@ above. The pattern generalizes to any minio-go-based service.
 
 4. **Every static credential removed, not just the one in the config file.**
    minio-go tries providers in order: static config, `EnvAWS`, `EnvMinio`,
-   files, and only then web identity. Six variable names have to be absent,
-   not two. `EnvMinio` checks `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
-   FIRST, then `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY`; `EnvAWS` reads
-   `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Leave any of the six set
-   and the service keeps using its old key while every check looks green:
-   the job runs, the bucket reads, nothing errors. Delete the config keys
-   AND whatever renders those variables.
+   files, and only then web identity. Six variable names have to be absent
+   on this route. `EnvMinio` checks `MINIO_ROOT_USER` and
+   `MINIO_ROOT_PASSWORD` FIRST, then `MINIO_ACCESS_KEY` and
+   `MINIO_SECRET_KEY`; `EnvAWS` reads `AWS_ACCESS_KEY_ID` and
+   `AWS_SECRET_ACCESS_KEY`. Leave any of the six set and the service keeps
+   using its old key while every check looks green: the job runs, the bucket
+   reads, nothing errors. Delete the config keys AND whatever renders those
+   variables.
+
+   On the `credential_process` route the set is NINE, and the ninth is the
+   one you are most likely to copy from tempo. See that section below.
 
 The check that catches step 4 is `nomad job inspect <job>`: a
 `template { env = true }` stanza is itself part of the submitted jobspec, so
-grepping the jobspec for those six names covers both the `env` block and
-anything rendered from Vault. Expect no matches.
+grepping the jobspec for those names covers both the `env` block and
+anything rendered from Vault. Expect no matches. A credential that is NOT an
+env var escapes this check entirely: registry's used to be two YAML keys in
+its rendered config, so grep the jobspec for those too.
+
+### Second route: `credential_process`, for aws-sdk-go v1 services
+
+Tempo's route needs a client library that can be pointed at MinIO's STS.
+aws-sdk-go v1 cannot: it has no environment variable for a non-AWS STS
+endpoint, so a service built on it would send the exchange to Amazon. loki
+and registry are both in that position, and both take a second route
+instead: a small helper does the exchange itself, and the SDK runs it.
+
+The SDK invokes `credential_process`, the helper POSTs to MinIO's STS with
+the JWT and no `RoleArn`, prints credentials as JSON, and the SDK re-runs it
+when they expire. Claim mode resolves the policy from `nomad_job_id` exactly
+as on the other route, so the MinIO side is identical.
+
+Four things per job, and the second is the one that breaks everything,
+loudly:
+
+1. The named identity block, as above, with `aud = ["minio"]`.
+2. **Three env vars, all required:**
+
+   ```
+   AWS_SDK_LOAD_CONFIG = "1"
+   AWS_CONFIG_FILE     = "/local/aws-config"
+   AWS_REGION          = "us-east-1"
+   ```
+
+   `AWS_SDK_LOAD_CONFIG` is what puts the config file on the SDK's list at
+   all. `AWS_CONFIG_FILE` is what says WHICH file: omit it and the SDK reads
+   `$HOME/.aws/config`, which does not exist in these containers, and every
+   request fails with `NoCredentialProviders`.
+
+3. Two templates: the helper at `local/minio-creds.sh` with `perms = "0755"`,
+   and `local/aws-config` naming it under a `[default]` profile. The template
+   destination is alloc-relative and `AWS_CONFIG_FILE` is the in-container
+   path, so they differ by a leading slash and must otherwise agree.
+4. **Nine names absent, not six.** The six above, plus the legacy
+   `AWS_ACCESS_KEY` / `AWS_SECRET_KEY`, plus
+   `AWS_WEB_IDENTITY_TOKEN_FILE`. That last one is the trap: tempo SETS it,
+   so it is what you copy, and aws-sdk-go checks it BEFORE the shared config.
+   Set it here and session creation fails outright with
+   `WebIdentityErr: role ARN is not set`, with the helper otherwise perfect.
+
+**The helper's contract is the SDK's, not yours.** `"Version":1` is
+mandatory, stdout is capped at 8 KiB and the run at 60 seconds, it is invoked
+through `sh -c`, and a non-zero exit surfaces as
+`ProcessProviderExecutionError`. Print the JSON and nothing else, and fail
+loudly rather than emitting a half-document: an empty field would otherwise
+reach the SDK as valid JSON with blank credentials.
+
+**This route needs the image to cooperate.** The container must ship a shell
+and an HTTP client, and the task must be able to read its own JWT. loki
+(`docker.io/grafana/loki:3.4.2`, built on `gcr.io/distroless/static:debug`,
+whose busybox supplies both) and registry (`docker.io/library/registry:3.1.1`,
+Alpine-based) qualify, and both run as root. Check a new consumer before
+assuming: a `scratch` image has neither, and would need the exchange moved to
+a sidecar instead.
 
 **A second target already exists.** `POC2` (`aud = minio-poc2`) is configured
 alongside `NOMAD`, on the same discovery document under a different client

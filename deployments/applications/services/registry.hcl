@@ -31,7 +31,35 @@ job "registry" {
     task "registry" {
       driver = "podman"
 
+      ### KEEPS `vault {}`, unlike loki: the htpasswd below is a second Vault
+      ### use that outlives the MinIO key.
       vault {}
+
+      ### Keyless MinIO access. Field-by-field rationale is in
+      ### docs/workload-identity.md; only what is specific to registry is here.
+      ### The task sets no `user`, so Nomad leaves the JWT readable.
+      identity {
+        name        = "minio"
+        aud         = ["minio"]
+        file        = true
+        filepath    = "secrets/nomad_minio.jwt"
+        ttl         = "1h"
+        change_mode = "noop"
+      }
+
+      ### Same shape as loki: aws-sdk-go v1 cannot be pointed at a non-AWS
+      ### STS, so the SDK runs local/minio-creds.sh and re-runs it on expiry.
+      ###
+      ### AWS_CONFIG_FILE is NOT optional. Without it the SDK reads
+      ### $HOME/.aws/config, which does not exist here, and every request
+      ### fails with NoCredentialProviders. AWS_WEB_IDENTITY_TOKEN_FILE must
+      ### stay unset: it is checked before the shared config and would
+      ### pre-empt the helper.
+      env {
+        AWS_SDK_LOAD_CONFIG = "1"
+        AWS_CONFIG_FILE     = "/local/aws-config"
+        AWS_REGION          = "us-east-1"
+      }
 
       service {
         name = "registry"
@@ -56,9 +84,56 @@ job "registry" {
         network_mode = "host"
       }
 
-      # Config lives in secrets/ rather than local/ because it carries the
-      # MinIO keys inline. The registry has no env-var expansion inside the
-      # config file, so consul-template renders them in directly.
+      ### The credential_process helper. Contract imposed by the SDK, not by
+      ### us: "Version":1 is mandatory, stdout is capped at 8 KiB and the run
+      ### at 60s, it is invoked through `sh -c`, and a non-zero exit surfaces
+      ### as ProcessProviderExecutionError. So it prints the JSON and nothing
+      ### else, and fails loudly rather than emitting a half-document.
+      ###
+      ### No RoleArn in the request: MinIO resolves the policy from the
+      ### token's nomad_job_id claim, which is what makes the `registry` policy
+      ### apply to registry alone.
+      template {
+        data        = <<-EOF
+        #!/bin/sh
+        set -eu
+        jwt=$(cat /secrets/nomad_minio.jwt)
+        body=$(wget -q -O - --post-data='' \
+          "http://${minio_host}:9000/?Action=AssumeRoleWithWebIdentity&Version=2011-06-15&WebIdentityToken=$${jwt}")
+        field() {
+          printf '%s' "$${body}" | sed -n "s:.*<$1>\([^<]*\)</$1>.*:\1:p"
+        }
+        ak=$(field AccessKeyId)
+        sk=$(field SecretAccessKey)
+        st=$(field SessionToken)
+        ex=$(field Expiration)
+        if [ -z "$${ak}" ] || [ -z "$${sk}" ] || [ -z "$${st}" ] || [ -z "$${ex}" ]; then
+          echo "minio-creds: STS response missing a credential field" >&2
+          exit 1
+        fi
+        printf '{"Version":1,"AccessKeyId":"%s","SecretAccessKey":"%s","SessionToken":"%s","Expiration":"%s"}\n' \
+          "$${ak}" "$${sk}" "$${st}" "$${ex}"
+        EOF
+        destination = "local/minio-creds.sh"
+        perms       = "0755"
+      }
+
+      ### Points the SDK at the helper. The path here and AWS_CONFIG_FILE above
+      ### must stay identical.
+      template {
+        data        = <<-EOF
+        [default]
+        credential_process = /local/minio-creds.sh
+        EOF
+        destination = "local/aws-config"
+      }
+
+      # This file no longer carries a secret. The MinIO keys are gone, because
+      # omitting accesskey/secretkey is what sends the S3 driver down the AWS
+      # credential chain to the helper above, and the htpasswd line below is a
+      # literal path, not a rendered value: the Vault render is the separate
+      # template further down. The destination stays secrets/ only because
+      # moving it is not this ticket's business.
       template {
         data = <<-EOF
         version: 0.1
@@ -75,10 +150,6 @@ job "registry" {
             # Required field; MinIO ignores the value.
             region: us-east-1
             bucket: registry
-            {{- with secret "${registry_minio_secret}" }}
-            accesskey: {{ .Data.data.access_key }}
-            secretkey: {{ .Data.data.secret_key }}
-            {{- end }}
           # Needed for `registry garbage-collect` to reclaim MinIO space;
           # deleting a tag alone never frees blobs.
           delete:
