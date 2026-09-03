@@ -1927,8 +1927,8 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false,
-      "drop_reason": null,
+      "dropped": true,
+      "drop_reason": "superseded by R13: one credential_process helper serves both loki and registry, and it avoids R10's storage-client swap entirely",
       "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
@@ -1952,8 +1952,8 @@
       "blocker": null,
       "commit_sha": null,
       "review_verdict": null,
-      "dropped": false,
-      "drop_reason": null,
+      "dropped": true,
+      "drop_reason": "superseded by R13: same helper covers registry, so the two tickets collapse into one",
       "carried_over_finding": null,
       "epic": "rollout",
       "dependencies": [
@@ -1991,6 +1991,127 @@
       "stub": true,
       "premise": {},
       "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "B2-bifrost-oauth2-proxy": {
+      "slug": "B2-bifrost-oauth2-proxy",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "bifrost",
+      "dependencies": [],
+      "priority": 60,
+      "summary": "Front Bifrost's dashboard UI and admin API with a dedicated oauth2-proxy instance (port 4181, same node) authenticating humans against Vault's lab OIDC provider at the edge. Inference paths /v1/* and /anthropic/* skip the cookie gate and stay on virtual keys. Bifrost's native admin auth stays on (double login accepted). Direct-to-node consumers (Hermes, Memex, Prometheus, the Terraform bifrost provider) are untouched.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "bifrost",
+        "oauth2-proxy",
+        "oidc",
+        "vault",
+        "haproxy",
+        "terraform"
+      ],
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "R13-rollout-loki-registry-keyless-minio": {
+      "slug": "R13-rollout-loki-registry-keyless-minio",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "rollout",
+      "dependencies": [
+        "R9-rollout-tempo-keyless-minio"
+      ],
+      "priority": 18,
+      "summary": "Move loki and registry off their static MinIO keys in one change, using an AWS credential_process helper that performs the STS exchange itself. Supersedes R10 and R11: one mechanism serves both, and loki keeps its existing storage client.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {
+        "Q1": "Both images ship /bin/sh and wget and run as root, and both services build their S3 session with session.NewSession, so an AWS credential_process helper reached through AWS_SDK_LOAD_CONFIG serves both"
+      },
+      "measured_against": {
+        "Q1": {
+          "kind": "package",
+          "version": "loki v3.4.2 / distribution v3.1.1 / aws-sdk-go v1.55.x",
+          "ref": "live nomad alloc exec on both allocs, 2026-09-03; s3_storage_client.go L227-231,282; s3-aws/s3.go L461,492"
+        }
+      },
+      "eval_amendments": [
+        {
+          "row_title": "No static MinIO credential is reachable by either task",
+          "before": "| No static MinIO credential is reachable by either task | `nomad job inspect <job>` for each | Neither jobspec contains `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY` or `AWS_SECRET_KEY`, and no `minio.env` is rendered. Eight names, not four: aws-sdk-go v1 resolves the environment ahead of the shared config, and `EnvMinio` checks the ROOT pair first, so a survivor silently wins over the helper | deterministic check (grep the submitted jobspec) | 100% |",
+          "after": "| No static MinIO credential is reachable by either task | `nomad job inspect <job>` for each, checking BOTH the nine env names and registry's YAML keys | Neither jobspec contains `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` or `AWS_WEB_IDENTITY_TOKEN_FILE`, no `minio.env` is rendered, and registry's inspected jobspec contains no `accesskey` or `secretkey` line. Nine names, not eight: `AWS_WEB_IDENTITY_TOKEN_FILE` is what tempo sets, so it is what an implementer copies, and it pre-empts `credential_process` before the shared-config profile is read. The YAML check is separate because registry's static key is two config lines, not an env var, so a name-only check would pass a registry that never changed | deterministic check (grep the submitted jobspec, both shapes) | 100% |",
+          "reason": "plan review required fixes 2 and 3: AWS_WEB_IDENTITY_TOKEN_FILE pre-empts credential_process and was missing, and registry's key is two YAML lines that a name-only check would miss",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-03T07:25:01Z"
+        }
+      ],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "028dc0288f24cb5193c5ccebf6e1b5e7727097af93da32d5f53c475c8da09044",
+          "after_plan": "0cd29a84ba48ca7c72b001ea54e59f9e62998fa82df414e4388c7a5d08645e11",
+          "before_scope": "3af263735d9516dff5e621bc6bdf5aa5efbcc198d6e2b3dd924ce360f9945e60",
+          "after_scope": "7cfeca871f8e87974f50a990e2b50a05ce1fcd0d232ad7208ac65e1965e17d1d",
+          "sections": [
+            "6",
+            "7",
+            "9"
+          ],
+          "reason": "applied all six required fixes from the plan-validator verdict: AWS_CONFIG_FILE required and named, AWS_WEB_IDENTITY_TOKEN_FILE added to the forbidden list with corrected rationale, registry's YAML keys covered, the helper contract stated, the anonymous-fallback symptom corrected to NoCredentialProviders, and loki's vault block added to the rollback recipe",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-03T08:01:14Z"
+        }
+      ]
+    },
+    "D11-cli-vault-admin-join-leave": {
+      "slug": "D11-cli-vault-admin-join-leave",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "cli",
+      "dependencies": [
+        "D3-cli-read-commands"
+      ],
+      "priority": 25,
+      "summary": "Add `localstack vault admin status|join|leave` so joining and leaving the break-glass admin group is one safe command instead of a read-modify-write the operator does by hand. Automates the footgun the runbook warns about: the membership list is REPLACED, not appended to.",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {
+        "Q1": "The operator's own session token can already write identity/group/name/admin, so this needs no root token and no new Vault policy"
+      },
+      "measured_against": {
+        "Q1": {
+          "kind": "probe",
+          "version": "live cluster 2026-09-03",
+          "ref": "vault token capabilities identity/group/name/admin returned create, delete, list, read, update"
+        }
+      },
       "eval_amendments": [],
       "plan_rebinds": []
     }
