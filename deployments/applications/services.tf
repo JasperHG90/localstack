@@ -444,7 +444,7 @@ resource "nomad_job" "dash" {
 ### silently downgrades. See docs/memex-oidc-verification.md's V5 check.
 ### Both `value`s there are Vault GROUP NAMES, spelled exactly as the keys in
 ### `local.app_user_groups` in the OTHER Terraform root
-### (deployments/infrastructure/roles.tf) — Terraform cannot enforce that
+### (deployments/infrastructure/identity.tf) — Terraform cannot enforce that
 ### coupling across roots.
 ###
 ### hermes holds `admin`, unscoped, deliberately: the win R5 shipped was no

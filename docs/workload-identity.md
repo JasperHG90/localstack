@@ -100,7 +100,7 @@ default `nomad-workloads` role, and the shared policy are all created by
 Per-job roles and policies live in Terraform, beside the engine they grant
 access to. The worked example is the ACME job:
 
-- `deployments/infrastructure/acme.tf` declares
+- `deployments/infrastructure/machine_roles.tf` declares
   `vault_jwt_auth_backend_role.acme` and `vault_policy.acme_tls_write` on the
   Ansible-created `jwt-nomad` mount.
 - `deployments/infrastructure/services/acme.hcl` selects the role with
@@ -111,7 +111,7 @@ access to. The worked example is the ACME job:
 A Nomad task performs a single JWT login and holds a single Vault token, so
 naming a dedicated role **replaces** `nomad-workloads` rather than adding to
 it. A job that needs both a scoped grant and ordinary KV reads must list both
-policies on its own role. That is why `acme.tf` sets `token_policies` to
+policies on its own role. That is why the `acme` role sets `token_policies` to
 `["nomad-workloads", vault_policy.acme_tls_write.name]`: with only
 `acme-tls-write` attached, the job could write its cert but could not read
 the TransIP credential it needs to obtain one. `claim_mappings` must mirror

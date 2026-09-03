@@ -55,7 +55,7 @@ root because it is the only one with a `postgresql` provider:
    default role.
 4. A `vault_policy` scoped to `read` on `database/creds/s2-poc` and a
    `vault_jwt_auth_backend_role` bound to the PoC job, following F3's pattern
-   at `deployments/infrastructure/acme.tf:41-90`.
+   at `deployments/infrastructure/machine_roles.tf`, the `acme` section.
 
 The shared Ansible policy was never touched. `git diff bootstrap/` is empty.
 
@@ -181,7 +181,8 @@ Option 1 needs nothing from the applications and is where R3 should start.
 
 A Nomad task performs a single JWT login and holds a single Vault token, so
 naming a dedicated role in `vault { role = ... }` REPLACES `nomad-workloads`
-rather than adding to it. The PoC role works around this the way `acme.tf` does,
+rather than adding to it. The PoC role works around this the way the `acme` role
+in `machine_roles.tf` does,
 by listing `nomad-workloads` in its own `token_policies`.
 
 For R3 this is a real cost. Every converted job needs a dedicated JWT role
@@ -225,7 +226,8 @@ contains zero occurrences of the admin password.
 That last point is what justifies keeping this engine's mount and config in
 Terraform at all. F5 and F6 hand both to Ansible whenever a Vault engine needs
 a privileged external credential
-(`deployments/infrastructure/consul_deploy_role.tf:7-15`), precisely to keep
+(`deployments/infrastructure/machine_roles.tf`, the deployer's Consul role),
+precisely to keep
 that credential out of the Consul-backed state. The write-only chain achieves
 the same end, so the exception is earned rather than assumed. It is earned only
 while the chain stays intact: swap the ephemeral for a `random_password`

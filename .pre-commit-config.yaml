@@ -39,29 +39,38 @@ repos:
         entry: uv run --project cli ruff check --force-exclude
         language: system
         # `types: [python]` is required, not tidiness. pre-commit defaults to
-        # `types: [file]`, so `files: '^cli/'` alone would hand ruff
+        # `types: [file]`, so `files:` alone would hand ruff
         # cli/uv.lock and cli/justfile and go red on both.
         types: [python]
-        files: '^cli/'
+        files: '^(cli|scripts)/'
       - id: ruff-format
         name: Ruff (format)
         entry: uv run --project cli ruff format --check --force-exclude
         language: system
         types: [python]
-        files: '^cli/'
+        files: '^(cli|scripts)/'
       - id: mypy
         name: Mypy (strict, cli/)
         # --config-file is required. ruff and pytest walk up from their
         # arguments and find cli/pyproject.toml; mypy reads config from the
         # cwd only, and Q1 leaves no root manifest -- so without this it logs
         # `Config File: Default` and silently drops `strict = true`.
-        entry: uv run --project cli mypy --config-file cli/pyproject.toml cli/src cli/tests
+        entry: uv run --project cli mypy --config-file cli/pyproject.toml cli/src cli/tests scripts
         language: system
         # NO `types: [python]` here. This hook is pass_filenames:false, so the
         # filter buys nothing and costs coverage: a commit touching only
         # cli/pyproject.toml or cli/uv.lock would skip it, and flipping
         # `strict = true` to `false` would commit ungated.
-        files: '^cli/'
+        files: '^(cli|scripts)/'
+        pass_filenames: false
+      - id: tf-block-diff-self-test
+        name: tf_block_diff self-test
+        # scripts/ holds no pytest project, so the tool carries its own cases.
+        # They are the only thing standing behind its guarantee that a
+        # reorganization moved every block without editing one.
+        entry: python3 scripts/tf_block_diff.py --self-test
+        language: system
+        files: '^scripts/tf_block_diff\.py$'
         pass_filenames: false
       - id: pytest
         name: Pytest (cli/)

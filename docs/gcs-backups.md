@@ -4,7 +4,7 @@
 
 No off-site backups exist. PostgreSQL data lives on a single host volume on `firebat`, and the MinIO memex bucket lives on `orangepi4a`. A disk failure on either node means total data loss. This change adds two Nomad periodic batch jobs that back up to Google Cloud Storage nightly.
 
-All GCS infrastructure (bucket, service account, IAM, key) is managed by Terraform in `backup.tf` -- no manual `gcloud` setup needed.
+All GCS infrastructure (bucket, service account, IAM, key) is managed by Terraform in `storage.tf` -- no manual `gcloud` setup needed.
 
 ## Prerequisites
 
@@ -28,23 +28,23 @@ The Nomad workloads Vault policy (`bootstrap/roles/nomad_server/templates/vault_
 
 ## Architecture
 
-### `deployments/infrastructure/backup.tf`
+### `deployments/infrastructure/`
 
-Manages the full GCS backup lifecycle in one file:
+The backup lifecycle spans three files, one per subsystem.
 
-**Google Cloud resources:**
+**Google Cloud resources** (`storage.tf`):
 - `google_storage_bucket.backups` -- bucket with 180-day lifecycle delete rule
 - `google_service_account.backup` -- `localstack-backup` service account
 - `google_storage_bucket_iam_member.backup_writer` -- grants `roles/storage.objectAdmin` on the bucket
 - `google_service_account_key.backup` -- JSON key (stored in Terraform state, written to Vault)
 
-**Vault secrets** (credentials scoped per job):
+**Vault secrets** (`secrets.tf`, credentials scoped per job):
 - `backup_postgres_db_credentials` -> `default/backup-postgres/postgres` (copies root PG creds)
 - `backup_postgres_gcs_credentials` -> `default/backup-postgres/gcs` (GCS service account JSON)
 - `backup_minio_s3_credentials` -> `default/backup-minio/minio` (copies root MinIO creds)
 - `backup_minio_gcs_credentials` -> `default/backup-minio/gcs` (GCS service account JSON)
 
-**Nomad jobs:** two `nomad_job` resources referencing the HCL job specs below.
+**Nomad jobs** (`services.tf`): two `nomad_job` resources referencing the HCL job specs below.
 
 ### `deployments/infrastructure/services/backup-postgres.hcl`
 

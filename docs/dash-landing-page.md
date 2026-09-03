@@ -87,7 +87,7 @@ fetch call needs.
 ## What the status backend can and cannot read
 
 `dash`'s backend Nomad token is minted from a dedicated, read-only role
-(`deployments/infrastructure/nomad_dash_read_role.tf`): `read-job`,
+(`deployments/infrastructure/machine_roles.tf`, the `dash` section): `read-job`,
 `list-jobs`, and `node:read`, nothing else. No `submit-job`, no
 `host-volume-*`, no management capability. It never reads HAProxy's own job
 spec (that spec embeds a live credential in plaintext), so tile-to-job

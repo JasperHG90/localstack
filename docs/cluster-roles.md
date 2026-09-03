@@ -5,9 +5,9 @@ its first consumer.
 
 | Role | Defined in | What it is for |
 |---|---|---|
-| **Application user** | `deployments/infrastructure/roles.tf`, `local.app_user_groups` | Access to one application, at one level. |
-| **Developer** | `deployments/infrastructure/developer_group.tf` | Everything a person does here: both Terraform roots, brokered Nomad and Consul tokens, users and groups, secrets under `default/`. |
-| **Admin** | `deployments/infrastructure/roles.tf`, `vault_policy.admin` | Wildcard mode, for when `developer` refuses legitimate work. |
+| **Application user** | `deployments/infrastructure/identity.tf`, `local.app_user_groups` | Access to one application, at one level. |
+| **Developer** | `deployments/infrastructure/identity.tf` | Everything a person does here: both Terraform roots, brokered Nomad and Consul tokens, users and groups, secrets under `default/`. |
+| **Admin** | `deployments/infrastructure/identity.tf`, `vault_policy.admin` | Wildcard mode, for when `developer` refuses legitimate work. |
 | **Service account** | per-service, via `jwt-nomad` workload identity | Machines. Not a human role and not managed here. |
 
 There is no separate Deployer. Deploying is something a developer does, so the
@@ -115,7 +115,7 @@ one shape here would be guessing on their behalf.
 
 ## Adding a tier
 
-Add an entry to `local.app_user_groups` in `roles.tf`:
+Add an entry to `local.app_user_groups` in `identity.tf`:
 
 ```hcl
 locals {

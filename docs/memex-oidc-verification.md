@@ -407,7 +407,7 @@ Both TTLs are 30 days for this reason.
   the members map, the two tiers, and `vault_identity_oidc_assignment.smoke`
   `group_ids` growing from 1 to 3. That growth is EXPECTED, not a mistake:
   the smoke assignment binds `local.all_app_user_group_ids` by design, and
-  effective access does not change. Nothing else in `roles.tf` or `oidc.tf`
+  effective access does not change. Nothing else in `identity.tf` or `oidc.tf`
   should move.
 
 ## Revoking a long-lived human token

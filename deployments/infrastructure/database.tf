@@ -32,7 +32,7 @@ resource "vault_mount" "redis" {
   type        = "database"
   description = "Dynamic per-caller Redis ACL credentials"
 
-  # The `developer` policy (developer_group.tf) only grants sys/mounts/*
+  # The `developer` policy (identity.tf) only grants sys/mounts/*
   # on paths named there one at a time; explicit ordering, not an
   # attribute reference, is what makes the sys/mounts/redis grant land
   # before this mount is created in the same apply.
@@ -70,8 +70,9 @@ resource "vault_database_secret_backend_connection" "redis" {
 
 ### Redis cache consumers. Empty until a job actually needs the cache —
 ### add its Nomad job id here and `terraform apply` creates its own
-### `database_secret_backend_role`, `vault_policy`, and `jwt_auth_backend_role`
-### below, all three scoped to that job alone. A job then opts in with:
+### `database_secret_backend_role` below, plus the `vault_policy` and
+### `jwt_auth_backend_role` in machine_roles.tf — all three scoped to that job
+### alone. A job then opts in with:
 ###
 ###   vault {
 ###     role = "redis-cache-<job-id>"
@@ -91,7 +92,7 @@ resource "vault_database_secret_backend_connection" "redis" {
 ### (docs/postgres-vault-dynamic-creds-spike.md: "widening the shared
 ### nomad-workloads policy... gives every workload on the cluster the
 ### ability to mint database users. Take the per-job cost."). Each entry
-### here pays that per-job cost once, mirroring acme.tf's
+### here pays that per-job cost once, mirroring machine_roles.tf's
 ### `vault_jwt_auth_backend_role.acme`, the working precedent this is
 ### modeled on.
 locals {
@@ -133,53 +134,4 @@ resource "vault_database_secret_backend_role" "cache" {
 
   default_ttl = 900  # 15m; see the restart/lease-desync note above
   max_ttl     = 3600 # 1h
-}
-
-resource "vault_policy" "redis_cache_read" {
-  for_each = local.redis_cache_consumers
-  name     = "redis-cache-read-${each.key}"
-
-  policy = <<-EOT
-    path "redis/creds/cache-${each.key}" {
-      capabilities = ["read"]
-    }
-  EOT
-}
-
-### The `jwt-nomad` auth mount, its config, and the default `nomad-workloads`
-### role are Ansible-owned (bootstrap/roles/nomad_server/tasks/main.yml).
-### This is a per-consumer role on that mount, selected via `vault { role =
-### "redis-cache-<job>" }` — same pattern as `vault_jwt_auth_backend_role.acme`
-### (acme.tf), bound to exactly one `nomad_job_id`, not a namespace-wide
-### claim.
-###
-### token_policies carries BOTH policies deliberately, per the one-token
-### rule (docs/workload-identity.md): naming a dedicated role REPLACES
-### `nomad-workloads` rather than adding to it, so a caller that also needs
-### its own KV secrets must keep that policy attached too.
-resource "vault_jwt_auth_backend_role" "redis_cache" {
-  for_each  = local.redis_cache_consumers
-  backend   = "jwt-nomad"
-  role_name = "redis-cache-${each.key}"
-  role_type = "jwt"
-
-  bound_audiences = ["vault.io"]
-  bound_claims = {
-    nomad_namespace = "default"
-    nomad_job_id    = each.key
-  }
-
-  user_claim              = "/nomad_job_id"
-  user_claim_json_pointer = true
-
-  claim_mappings = {
-    nomad_namespace = "nomad_namespace"
-    nomad_job_id    = "nomad_job_id"
-    nomad_task      = "nomad_task"
-  }
-
-  token_type             = "service"
-  token_policies         = ["nomad-workloads", vault_policy.redis_cache_read[each.key].name]
-  token_period           = 1800
-  token_explicit_max_ttl = 0
 }

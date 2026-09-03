@@ -211,6 +211,33 @@ resource "nomad_dynamic_host_volume" "nats_data" {
   }
 }
 
+### State for the `acme` certificate-renewal job below.
+### lego needs durable state. It keeps the ACME account key under
+### <path>/accounts and the issued bundle under <path>/certificates, and every
+### periodic child job gets a fresh alloc dir. Without this volume lego
+### re-registers and re-issues on every run, exhausting Let's Encrypt's
+### 5-certs-per-identifier-set-per-week limit within days and locking out
+### issuance until the window rolls.
+resource "nomad_dynamic_host_volume" "acme_lego_state" {
+  name      = "acme_lego_state"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "1 GiB"
+  capacity_min = "100 MiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "ubuntu"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 ### Firewall rules for services (applied via SSH)
 locals {
   firewall_rules = {
@@ -312,7 +339,7 @@ locals {
     }
     # Redis cache on radxa-dragon-q6a. Narrowed from LAN-wide now that a
     # caller exists: embark is registered in redis_cache_consumers
-    # (redis_secrets_engine.tf) and runs on jetson-orin-nano. Add a node here
+    # (database.tf) and runs on jetson-orin-nano. Add a node here
     # when its job joins that list, or it fails to reach the cache.
     redis = {
       host     = "192.168.2.50"
@@ -493,13 +520,13 @@ resource "nomad_job" "nats" {
 }
 
 ### Redis — shared cache. Callers never receive a static password: a
-### consumer job in `local.redis_cache_consumers` (redis_secrets_engine.tf)
+### consumer job in `local.redis_cache_consumers` (database.tf)
 ### opts in with `vault { role = "redis-cache-<job>" }` and reads its own
 ### `redis/creds/cache-<job>` for a credential minted fresh per render and
 ### revoked on lease expiry.
 ###
 ### `detach = false`: the default (`true`) returns as soon as the job is
-### REGISTERED, not once its alloc is actually up. redis_secrets_engine.tf's
+### REGISTERED, not once its alloc is actually up. database.tf's
 ### Vault connection dials this job's address at apply time and needs it
 ### reachable by then, not just accepted by the scheduler.
 resource "nomad_job" "redis" {
@@ -508,4 +535,76 @@ resource "nomad_job" "redis" {
     { redis_admin_secret = vault_kv_secret_v2.redis_admin_credentials.path }
   )
   detach = false
+}
+
+### --- acme -----------------------------------------------------------------
+
+### ACME certificate renewal for the *.lab.orangecluster.nl edge.
+###
+### A periodic job runs lego's DNS-01 challenge against TransIP and writes the
+### issued material to Vault KV2, where the edge proxy reads it. HAProxy
+### templates that secret into the PEM it serves, so a failed renewal
+### eventually takes every routed service down together.
+### The TransIP API credential. Written by hand rather than by Terraform: it
+### is issued from the TransIP control panel and shown once, so there is no
+### resource that could generate it. Terraform never reads its value, only
+### its path — the acme job's own `vault {}` block reads the value at
+### deploy time with its own Vault token — so the path is a plain string,
+### not a `data "vault_kv_secret_v2"` source (deprecated in favor of the
+### ephemeral resource, which cannot flow into templatefile's non-write-only
+### vars map anyway; a literal string sidesteps that rather than fighting
+### it, matching hermes's external secrets in applications/services.tf).
+###
+### The key pair is created with 'whitelisted IP' unchecked, so lego's client
+### (which requests a global token by default) works from any address. A
+### whitelisted key would mint tokens that authenticate but fail on every
+### subsequent call.
+resource "nomad_job" "acme" {
+  jobspec = templatefile(
+    "${path.module}/services/acme.hcl",
+    {
+      vault_role     = vault_jwt_auth_backend_role.acme.role_name
+      transip_secret = "${var.secret_mount}/data/default/acme/transip"
+      secret_mount   = var.secret_mount
+      tls_path       = "default/haproxy/tls"
+      acme_domain    = var.acme_domain
+      acme_email     = var.acme_email
+      acme_server    = var.acme_server
+
+      ### Separate state directory per ACME environment. lego namespaces
+      ### accounts by server host but names certificate files after the domain
+      ### alone, so one shared directory would let the staging bundle satisfy
+      ### the production run's not-due check and republish an untrusted cert.
+      acme_path = "/acme-state/${length(regexall("staging", var.acme_server)) > 0 ? "staging" : "production"}"
+    }
+  )
+
+  depends_on = [nomad_dynamic_host_volume.acme_lego_state]
+}
+
+### --- backups --------------------------------------------------------------
+
+### Nomad backup jobs
+resource "nomad_job" "backup_postgres" {
+  jobspec = templatefile(
+    "${path.module}/services/backup-postgres.hcl",
+    {
+      postgres_secret = vault_kv_secret_v2.backup_postgres_db_credentials.path
+      gcs_secret      = vault_kv_secret_v2.backup_postgres_gcs_credentials.path
+      postgres_host   = "192.168.2.30"
+      gcs_bucket      = var.gcs_backup_bucket
+    }
+  )
+}
+
+resource "nomad_job" "backup_minio" {
+  jobspec = templatefile(
+    "${path.module}/services/backup-minio.hcl",
+    {
+      minio_secret = vault_kv_secret_v2.backup_minio_s3_credentials.path
+      gcs_secret   = vault_kv_secret_v2.backup_minio_gcs_credentials.path
+      minio_host   = "192.168.2.29"
+      gcs_bucket   = var.gcs_backup_bucket
+    }
+  )
 }

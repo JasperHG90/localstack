@@ -142,7 +142,7 @@ all four.
 **2. Revoke by accessor**, if you do not. This needs
 `auth/token/revoke-accessor`, which `developer` does not grant. **Join
 `admin`** — it exists for exactly this, and membership survives a
-`terraform apply` running mid-incident, because `roles.tf` sets
+`terraform apply` running mid-incident, because `identity.tf` sets
 `external_member_entity_ids = true` on the group.
 
 ```sh

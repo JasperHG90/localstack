@@ -113,7 +113,7 @@ resource "vault_kv_secret_v2" "postgres_root_credentials" {
 
 ### Redis admin password: the `default` user's password, which Vault's
 ### redis-database-plugin authenticates with to mint and revoke every
-### caller's short-lived ACL user (redis_secrets_engine.tf). No caller ever
+### caller's short-lived ACL user (database.tf). No caller ever
 ### reads this secret directly.
 resource "random_password" "redis_admin" {
   length  = 24
@@ -238,6 +238,70 @@ resource "vault_kv_secret_v2" "oauth2_proxy_cookie_secret" {
   name  = "default/oauth2-proxy/cookie"
   data_json = jsonencode({
     secret = random_password.oauth2_proxy_cookie_secret.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+### --- backup job credentials -----------------------------------------------
+
+resource "vault_kv_secret_v2" "backup_postgres_db_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/backup-postgres/postgres"
+  data_json = jsonencode({
+    username = "localstack"
+    password = random_password.postgres_root.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+resource "vault_kv_secret_v2" "backup_postgres_gcs_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/backup-postgres/gcs"
+  data_json = jsonencode({
+    service_account_json = base64decode(google_service_account_key.backup.private_key)
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+resource "vault_kv_secret_v2" "backup_minio_s3_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/backup-minio/minio"
+  data_json = jsonencode({
+    access_key = "minio"
+    secret_key = random_password.minio_secret_key.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+resource "vault_kv_secret_v2" "backup_minio_gcs_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/backup-minio/gcs"
+  data_json = jsonencode({
+    service_account_json = base64decode(google_service_account_key.backup.private_key)
   })
   delete_all_versions = false
   custom_metadata {

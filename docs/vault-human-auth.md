@@ -38,8 +38,8 @@ All of it lives in `deployments/infrastructure/`:
 
 | File | Contents |
 | --- | --- |
-| `auth_userpass.tf` | The `userpass` auth mount, the operator user, and the identity entity and alias that bind a login to an identity. The entity's `email` metadata is what the `email` scope reads |
-| `oidc.tf` | The OIDC signing key, the shared `groups` and `email` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (oauth2-proxy, grafana) |
+| `identity.tf` | The `userpass` auth mount, the operator user, the identity entity and alias that bind a login to an identity, and the `developer`, `admin` and app-user groups. The entity's `email` metadata is what the `email` scope reads |
+| `oidc.tf` | The OIDC signing key, the shared `groups` and `email` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (nomad, memex, oauth2-proxy, grafana) |
 | `secrets.tf` | Two KV2 writes: the operator password, and the smoke client's credentials |
 
 Two secrets land in KV2:
@@ -71,7 +71,7 @@ curl -s https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab/.well-k
 ## What the operator can do: the `developer` group
 
 Logging in gives you the `developer` policy, carried by the
-`developer` identity group (`deployments/infrastructure/developer_group.tf`).
+`developer` identity group (`deployments/infrastructure/identity.tf`).
 It covers everything a person does here: both Terraform roots, brokered Nomad
 and Consul tokens, creating users and groups, and every secret under
 `default/`.
@@ -210,7 +210,7 @@ Two things do close it:
   attached to a throwaway entity is invisible to it, so nothing removes the
   orphan when the incident ends. An earlier version of this page said the
   opposite — that a `terraform apply` would strip the grant mid-incident,
-  citing `developer_group.tf:161`. That is true only if you attach the policy
+  citing the `developer` policy in `identity.tf`. That is true only if you attach it
   to the `developer` **group**, which the paragraph above forbids.
 
   And you cannot pick the target by path. Every live session at
@@ -275,11 +275,11 @@ the template, and see `docs/cluster-roles.md` for the roles it refers to.
    `redirect_uris`.
 2. **Who is allowed in.** Four answers, in the order to try them:
 
-   1. **An existing tier group** — `developer` (`developer_group.tf`) or
-      `admin` (`roles.tf`) — when one already names who should get in.
+   1. **An existing tier group** — `developer` or `admin`, both in
+      `identity.tf` — when one already names who should get in.
       Create no group; you still create your own assignment in step 3.
-      `nomad_oidc.tf` does this.
-   2. **A new entry in `local.app_user_groups`** (`roles.tf`) when the
+      The `G2: Nomad` section of `oidc.tf` does this.
+   2. **A new entry in `local.app_user_groups`** (`identity.tf`) when the
       service needs its own tier. memex is its first consumer, so this is the
       branch that keeps app consumers on the shared scaffold rather than
       routing around it. Bind **only your own key**:
@@ -320,7 +320,7 @@ catch a Vault client secret: it matches a fixed list of PEM headers, and
 **That applies to a consumer whose service reads the secret at run time,
 through a `template` stanza or a config file.** If your consumer is a Terraform
 resource, pass the secret by reference instead and skip KV2 entirely: Nomad's
-auth method does this at `nomad_oidc.tf`, wiring
+auth method does this in `oidc.tf`, wiring
 `vault_identity_oidc_client.nomad.client_secret` straight into
 `config.oidc_client_secret`. Both fields are already `sensitive` in the
 providers, so nothing lands in plan output, and there is no second copy of a
@@ -355,7 +355,8 @@ the `developer` group" — a shell as root inside any container and write on
 every host volume. It belongs there rather than here, because that is the
 section someone reads when asking what membership buys.
 
-**Nomad is the first real consumer of this provider**, so `nomad_oidc.tf` is
+**Nomad is the first real consumer of this provider**, so the `G2: Nomad`
+section of `oidc.tf` is
 worth reading as the worked example. It shows **three** of the four resources
 plus the `local.oidc_provider_client_ids` line — it creates no
 `vault_identity_group`, because it reuses F11's existing `developer` group
@@ -465,7 +466,7 @@ it: its generic OAuth client refuses a login whose resolved email is empty and
 offers no setting to turn that off. An entity with no `email` key yields an
 empty string, not an error, and the login fails at the callback. **Every human
 entity needs that metadata key**, or its owner cannot sign in to Grafana. The
-operator's is set from `vault_operator_email` (`auth_userpass.tf`,
+operator's is set from `vault_operator_email` (`identity.tf`,
 `variables.tf`).
 
 Whether your service needs it depends on the service, not on a rule. Grafana

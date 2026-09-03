@@ -1,6 +1,7 @@
 set shell := ["bash", "-uc"]
 
 alias i := init
+alias p := plan
 alias a := apply
 alias d := destroy
 
@@ -9,6 +10,12 @@ init:
     set -euo pipefail
     eval "$(uv run localstack env)"
     terraform init -backend-config=./vars/backend-config.hcl
+
+plan:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    eval "$(uv run localstack env)"
+    terraform plan -var-file=./vars/prod.tfvars
 
 apply:
     #!/usr/bin/env bash
