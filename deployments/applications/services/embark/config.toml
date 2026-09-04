@@ -37,18 +37,33 @@ port = 8000
 # config: onnxruntime appends the CPU provider implicitly as a last resort for
 # operators the GPU providers cannot take, so naming it here would only blur
 # the startup check that catches a missing GPU provider.
-providers = ["TensorrtExecutionProvider", "CUDAExecutionProvider"]
+#
+# TensorRT is deferred to get the service up on CUDA alone. Untested here,
+# not known broken: the wheel carries the provider and the host has TensorRT
+# 10.3. Add it back AFTER CUDA, so CUDA keeps first pick of the graph:
+# providers = ["CUDAExecutionProvider", "TensorrtExecutionProvider"]
+#
+# Note that naming a provider is NOT the guard the paragraph above claims.
+# onnxruntime checks availability, not initialization: with the GPU absent
+# from the container it listed CUDAExecutionProvider, failed cudaSetDevice
+# with error 35, and fell back to CPU while /healthz stayed green. What
+# actually prevents that is NVIDIA_VISIBLE_DEVICES and
+# NVIDIA_DRIVER_CAPABILITIES in the jobspec.
+providers = ["CUDAExecutionProvider"]
 # The Orin Nano's 6 cores also run the OS and the HTTP server; onnxruntime's
 # default of one thread per core oversubscribes them.
 intra_op_threads = 4
 
+# Dead while TensorrtExecutionProvider is out of the providers list above.
+# Uncomment in the same change that puts it back.
+#
 # Under the host volume, so the built engine survives a restart. Building one
 # takes minutes, and it is rebuilt from scratch whenever this path is empty --
 # which is also why the health check probes /healthz rather than /readyz.
-[runtime.provider_options.TensorrtExecutionProvider]
-trt_engine_cache_enable = "1"
-trt_engine_cache_path = "/var/lib/embark/trt"
-trt_fp16_enable = "1"
+# [runtime.provider_options.TensorrtExecutionProvider]
+# trt_engine_cache_enable = "1"
+# trt_engine_cache_path = "/var/lib/embark/trt"
+# trt_fp16_enable = "1"
 
 [batching]
 embedding_batch_size = 16

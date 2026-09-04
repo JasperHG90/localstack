@@ -99,6 +99,20 @@ resource "vault_kv_secret_v2" "embark_registry_credentials" {
   })
 }
 
+### embark's API key, copied under Bifrost's OWN KV prefix so Bifrost can call
+### embark as a provider. embark ships auth on, and the nomad-workloads role
+### grants job `bifrost` read only under secret/data/default/bifrost/*, so
+### reading default/embark/auth would 403. Same copy-under-the-consumer shape
+### as embark_registry_credentials above, in the other direction: the other
+### bifrost_*_key secrets are keys Bifrost ISSUES, this one is a key it USES.
+resource "vault_kv_secret_v2" "bifrost_embark_key" {
+  mount = var.secret_mount
+  name  = "default/bifrost/embark"
+  data_json = jsonencode({
+    API_KEY = random_id.embark_api_key.b64_url
+  })
+}
+
 ### Registry
 
 resource "vault_kv_secret_v2" "registry_minio_credentials" {

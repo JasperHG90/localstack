@@ -165,8 +165,7 @@ resource "nomad_dynamic_host_volume" "tempo_data" {
 ### embark's model artifacts and its own cache. Sized for ONNX weights: the
 ### embeddinggemma-q8 ModelKit alone is ~300 MiB unpacked, and a reranker sits
 ### beside it. Not a cache that can be thrown away cheaply -- losing it means
-### re-pulling every model from the registry on the next start, and on the
-### Jetson rebuilding the TensorRT engine, which takes minutes.
+### re-pulling every model from the registry on the next start.
 ###
 ### Pinned to the same node as the embark job (deployments/applications's
 ### `embark_hostname`). The two are a pair: move one and the job stops

@@ -10,11 +10,24 @@ alias r := release
 # this builds and the image Terraform deploys cannot drift -- the same lockstep
 # rebuild_hermes and rebuild_dash_backend use.
 #
-# The grep tolerates a leading `#` because that line is currently commented
-# out: the embark job is not deployed yet (memex still holds the Jetson). The
-# image is worth building before then, so this keeps working either way.
+# The grep tolerates a leading `#` so the image can still be built while the
+# job is commented out in services.tf.
 _tag := ```
     grep -E '^\s*#?\s*embark_image\s*=' ../../services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/'
+    ```
+
+# The image this layers onto. Derived, never written down twice, so the base
+# and the jetson tag cannot drift.
+#
+# Two steps. Strip `-jetson` to get the repository; a tag with no `-jetson` in
+# it yields SELF, which every recipe below treats as a hard error rather than
+# building the GPU image and pushing it over the upstream portable one. Then
+# strip a trailing build revision: the jetson tag may carry one the base does
+# not, so `v0.1.0-1` means "base v0.1.0 plus our first set of layers".
+_base := ```
+    tag=$(grep -E '^\s*#?\s*embark_image\s*=' ../../services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    base="${tag/-jetson/}"
+    if [ "${base}" = "${tag}" ]; then echo "SELF"; else echo "${base%-[0-9]*}"; fi
     ```
 
 # Show what the recipes below would act on, without building anything.
@@ -23,7 +36,7 @@ show:
     set -euo pipefail
     image="{{ _tag }}"
     echo "jetson image : ${image}"
-    echo "base image   : ${image/-jetson/}"
+    echo "base image   : {{ _base }}"
 
 # Build the Jetson image: the published portable image plus the GPU wheel.
 #
@@ -40,8 +53,8 @@ build:
     #!/usr/bin/env bash
     set -euo pipefail
     image="{{ _tag }}"
-    base="${image/-jetson/}"
-    if [ "${base}" = "${image}" ]; then
+    base="{{ _base }}"
+    if [ "${base}" = "SELF" ]; then
         echo "!! embark_image in services.tf does not contain '-jetson', so the" >&2
         echo "!! base image cannot be derived from it. Fix that line first." >&2
         exit 1

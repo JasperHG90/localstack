@@ -18,8 +18,7 @@ job "embark" {
     # One volume, two jobs. It holds the unpacked model artifacts under
     # artifacts/ AND embark's own cache, which the image declares a volume and
     # embark's docs call not optional: without it a restart re-downloads every
-    # model, and on a Jetson it also rebuilds the TensorRT engine, which takes
-    # minutes.
+    # model.
     volume "embark_data" {
       type            = "host"
       source          = "embark_data"
@@ -128,9 +127,10 @@ ${models_list}
         tags = ["http", "llm"]
 
         # /healthz, not /readyz, deliberately. Readiness stays false until
-        # every model has warmed, and on a Jetson that includes a TensorRT
-        # engine build -- a check on readiness would kill the task mid-build
-        # and restart it into the same build, forever.
+        # every model has warmed; a check on readiness would kill the task
+        # mid-warm and restart it into the same warm, forever. That margin
+        # gets thinner if TensorRT comes back, since its engine build adds
+        # minutes.
         check {
           name     = "embark alive"
           type     = "http"
@@ -146,6 +146,25 @@ ${models_list}
         image        = "${embark_image}"
         ports        = ["http"]
         network_mode = "host"
+
+        # GPU: seccomp blocks Jetson GPU ioctls on /dev/nvhost-* and /dev/nvmap
+        security_opt = ["seccomp=unconfined", "label=disable"]
+
+        # GPU: CUDA toolkit + cuDNN are on the host but not injected by
+        # nvidia-container-runtime. Same list memex.hcl carries, and for the
+        # same reason -- Dockerfile.embark's header says the runtime supplies
+        # them, and on this node it does not.
+        volumes = [
+          "/usr/local/cuda-12.6/lib64:/usr/local/cuda/lib64:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn.so.9:/usr/lib/aarch64-linux-gnu/libcudnn.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_graph.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_graph.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_engines_precompiled.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_engines_precompiled.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_engines_runtime_compiled.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_engines_runtime_compiled.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_heuristic.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_heuristic.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_ops.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_ops.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_adv.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_adv.so.9:ro",
+          "/usr/lib/aarch64-linux-gnu/libcudnn_cnn.so.9:/usr/lib/aarch64-linux-gnu/libcudnn_cnn.so.9:ro",
+        ]
       }
 
       volume_mount {
@@ -156,17 +175,31 @@ ${models_list}
       env {
         EMBARK_CONFIG_FILE = "/local/config.toml"
         EMBARK_CACHE_DIR   = "/var/lib/embark"
+
+        # These three are what put the GPU in the container, and all three are
+        # required. Without the first two, nvidia-container-runtime injects
+        # neither libcuda.so.1 nor /dev/nvhost-gpu, and onnxruntime reports
+        # CUDAExecutionProvider available, fails cudaSetDevice with error 35,
+        # and falls back to CPU while the health check stays green. Without the
+        # third, the bind-mounted CUDA libs sit off the linker's search path
+        # and libcublas/libcudart go unresolved. memex.hcl sets the same three.
+        NVIDIA_VISIBLE_DEVICES     = "all"
+        NVIDIA_DRIVER_CAPABILITIES = "compute,utility"
+        LD_LIBRARY_PATH            = "/usr/local/cuda/lib64"
         # Spans go to the node-local Alloy collector, which forwards to Tempo.
         # embark never learns where Tempo is, so moving or replacing the trace
         # backend is a collector change rather than a redeploy of every
         # producer.
         #
-        # PREREQUISITE: that collector does not exist yet. Today's Alloy is
-        # the log shipper only and runs no OTLP receiver, so spans sent here
-        # go nowhere until O1-observability-otlp-llm-routing lands. Harmless
-        # while this job stays commented out in services.tf; check it before
-        # uncommenting.
-        EMBARK_TELEMETRY__ENABLED       = "true"
+        # OFF until that collector exists. Today's Alloy is the log shipper
+        # only and runs no OTLP receiver, so every export attempt fails. It
+        # does not stop embark serving, but the exporter retries about every
+        # five seconds and each failure is an error-level line that Alloy
+        # ships to Loki, so leaving it on fills the log with the fact that
+        # tracing is not wired up yet. Flip to "true" with
+        # O1-observability-otlp-llm-routing; the endpoint below is already
+        # right.
+        EMBARK_TELEMETRY__ENABLED       = "false"
         EMBARK_TELEMETRY__OTLP_ENDPOINT = "${otlp_endpoint}"
         EMBARK_TELEMETRY__SERVICE_NAME  = "embark"
       }

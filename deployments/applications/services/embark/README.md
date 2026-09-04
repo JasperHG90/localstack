@@ -15,13 +15,17 @@ What each file here is, and the one thing this repo cannot do for you.
 **The image this job runs is not built by CI. Building and pushing it is an
 operator step.**
 
-`config.toml` asks for `TensorrtExecutionProvider` and
-`CUDAExecutionProvider`, and **embark refuses to start when a requested
-provider is missing.** Point the job at the portable image embark's release
-workflow publishes, which carries the CPU onnxruntime wheel, and it will not
-run. That refusal is deliberate on embark's part: onnxruntime otherwise falls
-through to CPU silently, and a Jetson serving from CPU at a tenth of the speed
-reports itself healthy with nothing in the log.
+`config.toml` asks for `CUDAExecutionProvider`. Point the job at the portable
+image embark's release workflow publishes, which carries the CPU onnxruntime
+wheel, and the provider is not there to load.
+
+**Naming a provider does not guarantee you get it.** embark checks that a
+requested provider is *available*, which is a check on the wheel, not on the
+device. Deploying this job without the GPU env vars below produced exactly
+that: onnxruntime listed `CUDAExecutionProvider`, failed `cudaSetDevice` with
+CUDA error 35, fell back to CPU, and served correct embeddings at a tenth of
+the speed with `/healthz` green the whole time. Verify the GPU after any
+change to the image or the jobspec; do not infer it from a healthy job.
 
 `Dockerfile.embark` builds that image, and the `justfile` beside it drives the
 build:
@@ -38,9 +42,33 @@ Both tags come from the single `embark_image` line in
 `deployments/applications/services.tf`, so what gets built and what Terraform
 deploys cannot drift. Change the version there, not here.
 
+A trailing `-<number>` on the Jetson tag is a build revision of the base, not
+an upstream version: `v0.1.0-1` means "base `v0.1.0` plus the layers here".
+The justfile strips it to find the base, so bump it whenever this directory
+changes without the base moving.
+
 Nodes already authenticate to `ghcr.io` via
 `bootstrap/playbooks/configure_podman.yml`, so no per-job pull credential is
 needed.
+
+### How the GPU reaches the container
+
+Three things in `services/embark.hcl`, and the job serves from CPU if any one
+is missing:
+
+| What | Supplies |
+|---|---|
+| `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=compute,utility` | `libcuda.so.1` and `/dev/nvhost-*`, injected by nvidia-container-runtime |
+| nine `volumes` bind mounts | the CUDA toolkit and cuDNN, which the runtime does not inject |
+| `LD_LIBRARY_PATH=/usr/local/cuda/lib64` | puts those mounts on the linker's search path |
+
+The first two were measured on `jetson-orin-nano`: without them the container
+has no `libcuda.so.1` and no device nodes. `memex.hcl` carries the same three,
+which is where they came from.
+
+To check a running job, look for `Falling back to ['CPUExecutionProvider']` in
+`embark.stdout` on the node. Absent, and with `Memcpy nodes are added ... for
+CUDAExecutionProvider` present, the model is on the GPU.
 
 ### Why not embark's own Dockerfile.jetson
 
@@ -48,17 +76,15 @@ That one starts from `nvcr.io/nvidia/l4t-jetpack`, which needs NGC access and
 a multi-gigabyte pull, and embark's release workflow does not build it for
 exactly that reason. `Dockerfile.embark` takes memex's route instead
 (`docker/memex/Dockerfile.jetson`): layer `onnxruntime-gpu` onto the ordinary
-image with `pip install --no-deps` and let `nvidia-container-runtime` inject
-CUDA at runtime. That reduces the build to a single wheel swap an ordinary
-arm64 builder can produce, emulated or native.
+image with `pip install --no-deps`. That reduces the build to a single wheel
+swap an ordinary arm64 builder can produce, emulated or native.
 
-One caveat worth testing on the hardware before trusting it. embark's own
-deployment notes give a reason for the heavier base: the TensorRT execution
-provider loads TensorRT *from the image*, and a base without it falls short.
-The memex route assumes the container runtime supplies TensorRT along with
-CUDA. If `just verify` shows the providers but the Jetson refuses them at
-startup, that assumption is the thing that broke, and the l4t-jetpack base is
-the fallback.
+TensorRT is the open question. embark's deployment notes give a reason for the
+heavier base: the TensorRT execution provider loads TensorRT *from the image*,
+and a base without it falls short. The host carries TensorRT 10.3 and the
+wheel reports the provider, but the pair has not been run here, so
+`config.toml` requests CUDA alone. If enabling it fails at startup, that
+assumption is what broke, and the l4t-jetpack base is the fallback.
 
 ## Adding or changing a model
 

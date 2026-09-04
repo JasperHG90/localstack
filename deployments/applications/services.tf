@@ -107,25 +107,22 @@ locals {
         "allow from 192.168.2.50 to any port 4318 proto tcp",
       ]
     }
-    # embark on jetson-orin-nano. Commented out with the job itself (see
-    # `nomad_job.embark` below) -- uncomment BOTH together, or the service
-    # starts and nothing can reach it.
+    # embark on jetson-orin-nano.
     #
     # Cluster nodes only: any workload may want embeddings, and which one does
     # changes as memex moves off this host. Narrower than LAN-wide even though
     # embark requires an API key, matching how loki and tempo are scoped.
-    #
-    # embark = {
-    #   host     = "192.168.2.46"
-    #   ssh_user = "localstack"
-    #   rules = [
-    #     "allow from 192.168.2.30 to any port 8000 proto tcp",
-    #     "allow from 192.168.2.29 to any port 8000 proto tcp",
-    #     "allow from 192.168.2.46 to any port 8000 proto tcp",
-    #     "allow from 192.168.2.47 to any port 8000 proto tcp",
-    #     "allow from 192.168.2.50 to any port 8000 proto tcp",
-    #   ]
-    # }
+    embark = {
+      host     = "192.168.2.46"
+      ssh_user = "localstack"
+      rules = [
+        "allow from 192.168.2.30 to any port 8000 proto tcp",
+        "allow from 192.168.2.29 to any port 8000 proto tcp",
+        "allow from 192.168.2.46 to any port 8000 proto tcp",
+        "allow from 192.168.2.47 to any port 8000 proto tcp",
+        "allow from 192.168.2.50 to any port 8000 proto tcp",
+      ]
+    }
     # OCI registry on ubuntu (rpi4b). Single-caller shape: only HAProxy on
     # firebat dials it, because podman and docker refuse a plain-HTTP
     # registry and no node manages registries.conf, so the edge is the only
@@ -332,55 +329,44 @@ locals {
   ])
 }
 
-### NOT DEPLOYED YET. Commented out on purpose, together with the `embark`
-### entry in local.firewall_rules above -- uncomment both, or the service
-### comes up unreachable.
+### Runs on jetson-orin-nano, the node memex used to hold.
 ###
-### Two things must be true first:
-###   1. memex has moved off jetson-orin-nano. It holds ~6.5 GB there, so
-###      this job would sit in a blocked evaluation with `DimensionExhausted`
-###      rather than fail visibly.
-###   2. A node-local OTLP collector exists (O1-observability-otlp-llm-routing).
-###      Today's Alloy ships logs only and runs no receiver, so the telemetry
-###      endpoint below currently points at nothing.
-###
-### Everything around it -- the bucket-less host volume, the Vault API key,
-### the Redis consumer role -- is created regardless, so uncommenting is a
-### one-step change rather than a fresh dependency hunt.
-#
-# resource "nomad_job" "embark" {
-#   jobspec = templatefile(
-#     "${path.module}/services/embark.hcl",
-#     {
-#       # Target node. embark is built for the Orin Nano's GPU.
-#       embark_hostname = "jetson-orin-nano"
-#       embark_host     = "192.168.2.46"
-#       # NOT the image embark's release workflow publishes. That one is the
-#       # portable build and carries the CPU onnxruntime wheel, and config.toml
-#       # asks for the TensorRT and CUDA providers -- embark refuses to start
-#       # when a requested provider is missing. This tag has to be built on the
-#       # device and pushed by hand; see services/embark/README.md.
-#       embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.1.0"
-#
-#       registry_host        = local.embark_registry
-#       # embark's OWN copy of the registry credential. The nomad-workloads
-#       # role grants a job read only under secret/data/default/<job_id>/*,
-#       # so reading the registry's own path would 403.
-#       registry_auth_secret = vault_kv_secret_v2.embark_registry_credentials.path
-#       embark_auth_secret   = vault_kv_secret_v2.embark_auth.path
-#
-#       embark_models = local.embark_models_env
-#       models_list   = local.embark_models_list
-#       pull_script   = file("${path.module}/services/embark/pull.sh")
-#       config_toml   = file("${path.module}/services/embark/config.toml")
-#
-#       # Node-local Alloy, not Tempo directly: embark should not have to know
-#       # where the trace backend lives.
-#       otlp_endpoint = "http://127.0.0.1:4317"
-#       redis_host    = "192.168.2.50"
-#     }
-#   )
-# }
+### The telemetry endpoint below points at a node-local OTLP collector that
+### does not exist yet: today's Alloy ships logs only and runs no receiver, so
+### spans go nowhere until O1-observability-otlp-llm-routing lands.
+resource "nomad_job" "embark" {
+  jobspec = templatefile(
+    "${path.module}/services/embark.hcl",
+    {
+      # Target node. embark is built for the Orin Nano's GPU.
+      embark_hostname = "jetson-orin-nano"
+      embark_host     = "192.168.2.46"
+      # NOT the image embark's release workflow publishes. That one is the
+      # portable build and carries the CPU onnxruntime wheel, and config.toml
+      # asks for CUDA. Built and pushed by hand; see services/embark/README.md.
+      # The `-1` is a build revision on top of base v0.1.0, not an upstream
+      # version: nothing publishes embark:v0.1.0-1.
+      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.1.0-1"
+
+      registry_host = local.embark_registry
+      # embark's OWN copy of the registry credential. The nomad-workloads
+      # role grants a job read only under secret/data/default/<job_id>/*,
+      # so reading the registry's own path would 403.
+      registry_auth_secret = vault_kv_secret_v2.embark_registry_credentials.path
+      embark_auth_secret   = vault_kv_secret_v2.embark_auth.path
+
+      embark_models = local.embark_models_env
+      models_list   = local.embark_models_list
+      pull_script   = file("${path.module}/services/embark/pull.sh")
+      config_toml   = file("${path.module}/services/embark/config.toml")
+
+      # Node-local Alloy, not Tempo directly: embark should not have to know
+      # where the trace backend lives.
+      otlp_endpoint = "http://127.0.0.1:4317"
+      redis_host    = "192.168.2.50"
+    }
+  )
+}
 
 ### Dash — the cluster landing page (L3), split into a frontend and a
 ### backend task in the same job (L4). The tile list lives in
@@ -493,29 +479,34 @@ output "memex_auth_oidc_shape_check" {
 }
 
 ### Memex
-resource "nomad_job" "memex" {
-  jobspec = templatefile(
-    "${path.module}/services/memex.hcl",
-    {
-      memex_postgres_secret = vault_kv_secret_v2.memex_db_credentials.path
-      memex_minio_secret    = vault_kv_secret_v2.memex_minio_credentials.path
-      memex_auth_secret     = vault_kv_secret_v2.memex_auth_keys.path
-      postgres_host         = data.consul_service.postgres.service[0].node_address
-      minio_host            = data.consul_service.minio.service[0].node_address
-      phoenix_host          = "192.168.2.29"
-      memex_host            = "192.168.2.46"
-      memex_auth_keys       = local.memex_auth_keys
-      memex_auth_oidc       = local.memex_auth_oidc
-      bifrost_host          = "192.168.2.50"
-      memex_version         = "1.2.0"
-      # Bifrost virtual key issued to Memex (default/memex/bifrost). Memex's
-      # default/extraction/reflection models all call Bifrost /v1 with this key.
-      bifrost_key_secret = vault_kv_secret_v2.bifrost_memex_key.path
-    }
-  )
-  # Deploy Memex only after its Bifrost key exists in Vault.
-  depends_on = [postgresql_database.database, vault_kv_secret_v2.bifrost_memex_key]
-}
+###
+### Staged, not dead. Commented out to free jetson-orin-nano for embark, which
+### needs the GPU there and will not fit beside memex's ~6.5 GB. Uncomment when
+### memex has somewhere else to run: change `memex_host` to that node first, or
+### it lands back on the Jetson and one of the two stops placing.
+# resource "nomad_job" "memex" {
+#   jobspec = templatefile(
+#     "${path.module}/services/memex.hcl",
+#     {
+#       memex_postgres_secret = vault_kv_secret_v2.memex_db_credentials.path
+#       memex_minio_secret    = vault_kv_secret_v2.memex_minio_credentials.path
+#       memex_auth_secret     = vault_kv_secret_v2.memex_auth_keys.path
+#       postgres_host         = data.consul_service.postgres.service[0].node_address
+#       minio_host            = data.consul_service.minio.service[0].node_address
+#       phoenix_host          = "192.168.2.29"
+#       memex_host            = "192.168.2.46"
+#       memex_auth_keys       = local.memex_auth_keys
+#       memex_auth_oidc       = local.memex_auth_oidc
+#       bifrost_host          = "192.168.2.50"
+#       memex_version         = "1.2.0"
+#       # Bifrost virtual key issued to Memex (default/memex/bifrost). Memex's
+#       # default/extraction/reflection models all call Bifrost /v1 with this key.
+#       bifrost_key_secret = vault_kv_secret_v2.bifrost_memex_key.path
+#     }
+#   )
+#   # Deploy Memex only after its Bifrost key exists in Vault.
+#   depends_on = [postgresql_database.database, vault_kv_secret_v2.bifrost_memex_key]
+# }
 
 ### Bifrost — LLM gateway: load-balances two Ollama Cloud keys, falls back to Gemini (ADR-001)
 resource "nomad_job" "bifrost" {
@@ -542,10 +533,16 @@ resource "nomad_job" "bifrost" {
       # provisioned in database.tf and the creds stored at default/bifrost/db.
       bifrost_postgres_host = data.consul_service.postgres.service[0].node_address
       bifrost_db_secret     = vault_kv_secret_v2.bifrost_db_credentials.path
+      # embark as a custom OpenAI-compatible provider, reached as
+      # "embark/embedding". Not user-facing: embark's firewall admits cluster
+      # nodes only, so Bifrost is how anything gets embeddings.
+      embark_host       = "192.168.2.46"
+      embark_key_secret = vault_kv_secret_v2.bifrost_embark_key.path
     }
   )
-  # Bifrost migrates its config_store schema on startup, so the DB must exist first.
-  depends_on = [postgresql_database.database]
+  # Bifrost migrates its config_store schema on startup, so the DB must exist
+  # first. The embark key must exist before the provider template renders.
+  depends_on = [postgresql_database.database, vault_kv_secret_v2.bifrost_embark_key]
 }
 
 # Admin creds the bifrost provider authenticates with and Bifrost itself reads
@@ -590,32 +587,40 @@ resource "null_resource" "bifrost_ready" {
   }
 }
 
-# Hermes virtual key: allow-all on ollama + gemini. allowed_models=["*"] is the
+# Hermes virtual key: allow-all on ollama + gemini + embark. allowed_models=["*"] is the
 # wildcard (Bifrost IsUnrestricted); key_ids=["*"] allows all upstream keys.
 # Note: the wildcard does NOT bypass Bifrost's model catalog — a requested model
 # must still exist in the catalog for the provider (plugins/governance/resolver.go
 # IsModelAllowedForProvider). ollama models not in the catalog 403 as
 # "Model not allowed for this virtual key" regardless of this allowlist.
+# NOTE: keep provider_configs in ALPHABETICAL order by `provider`. The Bifrost
+# API returns this list sorted, but the Terraform provider models it as an
+# ordered list, so any other order fails the post-apply consistency check with
+# "produced an unexpected new value: .provider_configs[N].provider" -- the
+# write lands, the plan errors. Adding "embark" after "ollama"/"gemini" is what
+# first hit it.
 resource "bifrost_virtual_key" "hermes" {
   name = "hermes"
 
   provider_configs = [
-    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
-    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+    { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
 
   depends_on = [null_resource.bifrost_ready]
 }
 
-# Memex virtual key: allow-all on ollama + gemini. Same wildcard semantics as
-# the Hermes key: allowed_models=["*"], key_ids=["*"]. See the Hermes comment
-# for the model-catalog caveat.
+# Memex virtual key: allow-all on ollama + gemini + embark. Same wildcard
+# semantics as the Hermes key: allowed_models=["*"], key_ids=["*"]. See the
+# Hermes comment for the model-catalog caveat.
 resource "bifrost_virtual_key" "memex" {
   name = "memex"
 
   provider_configs = [
-    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
-    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+    { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
 
   depends_on = [null_resource.bifrost_ready]
