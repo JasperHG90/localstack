@@ -50,14 +50,6 @@ locals {
         "allow from 192.168.0.0/16 to any port 4317 proto tcp",
       ]
     }
-    # Memex on jetson_nano
-    memex = {
-      host     = "192.168.2.46"
-      ssh_user = "localstack"
-      rules = [
-        "allow from 192.168.0.0/16 to any port 8000 proto tcp",
-      ]
-    }
     # Hermes on radxa (only HAProxy + Memex can reach it)
     hermes = {
       host     = "192.168.2.50"
@@ -107,20 +99,17 @@ locals {
         "allow from 192.168.2.50 to any port 4318 proto tcp",
       ]
     }
-    # embark on jetson-orin-nano.
-    #
-    # Cluster nodes only: any workload may want embeddings, and which one does
-    # changes as memex moves off this host. Narrower than LAN-wide even though
-    # embark requires an API key, matching how loki and tempo are scoped.
+    # embark on jetson-orin-nano. Two callers, not the cluster: embark is
+    # reached through Bifrost (`embark/embedding`), so radxa is the only node
+    # that dials it and a direct consumer would have to be added here on
+    # purpose. jetson-orin-nano admits itself because its own Consul agent
+    # runs the health check against this address.
     embark = {
       host     = "192.168.2.46"
       ssh_user = "localstack"
       rules = [
-        "allow from 192.168.2.30 to any port 8000 proto tcp",
-        "allow from 192.168.2.29 to any port 8000 proto tcp",
-        "allow from 192.168.2.46 to any port 8000 proto tcp",
-        "allow from 192.168.2.47 to any port 8000 proto tcp",
         "allow from 192.168.2.50 to any port 8000 proto tcp",
+        "allow from 192.168.2.46 to any port 8000 proto tcp",
       ]
     }
     # OCI registry on ubuntu (rpi4b). Single-caller shape: only HAProxy on
@@ -156,6 +145,17 @@ locals {
   }
 }
 
+# ONE-WAY. Each rule is `ufw allow`, run once on create, and there is no
+# destroy provisioner: deleting an entry above destroys the Terraform resource
+# and leaves the rule live on the host. Narrowing a rule set is therefore two
+# steps, and `terraform apply` is only the first -- finish it by hand:
+#
+#   ssh <ssh_user>@<host> sudo ufw status numbered
+#   ssh <ssh_user>@<host> sudo ufw delete <n>     # highest number first
+#
+# The memex entry that used to sit above opened port 8000 LAN-wide on
+# jetson-orin-nano. It outlived the job by a fortnight and silently subsumed
+# every narrower rule embark added to the same port.
 resource "null_resource" "firewall" {
   for_each = local.firewall_rules
 
