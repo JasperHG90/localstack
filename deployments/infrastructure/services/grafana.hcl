@@ -139,12 +139,27 @@ job "grafana" {
             url: http://192.168.2.47:3100
             editable: false
             jsonData:
-              # Turns a trace_id on a log line into a link into Tempo. Loki
-              # writes trace_id as structured metadata for logs it ingests over
-              # OTLP, hence matcherType `label` rather than a regex over the
-              # message body. Logs with no trace_id are unaffected.
+              # Turns a trace_id on a log line into a link into Tempo. Two
+              # matchers, because logs reach Loki by two different roads and
+              # each carries the id somewhere else. Logs with no trace_id are
+              # unaffected by either.
               derivedFields:
+                # Nomad task logs, which is nearly everything here. Alloy tails
+                # the alloc files (`loki.source.file` in alloy.hcl), so the id
+                # is a field inside the JSON body and there is no structured
+                # metadata to match on. Requires the service to render JSON
+                # logs AND to put trace context in them; embark does the first
+                # and not yet the second, so this is armed rather than live.
                 - name: TraceID
+                  matcherType: regex
+                  matcherRegex: '"trace_id":\s*"([a-f0-9]{32})"'
+                  datasourceUid: tempo
+                  url: "$${__value.raw}"
+                # Logs ingested over OTLP, where Loki lifts trace_id out of the
+                # record into structured metadata and it never appears in the
+                # body. Nothing ships this way today; kept so that turning on
+                # an OTLP log path is not also a Grafana change.
+                - name: TraceID (OTLP)
                   matcherType: label
                   matcherRegex: trace_id
                   datasourceUid: tempo
