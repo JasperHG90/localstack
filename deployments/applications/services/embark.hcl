@@ -191,15 +191,7 @@ ${models_list}
         # backend is a collector change rather than a redeploy of every
         # producer.
         #
-        # OFF until that collector exists. Today's Alloy is the log shipper
-        # only and runs no OTLP receiver, so every export attempt fails. It
-        # does not stop embark serving, but the exporter retries about every
-        # five seconds and each failure is an error-level line that Alloy
-        # ships to Loki, so leaving it on fills the log with the fact that
-        # tracing is not wired up yet. Flip to "true" with
-        # O1-observability-otlp-llm-routing; the endpoint below is already
-        # right.
-        EMBARK_TELEMETRY__ENABLED       = "false"
+        EMBARK_TELEMETRY__ENABLED       = "true"
         EMBARK_TELEMETRY__OTLP_ENDPOINT = "${otlp_endpoint}"
         EMBARK_TELEMETRY__SERVICE_NAME  = "embark"
       }

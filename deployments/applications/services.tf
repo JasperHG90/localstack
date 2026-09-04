@@ -330,10 +330,6 @@ locals {
 }
 
 ### Runs on jetson-orin-nano, the node memex used to hold.
-###
-### The telemetry endpoint below points at a node-local OTLP collector that
-### does not exist yet: today's Alloy ships logs only and runs no receiver, so
-### spans go nowhere until O1-observability-otlp-llm-routing lands.
 resource "nomad_job" "embark" {
   jobspec = templatefile(
     "${path.module}/services/embark.hcl",
@@ -361,8 +357,11 @@ resource "nomad_job" "embark" {
       config_toml   = file("${path.module}/services/embark/config.toml")
 
       # Node-local Alloy, not Tempo directly: embark should not have to know
-      # where the trace backend lives.
-      otlp_endpoint = "http://127.0.0.1:4317"
+      # where the trace backend lives. 4319, not 4317: Alloy's receiver cannot
+      # use the default port, because tempo and phoenix already hold it on
+      # their own nodes and Alloy is a system job. See its `network` block in
+      # deployments/infrastructure/services/alloy.hcl.
+      otlp_endpoint = "http://127.0.0.1:4319"
       redis_host    = "192.168.2.50"
     }
   )

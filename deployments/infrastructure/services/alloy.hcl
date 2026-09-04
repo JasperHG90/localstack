@@ -8,6 +8,19 @@ job "alloy" {
       port "http" {
         static = 12345
       }
+
+      # OTLP ingest, NOT on 4317/4318. Those are taken on two nodes already --
+      # tempo binds them on rpi5 and phoenix on orangepi4a -- and this is a
+      # system job, so claiming them would fail placement on exactly those two
+      # nodes and silently stop shipping their logs. Declared static so Nomad
+      # keeps enforcing that, rather than leaving two jobs to race for a bind.
+      port "otlp_grpc" {
+        static = 4319
+      }
+
+      port "otlp_http" {
+        static = 4320
+      }
     }
 
     task "alloy" {
@@ -40,7 +53,7 @@ job "alloy" {
           "--disable-reporting",
           "/local/config.alloy",
         ]
-        ports        = ["http"]
+        ports        = ["http", "otlp_grpc", "otlp_http"]
         network_mode = "host"
         volumes = [
           "/var/log:/var/log:ro",
@@ -138,6 +151,43 @@ job "alloy" {
         loki.source.file "nomad_alloc" {
           targets    = discovery.relabel.nomad_alloc.output
           forward_to = [loki.write.default.receiver]
+        }
+
+        // ---- OTLP traces ----
+        // Bound to loopback on purpose. A workload traces to 127.0.0.1 and
+        // never learns where Tempo lives, so moving or replacing the trace
+        // backend is a change here rather than a redeploy of every producer.
+        // Loopback also means no firewall rule: nothing off-node can reach it.
+        otelcol.receiver.otlp "default" {
+          grpc {
+            endpoint = "127.0.0.1:4319"
+          }
+
+          http {
+            endpoint = "127.0.0.1:4320"
+          }
+
+          output {
+            traces = [otelcol.processor.batch.default.input]
+          }
+        }
+
+        otelcol.processor.batch "default" {
+          output {
+            traces = [otelcol.exporter.otlp.tempo.input]
+          }
+        }
+
+        otelcol.exporter.otlp "tempo" {
+          client {
+            endpoint = "192.168.2.47:4317"
+
+            // Tempo's OTLP listener is plaintext gRPC on the LAN, the same
+            // shape as the Loki push above.
+            tls {
+              insecure = true
+            }
+          }
         }
         EOF
 
