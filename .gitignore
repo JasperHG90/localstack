@@ -28,3 +28,6 @@ apm_modules/
 # about a run, not content: ~900KB of rendered HTML that is stale the moment
 # the next run finishes.
 cli/snapshot_report.html
+
+# Byte-compiled helpers under scripts/ (importing one for a test leaves these).
+__pycache__/

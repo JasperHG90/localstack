@@ -36,7 +36,8 @@ unseal_vault:
 # Break-glass: join the Vault `admin` group for an incident, and leave after.
 #
 # `admin` membership is deliberately outside Terraform
-# (deployments/infrastructure/roles.tf, external_member_entity_ids = true), so
+# (deployments/infrastructure/identity.tf, external_member_entity_ids = true),
+# so
 # nothing plans it and nothing reminds you to leave. docs/cluster-roles.md is
 # the long form.
 #

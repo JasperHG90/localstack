@@ -26,7 +26,7 @@ fixes are listed in its verdict and are **implementation work, not optional**.
 **A stolen `localstack` session file: run `localstack logout` first.**
 That alone ends all three credentials, by cascade, and needs no root. If the file is gone, a revoke by accessor does the same — also without root, since `developer` can grant itself `auth/token/revoke-accessor`. Rotating the operator password does nothing: `secret/default/vault/operator` is
 the KV *record*, while the credential lives at `auth/userpass/users/operator`
-(`auth_userpass.tf:29`). And the holder of a stolen session has `developer`,
+(`identity.tf`). And the holder of a stolen session has `developer`,
 which grants `auth/userpass/users/*` and `identity/*` — so they rotate it back
 or mint a second identity. Measured 2026-08-01.
 
