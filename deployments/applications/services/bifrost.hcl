@@ -104,12 +104,13 @@ EOF
       #     services/embark/models.json -- "embark/embedding" and
       #     "embark/reranker" today.
       #
-      #     Bifrost's own rerank schema takes `documents` as OBJECTS, not
-      #     strings: {"documents":[{"text":"..."}]} returns 200, while
-      #     {"documents":["..."]} is rejected before it reaches embark with a
-      #     flat 400 "Invalid request payload" that names no field. Measured
-      #     against this deployment. The reranker returns raw logits, so a
-      #     negative relevance_score is normal and not an error.
+      #     Bifrost's rerank schema takes `documents` as either bare strings
+      #     or objects from 2.0.0, which added RerankDocument.UnmarshalJSON.
+      #     Through 1.6.11 it took objects only, and rejected
+      #     {"documents":["..."]} with a flat 400 "Invalid request payload"
+      #     that names no field, before the request reached embark. That
+      #     version boundary is why U7 exists. The reranker returns raw
+      #     logits, so a negative relevance_score is normal and not an error.
       #
       #     allow_private_network is required, not optional. Bifrost 1.5.9
       #     added an SSRF guard that refuses RFC1918 destinations by default,

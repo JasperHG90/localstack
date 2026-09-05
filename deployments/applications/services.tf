@@ -534,7 +534,7 @@ resource "nomad_job" "bifrost" {
     {
       bifrost_hostname = "radxa-dragon-q6a"
       bifrost_host     = "192.168.2.50"
-      bifrost_version  = "1.6.7"
+      bifrost_version  = "2.0.0"
       # Externally seeded in Vault (not Terraform-managed):
       #   vault kv put secret/default/bifrost/ollama-personal API_KEY=...
       #   vault kv put secret/default/bifrost/ollama-xebia    API_KEY=...

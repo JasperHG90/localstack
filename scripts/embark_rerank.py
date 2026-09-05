@@ -113,14 +113,14 @@ def rerank(
 ) -> tuple[list[dict[str, Any]], float]:
     """Return (results ordered best first, elapsed seconds).
 
-    Bifrost requires documents as objects carrying a `text` field. Passing
-    bare strings, which embark itself accepts, is rejected by the gateway
-    with a bare "Invalid request payload" and no routing information.
+    Documents go as bare strings, the shape OpenViking's OpenAI-compatible
+    rerank clients send. Bifrost took only the object form through 1.6.11
+    and normalizes both from 2.0.0.
     """
     payload: dict[str, Any] = {
         "model": MODEL,
         "query": query,
-        "documents": [{"id": str(i), "text": d} for i, d in enumerate(documents)],
+        "documents": documents,
     }
     if top_n is not None:
         payload["top_n"] = top_n
