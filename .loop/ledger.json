@@ -2327,6 +2327,200 @@
           "when": "2026-09-05"
         }
       ]
+    },
+    "OV1-openviking-service": {
+      "slug": "OV1-openviking-service",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "openviking",
+      "dependencies": [
+        "U7-upgrade-bifrost-2x"
+      ],
+      "priority": 25,
+      "summary": "Stand up OpenViking on the cluster: a derived image layering ov-postgres onto ghcr.io/volcengine/openviking pinned at v0.4.17.1, pgvector in the existing `openviking` Postgres database, the existing `openviking` MinIO bucket for AGFS blobs, embedding and rerank through Bifrost as embark/embedding at dimension 768 and embark/reranker, VLM through Bifrost's ollama provider, and browser auth via a dedicated Vault OIDC client whose ID token oauth2-proxy forwards to an OpenViking running auth_mode=oidc. Rerank through Bifrost requires the gateway at 2.0.0 or newer, which is why this ticket depends on U7-upgrade-bifrost-2x: the deployed 1.6.7 rejects the plain-string documents every OpenAI-compatible OpenViking rerank client sends. One of the operator's stated requirements does not survive contact with the code and is raised as a fork rather than settled: MinIO workload identity is unreachable, because OpenViking's S3 config validator demands a static access_key/secret_key pair and the Rust client hard-codes session_token=None.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "openviking",
+        "postgres",
+        "pgvector",
+        "minio",
+        "bifrost",
+        "embark",
+        "rerank",
+        "oidc",
+        "oauth2-proxy",
+        "vault",
+        "nomad",
+        "terraform",
+        "haproxy",
+        "docker"
+      ],
+      "stub": false,
+      "premise": {
+        "Q1": "MinIO workload identity is unreachable at OpenViking v0.4.17.1, so blob storage uses the existing openviking MinIO user's static key from secret/data/default/openviking/minio and NO minio_iam_policy named openviking is created; the premise this rests on is that access_key and secret_key are mandatory for backend s3, session_token is a forbidden extra key, backend is restricted to local|s3|memory, and the Rust client passes session_token=None, so no config route reaches the SDK default chain. A deliberate step back from the cluster's keyless direction, forced rather than chosen",
+        "Q2": "OpenViking's openai and cohere rerank clients each build their own flat body and both send documents as a list of plain strings, which Bifrost 1.6.7 rejects with a flat 400 before the request reaches embark; the litellm client hands the same list to a third-party library whose wire output was not measured, and the vikingdb client does wrap each document as an object but signs for Volcengine's own host and cannot be aimed at Bifrost. Bifrost 2.0.0 accepts a bare string in RerankDocument.UnmarshalJSON, which removes the incompatibility, so the operator resolved this fork by upgrading the gateway rather than bypassing it",
+        "Q3": "OpenViking's auth_mode selects exactly one plugin with no API-key fallback, and Vault's lab provider offers only the authorization_code grant, so nothing headless can authenticate; this ticket therefore ships browser access through oauth2-proxy alone and defers agent access to its own ticket, for which auth_mode trusted is the named starting point",
+        "Q4": "the openviking schema is adopted as it stands because ov_collections and ov_indexes are empty and already carry ov-postgres v0.2.0's column shapes with its three helper functions installed, so first run finds what it would have created; the five dbg_fts* schemas are dropped by hand in an operator-run step and never from Terraform, so no apply carries a live DROP against the vector store's database",
+        "Q5": "vlm is left unset in the first deployment because no catalogued vision model has been chosen and Bifrost 403s an uncatalogued model for a provider whatever the virtual key allows; OpenViking's VLM config validates only when one of its fields is set, so an absent block is legal",
+        "Q7": "R15's static half becomes measurable in this ticket via scripts/check_openviking_config.py and its pre-commit hooks, which sections 7 and 8 already name conditionally so no bound section changes; its runtime half is scored by an explicitly LABELLED proxy whose eval row must state that it does not measure whether a live Vault token is accepted, whether a foreign audience is refused, or whether any call reaches embark or Bifrost"
+      },
+      "measured_against": {
+        "Q1": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "resolution (a) of section 11 Q1; decided by the coordinating agent under an explicit grant of full loop control from JasperHG90, operator offline",
+          "note": "falsified if upstream makes access_key/secret_key optional and threads an STS session token, or if any config route to the Rust default credential chain is found; either would make the keyless form reachable and this decision wrong"
+        },
+        "Q2": {
+          "kind": "probe",
+          "version": "OpenViking v0.4.17.1 source, live Bifrost 1.6.7 on radxa, Bifrost transports/v2.0.0 source",
+          "ref": "openviking/models/rerank/openai_rerank.py lines 75-102, cohere_rerank.py lines 64-70, volcengine_rerank.py lines 107 and 122; POST /v1/rerank against 192.168.2.50 port 8080; core/schemas/rerank.go lines 26-41 at tag transports/v2.0.0 against the same file at transports/v1.6.7",
+          "note": "object documents 200, string documents 400 Invalid request payload with empty routing_info on 1.6.7; transports/v2.0.0 adds RerankDocument.UnmarshalJSON accepting a bare string, which transports/v1.6.7 has not"
+        },
+        "Q3": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "resolution (a) of section 11 Q3; decided by the coordinating agent under an explicit grant of full loop control from JasperHG90, operator offline",
+          "note": "falsified if OpenViking gains a second concurrent auth path or Vault's lab provider gains a non-interactive grant, either of which would let agents in without a follow-up ticket"
+        },
+        "Q4": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "resolution of section 11 Q4; decided by the coordinating agent under an explicit grant of full loop control from JasperHG90, operator offline",
+          "note": "falsified if the registry tables gain rows before deployment or if ov-postgres changes its DDL so the existing columns no longer match, either of which turns adoption from a no-op into a migration"
+        },
+        "Q5": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "resolution of section 11 Q5; decided by the coordinating agent under an explicit grant of full loop control from JasperHG90, operator offline",
+          "note": "falsified if a vision model is added to Bifrost's ollama catalog and chosen, which turns this from a deferral into an omission"
+        },
+        "Q7": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "resolution widen-surface plus declared-proxy of section 11 Q7; decided by the coordinating agent under an explicit grant of full loop control from JasperHG90, operator offline",
+          "note": "falsified if the repo gains a harness that exercises a deployed service, which would make the runtime half directly measurable and the declared proxy an unnecessary downgrade; also violated, not falsified, if the eval row ships without the label"
+        }
+      },
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "f6e649477011666e8bec73c3e5b128b60fdc53099d2bef533980847c1f72b5ba",
+          "after_plan": "d5b7d92a1aefa1d483d869442e2ec4bb86626ed73a9f9555644db10d7dd790e7",
+          "before_scope": "558c7f6adeca86a9bdc9250a5d6a789ae296a130718ad10dbfb4ccefad2b10cc",
+          "after_scope": "fbda2b19ccde1a0944a1d6a093e6406e9037a3848cb3da4ef2bb1043ba11d689",
+          "sections": [
+            "front-matter",
+            "premises"
+          ],
+          "reason": "Cycle-3 required fixes 1 and 2: removed the false 'shares that builder' mechanism claim from P2 and the matching clause from front-matter premise.Q2. Both one-clause wording corrections the verdict specified, confined to fix_sections (front-matter, premises). Reviewer rated severity low and confirmed no requirement, subticket or dependency moves; the operative conclusion was independently verified. verify-plan valid.",
+          "counter_signer": "claude-opus-5 (delegated by JasperHG90, operator offline)",
+          "when": "2026-09-05T15:41:25Z"
+        }
+      ]
+    },
+    "U7-upgrade-bifrost-2x": {
+      "slug": "U7-upgrade-bifrost-2x",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "upgrade",
+      "dependencies": [],
+      "priority": 30,
+      "summary": "Bump the Bifrost gateway pin from 1.6.7 to 2.0.0 so its rerank endpoint accepts `documents` as a list of bare strings. 2.0.0 is the first release carrying `RerankDocument.UnmarshalJSON`; no 1.6.x backport exists. OV1-openviking-service depends on this ticket (`depends_on = [\"U7-upgrade-bifrost-2x\"]`) and holds the embark bypass in reserve as a documented fallback if this one stalls. Two lines of value change plus two now-false comments; the weight is in proving the Terraform bifrost provider still plans clean against a 2.0.0 gateway and in the outage window for Hermes, Memex and embark.",
+      "relay_block_nonfork": null,
+      "tags": [
+        "bifrost",
+        "upgrade",
+        "terraform",
+        "nomad",
+        "rerank",
+        "embark",
+        "postgres",
+        "openviking"
+      ],
+      "stub": false,
+      "premise": {
+        "Q0": "Bifrost manages its own config_store schema migration at startup; operator accepted this without independent verification, and specifically did not verify whether 1.6.7 can read a 2.0.0-migrated schema",
+        "Q1": "the three post-upgrade auth behaviors that no repo file produces (inference auth enforced, /metrics behind basic auth, no unauthenticated admin path) are worth a new gated producer rather than a labelled proxy, because two of the three are security posture",
+        "Q2": "the Terraform bifrost provider at the locked 0.1.1 decodes a 2.0.0 gateway's virtual-key responses without a version bump",
+        "Q3": "setup_token stays absent from config.json because a config_store that already holds an admin never reaches the first-admin path",
+        "Q4": "sending documents as bare strings only is sufficient regression cover, because 2.0.0 normalizes the bare-string and object forms into the same struct",
+        "Q5": "an unattended apply is acceptable because no agent traffic is expected through the gateway during this session"
+      },
+      "measured_against": {
+        "Q0": {
+          "kind": "operator-decision",
+          "version": "2026-09-05",
+          "ref": "deployments/applications/services.tf:562 states the startup migration; decision relayed by the coordinator during planning",
+          "note": "downgrade-readability was raised as an open uncertainty and deliberately closed by operator decision rather than by probe. If a rollback ever fails, this is the premise that broke."
+        },
+        "Q1": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "coordinating agent under an explicit grant of full loop control from JasperHG90, operator offline; resolved widen-surface, adding scripts/bifrost_smoke.py to the code surface",
+          "note": "the unmeasurable-requirement fork. Chosen over declared-proxy because a /health poll measures process start, not auth posture. If the smoke script is ever quietly dropped, this requirement silently reverts to unmeasured."
+        },
+        "Q2": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "coordinating agent, same grant; provider constraint at deployments/applications/providers.tf:27-30 stays ~>0.1.0, resolving to 0.1.1",
+          "note": "rests on P7, which is structural evidence only. A plan/apply failure on decode makes this the premise that broke, and the fix is a follow-up provider bump with the failure in hand."
+        },
+        "Q3": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "coordinating agent, same grant; setup_token stays out of the config.json at deployments/applications/services/bifrost.hcl:121-195",
+          "note": "rests on the store already holding an admin (P8 lists four virtual keys behind admin basic auth). Q1 smoke assertion 3 is what would catch it if wrong."
+        },
+        "Q4": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "coordinating agent, same grant; scripts/embark_rerank.py:123 sends bare strings only",
+          "note": "the object form stays valid upstream and is simply no longer exercised here."
+        },
+        "Q5": {
+          "kind": "agent-decision",
+          "version": "2026-09-05",
+          "ref": "coordinating agent, same grant, operator offline and unreachable for the apply window",
+          "note": "no-traffic is an EXPECTATION, not a guarantee. Nothing in this repo reserves the gateway or drains it, so an in-flight Hermes or Memex turn during the restart fails rather than retries."
+        }
+      },
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "8acfcf42aed300b419eeb751cb4a05c872682b53e93dd9a1427fa7033ff5443e",
+          "after_plan": "656b5cf3ed76bcc7a3145ec0af70a01958fc4c80a8820514fbe49d4cf14a0c73",
+          "before_scope": "22188ad8a36236384c9ae557c5e9259e5914133e2b9ebbce496c263b13441c1f",
+          "after_scope": "fd6e321c0b4f17e5c74928763c13257394b960d11fc5f1728d40fd0ed51ea88a",
+          "sections": [
+            "front-matter",
+            "5",
+            "8",
+            "premises"
+          ],
+          "reason": "Citation-only corrections the verdict itself specified (5 anchors), plus the P16 SSRF premise promotion the verdict requested and had already assessed as holding. No approach change; verify-plan valid.",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-05T15:28:54Z"
+        }
+      ]
     }
   }
 }
