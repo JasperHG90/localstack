@@ -2188,10 +2188,13 @@
     },
     "L5-landing-registry-tab": {
       "slug": "L5-landing-registry-tab",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "cap-exceeded",
+        "reason": "Code complete and gates green on branch loop/L5-landing-registry-tab; both images pushed (registry-ui-frontend/backend:0.1.0). Blocked because review_cycles hit the cap of 3 AND the last adversarial pass was invalidated: Bash edits moved the tree while it read, so its verdict binds to a tree that no longer exists. All its findings ARE fixed (nginx listened on 8000 while the job allocates 8002; main.py/config.py had lost all coverage in the split, now 55 tests; the oauth2-proxy guard covered only dash's jobspec, now both, verified by planting an exemption). Needs one clean review cycle of the current tree, then commit. WORKTREE DELIBERATELY NOT TORN DOWN - it holds the whole implementation."
+      },
       "commit_sha": null,
       "review_verdict": null,
       "review_entry_tree": null,
