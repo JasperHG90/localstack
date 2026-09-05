@@ -214,6 +214,29 @@ resource "nomad_dynamic_host_volume" "registry_ui_data" {
   }
 }
 
+### OpenViking's workspace and RAGFS's local scratch.
+### The vectors live in Postgres and the blobs in MinIO, so this is working
+### state rather than the store itself.
+resource "nomad_dynamic_host_volume" "openviking_data" {
+  name      = "openviking_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "10 GiB"
+  capacity_min = "1 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "radxa-dragon-q6a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 resource "nomad_dynamic_host_volume" "nats_data" {
   name      = "nats_data"
   namespace = "default"
@@ -384,14 +407,16 @@ locals {
     # oauth2-proxy on radxa-dragon-q6a (L1). Only HAProxy (firebat) calls it
     # directly; no direct LAN access is needed since the gate's whole point
     # is that traffic goes through HAProxy first.
-    # Two proxies, two ports: 4180 gates dash, 4181 gates registry-ui. Both
-    # admit HAProxy's node alone, which is why the edge is the only route in.
+    # Three proxies, three ports: 4180 gates dash, 4181 registry-ui, 4182
+    # OpenViking. All admit HAProxy's node alone, which is why the edge is the
+    # only route in.
     oauth2_proxy = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
       rules = [
         "allow from 192.168.2.30 to any port 4180 proto tcp",
         "allow from 192.168.2.30 to any port 4181 proto tcp",
+        "allow from 192.168.2.30 to any port 4182 proto tcp",
       ]
     }
   }
@@ -559,6 +584,24 @@ resource "nomad_job" "oauth2_proxy_registry_ui" {
       # EXACTLY rather than as a prefix.
       frontend_upstream = "http://127.0.0.1:8002"
       backend_upstream  = "http://127.0.0.1:8003/api/registry"
+    }
+  )
+}
+
+### OV1: the third proxy, gating OpenViking. Unlike its two siblings it
+### forwards the Vault ID token upstream, because OpenViking validates that
+### same token itself.
+resource "nomad_job" "oauth2_proxy_openviking" {
+  jobspec = templatefile(
+    "${path.module}/services/oauth2-proxy-openviking.hcl",
+    {
+      oidc_secret   = vault_kv_secret_v2.oauth2_proxy_openviking_oidc_client.path
+      cookie_secret = vault_kv_secret_v2.oauth2_proxy_openviking_cookie_secret.path
+      redirect_url  = local.openviking_redirect_url
+
+      # OpenViking serves its API and Studio from one port, colocated with
+      # this proxy on radxa-dragon-q6a, so a single loopback upstream.
+      upstream = "http://127.0.0.1:1933"
     }
   )
 }

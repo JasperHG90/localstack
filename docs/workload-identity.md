@@ -269,7 +269,10 @@ work. Tempo (R9), loki and registry (R13) have since been moved off theirs,
 and each keeps its key provisioned as a rollback path. memex is the only one
 of those four still using one. Other holders exist outside this set: the
 `backup-minio` job runs on the root credential, and `storage.tf` still mints
-keys for buckets no job consumes.
+keys for buckets no job consumes. `openviking` is no longer one of those: its
+job reads that key deliberately, because OpenViking's config layer makes
+`access_key` and `secret_key` mandatory for an s3 backend and its S3 client
+drops the session token STS credentials require. See `docs/openviking.md`.
 
 **What MinIO trusts.** Three env vars on the MinIO job
 (`deployments/infrastructure/services/minio.hcl`) define the `NOMAD` target:

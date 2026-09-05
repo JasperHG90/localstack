@@ -22,6 +22,7 @@ from pathlib import Path
 JOBSPECS = (
     Path("deployments/infrastructure/services/oauth2-proxy.hcl"),
     Path("deployments/infrastructure/services/oauth2-proxy-registry-ui.hcl"),
+    Path("deployments/infrastructure/services/oauth2-proxy-openviking.hcl"),
 )
 
 # Named in full, never matched as a `SKIP` substring:

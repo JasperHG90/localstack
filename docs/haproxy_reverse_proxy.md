@@ -23,12 +23,16 @@ to the HTTPS URL.
 | `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
 | `dash.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4180 |
 | `registry-ui.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4181 |
+| `openviking.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4182 |
 
 `phoenix` sits behind HTTP basic auth. `bifrost` authenticates
 with its own native `governance.auth_config` (admin creds from Vault), so
-HAProxy no longer gates it. `dash` and `registry-ui` each sit behind their own oauth2-proxy
-instance, on 4180 and 4181, both gated by Vault
-SSO with flat any-authenticated-user access. `grafana` reaches that same Vault
+HAProxy no longer gates it. `dash`, `registry-ui` and `openviking` each sit
+behind their own oauth2-proxy instance, on 4180, 4181 and 4182, all gated by
+Vault SSO with flat any-authenticated-user access. `openviking`'s proxy
+differs from the other two: it forwards the Vault ID token upstream, because
+OpenViking validates that same token itself rather than trusting the proxy.
+`grafana` reaches that same Vault
 SSO through its own built-in OIDC client, with no proxy in between, and keeps
 its local admin account as the way in when Vault is down. The rest are open to
 anyone who reaches the edge.

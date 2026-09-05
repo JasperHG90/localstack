@@ -39,7 +39,7 @@ All of it lives in `deployments/infrastructure/`:
 | File | Contents |
 | --- | --- |
 | `identity.tf` | The `userpass` auth mount, the operator user, the identity entity and alias that bind a login to an identity, and the `developer`, `admin` and app-user groups. The entity's `email` metadata is what the `email` scope reads |
-| `oidc.tf` | The OIDC signing key, the shared `groups` and `email` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (nomad, memex, oauth2-proxy, grafana) |
+| `oidc.tf` | The OIDC signing key, the shared `groups` and `email` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (nomad, memex, oauth2-proxy, grafana, openviking) |
 | `secrets.tf` | Two KV2 writes: the operator password, and the smoke client's credentials |
 
 Two secrets land in KV2:

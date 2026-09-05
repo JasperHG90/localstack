@@ -230,6 +230,46 @@ resource "vault_kv_secret_v2" "bifrost_db_credentials" {
   })
 }
 
+### OpenViking
+###
+### All three under the job's own prefix. The nomad-workloads role grants a
+### job read only on secret/data/<namespace>/<job_id>/*, so a path belonging
+### to another job renders 403 and the task never starts. Same copy-under-the
+### -consumer shape as bifrost_hermes_key and embark_registry_credentials.
+
+resource "vault_kv_secret_v2" "openviking_db_credentials" {
+  mount = var.secret_mount
+  name  = "default/openviking/db"
+  data_json = jsonencode({
+    username = postgresql_role.role["openviking"].name
+    password = random_password.password["openviking"].result
+  })
+}
+
+### The static MinIO key. OpenViking cannot use workload identity: its config
+### layer makes access_key and secret_key mandatory for an s3 backend, and the
+### Rust client behind AGFS drops the session token STS credentials require.
+### Deliberately no minio_iam_policy named `openviking` in storage.tf, which
+### would read as live while granting nothing.
+resource "vault_kv_secret_v2" "openviking_minio_credentials" {
+  mount = var.secret_mount
+  name  = "default/openviking/minio"
+  data_json = jsonencode({
+    access_key = minio_accesskey.users["openviking"].access_key
+    secret_key = minio_accesskey.users["openviking"].secret_key
+  })
+}
+
+### The Bifrost virtual key OpenViking calls for embeddings and rerank.
+resource "vault_kv_secret_v2" "bifrost_openviking_key" {
+  mount = var.secret_mount
+  name  = "default/openviking/bifrost"
+  data_json = jsonencode({
+    API_KEY = bifrost_virtual_key.openviking.value
+  })
+  depends_on = [bifrost_virtual_key.openviking]
+}
+
 resource "vault_kv_secret_v2" "minio_credentials" {
   for_each = minio_accesskey.users
   mount    = var.secret_mount

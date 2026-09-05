@@ -1,0 +1,48 @@
+# OpenViking plus the Postgres vector backend, which the upstream image
+# cannot reach on its own.
+#
+# Build and push with the justfile beside this file:
+#
+#   just build
+#   just push
+#
+# `storage.vectordb.backend` names `ov_postgres.adapter.PgVectorCollectionAdapter`
+# as a dotted path. OpenViking resolves it with importlib at startup, so the
+# package must be importable by the interpreter that runs the server or the
+# backend simply does not exist. Neither ov-postgres nor psycopg is in the
+# upstream image.
+#
+# BASE_IMAGE is passed by the justfile from the `openviking_base_image` line
+# in services.tf, so what Terraform deploys and what this builds cannot drift.
+
+ARG BASE_IMAGE=ghcr.io/volcengine/openviking:v0.4.17.1
+FROM ${BASE_IMAGE}
+
+# The venv at /app/.venv ships no pip and the image has no uv, so the system
+# interpreter installs into the venv's site-packages with --target. Same shape
+# as services/embark/Dockerfile.embark.
+#
+# ov-postgres is not on PyPI and installs only from a git URL. The tag is
+# pinned: `main` would make the image non-reproducible.
+#
+# NO `#subdirectory=` fragment. The package README documents the monorepo form
+# (`packages/ov-postgres`), which is correct for `main` but not for this tag:
+# at ov-postgres-v0.2.0 the repository holds `src/` and a root pyproject.toml
+# declaring `name = "ov-postgres"`. The fragment fails the install outright.
+#
+# --no-deps, the same flag embark's Dockerfile documents at :32-33. Without it
+# pip resolves ov-postgres's dependency tree and reinstalls openviking itself
+# plus ~160 packages over the base image's locked venv, which un-pins an image
+# whose whole purpose is a reproducible pin. ov_postgres needs openviking and
+# pydantic, which the base image carries, plus psycopg and psycopg_pool, which
+# RUN #2 supplies. Do not strip `pool` from RUN #2 as redundant: the adapter
+# imports ConnectionPool at startup.
+RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
+    --target /app/.venv/lib/python3.13/site-packages \
+    "ov-postgres @ git+https://github.com/JasperHG90/openviking_extensions@ov-postgres-v0.2.0"
+
+# psycopg's binary wheel, so no libpq or compiler is needed at runtime, and
+# the pool the adapter opens per collection.
+RUN /usr/local/bin/python3.13 -m pip install --upgrade \
+    --target /app/.venv/lib/python3.13/site-packages \
+    "psycopg[binary,pool]==3.2.3"

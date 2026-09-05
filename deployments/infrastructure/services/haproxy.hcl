@@ -107,6 +107,7 @@ frontend https_in
     acl is_dash       hdr(host) -i dash.lab.orangecluster.nl
     acl is_registry   hdr(host) -i registry.lab.orangecluster.nl
     acl is_registryui hdr(host) -i registry-ui.lab.orangecluster.nl
+    acl is_openviking hdr(host) -i openviking.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -120,6 +121,7 @@ frontend https_in
     use_backend dash       if is_dash
     use_backend registry   if is_registry
     use_backend registryui if is_registryui
+    use_backend openviking if is_openviking
 
 frontend stats
     bind *:8404
@@ -182,6 +184,9 @@ backend dash
 
 backend registryui
     server registryui1 192.168.2.50:4181 check
+
+backend openviking
+    server openviking1 192.168.2.50:4182 check
         EOH
         destination = "local/haproxy.cfg"
       }

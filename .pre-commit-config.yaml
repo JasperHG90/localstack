@@ -80,13 +80,28 @@ repos:
         # not run on one.
         entry: python3 scripts/check_oauth2_proxy_guard.py
         language: system
-        files: '^(deployments/infrastructure/services/oauth2-proxy(-registry-ui)?\.hcl|scripts/check_oauth2_proxy_guard\.py)$'
+        files: '^(deployments/infrastructure/services/oauth2-proxy(-registry-ui|-openviking)?\.hcl|scripts/check_oauth2_proxy_guard\.py)$'
         pass_filenames: false
       - id: oauth2-proxy-guard-self-test
         name: oauth2-proxy guard self-test
         entry: python3 scripts/check_oauth2_proxy_guard.py --self-test
         language: system
         files: '^scripts/check_oauth2_proxy_guard\.py$'
+        pass_filenames: false
+      - id: openviking-config-guard
+        name: openviking config holds its measured values
+        # Fires on the jobspec, not just the checker: the config lives in a
+        # Nomad template there, so the commit that would drift the dimension
+        # or the rerank target is a commit to openviking.hcl.
+        entry: python3 scripts/check_openviking_config.py
+        language: system
+        files: '^(deployments/applications/services/openviking\.hcl|scripts/check_openviking_config\.py)$'
+        pass_filenames: false
+      - id: openviking-config-guard-self-test
+        name: openviking config guard self-test
+        entry: python3 scripts/check_openviking_config.py --self-test
+        language: system
+        files: '^scripts/check_openviking_config\.py$'
         pass_filenames: false
       - id: pytest
         name: Pytest (cli/)

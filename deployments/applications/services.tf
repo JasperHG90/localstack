@@ -38,6 +38,14 @@ data "vault_identity_oidc_client_creds" "memex" {
   name = "memex"
 }
 
+### The same cross-root channel for OpenViking. Vault generates the client_id
+### in the infrastructure root; this is its only producer here, and it is what
+### OpenViking validates as `audience`. A literal would be a value nothing
+### keeps in step with the client.
+data "vault_identity_oidc_client_creds" "openviking" {
+  name = "openviking"
+}
+
 ### Firewall rules for application services
 locals {
   firewall_rules = {
@@ -141,6 +149,15 @@ locals {
       host     = "192.168.2.50"
       ssh_user = "radxa"
       rules    = ["allow from 192.168.2.50 to any port 8000 proto tcp"]
+    }
+    # OpenViking on radxa-dragon-q6a, colocated with its oauth2-proxy, which
+    # reaches it over loopback. Single-caller shape, admitting only this same
+    # host: nothing off-node should reach 1933 directly, because that port is
+    # the path that bypasses the proxy's browser login.
+    openviking = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules    = ["allow from 192.168.2.50 to any port 1933 proto tcp"]
     }
   }
 }
@@ -365,6 +382,53 @@ resource "nomad_job" "embark" {
       redis_host    = "192.168.2.50"
     }
   )
+}
+
+### OpenViking — context store for agents, on radxa beside Bifrost.
+###
+### The image is DERIVED: the upstream one carries neither ov-postgres nor
+### psycopg, and storage.vectordb.backend names a dotted import path that
+### OpenViking resolves at startup, so against the upstream image the backend
+### does not exist. Both tags are pinned HERE and read by
+### services/openviking/justfile, so what is built and what is deployed cannot
+### drift. `:latest` is not a pin: it and v0.4.17.1 resolve to one index digest
+### today and need not tomorrow.
+###
+### Built and pushed by hand; see services/openviking/README.md.
+resource "nomad_job" "openviking" {
+  jobspec = templatefile(
+    "${path.module}/services/openviking.hcl",
+    {
+      openviking_hostname = "radxa-dragon-q6a"
+      openviking_host     = "192.168.2.50"
+
+      openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-1"
+
+      postgres_host = data.consul_service.postgres.service[0].node_address
+      minio_host    = data.consul_service.minio.service[0].node_address
+      bifrost_host  = "192.168.2.50"
+
+      openviking_db_secret      = vault_kv_secret_v2.openviking_db_credentials.path
+      openviking_minio_secret   = vault_kv_secret_v2.openviking_minio_credentials.path
+      openviking_bifrost_secret = vault_kv_secret_v2.bifrost_openviking_key.path
+
+      # The audience OpenViking validates. Vault generates this in the
+      # infrastructure root, so the data source above is its only producer.
+      openviking_client_id = data.vault_identity_oidc_client_creds.openviking.client_id
+      vault_oidc_issuer    = local.vault_oidc_issuer
+
+      openviking_hostname_public = "openviking.lab.orangecluster.nl"
+    }
+  )
+
+  # The database must exist before the adapter creates its tables, and the
+  # Bifrost key before the config template renders. No MinIO policy dependency:
+  # this job authenticates with a static key (see secrets.tf).
+  depends_on = [
+    postgresql_database.database,
+    vault_kv_secret_v2.bifrost_openviking_key,
+  ]
 }
 
 ### Dash — the cluster landing page (L3), split into a frontend and a
@@ -640,6 +704,25 @@ resource "bifrost_virtual_key" "memex" {
     { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+  ]
+
+  depends_on = [null_resource.bifrost_ready]
+}
+
+# OpenViking virtual key. Only `embark` is listed: OpenViking calls this
+# gateway for embeddings and rerank, and both are embark models. No gemini or
+# ollama entry, because no VLM is configured (the ticket's Q5) and a provider
+# it never calls is standing permission for nothing.
+#
+# provider_configs stays ALPHABETICAL by `provider`, as the hermes key's
+# comment records: the API returns the list sorted while the Terraform
+# provider models it as ordered, so any other order fails the post-apply
+# consistency check with the write already landed.
+resource "bifrost_virtual_key" "openviking" {
+  name = "openviking"
+
+  provider_configs = [
+    { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
 
   depends_on = [null_resource.bifrost_ready]
