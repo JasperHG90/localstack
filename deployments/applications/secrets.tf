@@ -99,6 +99,20 @@ resource "vault_kv_secret_v2" "embark_registry_credentials" {
   })
 }
 
+### registry-ui's OWN copy of the same registry credential, for the same
+### reason embark needs one: the nomad-workloads role grants a job read only
+### under secret/data/default/<job_id>/*, so job `registry-ui` reading
+### default/registry/auth would 403. Read-only use — it lists repositories
+### and reads manifests and small blobs; it never pushes.
+resource "vault_kv_secret_v2" "registry_ui_credentials" {
+  mount = var.secret_mount
+  name  = "default/registry-ui/registry"
+  data_json = jsonencode({
+    username = "push"
+    password = random_password.registry_push.result
+  })
+}
+
 ### embark's API key, copied under Bifrost's OWN KV prefix so Bifrost can call
 ### embark as a provider. embark ships auth on, and the nomad-workloads role
 ### grants job `bifrost` read only under secret/data/default/bifrost/*, so

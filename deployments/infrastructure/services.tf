@@ -190,6 +190,30 @@ resource "nomad_dynamic_host_volume" "embark_data" {
   }
 }
 
+### registry-ui's cache. Small on purpose: it holds manifest digests and
+### rendered model cards (tens of KB today), never a model layer. It exists
+### so a restart costs no re-walk, since a cards row is keyed by a content
+### digest and can never go stale.
+resource "nomad_dynamic_host_volume" "registry_ui_data" {
+  name      = "registry_ui_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "1 GiB"
+  capacity_min = "100 MiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "radxa-dragon-q6a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 resource "nomad_dynamic_host_volume" "nats_data" {
   name      = "nats_data"
   namespace = "default"
@@ -508,6 +532,28 @@ resource "nomad_job" "oauth2_proxy" {
       # oauth2-proxy.hcl's own OAUTH2_PROXY_UPSTREAMS value.
       dash_frontend_upstream = "http://127.0.0.1:8000"
       dash_backend_upstream  = "http://127.0.0.1:8001/api/status"
+    }
+  )
+}
+
+### A second oauth2-proxy, gating registry-ui on its own hostname. The job
+### above says this pattern is meant to be copied; this is the first copy.
+### Same OIDC client and cookie secret, different redirect URI, different
+### listen port, different upstreams.
+resource "nomad_job" "oauth2_proxy_registry_ui" {
+  jobspec = templatefile(
+    "${path.module}/services/oauth2-proxy-registry-ui.hcl",
+    {
+      oidc_secret   = vault_kv_secret_v2.oauth2_proxy_oidc_client.path
+      cookie_secret = vault_kv_secret_v2.oauth2_proxy_cookie_secret.path
+      redirect_url  = local.registry_ui_redirect_url
+
+      # registry-ui's frontend task (8002) and backend task (8003), both
+      # colocated with this proxy on radxa-dragon-q6a, so loopback. The
+      # backend entry is path-scoped, and a path-scoped upstream matches
+      # EXACTLY rather than as a prefix.
+      frontend_upstream = "http://127.0.0.1:8002"
+      backend_upstream  = "http://127.0.0.1:8003/api/registry"
     }
   )
 }

@@ -418,6 +418,7 @@ resource "vault_identity_oidc_key_allowed_client_id" "memex" {
 ### apart.
 locals {
   oauth2_proxy_redirect_url = "https://dash.lab.orangecluster.nl/oauth2/callback"
+  registry_ui_redirect_url  = "https://registry-ui.lab.orangecluster.nl/oauth2/callback"
 }
 
 resource "vault_identity_oidc_client" "oauth2_proxy" {
@@ -426,6 +427,7 @@ resource "vault_identity_oidc_client" "oauth2_proxy" {
 
   redirect_uris = [
     local.oauth2_proxy_redirect_url,
+    local.registry_ui_redirect_url,
   ]
 
   assignments      = ["allow_all"]

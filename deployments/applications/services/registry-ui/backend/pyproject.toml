@@ -1,0 +1,43 @@
+[project]
+name = "registry-ui"
+version = "0.1.0"
+description = "Registry view for the localstack cluster: ModelKits and container images"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "markdown-it-py>=4.2.0",
+    "starlette>=1.6.0",
+    "uvicorn>=0.52.4",
+]
+
+[project.scripts]
+registry-ui = "registry_ui.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/registry_ui"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "respx>=0.23.1",
+    "ruff>=0.16.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "cluster: hits the live cluster (network, real registry)",
+]
+addopts = "-m 'not cluster'"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

@@ -22,10 +22,12 @@ to the HTTPS URL.
 | `grafana.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 3000 |
 | `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
 | `dash.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4180 |
+| `registry-ui.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4181 |
 
 `phoenix` sits behind HTTP basic auth. `bifrost` authenticates
 with its own native `governance.auth_config` (admin creds from Vault), so
-HAProxy no longer gates it. `dash` sits behind oauth2-proxy, gated by Vault
+HAProxy no longer gates it. `dash` and `registry-ui` each sit behind their own oauth2-proxy
+instance, on 4180 and 4181, both gated by Vault
 SSO with flat any-authenticated-user access. `grafana` reaches that same Vault
 SSO through its own built-in OIDC client, with no proxy in between, and keeps
 its local admin account as the way in when Vault is down. The rest are open to
