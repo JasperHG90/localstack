@@ -400,6 +400,26 @@ resource "nomad_job" "dash" {
   )
 }
 
+### registry-ui — what the cluster registry holds: KitOps ModelKits with
+### their own model cards, and container images. Same two-task split dash
+### uses (a static frontend, a backend that does the reading), and its own
+### job so neither service can take the other down.
+resource "nomad_job" "registry_ui" {
+  jobspec = templatefile(
+    "${path.module}/services/registry-ui.hcl",
+    {
+      registry_ui_frontend_version = "0.1.0"
+      registry_ui_backend_version  = "0.1.0"
+
+      # The edge hostname, not the registry's own port: that port admits
+      # HAProxy's node alone (local.firewall_rules above), and TLS
+      # terminates at the edge.
+      registry_addr        = "https://${local.embark_registry}"
+      registry_auth_secret = vault_kv_secret_v2.registry_ui_credentials.path
+    }
+  )
+}
+
 ### Memex's auth config lives in services/memex/*.json, not inline in the job
 ### template (mirrors the services/hermes/ subfolder pattern), so changing a
 ### key or a grant is a plain-JSON edit. Both locals round-trip their file

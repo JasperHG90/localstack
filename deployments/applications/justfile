@@ -58,6 +58,29 @@ rebuild_dash_backend:
     docker build --pull --platform linux/arm64 -t "${image}" -f services/dash/backend/Dockerfile services/dash/backend
     docker push "${image}"
 
+# Rebuild and push the registry-ui backend image.
+# Tag is read from services.tf so the Dockerfile and Terraform stay in lockstep.
+rebuild_registry_ui_backend:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tag=$(grep -E '^\s*registry_ui_backend_version\s*=' services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    image="ghcr.io/jasperhg90/registry-ui-backend:${tag}"
+    echo ">> building ${image}"
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    docker build --pull --platform linux/arm64 -t "${image}" -f services/registry-ui/backend/Dockerfile services/registry-ui/backend
+    docker push "${image}"
+
+# Rebuild and push the registry-ui frontend image (static files only).
+rebuild_registry_ui_frontend:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tag=$(grep -E '^\s*registry_ui_frontend_version\s*=' services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    image="ghcr.io/jasperhg90/registry-ui-frontend:${tag}"
+    echo ">> building ${image}"
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    docker build --pull --platform linux/arm64 -t "${image}" -f services/registry-ui/frontend/Dockerfile services/registry-ui/frontend
+    docker push "${image}"
+
 # Rebuild and push the dash frontend image (static files only).
 # Tag is read from services.tf so the Dockerfile and Terraform stay in lockstep.
 rebuild_dash_frontend:

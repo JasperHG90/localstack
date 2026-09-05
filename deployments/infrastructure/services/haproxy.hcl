@@ -106,6 +106,7 @@ frontend https_in
     acl is_bifrost    hdr(host) -i bifrost.lab.orangecluster.nl
     acl is_dash       hdr(host) -i dash.lab.orangecluster.nl
     acl is_registry   hdr(host) -i registry.lab.orangecluster.nl
+    acl is_registryui hdr(host) -i registry-ui.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -118,6 +119,7 @@ frontend https_in
     use_backend bifrost    if is_bifrost
     use_backend dash       if is_dash
     use_backend registry   if is_registry
+    use_backend registryui if is_registryui
 
 frontend stats
     bind *:8404
@@ -177,6 +179,9 @@ backend bifrost
 
 backend dash
     server dash1 192.168.2.50:4180 check
+
+backend registryui
+    server registryui1 192.168.2.50:4181 check
         EOH
         destination = "local/haproxy.cfg"
       }
