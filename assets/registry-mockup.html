@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>localstack registry</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: oklch(97% 0.005 340);
+    --panel: oklch(99% 0.003 340);
+    --panel-raised: oklch(95.5% 0.006 340);
+    --border: oklch(88% 0.01 340);
+    --border-soft: oklch(92% 0.008 340);
+    --text: oklch(24% 0.012 340);
+    --text-muted: oklch(45% 0.014 340);
+    --text-faint: oklch(58% 0.012 340);
+
+    --accent: #592742;
+    --accent-deep: #592742;
+    --logo-window: oklch(97% 0.016 80);
+
+    --up: oklch(48% 0.14 150);
+    --degraded: oklch(52% 0.15 75);
+    --up-bg: oklch(48% 0.14 150 / 0.1);
+    --degraded-bg: oklch(52% 0.15 75 / 0.1);
+    --degraded-border: oklch(52% 0.15 75 / 0.35);
+
+    /* layer materials: one hue per Kitfile field, low saturation so the
+       stack reads as substance rather than as four new brands */
+    --lay-model: oklch(46% 0.11 340);
+    --lay-part: oklch(66% 0.11 75);
+    --lay-code: oklch(58% 0.07 205);
+    --lay-docs: oklch(56% 0.1 150);
+
+    --shadow-card: 0 1px 2px oklch(30% 0.02 340 / 0.05);
+    --backdrop: oklch(20% 0.02 340 / 0.4);
+
+    --font-display: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --font-label: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: oklch(15% 0.008 340);
+      --panel: oklch(19% 0.01 340);
+      --panel-raised: oklch(23% 0.012 340);
+      --border: oklch(30% 0.014 340);
+      --border-soft: oklch(25% 0.012 340);
+      --text: oklch(93% 0.004 340);
+      --text-muted: oklch(64% 0.012 340);
+      --text-faint: oklch(46% 0.01 340);
+      --accent: #a34c76;
+      --logo-window: oklch(94% 0.014 80);
+      --up: oklch(72% 0.15 150);
+      --degraded: oklch(80% 0.15 80);
+      --up-bg: oklch(72% 0.15 150 / 0.08);
+      --degraded-bg: oklch(80% 0.15 80 / 0.06);
+      --degraded-border: oklch(80% 0.15 80 / 0.4);
+      --lay-model: oklch(62% 0.13 340);
+      --lay-part: oklch(76% 0.12 75);
+      --lay-code: oklch(70% 0.08 205);
+      --lay-docs: oklch(68% 0.12 150);
+      --shadow-card: none;
+      --backdrop: oklch(8% 0.01 340 / 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: oklch(15% 0.008 340);
+    --panel: oklch(19% 0.01 340);
+    --panel-raised: oklch(23% 0.012 340);
+    --border: oklch(30% 0.014 340);
+    --border-soft: oklch(25% 0.012 340);
+    --text: oklch(93% 0.004 340);
+    --text-muted: oklch(64% 0.012 340);
+    --text-faint: oklch(46% 0.01 340);
+    --accent: #a34c76;
+    --logo-window: oklch(94% 0.014 80);
+    --up: oklch(72% 0.15 150);
+    --degraded: oklch(80% 0.15 80);
+    --up-bg: oklch(72% 0.15 150 / 0.08);
+    --degraded-bg: oklch(80% 0.15 80 / 0.06);
+    --degraded-border: oklch(80% 0.15 80 / 0.4);
+    --lay-model: oklch(62% 0.13 340);
+    --lay-part: oklch(76% 0.12 75);
+    --lay-code: oklch(70% 0.08 205);
+    --lay-docs: oklch(68% 0.12 150);
+    --shadow-card: none;
+    --backdrop: oklch(8% 0.01 340 / 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-label);
+    -webkit-font-smoothing: antialiased;
+  }
+  :root:not([data-theme="dark"]) body {
+    background:
+      radial-gradient(1200px 520px at 8% -12%, oklch(90% 0.02 340 / 0.6), transparent 62%),
+      var(--bg);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body {
+      background:
+        radial-gradient(1200px 520px at 8% -12%, oklch(28% 0.03 340 / 0.3), transparent 62%),
+        repeating-linear-gradient(0deg, oklch(100% 0 0 / 0.014) 0px, oklch(100% 0 0 / 0.014) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, oklch(100% 0 0 / 0.014) 0px, oklch(100% 0 0 / 0.014) 1px, transparent 1px, transparent 40px),
+        var(--bg);
+    }
+  }
+  :root[data-theme="dark"] body {
+    background:
+      radial-gradient(1200px 520px at 8% -12%, oklch(28% 0.03 340 / 0.3), transparent 62%),
+      repeating-linear-gradient(0deg, oklch(100% 0 0 / 0.014) 0px, oklch(100% 0 0 / 0.014) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(90deg, oklch(100% 0 0 / 0.014) 0px, oklch(100% 0 0 / 0.014) 1px, transparent 1px, transparent 40px),
+      var(--bg);
+  }
+
+  a { color: var(--accent); }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 44px 32px 72px; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap; margin-bottom: 30px;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .wordmark {
+    font-family: var(--font-display); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.01em; color: var(--text); line-height: 1;
+  }
+  .wordmark .cursor { color: var(--accent); }
+  .tagline {
+    font-size: 11px; color: var(--text-faint); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-top: 5px;
+  }
+
+  .summary { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .stat { display: flex; align-items: baseline; gap: 7px; }
+  .stat-count { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); }
+  .stat-label { font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+  .vrule { width: 1px; height: 26px; background: var(--border); }
+  .synced { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .synced-time { font-size: 12px; color: var(--text-muted); }
+  .synced-src { font-size: 10px; color: var(--text-faint); }
+
+  .theme-toggle {
+    width: 36px; height: 36px; min-width: 36px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .theme-toggle .icon-moon { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-toggle .icon-sun { display: none; }
+    :root:not([data-theme="light"]) .theme-toggle .icon-moon { display: block; }
+  }
+
+  /* tabs: a baseline rule the active tab sits on, not a pill row */
+  .tabs {
+    display: flex; align-items: stretch; gap: 4px;
+    border-bottom: 1px solid var(--border); margin-bottom: 26px;
+  }
+  .tab {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-size: 13px; font-weight: 500;
+    color: var(--text-faint); background: none; border: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    padding: 11px 14px; cursor: pointer;
+  }
+  .tab:hover { color: var(--text-muted); }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+  .tab-count {
+    font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+    background: var(--panel-raised); color: var(--text-faint);
+  }
+  .tab[aria-selected="true"] .tab-count { background: var(--up-bg); color: var(--text-muted); }
+
+  .section-eyebrow {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 14px; font-size: 12px;
+  }
+  .section-eyebrow .label {
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
+  }
+  .section-eyebrow .hint { font-size: 11px; color: var(--text-faint); }
+
+  .kit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+
+  .kit {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; display: flex; flex-direction: column; gap: 15px;
+    text-align: left; font: inherit; color: inherit; cursor: pointer;
+    box-shadow: var(--shadow-card); transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .kit { transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
+    .kit:hover { transform: translateY(-2px); }
+  }
+  .kit:hover { border-color: var(--accent); background: var(--panel-raised); }
+  .kit:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .kit-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .kit-name { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--text); word-break: break-all; }
+  .kit-tag { font-family: var(--font-display); font-size: 11px; color: var(--text-faint); }
+  .kit-desc { font-size: 12px; color: var(--text-muted); line-height: 1.55; margin-top: 6px; }
+
+
+  /* the layer stack, drawn to scale */
+  .stack { display: flex; flex-direction: column; gap: 7px; }
+  .stack-bar {
+    display: flex; height: 10px; border-radius: 3px; overflow: hidden;
+    background: var(--panel-raised); gap: 1px;
+  }
+  .seg { min-width: 2px; }
+  .seg.model { background: var(--lay-model); }
+  .seg.modelpart { background: var(--lay-part); }
+  .seg.code { background: var(--lay-code); }
+  .seg.docs { background: var(--lay-docs); }
+  .stack-legend {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; font-size: 11px; color: var(--text-faint);
+  }
+  .stack-legend .lead { font-family: var(--font-display); color: var(--text-muted); }
+
+  .kit-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding-top: 13px; border-top: 1px solid var(--border-soft);
+    font-family: var(--font-display); font-size: 11px; color: var(--text-faint);
+  }
+  .kit-open { color: var(--text-faint); display: flex; align-items: center; gap: 5px; }
+  .kit:hover .kit-open { color: var(--accent); }
+
+  .footnote { margin-top: 30px; font-size: 11px; color: var(--text-faint); line-height: 1.7; max-width: 660px; }
+  .footnote code { font-family: var(--font-display); color: var(--text-muted); }
+
+  /* images tab */
+  .empty {
+    border: 1px dashed var(--border); border-radius: 12px; background: var(--panel);
+    padding: 34px 28px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  }
+  .empty h3 { margin: 0; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--text); }
+  .empty p { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.65; max-width: 62ch; }
+  .empty code { font-family: var(--font-display); font-size: 12px; color: var(--text); }
+
+  .preview-note {
+    display: flex; align-items: center; gap: 8px; margin: 30px 0 12px;
+    font-size: 11px; color: var(--degraded); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600;
+  }
+  .preview-note .bar { flex: 1; height: 1px; background: var(--degraded-border); }
+
+  .img-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .img-wrap {
+    overflow-x: auto; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--panel); opacity: 0.72;
+  }
+  .img-table th {
+    text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text-faint); padding: 12px 16px;
+    border-bottom: 1px solid var(--border-soft); white-space: nowrap;
+  }
+  .img-table td {
+    padding: 13px 16px; border-bottom: 1px solid var(--border-soft);
+    color: var(--text-muted); white-space: nowrap;
+  }
+  .img-table tr:last-child td { border-bottom: none; }
+  .img-table .repo { font-family: var(--font-display); color: var(--text); font-weight: 500; }
+  .img-table .mono { font-family: var(--font-display); font-size: 12px; }
+
+  /* the model card panel */
+  dialog.card-modal {
+    border: 1px solid var(--border); border-radius: 14px; padding: 0;
+    background: var(--panel); color: var(--text);
+    width: min(720px, 94vw); max-height: 88vh;
+    box-shadow: 0 20px 60px oklch(20% 0.02 340 / 0.25);
+  }
+  dialog.card-modal::backdrop { background: var(--backdrop); }
+
+  .modal-head {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 20px 22px 16px; border-bottom: 1px solid var(--border-soft);
+    position: sticky; top: 0; background: var(--panel); border-radius: 14px 14px 0 0;
+  }
+  .modal-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); word-break: break-all; }
+  .modal-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.55; }
+  .modal-close {
+    margin-left: auto; width: 28px; height: 28px; min-width: 28px; border-radius: 8px;
+    border: none; background: transparent; color: var(--text-faint);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .modal-close:hover { background: var(--panel-raised); color: var(--text); }
+
+  .modal-body { padding: 20px 22px 24px; display: flex; flex-direction: column; gap: 22px; overflow-y: auto; }
+
+  .block-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 10px;
+  }
+
+
+  .layers { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .layers th {
+    text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-faint);
+    padding: 0 10px 8px 0; white-space: nowrap;
+  }
+  .layers th:last-child, .layers td:last-child { text-align: right; padding-right: 0; }
+  .layers td { padding: 9px 10px 9px 0; border-top: 1px solid var(--border-soft); color: var(--text-muted); }
+  .layers .path { font-family: var(--font-display); color: var(--text); white-space: nowrap; }
+  .layers .dg { font-family: var(--font-display); font-size: 11px; color: var(--text-faint); }
+  .layers .sz { font-family: var(--font-display); color: var(--text); white-space: nowrap; }
+  .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+  .layer-wrap { overflow-x: auto; }
+
+
+
+  /* the rendered model card */
+  .md { font-size: 13px; line-height: 1.65; color: var(--text-muted); overflow-x: auto; }
+  .md > :first-child { margin-top: 0; }
+  .md > :last-child { margin-bottom: 0; }
+  .md h1, .md h2, .md h3 {
+    font-family: var(--font-display); color: var(--text); line-height: 1.3;
+    margin: 22px 0 8px; text-wrap: balance;
+  }
+  .md h1 { font-size: 16px; font-weight: 600; }
+  .md h2 { font-size: 14px; font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); }
+  .md h3 { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+  .md p { margin: 0 0 11px; }
+  .md strong { color: var(--text); font-weight: 600; }
+  .md a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--border); }
+  .md a:hover { border-bottom-color: var(--accent); }
+  .md ul, .md ol { margin: 0 0 11px; padding-left: 20px; }
+  .md li { margin-bottom: 4px; }
+  .md code {
+    font-family: var(--font-display); font-size: 11.5px; color: var(--text);
+    background: var(--panel-raised); padding: 1px 5px; border-radius: 4px;
+  }
+  .md pre {
+    background: var(--bg); border: 1px solid var(--border-soft); border-radius: 8px;
+    padding: 11px 13px; overflow-x: auto; margin: 0 0 13px;
+  }
+  .md pre code { background: none; padding: 0; font-size: 11.5px; line-height: 1.6; }
+  .md table { border-collapse: collapse; margin: 0 0 13px; font-size: 12px; min-width: 60%; }
+  .md th {
+    text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-faint);
+    padding: 7px 14px 7px 0; border-bottom: 1px solid var(--border);
+  }
+  .md td { padding: 8px 14px 8px 0; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+  .md tr:last-child td { border-bottom: none; }
+  .md blockquote {
+    margin: 0 0 13px; padding-left: 13px; border-left: 2px solid var(--border);
+    color: var(--text-faint);
+  }
+  .md hr { border: none; border-top: 1px solid var(--border-soft); margin: 18px 0; }
+
+  .card-missing {
+    font-size: 12px; color: var(--text-faint); font-style: italic;
+    padding: 13px 15px; border: 1px dashed var(--border); border-radius: 10px;
+  }
+
+  .cmd { display: flex; flex-direction: column; gap: 8px; }
+  .cmd-row {
+    display: flex; align-items: center; gap: 10px; background: var(--bg);
+    border: 1px solid var(--border-soft); border-radius: 8px; padding: 10px 12px;
+  }
+  .cmd-row code {
+    font-family: var(--font-display); font-size: 12px; color: var(--text);
+    overflow-x: auto; white-space: pre; flex: 1;
+  }
+  .copy-btn {
+    font-family: var(--font-label); font-size: 11px; font-weight: 500;
+    color: var(--text-muted); background: var(--panel-raised);
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cmd-why { font-size: 11px; color: var(--text-faint); line-height: 1.6; }
+
+  @media (max-width: 620px) {
+    .wrap { padding: 32px 18px 56px; }
+    .header { gap: 16px; }
+  }
+</style>
+
+<script>
+  (function () {
+    var stored = null;
+    try { stored = localStorage.getItem('ls-theme'); } catch (e) {}
+    if (stored) document.documentElement.setAttribute('data-theme', stored);
+  })();
+</script>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="brand">
+      <svg width="40" height="42" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <path d="M50 4 L98 52 L82 52 L82 96 L18 96 L18 52 L2 52 Z" fill="var(--accent)"/>
+        <rect x="33" y="54" width="34" height="26" rx="6" fill="var(--logo-window)"/>
+        <path d="M42 60 L49 67 L42 74" stroke="var(--accent-deep)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M52 74 L61 74" stroke="var(--accent-deep)" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="wordmark">registry<span class="cursor">_</span></div>
+        <div class="tagline">registry.lab.orangecluster.nl</div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="stat"><span class="stat-count tabular">4</span><span class="stat-label">repos</span></div>
+      <div class="stat"><span class="stat-count tabular">1.52</span><span class="stat-label">GB</span></div>
+      <div class="vrule"></div>
+      <div class="synced">
+        <div class="synced-time">blobs in <strong>minio/registry</strong></div>
+        <div class="synced-src">distribution 3.1.1 &middot; ubuntu:5000</div>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle colour theme">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Registry contents">
+    <button class="tab" role="tab" id="tab-models" aria-controls="panel-models" aria-selected="true">
+      models <span class="tab-count tabular">4</span>
+    </button>
+    <button class="tab" role="tab" id="tab-images" aria-controls="panel-images" aria-selected="false">
+      images <span class="tab-count tabular">0</span>
+    </button>
+  </div>
+
+  <section id="panel-models" role="tabpanel" aria-labelledby="tab-models">
+    <div class="section-eyebrow">
+      <span class="label">modelkits</span>
+      <span class="hint">bar is the layer stack, drawn to scale &middot; open a kit to read its card</span>
+    </div>
+    <div class="kit-grid" id="kit-grid"></div>
+
+    <p class="footnote">
+      Nothing here touches the weights. The whole view is the catalog, one tag list per
+      repo, then a manifest per tag, and a <code>Kitfile</code> plus a <code>README.md</code>
+      per distinct digest &mdash; <code>1 + R + T + 2D</code>, which is 21 requests and about
+      1.2 s eight-way against this registry. Both tags of every repo resolve to one digest,
+      so each kit is walked and drawn once.
+    </p>
+  </section>
+
+  <section id="panel-images" role="tabpanel" aria-labelledby="tab-images" hidden>
+    <div class="section-eyebrow">
+      <span class="label">container images</span>
+      <span class="hint">repos whose manifest is an OCI image rather than a ModelKit</span>
+    </div>
+
+    <div class="empty">
+      <h3>No image repos here yet</h3>
+      <p>
+        The catalog holds two repositories and both are ModelKits. Cluster images are built
+        and pushed to <code>ghcr.io/jasperhg90</code> instead, and the nodes authenticate
+        there through <code>configure_podman.yml</code>. This tab stays for the day that
+        changes: the split is decided per repo by the manifest's <code>artifactType</code>,
+        so an image pushed tomorrow lands here without a config change.
+      </p>
+    </div>
+
+    <div class="preview-note"><span>Example rows &mdash; not in this registry</span><span class="bar"></span></div>
+    <div class="img-wrap">
+      <table class="img-table">
+        <thead>
+          <tr><th>repository</th><th>tag</th><th>digest</th><th>arch</th><th>size</th><th>pushed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="repo">dash-frontend</td><td class="mono">v0.4.1</td>
+            <td class="mono">sha256:1f9c02&hellip;</td><td class="mono">arm64</td>
+            <td class="mono tabular">18.4 MB</td><td>3 days ago</td>
+          </tr>
+          <tr>
+            <td class="repo">dash-backend</td><td class="mono">v0.4.1</td>
+            <td class="mono">sha256:7b41ad&hellip;</td><td class="mono">arm64</td>
+            <td class="mono tabular">96.2 MB</td><td>3 days ago</td>
+          </tr>
+          <tr>
+            <td class="repo">embark-jetson</td><td class="mono">v0.1.0-1</td>
+            <td class="mono">sha256:c30e88&hellip;</td><td class="mono">arm64</td>
+            <td class="mono tabular">1.9 GB</td><td>2 weeks ago</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="footnote">
+      An image row needs one extra request that a ModelKit row does not: its config blob
+      carries the architecture and the build date, and a multi-arch tag resolves through an
+      index first. Same two-request shape otherwise.
+    </p>
+  </section>
+
+</div>
+
+<dialog class="card-modal" id="card-modal" aria-label="Model card">
+  <div class="modal-head">
+    <div>
+      <div class="modal-name" id="m-name">&nbsp;</div>
+      <div class="modal-desc" id="m-desc">&nbsp;</div>
+    </div>
+    <button class="modal-close" id="m-close" aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="modal-body" id="m-body"></div>
+</dialog>
+
+<script>
+(function () {
+  var REG = 'registry.lab.orangecluster.nl';
+
+  // Read verbatim from the registry: manifest, Kitfile config blob, and the
+  // README.md out of the docs layer. Digests are the real ones. embark.json
+  // appears in the layer list because the kit carries it; it is never parsed.
+  var KITS = [
+    {
+      "repo": "embeddinggemma-q8",
+      "tags": [
+        "0.1.0",
+        "latest"
+      ],
+      "digest": "sha256:a303abc2f44d9e907ed5049c9a001616e2d8e5a7abd8334f2b363326490a6fef",
+      "created": "2026-09-05T06:35:01Z",
+      "description": "Embedding model, INT8 post-training quantization. 328 MB, and the embedder embark serves by default.",
+      "authors": [
+        "Google",
+        "embark"
+      ],
+      "layers": [
+        {
+          "path": "model.onnx",
+          "kind": "model",
+          "size": 309664768,
+          "digest": "sha256:bdf33e404ca1552524696305ec1ba1f45746e96f6f01a5f6083b7c52b85eb223"
+        },
+        {
+          "path": "tokenizer.json",
+          "kind": "modelpart",
+          "size": 33387008,
+          "digest": "sha256:3424178aad1ca6b1acf8d5b16d76c1eb8ba54f7c83ce47dde976306dc32ce5c3"
+        },
+        {
+          "path": "embark.json",
+          "kind": "modelpart",
+          "size": 2048,
+          "digest": "sha256:2d625bc3e48468852b942627e5f865814777806c35f514321b9bd220462bb4ea"
+        },
+        {
+          "path": "golden.json",
+          "kind": "modelpart",
+          "size": 67072,
+          "digest": "sha256:5963f2a18f0ba127d85de0470f72d7730ba84222055f9400f6a2bc64a442eccc"
+        },
+        {
+          "path": "justfile",
+          "kind": "code",
+          "size": 3584,
+          "digest": "sha256:92d8cb57cb43f5b7b31849faecf7c0957f7c2a9c6a6852de1ad5d8dd70c82b6f"
+        },
+        {
+          "path": "README.md",
+          "kind": "docs",
+          "size": 6656,
+          "digest": "sha256:e9e2edb3a103eee0d33504ed5d42f67b468fbfdf2aed719f19c7e882d2e72e41"
+        }
+      ],
+      "card_html": "<h1>embeddinggemma-q8</h1>\n<p>An embedding model for embark, quantized to INT8 after export. 328 MB.</p>\n<p><strong>This is the embedder to serve.</strong> The quantization-aware alternative is nearly\nthree times the size and does not rank better \u2014 see <a href=\"#against-the-alternative\">Against the\nalternative</a>.</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Source</td>\n<td><a href=\"https://huggingface.co/google/embeddinggemma-300m\"><code>google/embeddinggemma-300m</code></a></td>\n</tr>\n<tr>\n<td>Revision</td>\n<td><code>57c266a740f537b4dc058e1b0cda161fd15afa75</code></td>\n</tr>\n<tr>\n<td>Architecture</td>\n<td>Gemma 3 text model, hidden 768, 262,144-token vocabulary</td>\n</tr>\n<tr>\n<td>Output</td>\n<td><code>sentence_embedding</code>, shape <code>[batch, 768]</code>, L2-normalized</td>\n</tr>\n<tr>\n<td>Max sequence</td>\n<td>2048 tokens</td>\n</tr>\n<tr>\n<td>Licence</td>\n<td><a href=\"https://ai.google.dev/gemma/terms\">Gemma Terms of Use</a> \u2014 <strong>not</strong> Apache 2.0</td>\n</tr>\n</tbody>\n</table>\n<h2>What it does</h2>\n<p>Turns text into a 768-dimensional unit vector. Multilingual across 100+\nlanguages, 2k tokens of context.</p>\n<p><strong>It wants different prefixes on each side of a retrieval pair</strong>, and the\nmanifest carries both:</p>\n<table>\n<thead>\n<tr>\n<th>side</th>\n<th>prefix</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>query</td>\n<td><code>task: search result | query: </code></td>\n</tr>\n<tr>\n<td>document</td>\n<td><code>title: none | text: </code></td>\n</tr>\n</tbody>\n</table>\n<p>embark applies them from the <code>input_type</code> field on <code>/v1/embeddings</code>, which\ndefaults to <code>document</code>. Getting this wrong is the quiet kind of wrong: the\nvector comes back the right shape, the right width, with an ordinary norm, and\nsimply retrieves badly. <strong>If you embed outside embark, apply the prefixes\nyourself.</strong></p>\n<p>Matryoshka-trained, so a prefix of the vector is a usable smaller vector \u2014\ntruncating to 256 costs 1\u20133% recall and quarters your storage. embark's\n<code>dimensions</code> parameter does this and re-normalizes; a truncated unit vector is\nnot a unit vector, and a dot-product index would be silently wrong without it.</p>\n<h2>How it was built</h2>\n<p>Exported to ONNX at FP32 with pooling and normalization folded into the graph,\nverified against the torch reference, then quantized dynamically to INT8.</p>\n<p><strong>Dynamic, not static.</strong> It emits <code>DynamicQuantizeLinear</code> and <code>MatMulInteger</code>,\nwhich TensorRT cannot compile. Dynamic measured more accurate on CPU \u2014 cosine\n0.96 against 0.80 for static on a generic calibration set \u2014 and CPU is the\ntarget. Pass <code>--calibration</code> for the TensorRT-compilable form.</p>\n<h2>Measured</h2>\n<p><code>golden.json</code> records the INT8 graph against its FP32 golden: <code>max_abs_diff</code>\n0.0379, <code>min_cosine</code> 0.9642.</p>\n<p>Judge that cosine against this model's own spread rather than in the abstract.\nUnrelated text sits at a mean cosine of <strong>0.193</strong> here, and measured on this\nartifact, 0.2142 across four unrelated sentences. A 0.9642 drift is small\nagainst a space that separates unrelated text that widely.</p>\n<p>On embark's held-out gold set \u2014 60 queries against 118 documents \u2014 this\nartifact is the reference the alternatives are measured against:</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>accuracy@1</td>\n<td>0.6833</td>\n</tr>\n<tr>\n<td>accuracy@5</td>\n<td>0.8667</td>\n</tr>\n<tr>\n<td>accuracy@10</td>\n<td>0.9167</td>\n</tr>\n<tr>\n<td>MRR@10</td>\n<td>0.7719</td>\n</tr>\n</tbody>\n</table>\n<p>Reproduce with:</p>\n<pre><code class=\"language-console\">$ embark-forge evaluate-goldset ./embeddinggemma-q8 \\\n    --goldset goldsets/embark-docs/test.jsonl\n</code></pre>\n<h3>Against the alternative</h3>\n<table>\n<thead>\n<tr>\n<th></th>\n<th>size</th>\n<th>accuracy@1</th>\n<th>MRR@10</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><strong>this artifact</strong></td>\n<td><strong>328 MB</strong></td>\n<td><strong>0.6833</strong></td>\n<td>0.7719</td>\n</tr>\n<tr>\n<td><code>embeddinggemma-qat</code></td>\n<td>933 MB</td>\n<td>0.6667</td>\n<td>0.7792</td>\n</tr>\n</tbody>\n</table>\n<p>The QAT artifact ranks slightly better below the top hit and slightly worse at\nit, for 2.8\u00d7 the disk. Quantization-aware training cannot shrink this model:\nits 262k-row vocabulary table is two thirds of the weights, and torchao would\nbreak it \u2014 <code>embeddinggemma-qat</code>'s card explains why. Post-training\nquantization converts the table because onnxruntime walks the whole graph.</p>\n<h2>Serving it</h2>\n<pre><code class=\"language-console\">$ kit unpack registry.lab.orangecluster.nl/embeddinggemma-q8:latest -d ./embed\n$ embark serve ./embed\n</code></pre>\n<p>Then <code>POST /v1/embeddings</code> with <code>input_type</code> set to <code>query</code> or <code>document</code>. See\n<a href=\"../../docs/api.md\"><code>docs/api.md</code></a>.</p>\n<p><strong>Not interchangeable with the FP32 source.</strong> INT8 vectors differ by far more\nthan float32 rounding, so re-index anything built against another artifact and\ndo not mix two in one store.</p>\n<h2>Limits</h2>\n<p><strong>The gold set is embark's own documentation</strong> \u2014 60 English queries over\ntechnical prose about this repository. It says nothing about your corpus, and\nnothing about the multilingual coverage this model was chosen for. Measure\nrecall on your own data before trusting it.</p>\n<p><strong>The licence passes downstream.</strong> Commercial use is allowed under the Gemma\nTerms, but those terms bind anyone you ship this to. That is a different\nobligation from the reranker's Apache 2.0.</p>\n<p><strong>Dynamic quantization is a CPU choice.</strong> On a Jetson this falls back off\nTensorRT. Build a static variant with a calibration set that looks like your\ntraffic if that is the target.</p>\n"
+    },
+    {
+      "repo": "embeddinggemma-qat",
+      "tags": [
+        "0.1.0",
+        "latest"
+      ],
+      "digest": "sha256:21b25b4d283a439cd02eba4d929f4f1911115d23f7ab5d9de42f2abf0ae33c40",
+      "created": "2026-09-05T06:35:19Z",
+      "description": "Embedding model, quantization-aware trained to INT4 on the linear layers. 933 MB, because the vocabulary table cannot be quantized here.",
+      "authors": [
+        "Google",
+        "embark"
+      ],
+      "layers": [
+        {
+          "path": "model.onnx",
+          "kind": "model",
+          "size": 12057088,
+          "digest": "sha256:09818b980344e72e66483ca02952a04c6eda138bb08ea829095005d850fcc80b"
+        },
+        {
+          "path": "model.onnx.data",
+          "kind": "modelpart",
+          "size": 932513280,
+          "digest": "sha256:274547dbb60b101d19e554eb4da735ffb18f2268a2433f2b6b50b6f7e38ba414"
+        },
+        {
+          "path": "tokenizer.json",
+          "kind": "modelpart",
+          "size": 33387008,
+          "digest": "sha256:828be568dd6926aedb0da50fd9bcf6f99d443f773e65356fd29d2038320b4400"
+        },
+        {
+          "path": "embark.json",
+          "kind": "modelpart",
+          "size": 2048,
+          "digest": "sha256:2d625bc3e48468852b942627e5f865814777806c35f514321b9bd220462bb4ea"
+        },
+        {
+          "path": "justfile",
+          "kind": "code",
+          "size": 3584,
+          "digest": "sha256:e1b3fdf0da0d53bcd00fb234bd2920559941672eb33922a2ea2fdbf889b38903"
+        },
+        {
+          "path": "README.md",
+          "kind": "docs",
+          "size": 7680,
+          "digest": "sha256:19abb65d344b73559e984589fb47be821a2454906ab631d6a8d403b92c79dc82"
+        }
+      ],
+      "card_html": "<h1>embeddinggemma-qat</h1>\n<p>An embedding model for embark, fine-tuned under quantization-aware training.\nINT4 weights on the linear layers, INT8 activations, FP32 vocabulary table.\n933 MB.</p>\n<blockquote>\n<p><strong><code>embeddinggemma-q8</code> is the embedder to serve.</strong> It is 328 MB and ranks the\ntop hit slightly better. This artifact exists because QAT is the right tool\nfor a reranker and it is worth having the measurement that says it is not the\nright tool here \u2014 see <a href=\"#why-this-is-bigger-not-smaller\">Why this is bigger, not\nsmaller</a>.</p>\n</blockquote>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Source</td>\n<td><a href=\"https://huggingface.co/google/embeddinggemma-300m\"><code>google/embeddinggemma-300m</code></a></td>\n</tr>\n<tr>\n<td>Revision</td>\n<td><code>57c266a740f537b4dc058e1b0cda161fd15afa75</code></td>\n</tr>\n<tr>\n<td>Architecture</td>\n<td>Gemma 3 text model, hidden 768, 262,144-token vocabulary</td>\n</tr>\n<tr>\n<td>Output</td>\n<td><code>sentence_embedding</code>, shape <code>[batch, 768]</code>, L2-normalized</td>\n</tr>\n<tr>\n<td>Max sequence</td>\n<td>2048 tokens</td>\n</tr>\n<tr>\n<td>Licence</td>\n<td><a href=\"https://ai.google.dev/gemma/terms\">Gemma Terms of Use</a> \u2014 <strong>not</strong> Apache 2.0</td>\n</tr>\n</tbody>\n</table>\n<h2>What it does</h2>\n<p>Turns text into a 768-dimensional unit vector, multilingual, 2k context.</p>\n<p>It wants different prefixes on each side of a retrieval pair, carried in the\nmanifest and applied by embark from <code>input_type</code>:</p>\n<table>\n<thead>\n<tr>\n<th>side</th>\n<th>prefix</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>query</td>\n<td><code>task: search result | query: </code></td>\n</tr>\n<tr>\n<td>document</td>\n<td><code>title: none | text: </code></td>\n</tr>\n</tbody>\n</table>\n<p>Embedding a query with the document prefix returns a vector of the right shape\nand width that simply retrieves badly. If you embed outside embark, apply them\nyourself.</p>\n<h2>How it was built</h2>\n<pre><code class=\"language-console\">$ embark-forge train google/embeddinggemma-300m ./embeddinggemma-qat \\\n    --goldset goldsets/embark-docs \\\n    --revision 57c266a740f537b4dc058e1b0cda161fd15afa75 \\\n    --epochs 8 --learning-rate 1e-6 --batch-size 8 \\\n    --query-prefix &quot;task: search result | query: &quot; \\\n    --document-prefix &quot;title: none | text: &quot;\n</code></pre>\n<p>Fine-tuned on 123 hand-written triplets from embark's own documentation with\n<code>MultipleNegativesRankingLoss</code>, which treats every other document in the batch\nas an additional negative. Fake quantization sits in the forward pass while\ngradients flow. The 60 held-out triplets below were never seen in training.</p>\n<h2>Why this is bigger, not smaller</h2>\n<p>Two thirds of this model's weights are its 262,144-row vocabulary table \u2014 201M\nof roughly 300M parameters. Quantizing the linear layers alone is close to a\nrounding error, so the size of a QAT artifact is decided almost entirely by\nwhat happens to that table.</p>\n<p><strong>It cannot be quantized here.</strong> EmbeddingGemma's table is a\n<code>Gemma3TextScaledWordEmbedding</code>, an <code>nn.Embedding</code> subclass whose forward\nmultiplies the lookup by <code>embed_scale</code> = \u221a768 = 27.71. torchao's quantizer\nrebuilds every embedding from its constructor arguments and drops the subclass,\nso that factor vanishes. Measured directly: vector magnitude fell <strong>27.5\u00d7</strong>.</p>\n<p>The resulting artifact still loaded, still warmed, still returned unit-length\nvectors of the right width \u2014 and ranked the gold set at roughly twice random,\naccuracy@1 <strong>0.0167</strong> against 0.6833. Every static check passed. Only the gold\nset caught it.</p>\n<p>So <code>embark-forge train</code> refuses to quantize an embedding whose class overrides\n<code>forward</code>, and says so before the training starts:</p>\n<pre><code>1 embedding table(s) left at FP32:\n  embed_tokens: Gemma3TextScaledWordEmbedding overrides forward, and the\n                quantizer replaces it with a plain embedding that does not\n</code></pre>\n<p>That is the correct outcome and it costs the size win. The table stays FP32 at\n805 MB, which is what makes this artifact 933 MB.</p>\n<p>The reranker has no such problem \u2014 its vocabulary is a plain <code>nn.Embedding</code>,\nand quantizing it took that artifact from 232 MB to 103 MB.</p>\n<h2>Measured</h2>\n<p>60 queries, each scored against all 118 distinct documents in the held-out\nsplit. Reference is <code>embeddinggemma-q8</code>, the post-training INT8 artifact.</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th>q8 reference</th>\n<th><strong>this artifact</strong></th>\n<th>change</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>accuracy@1</td>\n<td>0.6833</td>\n<td>0.6667</td>\n<td>\u22120.0167</td>\n</tr>\n<tr>\n<td>accuracy@5</td>\n<td>0.8667</td>\n<td>0.9000</td>\n<td>+0.0333</td>\n</tr>\n<tr>\n<td>accuracy@10</td>\n<td>0.9167</td>\n<td>0.9667</td>\n<td>+0.0500</td>\n</tr>\n<tr>\n<td>MRR@10</td>\n<td>0.7719</td>\n<td>0.7792</td>\n<td>+0.0073</td>\n</tr>\n</tbody>\n</table>\n<p>4 queries rank worse, 9 better. Accepted on all three limits: accuracy@1 drop\n0.0167 (limit 0.02), MRR@10 drop \u22120.0073 (a gain), net demotion \u22120.083 (a net\nimprovement).</p>\n<p>Read that honestly. The top hit is one query worse out of sixty \u2014 which is the\nsmallest movement this gold set can express \u2014 and everything below rank 1 is\nbetter. It is a wash, bought for 605 MB.</p>\n<p>Reproduce with:</p>\n<pre><code class=\"language-console\">$ embark-forge evaluate-goldset ./embeddinggemma-qat \\\n    --goldset goldsets/embark-docs/test.jsonl \\\n    --against ./embeddinggemma-q8\n</code></pre>\n<h2>Serving it</h2>\n<pre><code class=\"language-console\">$ kit unpack registry.lab.orangecluster.nl/embeddinggemma-qat:latest -d ./embed\n$ embark serve ./embed\n</code></pre>\n<p>Then <code>POST /v1/embeddings</code> with <code>input_type</code> set to <code>query</code> or <code>document</code>.</p>\n<p><strong>Not interchangeable with <code>embeddinggemma-q8</code>.</strong> Different weights, different\nvectors. Re-index anything built against the other.</p>\n<h2>Limits</h2>\n<p><strong>60 queries resolves accuracy in steps of 0.0167</strong>, so the single-query\ndifference from the q8 artifact is exactly one resolution step. This gold set\ncannot tell you which of the two is better at the top; it can tell you neither\nis broken.</p>\n<p><strong>The gold set is embark's own documentation</strong> \u2014 English technical prose about\nthis repository. Nothing here measures the multilingual coverage this model was\nchosen for.</p>\n<p><strong>The training set is 123 triplets.</strong> That is enough to adapt a pretrained\nmodel gently at 1e-6 for 8 epochs. It is not enough to teach it a domain.</p>\n<p><strong>The licence passes downstream.</strong> Commercial use is allowed under the Gemma\nTerms, but those terms bind anyone you ship this to.</p>\n"
+    },
+    {
+      "repo": "mxbai-rerank-qat",
+      "tags": [
+        "0.1.0",
+        "latest"
+      ],
+      "digest": "sha256:b52766c97da599537836e3345172f108eed1de7fd6d8a69a377c91d6de9e45ff",
+      "created": "2026-09-05T06:35:15Z",
+      "description": "Cross-encoder reranker, quantization-aware trained to INT4. Holds its FP32 accuracy@1 at 103 MB.",
+      "authors": [
+        "Mixedbread-AI",
+        "embark"
+      ],
+      "layers": [
+        {
+          "path": "model.onnx",
+          "kind": "model",
+          "size": 8121344,
+          "digest": "sha256:8f5342f6c74ba7c9ecdaceafac36022ad54b03b8381c1df4d748e3769799bbc8"
+        },
+        {
+          "path": "model.onnx.data",
+          "kind": "modelpart",
+          "size": 90217472,
+          "digest": "sha256:da183107eca4caa67cacfe470c390fdef8476175d81d9942e78957e37668bff7"
+        },
+        {
+          "path": "tokenizer.json",
+          "kind": "modelpart",
+          "size": 8650752,
+          "digest": "sha256:b99669021ad2133aa761109c56c9c1eb84da17d54123a2c6c13ecfadef8f1520"
+        },
+        {
+          "path": "embark.json",
+          "kind": "modelpart",
+          "size": 2048,
+          "digest": "sha256:30d429b0884f231c8e8f99be05f464ca024d171ed72177b14dfe06881d4b425c"
+        },
+        {
+          "path": "justfile",
+          "kind": "code",
+          "size": 3584,
+          "digest": "sha256:d07ffee80b2b6c5306cb1dde54e3072019feee695dd2c938be6050ce68d60b80"
+        },
+        {
+          "path": "README.md",
+          "kind": "docs",
+          "size": 7680,
+          "digest": "sha256:df9a994531ecb2e613c542b1d69d61c5d61581df37b1e0cc36129945ba0ec8ae"
+        }
+      ],
+      "card_html": "<h1>mxbai-rerank-qat</h1>\n<p>A cross-encoder reranker for embark, fine-tuned under quantization-aware\ntraining. INT4 weights, INT8 activations, 103 MB.</p>\n<p><strong>This is the reranker to serve.</strong> The post-training INT8 alternative is 11 MB\nsmaller and loses the top hit on a third more queries \u2014 see <a href=\"#against-the-alternatives\">Against the\nalternatives</a>.</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Source</td>\n<td><a href=\"https://huggingface.co/mixedbread-ai/mxbai-rerank-xsmall-v1\"><code>mixedbread-ai/mxbai-rerank-xsmall-v1</code></a></td>\n</tr>\n<tr>\n<td>Revision</td>\n<td><code>b5c6e9da73abc3711f593f705371cdbe9e0fe422</code></td>\n</tr>\n<tr>\n<td>Architecture</td>\n<td>DeBERTa-v3-xsmall, 12 layers, hidden 384, 128,100-token vocabulary</td>\n</tr>\n<tr>\n<td>Output</td>\n<td><code>logits</code>, shape <code>[batch, 1]</code> \u2014 one raw relevance score per pair</td>\n</tr>\n<tr>\n<td>Max sequence</td>\n<td>512 tokens</td>\n</tr>\n<tr>\n<td>Licence</td>\n<td>Apache 2.0</td>\n</tr>\n</tbody>\n</table>\n<h2>What it does</h2>\n<p>Scores a (query, document) pair jointly and returns one number. Higher is more\nrelevant. <strong>The scores are raw logits: they are not normalized, not\nprobabilities, and not comparable across models.</strong> Negative values are normal.\nSort by the score; do not threshold on it without calibrating against your own\ndata first.</p>\n<p>A cross-encoder reads the query and the document as two segments of one\nsequence, so it cannot precompute anything. Cost is one forward pass per\ncandidate \u2014 use it to reorder a shortlist an embedder retrieved, not to search.</p>\n<h2>How it was built</h2>\n<pre><code class=\"language-console\">$ embark-forge train mixedbread-ai/mxbai-rerank-xsmall-v1 ./mxbai-rerank-qat \\\n    --goldset goldsets/embark-docs --reranker \\\n    --revision b5c6e9da73abc3711f593f705371cdbe9e0fe422 \\\n    --epochs 10 --learning-rate 6e-6 --batch-size 8\n</code></pre>\n<p>Fake quantization sits in the forward pass while gradients flow, so the weights\nsettle somewhere the INT4 grid does not hurt. That is the difference from\nquantizing afterwards, and it is the whole reason this artifact keeps its\naccuracy while the INT8 one does not.</p>\n<p>Trained on 123 hand-written triplets from embark's own documentation with\n<code>MarginRankingLoss</code> (margin 1.0); 65 more reported loss during the run. The 60\nheld-out triplets below were never seen in training.</p>\n<h2>Measured</h2>\n<p>60 queries, each scored against all 118 distinct documents in the held-out\nsplit. Reference is the FP32 export of the same source revision.</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th>FP32</th>\n<th><strong>this artifact</strong></th>\n<th>change</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>accuracy@1</td>\n<td>0.6833</td>\n<td><strong>0.6833</strong></td>\n<td>+0.0000</td>\n</tr>\n<tr>\n<td>accuracy@5</td>\n<td>0.8833</td>\n<td>0.8500</td>\n<td>\u22120.0333</td>\n</tr>\n<tr>\n<td>accuracy@10</td>\n<td>0.9167</td>\n<td>0.9333</td>\n<td>+0.0167</td>\n</tr>\n<tr>\n<td>MRR@10</td>\n<td>0.7678</td>\n<td>0.7607</td>\n<td>\u22120.0071</td>\n</tr>\n</tbody>\n</table>\n<p>7 queries rank worse, 7 better. <code>embark-forge</code> accepts it on all three limits:\naccuracy@1 drop 0.0000 (limit 0.02), MRR@10 drop 0.0071 (limit 0.02), net\ndemotion 0.0000 (limit 0.05).</p>\n<p>Reproduce with:</p>\n<pre><code class=\"language-console\">$ embark-forge evaluate-goldset ./mxbai-rerank-qat \\\n    --goldset goldsets/embark-docs/test.jsonl \\\n    --against ./mxbai-rerank-xsmall-v1\n</code></pre>\n<h3>Against the alternatives</h3>\n<table>\n<thead>\n<tr>\n<th></th>\n<th>size</th>\n<th>accuracy@1</th>\n<th>MRR@10</th>\n<th>gate</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>FP32 source</td>\n<td>280 MB</td>\n<td>0.6833</td>\n<td>0.7678</td>\n<td>reference</td>\n</tr>\n<tr>\n<td>post-training INT8</td>\n<td>92 MB</td>\n<td>0.6500</td>\n<td>0.7407</td>\n<td><strong>refused</strong></td>\n</tr>\n<tr>\n<td><strong>this artifact</strong></td>\n<td>103 MB</td>\n<td><strong>0.6833</strong></td>\n<td>0.7607</td>\n<td>accepted</td>\n</tr>\n</tbody>\n</table>\n<p>Eleven megabytes buys back the 0.0333 of accuracy@1 that post-training\nquantization loses \u2014 one query in thirty getting the right document first.</p>\n<h2>What is actually quantized</h2>\n<table>\n<thead>\n<tr>\n<th>tensor</th>\n<th>dtype</th>\n<th>size</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>word_embeddings</code> <code>[128100, 384]</code></td>\n<td>INT8 storage, <strong>16 distinct values</strong></td>\n<td>49.2 MB</td>\n</tr>\n<tr>\n<td>its per-group scales</td>\n<td>FLOAT32</td>\n<td>6.1 MB</td>\n</tr>\n<tr>\n<td>its per-group zero points</td>\n<td>INT32</td>\n<td>6.1 MB</td>\n</tr>\n<tr>\n<td>linear layers</td>\n<td>INT8 storage, INT4 values</td>\n<td>21.4 MB</td>\n</tr>\n<tr>\n<td><code>rel_embeddings</code> <code>[512, 384]</code></td>\n<td>FLOAT32 \u2014 left alone deliberately</td>\n<td>0.8 MB</td>\n</tr>\n</tbody>\n</table>\n<p>Two things worth knowing.</p>\n<p><strong>INT4 does not halve the bytes.</strong> torchao writes one value per byte\n(<code>IntxPackingFormat.UNPACKED_TO_INT8</code>), so an INT4 tensor costs what an INT8 one\ncosts. The vocabulary table holds exactly 16 distinct values \u2014 a real INT4 grid\n\u2014 in byte storage.</p>\n<p><strong>The relative-position table is FP32 on purpose.</strong>\n<code>DebertaV2Encoder.get_rel_embedding</code> reads <code>rel_embeddings.weight</code> as a raw\ntensor rather than calling the module, and a quantized embedding stores INT8\nthere, which kills the first LayerNorm downstream. It is 0.4% of the\nparameters, so skipping it costs nothing and buys the export.</p>\n<p>At <code>--group-size 32</code> the scales and zero points come to 12.2 MB, a quarter of\nthe table they describe. A wider group would trade some of that back for\naccuracy; untested here.</p>\n<h2>Serving it</h2>\n<pre><code class=\"language-console\">$ kit unpack registry.lab.orangecluster.nl/mxbai-rerank-qat:latest -d ./rerank\n$ embark serve ./rerank\n</code></pre>\n<p>Then <code>POST /v1/rerank</code> with a <code>model</code>, a <code>query</code>, and <code>documents</code>. Results come\nback sorted by score, with <code>index</code> addressing your request array. See\n<a href=\"../../docs/api.md\"><code>docs/api.md</code></a>.</p>\n<p>The artifact is the four files a kit unpacks: <code>model.onnx</code>, its\n<code>model.onnx.data</code> sidecar, <code>tokenizer.json</code>, and <code>embark.json</code>. Nothing else in\nthe directory is read.</p>\n<h2>Limits</h2>\n<p><strong>60 queries is a small gold set.</strong> It resolves accuracy in steps of 0.0167, so\nthe 0.02 gate is a 1.2-query threshold. It is enough to catch a broken\nquantization and not enough to settle a close call.</p>\n<p><strong>The gold set is embark's own documentation.</strong> It measures retrieval over\ntechnical prose about this repository. It says nothing about your corpus, and\nnothing about the multilingual behaviour the source model was chosen for \u2014\nevery triplet is English. Measure on your own data before trusting it.</p>\n<p><strong>No FP16 or TensorRT numbers.</strong> This was built and measured on CPU. The\n<code>DebertaV2</code> attention this model uses is not the plain BERT attention TensorRT\nprefers, so a Jetson deployment should be measured rather than assumed.</p>\n"
+    },
+    {
+      "repo": "mxbai-rerank-xsmall-v1-q8",
+      "tags": [
+        "0.1.0",
+        "latest"
+      ],
+      "digest": "sha256:1f522ea9e6f11008c233e098cce2cb64e096f3758c294856bf1a5250371f5264",
+      "created": "2026-09-05T06:35:16Z",
+      "description": "Cross-encoder reranker, INT8 post-training quantization. Smallest at 92 MB; loses accuracy@1 and does not pass embark's gate.",
+      "authors": [
+        "Mixedbread-AI",
+        "embark"
+      ],
+      "layers": [
+        {
+          "path": "model.onnx",
+          "kind": "model",
+          "size": 87119360,
+          "digest": "sha256:a0569ba938c95042de68915d92b75d7505f20335542b8f8b8f8a2761103189e7"
+        },
+        {
+          "path": "tokenizer.json",
+          "kind": "modelpart",
+          "size": 8650752,
+          "digest": "sha256:38a4a18c9900297d7c083175e2a469e19f0f6a423f49845099f485cb8064462c"
+        },
+        {
+          "path": "embark.json",
+          "kind": "modelpart",
+          "size": 2048,
+          "digest": "sha256:30d429b0884f231c8e8f99be05f464ca024d171ed72177b14dfe06881d4b425c"
+        },
+        {
+          "path": "golden.json",
+          "kind": "modelpart",
+          "size": 2560,
+          "digest": "sha256:4609f5366f1bf36dd682566ff7c7b2704716f5af14c862d824a8d3525a5a60c3"
+        },
+        {
+          "path": "justfile",
+          "kind": "code",
+          "size": 3584,
+          "digest": "sha256:11e8b00f0f9984f0d00f52ca41cfda080516a3d448e793a26ba15cfb1e565199"
+        },
+        {
+          "path": "README.md",
+          "kind": "docs",
+          "size": 6144,
+          "digest": "sha256:13ce4b9835956f25fe6a142cee967b0b2e8fd395c0383da0db5c2d64b58be1a9"
+        }
+      ],
+      "card_html": "<h1>mxbai-rerank-xsmall-v1-q8</h1>\n<p>A cross-encoder reranker for embark, quantized to INT8 after export. 92 MB.</p>\n<blockquote>\n<p><strong>This artifact does not pass embark's quality gate.</strong> It loses accuracy@1 on\none query in thirty against its FP32 source. <code>mxbai-rerank-qat</code> is 11 MB\nlarger and does not. Prefer that one unless those 11 MB matter to you \u2014 see\n<a href=\"#measured\">Measured</a>.</p>\n</blockquote>\n<table>\n<thead>\n<tr>\n<th></th>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Source</td>\n<td><a href=\"https://huggingface.co/mixedbread-ai/mxbai-rerank-xsmall-v1\"><code>mixedbread-ai/mxbai-rerank-xsmall-v1</code></a></td>\n</tr>\n<tr>\n<td>Revision</td>\n<td><code>b5c6e9da73abc3711f593f705371cdbe9e0fe422</code></td>\n</tr>\n<tr>\n<td>Architecture</td>\n<td>DeBERTa-v3-xsmall, 12 layers, hidden 384, 128,100-token vocabulary</td>\n</tr>\n<tr>\n<td>Output</td>\n<td><code>logits</code>, shape <code>[batch, 1]</code> \u2014 one raw relevance score per pair</td>\n</tr>\n<tr>\n<td>Max sequence</td>\n<td>512 tokens</td>\n</tr>\n<tr>\n<td>Licence</td>\n<td>Apache 2.0</td>\n</tr>\n</tbody>\n</table>\n<h2>What it does</h2>\n<p>Scores a (query, document) pair jointly and returns one number. Higher is more\nrelevant. <strong>The scores are raw logits: not normalized, not probabilities, not\ncomparable across models.</strong> Negative values are normal. Sort by the score;\ncalibrate before thresholding on it.</p>\n<p>Cost is one forward pass per candidate, so use it to reorder a shortlist rather\nthan to search.</p>\n<h2>How it was built</h2>\n<p>Exported to ONNX at FP32, verified against the torch reference, then quantized\ndynamically to INT8 with onnxruntime. The weights were final before the\nquantizer saw them \u2014 the model never learned to live on the INT8 grid, which is\nwhat the numbers below reflect.</p>\n<p><strong>Dynamic, not static.</strong> It emits <code>DynamicQuantizeLinear</code> and <code>MatMulInteger</code>,\nwhich TensorRT cannot compile; on a Jetson every affected subgraph falls back to\nCUDA or CPU. Dynamic measured more accurate on CPU, which is where this is\nmeant to run. Pass <code>--calibration</code> to <code>embark-forge quantize</code> for the static,\nTensorRT-compilable form.</p>\n<h2>Measured</h2>\n<p>60 queries, each scored against all 118 distinct documents in embark's held-out\ngold set. Reference is the FP32 export of the same source revision.</p>\n<table>\n<thead>\n<tr>\n<th></th>\n<th>FP32</th>\n<th><strong>this artifact</strong></th>\n<th>change</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>accuracy@1</td>\n<td>0.6833</td>\n<td><strong>0.6500</strong></td>\n<td>\u22120.0333</td>\n</tr>\n<tr>\n<td>accuracy@5</td>\n<td>0.8833</td>\n<td>0.8667</td>\n<td>\u22120.0167</td>\n</tr>\n<tr>\n<td>MRR@10</td>\n<td>0.7678</td>\n<td>0.7407</td>\n<td>\u22120.0271</td>\n</tr>\n</tbody>\n</table>\n<p>10 queries rank worse, 5 better. <code>embark-forge quantize</code> <strong>refuses</strong> this:\naccuracy@1 fell 0.0333 (limit 0.02), MRR@10 fell 0.0271 (limit 0.02), net\ndemotion 0.0833 (limit 0.05).</p>\n<p>It is published anyway, tagged and documented, because &quot;smallest artifact that\nstill works&quot; is a legitimate thing to want and the numbers to decide with are\nright here. It is not published as the default.</p>\n<h3>Why the numeric checks did not catch this</h3>\n<p><code>golden.json</code> records <code>max_abs_diff</code> 0.2417 and <code>min_cosine</code> <strong>1.0000</strong>.</p>\n<p>That cosine is not a good sign \u2014 it is a meaningless one. This model's output is\none score wide, and cosine between two one-element vectors is <code>sign(a\u00b7b)</code>. It\nreads 1.0 whenever the signs agree, whatever the magnitudes do. embark gated on\nthat number until this artifact was measured against a gold set; now it gates on\nranking, and both numbers are recorded rather than trusted.</p>\n<p>Reproduce with:</p>\n<pre><code class=\"language-console\">$ embark-forge evaluate-goldset ./mxbai-rerank-xsmall-v1-q8 \\\n    --goldset goldsets/embark-docs/test.jsonl \\\n    --against ./mxbai-rerank-xsmall-v1\n</code></pre>\n<h3>Against the alternatives</h3>\n<table>\n<thead>\n<tr>\n<th></th>\n<th>size</th>\n<th>accuracy@1</th>\n<th>MRR@10</th>\n<th>gate</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>FP32 source</td>\n<td>280 MB</td>\n<td>0.6833</td>\n<td>0.7678</td>\n<td>reference</td>\n</tr>\n<tr>\n<td><strong>this artifact</strong></td>\n<td><strong>92 MB</strong></td>\n<td>0.6500</td>\n<td>0.7407</td>\n<td>refused</td>\n</tr>\n<tr>\n<td><code>mxbai-rerank-qat</code></td>\n<td>103 MB</td>\n<td>0.6833</td>\n<td>0.7607</td>\n<td>accepted</td>\n</tr>\n</tbody>\n</table>\n<h2>Serving it</h2>\n<pre><code class=\"language-console\">$ kit unpack registry.lab.orangecluster.nl/mxbai-rerank-xsmall-v1-q8:latest -d ./rerank\n$ embark serve ./rerank\n</code></pre>\n<p>Then <code>POST /v1/rerank</code>. See <a href=\"../../docs/api.md\"><code>docs/api.md</code></a>.</p>\n<p><strong>Not interchangeable with the FP32 source or with the QAT artifact.</strong> The\nscores differ by far more than float32 rounding, so anything ranked or cached\nagainst one must be recomputed against another.</p>\n<h2>Limits</h2>\n<p><strong>60 queries resolves accuracy in steps of 0.0167.</strong> The measured 0.0333 drop is\ntwo queries. Two queries is a real signal at this size, and it is not a precise\none.</p>\n<p><strong>The gold set is embark's own documentation</strong> \u2014 English technical prose about\nthis repository. It says nothing about your corpus, and nothing about the\nmultilingual behaviour the source model was chosen for.</p>\n<p><strong>CPU only, so far.</strong> No FP16 or TensorRT measurements. The dynamic\nquantization above means TensorRT is not the intended target for this artifact\nin any case.</p>\n"
+    }
+  ];
+
+  function mb(bytes) {
+    if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+    if (bytes >= 1e3) return (bytes / 1e3).toFixed(1) + ' KB';
+    return bytes + ' B';
+  }
+  function modelLayer(kit) {
+    for (var i = 0; i < kit.layers.length; i++) {
+      if (kit.layers[i].kind === 'model') return kit.layers[i].size;
+    }
+    return 0;
+  }
+  function docsLayer(kit) {
+    for (var i = 0; i < kit.layers.length; i++) {
+      if (kit.layers[i].kind === 'docs') return kit.layers[i].size;
+    }
+    return 0;
+  }
+  function total(kit) {
+    return kit.layers.reduce(function (a, l) { return a + l.size; }, 0);
+  }
+  function ago(iso) {
+    var days = Math.round((Date.now() - Date.parse(iso)) / 86400000);
+    if (days <= 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 30) return days + ' days ago';
+    return Math.round(days / 30) + ' months ago';
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function stackBar(kit) {
+    var sum = total(kit);
+    var bar = el('div', 'stack-bar');
+    kit.layers.forEach(function (l) {
+      var seg = el('div', 'seg ' + l.kind);
+      seg.style.width = (l.size / sum * 100) + '%';
+      seg.title = l.path + ' — ' + mb(l.size);
+      bar.appendChild(seg);
+    });
+    return bar;
+  }
+
+  var grid = document.getElementById('kit-grid');
+  KITS.forEach(function (kit, i) {
+    var sum = total(kit);
+    var weights = modelLayer(kit);
+
+    var card = el('button', 'kit');
+    card.type = 'button';
+    card.setAttribute('aria-label', 'Open the model card for ' + kit.repo);
+
+    var top = el('div', 'kit-top');
+    var left = el('div');
+    left.appendChild(el('div', 'kit-name', kit.repo));
+    left.appendChild(el('div', 'kit-tag', kit.tags.map(function (t) { return ':' + t; }).join('  ')));
+    top.appendChild(left);
+    card.appendChild(top);
+
+    card.appendChild(el('div', 'kit-desc', kit.description));
+
+    var stack = el('div', 'stack');
+    stack.appendChild(stackBar(kit));
+    var legend = el('div', 'stack-legend');
+    legend.appendChild(el('span', 'lead', mb(sum) + ' · ' + kit.layers.length + ' layers'));
+    legend.appendChild(el('span', null,
+      'weights are ' + (weights / sum * 100).toFixed(1) + '% of it'));
+    stack.appendChild(legend);
+    card.appendChild(stack);
+
+    var foot = el('div', 'kit-foot');
+    foot.appendChild(el('span', null, 'pushed ' + ago(kit.created)));
+    var open = el('span', 'kit-open');
+    open.appendChild(document.createTextNode('read card'));
+    open.insertAdjacentHTML('beforeend',
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+    foot.appendChild(open);
+    card.appendChild(foot);
+
+    card.addEventListener('click', function () { openCard(i); });
+    grid.appendChild(card);
+  });
+
+  var modal = document.getElementById('card-modal');
+  var mBody = document.getElementById('m-body');
+
+  function section(label, node) {
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'block-label', label));
+    wrap.appendChild(node);
+    return wrap;
+  }
+
+  function cmdRow(text, why) {
+    var wrap = el('div', 'cmd');
+    var row = el('div', 'cmd-row');
+    row.appendChild(el('code', null, text));
+    var btn = el('button', 'copy-btn', 'copy');
+    btn.type = 'button';
+    btn.addEventListener('click', function () {
+      var done = function () { btn.textContent = 'copied'; setTimeout(function () { btn.textContent = 'copy'; }, 1400); };
+      try {
+        if (navigator.clipboard) { navigator.clipboard.writeText(text).then(done, function () {}); return; }
+      } catch (e) {}
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); done();
+      } catch (e2) {}
+    });
+    row.appendChild(btn);
+    wrap.appendChild(row);
+    if (why) wrap.appendChild(el('div', 'cmd-why', why));
+    return wrap;
+  }
+
+  function openCard(i) {
+    var kit = KITS[i];
+    var sum = total(kit);
+    var ref = REG + '/' + kit.repo + ':' + kit.tags[kit.tags.length - 1];
+
+    document.getElementById('m-name').textContent =
+      kit.repo + '  ' + kit.tags.map(function (t) { return ':' + t; }).join('  ');
+    document.getElementById('m-desc').textContent =
+      kit.description + ' · ' + kit.authors.join(', ') + ' · pushed ' + ago(kit.created);
+
+    mBody.textContent = '';
+
+    // the model card, rendered from the docs layer's README.md
+    if (kit.card_html) {
+      var card = el('div', 'md');
+      card.innerHTML = kit.card_html;
+      mBody.appendChild(section('model card \u2014 from the docs layer, ' + mb(docsLayer(kit)) + ' on the wire', card));
+    } else {
+      mBody.appendChild(section('model card', el('div', 'card-missing',
+        'This kit carries no docs layer, so there is no card to render. Its Kitfile metadata and layers are above.')));
+    }
+
+    // layers: every blob the manifest names, each independently fetchable.
+    var wrap = el('div', 'layer-wrap');
+    var t = el('table', 'layers');
+    var thead = el('thead');
+    var hr = el('tr');
+    ['path', 'kind', 'digest', 'size', 'share'].forEach(function (h) {
+      hr.appendChild(el('th', null, h));
+    });
+    thead.appendChild(hr);
+    t.appendChild(thead);
+    var tb = el('tbody');
+    kit.layers.forEach(function (l) {
+      var tr = el('tr');
+      var td0 = el('td', 'path');
+      var sw = el('span', 'swatch');
+      sw.style.background = 'var(--lay-' + (l.kind === 'modelpart' ? 'part' : l.kind) + ')';
+      td0.appendChild(sw);
+      td0.appendChild(document.createTextNode(l.path));
+      tr.appendChild(td0);
+      tr.appendChild(el('td', null, l.kind));
+      tr.appendChild(el('td', 'dg', l.digest.slice(0, 19) + '\u2026'));
+      tr.appendChild(el('td', 'sz tabular', mb(l.size)));
+      var share = l.size / sum * 100;
+      tr.appendChild(el('td', 'tabular', share < 0.01 ? '<0.01%' : share.toFixed(2) + '%'));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    mBody.appendChild(section('layers \u2014 each one its own blob, fetchable alone', wrap));
+
+    // commands. `pull` retrieves into kit's local storage; `unpack` writes
+    // files. Keeping the two verbs distinct here is deliberate.
+    var cmds = el('div', 'cmd');
+    cmds.style.gap = '14px';
+    cmds.appendChild(cmdRow('kit unpack ' + ref + ' --filter=docs -d ./card',
+      'Writes just this card to disk. Measured with --filter=code: 1.4 s, 12 KB written, the ' + mb(modelLayer(kit)) + ' model never requested.'));
+    cmds.appendChild(cmdRow('kit inspect --remote ' + ref,
+      'Prints the Kitfile, one ~2 KB GET, without touching local storage.'));
+    cmds.appendChild(cmdRow('kit pull ' + ref,
+      'Retrieves the kit into kit\u2019s local storage. Writes no model files \u2014 unpack does that.'));
+    cmds.appendChild(cmdRow('kit unpack ' + ref + ' -d ./' + kit.repo,
+      'Writes every component to disk, ' + mb(sum) + ', which is what embark\u2019s prestart task runs.'));
+    mBody.appendChild(section('on the command line', cmds));
+
+    modal.showModal();
+  }
+
+  document.getElementById('m-close').addEventListener('click', function () { modal.close(); });
+  modal.addEventListener('click', function (e) { if (e.target === modal) modal.close(); });
+
+  // tabs
+  var tabs = [
+    { btn: document.getElementById('tab-models'), panel: document.getElementById('panel-models') },
+    { btn: document.getElementById('tab-images'), panel: document.getElementById('panel-images') }
+  ];
+  tabs.forEach(function (t, i) {
+    t.btn.addEventListener('click', function () {
+      tabs.forEach(function (o, j) {
+        o.btn.setAttribute('aria-selected', String(i === j));
+        o.panel.hidden = i !== j;
+      });
+    });
+    t.btn.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.btn.focus(); next.btn.click();
+    });
+  });
+
+  // theme
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var root = document.documentElement;
+    var now = root.getAttribute('data-theme');
+    if (!now) {
+      now = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    var next = now === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('ls-theme', next); } catch (e) {}
+  });
+})();
+</script>
+</head>
+<body>
+</body>
+</html>
