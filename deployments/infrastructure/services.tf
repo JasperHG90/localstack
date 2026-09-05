@@ -384,10 +384,15 @@ locals {
     # oauth2-proxy on radxa-dragon-q6a (L1). Only HAProxy (firebat) calls it
     # directly; no direct LAN access is needed since the gate's whole point
     # is that traffic goes through HAProxy first.
+    # Two proxies, two ports: 4180 gates dash, 4181 gates registry-ui. Both
+    # admit HAProxy's node alone, which is why the edge is the only route in.
     oauth2_proxy = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
-      rules    = ["allow from 192.168.2.30 to any port 4180 proto tcp"]
+      rules = [
+        "allow from 192.168.2.30 to any port 4180 proto tcp",
+        "allow from 192.168.2.30 to any port 4181 proto tcp",
+      ]
     }
   }
 }
@@ -544,8 +549,8 @@ resource "nomad_job" "oauth2_proxy_registry_ui" {
   jobspec = templatefile(
     "${path.module}/services/oauth2-proxy-registry-ui.hcl",
     {
-      oidc_secret   = vault_kv_secret_v2.oauth2_proxy_oidc_client.path
-      cookie_secret = vault_kv_secret_v2.oauth2_proxy_cookie_secret.path
+      oidc_secret   = vault_kv_secret_v2.oauth2_proxy_registry_ui_oidc_client.path
+      cookie_secret = vault_kv_secret_v2.oauth2_proxy_registry_ui_cookie_secret.path
       redirect_url  = local.registry_ui_redirect_url
 
       # registry-ui's frontend task (8002) and backend task (8003), both

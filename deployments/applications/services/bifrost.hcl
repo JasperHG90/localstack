@@ -101,9 +101,15 @@ EOF
       #     /v1/rerank and nothing else, so those two are allowed and the rest
       #     are refused here rather than routed to a 404. Callers reach it as
       #     "embark/<served-name>", where the served names come from
-      #     services/embark/models.json. Only an embedding model is deployed
-      #     today; rerank is open so adding a reranker there needs no change
-      #     on this side.
+      #     services/embark/models.json -- "embark/embedding" and
+      #     "embark/reranker" today.
+      #
+      #     Bifrost's own rerank schema takes `documents` as OBJECTS, not
+      #     strings: {"documents":[{"text":"..."}]} returns 200, while
+      #     {"documents":["..."]} is rejected before it reaches embark with a
+      #     flat 400 "Invalid request payload" that names no field. Measured
+      #     against this deployment. The reranker returns raw logits, so a
+      #     negative relevance_score is normal and not an error.
       #
       #     allow_private_network is required, not optional. Bifrost 1.5.9
       #     added an SSRF guard that refuses RFC1918 destinations by default,

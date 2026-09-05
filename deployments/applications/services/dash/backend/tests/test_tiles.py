@@ -61,6 +61,72 @@ def test_loads_a_valid_mixed_config(tmp_path: Path) -> None:
     assert backend.connect.address == "firebat:5432"
 
 
+AGENT_TILE = {
+    "key": "hermes",
+    "name": "hermes",
+    "desc": "telegram agent",
+    "color": "#a68a1f",
+    "icon": "<svg></svg>",
+    "category": "agents",
+    "job": "hermes",
+    "node": "test-node",
+    "connect": {
+        "protocol": "Telegram bot",
+        "address": "test-node:8642",
+        "auth": "Message the bot directly in Telegram.",
+        "example": "Open your Hermes chat in Telegram.",
+    },
+}
+
+
+def test_loads_an_agent_tile_with_its_connect_block(tmp_path: Path) -> None:
+    path = _write(tmp_path, json.dumps([AGENT_TILE]))
+
+    agent = load_tiles(path)[0]
+
+    assert agent.category == "agents"
+    assert agent.url is None
+    assert agent.connect is not None
+    assert agent.connect.address == "test-node:8642"
+
+
+def test_rejects_an_agent_tile_missing_connect(tmp_path: Path) -> None:
+    broken = {k: v for k, v in AGENT_TILE.items() if k != "connect"}
+    path = _write(tmp_path, json.dumps([broken]))
+
+    with pytest.raises(TileConfigError, match="'hermes' is missing its 'connect' block"):
+        load_tiles(path)
+
+
+def test_rejects_an_unknown_category(tmp_path: Path) -> None:
+    broken = {**AGENT_TILE, "category": "agent"}
+    path = _write(tmp_path, json.dumps([broken]))
+
+    with pytest.raises(TileConfigError, match="category"):
+        load_tiles(path)
+
+
+SHIPPED_TILES = Path(__file__).resolve().parents[2] / "tiles.json"
+
+
+def test_the_shipped_tile_config_parses() -> None:
+    tiles = load_tiles(SHIPPED_TILES)
+
+    assert tiles
+    agents = [t for t in tiles if t.category == "agents"]
+    assert {t.key for t in agents} >= {"hermes", "memex"}
+    assert all(t.connect is not None for t in agents)
+
+
+def test_the_shipped_registry_tile_documents_podman_and_kit() -> None:
+    registry = next(t for t in load_tiles(SHIPPED_TILES) if t.key == "registry")
+
+    assert registry.connect is not None
+    example = registry.connect.example
+    assert "podman login" in example
+    assert "kit login" in example
+
+
 def test_rejects_syntactically_invalid_json(tmp_path: Path) -> None:
     path = _write(tmp_path, "[{,}]")
 

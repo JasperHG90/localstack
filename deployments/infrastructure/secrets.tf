@@ -248,6 +248,49 @@ resource "vault_kv_secret_v2" "oauth2_proxy_cookie_secret" {
   }
 }
 
+### The same two secrets again, under oauth2-proxy-registry-ui's OWN prefix.
+### Not duplication for its own sake: both proxies declare a bare `vault {}`,
+### so the nomad-workloads role scopes each to
+### secret/data/default/<job_id>/*. Job `oauth2-proxy-registry-ui` reading
+### `default/oauth2-proxy/*` gets a 403, its templates never render, and the
+### task never registers — which is exactly how it failed the first time.
+### Same copy-under-the-consumer shape embark and registry-ui already use.
+###
+### The values are shared deliberately: one OIDC client carrying both
+### redirect URIs, and one cookie secret. The two proxies gate different
+### hostnames, so their cookies never collide.
+resource "vault_kv_secret_v2" "oauth2_proxy_registry_ui_oidc_client" {
+  mount = vault_mount.kvv2.path
+  name  = "default/oauth2-proxy-registry-ui/oidc"
+  data_json = jsonencode({
+    client_id     = vault_identity_oidc_client.oauth2_proxy.client_id
+    client_secret = vault_identity_oidc_client.oauth2_proxy.client_secret
+    issuer        = "https://${var.vault_issuer_host}/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}"
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
+resource "vault_kv_secret_v2" "oauth2_proxy_registry_ui_cookie_secret" {
+  mount = vault_mount.kvv2.path
+  name  = "default/oauth2-proxy-registry-ui/cookie"
+  data_json = jsonencode({
+    secret = random_password.oauth2_proxy_cookie_secret.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### --- backup job credentials -----------------------------------------------
 
 resource "vault_kv_secret_v2" "backup_postgres_db_credentials" {

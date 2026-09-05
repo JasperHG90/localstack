@@ -424,10 +424,15 @@ flavor = "claude"
 source_path = ""
 target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
 marketplace_name = "aim-ef9f6a17bd3105b7"
-content_hash = "e6130b2201ae4bacb61f48c7b3bf7f10a430e1a6975abcceda135590dff6df4e"
+content_hash = "8c84a1bcfa944523b9bf2817f3da9658325307d684dbeb64cf423459d1e3a5e3"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "1.8.0"
+sha = "d52e8779d216c62cbcb1e53907ec8402bdd82888"
+installed_at = "2026-09-05T06:21:49.106712Z"
+
+[[plugin.history]]
 tag = "1.5.0"
 sha = "bd25eee0cca90963841433cc53a3ea44972d2f03"
 installed_at = "2026-08-21T10:42:57.638586Z"
@@ -476,11 +481,6 @@ installed_at = "2026-07-23T10:19:56.415790Z"
 tag = "0.4.0"
 sha = "f892e56db8b985c8a5e9e96c9e938e193dbdbb1d"
 installed_at = "2026-07-23T09:09:50.016377Z"
-
-[[plugin.history]]
-tag = "0.3.1"
-sha = "646bdbf0fc7bb6214ccc514f1be49a64b39a3cad"
-installed_at = "2026-07-22T15:04:11.812958Z"
 
 [[plugin]]
 qualified_name = "10ae737f6885d841/caveman"

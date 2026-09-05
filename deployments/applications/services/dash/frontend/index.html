@@ -334,7 +334,7 @@
   .example-label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
   .example-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     background: var(--bg);
     border: 1px solid var(--border-soft);
@@ -420,6 +420,14 @@
 
   <div class="section">
     <div class="section-eyebrow">
+      <span class="label">Agents</span>
+      <span class="hint">no browser UI &middot; click for connection details</span>
+    </div>
+    <div class="card-grid" id="agent-grid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">
       <span class="label">Backend services</span>
       <span class="hint">no browser UI &middot; click for connection details</span>
     </div>
@@ -488,7 +496,7 @@
   }
 
   const modal = document.getElementById('connect-modal');
-  let backendTiles = [];
+  let connectTiles = [];
 
   function openConnect(s) {
     const iconEl = document.getElementById('modal-icon');
@@ -507,11 +515,13 @@
     modal.showModal();
   }
 
-  document.getElementById('backend-grid').addEventListener('click', (event) => {
-    const card = event.target.closest('.connect-card');
-    if (!card) return;
-    const service = backendTiles.find((s) => s.key === card.dataset.key);
-    if (service) openConnect(service);
+  ['agent-grid', 'backend-grid'].forEach((id) => {
+    document.getElementById(id).addEventListener('click', (event) => {
+      const card = event.target.closest('.connect-card');
+      if (!card) return;
+      const service = connectTiles.find((s) => s.key === card.dataset.key);
+      if (service) openConnect(service);
+    });
   });
 
   document.getElementById('modal-close').addEventListener('click', () => modal.close());
@@ -567,10 +577,13 @@
 
     const tiles = data.tiles || [];
     const dashboards = sortTiles(tiles.filter((t) => t.category === 'dashboard'));
-    backendTiles = sortTiles(tiles.filter((t) => t.category === 'backend'));
+    const agents = sortTiles(tiles.filter((t) => t.category === 'agents'));
+    const backends = sortTiles(tiles.filter((t) => t.category === 'backend'));
+    connectTiles = agents.concat(backends);
 
     document.getElementById('dashboard-grid').innerHTML = dashboards.map((s) => cardHtml(s, 'link')).join('');
-    document.getElementById('backend-grid').innerHTML = backendTiles.map((s) => cardHtml(s, 'modal')).join('');
+    document.getElementById('agent-grid').innerHTML = agents.map((s) => cardHtml(s, 'modal')).join('');
+    document.getElementById('backend-grid').innerHTML = backends.map((s) => cardHtml(s, 'modal')).join('');
 
     const counts = tiles.reduce((acc, s) => {
       acc[s.status] = (acc[s.status] || 0) + 1;

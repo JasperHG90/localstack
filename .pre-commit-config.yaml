@@ -124,7 +124,9 @@ repos:
         name: Pytest (dash backend)
         entry: uv run --project deployments/applications/services/dash/backend pytest deployments/applications/services/dash/backend/tests
         language: system
-        files: '^deployments/applications/services/dash/backend/'
+        # tiles.json is in the pattern because the suite parses the shipped
+        # config; scoped to the backend alone, a bad tile would skip the gate.
+        files: '^deployments/applications/services/dash/(backend/|tiles\.json$)'
         pass_filenames: false
       # registry-ui carries the same four hooks as dash, for the same reason:
       # its own uv project, so its own interpreter and config. Its frontend

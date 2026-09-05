@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-Category = Literal["dashboard", "backend"]
+Category = Literal["dashboard", "agents", "backend"]
 
 
 class TileConfigError(ValueError):
@@ -20,7 +20,7 @@ class TileConfigError(ValueError):
 
 @dataclass(frozen=True)
 class ConnectInfo:
-    """How to connect to a backend-row service. Never a credential value."""
+    """How to connect to an agent- or backend-row service. Never a credential value."""
 
     protocol: str
     address: str
@@ -58,7 +58,7 @@ def _require(obj: dict[str, Any], field: str, tile_key: str) -> Any:
 
 def _parse_connect(raw: Any, tile_key: str) -> ConnectInfo:
     if not isinstance(raw, dict):
-        raise TileConfigError(f"backend tile {tile_key!r} is missing its 'connect' block")
+        raise TileConfigError(f"tile {tile_key!r} is missing its 'connect' block")
     return ConnectInfo(
         protocol=_require(raw, "protocol", tile_key),
         address=_require(raw, "address", tile_key),
@@ -80,7 +80,7 @@ def _parse_tile(raw: dict[str, Any]) -> Tile:
     job = _require(raw, "job", key)
     node = _require(raw, "node", key)
 
-    if category not in ("dashboard", "backend"):
+    if category not in ("dashboard", "agents", "backend"):
         raise TileConfigError(f"tile {key!r} has invalid category {category!r}")
 
     url: str | None = None

@@ -1,4 +1,4 @@
 {
   "embedding": "embeddinggemma-q8:latest",
-  "reranker": "mxbai-rerank-xsmall-v1-q8:latest"
+  "reranker": "mxbai-rerank-qat:latest"
 }

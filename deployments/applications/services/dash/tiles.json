@@ -77,6 +77,17 @@
     "url": "https://vault.lab.orangecluster.nl"
   },
   {
+    "key": "registry-ui",
+    "name": "registry-ui",
+    "desc": "what the registry holds",
+    "color": "#b5729d",
+    "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M11 3 L19 7 L11 11 L3 7 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M3 11 L11 15 L19 11\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M3 15 L11 19 L19 15\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/></svg>",
+    "category": "dashboard",
+    "job": "registry-ui",
+    "node": "radxa-dragon-q6a",
+    "url": "https://registry-ui.lab.orangecluster.nl"
+  },
+  {
     "key": "postgres",
     "name": "postgres",
     "desc": "primary database",
@@ -130,7 +141,7 @@
     "desc": "telegram agent",
     "color": "#a68a1f",
     "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M3 11 L19 3.5 L13 19 L10.2 12.7 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M10.2 12.7 L19 3.5\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>",
-    "category": "backend",
+    "category": "agents",
     "job": "hermes",
     "node": "radxa-dragon-q6a",
     "connect": {
@@ -146,7 +157,7 @@
     "desc": "long-term memory",
     "color": "#9d7fe0",
     "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><circle cx=\"6\" cy=\"7\" r=\"2\" stroke=\"currentColor\" stroke-width=\"1.6\"/><circle cx=\"16\" cy=\"6\" r=\"2\" stroke=\"currentColor\" stroke-width=\"1.6\"/><circle cx=\"9\" cy=\"16\" r=\"2\" stroke=\"currentColor\" stroke-width=\"1.6\"/><circle cx=\"17\" cy=\"15\" r=\"2\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M7.7 8.1 L14.5 6.6 M7.4 8.6 L8.6 14.2 M10.9 15.7 L15.2 15.2 M14.4 7.8 L16.6 13.3\" stroke=\"currentColor\" stroke-width=\"1.3\"/></svg>",
-    "category": "backend",
+    "category": "agents",
     "job": "memex",
     "node": "jetson-orin-nano",
     "connect": {
@@ -185,7 +196,7 @@
       "protocol": "OCI Distribution API over HTTPS. Blobs are stored in the `registry` MinIO bucket, not on local disk.",
       "address": "https://registry.lab.orangecluster.nl",
       "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC — the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
-      "example": "podman login registry.lab.orangecluster.nl -u push"
+      "example": "podman login registry.lab.orangecluster.nl -u push\npodman push registry.lab.orangecluster.nl/<image>:<tag>\n\nkit login registry.lab.orangecluster.nl -u push\nkit push registry.lab.orangecluster.nl/<modelkit>:<tag>"
     }
   }
 ]

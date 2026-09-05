@@ -93,7 +93,7 @@ Edit `models.json`. One entry per served name:
 ```json
 {
   "embedding": "embeddinggemma-q8:latest",
-  "reranker": "mmarco-minilm:v1"
+  "reranker": "mxbai-rerank-qat:latest"
 }
 ```
 
