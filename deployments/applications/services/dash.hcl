@@ -118,10 +118,16 @@ job "dash" {
       ### HCL string early -- caught only at terraform apply (the nomad
       ### provider's jobspec parse step), since neither terraform validate
       ### nor nomad fmt parse the rendered jobspec, only the template
-      ### source. A heredoc needs no quote-escaping, and tiles.json
-      ### contains no dollar-sign characters (confirmed by grep), so
-      ### Nomad's own interpolation syntax cannot misfire on the
-      ### substituted content.
+      ### source. A heredoc needs no quote-escaping. tiles.json must carry
+      ### no template opener: a dollar sign or a percent sign followed by an
+      ### opening brace. Both open a template here, and the percent form is
+      ### the dangerous one, because it parses and rewrites the text silently
+      ### rather than failing. A bare dollar sign is safe and already ships.
+      ### The backend suite asserts both openers are absent.
+      ###
+      ### This comment cannot spell either opener: templatefile() reads this
+      ### whole file, comments included, so writing one here breaks the very
+      ### call that renders it.
       template {
         data        = <<-EOH
         ${tiles_json}

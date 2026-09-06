@@ -13,11 +13,12 @@ no way to hold.
 One deliberate difference from that command's own `_collect`: this app never
 reads HAProxy's own job spec to build a route table. That spec embeds a live
 credential in plaintext (see cli's `api/haproxy.py` docstring), and nothing
-here needs it -- every tile already names its own Nomad job explicitly in
-`tiles.json`. Instead, one synthetic `Route` is built per tile, named after
-its job, so `join()`'s existing resolution ladder (job id, then Consul
+here needs it -- every tile already names its own Nomad jobs explicitly in
+`tiles.json`. Instead, one synthetic `Route` is built per JOB, named after
+that job, so `join()`'s existing resolution ladder (job id, then Consul
 service name) still does the matching, just without ever fetching a real
-routing table.
+routing table. A tile naming two jobs resolves each one separately and
+folds the results. See `worst`.
 """
 
 from __future__ import annotations
@@ -25,12 +26,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dash_app.consul_client import Check
-from dash_app.health import Health
+from dash_app.health import Health, JobHealth
 from dash_app.health import judge_all as judge_all
 from dash_app.nomad_client import Job, Node
-from dash_app.services import JobSource, Route
+from dash_app.services import JobSource, Route, ServiceRow
 from dash_app.services import join as join
-from dash_app.tiles import Tile
+from dash_app.tiles import Group, JobRef, Tile
 
 TileStatus = str  # "up" | "degraded" | "down" | "unknown"
 
@@ -42,14 +43,51 @@ _HEALTH_TO_STATUS: dict[Health, TileStatus] = {
 }
 
 
-@dataclass(frozen=True)
-class TileState:
-    """A tile's live status, ready to render."""
+# Ranked worst-last. `worst` folds a tile's jobs through this, and
+# `unknown` outranks `up` because absence of a signal is not evidence of
+# health -- the stance `services.NO_CHECK` already takes.
+_SEVERITY: dict[TileStatus, int] = {"up": 0, "unknown": 1, "degraded": 2, "down": 3}
 
-    tile: Tile
+
+def worst(statuses: list[TileStatus]) -> TileStatus:
+    """The worst status in the list, or "unknown" for an empty list."""
+    if not statuses:
+        return "unknown"
+    return max(statuses, key=lambda status: _SEVERITY[status])
+
+
+@dataclass(frozen=True)
+class JobState:
+    """One job behind a tile, resolved on its own."""
+
+    job: JobRef
     status: TileStatus
     counts: str
     checks: str
+
+
+@dataclass(frozen=True)
+class TileState:
+    """A tile's live status, ready to render.
+
+    `node` and `counts` are the DECIDING job's: the worst-severity one,
+    ties broken by config order. For a one-job tile that is just that
+    job's; for a two-job tile it names where the problem actually is.
+    """
+
+    tile: Tile
+    status: TileStatus
+    node: str
+    counts: str
+    jobs: list[JobState]
+
+
+@dataclass(frozen=True)
+class GroupState:
+    """One headed section, with its tiles in config order."""
+
+    group: Group
+    tiles: list[TileState]
 
 
 def status_for(health: Health) -> TileStatus:
@@ -67,13 +105,13 @@ def _status_from_consul(check_state: str) -> TileStatus:
 
     `check_state` is `_check_state`'s own vocabulary: "passing", "no
     check", "not found", or a joined set of failing statuses (e.g.
-    "critical"). Only used for agent-endpoint tiles (Vault, Nomad,
-    Consul), which carry no Nomad job for `judge_all` to assess.
+    "critical"). Only used for an agent endpoint (Vault, Nomad, Consul),
+    which carries no Nomad job for `judge_all` to assess.
 
     "no check" only reaches here already carrying `JobSource.CONSUL_NAME`
-    (`compute_tile_states` calls this function only in that branch): join()
-    has already confirmed the tile's job name is a real service in
-    Consul's own catalog, it just has no check registered against it --
+    (`_job_state` calls this function only in that branch): join() has
+    already confirmed the job name is a real service in Consul's own
+    catalog, it just has no check registered against it --
     Consul's own agent is the standing example, since its only check
     (`serfHealth`) carries no `ServiceName` (`consul_client.py`'s own
     docstring). Catalog presence is itself the health signal here, so this
@@ -88,57 +126,101 @@ def _status_from_consul(check_state: str) -> TileStatus:
     return "down"
 
 
-def build_routes(tiles: list[Tile]) -> list[Route]:
-    """One synthetic `Route` per tile, named after its job.
+def build_routes(groups: list[Group]) -> list[Route]:
+    """One synthetic `Route` per job, named after that job.
 
-    `hostname`/`backend_host`/`backend_port` are left blank: `join()`'s
-    health computation reads only `route.name` to match a job or a
-    Consul service name, never those fields.
+    De-duplicated by name, because two tiles may name the same job.
+    `hostname`/`backend_host`/`backend_port` are left blank, because
+    `join()`'s health computation reads only `route.name`.
     """
-    return [Route(name=tile.job, hostname="", backend_host="", backend_port=0) for tile in tiles]
+    names = dict.fromkeys(job.name for group in groups for tile in group.tiles for job in tile.jobs)
+    return [Route(name=name, hostname="", backend_host="", backend_port=0) for name in names]
+
+
+def _job_state(
+    job: JobRef,
+    healths_by_job: dict[str, JobHealth],
+    rows_by_name: dict[str, ServiceRow],
+) -> JobState:
+    """Resolve one job on the same three-rung ladder as before.
+
+    `judge_all` is the primary signal for a real Nomad job. A job with no
+    such entry (an agent endpoint like Vault, Nomad or Consul) falls back
+    to `join()`'s Consul-check resolution instead.
+    """
+    job_health = healths_by_job.get(job.name)
+    row = rows_by_name.get(job.name)
+
+    if job_health is not None:
+        status = status_for(job_health.health)
+        counts = job_health.counts
+    elif row is not None and row.job_source is JobSource.CONSUL_NAME:
+        status = _status_from_consul(row.health)
+        counts = ""
+    else:
+        status = "unknown"
+        counts = ""
+
+    checks = row.health if row is not None else ""
+    return JobState(job=job, status=status, counts=counts, checks=checks)
+
+
+def _tile_state(tile: Tile, job_states: list[JobState]) -> TileState:
+    deciding = max(job_states, key=lambda state: _SEVERITY[state.status])
+    return TileState(
+        tile=tile,
+        status=worst([state.status for state in job_states]),
+        node=deciding.job.node,
+        counts=deciding.counts,
+        jobs=job_states,
+    )
 
 
 def compute_tile_states(
-    tiles: list[Tile],
+    groups: list[Group],
     jobs: list[Job],
     nodes: list[Node],
     checks: list[Check],
     catalog: dict[str, list[str]],
     service_names: dict[str, list[str]],
-) -> list[TileState]:
-    """One `TileState` per configured tile.
-
-    `judge_all` is the primary signal for a tile backed by a real Nomad
-    job. A tile with no such job (an agent endpoint like Vault, Nomad or
-    Consul) falls back to `join()`'s Consul-check resolution instead.
-    """
+) -> list[GroupState]:
+    """One `GroupState` per configured group, in config order."""
     healths_by_job = {h.name: h for h in judge_all(jobs, nodes)}
-    routes = build_routes(tiles)
+    routes = build_routes(groups)
     rows_by_name = {
         row.name: row for row in join(routes, jobs, checks, service_names, catalog=catalog)
     }
 
-    states = []
-    for tile in tiles:
-        job_health = healths_by_job.get(tile.job)
-        row = rows_by_name.get(tile.job)
-
-        if job_health is not None:
-            status = status_for(job_health.health)
-            counts = job_health.counts
-        elif row is not None and row.job_source is JobSource.CONSUL_NAME:
-            status = _status_from_consul(row.health)
-            counts = ""
-        else:
-            status = "unknown"
-            counts = ""
-
-        states.append(
-            TileState(
-                tile=tile,
-                status=status,
-                counts=counts,
-                checks=row.health if row is not None else "",
-            )
+    return [
+        GroupState(
+            group=group,
+            tiles=[
+                _tile_state(
+                    tile,
+                    [_job_state(job, healths_by_job, rows_by_name) for job in tile.jobs],
+                )
+                for tile in group.tiles
+            ],
         )
-    return states
+        for group in groups
+    ]
+
+
+def unknown_states(groups: list[Group]) -> list[GroupState]:
+    """The page's shape with nothing known yet, for a failed fetch."""
+    return [
+        GroupState(
+            group=group,
+            tiles=[
+                _tile_state(
+                    tile,
+                    [
+                        JobState(job=job, status="unknown", counts="", checks="")
+                        for job in tile.jobs
+                    ],
+                )
+                for tile in group.tiles
+            ],
+        )
+        for group in groups
+    ]

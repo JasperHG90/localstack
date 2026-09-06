@@ -12,11 +12,11 @@ from __future__ import annotations
 from dash_app.config import Config
 from dash_app.consul_client import list_checks, list_services
 from dash_app.nomad_client import job_service_names, job_statuses, list_nodes
-from dash_app.status import TileState, compute_tile_states
-from dash_app.tiles import Tile
+from dash_app.status import GroupState, compute_tile_states
+from dash_app.tiles import Group
 
 
-def fetch_tile_states(config: Config, tiles: list[Tile]) -> list[TileState]:
+def fetch_tile_states(config: Config, groups: list[Group]) -> list[GroupState]:
     """Live per-tile status. Raises on a network/auth failure."""
     token = config.read_nomad_token()
     jobs = job_statuses(config.nomad_addr, token)
@@ -25,10 +25,13 @@ def fetch_tile_states(config: Config, tiles: list[Tile]) -> list[TileState]:
     catalog = list_services(config.consul_addr)
 
     job_names = {job.name for job in jobs}
+    wanted = dict.fromkeys(
+        job.name for group in groups for tile in group.tiles for job in tile.jobs
+    )
     service_names = {
-        tile.job: job_service_names(config.nomad_addr, token, tile.job)
-        for tile in tiles
-        if tile.job in job_names
+        name: job_service_names(config.nomad_addr, token, name)
+        for name in wanted
+        if name in job_names
     }
 
-    return compute_tile_states(tiles, jobs, nodes, checks, catalog, service_names)
+    return compute_tile_states(groups, jobs, nodes, checks, catalog, service_names)

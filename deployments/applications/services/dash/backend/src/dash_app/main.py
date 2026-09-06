@@ -22,11 +22,18 @@ from starlette.routing import Route
 
 from dash_app.config import Config
 from dash_app.live import fetch_tile_states
-from dash_app.status import TileState
-from dash_app.tiles import Tile, load_tiles
+from dash_app.status import GroupState, TileState, unknown_states
+from dash_app.tiles import Group, load_tiles
 
 
 def _tile_json(state: TileState) -> dict[str, Any]:
+    """Everything the page renders for one tile.
+
+    `status`, `node` and `counts` are the tile-level, folded values the
+    card foot, badge, border and summary counts all read; `jobs` carries
+    the per-job breakdown the panel lists. Dropping any of them renders a
+    page with no badges, and no gate in this repo would catch it.
+    """
     tile = state.tile
     body: dict[str, Any] = {
         "key": tile.key,
@@ -34,15 +41,22 @@ def _tile_json(state: TileState) -> dict[str, Any]:
         "desc": tile.desc,
         "color": tile.color,
         "icon": tile.icon,
-        "category": tile.category,
-        "node": tile.node,
         "status": state.status,
+        "node": state.node,
         "counts": state.counts,
+        "jobs": [
+            {
+                "name": job.job.name,
+                "node": job.job.node,
+                "status": job.status,
+                "counts": job.counts,
+            }
+            for job in state.jobs
+        ],
     }
-    if tile.category == "dashboard":
-        body["url"] = tile.url
-    else:
-        assert tile.connect is not None  # enforced by tiles.load_tiles
+    if tile.fe is not None:
+        body["fe"] = {"url": tile.fe.url, "label": tile.fe.label}
+    if tile.connect is not None:
         body["connect"] = {
             "protocol": tile.connect.protocol,
             "address": tile.connect.address,
@@ -52,22 +66,30 @@ def _tile_json(state: TileState) -> dict[str, Any]:
     return body
 
 
-def create_app(config: Config, tiles: list[Tile]) -> Starlette:
+def _group_json(state: GroupState) -> dict[str, Any]:
+    return {
+        "key": state.group.key,
+        "title": state.group.title,
+        "hint": state.group.hint,
+        "tiles": [_tile_json(tile) for tile in state.tiles],
+    }
+
+
+def create_app(config: Config, groups: list[Group]) -> Starlette:
     async def status_endpoint(request: Any) -> JSONResponse:  # noqa: ARG001
         try:
-            states = fetch_tile_states(config, tiles)
+            states = fetch_tile_states(config, groups)
             error = None
         except Exception as err:  # noqa: BLE001
             # A fetch failure reads as "nothing is known yet", the same
             # honest-uncertainty stance cli's own TUI panels take, rather
-            # than a 500 that takes the whole page down with it.
-            states = [
-                TileState(tile=tile, status="unknown", counts="", checks="") for tile in tiles
-            ]
+            # than a 500 that takes the whole page down with it. The page
+            # skeleton still renders: same groups, same tiles, no status.
+            states = unknown_states(groups)
             error = str(err)
 
         payload: dict[str, Any] = {
-            "tiles": [_tile_json(state) for state in states],
+            "groups": [_group_json(state) for state in states],
             "generated_at": datetime.now(UTC).isoformat(),
         }
         if error is not None:
@@ -84,8 +106,8 @@ def main() -> None:
     import uvicorn
 
     config = Config.from_env()
-    tiles = load_tiles(config.tiles_path)
-    app = create_app(config, tiles)
+    groups = load_tiles(config.tiles_path)
+    app = create_app(config, groups)
     port = int(os.environ.get("PORT", "8001"))
     uvicorn.run(app, host="0.0.0.0", port=port)  # noqa: S104
 
