@@ -361,6 +361,27 @@ resource "vault_kv_secret_v2" "openviking_user_keys" {
   })
 }
 
+### Hermes's OpenViking key, copied under hermes's OWN KV prefix rather than
+### read from default/openviking-users/hermes.
+###
+### The nomad-workloads role grants a job read on
+### `secret/data/<namespace>/<job_id>/*` and nothing else, so job `hermes`
+### reading an openviking-users path gets a 403, consul-template never renders,
+### and the task never starts. Same reason bifrost_hermes_key and
+### embark_registry_credentials above are copies under their consumers.
+###
+### The same derived key as the human entries, not a second one: the value
+### comes from the same local, so one seed change still rotates every holder.
+resource "vault_kv_secret_v2" "hermes_openviking_key" {
+  mount = var.secret_mount
+  name  = "default/hermes/openviking"
+  data_json = jsonencode({
+    account = local.openviking_account
+    user    = "hermes"
+    api_key = local.openviking_user_keys["hermes"]
+  })
+}
+
 resource "vault_kv_secret_v2" "openviking_db_credentials" {
   mount = var.secret_mount
   name  = "default/openviking/db"

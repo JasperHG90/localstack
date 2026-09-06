@@ -236,7 +236,7 @@ resource "nomad_job" "hermes" {
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       openviking_host                = "192.168.2.50"
-      openviking_user_secret         = "${var.secret_mount}/data/default/openviking-users/hermes"
+      openviking_user_secret         = vault_kv_secret_v2.hermes_openviking_key.path
       github_secret                  = "${var.secret_mount}/data/default/hermes/github"
       telegram_secret                = "${var.secret_mount}/data/default/hermes/telegram"
       email_secret                   = "${var.secret_mount}/data/default/hermes/email"

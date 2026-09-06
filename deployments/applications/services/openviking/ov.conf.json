@@ -80,7 +80,9 @@
         "enabled": true,
         "protocol": "grpc",
         "endpoint": "192.168.2.47:4317",
-        "insecure": true,
+        "tls": {
+          "insecure": true
+        },
         "service_name": "openviking"
       }
     }
