@@ -1,28 +1,31 @@
 ---
 name: medium-reader
-description: Receives Medium digest emails, filters clickbait, and captures worthy articles verbatim to Memex inbox via archive sources
+description: Receives Medium digest emails, filters clickbait, and captures worthy articles verbatim to OpenViking inbox via archive sources
 version: 1.1.0
 metadata:
   hermes:
-    tags: [productivity, medium, curation, articles, memex]
+    tags: [productivity, medium, curation, articles, openviking]
     category: productivity
 ---
 
 ## When to Use
 
-Activate when you receive a Medium digest email containing article links and summaries. The skill evaluates each article, filters out clickbait, and captures worthy articles **verbatim** to the Memex inbox vault.
+Activate when you receive a Medium digest email containing article links and summaries. The skill evaluates each article, filters out clickbait, and captures worthy articles **verbatim** to the OpenViking inbox vault.
 
 ## Configuration
 
-- KV namespace: `app:hermes:medium-reader:*`
-- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
+- Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
+- "Have I already captured this article?" needs an EXACT-KEY read, which
+  OpenViking cannot do -- it is a semantic store. Keep seen-article markers in
+  `$HERMES_HOME/state/medium-reader.json` via the `files` toolset. The article
+  itself goes to OpenViking.
 
 ## Procedure
 
 ### Critical Rules
 
 - **NEVER summarize.** Save the full, verbatim article text as clean markdown. If the full text cannot be captured, the task is a failure -- do not save partial summaries.
-- **NEVER write post-mortem or retro notes to Memex.** Delegate errors to a subagent with the /post-mortem skill instead.
+- **NEVER write post-mortem or retro notes yourself.** Delegate errors to a subagent with the /post-mortem skill instead.
 
 ### Step 1: Extract Article Links
 
@@ -67,10 +70,11 @@ For each article that passes the filter:
 2. Check if already captured:
 
 ```
-memex_kv_get(key="app:hermes:medium-reader:article:{url_slug}")
+read $HERMES_HOME/state/medium-reader.json, look up articles["{url_slug}"]
 ```
 
-If it exists, skip this article.
+If present, skip this article. Absent file on first run means nothing is
+captured yet: treat as `{}`.
 
 ### Step 4: Capture Article
 
@@ -94,7 +98,7 @@ For whichever source succeeds:
 
 ### Step 4b: Capture Assets
 
-For each successfully captured article, BEFORE saving to Memex:
+For each successfully captured article, BEFORE saving to OpenViking:
 
 1. Parse the page content for images. Skip avatars, tracking pixels, and decorative images. Keep diagrams, charts, code screenshots, and technical figures.
 2. Download each image using the terminal tool:
@@ -105,20 +109,14 @@ curl -sL -A "Mozilla/5.0 (X11; Linux x86_64)" -o /tmp/{uuid}.png {image_url}
 
 If image download fails, continue -- save the article text anyway. Missing assets are not a reason to skip the article.
 
-### Step 4c: Save to Memex
+### Step 4c: Save to OpenViking
 
 Create the note:
 
 ```
-memex_retain(
-  title="{extracted article title, verbatim from the page}",
-  author="medium-reader",
-  description="One-sentence summary of the article",
-  tags=["medium-reader", "medium", "{publication-slug}"],
-  markdown_content=$FULL_VERBATIM_MARKDOWN,
-  vault_id="inbox",
-  note_key="medium-reader:article:{url_slug}",
-  background=True
+viking_add_resource(
+  url="{the source URL that actually worked}",
+  reason="medium-reader capture: {extracted article title, verbatim}"
 )
 ```
 
@@ -126,17 +124,22 @@ Capture the returned note id into `NOTE_ID`. The `markdown_content` must include
 
 The `note_key` MUST match the idempotency key generated in Step 3. This is mandatory for deduplication.
 
-After creating the note, attach any downloaded assets from Step 4b via `memex_add_assets(note_id=$NOTE_ID, ...)`.
+`viking_add_resource` fetches and parses the page itself, which is what keeps
+the text verbatim -- do not paste a summary into `viking_remember` instead.
+For a source that only worked behind an archive URL, pass that archive URL.
+
+Any assets downloaded in Step 4b go in with their own
+`viking_add_resource(url=<asset-url>)` call.
 
 Mark as processed:
 
 ```
-memex_kv_write(
-  key="app:hermes:medium-reader:article:{url_slug}",
-  value="captured:{ISO-timestamp}",
-  ttl_seconds=259200
-)
+$HERMES_HOME/state/medium-reader.json
+  articles["{url_slug}"] = "captured:{ISO-timestamp}"
 ```
+
+Read-modify-write the whole file. There is no TTL: prune entries older than
+30 days when you write, or the file grows without bound.
 
 ### Step 5: Summary
 
@@ -153,7 +156,7 @@ After processing all articles, briefly report what you did:
 - Never fail the entire run because of one article.
 - Never retry a URL that returned a bot wall or security page. Move to the next source immediately.
 
-When you encounter errors (bot detection, asset capture failures, content extraction failures, Memex save failures), delegate to a subagent with the /post-mortem skill describing the issue. Include what went wrong, the root cause if identifiable, and a suggested fix. Do NOT write your own post-mortem notes to Memex. Only report actual failures, not clean runs.
+When you encounter errors (bot detection, asset capture failures, content extraction failures, OpenViking save failures), delegate to a subagent with the /post-mortem skill describing the issue. Include what went wrong, the root cause if identifiable, and a suggested fix. Do NOT write your own post-mortem notes to OpenViking. Only report actual failures, not clean runs.
 
 ## Pitfalls
 

@@ -1,6 +1,6 @@
 ---
 name: insight-linker
-description: Connects recent Memex insights to GitHub projects by opening issues or PRs with actionable suggestions
+description: Connects recent OpenViking insights to GitHub projects by opening issues or PRs with actionable suggestions
 version: 1.1.0
 metadata:
   hermes:
@@ -10,13 +10,17 @@ metadata:
 
 ## When to Use
 
-Activate on a schedule to scan recent Memex notes (blog posts, articles, research) and create GitHub issues or PRs when an insight contains an actionable technique, tool, pattern, or best practice applicable to a target repository.
+Activate on a schedule to scan recent OpenViking notes (blog posts, articles, research) and create GitHub issues or PRs when an insight contains an actionable technique, tool, pattern, or best practice applicable to a target repository.
 
 ## Configuration
 
 - **github_user**: GitHub username for API access (default: `JasperHG90`)
 - **github_repos**: Comma-separated list of `owner/repo` pairs to suggest improvements for (default: `JasperHG90/skills`)
-- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl for Memex calls. (GitHub API access still uses `gh`/curl.)
+- Use the native OpenViking tools (`viking_*`). Do not shell out to curl for
+  them. (GitHub API access still uses `gh`/curl.)
+- Repo context caching and processed markers need EXACT-KEY reads, which
+  OpenViking cannot do -- it is a semantic store. Keep them in
+  `$HERMES_HOME/state/insight-linker.json` via the `files` toolset.
 
 ## Procedure
 
@@ -24,65 +28,57 @@ Activate on a schedule to scan recent Memex notes (blog posts, articles, researc
 
 For each repo in the `github_repos` list:
 
-1. Check KV for cached repo context:
+1. Read `$HERMES_HOME/state/insight-linker.json` once for the whole run, and
+   take the cached repo context:
 
 ```
-memex_kv_get(key="app:hermes:insight-linker:repo:<owner>/<repo>:context")
+state["repos"]["<owner>/<repo>"]   # {summary, cached_at}
 ```
 
 2. If cached and less than 7 days old, use the cached description. Otherwise, use `gh` CLI or GitHub API to get:
    - Repository metadata (language, topics, description)
    - README content
    - Summarize the repo's purpose, tech stack, and areas where improvements could apply.
-   - Cache in KV:
+   - Cache it back:
 
 ```
-memex_kv_write(
-  key="app:hermes:insight-linker:repo:<owner>/<repo>:context",
-  value="<summary + ISO timestamp>"
-)
+state["repos"]["<owner>/<repo>"] = {summary: "<summary>", cached_at: "<ISO>"}
 ```
 
 Build a mental map of what each project does and what kind of insights would be relevant.
 
 ### Phase 2: Search for Recent Insights
 
-1. Get the last run timestamp:
+1. Take `state["last_run"]` from the file you already read.
+
+2. Search for candidate material:
 
 ```
-memex_kv_get(key="app:hermes:insight-linker:last_run")
-```
-
-2. Search for recent notes since last run (or last 3 days on first run):
-
-```
-memex_retrieve_notes(
+viking_search(
   query="engineering techniques tools patterns best practices",
-  after="<lookback_date>"
+  mode="deep",
+  limit=30
 )
 ```
 
+   There is no `after` filter -- OpenViking ranks by meaning, not recency. Read
+   each hit's own content for its date and drop anything older than the
+   lookback window.
 
-3. Deduplicate by note ID.
-4. Check which notes have already been processed:
+3. Deduplicate by `viking://` URI.
+4. Filter out URIs already in `state["processed"]`.
 
-```
-memex_kv_list(prefix="app:hermes:insight-linker:processed:")
-```
-
-5. Filter out already-processed note IDs.
-
-If no new notes remain, skip to Phase 5.
+If nothing new remains, skip to Phase 5.
 
 ### Phase 3: Evaluate and Match
 
 For each unprocessed note:
 
-1. Read the note content. For small notes use `memex_read_note(note_id=<id>)` (only when total_tokens < 500). Otherwise get page indices first, then batch-fetch nodes:
+1. Read the content, cheapest level first:
 
 ```
-memex_get_page_indices(note_ids=["<note_id>"])
-memex_get_nodes(node_ids=["<node_id_1>", "<node_id_2>"])
+viking_read(uri="<viking:// uri>", level="abstract")
+viking_read(uri="<viking:// uri>", level="full")   # only if the abstract is too thin
 ```
 
 2. Extract actionable insights. An insight is actionable if it describes:
@@ -147,23 +143,18 @@ Only create a PR when the change is:
 
 ### Phase 5: Update State
 
-1. For each processed note:
+Write the whole state file back ONCE, at the end of the run:
 
 ```
-memex_kv_write(
-  key="app:hermes:insight-linker:processed:<note_id>",
-  value="<action>:<ISO-timestamp>"
-)
+$HERMES_HOME/state/insight-linker.json
+  repos      = {...as cached in Phase 1...}
+  processed["<viking:// uri>"] = "<action>:<ISO-timestamp>"
+  last_run    = "<ISO-timestamp>"
+  last_issues = <count>
 ```
 
-Where `action` is `issue`, `pr`, or `skipped`.
-
-2. Update last run and issue count:
-
-```
-memex_kv_write(key="app:hermes:insight-linker:last_run", value="<ISO-timestamp>")
-memex_kv_write(key="app:hermes:insight-linker:last_issues", value="<count>")
-```
+Where `action` is `issue`, `pr`, or `skipped`. One write, not one per note: a
+per-note write that re-reads a stale copy loses the earlier entries.
 
 ### Quality Guidelines
 
@@ -180,7 +171,7 @@ memex_kv_write(key="app:hermes:insight-linker:last_issues", value="<count>")
 - If issue creation fails: log error, continue with remaining insights.
 - Never fail the entire run because of one repo or one note.
 
-When you encounter errors during your run (GitHub API rate limits, repo not found, issue creation failures, Memex search failures), delegate to a subagent with the /post-mortem skill describing the issue. Include what went wrong, the root cause if identifiable, and a suggested fix. Do NOT report clean runs or "no new insights found."
+When you encounter errors during your run (GitHub API rate limits, repo not found, issue creation failures, OpenViking search failures), delegate to a subagent with the /post-mortem skill describing the issue. Include what went wrong, the root cause if identifiable, and a suggested fix. Do NOT report clean runs or "no new insights found."
 
 ## Pitfalls
 

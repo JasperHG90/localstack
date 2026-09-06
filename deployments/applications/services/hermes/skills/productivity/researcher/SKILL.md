@@ -19,37 +19,46 @@ Activate when asked to investigate a topic, answer a complex question, or produc
 - **source_verification**: Cross-check claims across multiple sources before including. Default: `true`.
 - **max_sources**: Maximum number of sources to consult per investigation. Default: `30`.
 - **citation_style**: `inline_url`, `footnotes`, or `numbered`. Default: `inline_url`.
-- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
+- Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
+- Counters and run state need EXACT-KEY reads, which OpenViking cannot do --
+  it is a semantic store. Keep them in `$HERMES_HOME/state/researcher.json`
+  via the `files` toolset.
 
 ## Procedure
 
 ### Memory
 
-Use Memex for state and persistence -- not in-memory storage:
+Use OpenViking for state and persistence -- not in-memory storage:
 
 - KV store for state (namespace: `app:hermes:researcher:*`):
 
 ```
-memex_kv_get(key="app:hermes:researcher:{key}")
-memex_kv_write(key="app:hermes:researcher:{key}", value="...")
+read/write $HERMES_HOME/state/researcher.json
 ```
 
-- Note search to check existing knowledge before researching from scratch. Run both in parallel for best coverage:
+- Search existing knowledge before researching from scratch:
 
 ```
-memex_memory_search(query="...")   # individual facts/observations across notes
-memex_note_search(query="...")     # whole notes ranked by relevance
+viking_search(query="{topic}", mode="deep", limit=20)
+viking_read(uri="<a uri the search returned>", level="overview")
 ```
 
-- Entity exploration for knowledge graph:
+  One search, not two: OpenViking has a single semantic index rather than
+  separate note and memory planes. Start at `level="abstract"` and go deeper
+  only for the few hits that look load-bearing.
+
+- There is no entity graph and no co-occurrence lookup. To explore around a
+  topic, search for the relation you want in words:
 
 ```
-memex_list_entities(query="{topic}")
-memex_get_entity_cooccurrences(entity_id="...")
-memex_get_entity_mentions(entity_id="...")
+viking_search(query="{topic} and the systems or people it depends on", mode="deep")
 ```
 
-**Before starting research, ALWAYS search Memex first -- the answer may already exist.**
+  This is genuinely weaker than a graph walk: it will not enumerate every
+  neighbour, and it will not tell you two things co-occur. Say so in the
+  report rather than implying completeness.
+
+**Before starting research, ALWAYS search OpenViking first -- the answer may already exist.**
 
 ### Phase 1: Question Analysis and Decomposition
 
@@ -107,30 +116,28 @@ Format based on `output_style`. Always include:
 - Source list with quality ratings
 - Open questions / gaps identified
 
-Save report to Memex with tags `researcher`, `report`, plus topic tags. Use `vault_id="inbox"` -- the sorting-hat will route it to the correct vault:
+Save report to OpenViking with tags `researcher`, `report`, plus topic tags. Use `vault_id="inbox"` -- the sorting-hat will route it to the correct vault:
 
 ```
-memex_retain(
-  title="Research Report: {topic}",
-  author="researcher",
-  description="...",
-  tags=["researcher", "report", ...topic_tags],
-  markdown_content=$REPORT_MARKDOWN,
-  vault_id="inbox",
-  background=True
+viking_remember(
+  content=$REPORT_MARKDOWN,   # first line: Research Report: {topic}
+  category="case"
 )
 ```
 
-Capture the returned note id into `NOTE_ID` for reference.
+`category="case"` -- a research report is a worked-through question. Put the
+topic in the first line: it is what makes the report findable later, since
+there are no tags and no title field.
 
 ### Phase 7: Stats
 
-Update KV counters:
+Update the counters, read-modify-write on the whole file:
 
 ```
-memex_kv_write(key="app:hermes:researcher:queries_solved", value="...")
-memex_kv_write(key="app:hermes:researcher:sources_cited", value="...")
-memex_kv_write(key="app:hermes:researcher:reports_generated", value="...")
+$HERMES_HOME/state/researcher.json
+  queries_solved    += 1
+  sources_cited     += {count}
+  reports_generated += 1
 ```
 
 ### Guidelines
@@ -144,7 +151,7 @@ memex_kv_write(key="app:hermes:researcher:reports_generated", value="...")
 
 ## Pitfalls
 
-- Always search Memex before starting web research -- the answer may already exist, saving time and API calls.
+- Always search OpenViking before starting web research -- the answer may already exist, saving time and API calls.
 - Do not include sources you have not actually fetched and read. Only cite what you have verified.
 - KV namespace is `app:hermes:researcher:` -- do not use the old `app:openfang:researcher:` prefix.
 - Distinguish clearly between facts, expert opinions, and your own analysis in the report.

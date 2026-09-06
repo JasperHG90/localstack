@@ -1,10 +1,10 @@
 ---
 name: blog-scraper
-description: Daily engineering blog scraper — visits top AI/eng blogs, extracts new articles verbatim, stores in Memex
+description: Daily engineering blog scraper — visits top AI/eng blogs, extracts new articles verbatim, stores in OpenViking
 version: 1.1.0
 metadata:
   hermes:
-    tags: [productivity, scraping, engineering, blogs, memex]
+    tags: [productivity, scraping, engineering, blogs, openviking]
     category: productivity
 ---
 ## When to Use
@@ -13,13 +13,16 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 
 ## Configuration
 
-- KV namespace: `app:hermes:blog-scraper:*`
-- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
+- Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
+- "Which URLs have I already scraped?" needs EXACT-KEY reads, which OpenViking
+  cannot do -- it is a semantic store. Keep the per-site URL lists in
+  `$HERMES_HOME/state/blog-scraper.json` via the `files` toolset. Articles go
+  to OpenViking.
 
 ## Critical Rules
 
 - **NEVER summarize.** Save the full, verbatim article text as clean markdown. Partial summaries = failed capture.
-- **NEVER write post-mortem notes to Memex.** Report errors to a subagent with the `/post-mortem` skill.
+- **NEVER write post-mortem notes yourself.** Report errors to a subagent with the `/post-mortem` skill.
 
 ## Target Blogs
 
@@ -39,10 +42,10 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 For each blog, check previously scraped URLs:
 
 ```
-memex_kv_get(key="app:hermes:blog-scraper:scraped:{site_key}")
+read $HERMES_HOME/state/blog-scraper.json, take scraped["{site_key}"]
 ```
 
-Site keys: `anthropic`, `openai`, `spotify`, `deepmind`, `uber`, `mistral`, `ollama`. Value is JSON array of URLs. Missing key = first run.
+Site keys: `anthropic`, `openai`, `spotify`, `deepmind`, `uber`, `mistral`, `ollama`. Each value is a JSON array of URLs. Missing file or key = first run.
 
 ### Phase 2: Scrape Each Blog
 
@@ -69,49 +72,44 @@ If failed: skip article, report to subagent with `/post-mortem` skill.
 For successfully captured articles:
 1. Parse for meaningful images (diagrams, charts, code screenshots)
 2. Download via terminal: `curl -sL -A "Mozilla/5.0" -o /tmp/{uuid}.png {image_url}`
-3. After creating the Memex note, attach images via `memex_add_assets(note_id=$NOTE_ID, ...)`
+3. Add each image with its own `viking_add_resource(url=<image_url>)`
 
 If image download fails, continue — save article text anyway.
 
-### Phase 3: Save to Memex
+### Phase 3: Save to OpenViking
 
 For each new article:
 
 ```
-memex_retain(
-  title="{actual article title from page}",
-  author="blog-scraper",
-  description="{first sentence of article}",
-  tags=["blog-scraper", "engineering", "{source}"],
-  markdown_content=$FULL_VERBATIM_ARTICLE_MARKDOWN,
-  vault_id="inbox",
-  note_key="blog-scraper:article:{url_slug}",
-  background=True
+viking_add_resource(
+  url="{the article URL}",
+  reason="blog-scraper capture from {source}: {actual article title from page}"
 )
 ```
 
-Capture the returned note id into `NOTE_ID` so downstream steps (asset attach) can reference it.
-
-`markdown_content` is raw markdown (no base64 encoding). The `note_key` ensures idempotency. The body must include: source URL, author, date, complete article.
+`viking_add_resource` fetches and parses the page itself, which is what keeps
+the text verbatim. There is no upsert and no note key: idempotency comes from
+the state file in Phase 1, so a URL you failed to record will be captured
+twice.
 
 ### Phase 4: Update State
 
 Update KV for each blog:
 
 ```
-memex_kv_write(
-  key="app:hermes:blog-scraper:scraped:{site_key}",
-  value="{updated JSON array}"
-)
+$HERMES_HOME/state/blog-scraper.json
+  scraped["{site_key}"] = [updated JSON array]
 ```
 
-Only keep URLs from last 3 days. Remove older entries.
+Read-modify-write the whole file, or you will drop the other sites' lists.
+Only keep URLs from the last 3 days; prune older entries on every write.
 
 Also write:
 
 ```
-memex_kv_write(key="app:hermes:blog-scraper:last_run", value="{ISO-timestamp}")
-memex_kv_write(key="app:hermes:blog-scraper:last_count", value="{new articles found}")
+$HERMES_HOME/state/blog-scraper.json
+  last_run   = "{ISO-timestamp}"
+  last_count = {new articles found}
 ```
 
 ## Error Handling

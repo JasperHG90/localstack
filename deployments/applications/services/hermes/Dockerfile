@@ -16,28 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       curl jq chromium \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Memex common, Hermes plugin, and CLI into the venv (with deps).
-# Snapshot site-packages before/after so only NEW package dirs are chowned to
-# hermes — a recursive chown of the whole .venv would duplicate ~1.6GB into a
-# fresh layer.
-RUN set -euo pipefail; \
-    sp=/opt/hermes/.venv/lib/python3.13/site-packages; \
-    ls -1 "$sp" | sort > /tmp/sp-before; \
-    uv pip install --link-mode=copy --python /opt/hermes/.venv/bin/python \
-      pip setuptools wheel \
-      "https://github.com/JasperHG90/memex/releases/download/v1.1.0/memex_common-1.1.0-py3-none-any.whl" \
-      "https://github.com/JasperHG90/memex/releases/download/v1.1.0/memex_hermes_plugin-1.1.0-py3-none-any.whl" \
-      "https://github.com/JasperHG90/memex/releases/download/v1.1.0/memex_cli-1.1.0-py3-none-any.whl"; \
-    ls -1 "$sp" | sort > /tmp/sp-after; \
-    comm -13 /tmp/sp-before /tmp/sp-after | while IFS= read -r d; do \
-      chown -R hermes:hermes "$sp/$d"; \
-    done; \
-    rm /tmp/sp-before /tmp/sp-after
-
-# Stage plugin files for prestart to copy into user plugins dir ($HERMES_HOME/plugins/memex/)
-RUN mkdir -p /opt/hermes/memex-plugin && \
-    cp -r /opt/hermes/.venv/lib/python3.13/site-packages/memex_hermes_plugin/memex/* /opt/hermes/memex-plugin/ && \
-    chown -R hermes:hermes /opt/hermes/memex-plugin
+# No memory-provider packages are installed here. OpenViking's provider ships
+# inside the base image at /opt/hermes/plugins/memory/openviking and is chosen
+# by `memory.provider` in config.yaml, so it needs neither an install nor a
+# staging copy into $HERMES_HOME/plugins.
 
 # No trailing `USER hermes`: s6-overlay's /init must run as root so cont-init.d
 # can remap/chown, then main-wrapper.sh drops to the hermes user itself.

@@ -1,10 +1,10 @@
 ---
 name: post-mortem
-description: Receives issue reports, deduplicates them, and maintains structured post-mortem notes in the Memex inbox vault
+description: Receives issue reports, deduplicates them, and maintains structured post-mortems in OpenViking
 version: 1.1.0
 metadata:
   hermes:
-    tags: [devops, incident, post-mortem, memex]
+    tags: [devops, incident, post-mortem, openviking]
     category: devops
 ---
 
@@ -14,23 +14,25 @@ Activate when another skill or agent reports an error, failure, or operational i
 
 ## Configuration
 
-- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
+- Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
+- Recurrence tracking needs EXACT-KEY reads, which OpenViking cannot do -- it
+  is a semantic store, not a key-value one. Keep the tracker in
+  `$HERMES_HOME/state/post-mortem.json` via the `files` toolset, and keep the
+  written-up post-mortem itself in OpenViking.
 
 ## Procedure
 
 ### Forbidden Actions
 
-Do NOT use the memory search endpoint (`memex_recall`) for deduplication. Use note search with specific tags (`memex_retrieve_notes` / `memex_find_note`) instead.
+Do NOT use `viking_search` for deduplication. Semantic search returns things
+that are merely similar, so it will both miss recurrences and merge distinct
+issues. Deduplication is the state file's job, keyed on the slug.
 
-### Step 1: Verify the Vault
-
-On first invocation, confirm the `inbox` vault exists:
+### Step 1: Load the Tracker
 
 ```
-memex_get_vault_summary(vault_id="inbox")
+read $HERMES_HOME/state/post-mortem.json   (absent on first run: treat as {})
 ```
-
-If the call fails because the vault does not exist, stop and report an error -- you cannot persist without it.
 
 ### Step 2: Generate a Deterministic Issue Slug
 
@@ -38,10 +40,10 @@ Create a lowercase, hyphen-separated, short identifier for the issue (e.g. `post
 
 ### Step 3: Check for Prior Occurrences
 
-Check the KV store for an existing tracker entry:
+Look up `{issue-slug}` in the tracker you just read:
 
 ```
-memex_kv_get(key="app:hermes:post-mortem:processed:{issue-slug}")
+tracker["processed"]["{issue-slug}"]
 ```
 
 - **If found:** this is a recurrence. Parse the JSON value to get `first_seen`, `occurrence_count`, and `reporters`. Increment `occurrence_count`, update `last_seen`, merge the new reporter into the list.
@@ -49,22 +51,20 @@ memex_kv_get(key="app:hermes:post-mortem:processed:{issue-slug}")
 
 ### Step 4: Create or Update the Post-Mortem Note
 
-Use the native Memex plugin tool to create/upsert the note:
+Store it in OpenViking:
 
 ```
-memex_retain(
-  title="Post-Mortem: {issue-slug}",
-  author="post-mortem",
-  description="One-sentence summary of the issue",
-  tags=["post-mortem", "hermes", ...reporter tags, ...domain tags],
-  markdown_content=<raw markdown body, see below>,
-  vault_id="inbox",
-  note_key="post-mortem:{issue-slug}",
-  background=True
+viking_remember(
+  content=<the full markdown body below, with a first line of
+           "Post-Mortem: {issue-slug} -- <one-sentence summary>">,
+  category="case"
 )
 ```
 
-`markdown_content` takes the raw markdown body — no base64 encoding.
+`category="case"` is the right one: a post-mortem is a worked-through problem.
+There is no upsert and no note key -- a recurrence writes a fresh memory whose
+content states the new occurrence count, and the tracker file is what keeps
+the count straight.
 
 The note content (do NOT include YAML frontmatter -- it is auto-generated):
 
@@ -93,14 +93,16 @@ The note content (do NOT include YAML frontmatter -- it is auto-generated):
 
 ### Step 5: Update the Tracker
 
-Write the updated tracker entry to KV:
+Write the updated tracker back:
 
 ```
-memex_kv_write(
-  key="app:hermes:post-mortem:processed:{issue-slug}",
-  value="{\"first_seen\": \"...\", \"last_seen\": \"...\", \"occurrence_count\": N, \"reporters\": [\"skill-a\", \"skill-b\"]}"
-)
+$HERMES_HOME/state/post-mortem.json
+  processed:
+    "{issue-slug}": {first_seen, last_seen, occurrence_count, reporters[]}
 ```
+
+Write the whole file back, do not append -- a partial write loses every other
+slug's entry.
 
 ### Step 6: Acknowledge
 
@@ -121,12 +123,13 @@ For example, if `cluster-watchdog` reports an issue, the tags array would be: `[
 
 ### Error Handling
 
-- If the vault summary call fails or `inbox` is missing: reply with an error. Do not attempt to save.
-- If `memex_retain` fails: reply with the error so the reporting skill knows the report was not persisted.
-- If KV writes fail: log warning, continue. State self-corrects on next report.
+- If `viking_remember` fails: reply with the error so the reporting skill knows the report was not persisted.
+- If the state write fails: log a warning and continue. The count is wrong until the next report, which is better than losing the post-mortem.
 
 ## Pitfalls
 
 - The issue slug must be deterministic -- the same underlying problem must always produce the same slug, or deduplication breaks.
-- Always pass `note_key` when calling `memex_retain` to enable upsert behavior. Without it, duplicate notes will be created.
-- KV namespace is `app:hermes:post-mortem:` -- do not use the old `app:openfang:post-mortem:` prefix.
+- `viking_remember` has no upsert. Deduplication lives entirely in the tracker
+  file; if you skip reading it you will file the same issue repeatedly.
+- Read-modify-write the whole state file. Two skills writing it concurrently
+  is a lost update, so keep post-mortem's own state in its own file.

@@ -175,10 +175,17 @@ It hooks the session lifecycle for auto-recall and auto-capture and reads
 proxy instead; plugin mode does not, so a separate `claude mcp add` is
 redundant with it.
 
-An agent should get its own user rather than borrowing a person's, which is two
-lines in `local.openviking_users` and gives it a separate key, its own role and
-its own data ownership. What is still undecided is what an agent's key may
-reach, which is a policy question rather than a plumbing one.
+**An agent shares its principal's identity, and that is not laziness.**
+OpenViking isolates user scopes absolutely: jasper with role ADMIN gets 403 on
+`viking://user/hermes`, and hermes gets 403 on `viking://user/jasper`. ADMIN
+manages users, it does not read their data, and no role grants a cross-user
+read. An agent given its own user therefore cannot see the scope of the person
+it works for, which for an assistant is the whole job.
+
+So Hermes holds jasper's key and writes into `viking://user/jasper`. Its
+writes are indistinguishable from jasper's own, and revoking it means rotating
+the seed, which rotates jasper too. `viking://resources` is account-shared and
+readable by every identity, so anything meant for all of them belongs there.
 
 ## Two forks, and how they were settled
 

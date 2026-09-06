@@ -274,9 +274,6 @@ locals {
   openviking_users = {
     jasper = "admin"
     veerle = "user"
-    # An agent, not a person. Its own key so its writes are attributable and
-    # revoking it does not touch a human's.
-    hermes = "user"
   }
 
   # The account's bootstrap admin, taken from the map rather than written a
@@ -361,8 +358,24 @@ resource "vault_kv_secret_v2" "openviking_user_keys" {
   })
 }
 
-### Hermes's OpenViking key, copied under hermes's OWN KV prefix rather than
-### read from default/openviking-users/hermes.
+### Hermes's OpenViking key: JASPER's key, not its own.
+###
+### An agent with its own user was the obvious shape and it is wrong here.
+### OpenViking isolates user scopes absolutely -- measured against the live
+### service, jasper with role ADMIN gets 403 on viking://user/hermes and
+### hermes gets 403 on viking://user/jasper. ADMIN manages users; it does not
+### read their data, and no role grants cross-user reads. So an agent with its
+### own identity can never see its principal's scope, which for a personal
+### assistant is the entire point.
+###
+### Hermes therefore acts AS jasper: its reads and writes land in
+### viking://user/jasper, and viking://resources stays shared either way. The
+### cost is real and accepted: Hermes's writes are indistinguishable from
+### jasper's, and revoking Hermes means rotating the seed, which rotates
+### jasper too.
+###
+### Copied under hermes's OWN KV prefix rather than read from
+### default/openviking-users/jasper.
 ###
 ### The nomad-workloads role grants a job read on
 ### `secret/data/<namespace>/<job_id>/*` and nothing else, so job `hermes`
@@ -377,8 +390,8 @@ resource "vault_kv_secret_v2" "hermes_openviking_key" {
   name  = "default/hermes/openviking"
   data_json = jsonencode({
     account = local.openviking_account
-    user    = "hermes"
-    api_key = local.openviking_user_keys["hermes"]
+    user    = "jasper"
+    api_key = local.openviking_user_keys["jasper"]
   })
 }
 

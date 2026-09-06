@@ -20,34 +20,33 @@ Activate on a schedule to track targets (companies, sectors, instruments, people
 - **alert_on_changes**: Send a Telegram alert when significant changes are detected. Default: `true`.
 - **max_sources_per_cycle**: How many sources to process each collection sweep (10, 30, 50, or 100). Default: `30`.
 - **track_sentiment**: Analyse sentiment trends over time. Default: `true`.
-- Use the native Memex plugin tools (`memex_*`). Do not shell out to curl.
+- Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
+- The known-state snapshot and run timestamps need EXACT-KEY reads, which
+  OpenViking cannot do -- it is a semantic store. Keep them in
+  `$HERMES_HOME/state/collector.json` via the `files` toolset. Reports go to
+  OpenViking.
 
 ## Procedure
 
 ### Memory
 
-Use Memex for state and persistence (namespace: `app:hermes:collector:*`):
+Two stores, and the split matters:
 
 ```
-memex_kv_get(key="app:hermes:collector:{key}")
-memex_kv_write(key="app:hermes:collector:{key}", value="...")
-memex_retrieve_notes(query="...")   # search existing knowledge
-memex_list_entities(query="{topic}") # entity exploration
+$HERMES_HOME/state/collector.json     # run state: exact keys, read-modify-write
+viking_search(query="...", mode="deep")  # existing knowledge, by meaning
 ```
+
+There is no entity list. To explore around a subject, ask for the relation in
+words: `viking_search(query="{topic} and who or what it involves")`. That will
+not enumerate neighbours the way an entity graph would.
 
 ### Phase 0: Load State
 
-1. Get last run timestamp:
+1. Read `$HERMES_HOME/state/collector.json` once. A missing file is a first
+   run: treat it as `{}` and every finding as new.
 
-```
-memex_kv_get(key="app:hermes:collector:last_run")
-```
-
-2. Get previous known state snapshot:
-
-```
-memex_kv_get(key="app:hermes:collector:known_state")
-```
+2. Take `last_run` and `known_state` from it.
 
 3. Read `target_subject` and `focus_area` from configuration.
 
@@ -91,30 +90,31 @@ Score each change:
 1. Update `known_state` in KV with the latest facts:
 
 ```
-memex_kv_write(key="app:hermes:collector:known_state", value="{...updated facts...}")
+$HERMES_HOME/state/collector.json
+  known_state = {...updated facts...}
 ```
 
-2. Save a collection report to Memex:
+2. Save the collection report to OpenViking:
 
 ```
-memex_retain(
-  title="Collector Report: {target_subject} - {date}",
-  author="collector",
-  description="...",
-  tags=["collector", "intelligence", "{target_subject}"],
-  markdown_content=$REPORT_MARKDOWN,
-  vault_id="inbox",
-  background=True
+viking_remember(
+  content=$REPORT_MARKDOWN,   # first line: Collector Report: {target_subject} - {date}
+  category="event"
 )
 ```
 
-Capture the returned note id into `NOTE_ID` if you need it later.
+`category="event"` -- a sweep is a thing that happened on a date. The first
+line is what makes it findable, since there is no title or tag field.
 
 3. Update last run:
 
 ```
-memex_kv_write(key="app:hermes:collector:last_run", value="{ISO-timestamp}")
+$HERMES_HOME/state/collector.json
+  last_run = "{ISO-timestamp}"
 ```
+
+Write `known_state` and `last_run` in ONE read-modify-write, not two: a second
+write that re-reads a stale copy loses the first.
 
 4. If `alert_on_changes` is enabled AND any CRITICAL or IMPORTANT changes were detected, send via Telegram with the format:
 
@@ -124,13 +124,15 @@ If no significant changes, do nothing (no Telegram spam on quiet days).
 
 ### Phase 5: Stats
 
-Update KV counters:
+Update the counters in the same read-modify-write as Phase 4, not a separate
+one:
 
 ```
-memex_kv_write(key="app:hermes:collector:data_points", value="{total}")
-memex_kv_write(key="app:hermes:collector:entities_tracked", value="{count}")
-memex_kv_write(key="app:hermes:collector:reports_generated", value="{count}")
-memex_kv_write(key="app:hermes:collector:last_update", value="{ISO-timestamp}")
+$HERMES_HOME/state/collector.json
+  data_points       = {total}
+  entities_tracked  = {count}
+  reports_generated = {count}
+  last_update       = "{ISO-timestamp}"
 ```
 
 ### Guidelines

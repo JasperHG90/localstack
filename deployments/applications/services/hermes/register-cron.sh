@@ -33,11 +33,11 @@ send_cron() {
 
 echo "hermes: registering cron jobs via gateway API..."
 
-send_cron '/cron add "0 8 * * *" "Scrape all target engineering blogs for new articles published in the last 3 days. Save new articles verbatim to Memex vault inbox with proper titles, tags, and assets." --skill blog-scraper --name "daily-blog-scrape"'
+send_cron '/cron add "0 8 * * *" "Scrape all target engineering blogs for new articles published in the last 3 days. Save new articles verbatim to OpenViking, one resource per article." --skill blog-scraper --name "daily-blog-scrape"'
 
-send_cron '/cron add "0 8 * * 1" "Send a weekly digest email of changed Memex notes to ${DIGEST_EMAIL}. Search for notes modified in the past 7 days. Group by vault. Include title and one-line description per note. Subject: Memex Weekly Digest." --deliver email:${DIGEST_EMAIL} --name "weekly-digest"'
+send_cron '/cron add "0 8 * * 1" "Send a weekly digest email of what was captured to ${DIGEST_EMAIL}. Search OpenViking for the past week of material and group it by theme. One line per item. Subject: Weekly Digest." --deliver email:${DIGEST_EMAIL} --name "weekly-digest"'
 
-send_cron '/cron add "0 10 * * *" "Search Memex for recent insights (last 48 hours) and open GitHub issues or PRs for applicable improvements to target repositories." --skill insight-linker --name "insight-linker-daily"'
+send_cron '/cron add "0 10 * * *" "Search OpenViking for recent insights (last 48 hours) and open GitHub issues or PRs for applicable improvements to target repositories." --skill insight-linker --name "insight-linker-daily"'
 
 send_cron '/cron add "0 0 * * *" "Run the daily-reflect skill for today. Persistence is mandatory." --skill daily-reflect --deliver '"$TELEGRAM"' --name "Daily reflect"'
 
