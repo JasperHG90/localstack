@@ -478,23 +478,30 @@ resource "nomad_job" "openviking" {
   ]
 }
 
-### Registers the account and its humans through OpenViking's Admin API.
+### Creates one OpenViking account per person through the Admin API.
 ###
 ### Over SSH rather than a local-exec curl. Port 1933 is LAN-open, so this is
 ### no longer forced -- it stays because it puts no dependency on where the
 ### apply runs from, and because the root key then never leaves the node it is
 ### used on. Same shape as null_resource.firewall above.
 ###
-### Each user is registered WITH THE SEED, so the key OpenViking stores is the
+### One POST per person and that is the whole registration: POST /accounts
+### creates the account, makes admin_user_id its first user with role admin,
+### and initializes both directory trees. There is no separate user POST and no
+### role PUT, because neither has anything left to do.
+###
+### Each account is created WITH THE SEED, so the key OpenViking stores is the
 ### one Terraform already derived and wrote to Vault. Nothing is read back.
 ###
-### Idempotent by construction: a re-run POSTs the same account and users and
-### treats a 409 as success, because the account existing is the desired state.
-### The trigger is the user set plus the seed, so adding a person or rotating
-### the seed re-runs this and nothing else does.
+### Idempotent by construction: a re-run POSTs the same accounts and treats a
+### 409 as success, because the account existing is the desired state. The key
+### step below is a SEPARATE list element, not chained to that case guard, so
+### it still runs after a 409 -- which is what makes a seed rotation reach the
+### server. The trigger is the account map plus the seed, so adding a person or
+### rotating the seed re-runs this and nothing else does.
 resource "null_resource" "openviking_users" {
   triggers = {
-    users = jsonencode(local.openviking_users)
+    users = jsonencode(local.openviking_accounts)
     seed  = sha256(random_password.openviking_user_seed.result)
     # Accounts live in the server's own store, not in this state file. A
     # redeploy that starts from empty leaves the users unregistered while the
@@ -539,37 +546,31 @@ resource "null_resource" "openviking_users" {
         # curl writes it with no trailing newline, and the exit code is the
         # only thing that fails the apply. The seed interpolates directly --
         # random_password sets special = false, so it needs no JSON escaping.
-        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"account_id\\\":\\\"${local.openviking_account}\\\",\\\"admin_user_id\\\":\\\"${local.openviking_admin_user}\\\",\\\"seed\\\":\\\"$OV_SEED\\\"}\")",
-        "case \"$code\" in 200|201|409) ;; *) echo \"creating account ${local.openviking_account} returned $code\" >&2; exit 1 ;; esac",
-      ],
-      [
-        for user, role in local.openviking_users :
-        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts/${local.openviking_account}/users -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"user_id\\\":\\\"${user}\\\",\\\"role\\\":\\\"${role}\\\",\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201|409) ;; *) echo \"creating user ${user} returned $code\" >&2; exit 1 ;; esac"
-      ],
-      [
-        # Nothing here DELETES. A name removed from local.openviking_users is
-        # visited by no call below, so its key keeps working while Vault forgets
-        # it ever existed. Offboarding is a hand-run DELETE on
-        # /api/v1/admin/accounts/<account>/users/<user>, kept out of the apply
-        # because it also destroys everything that user owns. docs/openviking.md
-        # carries the command.
         #
-        # Roles do not reconcile the way keys do, and upstream is the limit.
-        # `set_user_role` raises InvalidArgumentError on anything but ADMIN
-        # ("set_user_role only supports promotion to admin"), so this promotes
-        # and cannot demote. Flipping a person from admin to user in the map
-        # therefore updates Vault and leaves the server alone -- fix that by
-        # hand, or delete and re-register the user.
-        for user, role in local.openviking_users : "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X PUT http://127.0.0.1:1933/api/v1/admin/accounts/${local.openviking_account}/users/${user}/role -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d '{\"role\":\"admin\"}'); case \"$code\" in 200|201) ;; *) echo \"promoting ${user} returned $code\" >&2; exit 1 ;; esac"
-        if role == "admin"
+        # ONE CALL PER PERSON, and it is the whole registration. POST /accounts
+        # creates the account, makes admin_user_id its first user with role
+        # admin, and initializes both the account and the user directory trees.
+        # The separate POST /users and the PUT /role that used to follow are
+        # gone because they now have nothing left to do.
       ],
       [
-        # THE RECONCILE STEP, and it is not optional. The POSTs above 409 on an
-        # existing user WITHOUT touching its key, so on a seed change the server
-        # would keep the old key while Vault holds the new one. This is what
-        # makes the stored key follow the seed.
-        for user, _ in local.openviking_users :
-        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts/${local.openviking_account}/users/${user}/key -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201) ;; *) echo \"regenerating ${user}'s key returned $code\" >&2; exit 1 ;; esac"
+        for user, account in local.openviking_accounts :
+        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"account_id\\\":\\\"${account}\\\",\\\"admin_user_id\\\":\\\"${user}\\\",\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201|409) ;; *) echo \"creating account ${account} returned $code\" >&2; exit 1 ;; esac"
+      ],
+      [
+        # THE RECONCILE STEP, and it is not optional. The POST above 409s on an
+        # existing account WITHOUT touching any key, so on a seed change the
+        # server would keep the old key while Vault holds the new one. This is
+        # what makes the stored key follow the seed.
+        #
+        # Nothing here DELETES, and under one account per person the old
+        # offboarding call no longer exists: the server refuses to remove an
+        # account's last active admin, and every account here has exactly one.
+        # Removing a person is `DELETE /api/v1/admin/accounts/<account>`, which
+        # takes their whole tree with it. It stays a hand step for the reason it
+        # always did -- it destroys content -- and docs/openviking.md carries it.
+        for user, account in local.openviking_accounts :
+        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts/${account}/users/${user}/key -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201) ;; *) echo \"regenerating ${user}'s key returned $code\" >&2; exit 1 ;; esac"
       ],
     )
   }

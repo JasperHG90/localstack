@@ -41,11 +41,38 @@ The server enforces the role attached to each key, and a caller cannot assert
 a different one: there is no header or claim that changes who OpenViking
 thinks you are.
 
-| Key | Held by | Role | Purpose |
-|---|---|---|---|
-| Root | the job, from Vault | ROOT | account and user management |
-| `jasper` | a person | ADMIN | own data, plus user management in `lab` |
-| `veerle` | a person | USER | own data |
+| Key | Held by | Account | Role | Purpose |
+|---|---|---|---|---|
+| Root | the job, from Vault | none | ROOT | accounts, and re-minting any user's key |
+| `jasper` | a person | `jasper` | ADMIN | everything in their own account |
+| `veerle` | a person | `veerle` | ADMIN | everything in their own account |
+
+### One account per person, and why it is the account rather than a setting
+
+Each person gets their own OpenViking ACCOUNT, not a user inside a shared one.
+The account is the first segment of every stored path
+(`/local/<account_id>/...`), so two accounts never address the same bytes.
+Vectors are separated by a different mechanism for the same effect: both
+accounts would share one Postgres collection, so the server ANDs an
+`account_id` equality into every query and stamps it on every write.
+
+The alternative was a per-user default upload target
+(`server.user_config_defaults.add_targets.resource_uri`), and it does not work
+here. It is consulted only when a caller supplies neither `to` nor `parent`,
+and the two surfaces a person actually uploads through both supply one: Web
+Studio's add-resource form ships prefilled with `viking://resources/`, and
+WebDAV builds that same URI as a literal in server Python. Configuration
+reaches neither. The account does.
+
+Inside an account `viking://resources` is still shared by every user in it.
+At one person per account that is a tree of one, and it stops being one the
+moment a second person joins.
+
+Everyone is ADMIN of their own account, which is forced rather than chosen:
+`POST /accounts` makes its `admin_user_id` the account's first user with that
+role, and `set_user_role` only ever promotes. ADMIN scopes to its own account
+and grants nothing over any other: every account-scoped admin route checks
+account access first, and creating, listing or deleting accounts is root-only.
 
 ### Why not Vault as the identity itself
 
@@ -72,7 +99,11 @@ who you are.
 
 ### Where a key comes from
 
-A user key is `base64url(account).base64url(user).base64url(secret)` where
+A user key is `base64url(account).base64url(user).base64url(secret)`, and here
+the first two segments carry the same string, because the account id IS the
+person's user id. The secret is derived from the user id and the seed and NOT
+the account, which is why giving everyone their own account re-homed every key
+without rotating any secret. The derivation is
 `secret = sha256(user_id + NUL + seed)`. Terraform computes that locally from
 one seed in Vault, so the key exists in state and in Vault before the server
 ever sees it, and `terraform apply` is idempotent instead of minting a new key
@@ -94,28 +125,77 @@ $ vault kv get -mount=secret default/openviking-users/jasper
 ```
 
 Rotating everyone's key at once is a change to one seed. Adding a person is one
-line in `local.openviking_users`.
+line in `local.openviking_people`, which gives them their own account as well
+as their own key.
 
 **Taking a person away is not.** Deleting their line destroys their Vault entry
 and visits them in no Admin API call, so `terraform apply` reports success
-while their key still works and their data is still in the account. Terraform
+while their key still works and their data is still in their account. Terraform
 has just deleted the record that would have shown you this. Offboard by hand
-first, then remove the line:
+first, then remove the line.
+
+The call is against the ACCOUNT, not the user, and that is not a style choice.
+Under one account per person the per-user delete can never succeed: the server
+refuses to remove an account's last active admin, and every account here has
+exactly one. The fence tests the target's role, not the caller's, so the root
+key does not get past it either.
 
 ```console
 $ ROOT_KEY=$(vault kv get -field=root_api_key -mount=secret \
     default/openviking/root)
 $ curl -X DELETE -H "X-API-Key: $ROOT_KEY" \
-    "$OV_URL/api/v1/admin/accounts/lab/users/veerle"
+    "$OV_URL/api/v1/admin/accounts/veerle"
 ```
 
-That call also starts durable cleanup of everything they own, which is why no
-apply runs it for you. If the key may have leaked, rotate the seed too: their
-key is derived, so anyone who held the seed can recompute it.
+That removes `/local/veerle` entirely, taking their resources, memories and
+skills with it, which is why no apply runs it for you. If the key may have
+leaked, rotate the seed too: their key is derived, so anyone who held the seed
+can recompute it.
 
-A role change reconciles in one direction only. `set_user_role` upstream
-refuses anything but a promotion, so admin to user updates Vault and leaves the
-server alone. That one is a hand step as well.
+There are no roles left to reconcile. Everyone is ADMIN of their own account
+from the moment `POST /accounts` creates it, and `set_user_role` upstream
+refuses anything but a promotion, so there is nothing for an apply to change.
+
+### Closing the old `lab` account
+
+Before this deployment gave each person their own account, both shared one
+called `lab`. That account still exists, still holds everything uploaded before
+the change, and is still shared. Nothing in the move revoked its keys.
+`ov config add` writes a key to disk in the clear, so a working `lab` key is
+probably still sitting in `~/.openviking/ovcli.conf` on more than one laptop.
+
+Re-minting both keys from a seed you keep nowhere kills those copies without
+destroying the content:
+
+```console
+$ ROOT_KEY=$(vault kv get -field=root_api_key -mount=secret \
+    default/openviking/root)
+$ umask 077 && printf '{"seed":"%s"}' "$(openssl rand -hex 24)" > /tmp/ov-remint.json
+$ for u in jasper veerle; do \
+    curl -sS -o /dev/null -w "$u %{http_code}\n" -X POST \
+      -H "X-API-Key: $ROOT_KEY" -H 'Content-Type: application/json' \
+      --data-binary @/tmp/ov-remint.json \
+      "$OV_URL/api/v1/admin/accounts/lab/users/$u/key"; \
+  done
+$ rm -f /tmp/ov-remint.json
+```
+
+Two details in that block are the point of it, not decoration. `-o /dev/null`
+is there because the endpoint returns the NEW key in its response body: print
+it and you have replaced two leaked keys with two fresh ones in your
+scrollback. And the seed goes in a 0600 file rather than an argument, because
+an argv secret is readable from `ps` for the life of the call. The provisioner
+beside this does both for the same reasons.
+
+The old keys stop working immediately: the server stores an Argon2id hash of
+the key, and a re-mint replaces it. The content stays where it is, reachable
+again by re-minting once more with a seed you DO keep. That reversibility is
+the reason to prefer this over `DELETE /accounts/lab`, which closes the same
+hole by deleting everything in it.
+
+Keep the throwaway seed nowhere: not in the file above, not in your shell
+history, not in a password manager. The key is derived from it, so retaining
+the seed retains the key.
 
 ### What this costs against OIDC
 
@@ -147,7 +227,7 @@ $ export OV_URL=https://openviking-api.lab.orangecluster.nl
 $ export OV_KEY=$(vault kv get -field=api_key -mount=secret \
     default/openviking-users/jasper)
 
-$ printf '%s' "$OV_KEY" | ov config add custom --name lab \
+$ printf '%s' "$OV_KEY" | ov config add custom --name orangecluster \
     --url "$OV_URL" --api-key-stdin --activate
 $ ov config validate
 ```
@@ -182,10 +262,16 @@ manages users, it does not read their data, and no role grants a cross-user
 read. An agent given its own user therefore cannot see the scope of the person
 it works for, which for an assistant is the whole job.
 
-So Hermes holds jasper's key and writes into `viking://user/jasper`. Its
-writes are indistinguishable from jasper's own, and revoking it means rotating
-the seed, which rotates jasper too. `viking://resources` is account-shared and
-readable by every identity, so anything meant for all of them belongs there.
+So Hermes holds jasper's key and writes into `viking://user/jasper`, now inside
+jasper's own account. Its writes are indistinguishable from jasper's own, and
+revoking it means rotating the seed, which rotates jasper too.
+`viking://resources` is still shared by every identity in an account, but an
+account now holds one person, so no tree is readable by both. Sharing something
+between them means copying it.
+
+**Re-homing Hermes empties its memory.** OpenViking is its memory provider, so
+its history lives under the old `lab` account and the new one starts blank.
+That is a consequence of the move, not a fault to debug.
 
 ## Two forks, and how they were settled
 
@@ -226,12 +312,13 @@ accounting for one call type.
 
 ## Verifying a deployment
 
-`scripts/check_openviking_config.py` runs in pre-commit and asserts the nine
+`scripts/check_openviking_config.py` runs in pre-commit and asserts the fifteen
 config values that fail silently: the embedding dimension, the vector backend,
 the `custom_params` key allow-list, the rerank target, `auth_mode`,
-`root_api_key`, `api_key_hashing`, and the VLM's model and `api_base`. Without
-a root key under `api_key` mode the server calls `sys.exit(1)` at startup, on
-loopback and off it.
+`root_api_key`, `api_key_hashing`, the VLM's model and `api_base`, the query
+planner's model and `api_base`, `metrics.enabled` and its Prometheus exporter,
+and `traces.enabled` with its endpoint. Without a root key under `api_key` mode
+the server calls `sys.exit(1)` at startup, on loopback and off it.
 
 It does **not** measure anything about a running service. These checks need a
 deployment and nothing in this repo automates them:
@@ -336,8 +423,11 @@ because nothing else reports it.
 ## What is not configured
 
 No agent has its own user yet. The route in works and is documented above, but
-every caller today borrows a person's key. Giving an agent its own is two lines
-in `local.openviking_users`; what may hold one is the open question.
+every caller today borrows a person's key. Giving an agent its own is one line
+in `local.openviking_people`, which would also give it its own account. That is
+exactly why Hermes does not have one: an agent in its own account cannot see
+its principal's data at all. What may hold one is the open
+question.
 
 ## The database already existed
 
