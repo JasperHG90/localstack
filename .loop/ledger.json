@@ -2568,7 +2568,7 @@
     },
     "G3-alerts-standalone-telegram-bot": {
       "slug": "G3-alerts-standalone-telegram-bot",
-      "stage": "planning",
+      "stage": "ready",
       "attempts": 0,
       "review_cycles": 0,
       "blocker": null,
