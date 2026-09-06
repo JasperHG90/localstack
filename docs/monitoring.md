@@ -72,7 +72,7 @@ with **OrangeClusterAlertBot**. The contact point is provisioned from
 `default/grafana/telegram` and the chat id from the `telegram_alert_chat_id`
 variable.
 
-Hermes uses a different bot with a different token, at
+Hermes uses a different bot, **@OrangeHermes**, with a different token, at
 `default/hermes/telegram`. Terraform writes neither value. Both are
 hand-managed in Vault, so pointing alerts at another bot means editing the
 Vault secret, and no `terraform apply` takes part in it. Grafana picks the new

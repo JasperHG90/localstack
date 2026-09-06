@@ -7,6 +7,12 @@ one endpoint, so `openviking` is a single tile carrying both its dashboard
 and its API, and `registry` is a single tile covering the OCI API and the
 `registry-ui` browser view.
 
+One service may still get a second tile when a facet of it is worth finding on
+its own. `alerting` is the first: it names Grafana's Telegram channel and
+tracks Grafana's job, because Grafana is the alert engine. A facet tile shares
+the job it names, so a Grafana outage shows against both cards, and the header
+counters count tiles rather than jobs and will say two.
+
 Clicking a tile opens a panel: the status of every job behind the service,
 instructions for reaching it without a browser, and a button to its UI if it
 has one. A service with both gets both, which is the point. A tile that

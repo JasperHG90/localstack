@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dash_app.tiles import Group, TileConfigError, load_tiles
+from dash_app.tiles import Group, Tile, TileConfigError, load_tiles
 
 GRAFANA = {
     "key": "grafana",
@@ -204,7 +204,7 @@ EXPECTED_GROUPS = ["platform", "storage", "telemetry", "events", "agentic", "art
 EXPECTED_TILES = {
     "platform": ["nomad", "consul", "vault"],
     "storage": ["postgres", "redis", "minio"],
-    "telemetry": ["grafana", "phoenix", "tempo", "prometheus"],
+    "telemetry": ["grafana", "phoenix", "tempo", "prometheus", "alerting"],
     "events": ["nats"],
     "agentic": ["bifrost", "hermes", "openviking"],
     "artifacts": ["registry"],
@@ -265,6 +265,61 @@ def test_the_shipped_prometheus_tile_documents_the_consul_tag() -> None:
     assert "prometheus" in tile.connect.auth
     assert "tag" in tile.connect.auth.lower()
     assert "metrics_path" in tile.connect.auth
+
+
+def _connect_text(tile: Tile) -> str:
+    """Every connect field of a tile, joined. A bot name may sit in any of them."""
+    assert tile.connect is not None
+    c = tile.connect
+    return " ".join([c.protocol, c.address, c.auth, c.example])
+
+
+def test_the_shipped_telegram_tiles_name_their_bots() -> None:
+    tiles = {t.key: t for g in load_tiles(SHIPPED_TILES) for t in g.tiles}
+
+    hermes = _connect_text(tiles["hermes"])
+    alerting = _connect_text(tiles["alerting"])
+
+    assert "@OrangeHermes" in hermes
+    assert "@OrangeClusterAlertBot" in alerting
+
+    # The two bots are separate and the cards must not blur that. Checked over
+    # every connect field, not just address: the hermes card names its bot in
+    # three of them, so a narrower check would let the other two drift.
+    assert "@OrangeClusterAlertBot" not in hermes
+    assert "@OrangeHermes" not in alerting
+
+
+def test_the_shipped_hermes_tile_keeps_its_lan_only_gateway() -> None:
+    """The gateway host and port are the card's only non-Telegram fact."""
+    hermes = next(t for g in load_tiles(SHIPPED_TILES) for t in g.tiles if t.key == "hermes")
+
+    assert hermes.connect is not None
+    assert "radxa-dragon-q6a:8642" in hermes.connect.address
+    assert "LAN-only" in hermes.connect.address
+
+
+def test_the_shipped_alerting_tile_tracks_grafanas_job() -> None:
+    """Grafana is the alert engine, so alerting is down when grafana is."""
+    alerting = next(t for g in load_tiles(SHIPPED_TILES) for t in g.tiles if t.key == "alerting")
+
+    assert [(j.name, j.node) for j in alerting.jobs] == [("grafana", "ubuntu")]
+    assert alerting.fe is not None
+    # Grafana's own alert template links this path (grafana.hcl:378), which is
+    # what makes it canonical rather than a guess.
+    assert alerting.fe.url == "https://grafana.lab.orangecluster.nl/alerting/list"
+
+
+def test_the_shipped_alerting_tile_does_not_claim_delivery_on_its_face() -> None:
+    """The status dot is grafana's job, and the card face has to say so.
+
+    A card reading "grafana alerts to telegram" beside a green dot asserts a
+    delivery nobody checked. docs/monitoring.md documents that exact silent
+    failure: alerts fire in the UI and nothing arrives.
+    """
+    alerting = next(t for g in load_tiles(SHIPPED_TILES) for t in g.tiles if t.key == "alerting")
+
+    assert "unchecked" in alerting.desc
 
 
 def test_the_shipped_config_carries_no_nomad_template_opener() -> None:

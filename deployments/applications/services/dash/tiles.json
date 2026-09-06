@@ -196,6 +196,29 @@
           "auth": "None on the LAN. To get your service scraped, tag its Consul service `prometheus`; add a `metrics_path` service meta if your metrics are not on /metrics.",
           "example": "service {\n  name = \"myapp\"\n  port = \"http\"\n  tags = [\"prometheus\"]\n  meta { metrics_path = \"/internal/metrics\" }\n}"
         }
+      },
+      {
+        "key": "alerting",
+        "name": "alerting",
+        "desc": "grafana alerts to telegram, delivery unchecked",
+        "color": "#e11d48",
+        "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M11 3 C7.9 3 6 5.2 6 8.3 C6 12.5 4.5 13.8 4.5 15 H17.5 C17.5 13.8 16 12.5 16 8.3 C16 5.2 14.1 3 11 3 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M9.2 17.5 C9.6 18.5 10.2 19 11 19 C11.8 19 12.4 18.5 12.8 17.5\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>",
+        "jobs": [
+          {
+            "name": "grafana",
+            "node": "ubuntu"
+          }
+        ],
+        "fe": {
+          "url": "https://grafana.lab.orangecluster.nl/alerting/list",
+          "label": "open alert rules"
+        },
+        "connect": {
+          "protocol": "Telegram bot, send-only. Grafana is the alert engine, so this tile's status is grafana's job and says nothing about whether a message arrived.",
+          "address": "@OrangeClusterAlertBot, into the operator's private chat",
+          "auth": "Press Start in Telegram first: a bot cannot open a conversation, so a new bot sends into nothing until you do. Token in Vault at default/grafana/telegram, chat id in the telegram_alert_chat_id variable.",
+          "example": "Grafana > Alerting > Contact points > telegram-default > Test"
+        }
       }
     ]
   },
@@ -260,9 +283,9 @@
         ],
         "connect": {
           "protocol": "Telegram bot, plus an internal API gateway for skills",
-          "address": "gateway: radxa-dragon-q6a:8642 (LAN-only)",
-          "auth": "Message the bot directly in Telegram. The gateway is for skill integrations, not general use.",
-          "example": "Open your Hermes chat in Telegram. No host or port needed."
+          "address": "@OrangeHermes on Telegram. Gateway: radxa-dragon-q6a:8642 (LAN-only).",
+          "auth": "Message @OrangeHermes directly in Telegram. The gateway is for skill integrations, not general use.",
+          "example": "Open your @OrangeHermes chat in Telegram. No host or port needed."
         }
       },
       {
