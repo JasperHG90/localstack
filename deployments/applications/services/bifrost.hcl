@@ -40,7 +40,12 @@ job "bifrost" {
         image        = "docker.io/maximhq/bifrost:v${bifrost_version}"
         network_mode = "host"
 
-        # config.json is the declarative source of truth (GitOps). The
+        # config.json seeds providers and keys and updates them, but it is
+        # NOT authoritative for deletions: source_of_truth defaults to
+        # "split", and the merge keeps any key the store holds that this
+        # file omits (v2.0.0 lib/config.go, reconcileProviderKeys). A key
+        # dropped here keeps routing live until it is also deleted from the
+        # store, with DELETE /api/providers/{provider}/keys/{key_id}. The
         # config_store is Postgres (persistent) so governance virtual keys
         # survive restarts and the admin UI can manage them; the logs_store
         # stays SQLite on the anonymous /app/data volume, rebuilt per alloc.
@@ -69,12 +74,6 @@ OLLAMA_KEY_PERSONAL={{ .Data.data.API_KEY }}
 {{- with secret "${ollama_xebia_secret}" }}
 OLLAMA_KEY_XEBIA={{ .Data.data.API_KEY }}
 {{- end }}
-{{- with secret "${ollama_proton_secret}" }}
-OLLAMA_KEY_PROTON={{ .Data.data.API_KEY }}
-{{- end }}
-{{- with secret "${ollama_rituals_secret}" }}
-OLLAMA_KEY_RITUALS={{ .Data.data.API_KEY }}
-{{- end }}
 {{- with secret "${gemini_secret}" }}
 GEMINI_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
 {{- end }}
@@ -91,8 +90,8 @@ EOF
         env         = true
       }
 
-      # --- gateway routing policy: four weighted Ollama Cloud keys
-      #     (personal + xebia + proton + rituals accounts). Gemini is addressed directly
+      # --- gateway routing policy: two weighted Ollama Cloud keys
+      #     (personal + xebia accounts). Gemini is addressed directly
       #     by consumers via the "gemini/" model prefix.
       #
       #     embark is a custom provider, not a built-in one: it speaks the
@@ -137,9 +136,7 @@ EOF
     "ollama": {
       "keys": [
         { "name": "ollama-personal", "value": "env.OLLAMA_KEY_PERSONAL", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
-        { "name": "ollama-xebia", "value": "env.OLLAMA_KEY_XEBIA", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
-        { "name": "ollama-proton", "value": "env.OLLAMA_KEY_PROTON", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } },
-        { "name": "ollama-rituals", "value": "env.OLLAMA_KEY_RITUALS", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } }
+        { "name": "ollama-xebia", "value": "env.OLLAMA_KEY_XEBIA", "models": ["*"], "weight": 0.5, "ollama_key_config": { "url": "https://ollama.com" } }
       ],
       "network_config": {
         "base_url": "https://ollama.com",
