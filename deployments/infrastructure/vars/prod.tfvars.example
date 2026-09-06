@@ -1,3 +1,7 @@
 secret_mount      = "secret"
 gcp_project       = "your-gcp-project-id"
 gcs_backup_bucket = "your-cluster-backup-bucket"
+
+# Your own numeric Telegram user ID. Grafana's alert bot writes here and
+# nowhere else.
+telegram_alert_chat_id = "0000000000"

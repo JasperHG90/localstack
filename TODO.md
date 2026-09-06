@@ -1,4 +1,3 @@
-- Use telegram channel for alerts & split from the hermes bot
 - Memex firefox plugin -> OV
 - Leo meetings -> OV
 - Remove stale ollama provider keys

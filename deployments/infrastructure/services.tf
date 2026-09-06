@@ -520,8 +520,12 @@ resource "nomad_job" "grafana" {
       nats_dashboard             = file("${path.module}/services/grafana/nats.json")
       bifrost_dashboard          = file("${path.module}/services/grafana/bifrost.json")
       alert_rules                = file("${path.module}/services/grafana/alert-rules.yaml")
-      telegram_secret            = "${var.secret_mount}/data/default/grafana/telegram"
-      telegram_alert_chat_id     = var.telegram_alert_chat_id
+      ### OrangeClusterAlertBot's token, not Hermes's. The two bots are separate
+      ### and so are their Vault paths. Hermes reads default/hermes/telegram.
+      ### No Terraform resource writes either value, so swapping the alert bot
+      ### is a Vault edit and this line does not change.
+      telegram_secret        = "${var.secret_mount}/data/default/grafana/telegram"
+      telegram_alert_chat_id = var.telegram_alert_chat_id
       ### Only consumer is the "Open Grafana" link in the Telegram alert
       ### template. It does NOT feed the OIDC redirect URI — GF_SERVER_ROOT_URL
       ### does — but a node address here ships alerts pointing somewhere the

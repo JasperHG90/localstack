@@ -64,6 +64,47 @@ runbook for getting it back. It names `/opt/vault/init.json` on firebat as
 where the unseal keys live, and deliberately never opens it: you read that
 file yourself, as root on the manager.
 
+### Where alerts go
+
+Grafana sends every alert to one Telegram chat: the operator's private chat
+with **OrangeClusterAlertBot**. The contact point is provisioned from
+`services/grafana.hcl`, which reads the bot token from Vault KV2 at
+`default/grafana/telegram` and the chat id from the `telegram_alert_chat_id`
+variable.
+
+Hermes uses a different bot with a different token, at
+`default/hermes/telegram`. Terraform writes neither value. Both are
+hand-managed in Vault, so pointing alerts at another bot means editing the
+Vault secret, and no `terraform apply` takes part in it. Grafana picks the new
+token up by itself: the contact point template renders it straight from Vault
+and restarts the task when it changes.
+
+Two separate things scope this bot, and each has its own enforcer.
+
+**Outbound is the chat id.** Grafana writes to that one chat and nowhere else,
+so nobody but the operator ever receives an alert. This is the half the repo
+controls, and it is one line of the contact point.
+
+**Inbound is the missing listener.** Nothing calls `getUpdates` and no webhook
+is registered for this token, so anything sent to the bot is read by nothing.
+Anyone who knows the bot's @username can still open a chat and type at it.
+BotFather has no setting that stops them: Telegram's bot documentation states
+that all bots must be able to process direct messages. What BotFather does
+control is groups, and group joins were turned off on 2026-09-06, so the bot
+cannot be added anywhere the operator did not put it. Nothing in this repo can
+notice that setting being flipped back, so check BotFather rather than trust
+this line.
+
+One more condition decides whether anything arrives at all.
+
+**A bot cannot start a conversation, so you must message it first.** A new
+alert bot delivers nothing until the operator presses Start on it. At Grafana's
+default `info` level the log reads `failed to send telegram message: webhook
+response status 403 Forbidden`. Telegram's own explanation, `bot can't initiate
+conversation with a user`, rides in the response body and reaches the log only
+at `debug`. Alerts fire normally in the UI and nothing arrives. This is the
+step the next bot swap will trip over.
+
 ### Why they are not behind the edge proxy
 
 Narrowing the firewall alone would not have made these services private.

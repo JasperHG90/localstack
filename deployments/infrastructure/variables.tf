@@ -14,7 +14,16 @@ variable "gcs_backup_bucket" {
 }
 
 variable "telegram_alert_chat_id" {
-  description = "Telegram chat ID that receives Grafana alerts (reuses Hermes bot token from Vault)."
+  description = <<-EOT
+    Telegram chat that receives Grafana alerts. The value is the operator's own
+    numeric user ID, which is also the id of their private chat with
+    OrangeClusterAlertBot, so it survives a bot swap unchanged.
+
+    It is that bot's entire outbound scope: Grafana writes to this chat and no
+    other, so nobody else receives an alert. Inbound is not scoped here at all,
+    because nothing reads the bot's updates. See "Where alerts go" in
+    docs/monitoring.md.
+  EOT
   type        = string
   default     = "10650075"
 }
