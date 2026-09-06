@@ -68,6 +68,10 @@
 
   * { box-sizing: border-box; }
 
+  /* An author `display` outranks the UA's `[hidden]` rule, so any element we
+     toggle with `el.hidden` needs this to actually disappear. */
+  [hidden] { display: none !important; }
+
   body {
     margin: 0;
     min-height: 100vh;
@@ -198,14 +202,34 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    text-decoration: none;
     color: inherit;
-    font: inherit;
     text-align: left;
-    cursor: pointer;
     box-shadow: var(--shadow-card);
     transition: border-color 0.15s ease, background 0.15s ease;
   }
+
+  /* Covers the whole card, so a click anywhere opens the panel. An <a> cannot
+     live inside a <button>, so the corner link is a sibling raised above it
+     rather than a child. */
+  .card-open {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+  .card-open:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .card-corner { display: flex; line-height: 0; }
+  a.card-corner { position: relative; z-index: 1; }
+  a.card-corner:hover .external-icon { color: var(--accent); opacity: 1; }
   @media (prefers-reduced-motion: no-preference) {
     .card { transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
     .card:hover { transform: translateY(-2px); }
@@ -213,10 +237,6 @@
   .card:hover {
     border-color: var(--accent);
     background: var(--panel-raised);
-  }
-  .card:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
   }
   .card.state-degraded { box-shadow: var(--shadow-card), inset 3px 0 0 var(--degraded); background: var(--degraded-bg); }
   .card.state-down { box-shadow: var(--shadow-card), inset 3px 0 0 var(--down); background: var(--down-bg); }
@@ -282,6 +302,36 @@
 
   .card-node { font-family: var(--font-display); font-size: 11px; color: var(--text-faint); text-align: right; }
 
+  .job-rows { display: flex; flex-direction: column; gap: 8px; }
+  .job-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+  .job-name { font-family: var(--font-display); font-size: 12px; color: var(--text); }
+  .job-node { margin-left: auto; font-family: var(--font-display); font-size: 11px; color: var(--text-faint); }
+
+  .fe-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--panel);
+    font-family: var(--font-label);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .fe-button:hover { filter: brightness(1.08); color: var(--panel); }
+
   .footnote {
     margin-top: 32px;
     font-size: 11px;
@@ -331,6 +381,7 @@
   .connect-list dt { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; padding-top: 2px; }
   .connect-list dd { margin: 0; font-size: 13px; color: var(--text); line-height: 1.5; }
 
+  .example-block { margin-top: 18px; }
   .example-label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
   .example-row {
     display: flex;
@@ -410,29 +461,7 @@
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-eyebrow">
-      <span class="label">Dashboards</span>
-      <span class="hint">degraded first, then alphabetical &middot; click to open</span>
-    </div>
-    <div class="card-grid" id="dashboard-grid"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-eyebrow">
-      <span class="label">Agents</span>
-      <span class="hint">no browser UI &middot; click for connection details</span>
-    </div>
-    <div class="card-grid" id="agent-grid"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-eyebrow">
-      <span class="label">Backend services</span>
-      <span class="hint">no browser UI &middot; click for connection details</span>
-    </div>
-    <div class="card-grid" id="backend-grid"></div>
-  </div>
+  <div id="groups"></div>
 
   <div class="footnote">Status comes from Nomad job and allocation state, cross-checked against Consul health checks. Vault, Nomad and Consul run as agents rather than Nomad jobs, so their health reads from Consul's own catalog. Per-service history and latency live in Grafana.</div>
 
@@ -450,14 +479,18 @@
     </button>
   </div>
   <div class="modal-body">
-    <dl class="connect-list" id="connect-list"></dl>
-    <div>
-      <div class="example-label">Example</div>
-      <div class="example-row">
-        <code id="modal-example"></code>
-        <button class="copy-btn" id="modal-copy" type="button">copy</button>
+    <div class="job-rows" id="modal-jobs"></div>
+    <div id="modal-connect" hidden>
+      <dl class="connect-list" id="connect-list"></dl>
+      <div class="example-block">
+        <div class="example-label">Example</div>
+        <div class="example-row">
+          <code id="modal-example"></code>
+          <button class="copy-btn" id="modal-copy" type="button">copy</button>
+        </div>
       </div>
     </div>
+    <a class="fe-button" id="modal-fe" hidden href="#" target="_blank" rel="noopener noreferrer"></a>
   </div>
 </dialog>
 
@@ -471,57 +504,92 @@
 
   const badgeLabel = { up: 'UP', degraded: 'DEGRADED', down: 'DOWN', unknown: 'UNKNOWN' };
 
-  function cardHtml(s, kind) {
-    const tag = kind === 'link' ? 'a' : 'button';
-    const attrs = kind === 'link'
-      ? `href="${s.url}" target="_blank" rel="noopener noreferrer"`
-      : `type="button" data-key="${s.key}"`;
-    const cornerIcon = kind === 'link' ? EXTERNAL_ICON : CONNECT_ICON;
+  function badge(status) {
+    const label = badgeLabel[status] || String(status).toUpperCase();
+    return `<div class="badge state-${status}"><span class="dot"></span>${label}</div>`;
+  }
+
+  function cardHtml(s) {
+    const corner = s.fe
+      ? `<a class="card-corner" href="${escapeHtml(s.fe.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(s.name)}: ${escapeHtml(s.fe.label)}">${EXTERNAL_ICON}</a>`
+      : `<span class="card-corner">${CONNECT_ICON}</span>`;
     return `
-    <${tag} class="card state-${s.status} ${kind === 'modal' ? 'connect-card' : ''}" ${attrs}>
+    <div class="card state-${s.status}">
+      <button class="card-open" type="button" data-key="${escapeHtml(s.key)}" aria-label="${escapeHtml(s.name)} details"></button>
       <div class="card-top">
         <div class="icon-chip" style="background:${s.color}22; color:${s.color};">${s.icon}</div>
-        ${cornerIcon}
+        ${corner}
       </div>
       <div>
         <div class="card-name">${escapeHtml(s.name)}</div>
         <div class="card-desc">${escapeHtml(s.desc)}</div>
       </div>
       <div class="card-foot">
-        <div class="badge state-${s.status}"><span class="dot"></span>${badgeLabel[s.status] || s.status.toUpperCase()}</div>
+        ${badge(s.status)}
         <div class="card-node tabular">${escapeHtml(s.node)}${s.counts ? ' &middot; ' + s.counts : ''}</div>
       </div>
-    </${tag}>
+    </div>
+  `;
+  }
+
+  function groupHtml(group) {
+    return `
+    <div class="section">
+      <div class="section-eyebrow">
+        <span class="label">${escapeHtml(group.title)}</span>
+        <span class="hint">${escapeHtml(group.hint || '')}</span>
+      </div>
+      <div class="card-grid">${group.tiles.map(cardHtml).join('')}</div>
+    </div>
   `;
   }
 
   const modal = document.getElementById('connect-modal');
-  let connectTiles = [];
+  let tilesByKey = new Map();
 
-  function openConnect(s) {
+  function openPanel(s) {
     const iconEl = document.getElementById('modal-icon');
     iconEl.innerHTML = s.icon;
     iconEl.style.background = s.color + '22';
     iconEl.style.color = s.color;
     document.getElementById('modal-name').textContent = s.name;
     document.getElementById('modal-desc').textContent = s.desc;
-    document.getElementById('connect-list').innerHTML = `
-      <dt>Protocol</dt><dd>${escapeHtml(s.connect.protocol)}</dd>
-      <dt>Address</dt><dd class="tabular">${escapeHtml(s.connect.address)}</dd>
-      <dt>Auth</dt><dd>${escapeHtml(s.connect.auth)}</dd>
-    `;
-    document.getElementById('modal-example').textContent = s.connect.example;
-    document.getElementById('modal-copy').textContent = 'copy';
+
+    document.getElementById('modal-jobs').innerHTML = (s.jobs || []).map((job) => `
+      <div class="job-row">
+        ${badge(job.status)}
+        <span class="job-name">${escapeHtml(job.name)}</span>
+        <span class="job-node tabular">${escapeHtml(job.node)}${job.counts ? ' &middot; ' + job.counts : ''}</span>
+      </div>
+    `).join('');
+
+    const connectEl = document.getElementById('modal-connect');
+    connectEl.hidden = !s.connect;
+    if (s.connect) {
+      document.getElementById('connect-list').innerHTML = `
+        <dt>Protocol</dt><dd>${escapeHtml(s.connect.protocol)}</dd>
+        <dt>Address</dt><dd class="tabular">${escapeHtml(s.connect.address)}</dd>
+        <dt>Auth</dt><dd>${escapeHtml(s.connect.auth)}</dd>
+      `;
+      document.getElementById('modal-example').textContent = s.connect.example;
+      document.getElementById('modal-copy').textContent = 'copy';
+    }
+
+    const feEl = document.getElementById('modal-fe');
+    feEl.hidden = !s.fe;
+    if (s.fe) {
+      feEl.href = s.fe.url;
+      feEl.textContent = s.fe.label;
+    }
+
     modal.showModal();
   }
 
-  ['agent-grid', 'backend-grid'].forEach((id) => {
-    document.getElementById(id).addEventListener('click', (event) => {
-      const card = event.target.closest('.connect-card');
-      if (!card) return;
-      const service = connectTiles.find((s) => s.key === card.dataset.key);
-      if (service) openConnect(service);
-    });
+  document.getElementById('groups').addEventListener('click', (event) => {
+    const opener = event.target.closest('.card-open');
+    if (!opener) return;
+    const service = tilesByKey.get(opener.dataset.key);
+    if (service) openPanel(service);
   });
 
   document.getElementById('modal-close').addEventListener('click', () => modal.close());
@@ -548,14 +616,6 @@
     try { localStorage.setItem('ls-theme', next); } catch (e) {}
   });
 
-  const STATUS_ORDER = { down: 0, degraded: 1, up: 2, unknown: 3 };
-  function sortTiles(tiles) {
-    return tiles.slice().sort((a, b) => {
-      const rank = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-      return rank !== 0 ? rank : a.name.localeCompare(b.name);
-    });
-  }
-
   let lastSyncedAt = null;
 
   function renderSyncedTime() {
@@ -575,15 +635,11 @@
       return;
     }
 
-    const tiles = data.tiles || [];
-    const dashboards = sortTiles(tiles.filter((t) => t.category === 'dashboard'));
-    const agents = sortTiles(tiles.filter((t) => t.category === 'agents'));
-    const backends = sortTiles(tiles.filter((t) => t.category === 'backend'));
-    connectTiles = agents.concat(backends);
+    const groups = data.groups || [];
+    const tiles = groups.flatMap((g) => g.tiles);
+    tilesByKey = new Map(tiles.map((t) => [t.key, t]));
 
-    document.getElementById('dashboard-grid').innerHTML = dashboards.map((s) => cardHtml(s, 'link')).join('');
-    document.getElementById('agent-grid').innerHTML = agents.map((s) => cardHtml(s, 'modal')).join('');
-    document.getElementById('backend-grid').innerHTML = backends.map((s) => cardHtml(s, 'modal')).join('');
+    document.getElementById('groups').innerHTML = groups.map(groupHtml).join('');
 
     const counts = tiles.reduce((acc, s) => {
       acc[s.status] = (acc[s.status] || 0) + 1;
