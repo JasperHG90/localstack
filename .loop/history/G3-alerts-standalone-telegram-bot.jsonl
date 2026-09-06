@@ -1,0 +1,1 @@
+{"slug": "G3-alerts-standalone-telegram-bot", "at": "2026-09-06T11:24:26.750123+00:00", "tree": "be54266169cff8f5cc7fe2959c0707472c5bec95", "failed_gates": [{"command": "just pre_commit", "exit": 1}]}
