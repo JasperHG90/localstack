@@ -2521,6 +2521,101 @@
           "when": "2026-09-05T15:28:54Z"
         }
       ]
+    },
+    "L6-landing-dash-service-groups": {
+      "slug": "L6-landing-dash-service-groups",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "landing",
+      "dependencies": [
+        "L4-landing-dash-fe-be-split"
+      ],
+      "priority": 10,
+      "summary": "Reorganize the dash landing page around operator-chosen service groups.\ntiles.json becomes an ordered list of groups of tiles; a tile is one\nSERVICE carrying an optional frontend URL and optional backend connect\ninstructions, not one row per endpoint. Every card opens a panel.\nDrops the memex tile, adds prometheus, folds openviking-api into\nopenviking and registry-ui into registry.\n",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "97994a20cd9e42eb46cbc74d64e43dcf21fa0f4043ea622aced76ac39de84dc9",
+          "after_plan": "bee0c327a012bba8efc3fe4f68879d55ae132da0bd8d4352f872e2dfdbfcf843",
+          "before_scope": "90f24bb7a3bc116063f39f39323afb73752600940f5c21f2cbd69fc08780080d",
+          "after_scope": "c820101e8ec94a2cd9e350f6426f51e86c78a49077b1502f2ab49b0c630dfc8f",
+          "sections": [
+            "6",
+            "7",
+            "8",
+            "9",
+            "premises"
+          ],
+          "reason": "Applied all seven required fixes from the plan-validator verdict: added test_cluster.py, docs/dash-landing-page.md, dash.hcl and TODO.md to the code surface; corrected R12 and risk 1 to the probed heredoc behavior and widened the ban to %{; rewrote R11 to name the full per-tile payload the page reads; repointed the footnote anchor and eight drifted anchors; homed the stale dash.hcl:122 comment. Every edit is inside fix_sections.",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-06T10:58:42Z"
+        }
+      ]
+    },
+    "G3-alerts-standalone-telegram-bot": {
+      "slug": "G3-alerts-standalone-telegram-bot",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "rollout",
+      "dependencies": [],
+      "priority": 65,
+      "summary": "Record in the repo that Grafana alerts now go through OrangeClusterAlertBot, a\nstandalone send-only bot, not the shared Hermes bot. The Vault token was\nalready swapped by the operator, so no value changes: the work is correcting a\nstale variable description, adding the missing variable to the tfvars example,\ndocumenting where alerts go and what makes the bot scoped to one person, and\nstriking the finished TODO item.\n",
+      "relay_block_nonfork": null,
+      "tags": [
+        "grafana",
+        "alerting",
+        "telegram",
+        "terraform",
+        "docs"
+      ],
+      "stub": false,
+      "premise": {
+        "Q1": "10650075 is the operator's personal Telegram user ID, not a group or channel ID, so a private chat's id carries to any bot unchanged",
+        "Q2": "BotFather group-join for OrangeClusterAlertBot is off as of 2026-09-06",
+        "P9": "the Vault KV value at default/grafana/telegram already holds the OrangeClusterAlertBot token, swapped by the operator before this ticket existed; operator statement 2026-09-06, unverifiable from this repo"
+      },
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "2dd7bf32f9ed0844743d855b915db43695258b1480a467c2a839ce8123fb4e5c",
+          "after_plan": "4e42eb64d8233529c327900dbe4cda44e6e907a97670c3d1d6289f4d6c4d5890",
+          "before_scope": "2c262997e9b2315be74b24cb56faa9c5ecb22e8c4adba99b3a84792f0e3fd3e1",
+          "after_scope": "9210fc8613912ed09e4a26e58491db561f8e74045881665fe71a0ea83f2af4a8",
+          "sections": [
+            "front-matter",
+            "6",
+            "7",
+            "premises"
+          ],
+          "reason": "RF1-RF4 applied; edits confined to the reviewer's fix_sections (front-matter, 6, 7, premises). RF1 adds premise P9 for the already-swapped Vault token, RF2 repairs P7's non-matching BRE probe, RF3 records why TODO.md:1 is deleted whole, RF4 adds R8 and P10 for the open-the-chat delivery precondition.",
+          "counter_signer": "Jasper",
+          "when": "2026-09-06T10:58:34Z"
+        }
+      ]
     }
   }
 }
