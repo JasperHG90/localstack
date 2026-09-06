@@ -1,41 +1,74 @@
 #!/usr/bin/env python3
 """Assert the parts of OpenViking's config that must not drift.
 
-The config is a Nomad template inside `services/openviking.hcl`, rendered with
-Vault credentials at deploy time, so nothing else in this repo reads it. These
-six settings each fail in a way a healthy-looking service would hide:
+The config is `services/openviking/ov.conf.json`, a real JSON document that
+Terraform round-trips into the jobspec. These twelve settings each fail in a way a
+healthy-looking service would hide:
 
     dimension        a wrong value corrupts the collection silently
     backend          the vectordb one, not agfs's, which is declared first
     custom_params    ov-postgres forbids unknown keys; a typo fails at startup
     rerank target    pointing past Bifrost loses gateway governance
-    auth_mode        anything but "oidc" drops Vault as the identity source
-    audience         must equal client_id, or every token is refused
+    auth_mode        oidc and ldap leave Web Studio unusable
+    root_api_key     absent under api_key mode, the server exits at startup
+    api_key_hashing  off, the key store is a list of working credentials
+    vlm model        one that cannot see embeds an error string per image
+    vlm api_base     past Bifrost loses gateway governance, as rerank does
+    metrics          off, /metrics 404s and the Prometheus job scrapes nothing
+    traces           off or unpointed, and Tempo receives nothing, silently
+    query_planner    past Bifrost, or unset and it silently falls back to vlm
 
-This is the STATIC half of the ticket's R15. It does not measure whether a live
-Vault token is accepted, whether a foreign audience is refused, or whether any
-call reaches embark. Those need a deployed service and no gate here runs one.
+Reading the document as JSON rather than as text is what makes the backend
+check honest: `agfs` declares its own `backend` first, so a textual search finds
+the blob store's value and passes whatever the vector store is set to.
+
+This is the STATIC half. It does not measure whether the service accepts a key,
+whether one user's data is isolated from another's, or whether any call reaches
+embark. Those need a deployed service and no gate here runs one.
 
 Run with `--self-test` to check the checker.
 """
 
 from __future__ import annotations
 
-import re
+import json
 import sys
 from pathlib import Path
+from typing import Any
 
-JOBSPEC = Path("deployments/applications/services/openviking.hcl")
+CONFIG = Path("deployments/applications/services/openviking/ov.conf.json")
 
 EXPECTED_DIMENSION = 768
-EXPECTED_AUTH_MODE = "oidc"
+EXPECTED_AUTH_MODE = "api_key"
 EXPECTED_BACKEND = "ov_postgres.adapter.PgVectorCollectionAdapter"
+BIFROST_PORT = "8080"
+# Tempo's OTLP gRPC receiver, on ubuntu beside Prometheus and Loki.
+TEMPO_OTLP = "192.168.2.47:4317"
 
-# ov-postgres's config model is extra=forbid, so a key outside this set is a
-# startup failure rather than a warning.
-# Every field PgVectorParams declares, plus `schema`, which is `db_schema`'s
-# alias. Read off the model at the pinned tag rather than from prose: a key
-# this set omits is reported as forbidden while ov-postgres accepts it.
+# Models MEASURED to accept an image through Bifrost, by POSTing a PNG to
+# /v1/chat/completions and reading the answer back. Being in Bifrost's catalog
+# is not enough and is the trap this set exists to close: glm-5.3, glm-5.2,
+# glm-5.1 and both deepseek-v4 variants all answer text and refuse an image
+# with "this model does not support image input".
+#
+# A model that cannot see returns HTTP 200 for the ingest anyway. OpenViking
+# catches the error and returns {"summary": "Image summary generation failed"}
+# (parse/parsers/media/utils.py:325), which is then embedded as the image's
+# content, so every image lands with the same junk vector and nothing reports
+# a failure. Add a model here only after measuring it.
+VISION_MODELS = frozenset(
+    {
+        "ollama/glm-5.3-flash",
+        "ollama/gemma4:31b",
+        "ollama/kimi-k3",
+        "ollama/minimax-m3",
+        "ollama/qwen3.5:397b",
+    }
+)
+
+# Every field PgVectorParams declares at the pinned tag, plus `schema`, which
+# is `db_schema`'s alias. Read off the model rather than from prose: a key this
+# set omits is reported as forbidden while ov-postgres accepts it.
 ALLOWED_CUSTOM_PARAMS = frozenset(
     {
         "dsn",
@@ -58,107 +91,178 @@ ALLOWED_CUSTOM_PARAMS = frozenset(
 )
 
 
-def _value(text: str, key: str) -> str | None:
-    match = re.search(rf'"{re.escape(key)}"\s*:\s*"([^"]*)"', text)
-    return match.group(1) if match else None
-
-
-def _custom_param_keys(text: str) -> set[str]:
-    block = re.search(r'"custom_params"\s*:\s*\{(.*?)\n\s*\}', text, re.DOTALL)
-    if not block:
-        return set()
-    return set(re.findall(r'"([a-z_]+)"\s*:', block.group(1)))
-
-
-def _vectordb_backend(text: str) -> str | None:
-    """The backend inside `vectordb`, not the first `backend` in the file.
-
-    `agfs` declares its own `backend` earlier, so an unscoped lookup reads the
-    blob store's value and passes whatever the vector store is set to.
-    """
-    block = re.search(r'"vectordb"\s*:\s*\{(.*?)\n\s{12}\}', text, re.DOTALL)
-    return _value(block.group(1), "backend") if block else None
-
-
-def failures(text: str) -> list[str]:
+def failures(config: dict[str, Any]) -> list[str]:
     found: list[str] = []
 
-    dimension = re.search(r'"dimension"\s*:\s*(\d+)', text)
-    if dimension is None or int(dimension.group(1)) != EXPECTED_DIMENSION:
-        got = dimension.group(1) if dimension else "absent"
+    vectordb = config.get("storage", {}).get("vectordb", {})
+    server = config.get("server", {})
+
+    dimension = config.get("embedding", {}).get("dense", {}).get("dimension")
+    if dimension != EXPECTED_DIMENSION:
         found.append(
-            f"embedding.dense.dimension is {got}, expected {EXPECTED_DIMENSION}. "
-            "Measured against embark through Bifrost; a wrong value corrupts "
-            "the collection without erroring."
+            f"embedding.dense.dimension is {dimension!r}, expected "
+            f"{EXPECTED_DIMENSION}. Measured against embark through Bifrost; a "
+            "wrong value corrupts the collection without erroring."
         )
 
-    backend = _vectordb_backend(text)
+    backend = vectordb.get("backend")
     if backend != EXPECTED_BACKEND:
         found.append(
             f"storage.vectordb.backend is {backend!r}, expected {EXPECTED_BACKEND!r}"
         )
 
-    unknown = _custom_param_keys(text) - ALLOWED_CUSTOM_PARAMS
+    unknown = set(vectordb.get("custom_params", {})) - ALLOWED_CUSTOM_PARAMS
     if unknown:
         found.append(
             f"custom_params carries {sorted(unknown)}, which ov-postgres forbids "
             "(its config model is extra=forbid, so this fails at startup)"
         )
 
-    rerank = re.search(r'"rerank"\s*:\s*\{(.*?)\n\s{10}\}', text, re.DOTALL)
-    if rerank is None:
-        found.append("no rerank section")
-    elif "8080" not in rerank.group(1):
+    rerank_base = config.get("rerank", {}).get("api_base", "")
+    if BIFROST_PORT not in rerank_base:
         found.append(
-            "rerank.api_base does not point at Bifrost's port. Rerank must "
-            "traverse the gateway; a direct embark target loses its logging, "
-            "governance and virtual-key accounting."
+            f"rerank.api_base is {rerank_base!r}, which is not Bifrost's port. "
+            "Rerank must traverse the gateway; a direct embark target loses its "
+            "logging, governance and virtual-key accounting."
         )
 
-    auth_mode = _value(text, "auth_mode")
+    auth_mode = server.get("auth_mode")
     if auth_mode != EXPECTED_AUTH_MODE:
         found.append(
             f"server.auth_mode is {auth_mode!r}, expected {EXPECTED_AUTH_MODE!r}. "
-            "Anything else drops Vault as the identity source."
+            "Web Studio refuses to run against oidc and ldap, so those modes "
+            "leave the browser half of the service dead."
         )
 
-    client_id = _value(text, "client_id")
-    audience = _value(text, "audience")
-    if client_id is None or audience is None or client_id != audience:
+    if not server.get("root_api_key"):
         found.append(
-            f"server.oidc.audience ({audience!r}) must equal client_id "
-            f"({client_id!r}); Vault sets a token's aud to the client id, so a "
-            "mismatch refuses every token."
+            "server.root_api_key is absent. Under auth_mode='api_key' "
+            "ApiKeyAuthPlugin.validate_config calls sys.exit(1), so the server "
+            "never starts."
+        )
+
+    vlm = config.get("vlm", {})
+    vlm_model = vlm.get("model")
+    if vlm_model not in VISION_MODELS:
+        found.append(
+            f"vlm.model is {vlm_model!r}, which is not in VISION_MODELS. Only a "
+            "model measured to accept an image belongs here: one that cannot "
+            "makes every image ingest as the string 'Image summary generation "
+            "failed' with no error reported."
+        )
+
+    vlm_base = vlm.get("api_base", "")
+    if BIFROST_PORT not in vlm_base:
+        found.append(
+            f"vlm.api_base is {vlm_base!r}, which is not Bifrost's port. The VLM "
+            "must traverse the gateway for the same reason rerank does."
+        )
+
+    # Unset, query_planner falls back to the vlm block, so planning would run
+    # on the vision model at vision cost. Absence is legal and silent, which is
+    # why this asserts presence rather than only shape.
+    planner = config.get("query_planner") or {}
+    if not planner.get("model"):
+        found.append(
+            "query_planner.model is unset, so retrieval planning falls back to "
+            "the vlm block and runs on the vision model."
+        )
+    if BIFROST_PORT not in planner.get("api_base", ""):
+        found.append(
+            f"query_planner.api_base is {planner.get('api_base')!r}, which is "
+            "not Bifrost's port, so planning calls bypass the gateway."
+        )
+
+    observability = server.get("observability", {})
+
+    if observability.get("metrics", {}).get("enabled") is not True:
+        found.append(
+            "server.observability.metrics.enabled is not True. Off, /metrics "
+            "returns 404 and prometheus.hcl's openviking job scrapes a dead "
+            "target without failing anything."
+        )
+
+    prometheus = (
+        observability.get("metrics", {}).get("exporters", {}).get("prometheus", {})
+    )
+    if prometheus.get("enabled") is not True:
+        found.append(
+            "server.observability.metrics.exporters.prometheus.enabled is not "
+            "True. metrics.enabled alone builds no exporter, so /metrics still "
+            "404s."
+        )
+
+    traces = observability.get("traces", {})
+    if traces.get("enabled") is not True:
+        found.append(
+            "server.observability.traces.enabled is not True, so Tempo gets nothing"
+        )
+
+    if TEMPO_OTLP not in traces.get("endpoint", ""):
+        found.append(
+            f"server.observability.traces.endpoint is {traces.get('endpoint')!r}, "
+            f"expected Tempo's OTLP gRPC receiver at {TEMPO_OTLP}. A wrong or "
+            "empty endpoint logs one warning at startup and then exports "
+            "nothing for the life of the process."
+        )
+
+    hashing = config.get("encryption", {}).get("api_key_hashing", {}).get("enabled")
+    if hashing is not True:
+        found.append(
+            f"encryption.api_key_hashing.enabled is {hashing!r}, expected True. "
+            "Off, the server stores every key verbatim, so its key store is a "
+            "list of working credentials."
         )
 
     return found
 
 
-# Mirrors the jobspec's nesting, including agfs declaring its own `backend`
-# BEFORE vectordb does. A fixture with only one `backend` key passes an
-# unscoped lookup that reads the blob store's value in the real file.
-CLEAN = """
-            "agfs": {
-              "backend": "s3",
-              "s3": { "bucket": "openviking" }
-            },
-            "vectordb": {
-              "backend": "ov_postgres.adapter.PgVectorCollectionAdapter",
-              "custom_params": {
+# Mirrors the real document's nesting, including agfs declaring its own
+# `backend` BEFORE vectordb. A fixture with one `backend` would let a textual
+# lookup pass while reading the wrong one.
+CLEAN: dict[str, Any] = {
+    "storage": {
+        "agfs": {"backend": "s3", "s3": {"bucket": "openviking"}},
+        "vectordb": {
+            "backend": EXPECTED_BACKEND,
+            "custom_params": {
                 "dsn": "postgresql://u:p@h:5432/openviking",
                 "schema": "openviking",
-                "index_method": "flat"
-              }
             },
-  "embedding": { "dense": { "dimension": 768 } },
-          "rerank": {
-            "api_base": "http://192.168.2.50:8080/v1",
-            "timeout": 120
-          },
-  "auth_mode": "oidc",
-  "client_id": "abc123",
-  "audience": "abc123"
-"""
+        },
+    },
+    "embedding": {"dense": {"dimension": 768}},
+    "rerank": {"api_base": "http://192.168.2.50:8080/v1"},
+    "vlm": {"model": "ollama/glm-5.3-flash", "api_base": "http://192.168.2.50:8080/v1"},
+    "query_planner": {
+        "model": "ollama/gemma4:31b",
+        "api_base": "http://192.168.2.50:8080/v1",
+    },
+    "encryption": {"api_key_hashing": {"enabled": True}},
+    "server": {
+        "auth_mode": "api_key",
+        "root_api_key": "a-root-key",
+        "observability": {
+            "metrics": {
+                "enabled": True,
+                "exporters": {"prometheus": {"enabled": True}},
+            },
+            "traces": {"enabled": True, "endpoint": TEMPO_OTLP},
+        },
+    },
+}
+
+
+def _mutate(path: tuple[str, ...], value: Any) -> dict[str, Any]:
+    config: dict[str, Any] = json.loads(json.dumps(CLEAN))
+    target = config
+    for key in path[:-1]:
+        target = target[key]
+    if value is None:
+        del target[path[-1]]
+    else:
+        target[path[-1]] = value
+    return config
 
 
 def _self_test() -> int:
@@ -168,28 +272,71 @@ def _self_test() -> int:
         )
         return 1
 
-    mutants = {
-        "dimension": (
-            CLEAN.replace('"dimension": 768', '"dimension": 512'),
-            "dimension",
-        ),
-        "backend": (CLEAN.replace(EXPECTED_BACKEND, "local"), "backend"),
+    mutants: dict[str, tuple[dict[str, Any], str]] = {
+        "dimension": (_mutate(("embedding", "dense", "dimension"), 512), "dimension"),
+        # The one a textual checker gets wrong: agfs.backend stays correct
+        # while the vector store is broken.
+        "backend": (_mutate(("storage", "vectordb", "backend"), "local"), "backend"),
         "custom_params": (
-            CLEAN.replace('"schema": "openviking"', '"schemaa": "openviking"'),
+            _mutate(("storage", "vectordb", "custom_params"), {"schemaa": "x"}),
             "custom_params",
         ),
-        "rerank": (CLEAN.replace("8080", "8000"), "rerank"),
-        "auth_mode": (
-            CLEAN.replace('"auth_mode": "oidc"', '"auth_mode": "api_key"'),
-            "auth_mode",
+        "rerank": (
+            _mutate(("rerank", "api_base"), "http://192.168.2.46:8000/v1"),
+            "rerank",
         ),
-        "audience": (
-            CLEAN.replace('"audience": "abc123"', '"audience": "other"'),
-            "audience",
+        "auth_mode": (_mutate(("server", "auth_mode"), "oidc"), "auth_mode"),
+        "root_api_key": (_mutate(("server", "root_api_key"), None), "root_api_key"),
+        # The model that started this: catalogued, answers text, refuses images.
+        "vlm_model": (
+            _mutate(("vlm", "model"), "ollama/deepseek-v4-flash:0731"),
+            "vlm.model",
+        ),
+        "vlm_api_base": (
+            _mutate(("vlm", "api_base"), "http://192.168.2.46:8000/v1"),
+            "vlm.api_base",
+        ),
+        "planner_absent": (_mutate(("query_planner",), None), "query_planner.model"),
+        "planner_api_base": (
+            _mutate(("query_planner", "api_base"), "http://192.168.2.46:8000/v1"),
+            "query_planner.api_base",
+        ),
+        "metrics_off": (
+            _mutate(("server", "observability", "metrics", "enabled"), False),
+            "metrics.enabled",
+        ),
+        # metrics.enabled True but no exporter: /metrics still 404s.
+        "prometheus_off": (
+            _mutate(
+                (
+                    "server",
+                    "observability",
+                    "metrics",
+                    "exporters",
+                    "prometheus",
+                    "enabled",
+                ),
+                False,
+            ),
+            "prometheus.enabled",
+        ),
+        "traces_off": (
+            _mutate(("server", "observability", "traces", "enabled"), False),
+            "traces.enabled",
+        ),
+        "traces_endpoint": (
+            _mutate(
+                ("server", "observability", "traces", "endpoint"), "localhost:4317"
+            ),
+            "traces.endpoint",
+        ),
+        "api_key_hashing": (
+            _mutate(("encryption", "api_key_hashing", "enabled"), False),
+            "api_key_hashing",
         ),
     }
-    for name, (text, marker) in mutants.items():
-        hits = failures(text)
+    for name, (config, marker) in mutants.items():
+        hits = failures(config)
         if not any(marker in hit for hit in hits):
             print(
                 f"self-test: the {name} mutant was not detected: {hits}",
@@ -205,13 +352,19 @@ def main(argv: list[str]) -> int:
     if "--self-test" in argv:
         return _self_test()
 
-    if not JOBSPEC.exists():
-        print(f"{JOBSPEC}: not found", file=sys.stderr)
+    if not CONFIG.exists():
+        print(f"{CONFIG}: not found", file=sys.stderr)
         return 1
 
-    found = failures(JOBSPEC.read_text())
+    try:
+        config = json.loads(CONFIG.read_text())
+    except json.JSONDecodeError as error:
+        print(f"{CONFIG}: not valid JSON: {error}", file=sys.stderr)
+        return 1
+
+    found = failures(config)
     for failure in found:
-        print(f"{JOBSPEC}: {failure}", file=sys.stderr)
+        print(f"{CONFIG}: {failure}", file=sys.stderr)
     return 1 if found else 0
 
 

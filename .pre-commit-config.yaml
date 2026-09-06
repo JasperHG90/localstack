@@ -90,12 +90,12 @@ repos:
         pass_filenames: false
       - id: openviking-config-guard
         name: openviking config holds its measured values
-        # Fires on the jobspec, not just the checker: the config lives in a
-        # Nomad template there, so the commit that would drift the dimension
-        # or the rerank target is a commit to openviking.hcl.
+        # Fires on the config document, not just the checker: the settings
+        # that fail silently live in ov.conf.json, so the commit that would
+        # drift the dimension or the rerank target is a commit to that file.
         entry: python3 scripts/check_openviking_config.py
         language: system
-        files: '^(deployments/applications/services/openviking\.hcl|scripts/check_openviking_config\.py)$'
+        files: '^(deployments/applications/services/openviking/ov\.conf\.json|scripts/check_openviking_config\.py)$'
         pass_filenames: false
       - id: openviking-config-guard-self-test
         name: openviking config guard self-test

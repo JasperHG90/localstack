@@ -363,71 +363,21 @@ sha = "d0f02626629875a5dd57ddbc611ba129cdb4092b"
 installed_at = "2026-07-30T19:39:40.008944Z"
 
 [[plugin]]
-qualified_name = "8b8de8ec329cb5d5/memex"
-repo_alias = "8b8de8ec329cb5d5"
-flavor = "claude"
-source_path = "packages/claude-code-plugin"
-target_dir = ".claude/plugins/aim-8b8de8ec329cb5d5/memex"
-marketplace_name = "aim-8b8de8ec329cb5d5"
-content_hash = "506a7126e557ab90f15477f7a24459eafbc6b80cabdf4ee94eac964e75be8b08"
-risk_acknowledged = false
-
-[plugin.current]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:44:56.882997Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:44:49.567979Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:44:41.173743Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:44:30.682332Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:43:24.466958Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:43:18.275979Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:43:10.090951Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-08-21T10:43:02.754991Z"
-
-[[plugin.history]]
-tag = "1.1.1"
-sha = "1f6732a14229ea151e16b581a06e98966ef6e483"
-installed_at = "2026-07-06T18:25:45.137931Z"
-
-[[plugin]]
 qualified_name = "ef9f6a17bd3105b7/loop-harness"
 repo_alias = "ef9f6a17bd3105b7"
 flavor = "claude"
 source_path = ""
 target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
 marketplace_name = "aim-ef9f6a17bd3105b7"
-content_hash = "8c84a1bcfa944523b9bf2817f3da9658325307d684dbeb64cf423459d1e3a5e3"
+content_hash = "6fbf0487bc9feaf9e520e7740afde05f1c2941670c7b8557a39ffb6b6c537c04"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "1.9.0"
+sha = "f26e7d6fdacc6268f83f7662a490ff38b259ea53"
+installed_at = "2026-09-05T13:03:34.741204Z"
+
+[[plugin.history]]
 tag = "1.8.0"
 sha = "d52e8779d216c62cbcb1e53907ec8402bdd82888"
 installed_at = "2026-09-05T06:21:49.106712Z"
@@ -477,11 +427,6 @@ tag = "0.4.1"
 sha = "c1d56b4b2f0be64fdc0a72c340bd1f06f3716870"
 installed_at = "2026-07-23T10:19:56.415790Z"
 
-[[plugin.history]]
-tag = "0.4.0"
-sha = "f892e56db8b985c8a5e9e96c9e938e193dbdbb1d"
-installed_at = "2026-07-23T09:09:50.016377Z"
-
 [[plugin]]
 qualified_name = "10ae737f6885d841/caveman"
 repo_alias = "10ae737f6885d841"
@@ -507,5 +452,4 @@ guidelines = "9f2811d5c944f66b8dd93552c313b774b0bb2ecc1796783b476131e17e808f69"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
-8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
 ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"

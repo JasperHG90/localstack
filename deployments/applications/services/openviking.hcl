@@ -79,89 +79,30 @@ job "openviking" {
         OPENVIKING_CONFIG_FILE = "/secrets/ov.conf"
       }
 
-      ### ov.conf. Credentials are interpolated by Nomad from Vault, which is
-      ### why the whole file is a template rather than a committed artifact.
+      ### ov.conf. The document itself is services/openviking/ov.conf.json,
+      ### parsed and re-injected by services.tf's `openviking_ov_conf` local,
+      ### so a syntax error fails at plan time rather than at startup.
       ###
-      ### Every secret path is under secret/data/default/openviking/: the
-      ### nomad-workloads role grants a job read only under its own job id, so
-      ### a path belonging to another job renders 403 and the task never
-      ### starts.
+      ### The four assignments below bind each secret to its OWN variable,
+      ### which is what the placeholders in that file name. Nested `with secret`
+      ### scopes would NOT work: each one rebinds the dot, so every
+      ### `.Data.data.*` reference would resolve against the innermost secret
+      ### and silently read the wrong credential.
       ###
-      ### storage.vectordb.backend is a dotted import path, resolved by
-      ### importlib at startup against the derived image. custom_params is a
-      ### free-form dict on the OpenViking side and an extra=forbid model on
-      ### ov-postgres's, so an unknown key here is a startup failure.
+      ### Each path is under this job's own prefix: the nomad-workloads role
+      ### grants a job read only on secret/data/<namespace>/<job_id>/*, so
+      ### another job's path renders 403 and the task never starts.
       ###
-      ### server.oidc carries NO `identity` block: OpenViking's defaults map
-      ### `sub`, and Vault's `groups` claim is an array that its scalar role
-      ### mapping does not consume. jwks_uri is explicit so a first request
-      ### does not depend on live discovery.
+      ### NOTE: this whole template.data block is a live Nomad template. Do not
+      ### write a literal double-curly-brace action in a comment here; it gets
+      ### parsed, not read.
       template {
         data        = <<-EOF
-        {
-          "storage": {
-            "workspace": "/app/.openviking/workspace",
-            "agfs": {
-              "backend": "s3",
-              "s3": {
-                "bucket": "openviking",
-                "endpoint": "http://${minio_host}:9000",
-                "region": "us-east-1",
-                {{- with secret "${openviking_minio_secret}" }}
-                "access_key": "{{ .Data.data.access_key }}",
-                "secret_key": "{{ .Data.data.secret_key }}",
-                {{- end }}
-                "use_ssl": false,
-                "use_path_style": true
-              }
-            },
-            "vectordb": {
-              "backend": "ov_postgres.adapter.PgVectorCollectionAdapter",
-              "name": "context",
-              "index_name": "default",
-              "distance_metric": "cosine",
-              "custom_params": {
-                {{- with secret "${openviking_db_secret}" }}
-                "dsn": "postgresql://{{ .Data.data.username }}:{{ .Data.data.password }}@${postgres_host}:5432/openviking",
-                {{- end }}
-                "schema": "openviking",
-                "index_method": "flat"
-              }
-            }
-          },
-          "embedding": {
-            "dense": {
-              "provider": "openai",
-              "model": "embark/embedding",
-              "dimension": 768,
-              "api_base": "http://${bifrost_host}:8080/v1",
-              {{- with secret "${openviking_bifrost_secret}" }}
-              "api_key": "{{ .Data.data.API_KEY }}"
-              {{- end }}
-            }
-          },
-          "rerank": {
-            "provider": "openai",
-            "model": "embark/reranker",
-            "api_base": "http://${bifrost_host}:8080/v1",
-            {{- with secret "${openviking_bifrost_secret}" }}
-            "api_key": "{{ .Data.data.API_KEY }}",
-            {{- end }}
-            "timeout": 120
-          },
-          "server": {
-            "host": "0.0.0.0",
-            "port": 1933,
-            "auth_mode": "oidc",
-            "public_base_url": "https://${openviking_hostname_public}",
-            "oidc": {
-              "issuer": "${vault_oidc_issuer}",
-              "client_id": "${openviking_client_id}",
-              "audience": "${openviking_client_id}",
-              "jwks_uri": "${vault_oidc_issuer}/.well-known/keys"
-            }
-          }
-        }
+        {{- $minio := secret "${openviking_minio_secret}" -}}
+        {{- $db := secret "${openviking_db_secret}" -}}
+        {{- $bifrost := secret "${openviking_bifrost_secret}" -}}
+        {{- $root := secret "${openviking_root_key_secret}" -}}
+        ${ov_conf}
         EOF
         destination = "secrets/ov.conf"
         change_mode = "restart"

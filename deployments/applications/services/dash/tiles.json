@@ -33,6 +33,33 @@
     "url": "https://bifrost.lab.orangecluster.nl"
   },
   {
+    "key": "openviking",
+    "name": "openviking",
+    "desc": "context store",
+    "color": "#4fb39a",
+    "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M11 3 L19 7 L11 11 L3 7 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M3 11 L11 15 L19 11\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M3 15 L11 19 L19 15\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    "category": "dashboard",
+    "job": "openviking",
+    "node": "radxa-dragon-q6a",
+    "url": "https://openviking.lab.orangecluster.nl"
+  },
+  {
+    "key": "openviking-api",
+    "name": "openviking-api",
+    "desc": "context store api",
+    "color": "#4fb39a",
+    "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M11 3 L19 7 L11 11 L3 7 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M3 11 L11 15 L19 11\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M3 15 L11 19 L19 15\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    "category": "agents",
+    "job": "openviking",
+    "node": "radxa-dragon-q6a",
+    "connect": {
+      "protocol": "REST / MCP API",
+      "address": "https://openviking-api.lab.orangecluster.nl",
+      "auth": "Per-user API key, in Vault at default/openviking-users/<name>. Send it as X-API-Key or Authorization: Bearer. The openviking hostname is browsers only -- it is gated by oauth2-proxy and no headless client can hold its session cookie.",
+      "example": "curl -H \"X-API-Key: $OV_KEY\" \"https://openviking-api.lab.orangecluster.nl/api/v1/fs/ls?uri=viking://\""
+    }
+  },
+  {
     "key": "consul",
     "name": "consul",
     "desc": "service discovery",
@@ -177,9 +204,9 @@
     "job": "tempo",
     "node": "ubuntu",
     "connect": {
-      "protocol": "OTLP over gRPC (4317) and HTTP (4318). No collector in between — apps export straight to Tempo.",
+      "protocol": "OTLP over gRPC (4317) and HTTP (4318). No collector in between \u2014 apps export straight to Tempo.",
       "address": "ubuntu:4317 or ubuntu:4318. Query API on ubuntu:3200.",
-      "auth": "None. Cluster-internal only: the firewall admits all five nodes on the OTLP ports, and only Grafana and the edge on 3200. Tempo has no UI — read traces through Grafana's Tempo datasource.",
+      "auth": "None. Cluster-internal only: the firewall admits all five nodes on the OTLP ports, and only Grafana and the edge on 3200. Tempo has no UI \u2014 read traces through Grafana's Tempo datasource.",
       "example": "OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4317 OTEL_SERVICE_NAME=myapp"
     }
   },
@@ -195,7 +222,7 @@
     "connect": {
       "protocol": "OCI Distribution API over HTTPS. Blobs are stored in the `registry` MinIO bucket, not on local disk.",
       "address": "https://registry.lab.orangecluster.nl",
-      "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC — the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
+      "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC \u2014 the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
       "example": "podman login registry.lab.orangecluster.nl -u push\npodman push registry.lab.orangecluster.nl/<image>:<tag>\n\nkit login registry.lab.orangecluster.nl -u push\nkit push registry.lab.orangecluster.nl/<modelkit>:<tag>"
     }
   }

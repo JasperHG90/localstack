@@ -18,9 +18,10 @@ ephemeral "vault_kv_secret_v2" "postgres_admin" {
   name  = "default/postgres/localstack"
 }
 
-### Nomad's OIDC issuer (F10). One definition, two consumers: the memex
-### server trusts it, and the hermes client points its OIDC config at it.
-### The string must be byte-identical in both, or provider selection fails.
+### Nomad's OIDC issuer (F10). The memex server trusts it, and it must be
+### byte-identical to what Nomad advertises or provider selection fails.
+### Hermes was the second consumer until it moved to openviking, which
+### authenticates with an API key instead of a workload-identity JWT.
 locals {
   nomad_oidc_issuer = "https://nomad.lab.orangecluster.nl"
 
@@ -38,14 +39,6 @@ data "vault_identity_oidc_client_creds" "memex" {
   name = "memex"
 }
 
-### The same cross-root channel for OpenViking. Vault generates the client_id
-### in the infrastructure root; this is its only producer here, and it is what
-### OpenViking validates as `audience`. A literal would be a value nothing
-### keeps in step with the client.
-data "vault_identity_oidc_client_creds" "openviking" {
-  name = "openviking"
-}
-
 ### Firewall rules for application services
 locals {
   firewall_rules = {
@@ -58,7 +51,10 @@ locals {
         "allow from 192.168.0.0/16 to any port 4317 proto tcp",
       ]
     }
-    # Hermes on radxa (only HAProxy + Memex can reach it)
+    # Hermes on radxa. The .46 rule was memex reaching the gateway; hermes now
+    # uses openviking instead, so nothing dials 8642 from that host any more.
+    # Left in place because these rules are one-way -- deleting the line here
+    # removes no rule from the node.
     hermes = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
@@ -150,14 +146,38 @@ locals {
       ssh_user = "radxa"
       rules    = ["allow from 192.168.2.50 to any port 8000 proto tcp"]
     }
-    # OpenViking on radxa-dragon-q6a, colocated with its oauth2-proxy, which
-    # reaches it over loopback. Single-caller shape, admitting only this same
-    # host: nothing off-node should reach 1933 directly, because that port is
-    # the path that bypasses the proxy's browser login.
+    # OpenViking on radxa-dragon-q6a. Three named callers, not the LAN: this
+    # was briefly `192.168.0.0/16` because headless clients had no route in at
+    # all, and HAProxy fronting 1933 as openviking-api.lab.orangecluster.nl is
+    # what made that unnecessary. 192.168.2.50 is the colocated oauth2-proxy,
+    # .30 is HAProxy, .47 is Prometheus scraping /metrics.
+    #
+    # This port is NOT unauthenticated. Under auth_mode api_key every call
+    # needs a user key -- /api/v1/fs/ls without one is a 401 -- so the proxy is
+    # not the only thing standing here. It was under auth_mode oidc, which is
+    # when this rule was written node-only.
+    #
+    # What IS open without a key, measured against the live service rather than
+    # assumed: /ready, /health, /bot/v1/health, /docs, /openapi.json (the full
+    # 113-path schema), the Studio bundle, and /metrics, which has no auth
+    # dependency and is now enabled. That is why .47 is on this list and why
+    # narrowing it mattered: those three callers can read the metrics, the LAN
+    # cannot.
+    #
+    # These rules are ONE-WAY. An apply ADDS them and removes nothing, so the
+    # earlier 192.168.0.0/16 rule outlives this edit and has to be deleted on
+    # the node:
+    #   ssh radxa@192.168.2.50 \
+    #     'sudo ufw delete allow from 192.168.0.0/16 to any port 1933 proto tcp'
+    # Until that runs, the host is still open LAN-wide whatever this says.
     openviking = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
-      rules    = ["allow from 192.168.2.50 to any port 1933 proto tcp"]
+      rules = [
+        "allow from 192.168.2.50 to any port 1933 proto tcp",
+        "allow from 192.168.2.30 to any port 1933 proto tcp",
+        "allow from 192.168.2.47 to any port 1933 proto tcp",
+      ]
     }
   }
 }
@@ -215,9 +235,8 @@ resource "nomad_job" "hermes" {
       hermes_version  = "0.19.1-memex-v1.1.0"
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
-      memex_host                     = "192.168.2.46"
-      nomad_oidc_issuer              = local.nomad_oidc_issuer
-      memex_auth_secret              = "${var.secret_mount}/data/default/hermes/memex_auth"
+      openviking_host                = "192.168.2.50"
+      openviking_user_secret         = "${var.secret_mount}/data/default/openviking-users/hermes"
       github_secret                  = "${var.secret_mount}/data/default/hermes/github"
       telegram_secret                = "${var.secret_mount}/data/default/hermes/telegram"
       email_secret                   = "${var.secret_mount}/data/default/hermes/email"
@@ -384,6 +403,31 @@ resource "nomad_job" "embark" {
   )
 }
 
+### OpenViking's config lives in services/openviking/ov.conf.json, not inline
+### in the jobspec, the same shape memex's auth_keys.json and dash's tiles.json
+### already use. Two guarantees come out of that: a syntax error fails
+### `terraform plan` instead of reaching the service, and
+### scripts/check_openviking_config.py parses real JSON rather than a heredoc.
+###
+### Two kinds of token, and only one is ours. `${...}` is substituted here by
+### templatefile, which ERRORS on a token with no matching variable, so a typo
+### cannot reach the service as a literal. `{{ ... }}` entries are opaque to
+### templatefile, which reads only `${` and `%{`, and are resolved by Nomad's
+### own template engine against the secret variables openviking.hcl binds.
+###
+### Only values Terraform discovers at plan time are substituted. Every static
+### address stays in the document, where check_openviking_config.py can assert
+### it; a token there would hide the setting the check exists for.
+locals {
+  openviking_ov_conf = jsonencode(jsondecode(templatefile(
+    "${path.module}/services/openviking/ov.conf.json",
+    {
+      minio_endpoint = "http://${data.consul_service.minio.service[0].node_address}:9000"
+      postgres_host  = data.consul_service.postgres.service[0].node_address
+    }
+  )))
+}
+
 ### OpenViking — context store for agents, on radxa beside Bifrost.
 ###
 ### The image is DERIVED: the upstream one carries neither ov-postgres nor
@@ -396,6 +440,11 @@ resource "nomad_job" "embark" {
 ###
 ### Built and pushed by hand; see services/openviking/README.md.
 resource "nomad_job" "openviking" {
+  # Registration is not readiness: the default (detach = true) returns as
+  # soon as Nomad accepts the job. The provisioner below polls /ready too,
+  # but this stops the apply racing ahead of the deployment.
+  detach = false
+
   jobspec = templatefile(
     "${path.module}/services/openviking.hcl",
     {
@@ -405,20 +454,18 @@ resource "nomad_job" "openviking" {
       openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
       openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-1"
 
-      postgres_host = data.consul_service.postgres.service[0].node_address
-      minio_host    = data.consul_service.minio.service[0].node_address
-      bifrost_host  = "192.168.2.50"
+      # The config document, already parsed, substituted and re-encoded. Every
+      # host and endpoint it needs is baked in above, so the jobspec takes none
+      # of them separately.
+      ov_conf = local.openviking_ov_conf
 
       openviking_db_secret      = vault_kv_secret_v2.openviking_db_credentials.path
       openviking_minio_secret   = vault_kv_secret_v2.openviking_minio_credentials.path
       openviking_bifrost_secret = vault_kv_secret_v2.bifrost_openviking_key.path
 
-      # The audience OpenViking validates. Vault generates this in the
-      # infrastructure root, so the data source above is its only producer.
-      openviking_client_id = data.vault_identity_oidc_client_creds.openviking.client_id
-      vault_oidc_issuer    = local.vault_oidc_issuer
-
-      openviking_hostname_public = "openviking.lab.orangecluster.nl"
+      # The root key. It authenticates ROOT for account and user management;
+      # humans use their own per-user keys (secrets.tf).
+      openviking_root_key_secret = vault_kv_secret_v2.openviking_root_key.path
     }
   )
 
@@ -429,6 +476,105 @@ resource "nomad_job" "openviking" {
     postgresql_database.database,
     vault_kv_secret_v2.bifrost_openviking_key,
   ]
+}
+
+### Registers the account and its humans through OpenViking's Admin API.
+###
+### Over SSH rather than a local-exec curl. Port 1933 is LAN-open, so this is
+### no longer forced -- it stays because it puts no dependency on where the
+### apply runs from, and because the root key then never leaves the node it is
+### used on. Same shape as null_resource.firewall above.
+###
+### Each user is registered WITH THE SEED, so the key OpenViking stores is the
+### one Terraform already derived and wrote to Vault. Nothing is read back.
+###
+### Idempotent by construction: a re-run POSTs the same account and users and
+### treats a 409 as success, because the account existing is the desired state.
+### The trigger is the user set plus the seed, so adding a person or rotating
+### the seed re-runs this and nothing else does.
+resource "null_resource" "openviking_users" {
+  triggers = {
+    users = jsonencode(local.openviking_users)
+    seed  = sha256(random_password.openviking_user_seed.result)
+    # Accounts live in the server's own store, not in this state file. A
+    # redeploy that starts from empty leaves the users unregistered while the
+    # two triggers above are unchanged, so re-run whenever the job does.
+    jobspec = sha1(nomad_job.openviking.jobspec)
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      host        = "192.168.2.50"
+      user        = "radxa"
+      private_key = file("${path.root}/../../.ssh/id_rsa")
+    }
+
+    inline = concat(
+      [
+        # remote-exec joins these into ONE script, prepends `#!/bin/sh` and
+        # runs it with no errexit, so an unguarded script reports the LAST
+        # command's status and swallows every failure before it. `set -e` plus
+        # the trap is what makes a failed call fail the apply, and the trap is
+        # what removes the credential file on the failure paths too.
+        "set -e",
+
+        # Credentials go in a 0600 file rather than on the command line: an
+        # argv secret is visible in `ps` for the life of each call. This does
+        # not hide them from the script itself, which carries both as literals
+        # in the heredoc below.
+        "umask 077",
+        "cat > /tmp/ov-prov.env <<'OVENV'\nOV_ROOT_KEY=${random_password.openviking_root_key.result}\nOV_SEED=${random_password.openviking_user_seed.result}\nOVENV",
+        "trap 'rm -f /tmp/ov-prov.env' EXIT",
+        ". /tmp/ov-prov.env",
+
+        # Registration is not readiness and the health check is on a 30s
+        # interval, so this is not a narrow window. `if ...; then break; fi`
+        # rather than `... && break`: under errexit a failing `&&` list ends
+        # the script on the first miss. Same shape as null_resource.bifrost_ready.
+        "for i in $(seq 1 60); do if curl -fsS http://127.0.0.1:1933/ready >/dev/null 2>&1; then break; fi; echo 'waiting for openviking /ready...'; sleep 2; done",
+        "if ! curl -fsS http://127.0.0.1:1933/ready >/dev/null 2>&1; then echo 'openviking did not become ready' >&2; exit 1; fi",
+
+        # 409 means the account is already there, which is the desired state.
+        # The status is captured and matched rather than piped through grep:
+        # curl writes it with no trailing newline, and the exit code is the
+        # only thing that fails the apply. The seed interpolates directly --
+        # random_password sets special = false, so it needs no JSON escaping.
+        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"account_id\\\":\\\"${local.openviking_account}\\\",\\\"admin_user_id\\\":\\\"${local.openviking_admin_user}\\\",\\\"seed\\\":\\\"$OV_SEED\\\"}\")",
+        "case \"$code\" in 200|201|409) ;; *) echo \"creating account ${local.openviking_account} returned $code\" >&2; exit 1 ;; esac",
+      ],
+      [
+        for user, role in local.openviking_users :
+        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts/${local.openviking_account}/users -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"user_id\\\":\\\"${user}\\\",\\\"role\\\":\\\"${role}\\\",\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201|409) ;; *) echo \"creating user ${user} returned $code\" >&2; exit 1 ;; esac"
+      ],
+      [
+        # Nothing here DELETES. A name removed from local.openviking_users is
+        # visited by no call below, so its key keeps working while Vault forgets
+        # it ever existed. Offboarding is a hand-run DELETE on
+        # /api/v1/admin/accounts/<account>/users/<user>, kept out of the apply
+        # because it also destroys everything that user owns. docs/openviking.md
+        # carries the command.
+        #
+        # Roles do not reconcile the way keys do, and upstream is the limit.
+        # `set_user_role` raises InvalidArgumentError on anything but ADMIN
+        # ("set_user_role only supports promotion to admin"), so this promotes
+        # and cannot demote. Flipping a person from admin to user in the map
+        # therefore updates Vault and leaves the server alone -- fix that by
+        # hand, or delete and re-register the user.
+        for user, role in local.openviking_users : "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X PUT http://127.0.0.1:1933/api/v1/admin/accounts/${local.openviking_account}/users/${user}/role -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d '{\"role\":\"admin\"}'); case \"$code\" in 200|201) ;; *) echo \"promoting ${user} returned $code\" >&2; exit 1 ;; esac"
+        if role == "admin"
+      ],
+      [
+        # THE RECONCILE STEP, and it is not optional. The POSTs above 409 on an
+        # existing user WITHOUT touching its key, so on a seed change the server
+        # would keep the old key while Vault holds the new one. This is what
+        # makes the stored key follow the seed.
+        for user, _ in local.openviking_users :
+        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts/${local.openviking_account}/users/${user}/key -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201) ;; *) echo \"regenerating ${user}'s key returned $code\" >&2; exit 1 ;; esac"
+      ],
+    )
+  }
+
+  depends_on = [nomad_job.openviking]
 }
 
 ### Dash — the cluster landing page (L3), split into a frontend and a
@@ -709,20 +855,21 @@ resource "bifrost_virtual_key" "memex" {
   depends_on = [null_resource.bifrost_ready]
 }
 
-# OpenViking virtual key. Only `embark` is listed: OpenViking calls this
-# gateway for embeddings and rerank, and both are embark models. No gemini or
-# ollama entry, because no VLM is configured (the ticket's Q5) and a provider
-# it never calls is standing permission for nothing.
+# OpenViking virtual key.
+# embark carries embedding and rerank; ollama carries the VLM that writes image
+# summaries. Alphabetical by `provider` -- see the Hermes key's comment for why
+# any other order fails the post-apply consistency check.
 #
-# provider_configs stays ALPHABETICAL by `provider`, as the hermes key's
-# comment records: the API returns the list sorted while the Terraform
-# provider models it as ordered, so any other order fails the post-apply
-# consistency check with the write already landed.
+# `allowed_models = ["*"]` does NOT bypass Bifrost's model catalog. Only
+# glm-5.3-flash was measured to accept an image: plain glm-5.3, glm-5.2,
+# glm-5.1 and both deepseek-v4 variants are in the catalog and answer text
+# while refusing image input with "this model does not support image input".
 resource "bifrost_virtual_key" "openviking" {
   name = "openviking"
 
   provider_configs = [
-    { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+    { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
 
   depends_on = [null_resource.bifrost_ready]

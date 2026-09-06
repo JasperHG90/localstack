@@ -1,0 +1,88 @@
+{
+  "storage": {
+    "workspace": "/app/.openviking/workspace",
+    "agfs": {
+      "backend": "s3",
+      "s3": {
+        "bucket": "openviking",
+        "endpoint": "${minio_endpoint}",
+        "region": "us-east-1",
+        "access_key": "{{ $minio.Data.data.access_key }}",
+        "secret_key": "{{ $minio.Data.data.secret_key }}",
+        "use_ssl": false,
+        "use_path_style": true
+      }
+    },
+    "vectordb": {
+      "backend": "ov_postgres.adapter.PgVectorCollectionAdapter",
+      "name": "context",
+      "index_name": "default",
+      "distance_metric": "cosine",
+      "custom_params": {
+        "dsn": "postgresql://{{ $db.Data.data.username }}:{{ $db.Data.data.password }}@${postgres_host}:5432/openviking",
+        "schema": "openviking",
+        "index_method": "flat"
+      }
+    }
+  },
+  "embedding": {
+    "dense": {
+      "provider": "openai",
+      "model": "embark/embedding",
+      "dimension": 768,
+      "api_base": "http://192.168.2.50:8080/v1",
+      "api_key": "{{ $bifrost.Data.data.API_KEY }}"
+    }
+  },
+  "rerank": {
+    "provider": "openai",
+    "model": "embark/reranker",
+    "api_base": "http://192.168.2.50:8080/v1",
+    "api_key": "{{ $bifrost.Data.data.API_KEY }}",
+    "timeout": 120
+  },
+  "vlm": {
+    "provider": "openai",
+    "model": "ollama/glm-5.3-flash",
+    "api_base": "http://192.168.2.50:8080/v1",
+    "api_key": "{{ $bifrost.Data.data.API_KEY }}",
+    "timeout": 120,
+    "max_concurrent": 4
+  },
+  "query_planner": {
+    "provider": "openai",
+    "model": "ollama/gemma4:31b",
+    "api_base": "http://192.168.2.50:8080/v1",
+    "api_key": "{{ $bifrost.Data.data.API_KEY }}",
+    "timeout": 60
+  },
+  "encryption": {
+    "api_key_hashing": {
+      "enabled": true
+    }
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 1933,
+    "auth_mode": "api_key",
+    "root_api_key": "{{ $root.Data.data.root_api_key }}",
+    "public_base_url": "https://openviking.lab.orangecluster.nl",
+    "observability": {
+      "metrics": {
+        "enabled": true,
+        "exporters": {
+          "prometheus": {
+            "enabled": true
+          }
+        }
+      },
+      "traces": {
+        "enabled": true,
+        "protocol": "grpc",
+        "endpoint": "192.168.2.47:4317",
+        "insecure": true,
+        "service_name": "openviking"
+      }
+    }
+  }
+}

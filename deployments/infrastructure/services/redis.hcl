@@ -61,10 +61,13 @@ job "redis" {
       ### in Redis's memory — there is no `aclfile` — so ANY restart of this
       ### task (OOM, reschedule, node reboot, `nomad job restart`, not just
       ### a config change) wipes every outstanding user while Vault still
-      ### considers their leases valid. The dynamic role's default_ttl is
-      ### kept short (15m, not the usual 1h) so a caller's own lease
-      ### renewal — which re-authenticates and re-mints — recovers within
-      ### minutes rather than up to an hour of silent auth failures.
+      ### considers their leases valid. Nothing recovers that on its own: a
+      ### lease RENEWAL does not re-run creation_statements (renew_statements
+      ### is empty), so only a re-mint rebuilds the user, and the role's
+      ### max_ttl is 720h. Restart the affected consumer by hand -- for
+      ### embark, `nomad job restart embark` -- which re-reads the secret and
+      ### mints a new user. Until then that consumer logs its own cache
+      ### warning and serves uncached.
       template {
         data        = <<EOH
 requirepass {{ with secret "${redis_admin_secret}" }}{{ .Data.data.password }}{{ end }}

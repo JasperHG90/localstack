@@ -137,6 +137,17 @@ job "prometheus" {
           # memex omitted: /metrics requires auth — wire up via Consul SD when
           # an auth-aware Prometheus config is added (or remove the auth gate).
 
+          # OpenViking, scraped on its own port rather than through the
+          # oauth2-proxy edge, which would answer a browser sign-in. No
+          # basic_auth and no API key: /metrics is the one OpenViking route
+          # with no auth dependency at all, so it needs no credential here —
+          # and, for the same reason, anything on the LAN can read it while
+          # 1933 is open LAN-wide (see local.firewall_rules.openviking).
+          - job_name: openviking
+            metrics_path: /metrics
+            static_configs:
+              - targets: ["192.168.2.50:1933"]
+
           # Per-node node-exporter targets (system job, one per host).
           # Relabel rewrites `instance` from "<ip>:9100" → "<hostname>" so
           # series are identified by hostname everywhere.

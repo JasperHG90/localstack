@@ -6,6 +6,7 @@ What each file here is, and the one thing this repo cannot do for you.
 |---|---|
 | `Dockerfile.openviking` | The derived image: upstream OpenViking plus `ov-postgres` and `psycopg[binary,pool]`. |
 | `justfile` | Builds and pushes that image. |
+| `ov.conf.json` | The service config, substituted by Terraform and rendered by Nomad. |
 
 ## You build and push the image
 
@@ -39,10 +40,12 @@ Nodes already authenticate to `ghcr.io` via
 `bootstrap/playbooks/configure_podman.yml`, so no per-job pull credential is
 needed.
 
-## What is not in this directory
+## The config
 
-The config OpenViking reads is a template inside
-`deployments/applications/services/openviking.hcl`, not a file here. It carries
-credentials from Vault, so it is rendered by Nomad rather than committed.
-`scripts/check_openviking_config.py` asserts the parts of it that must not
-drift.
+`ov.conf.json` is the document OpenViking reads. Terraform substitutes the two
+addresses it discovers at plan time and hands the result to the jobspec, which
+wraps it in the Vault lookups that fill in the credentials. Nothing here holds
+a secret.
+
+`scripts/check_openviking_config.py` asserts the settings in it that fail
+silently, and runs in pre-commit against this file.

@@ -42,8 +42,8 @@ RUN curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/ins
 # Install clx
 RUN curl -fsSL https://raw.githubusercontent.com/JasperHG90/clx/main/install.sh | bash
 
-# Install memex cli
-RUN uv tool install --refresh "memex-cli[server,mcp] @ git+https://github.com/JasperHG90/memex.git@latest#subdirectory=packages/cli"
+# Install openviking
+RUN uv tool install openviking
 
 # Install aim
 RUN uv tool install git+https://github.com/JasperHG90/agent-integrations-manager.git

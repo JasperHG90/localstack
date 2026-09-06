@@ -232,10 +232,134 @@ resource "vault_kv_secret_v2" "bifrost_db_credentials" {
 
 ### OpenViking
 ###
-### All three under the job's own prefix. The nomad-workloads role grants a
-### job read only on secret/data/<namespace>/<job_id>/*, so a path belonging
-### to another job renders 403 and the task never starts. Same copy-under-the
-### -consumer shape as bifrost_hermes_key and embark_registry_credentials.
+### Split across two prefixes on purpose. What the JOB reads sits under
+### default/openviking/*, the nomad-workloads role's grant (it allows a job
+### read only on secret/data/<namespace>/<job_id>/*, so a path belonging to
+### another job renders 403 and the task never starts) -- the same
+### copy-under-the-consumer shape as bifrost_hermes_key and
+### embark_registry_credentials. What the job must NOT read -- the seed and the
+### humans' keys -- sits outside it, under default/openviking-seed/ and
+### default/openviking-users/.
+
+### The root key. It manages accounts and users through the Admin API and is
+### what `auth_mode: "api_key"` authenticates ROOT against. It is NOT a human
+### credential: people use their own per-user keys below.
+resource "random_password" "openviking_root_key" {
+  length  = 48
+  special = false
+}
+
+### The seed every per-user key is derived from. One secret, so rotating it
+### rotates every user key at once; the users themselves are unaffected.
+resource "random_password" "openviking_user_seed" {
+  length  = 48
+  special = false
+}
+
+### The humans, and their keys.
+###
+### A key is NOT read back from the Admin API. OpenViking derives a seeded key
+### as `sha256(user_id + NUL + seed)` wrapped in a base64url triple
+### (`openviking/server/api_keys/new.py`, `legacy.py`), so Terraform computes
+### the same value locally and the API call only has to REGISTER the user. That
+### keeps the key in Vault and in state rather than in a response nobody kept,
+### and makes `terraform apply` idempotent instead of minting a new key per run.
+###
+### The escape in the sha256 call below is a NUL byte, and it is load-bearing:
+### it is the separator OpenViking joins on. Any other separator derives a key
+### the server rejects, while `terraform apply` still succeeds and every gate
+### stays green. Verified in both directions against the upstream code.
+locals {
+  openviking_account = "lab"
+  openviking_users = {
+    jasper = "admin"
+    veerle = "user"
+    # An agent, not a person. Its own key so its writes are attributable and
+    # revoking it does not touch a human's.
+    hermes = "user"
+  }
+
+  # The account's bootstrap admin, taken from the map rather than written a
+  # second time in the provisioner: a literal there would survive that person
+  # being removed from the map. Only POST /accounts takes one, and sort makes
+  # the pick stable across runs; a second admin is legal and the provisioner's
+  # role step promotes them. Zero admins fails here, which is the right answer:
+  # the account cannot be created without one.
+  openviking_admin_user = sort([for user, role in local.openviking_users : user if role == "admin"])[0]
+
+  # base64url with ALL padding stripped, per segment. Two traps, each of which
+  # yields a key that looks right and is rejected:
+  #   - trimsuffix(x, "=") removes ONE "="; a 64-char hex secret encodes with
+  #     TWO padding characters, so this must be replace, not trimsuffix.
+  #   - Terraform's base64encode uses the standard alphabet while OpenViking
+  #     uses URL-safe, so "+" and "/" have to be translated.
+  openviking_b64url = {
+    for k, v in merge(
+      { account = local.openviking_account },
+      { for user, _ in local.openviking_users : "user_${user}" => user },
+      {
+        for user, _ in local.openviking_users :
+        "secret_${user}" => sha256("${user}\u0000${random_password.openviking_user_seed.result}")
+      },
+    ) : k => replace(replace(replace(base64encode(v), "=", ""), "+", "-"), "/", "_")
+  }
+
+  openviking_user_keys = {
+    for user, _ in local.openviking_users :
+    user => join(".", [
+      local.openviking_b64url["account"],
+      local.openviking_b64url["user_${user}"],
+      local.openviking_b64url["secret_${user}"],
+    ])
+  }
+}
+
+resource "vault_kv_secret_v2" "openviking_root_key" {
+  mount = var.secret_mount
+  name  = "default/openviking/root"
+  data_json = jsonencode({
+    root_api_key = random_password.openviking_root_key.result
+  })
+}
+
+### The seed is NOT in the resource above, and that is the whole point of this
+### one. `default/openviking/*` is the prefix the nomad-workloads role grants
+### the job, and seed + user_id derives any human's key offline, so a seed
+### there would hand the service every key it must not hold. Nothing reads this
+### path: the provisioner uses random_password directly and the job never wants
+### it. It exists so an operator can re-derive a key by hand.
+###
+### Its own prefix rather than default/openviking-users/, where a person named
+### `seed` in local.openviking_users would land on this exact path. Two
+### resources writing one path is not an error in Vault, it is last-writer-wins
+### and a diff that never settles.
+resource "vault_kv_secret_v2" "openviking_seed" {
+  mount = var.secret_mount
+  name  = "default/openviking-seed/seed"
+  data_json = jsonencode({
+    seed = random_password.openviking_user_seed.result
+  })
+}
+
+### One entry per human. Under `default/openviking-users/` for two reasons that
+### both matter: the `developer` policy grants `secret/data/default/*`, so the
+### deploying identity can write these, and the path sits OUTSIDE
+### `default/openviking/*`, which is the prefix the nomad-workloads role grants
+### the job. Vault's trailing glob is a literal prefix match, so
+### `default/openviking-users/` is not covered by it and the service cannot
+### read the humans' keys. This says nothing about person-to-person access:
+### `developer` covers all of `default/*`, so anyone holding it reads everyone.
+resource "vault_kv_secret_v2" "openviking_user_keys" {
+  for_each = local.openviking_user_keys
+  mount    = var.secret_mount
+  name     = "default/openviking-users/${each.key}"
+  data_json = jsonencode({
+    account = local.openviking_account
+    user    = each.key
+    role    = local.openviking_users[each.key]
+    api_key = each.value
+  })
+}
 
 resource "vault_kv_secret_v2" "openviking_db_credentials" {
   mount = var.secret_mount

@@ -115,13 +115,13 @@ locals {
 ### locking or messaging. Add them per-consumer if a future caller needs
 ### them.
 ###
-### `default_ttl = 900` (15m), well under the usual 1h elsewhere in this
-### repo: every dynamic user lives only in Redis's memory (no `aclfile`), so
-### ANY restart of the redis task — OOM, reschedule, node reboot, not just
-### a config change — wipes every outstanding user while Vault still
-### considers their leases valid. A short TTL bounds that desync window to
-### the time until the caller's next natural lease renewal instead of up to
-### an hour of silent auth failures.
+### Every dynamic user lives only in Redis's memory (no `aclfile`), so ANY
+### restart of the redis task — OOM, reschedule, node reboot, not just a
+### config change — wipes every outstanding user while Vault still considers
+### their leases valid. A renewal does NOT repair that: renew_statements is
+### empty, so only a re-mint re-runs creation_statements, and max_ttl is now
+### 720h. Recovery is a hand-run restart of the affected consumer
+### (`nomad job restart embark`), which re-reads the secret and mints anew.
 resource "vault_database_secret_backend_role" "cache" {
   for_each = local.redis_cache_consumers
   backend  = vault_mount.redis.path
@@ -132,6 +132,22 @@ resource "vault_database_secret_backend_role" "cache" {
     jsonencode(["+@read", "+@write", "+@connection", "~${each.key}:*"])
   ]
 
-  default_ttl = 900  # 15m; see the restart/lease-desync note above
-  max_ttl     = 3600 # 1h
+  # default_ttl is the RENEWAL cadence and costs nothing: a renewal returns the
+  # same username and password, so the consumer's template does not re-render.
+  #
+  # max_ttl is what used to hurt. At max_ttl consul-template can no longer renew
+  # and must mint a NEW credential, which changes the rendered password, and
+  # embark's cache.env carries change_mode = "restart". At 1h that restarted a
+  # GPU service with a ~25s model reload every single hour: 17 restarts in the
+  # 15h after deploy, measured off `nomad alloc status`, 57m apart.
+  #
+  # At 720h the same lease is renewed for a month and the service never
+  # restarts for this. The cost is the recovery path in the note above: the
+  # Redis users live only in memory, so a redis restart wipes them, and it is
+  # RE-MINTING that rebuilds one (renew_statements is empty, so a renewal does
+  # not re-run creation_statements). Until then embark logs "cache backend
+  # unavailable" and serves uncached, which is a warning it already handles.
+  # Recovering the cache sooner than a month means restarting embark by hand.
+  default_ttl = 900     # 15m renewal cadence
+  max_ttl     = 2592000 # 720h; a restart per hour is worse than a stale cache
 }

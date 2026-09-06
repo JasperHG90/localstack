@@ -108,6 +108,7 @@ frontend https_in
     acl is_registry   hdr(host) -i registry.lab.orangecluster.nl
     acl is_registryui hdr(host) -i registry-ui.lab.orangecluster.nl
     acl is_openviking hdr(host) -i openviking.lab.orangecluster.nl
+    acl is_ovapi      hdr(host) -i openviking-api.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -122,6 +123,7 @@ frontend https_in
     use_backend registry   if is_registry
     use_backend registryui if is_registryui
     use_backend openviking if is_openviking
+    use_backend ovapi      if is_ovapi
 
 frontend stats
     bind *:8404
@@ -187,6 +189,19 @@ backend registryui
 
 backend openviking
     server openviking1 192.168.2.50:4182 check
+
+# openviking-api: the SAME service as the backend above, reached on its own
+# port instead of through oauth2-proxy. The proxy gates browsers with a Vault
+# session cookie, which no CLI or MCP client can hold, so a headless caller had
+# no route through the edge at all.
+#
+# Not an auth exemption. OpenViking runs auth_mode api_key and refuses an
+# unauthenticated call on this port with a 401 -- measured against the live
+# service, on /api/v1/fs/ls and on /mcp. Only /ready and /health are open, and
+# they carry no data. Same shape as the bifrost backend above, which skips the
+# proxy for the same reason: the service authenticates its own callers.
+backend ovapi
+    server ovapi1 192.168.2.50:1933 check
         EOH
         destination = "local/haproxy.cfg"
       }

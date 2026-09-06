@@ -445,11 +445,13 @@ resource "vault_identity_oidc_key_allowed_client_id" "oauth2_proxy" {
 }
 
 ### --- OV1: OpenViking -------------------------------------------------------
-### Its OWN client rather than a redirect_uri on oauth2_proxy's, because the
-### client_id is doing double duty: oauth2-proxy logs the human in with it, and
-### OpenViking validates the resulting token's `aud` against it. Sharing the
-### proxy client would mean OpenViking accepting any token minted for dash or
-### registry-ui.
+### Its OWN client rather than a redirect_uri on oauth2_proxy's, which already
+### carries dash's and registry-ui's. There is no live reason left: OpenViking
+### stopped validating the token's `aud` when it moved to auth_mode api_key,
+### and both clients run the same 3600s TTLs today. It stays separate because
+### it already exists and folding it in would rewrite a Vault KV entry to buy
+### nothing -- and because a per-service TTL stays available if OpenViking ever
+### wants a different session length.
 ###
 ### Flat access: branch 3 of the documented procedure
 ### (docs/vault-human-auth.md:288-292) - the built-in "allow_all" assignment,

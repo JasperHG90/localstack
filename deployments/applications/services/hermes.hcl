@@ -102,13 +102,6 @@ else
   echo "hermes: WARN failed to fetch external skills jasperhg90@$EXT_JG_REF (continuing)"
 fi
 
-# Copy Memex plugin from staged location in custom image
-if [ -d /opt/hermes/memex-plugin ]; then
-  mkdir -p /opt/data/plugins/memex
-  cp -r /opt/hermes/memex-plugin/* /opt/data/plugins/memex/
-  echo "hermes: memex plugin synced"
-fi
-
 # IaC-managed model-provider profiles (e.g. bifrost gateway). Auto-discovered
 # by the provider registry from $HERMES_HOME/plugins/model-providers/. Refreshed
 # each deploy so the profile stays in lockstep with config.yaml.
@@ -197,14 +190,12 @@ GITHUB_PERSONAL_ACCESS_TOKEN={{ .Data.data.pat }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
-{{- with secret "${memex_auth_secret}" }}
-MEMEX_API_KEY={{ .Data.data.admin_key }}
+{{- with secret "${openviking_user_secret}" }}
+OPENVIKING_API_KEY={{ .Data.data.api_key }}
+OPENVIKING_ACCOUNT={{ .Data.data.account }}
+OPENVIKING_USER={{ .Data.data.user }}
 {{- end }}
-MEMEX_SERVER_URL=http://${memex_host}:8000
-MEMEX_VAULT=hermes
-MEMEX_OIDC__ISSUER=${nomad_oidc_issuer}
-MEMEX_OIDC__GRANT=token_file
-MEMEX_OIDC__TOKEN_FILE=/secrets/nomad_memex.jwt
+OPENVIKING_ENDPOINT=http://${openviking_host}:1933
 NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
 HERMES_YOLO_MODE=true
@@ -235,7 +226,7 @@ agent:
 
 plugins:
   enabled:
-    - memex
+    - openviking
   disabled: []
 
 skills:
@@ -248,19 +239,17 @@ memory:
   user_profile_enabled: true
   memory_char_limit: 2200
   user_char_limit: 1375
-  provider: "memex"
+  provider: "openviking"
 
 terminal:
   backend: "local"
   cwd: "/opt/data"
   timeout: 180
   env_passthrough:
-    - MEMEX_API_KEY
-    - MEMEX_SERVER_URL
-    - MEMEX_VAULT
-    - MEMEX_OIDC__ISSUER
-    - MEMEX_OIDC__GRANT
-    - MEMEX_OIDC__TOKEN_FILE
+    - OPENVIKING_ENDPOINT
+    - OPENVIKING_API_KEY
+    - OPENVIKING_ACCOUNT
+    - OPENVIKING_USER
     - NOMAD_TOKEN
     - NOMAD_ADDR
     - CONSUL_ADDR
@@ -269,12 +258,10 @@ terminal:
 
 code_execution:
   env_passthrough:
-    - MEMEX_API_KEY
-    - MEMEX_SERVER_URL
-    - MEMEX_VAULT
-    - MEMEX_OIDC__ISSUER
-    - MEMEX_OIDC__GRANT
-    - MEMEX_OIDC__TOKEN_FILE
+    - OPENVIKING_ENDPOINT
+    - OPENVIKING_API_KEY
+    - OPENVIKING_ACCOUNT
+    - OPENVIKING_USER
     - NOMAD_TOKEN
     - NOMAD_ADDR
     - CONSUL_ADDR
@@ -310,7 +297,7 @@ platform_toolsets:
     - web
     - browser
     - memory
-    - memex
+    - openviking
     - skills
     - files
     - cronjob
@@ -319,7 +306,7 @@ platform_toolsets:
     - web
     - browser
     - memory
-    - memex
+    - openviking
     - skills
     - files
     - cronjob
@@ -395,28 +382,6 @@ EOT
 
       vault {}
 
-      # Workload Identity JWT for memex. `name` is load-bearing: an unnamed
-      # identity writes no file. `aud` names the VERIFIER (memex), not this
-      # job. `filepath` pins the path instead of relying on the
-      # secrets/nomad_<name>.jwt default, so the client config and the file
-      # cannot drift apart.
-      #
-      # change_mode = "noop", NOT "restart": Nomad restarts the task on every
-      # renewal after the first with no materiality test, which at ttl = 1h
-      # would restart the agent gateway hourly. No restart is needed — the
-      # client re-reads this file on every request.
-      #
-      # Do NOT add `user =` to this task. The gateway runs unprivileged and
-      # reads this Nomad-written file only because the task sets no user, so
-      # Nomad skips the chown and leaves it world-readable.
-      identity {
-        name        = "memex"
-        aud         = ["memex"]
-        file        = true
-        filepath    = "secrets/nomad_memex.jwt"
-        ttl         = "1h"
-        change_mode = "noop"
-      }
 
       template {
         data = <<EOF
@@ -433,8 +398,10 @@ GH_TOKEN={{ .Data.data.pat }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
-{{- with secret "${memex_auth_secret}" }}
-MEMEX_API_KEY={{ .Data.data.admin_key }}
+{{- with secret "${openviking_user_secret}" }}
+OPENVIKING_API_KEY={{ .Data.data.api_key }}
+OPENVIKING_ACCOUNT={{ .Data.data.account }}
+OPENVIKING_USER={{ .Data.data.user }}
 {{- end }}
 {{- with secret "${api_server_secret}" }}
 API_SERVER_KEY={{ .Data.data.key }}
@@ -478,11 +445,7 @@ EOF
       env {
         HERMES_HOME            = "/opt/data"
         HERMES_YOLO_MODE       = "true"
-        MEMEX_SERVER_URL       = "http://${memex_host}:8000"
-        MEMEX_VAULT            = "hermes"
-        MEMEX_OIDC__ISSUER     = "${nomad_oidc_issuer}"
-        MEMEX_OIDC__GRANT      = "token_file"
-        MEMEX_OIDC__TOKEN_FILE = "/secrets/nomad_memex.jwt"
+        OPENVIKING_ENDPOINT    = "http://${openviking_host}:1933"
         NOMAD_ADDR             = "http://192.168.2.30:4646"
         CONSUL_ADDR            = "http://192.168.2.30:8500"
         TELEGRAM_ALLOWED_USERS = "${telegram_allowed_users}"

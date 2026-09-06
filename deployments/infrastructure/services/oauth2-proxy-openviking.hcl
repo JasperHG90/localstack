@@ -4,18 +4,24 @@
 ### user is let through (OAUTH2_PROXY_EMAIL_DOMAINS=*, and the Vault client is
 ### bound to the built-in "allow_all" assignment in oidc.tf).
 ###
-### This one differs from its two siblings in one way that matters.
-### PASS_AUTHORIZATION_HEADER forwards the Vault ID TOKEN upstream, because
-### OpenViking runs `auth_mode: "oidc"` and validates that same token against
-### Vault's JWKS. dash and registry-ui trust the proxy and never see a token;
-### here the proxy performs the browser login and OpenViking still checks the
-### result, so one Vault identity covers both hops. Drop that setting and the
-### browser flow still looks correct while OpenViking sees an unauthenticated
-### request.
+### This proxy is a NETWORK GATE. OpenViking runs `auth_mode: "api_key"` and
+### resolves each caller from their own key, so the proxy's job is only to keep
+### the hostname behind a Vault login.
 ###
-### SET_AUTHORIZATION_HEADER is the WRONG one and must stay unset: upstream
-### documents it as setting the Authorization Bearer RESPONSE header, so it
-### hands the raw Vault ID token back to the browser rather than forwarding it.
+### It does still inject four headers, because PASS_USER_HEADERS defaults TRUE
+### in v7 and is not set below: X-Forwarded-Groups, -User, -Email and
+### -Preferred-Username. OpenViking reads none of them -- `_extract_api_key`
+### accepts only X-API-Key and `Authorization: Bearer`, and the api_key plugin
+### strips X-OpenViking-User itself -- so they are inert rather than a second
+### identity.
+###
+### It injects NO Authorization header, and touches an incoming one not at all.
+### Read from v7.13.0's source rather than its flag table, because the table
+### reads the other way: legacy_options.go:237 gates the Basic header on
+### `BasicAuthPassword != ""`, which nothing here sets, and :256 builds the
+### SKIP_AUTH_STRIP_HEADERS strip list out of the INJECTED headers only. So a
+### caller through the edge may present its key as X-API-Key or as
+### `Authorization: Bearer`; Studio uses the former.
 ###
 ### COOKIE_EXPIRE matches the client's 3600s id_token_ttl. The default is
 ### 168h, which would leave a session valid for a week after the token behind
@@ -72,7 +78,6 @@ job "oauth2-proxy-openviking" {
         OAUTH2_PROXY_SCOPE="openid"
         OAUTH2_PROXY_SKIP_PROVIDER_BUTTON="false"
         OAUTH2_PROXY_HTTP_ADDRESS="0.0.0.0:4182"
-        OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER="true"
         OAUTH2_PROXY_COOKIE_EXPIRE="3600s"
         EOH
         destination = "secrets/file.env"

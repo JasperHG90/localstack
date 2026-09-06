@@ -588,9 +588,9 @@ resource "nomad_job" "oauth2_proxy_registry_ui" {
   )
 }
 
-### OV1: the third proxy, gating OpenViking. Unlike its two siblings it
-### forwards the Vault ID token upstream, because OpenViking validates that
-### same token itself.
+### OV1: the third proxy, gating OpenViking. Same shape as its two siblings --
+### a network gate that forwards no Vault ID token. OpenViking runs auth_mode
+### api_key and identifies each caller from their own key.
 resource "nomad_job" "oauth2_proxy_openviking" {
   jobspec = templatefile(
     "${path.module}/services/oauth2-proxy-openviking.hcl",

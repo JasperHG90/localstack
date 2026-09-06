@@ -254,10 +254,26 @@ ${config_toml}
         change_mode = "restart"
       }
 
+      # jetson-orin-nano has 7619 MB total and UNIFIED memory: there is no
+      # separate VRAM, so every CUDA allocation ONNX Runtime makes comes out of
+      # this same budget and is charged to this cgroup. That is what
+      # `NvMapMemAllocInternalTagged ... error 12` (ENOMEM) means here -- the
+      # GPU allocator asking this task's cgroup for pages it does not have.
+      #
+      # `memory` IS the enforced cap on this cluster, and there is deliberately
+      # no `memory_max`. Nomad memory oversubscription is off at the server, so
+      # the scheduler zeroes MemoryMaxMB in the allocation and the client sets
+      # the cgroup from `memory` alone. A `memory_max` here reads as headroom
+      # that does not exist: with memory=4096/memory_max=5120 the kernel showed
+      # `memory.max = 4294967296` (4096 MiB), not 5120. Verified through podman
+      # inspect and the container's own cgroup, not inferred.
+      #
+      # 5120, not 6144: the rest of the host (OS, nomad, alloy, node-exporter)
+      # holds ~1019 MB, so 5120 leaves ~1480 MB and 6144 would leave ~460 MB.
+      # Measured with `free -m` and the container cgroup on the node.
       resources {
-        cpu        = 2000
-        memory     = 2048
-        memory_max = 3072
+        cpu    = 2000
+        memory = 5120
       }
     }
   }

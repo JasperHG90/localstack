@@ -291,11 +291,10 @@ resource "vault_kv_secret_v2" "oauth2_proxy_registry_ui_cookie_secret" {
   }
 }
 
-### OV1: OpenViking's proxy. Its OWN OIDC client, not the shared oauth2_proxy
-### one, because OpenViking validates the token's `aud` against this client_id
-### as well as the proxy using it to log the human in. The cookie secret IS
-### shared with the other two proxies: they gate different hostnames, so their
-### cookies never collide.
+### OV1: OpenViking's proxy. Its OWN OIDC client rather than the shared
+### oauth2_proxy one -- see the reason in oidc.tf beside the client itself. The
+### cookie secret IS shared with the other two proxies: they gate different
+### hostnames, so their cookies never collide.
 resource "vault_kv_secret_v2" "oauth2_proxy_openviking_oidc_client" {
   mount = vault_mount.kvv2.path
   name  = "default/oauth2-proxy-openviking/oidc"

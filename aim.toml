@@ -17,7 +17,6 @@ scope = "local"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
-8b8de8ec329cb5d5 = "https://github.com/jasperhg90/memex"
 ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"
 
 [[rule]]
@@ -187,14 +186,6 @@ repo_alias = "10ae737f6885d841"
 flavor = "claude"
 source_path = ""
 marketplace_name = "caveman"
-risk_acknowledged = false
-
-[[plugin]]
-qualified_name = "8b8de8ec329cb5d5/memex"
-repo_alias = "8b8de8ec329cb5d5"
-flavor = "claude"
-source_path = "packages/claude-code-plugin"
-marketplace_name = "memex"
 risk_acknowledged = false
 
 [[plugin]]
