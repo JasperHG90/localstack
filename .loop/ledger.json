@@ -2619,13 +2619,13 @@
     },
     "OV2-openviking-user-scoped-resources": {
       "slug": "OV2-openviking-user-scoped-resources",
-      "stage": "implementing",
+      "stage": "done",
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": null,
-      "review_verdict": null,
-      "review_entry_tree": null,
+      "commit_sha": "a5a48f3f36fe95437f3e332d8b5cc60da95f6657",
+      "review_verdict": ".loop/verdicts/OV2-openviking-user-scoped-resources.adversarial.md, .loop/verdicts/OV2-openviking-user-scoped-resources.documentation.md",
+      "review_entry_tree": "e93b785de6317a53444963f577fb653507be41f2",
       "dropped": false,
       "drop_reason": null,
       "carried_over_finding": null,
@@ -2634,26 +2634,33 @@
         "OV1-openviking-service"
       ],
       "priority": 100,
-      "summary": "Give each person their own OpenViking account, so resources are isolated at the\nphysical path root (/local/<account>/...) rather than by a scope check. This covers\nevery upload surface including Web Studio and WebDAV, both of which write the\naccount-shared viking://resources tree and cannot be redirected by any config key.\n",
+      "summary": "Give each person their own OpenViking account. Blobs isolate at the physical path\nroot (/local/<account>/...) and vectors by an account_id filter, so NEW content is\nseparated on every upload surface including Web Studio and WebDAV, which write the\naccount-shared viking://resources tree and cannot be redirected by any config key.\nExisting content in the lab account stays shared until an operator closes it,\nby re-minting its keys from a discarded seed or by deleting the account.\n",
       "relay_block_nonfork": null,
       "tags": [],
       "stub": false,
       "premise": {
-        "Q1": "isolating at the account root is the only mechanism that covers Studio and WebDAV, whose targets are prefilled and hardcoded respectively",
-        "Q2": "the lab account survives this change with its keys unrevoked, so old content stays readable by both people until an operator step removes it"
+        "Q1": "operator chose to close the lab exposure by re-minting its keys from a discarded seed, preserving the content and staying reversible, over deleting the account outright",
+        "Q2": "every person being sole ADMIN of their own account grants nothing over any other account",
+        "Q3": "account id equal to user id"
       },
       "measured_against": {
         "Q1": {
           "kind": "package",
           "version": "0.4.17.1",
           "ref": "ghcr.io/volcengine/openviking:v0.4.17.1",
-          "note": "the tag deployments/applications/services.tf:454 pins as openviking_base_image; Studio prefill and the WebDAV literal both read from this wheel"
+          "note": "regenerate_key against a hashing-enabled manager rejects the previously issued key; see P13"
         },
         "Q2": {
           "kind": "package",
           "version": "0.4.17.1",
           "ref": "ghcr.io/volcengine/openviking:v0.4.17.1",
-          "note": "_uri_to_path builds /local/{account_id}/...; nothing in the provisioner or Vault revokes an existing lab key"
+          "note": "account-scoped admin routes call _check_account_access; create/list/delete account are root-only"
+        },
+        "Q3": {
+          "kind": "package",
+          "version": "0.4.17.1",
+          "ref": "ghcr.io/volcengine/openviking:v0.4.17.1",
+          "note": "validate_account_id accepts jasper and veerle; user ids are namespaced per account under /local/{account_id}/_system/users.json"
         }
       },
       "eval_amendments": [],
