@@ -270,19 +270,22 @@ resource "random_password" "openviking_user_seed" {
 ### the server rejects, while `terraform apply` still succeeds and every gate
 ### stays green. Verified in both directions against the upstream code.
 locals {
-  openviking_account = "lab"
-  openviking_users = {
-    jasper = "admin"
-    veerle = "user"
-  }
+  # ONE ACCOUNT PER PERSON, not one account holding both.
+  #
+  # The account is the first segment of every stored path
+  # (`/local/<account_id>/...`), so it is the only boundary that also covers the
+  # two surfaces a person actually uploads through. Web Studio's add-resource
+  # form ships prefilled with `viking://resources/`, and WebDAV builds that same
+  # URI as a literal in server Python; neither consults
+  # `user_config_defaults.add_targets`, so a per-user default target would have
+  # left both sharing. Within an account `viking://resources` is still shared by
+  # every user in it -- at one person per account that is a tree of one.
+  openviking_people = toset(["jasper", "veerle"])
 
-  # The account's bootstrap admin, taken from the map rather than written a
-  # second time in the provisioner: a literal there would survive that person
-  # being removed from the map. Only POST /accounts takes one, and sort makes
-  # the pick stable across runs; a second admin is legal and the provisioner's
-  # role step promotes them. Zero admins fails here, which is the right answer:
-  # the account cannot be created without one.
-  openviking_admin_user = sort([for user, role in local.openviking_users : user if role == "admin"])[0]
+  # The account id IS the person's user id. Named separately because a key is
+  # base64url(account).base64url(user).base64url(secret), and the two positions
+  # carrying the same string is a decision, not a coincidence.
+  openviking_accounts = { for user in local.openviking_people : user => user }
 
   # base64url with ALL padding stripped, per segment. Two traps, each of which
   # yields a key that looks right and is rejected:
@@ -290,21 +293,25 @@ locals {
   #     TWO padding characters, so this must be replace, not trimsuffix.
   #   - Terraform's base64encode uses the standard alphabet while OpenViking
   #     uses URL-safe, so "+" and "/" have to be translated.
+  #
+  # The secret takes the user id and the seed and NOT the account, matching
+  # `derive_seeded_api_key_secret(user_id, seed)`. That is why moving everyone
+  # into their own account re-homes each key without rotating its secret.
   openviking_b64url = {
     for k, v in merge(
-      { account = local.openviking_account },
-      { for user, _ in local.openviking_users : "user_${user}" => user },
+      { for user, account in local.openviking_accounts : "account_${user}" => account },
+      { for user in local.openviking_people : "user_${user}" => user },
       {
-        for user, _ in local.openviking_users :
+        for user in local.openviking_people :
         "secret_${user}" => sha256("${user}\u0000${random_password.openviking_user_seed.result}")
       },
     ) : k => replace(replace(replace(base64encode(v), "=", ""), "+", "-"), "/", "_")
   }
 
   openviking_user_keys = {
-    for user, _ in local.openviking_users :
+    for user in local.openviking_people :
     user => join(".", [
-      local.openviking_b64url["account"],
+      local.openviking_b64url["account_${user}"],
       local.openviking_b64url["user_${user}"],
       local.openviking_b64url["secret_${user}"],
     ])
@@ -327,7 +334,7 @@ resource "vault_kv_secret_v2" "openviking_root_key" {
 ### it. It exists so an operator can re-derive a key by hand.
 ###
 ### Its own prefix rather than default/openviking-users/, where a person named
-### `seed` in local.openviking_users would land on this exact path. Two
+### `seed` in local.openviking_people would land on this exact path. Two
 ### resources writing one path is not an error in Vault, it is last-writer-wins
 ### and a diff that never settles.
 resource "vault_kv_secret_v2" "openviking_seed" {
@@ -346,14 +353,19 @@ resource "vault_kv_secret_v2" "openviking_seed" {
 ### `default/openviking-users/` is not covered by it and the service cannot
 ### read the humans' keys. This says nothing about person-to-person access:
 ### `developer` covers all of `default/*`, so anyone holding it reads everyone.
+###
+### `role` is the constant "admin" because POST /accounts makes its
+### admin_user_id the account's first user with that role, and set_user_role
+### only ever promotes. An account of one has no USER-only shape available, and
+### ADMIN there grants nothing over any other account.
 resource "vault_kv_secret_v2" "openviking_user_keys" {
   for_each = local.openviking_user_keys
   mount    = var.secret_mount
   name     = "default/openviking-users/${each.key}"
   data_json = jsonencode({
-    account = local.openviking_account
+    account = local.openviking_accounts[each.key]
     user    = each.key
-    role    = local.openviking_users[each.key]
+    role    = "admin"
     api_key = each.value
   })
 }
@@ -369,8 +381,10 @@ resource "vault_kv_secret_v2" "openviking_user_keys" {
 ### assistant is the entire point.
 ###
 ### Hermes therefore acts AS jasper: its reads and writes land in
-### viking://user/jasper, and viking://resources stays shared either way. The
-### cost is real and accepted: Hermes's writes are indistinguishable from
+### viking://user/jasper, inside jasper's own account. Giving it its own line in
+### openviking_people would give it its own ACCOUNT, whose viking://resources is
+### shared with nobody -- which is the same isolation stated above, arriving by
+### a second route. The cost is real and accepted: Hermes's writes are indistinguishable from
 ### jasper's, and revoking Hermes means rotating the seed, which rotates
 ### jasper too.
 ###
@@ -389,7 +403,7 @@ resource "vault_kv_secret_v2" "hermes_openviking_key" {
   mount = var.secret_mount
   name  = "default/hermes/openviking"
   data_json = jsonencode({
-    account = local.openviking_account
+    account = local.openviking_accounts["jasper"]
     user    = "jasper"
     api_key = local.openviking_user_keys["jasper"]
   })

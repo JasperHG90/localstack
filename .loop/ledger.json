@@ -2528,7 +2528,7 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "b665a835684d674400db43fd8194319dc56f5b33",
       "review_verdict": ".loop/verdicts/L6-landing-dash-service-groups.adversarial.md, .loop/verdicts/L6-landing-dash-service-groups.documentation.md",
       "review_entry_tree": "35683c0103cf5c6f71feaaa9a52f288b730bfb2e",
       "dropped": false,
@@ -2572,7 +2572,7 @@
       "attempts": 1,
       "review_cycles": 1,
       "blocker": null,
-      "commit_sha": null,
+      "commit_sha": "07c74d6ba5b497e848876312e270a782a00337a6",
       "review_verdict": ".loop/verdicts/G3-alerts-standalone-telegram-bot.adversarial.md, .loop/verdicts/G3-alerts-standalone-telegram-bot.documentation.md",
       "review_entry_tree": "28a844a1e7ed34479e12089d65e5866551066904",
       "dropped": false,
@@ -2614,6 +2614,64 @@
           "reason": "RF1-RF4 applied; edits confined to the reviewer's fix_sections (front-matter, 6, 7, premises). RF1 adds premise P9 for the already-swapped Vault token, RF2 repairs P7's non-matching BRE probe, RF3 records why TODO.md:1 is deleted whole, RF4 adds R8 and P10 for the open-the-chat delivery precondition.",
           "counter_signer": "Jasper",
           "when": "2026-09-06T10:58:34Z"
+        }
+      ]
+    },
+    "OV2-openviking-user-scoped-resources": {
+      "slug": "OV2-openviking-user-scoped-resources",
+      "stage": "implementing",
+      "attempts": 1,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "openviking",
+      "dependencies": [
+        "OV1-openviking-service"
+      ],
+      "priority": 100,
+      "summary": "Give each person their own OpenViking account, so resources are isolated at the\nphysical path root (/local/<account>/...) rather than by a scope check. This covers\nevery upload surface including Web Studio and WebDAV, both of which write the\naccount-shared viking://resources tree and cannot be redirected by any config key.\n",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {
+        "Q1": "isolating at the account root is the only mechanism that covers Studio and WebDAV, whose targets are prefilled and hardcoded respectively",
+        "Q2": "the lab account survives this change with its keys unrevoked, so old content stays readable by both people until an operator step removes it"
+      },
+      "measured_against": {
+        "Q1": {
+          "kind": "package",
+          "version": "0.4.17.1",
+          "ref": "ghcr.io/volcengine/openviking:v0.4.17.1",
+          "note": "the tag deployments/applications/services.tf:454 pins as openviking_base_image; Studio prefill and the WebDAV literal both read from this wheel"
+        },
+        "Q2": {
+          "kind": "package",
+          "version": "0.4.17.1",
+          "ref": "ghcr.io/volcengine/openviking:v0.4.17.1",
+          "note": "_uri_to_path builds /local/{account_id}/...; nothing in the provisioner or Vault revokes an existing lab key"
+        }
+      },
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "955f1e0431b571aa08124a481689a203062bbfd15e09eacd0a5df8a93913b8a4",
+          "after_plan": "fadb380c243b9f3c6072e5e1d999a15223ad02e53e93eb9d19ded3586077a3b9",
+          "before_scope": "137fbbf35f6699054ca5847c6ad5840d8784b7e536538fa9aa972fb211c2ee9c",
+          "after_scope": "eb5ebffc4a22b25926589e1a82cb95b38d379400de53d4802a8f32dac513b0fc",
+          "sections": [
+            "front-matter",
+            "7",
+            "premises"
+          ],
+          "reason": "Cycle-4 required fixes RF-A/RF-B/RF-C applied inside the verdict's own fix_sections (front-matter, 7, premises): corrected the hallucinated symbol _request_user_deletion to begin_user_deletion in P10, added the offboarding-runbook and Hermes-memory rows the R6 deliverables were missing from section 7, and stopped the front-matter summary presupposing Q1 option (a). Recorded P13, the now-verified re-mint premise. Operator settled Q1 in favour of option (b).",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-06"
         }
       ]
     }
