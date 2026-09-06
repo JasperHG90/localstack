@@ -6,14 +6,16 @@
 # the earlier "rootless can't grant CAP_SETGID" concern no longer applies.
 # The image therefore stays root (no trailing USER hermes); do NOT pin the
 # Nomad task to a non-root UID — the wrapper rejects arbitrary UIDs.
-FROM nousresearch/hermes-agent:v2026.7.30
+FROM nousresearch/hermes-agent:v2026.8.31
 
-# Install curl + jq for skill-based HTTP/JSON manipulation, plus chromium so the
-# agent-browser fallback chain finds a system Chrome for browser_vision /
-# screenshot workflows (see issue #8).
+# jq and chromium only: the base already ships curl, but not these two.
+# chromium is what lets the agent-browser fallback chain find a system Chrome
+# for browser_vision / screenshot workflows (see issue #8). Checked against
+# v2026.8.31 -- if a later base starts shipping both, this whole custom image
+# stops earning its keep and the job can point at the base directly.
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl jq chromium \
+      jq chromium \
     && rm -rf /var/lib/apt/lists/*
 
 # No memory-provider packages are installed here. OpenViking's provider ships

@@ -30,7 +30,7 @@ state_rm resource:
     eval "$(localstack env)"
     terraform state rm {{resource}}
 
-# Rebuild and push the custom Hermes image (Hermes base + Memex wheels).
+# Rebuild and push the custom Hermes image (Hermes base + jq + chromium).
 # Tag is read from services.tf so the Dockerfile and Terraform stay in lockstep.
 rebuild_hermes:
     #!/usr/bin/env bash

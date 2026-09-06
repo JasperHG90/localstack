@@ -224,9 +224,11 @@ agent:
   max_turns: 90
   reasoning_effort: "medium"
 
+# No entry for the memory provider here. `plugins/memory` is skipped by the
+# general plugin scanner (hermes_cli/plugins.py, skip_names), so a name listed
+# here is silently ignored; `memory.provider` below is what selects it.
 plugins:
-  enabled:
-    - openviking
+  enabled: []
   disabled: []
 
 skills:
@@ -297,7 +299,6 @@ platform_toolsets:
     - web
     - browser
     - memory
-    - openviking
     - skills
     - files
     - cronjob
@@ -306,7 +307,6 @@ platform_toolsets:
     - web
     - browser
     - memory
-    - openviking
     - skills
     - files
     - cronjob

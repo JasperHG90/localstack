@@ -232,7 +232,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
-      hermes_version  = "0.19.1-memex-v1.1.0"
+      hermes_version  = "0.21.0-1"
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       openviking_host                = "192.168.2.50"
