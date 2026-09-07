@@ -89,26 +89,25 @@ identity-token path mints a NEW token, so rendering one into Hermes's env
 restarted the task on every consul-template poll. The sidecar reads the token
 from disk per request instead, and Hermes holds a constant endpoint.
 
-### One account per person, and why it is the account rather than a setting
+### One account, one user each
 
-Each person gets their own OpenViking ACCOUNT, not a user inside a shared one.
-The account is the first segment of every stored path
-(`/local/<account_id>/...`), so two accounts never address the same bytes.
-Vectors are separated by a different mechanism for the same effect: both
-accounts would share one Postgres collection, so the server ANDs an
-`account_id` equality into every query and stamps it on every write.
+Everyone shares the `lab` account and is told apart by the user inside it.
+`viking://user/jasper` and `viking://user/veerle` cannot read each other,
+because OpenViking isolates user scopes absolutely: measured in OV1, an ADMIN
+gets 403 on another user's scope and no role grants a cross-user read.
+`viking://resources` belongs to the account, so it is common to both.
 
-The alternative was a per-user default upload target
-(`server.user_config_defaults.add_targets.resource_uri`), and it does not work
-here. It is consulted only when a caller supplies neither `to` nor `parent`,
-and the two surfaces a person actually uploads through both supply one: Web
-Studio's add-resource form ships prefilled with `viking://resources/`, and
-WebDAV builds that same URI as a literal in server Python. Configuration
-reaches neither. The account does.
+That shape needs the two claims to be separate. The account is the first
+segment of every stored path (`/local/<account_id>/...`) and vectors are
+separated by the same value ANDed into every query, so a shared account is what
+puts two people in one resource tree; the user is what keeps their own trees
+apart. Mapping both from one claim resolves to `lab/user/lab`, which does not
+exist.
 
-Inside an account `viking://resources` is still shared by every user in it.
-At one person per account that is a tree of one, and it stops being one the
-moment a second person joins.
+OV2 briefly gave each person their own account instead. It isolated them from
+the shared half as well, and it migrated nothing, so the content stayed in
+`lab` while the new accounts sat empty. `lab` is the live account; the
+per-person ones are leftovers.
 
 Under `oidc` every caller resolves to role USER. The plugin never consults a
 role mapping and never consults `server.root_api_key`, so no admin route has a
@@ -117,111 +116,28 @@ reachable credential and nothing can create an account.
 Nothing needs to. MEASURED after the switch with
 `scripts/ov_identity_probe.py`: a token naming an account that was never
 created returns 200 and reads an empty tree. So adding a person is a Vault
-entity carrying `ov_account` and nothing else, and the provisioner that used
-to POST to the Admin API is gone rather than replaced.
+entity carrying `ov_account` and `ov_user` and nothing else, and the
+provisioner that used to POST to the Admin API is gone rather than replaced.
 
-The cost of that is a typo. A misspelled `ov_account` does not fail; it opens
-a new empty account, and the person sees an empty tree rather than an error.
+The cost of that is a typo. A misspelled claim does not fail; it opens a new
+empty account or user, and the person sees an empty tree rather than an error.
 
-### Where a key comes from
+### The API keys that are left
 
-A user key is `base64url(account).base64url(user).base64url(secret)`, and here
-the first two segments carry the same string, because the account id IS the
-person's user id. The secret is derived from the user id and the seed and NOT
-the account, which is why giving everyone their own account re-homed every key
-without rotating any secret. The derivation is
-`secret = sha256(user_id + NUL + seed)`. Terraform computes that locally from
-one seed in Vault, so the key exists in state and in Vault before the server
-ever sees it, and `terraform apply` is idempotent instead of minting a new key
-per run. The Admin API call only *registers* the user with the same seed.
+There are none on the request path. `auth_mode` is `oidc`, so OpenViking
+resolves every caller from a Vault-signed JWT and no key is accepted.
 
-Three details in that derivation each produce a key that looks correct and is
-rejected, so `secrets.tf` spells them out: the separator is a NUL, padding is
-stripped entirely rather than one character, and the alphabet is URL-safe.
+Terraform still derives the old per-user keys from a seed and writes them to
+`default/openviking-users/*`, because removing that apparatus is a separate
+change. Nothing reads them. A client still holding one gets a 401, logged
+server-side as `Invalid OIDC token: Invalid token format` -- misleading, and
+worth knowing: an old key is `base64url(account).base64url(user).base64url(
+secret)`, exactly two dots, and upstream treats any two-dot credential as a JWT
+before failing to parse it. Those warnings are stale keys being refused, not a
+fault.
 
-The seed lives at `default/openviking-seed/seed`, deliberately away from the
-root key. `default/openviking/*` is the prefix the job's own Vault role grants
-it, and anyone holding the seed derives every human's key offline, so the
-service must not be able to read it.
-
-Getting your key:
-
-```console
-$ vault kv get -mount=secret default/openviking-users/jasper
-```
-
-Rotating everyone's key at once is a change to one seed. Adding a person is one
-line in `local.openviking_people`, which gives them their own account as well
-as their own key.
-
-**Taking a person away is not.** Deleting their line destroys their Vault entry
-and visits them in no Admin API call, so `terraform apply` reports success
-while their key still works and their data is still in their account. Terraform
-has just deleted the record that would have shown you this. Offboard by hand
-first, then remove the line.
-
-The call is against the ACCOUNT, not the user, and that is not a style choice.
-Under one account per person the per-user delete can never succeed: the server
-refuses to remove an account's last active admin, and every account here has
-exactly one. The fence tests the target's role, not the caller's, so the root
-key does not get past it either.
-
-```console
-$ ROOT_KEY=$(vault kv get -field=root_api_key -mount=secret \
-    default/openviking/root)
-$ curl -X DELETE -H "X-API-Key: $ROOT_KEY" \
-    "$OV_URL/api/v1/admin/accounts/veerle"
-```
-
-That removes `/local/veerle` entirely, taking their resources, memories and
-skills with it, which is why no apply runs it for you. If the key may have
-leaked, rotate the seed too: their key is derived, so anyone who held the seed
-can recompute it.
-
-There are no roles left to reconcile. Everyone is ADMIN of their own account
-from the moment `POST /accounts` creates it, and `set_user_role` upstream
-refuses anything but a promotion, so there is nothing for an apply to change.
-
-### Closing the old `lab` account
-
-Before this deployment gave each person their own account, both shared one
-called `lab`. That account still exists, still holds everything uploaded before
-the change, and is still shared. Nothing in the move revoked its keys.
-`ov config add` writes a key to disk in the clear, so a working `lab` key is
-probably still sitting in `~/.openviking/ovcli.conf` on more than one laptop.
-
-Re-minting both keys from a seed you keep nowhere kills those copies without
-destroying the content:
-
-```console
-$ ROOT_KEY=$(vault kv get -field=root_api_key -mount=secret \
-    default/openviking/root)
-$ umask 077 && printf '{"seed":"%s"}' "$(openssl rand -hex 24)" > /tmp/ov-remint.json
-$ for u in jasper veerle; do \
-    curl -sS -o /dev/null -w "$u %{http_code}\n" -X POST \
-      -H "X-API-Key: $ROOT_KEY" -H 'Content-Type: application/json' \
-      --data-binary @/tmp/ov-remint.json \
-      "$OV_URL/api/v1/admin/accounts/lab/users/$u/key"; \
-  done
-$ rm -f /tmp/ov-remint.json
-```
-
-Two details in that block are the point of it, not decoration. `-o /dev/null`
-is there because the endpoint returns the NEW key in its response body: print
-it and you have replaced two leaked keys with two fresh ones in your
-scrollback. And the seed goes in a 0600 file rather than an argument, because
-an argv secret is readable from `ps` for the life of the call. The provisioner
-beside this does both for the same reasons.
-
-The old keys stop working immediately: the server stores an Argon2id hash of
-the key, and a re-mint replaces it. The content stays where it is, reachable
-again by re-minting once more with a seed you DO keep. That reversibility is
-the reason to prefer this over `DELETE /accounts/lab`, which closes the same
-hole by deleting everything in it.
-
-Keep the throwaway seed nowhere: not in the file above, not in your shell
-history, not in a password manager. The key is derived from it, so retaining
-the seed retains the key.
+Deleting the seed and the KV entries would turn that quiet refusal into a loud
+failure at Vault, which is the better shape and is not done yet.
 
 ### What this costs
 
@@ -242,7 +158,7 @@ environment. See the authentication section above.
 
 ## Using it from the CLI and from an agent
 
-Both hold the same key a browser user holds, and both use
+Both authenticate with a Vault identity token, and both use
 `openviking-api.lab.orangecluster.nl`, which is its own HAProxy route straight
 to port 1933. The `openviking.` hostname is for browsers only: oauth2-proxy
 gates it with a Vault session cookie, and no CLI or MCP client can hold one.
@@ -250,28 +166,26 @@ gates it with a Vault session cookie, and no CLI or MCP client can hold one.
 Two hostnames rather than an exemption on the proxy. `bifrost.` already works
 this way for the same reason, and `scripts/check_oauth2_proxy_guard.py` forbids
 a skip-auth route on an oauth2-proxy. The API hostname is not unguarded:
-OpenViking answers 401 there without a key, on the REST API and on `/mcp`.
+OpenViking answers 401 there without a token, on the REST API and on `/mcp`.
 
 ```console
+$ vault login -method=userpass username=jasper
 $ export OV_URL=https://openviking-api.lab.orangecluster.nl
-$ export OV_KEY=$(vault kv get -field=api_key -mount=secret \
-    default/openviking-users/jasper)
+$ export OV_TOKEN=$(vault read -field=token identity/oidc/token/openviking)
 
-$ printf '%s' "$OV_KEY" | ov config add custom --name orangecluster \
-    --url "$OV_URL" --api-key-stdin --activate
-$ ov config validate
+$ curl -H "Authorization: Bearer $OV_TOKEN" "$OV_URL/api/v1/fs/ls?uri=viking://"
 ```
 
-**Every flag writes the key to disk in the clear.** `--api-key-env` does not
-hold an indirection: it resolves the variable when the config is written, so
-`~/.openviking/ovcli.conf` ends up carrying the literal key exactly as
-`--api-key-stdin` does. Measured by writing a config both ways and grepping the
-result. `ov` also refuses to run from environment alone -- with no config file
-it answers `No ovcli.conf detected` whatever is exported.
+The Vault login lasts as long as its token renews; the identity token expires
+in 30 days and is re-minted by reading that path again, with no browser. Send
+it as `Authorization: Bearer`, or in `X-API-Key`, which upstream also accepts
+for anything shaped like a JWT.
 
-`OPENVIKING_CLI_CONFIG_FILE` is the way out. It moves where `ov` READS its
-config, so the file can live somewhere that is not the disk. Write it yourself;
-`ov config add` ignores the variable and still writes under `~/.openviking`.
+`ovx` wraps this so nothing lands in `~/.openviking/ovcli.conf`. That matters
+because `ov config add` writes whatever it is given to disk in the clear:
+`--api-key-env` resolves the variable at write time rather than holding an
+indirection, so it stores the literal value exactly as `--api-key-stdin` does.
+Measured by writing a config both ways and grepping the result.
 
 For Claude Code, use the memory plugin, not an MCP registration:
 
@@ -286,22 +200,23 @@ proxy instead; plugin mode does not, so a separate `claude mcp add` is
 redundant with it.
 
 **An agent shares its principal's identity, and that is not laziness.**
-OpenViking isolates user scopes absolutely: jasper with role ADMIN gets 403 on
-`viking://user/hermes`, and hermes gets 403 on `viking://user/jasper`. ADMIN
-manages users, it does not read their data, and no role grants a cross-user
-read. An agent given its own user therefore cannot see the scope of the person
-it works for, which for an assistant is the whole job.
+OpenViking isolates user scopes absolutely: an ADMIN gets 403 on another user's
+scope, and no role grants a cross-user read. An agent given its own user
+therefore cannot see the scope of the person it works for, which for an
+assistant is the whole job.
 
-So Hermes holds jasper's key and writes into `viking://user/jasper`, now inside
-jasper's own account. Its writes are indistinguishable from jasper's own, and
-revoking it means rotating the seed, which rotates jasper too.
-`viking://resources` is still shared by every identity in an account, but an
-account now holds one person, so no tree is readable by both. Sharing something
-between them means copying it.
+So Hermes's identity-token role carries `lab`/`jasper` and its writes land in
+`viking://user/jasper`, indistinguishable from jasper's own. It holds no key,
+and revoking it is removing one entry from `var.vault_openviking_workloads`
+rather than rotating a seed that rotates everyone.
 
-**Re-homing Hermes empties its memory.** OpenViking is its memory provider, so
-its history lives under the old `lab` account and the new one starts blank.
-That is a consequence of the move, not a fault to debug.
+**Hermes reaches OpenViking through a loopback sidecar, not directly.** A
+running process cannot have its environment changed, and every read of an
+identity-token path mints a NEW token, so rendering one into Hermes's
+environment restarted the task on every consul-template poll -- measured, it
+flapped every few minutes. The sidecar reads the token from a file per request
+instead, Nomad keeps that file fresh with `change_mode = "noop"`, and Hermes
+holds a constant endpoint for the life of the process.
 
 ## Two forks, and how they were settled
 
@@ -342,13 +257,19 @@ accounting for one call type.
 
 ## Verifying a deployment
 
-`scripts/check_openviking_config.py` runs in pre-commit and asserts the fifteen
-config values that fail silently: the embedding dimension, the vector backend,
-the `custom_params` key allow-list, the rerank target, `auth_mode`,
-`root_api_key`, `api_key_hashing`, the VLM's model and `api_base`, the query
-planner's model and `api_base`, `metrics.enabled` and its Prometheus exporter,
-and `traces.enabled` with its endpoint. Without a root key under `api_key` mode
-the server calls `sys.exit(1)` at startup, on loopback and off it.
+`scripts/check_openviking_config.py` runs in pre-commit and asserts the config
+values that fail silently: the embedding dimension, the vector backend, the
+`custom_params` key allow-list, the rerank target, `auth_mode`, the four
+`server.oidc` values (issuer, audience, and the two claim mappings with their
+fallbacks), the VLM's model and `api_base`, the query planner's model and
+`api_base`, `metrics.enabled` and its Prometheus exporter, and `traces.enabled`
+with its endpoint.
+
+Two it used to assert are gone. Under `oidc` the plugin never consults
+`server.root_api_key`, and nothing on the request path issues or verifies a
+per-user key, so `encryption.api_key_hashing` governs nothing reachable. The
+`auth_mode` assertion is what keeps both safe: a flip back to `api_key` fails
+the guard before either matters again.
 
 It does **not** measure anything about a running service. These checks need a
 deployment and nothing in this repo automates them:
@@ -360,13 +281,15 @@ deployment and nothing in this repo automates them:
 # That check passes with the service dead
 $ curl -s "$OV_URL/ready"
 
-# a browser login lands authenticated, and Studio loads and accepts a user
-# key rather than refusing the auth mode
+# a browser login lands authenticated. Studio renders, but its connection
+# panel shows an unsupported-auth-mode alert: under oidc there is no key for
+# it to collect, and the token comes from Vault
 $ open https://openviking.lab.orangecluster.nl/
 
-# each person is a separate identity with their own key
-$ vault kv get -field=api_key -mount=secret default/openviking-users/jasper
-$ vault kv get -field=api_key -mount=secret default/openviking-users/veerle
+# the whole identity chain, both directions. Asserts the token is accepted and
+# reaches its OWN tree, that no credential and a foreign audience are refused,
+# and reports whether an account that was never created is usable
+$ python3 scripts/ov_identity_probe.py --account lab --user jasper
 
 # an unauthenticated call is refused. This is the one that justifies opening
 # 1933 to the LAN, so it is the one to run first after an apply
@@ -380,12 +303,13 @@ $ python3 scripts/bifrost_smoke.py
 # deliberately send the object form, so a green run says nothing about it
 $ python3 scripts/embark_rerank.py
 
-# how long an authenticated call takes. Unmeasured, and the one number here
-# nobody has: api_key_hashing verifies an Argon2id hash per request
-# (time_cost 3, memory_cost 64 MiB) on the event loop, with no cache, on an
-# SBC. Studio fires many calls per view. Record what this comes out at
+# how long an authenticated call takes. Unmeasured. Under oidc the cost per
+# request is JWT signature verification rather than an Argon2id hash, and the
+# JWKS is fetched over the network at request time, so the number is worth
+# having on an SBC. Record what this comes out at
+$ OV_TOKEN=$(vault read -field=token identity/oidc/token/openviking)
 $ curl -s -o /dev/null -w "%{time_total}\n" \
-    -H "X-API-Key: $OV_KEY" "$OV_URL/api/v1/fs/ls?uri=viking://"
+    -H "Authorization: Bearer $OV_TOKEN" "$OV_URL/api/v1/fs/ls?uri=viking://"
 ```
 
 The dimension is **768**, measured against `embark/embedding` through Bifrost.

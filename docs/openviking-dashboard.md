@@ -1,5 +1,15 @@
 # Building our own OpenViking dashboard
 
+> **SUPERSEDED on the authentication half.** This was written while OpenViking
+> ran `auth_mode: "api_key"`, and its case rests on a dashboard holding each
+> person's key server-side so the browser never sees one. Vault identity tokens
+> removed the key instead: `auth_mode` is `oidc`, callers authenticate with a
+> Vault-signed JWT, and `default/openviking-users/*` is dead. Two premises below
+> are now false — that OpenViking resolves callers from a long-lived key, and
+> that Web Studio "refuses to run" under `oidc` (it renders; only its connection
+> panel is replaced). The search and retrieval half is untouched and still
+> stands.
+
 **Worth doing, roughly four loop tickets, and the reason is authentication.**
 A dashboard we own can hold each person's OpenViking key server-side and
 resolve who they are from the Vault OIDC session the edge already
