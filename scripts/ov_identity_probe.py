@@ -120,10 +120,28 @@ def assert_no_token_is_refused(base: str) -> None:
     print(f"ok  an unauthenticated call is refused ({status})")
 
 
-def assert_foreign_audience_is_refused(base: str, key: str, account: str) -> None:
-    name = f"probe-aud-{uuid.uuid4().hex[:8]}"
-    scratch_role(name, key, f"not-{name}", account)
+def assert_foreign_audience_is_refused(base: str, account: str) -> None:
+    """A token OpenViking can verify the signature of, but must reject on aud.
+
+    It needs its OWN key: Vault refuses to mint a token whose client_id is not
+    in the signing key's allowed_client_ids, so a foreign audience on the real
+    key never gets issued at all. That is a real defence, and it is upstream of
+    the one being tested here.
+    """
+    suffix = uuid.uuid4().hex[:8]
+    key = f"probe-key-{suffix}"
+    name = f"probe-aud-{suffix}"
+    aud = f"not-openviking-{suffix}"
+    vault(
+        "write",
+        f"identity/oidc/key/{key}",
+        "algorithm=RS256",
+        "rotation_period=3600",
+        "verification_ttl=3600",
+        f"allowed_client_ids={aud}",
+    )
     try:
+        scratch_role(name, key, aud, account)
         status = call(base, mint(name))
         if status not in (401, 403):
             raise ProbeFailure(
@@ -133,6 +151,7 @@ def assert_foreign_audience_is_refused(base: str, key: str, account: str) -> Non
         print(f"ok  a foreign audience is refused ({status})")
     finally:
         vault("delete", f"identity/oidc/role/{name}")
+        vault("delete", f"identity/oidc/key/{key}")
 
 
 def report_unknown_account(base: str, key: str, client_id: str) -> None:
@@ -184,7 +203,7 @@ def main(argv: list[str]) -> int:
     try:
         assert_token_is_accepted(args.api, args.role, args.account)
         assert_no_token_is_refused(args.api)
-        assert_foreign_audience_is_refused(args.api, args.key, args.account)
+        assert_foreign_audience_is_refused(args.api, args.account)
         report_unknown_account(args.api, args.key, args.audience)
     except ProbeFailure as failure:
         print(f"FAIL: {failure}", file=sys.stderr)

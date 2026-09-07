@@ -12,8 +12,9 @@ healthy-looking service would hide:
     auth_mode        anything but oidc means Vault stopped being the identity
     oidc.issuer      a wrong value starts fine and 401s every request after
     oidc.audience    must equal the identity-token role's client_id
-    oidc.account_id  read from the entity-name claim; `sub` is the entity UUID
-    oidc.user_id     the same claim, because account id equals user id here
+    oidc.account_id  read from ov_account; `sub` is the entity UUID
+    oidc.user_id     read from ov_user, a DIFFERENT claim: the operator is
+                     user jasper inside account lab, and lab/user/lab is empty
     oidc.fallback    null, or an unmapped caller pools into the real `default`
     vlm model        one that cannot see embeds an error string per image
     vlm api_base     past Bifrost loses gateway governance, as rerank does
@@ -61,9 +62,12 @@ EXPECTED_ISSUER = "https://vault.lab.orangecluster.nl/v1/identity/oidc"
 # a literal both sides can be checked against.
 EXPECTED_AUDIENCE = "openviking"
 
-# Vault reserves `sub` for the entity UUID, so the entity NAME has to travel as
-# a claim the role's template adds.
+# Vault reserves `sub` for the entity UUID, so both identifiers travel as claims
+# the role's template adds. They are SEPARATE because they differ: the operator
+# is user `jasper` inside account `lab`, and there is no `lab/user/lab`.
 OV_ACCOUNT_CLAIM = "ov_account"
+OV_USER_CLAIM = "ov_user"
+IDENTITY_CLAIMS = {"account_id": OV_ACCOUNT_CLAIM, "user_id": OV_USER_CLAIM}
 BIFROST_PORT = "8080"
 # Tempo's OTLP gRPC receiver, on ubuntu beside Prometheus and Loki.
 TEMPO_OTLP = "192.168.2.47:4317"
@@ -256,13 +260,15 @@ def _oidc_failures(oidc: Any) -> list[str]:
         )
 
     identity = oidc.get("identity") or {}
-    for field in ("account_id", "user_id"):
+    for field, claim in IDENTITY_CLAIMS.items():
         mapping = identity.get(field) or {}
-        if mapping.get("source") != "claim" or mapping.get("claim") != OV_ACCOUNT_CLAIM:
+        if mapping.get("source") != "claim" or mapping.get("claim") != claim:
             found.append(
-                f"server.oidc.identity.{field} does not read the "
-                f"{OV_ACCOUNT_CLAIM!r} claim. Vault's sub is the entity UUID, so "
-                "mapping to it yields one account per UUID and still returns 200."
+                f"server.oidc.identity.{field} does not read the {claim!r} claim. "
+                "Vault's sub is the entity UUID, so mapping to it yields one "
+                "account per UUID and still returns 200. Mapping user_id to the "
+                "ACCOUNT claim is the same class of error: it resolves to "
+                "lab/user/lab, which does not exist."
             )
 
     if "fallback" not in (identity.get("account_id") or {}):
@@ -314,7 +320,7 @@ CLEAN: dict[str, Any] = {
                     "claim": OV_ACCOUNT_CLAIM,
                     "fallback": None,
                 },
-                "user_id": {"source": "claim", "claim": OV_ACCOUNT_CLAIM},
+                "user_id": {"source": "claim", "claim": OV_USER_CLAIM},
             },
         },
         "observability": {
@@ -387,6 +393,16 @@ def _self_test() -> int:
             _mutate(
                 ("server", "oidc", "identity", "user_id"),
                 {"source": "claim", "claim": "sub"},
+            ),
+            "identity.user_id",
+        ),
+        # The trap this split exists to stop: both fields reading the account
+        # claim resolves to lab/user/lab, which does not exist, so the caller
+        # gets a 200 and an empty tree.
+        "oidc_user_claim_is_account": (
+            _mutate(
+                ("server", "oidc", "identity", "user_id"),
+                {"source": "claim", "claim": OV_ACCOUNT_CLAIM},
             ),
             "identity.user_id",
         ),

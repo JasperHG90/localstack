@@ -244,7 +244,8 @@ resource "nomad_job" "hermes" {
       # the INFRASTRUCTURE root (var.vault_openviking_workloads). Two roots,
       # two states, so nothing links them but this comment: change one and the
       # job authenticates as one account while telling itself it is another.
-      openviking_account     = "jasper"
+      openviking_account     = "lab"
+      openviking_user        = "jasper"
       github_secret          = "${var.secret_mount}/data/default/hermes/github"
       telegram_secret        = "${var.secret_mount}/data/default/hermes/telegram"
       email_secret           = "${var.secret_mount}/data/default/hermes/email"

@@ -101,7 +101,7 @@ resource "vault_identity_oidc_role" "openviking" {
   client_id = local.openviking_audience
   ttl       = 3600 # 1h; the caller re-mints from a long-lived Vault session
 
-  template = "{\"ov_account\":{{identity.entity.metadata.ov_account}}}"
+  template = "{\"ov_account\":{{identity.entity.metadata.ov_account}},\"ov_user\":{{identity.entity.metadata.ov_user}}}"
 }
 
 ### One role per Nomad workload, with the account as a LITERAL rather than a
@@ -119,10 +119,11 @@ resource "vault_identity_oidc_role" "openviking" {
 ### (machine_roles.tf), so no other caller can mint a token claiming this
 ### account. Adding a workload adds an entry here and a policy there.
 ###
-### `hermes` maps to `jasper` because it is a personal assistant: OpenViking
-### isolates user scopes absolutely, so an agent with its own account could not
-### see the scope of the person it works for. Its writes are indistinguishable
-### from jasper's, which is the same trade the API key made before.
+### `hermes` maps to `lab`, the account OV2 left behind when it gave each person
+### their own. That is where hermes's memory actually lives: OV2 created the
+### per-person accounts and migrated nothing, so `lab` holds 2920 objects and
+### `jasper` holds a few dozen. Pointing hermes at `jasper` gave it an empty
+### memory, which is what OV2's own commit warned would happen.
 ###
 ### ttl is 12h rather than the human role's hour. A person re-mints on demand
 ### from a live session; a Nomad task gets this rendered into its environment at
@@ -135,7 +136,7 @@ resource "vault_identity_oidc_role" "openviking_workload" {
   client_id = local.openviking_audience
   ttl       = 43200 # 12h; the key's verification_ttl above must stay >= this
 
-  template = jsonencode({ ov_account = each.value })
+  template = jsonencode({ ov_account = each.value.account, ov_user = each.value.user })
 }
 
 locals {

@@ -60,7 +60,8 @@ resource "vault_identity_entity" "operator" {
     managed_by = "terraform"
     kind       = "human"
     email      = var.vault_operator_email
-    ov_account = var.vault_operator_ov_account
+    ov_account = var.vault_operator_ov_identity.account
+    ov_user    = var.vault_operator_ov_identity.user
   }
 }
 
@@ -120,6 +121,7 @@ resource "vault_identity_entity" "openviking_consumer" {
       managed_by = "terraform"
       kind       = "human"
       ov_account = each.key
+      ov_user    = each.key
     },
     each.value.email == null ? {} : { email = each.value.email },
   )

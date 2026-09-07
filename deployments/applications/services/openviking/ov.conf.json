@@ -77,7 +77,7 @@
         },
         "user_id": {
           "source": "claim",
-          "claim": "ov_account"
+          "claim": "ov_user"
         }
       }
     },

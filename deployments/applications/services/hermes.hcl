@@ -200,7 +200,7 @@ NOMAD_TOKEN={{ .Data.data.token }}
 OPENVIKING_API_KEY={{ .Data.token }}
 {{- end }}
 OPENVIKING_ACCOUNT=${openviking_account}
-OPENVIKING_USER=${openviking_account}
+OPENVIKING_USER=${openviking_user}
 OPENVIKING_ENDPOINT=http://${openviking_host}:1933
 NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
@@ -414,7 +414,7 @@ NOMAD_TOKEN={{ .Data.data.token }}
 OPENVIKING_API_KEY={{ .Data.token }}
 {{- end }}
 OPENVIKING_ACCOUNT=${openviking_account}
-OPENVIKING_USER=${openviking_account}
+OPENVIKING_USER=${openviking_user}
 {{- with secret "${api_server_secret}" }}
 API_SERVER_KEY={{ .Data.data.key }}
 {{- end }}

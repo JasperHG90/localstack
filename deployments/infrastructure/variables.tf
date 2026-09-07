@@ -76,10 +76,16 @@ variable "vault_operator_email" {
   default     = "jasperginn@gmail.com"
 }
 
-variable "vault_operator_ov_account" {
-  description = "The operator's OpenViking account id, published as the entity's `ov_account` metadata and from there as a token claim. Deliberately not the entity name: that entity is a cluster-admin identity and this is a data identity."
-  type        = string
-  default     = "jasper"
+variable "vault_operator_ov_identity" {
+  description = "The operator's OpenViking identity: which account, and which user inside it. Two values because they differ. The account is `lab`, which everyone shared before OV2 split them; OV2 created the per-person accounts and migrated nothing, so the content is still in `lab`. The user is `jasper`, because the tree is at `lab/user/jasper` and there is no `lab/user/lab`. Neither is the Vault entity name: that entity is a cluster-admin identity and these are data identities."
+  type = object({
+    account = string
+    user    = string
+  })
+  default = {
+    account = "lab"
+    user    = "jasper"
+  }
 }
 
 variable "vault_openviking_consumers" {
@@ -99,9 +105,15 @@ variable "oidc_smoke_redirect_uris" {
 }
 
 variable "vault_openviking_workloads" {
-  description = "Nomad jobs that reach OpenViking, keyed by job id. The key IS the alias name Vault's jwt-nomad mount creates, because that role sets `user_claim = /nomad_job_id`. The value is the OpenViking account the job writes into: `hermes` maps to `jasper` because a personal assistant must see its principal's scope, and OpenViking grants no cross-user read. Each entry mints one identity-token role (oidc.tf) whose read is granted by one policy on that job's own JWT role (machine_roles.tf)."
-  type        = map(string)
+  description = "Nomad jobs that reach OpenViking, keyed by job id. The key IS the alias name Vault's jwt-nomad mount creates, because that role sets `user_claim = /nomad_job_id`. The value is the account and the user the job writes as: hermes gets `lab`/`jasper`, its principal's tree, because OpenViking grants no cross-user read and an assistant with its own user could not see the scope it works for. Each entry mints one identity-token role (oidc.tf) whose read is granted by one policy on that job's own JWT role (machine_roles.tf)."
+  type = map(object({
+    account = string
+    user    = string
+  }))
   default = {
-    hermes = "jasper"
+    hermes = {
+      account = "lab"
+      user    = "jasper"
+    }
   }
 }
