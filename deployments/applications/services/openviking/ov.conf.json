@@ -37,7 +37,7 @@
   "rerank": {
     "provider": "openai",
     "model": "embark/reranker",
-    "api_base": "http://192.168.2.50:8080/v1",
+    "api_base": "http://192.168.2.50:8080/v1/rerank",
     "api_key": "{{ $bifrost.Data.data.API_KEY }}",
     "timeout": 120
   },
