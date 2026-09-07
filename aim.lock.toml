@@ -165,6 +165,19 @@ risk_acknowledged = false
 sha = "c3e24452dfb7152cfee4fc13ee2da5f3a0f9198a"
 installed_at = "2026-07-30T18:32:44.504400Z"
 
+[[skill]]
+qualified_name = "f2002c53d5747ac5/bencium-impact-designer"
+repo_alias = "f2002c53d5747ac5"
+source_path = "bencium-impact-designer/skills/bencium-impact-designer"
+target_dir = ".claude/skills/bencium-impact-designer"
+history = []
+content_hash = "3ba3033d0bddb847c6a6f42484a810621901e2aa60af5afc5f85a45c2047dc4d"
+risk_acknowledged = false
+
+[skill.current]
+sha = "a5d02a417dba380071f57cb18fb5e65bc5f7df5f"
+installed_at = "2026-09-06T13:23:54.011529Z"
+
 [[subagent]]
 qualified_name = "4290899e4697f267/adversarial-reviewer"
 repo_alias = "4290899e4697f267"
@@ -453,3 +466,4 @@ guidelines = "9f2811d5c944f66b8dd93552c313b774b0bb2ecc1796783b476131e17e808f69"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
 ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"
+f2002c53d5747ac5 = "https://github.com/bencium/bencium-marketplace"

@@ -1,0 +1,807 @@
+<title>OpenViking Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ── tokens ─────────────────────────────────────────────── */
+:root{
+  /* rail: dark in both themes, it is the product's signature surface */
+  --rail:#0F2E2C; --rail-ink:#E4F0EE; --rail-ink2:#93B4B0; --rail-ink3:#6C918D;
+  --rail-hover:rgba(255,255,255,.07); --rail-active:rgba(255,255,255,.13);
+  --rail-rule:rgba(255,255,255,.13);
+
+  --canvas:#FCFCFB; --sheet:#FFFFFF;
+  --ink:#16211F; --ink2:#586865; --ink3:#8C9995;
+  --hover:rgba(22,33,31,.045); --active:rgba(22,33,31,.085);
+  --rule:#E3E6E2; --rule2:#EDEFEC;
+
+  --accent:#0E7A7E; --accent-ink:#0A5C5F; --accent-bright:#2FB3AC; --accent-soft:#E2F1F0;
+  --rose:#A8412F; --rose-soft:#F7E8E4;
+  --gold:#846312; --gold-soft:#F6EFDB;
+  --plum:#664A88; --plum-soft:#EDE8F3;
+
+  --fd:"Fraunces",Georgia,"Times New Roman",serif;
+  --f:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --fm:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --rail:#08110F; --rail-ink:#DCE8E6; --rail-ink2:#8AA9A5; --rail-ink3:#628581;
+  --rail-hover:rgba(255,255,255,.06); --rail-active:rgba(255,255,255,.11);
+  --rail-rule:rgba(255,255,255,.10);
+
+  --canvas:#101A18; --sheet:#16211F;
+  --ink:#E4EBE9; --ink2:#9DAFAB; --ink3:#6E817D;
+  --hover:rgba(228,235,233,.055); --active:rgba(228,235,233,.10);
+  --rule:#26332F; --rule2:#1E2A27;
+
+  --accent:#4FC0BA; --accent-ink:#7DD4CE; --accent-bright:#4FC0BA; --accent-soft:#16302E;
+  --rose:#DE9484; --rose-soft:#331F1A;
+  --gold:#C7A54A; --gold-soft:#2E2715;
+  --plum:#AE93CD; --plum-soft:#251E33;
+}}
+:root[data-theme="dark"]{
+  --rail:#08110F; --rail-ink:#DCE8E6; --rail-ink2:#8AA9A5; --rail-ink3:#628581;
+  --rail-hover:rgba(255,255,255,.06); --rail-active:rgba(255,255,255,.11);
+  --rail-rule:rgba(255,255,255,.10);
+
+  --canvas:#101A18; --sheet:#16211F;
+  --ink:#E4EBE9; --ink2:#9DAFAB; --ink3:#6E817D;
+  --hover:rgba(228,235,233,.055); --active:rgba(228,235,233,.10);
+  --rule:#26332F; --rule2:#1E2A27;
+
+  --accent:#4FC0BA; --accent-ink:#7DD4CE; --accent-bright:#4FC0BA; --accent-soft:#16302E;
+  --rose:#DE9484; --rose-soft:#331F1A;
+  --gold:#C7A54A; --gold-soft:#2E2715;
+  --plum:#AE93CD; --plum-soft:#251E33;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--f);
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--fm);font-size:.88em;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+svg{display:block}
+
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ══ rail ══════════════════════════════════════════════ */
+.side{width:262px;flex:none;background:var(--rail);overflow:hidden;
+  transition:width .22s cubic-bezier(.32,.08,.24,1)}
+.side-in{width:262px;height:100%;overflow-y:auto;display:flex;flex-direction:column;
+  padding:8px 0 16px;color:var(--rail-ink2)}
+body.narrow .side{width:0}
+
+.ws{display:flex;align-items:center;gap:11px;padding:8px 10px;margin:2px 8px 10px;
+  border-radius:8px;width:calc(100% - 16px);text-align:left}
+.ws:hover{background:var(--rail-hover)}
+.ws-i{width:28px;height:28px;border-radius:8px;flex:none;background:var(--accent-bright);
+  color:#04211F;font-size:13px;font-weight:700;display:grid;place-items:center;
+  font-family:var(--fd);font-variation-settings:"opsz" 20}
+.ws-n{font-size:15.5px;font-weight:600;letter-spacing:-.01em;flex:1;color:var(--rail-ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-sub{display:block;font-size:11px;font-weight:400;color:var(--rail-ink3);letter-spacing:.02em}
+.ws-x{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;
+  color:var(--rail-ink3);opacity:0;flex:none}
+.ws:hover .ws-x,.ws-x:focus-visible{opacity:1}
+.ws-x:hover{background:var(--rail-active);color:var(--rail-ink)}
+
+.srow{display:flex;align-items:center;gap:10px;width:calc(100% - 16px);margin:1px 8px;
+  padding:0 10px;min-height:32px;border-radius:8px;text-align:left;
+  font-size:14.5px;color:var(--rail-ink2)}
+.srow:hover{background:var(--rail-hover);color:var(--rail-ink)}
+.srow[aria-current="true"]{background:var(--rail-active);color:var(--rail-ink);font-weight:600;
+  box-shadow:inset 2px 0 0 var(--accent-bright)}
+.srow .gi{width:18px;flex:none;color:var(--rail-ink3);display:grid;place-items:center}
+.srow:hover .gi,.srow[aria-current="true"] .gi{color:var(--accent-bright)}
+.srow .lb{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .ct{font-family:var(--fm);font-size:11.5px;color:var(--rail-ink3);font-variant-numeric:tabular-nums}
+
+.slabel{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--rail-ink3);padding:22px 18px 6px}
+.sfoot{margin-top:auto;padding-top:16px}
+.sfoot::before{content:"";display:block;height:1px;background:var(--rail-rule);margin:0 18px 12px}
+
+/* tree inside the rail */
+.side .tnode{color:var(--rail-ink2)}
+.side .tnode:hover{background:var(--rail-hover);color:var(--rail-ink)}
+.side .tnode .tw,.side .tnode .tg{color:var(--rail-ink3)}
+.side .tnode:hover .tw,.side .tnode.open>.cell .tg{color:var(--accent-bright)}
+.side .ind::before{background:var(--rail-rule)}
+
+/* ══ tree ══════════════════════════════════════════════ */
+.tree{display:flex;flex-direction:column}
+.tnode{display:flex;align-items:center;width:calc(100% - 16px);margin:0 8px;
+  min-height:32px;border-radius:8px;text-align:left;font-size:14.5px;color:var(--ink2);
+  padding-right:5px;position:relative}
+.tnode:hover{background:var(--hover);color:var(--ink)}
+.ind{width:17px;flex:none;align-self:stretch;position:relative}
+.ind::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:1px;background:var(--rule)}
+.tw{width:20px;height:20px;flex:none;display:grid;place-items:center;color:var(--ink3);
+  border-radius:5px;margin-left:-1px}
+.tw:hover{background:var(--active)}
+.tw svg{transition:transform .16s cubic-bezier(.3,0,.2,1)}
+.tnode.open>.cell .tw svg,.tnode.open .tw svg{transform:rotate(90deg)}
+.tw.leaf{visibility:hidden}
+.tg{width:21px;flex:none;display:grid;place-items:center;color:var(--ink3)}
+.tnode.open>.cell .tg{color:var(--accent)}
+.tlb{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:5px}
+.kids{display:none}
+.kids.open{display:block}
+
+/* ══ main ══════════════════════════════════════════════ */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--canvas)}
+.topbar{display:flex;align-items:center;gap:7px;height:52px;flex:none;padding:0 16px;
+  border-bottom:1px solid var(--rule);background:var(--canvas)}
+.icb{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;color:var(--ink3)}
+.icb:hover{background:var(--hover);color:var(--ink)}
+#openSide{display:none}
+body.narrow #openSide{display:grid}
+.bc{display:flex;align-items:center;gap:3px;font-size:14px;color:var(--ink2);min-width:0}
+.bc button{padding:4px 7px;border-radius:6px;white-space:nowrap}
+.bc button:hover{background:var(--hover)}
+.bc .cur{color:var(--ink);font-weight:600}
+.bc .sl{color:var(--ink3);opacity:.5}
+.topbar .sp{flex:1}
+.tbtn{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:7px;
+  font-size:14px;font-weight:500;color:var(--ink2)}
+.tbtn:hover{background:var(--hover);color:var(--ink)}
+.tbtn.primary{background:var(--accent);color:#fff;font-weight:600;padding:6px 14px;
+  box-shadow:0 1px 2px rgba(10,50,48,.22)}
+.tbtn.primary:hover{background:var(--accent-ink);color:#fff}
+
+.scroll{flex:1;overflow:auto}
+.doc{padding:0 88px 130px;max-width:1060px}
+.doc.narrow{max-width:880px}
+
+/* editorial header: the eyebrow names what kind of page this is */
+.eyebrow{display:flex;align-items:center;gap:12px;margin:44px 0 14px;
+  font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--accent)}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+h1{font-family:var(--fd);font-size:47px;font-weight:600;letter-spacing:-.021em;margin:0;
+  line-height:1.08;text-wrap:balance;font-variation-settings:"opsz" 90}
+.pdesc{color:var(--ink2);font-size:16.5px;margin:14px 0 0;max-width:60ch;line-height:1.6}
+
+.strip{display:flex;flex-wrap:wrap;gap:28px;margin-top:24px;padding:16px 20px;
+  background:var(--sheet);border-radius:12px;box-shadow:0 1px 2px rgba(22,33,31,.06),0 0 0 1px var(--rule)}
+.strip div{display:flex;flex-direction:column;gap:1px}
+.strip .n{font-family:var(--fd);font-size:27px;font-weight:600;line-height:1;
+  font-variation-settings:"opsz" 30;font-variant-numeric:tabular-nums}
+.strip .l{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+
+.pp{margin:26px 0 0;display:flex;flex-direction:column;gap:1px}
+.pp .r{display:flex;align-items:baseline;gap:10px;min-height:34px;font-size:14.5px}
+.pp .k{width:168px;flex:none;color:var(--ink3);font-family:var(--fm);font-size:11.5px;
+  letter-spacing:.09em;text-transform:uppercase;padding-top:4px}
+.pp .v{color:var(--ink);padding:5px 9px;border-radius:6px;margin-left:-9px}
+.pp .r:hover .v{background:var(--hover)}
+
+hr.div{border:0;border-top:1px solid var(--rule);margin:34px 0}
+h2{font-family:var(--fd);font-size:25px;font-weight:600;letter-spacing:-.014em;
+  margin:44px 0 12px;font-variation-settings:"opsz" 40}
+h3{font-family:var(--fd);font-size:18px;font-weight:600;margin:30px 0 6px;
+  font-variation-settings:"opsz" 24}
+
+.callout{display:flex;gap:14px;border-radius:12px;padding:17px 20px;margin:16px 0;
+  font-size:15px;line-height:1.62}
+.callout .ci{flex:none;padding-top:3px}
+.callout p{margin:0}
+.callout p+p{margin-top:8px}
+.c-sheet{background:var(--sheet);box-shadow:0 0 0 1px var(--rule)}
+.c-sheet .ci{color:var(--ink3)}
+.c-teal{background:var(--accent-soft)}
+.c-teal .ci{color:var(--accent)}
+
+/* ══ database views ══════════════════════════════════ */
+.views{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--rule);margin-top:22px}
+.views button{padding:9px 11px;font-size:14px;font-weight:500;color:var(--ink3);
+  border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:6px 6px 0 0}
+.views button:hover{background:var(--hover);color:var(--ink2)}
+.views button[aria-pressed="true"]{color:var(--accent);font-weight:600;border-bottom-color:var(--accent)}
+.views .sp{flex:1}
+.views .mini{font-size:12.5px;color:var(--ink3);padding:5px 9px;border-radius:6px;border-bottom:none}
+.views .mini:hover{background:var(--hover);color:var(--ink2)}
+
+.dbhead{display:grid;border-bottom:1px solid var(--rule)}
+.dbhead span{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink3);padding:10px 8px 8px;display:flex;
+  align-items:center;gap:5px;white-space:nowrap}
+.dbhead span.r{justify-content:flex-end}
+.newrow{display:flex;align-items:center;gap:9px;padding:11px 8px;font-size:14px;font-weight:500;
+  color:var(--ink3);width:100%;text-align:left;border-radius:8px;margin-top:6px}
+.newrow:hover{background:var(--hover);color:var(--accent)}
+
+.rows{display:flex;flex-direction:column}
+.rw{display:grid;align-items:center;min-height:42px;border-bottom:1px solid var(--rule2);
+  width:100%;text-align:left;position:relative}
+.rw:hover{background:var(--hover)}
+.cell{display:flex;align-items:center;min-width:0;padding:0 8px;font-size:14.5px}
+.cell.nm{padding:0;font-weight:500;color:var(--ink)}
+.cell.r{justify-content:flex-end;color:var(--ink3);font-family:var(--fm);font-size:12px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cell.d{color:var(--ink2);font-size:14px}
+
+.fs .tnode{display:grid;margin:0;width:100%;border-radius:0;min-height:40px;
+  border-bottom:1px solid var(--rule2);padding-right:0;
+  grid-template-columns:minmax(0,1fr) 116px 104px 96px 120px 46px}
+
+.chip{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;
+  letter-spacing:.015em}
+.chip.you{background:transparent;color:var(--ink3);box-shadow:inset 0 0 0 1px var(--rule)}
+.chip.agent{background:var(--plum-soft);color:var(--plum)}
+.chip.hybrid{background:var(--accent-soft);color:var(--accent-ink)}
+.chip.mean{background:var(--plum-soft);color:var(--plum)}
+.chip.word{background:var(--gold-soft);color:var(--gold)}
+
+.dl{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;
+  color:var(--ink3);opacity:0;flex:none}
+.tnode:hover .dl,.rw:hover .dl,.dl:focus-visible{opacity:1}
+.dl:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* ══ memories ══════════════════════════════════════════ */
+.mi{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start;
+  padding:15px 16px;margin:8px 0;border-radius:12px;background:var(--sheet);
+  box-shadow:0 0 0 1px var(--rule)}
+.mi:hover{box-shadow:0 0 0 1px var(--rule),0 2px 6px rgba(22,33,31,.07)}
+.mi p{margin:0 0 5px;font-size:15.5px;line-height:1.55}
+.mi .mt{font-family:var(--fm);font-size:11.5px;letter-spacing:-.01em;color:var(--ink3)}
+.mi .mt b{color:var(--ink2);font-weight:500}
+.x{opacity:0;font-size:13px;font-weight:600;color:var(--ink3);padding:5px 11px;
+  border-radius:7px;white-space:nowrap}
+.mi:hover .x{opacity:1}
+.x:hover{background:var(--rose-soft);color:var(--rose)}
+
+/* ══ search ════════════════════════════════════════════ */
+.sfield{display:flex;align-items:center;gap:12px;background:var(--sheet);border-radius:12px;
+  padding:15px 18px;margin-top:24px;box-shadow:0 0 0 1px var(--rule),0 1px 3px rgba(22,33,31,.06);
+  transition:box-shadow .16s ease}
+.sfield:focus-within{box-shadow:0 0 0 2px var(--accent),0 2px 10px rgba(14,122,126,.16)}
+.sfield input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:17px;color:var(--ink)}
+.sfield input:focus{outline:none}
+.seg{display:inline-flex;background:var(--sheet);border-radius:9px;padding:3px;
+  box-shadow:0 0 0 1px var(--rule)}
+.seg button{padding:7px 15px;font-size:13.5px;font-weight:600;color:var(--ink2);border-radius:7px}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;
+  box-shadow:0 1px 2px rgba(10,50,48,.2)}
+.mini2{font-size:13px;font-weight:600;color:var(--ink2);padding:6px 12px;border-radius:8px;
+  background:var(--sheet);box-shadow:0 0 0 1px var(--rule)}
+.mini2:hover{color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.hit{display:block;width:100%;text-align:left;padding:16px 18px;border-radius:12px;
+  margin:10px 0;background:var(--sheet);box-shadow:0 0 0 1px var(--rule)}
+.hit:hover{box-shadow:0 0 0 1px var(--accent)}
+.hit .hh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.hit .hn{font-family:var(--fd);font-size:18px;font-weight:600;letter-spacing:-.012em;
+  font-variation-settings:"opsz" 24}
+.hit .hp{font-family:var(--fm);font-size:11.5px;color:var(--ink3);margin-bottom:8px;letter-spacing:-.01em}
+.hit .hs{font-size:14.5px;color:var(--ink2);line-height:1.62}
+mark{background:var(--gold-soft);color:var(--ink);border-radius:3px;padding:1px 3px;font-weight:500}
+
+.tags{display:flex;flex-wrap:wrap;gap:7px}
+.tg2{font-family:var(--fm);font-size:12px;background:transparent;color:var(--ink2);
+  border-radius:6px;padding:3px 9px;box-shadow:inset 0 0 0 1px var(--rule);letter-spacing:-.01em}
+
+.drop{border-radius:14px;padding:52px 30px;text-align:center;background:var(--sheet);
+  box-shadow:0 0 0 2px var(--rule);margin-top:24px}
+.drop .di{color:var(--accent);margin:0 auto 14px}
+.drop p{margin:0}
+
+.view{display:none}
+.view.on{display:block}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:1080px){.doc{padding:0 44px 110px}}
+@media (max-width:820px){
+  .app{display:block;height:auto;overflow:visible}
+  .side{width:100%!important}
+  .side-in{width:100%;height:auto}
+  .doc{padding:0 20px 90px}
+  h1{font-size:33px}
+  .pp .k{width:124px}
+  .fs .tnode{grid-template-columns:minmax(0,1fr) 104px 46px}
+  .fs .cell:nth-child(2),.fs .cell:nth-child(4),.fs .cell:nth-child(5){display:none}
+  .dbhead span:nth-child(n+3){display:none}
+}
+</style>
+
+<div class="app">
+
+  <nav class="side" aria-label="Sidebar"><div class="side-in">
+    <button class="ws" type="button" data-go="account">
+      <span class="ws-i" aria-hidden="true">J</span>
+      <span class="ws-n">Jasper<span class="ws-sub">Signed in</span></span>
+      <span class="ws-x" id="closeSide" aria-label="Collapse sidebar" role="button" tabindex="0">
+        <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><rect x="1.8" y="2.2" width="10.4" height="9.6" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.7 2.6v8.8" stroke="currentColor" stroke-width="1.4"/></svg>
+      </span>
+    </button>
+
+    <button class="srow" type="button" data-go="search">
+      <span class="gi" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.7" cy="6.7" r="4.3" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      <span class="lb">Search</span></button>
+    <button class="srow" type="button" data-go="home" aria-current="true">
+      <span class="gi" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2.3 6.6L7.5 2.5l5.2 4.1v5.2a.8.8 0 01-.8.8H3.1a.8.8 0 01-.8-.8V6.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+      <span class="lb">Home</span></button>
+
+    <div class="slabel">Files</div>
+    <div class="tree" id="sideTree" role="tree" aria-label="Files"></div>
+
+    <div class="slabel">What it remembers</div>
+    <button class="srow" type="button" data-go="memories">
+      <span class="gi" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2.4c2.1 0 3.9 1.4 3.9 3.3 0 1-.5 1.9-1.3 2.5v1a.9.9 0 01-.9.9H5.8a.9.9 0 01-.9-.9v-1C4.1 7.6 3.6 6.7 3.6 5.7c0-1.9 1.8-3.3 3.9-3.3z" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/><path d="M6 11.8h3M6.3 13.4h2.4" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg></span>
+      <span class="lb">Memories</span><span class="ct">23</span></button>
+    <button class="srow" type="button" data-go="sessions">
+      <span class="gi" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M12.7 8c0 2.1-2.3 3.8-5.2 3.8-.7 0-1.3-.1-1.9-.3L3 12.4l.9-2.1C3.2 9.6 2.8 8.9 2.8 8 2.8 5.9 5.1 4.2 8 4.2s4.7 1.7 4.7 3.8z" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/></svg></span>
+      <span class="lb">Sessions</span><span class="ct">31</span></button>
+
+    <div class="sfoot">
+      <button class="srow" type="button" data-go="add">
+        <span class="gi" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 3.2v8.6M3.2 7.5h8.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <span class="lb">Add a file</span></button>
+    </div>
+  </div></nav>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="icb" type="button" id="openSide" aria-label="Show sidebar">
+        <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><rect x="1.8" y="2.2" width="10.4" height="9.6" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.7 2.6v8.8" stroke="currentColor" stroke-width="1.4"/></svg>
+      </button>
+      <div class="bc" id="bc"><button type="button" class="cur">Home</button></div>
+      <span class="sp"></span>
+      <button class="tbtn" type="button" data-go="search">Search</button>
+      <button class="tbtn primary" type="button" data-go="add">
+        <svg width="12" height="12" viewBox="0 0 15 15" fill="none"><path d="M7.5 3.2v8.6M3.2 7.5h8.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Add a file</button>
+    </div>
+
+    <div class="scroll">
+
+      <!-- ══ HOME ══ -->
+      <section class="view on doc" id="v-home">
+        <div class="eyebrow">Your workspace</div>
+        <h1>Jasper</h1>
+        <p class="pdesc">Everything your agents have read, written and remembered — plus
+        anything you put here yourself. Nobody else can see it.</p>
+        <div class="strip">
+          <div><span class="n">38</span><span class="l">Files</span></div>
+          <div><span class="n">23</span><span class="l">Memories</span></div>
+          <div><span class="n">31</span><span class="l">Sessions</span></div>
+          <div><span class="n">12m</span><span class="l">Last change</span></div>
+        </div>
+
+        <h2>Recent files</h2>
+        <div class="dbhead" style="grid-template-columns:minmax(0,1fr) 194px 96px 120px 46px">
+          <span>Name</span><span>Folder</span><span>Added by</span><span class="r">Updated</span><span></span>
+        </div>
+        <div class="rows">
+          <div class="rw" data-go="file" style="grid-template-columns:minmax(0,1fr) 194px 96px 120px 46px">
+            <span class="cell nm">Vault rotation checklist</span><span class="cell d">Notes / Cluster</span>
+            <span class="cell"><span class="chip agent">Agent</span></span><span class="cell r">2 hours ago</span>
+            <span class="cell"><button class="dl" type="button" aria-label="Download Vault rotation checklist"><svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7 2.4v6.4M4.6 6.6L7 9l2.4-2.4M2.6 11h8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+          </div>
+          <div class="rw" data-go="file" style="grid-template-columns:minmax(0,1fr) 194px 96px 120px 46px">
+            <span class="cell nm">Cluster runbook.pdf</span><span class="cell d">Documents / Manuals</span>
+            <span class="cell"><span class="chip you">You</span></span><span class="cell r">yesterday</span>
+            <span class="cell"><button class="dl" type="button" aria-label="Download Cluster runbook.pdf"><svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7 2.4v6.4M4.6 6.6L7 9l2.4-2.4M2.6 11h8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+          </div>
+          <div class="rw" data-go="file" style="grid-template-columns:minmax(0,1fr) 194px 96px 120px 46px">
+            <span class="cell nm">Postgres tuning notes</span><span class="cell d">Notes / Databases</span>
+            <span class="cell"><span class="chip agent">Agent</span></span><span class="cell r">3 days ago</span>
+            <span class="cell"><button class="dl" type="button" aria-label="Download Postgres tuning notes"><svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7 2.4v6.4M4.6 6.6L7 9l2.4-2.4M2.6 11h8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+          </div>
+          <div class="rw" data-go="file" style="grid-template-columns:minmax(0,1fr) 194px 96px 120px 46px">
+            <span class="cell nm">Q3 planning</span><span class="cell d">Notes / Meetings</span>
+            <span class="cell"><span class="chip you">You</span></span><span class="cell r">4 days ago</span>
+            <span class="cell"><button class="dl" type="button" aria-label="Download Q3 planning"><svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7 2.4v6.4M4.6 6.6L7 9l2.4-2.4M2.6 11h8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+          </div>
+        </div>
+        <button class="newrow" type="button" data-go="files">
+          <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M3.2 7.5h8.6M8.6 4.3l3.2 3.2-3.2 3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          All 38 files</button>
+
+        <h2>Recent memories</h2>
+        <div class="mi"><div><p>Certificates renew themselves, but DNS records are changed by hand.</p>
+          <div class="mt">From <b>Cluster runbook.pdf</b> · yesterday</div></div>
+          <button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>The cluster runs on three Radxa boards and one Jetson, all on the home network.</p>
+          <div class="mt">From <b>Cluster runbook.pdf</b> · yesterday</div></div>
+          <button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Veerle looks after the DNS records.</p>
+          <div class="mt">From <b>Q3 planning</b> · 4 days ago</div></div>
+          <button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Postgres is preferred over SQLite for anything more than one person uses.</p>
+          <div class="mt">From <b>Tracking down slow queries</b> · 1 week ago</div></div>
+          <button class="x" type="button">Delete</button></div>
+        <button class="newrow" type="button" data-go="memories">
+          <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M3.2 7.5h8.6M8.6 4.3l3.2 3.2-3.2 3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          All 23 memories</button>
+      </section>
+
+      <!-- ══ FILES ══ -->
+      <section class="view doc" id="v-files">
+        <div class="eyebrow">Folder</div>
+        <h1>Files</h1>
+        <p class="pdesc">38 items in 11 folders. Open a folder with its arrow. The download
+        arrow on the right takes a file as-is, or a whole folder as a zip.</p>
+
+        <div class="views">
+          <button type="button" aria-pressed="true">Tree</button>
+          <button type="button">Flat list</button>
+          <span class="sp"></span>
+          <button class="mini" type="button" id="expandAll">Expand all</button>
+          <button class="mini" type="button" id="collapseAll">Collapse all</button>
+        </div>
+        <div class="dbhead" style="grid-template-columns:minmax(0,1fr) 116px 104px 96px 120px 46px">
+          <span>Name</span><span>Kind</span><span>Added by</span>
+          <span class="r">Size</span><span class="r">Updated</span><span></span>
+        </div>
+        <div class="tree fs" id="fsTable" role="tree" aria-label="File tree"></div>
+        <button class="newrow" type="button" data-go="add">
+          <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M7.5 3.2v8.6M3.2 7.5h8.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          Add a file</button>
+      </section>
+
+      <!-- ══ ONE FILE ══ -->
+      <section class="view doc narrow" id="v-file">
+        <div class="eyebrow">File</div>
+        <h1>Cluster runbook.pdf</h1>
+        <div class="tags" style="gap:8px;margin-top:20px">
+          <button class="mini2" type="button" style="display:inline-flex;align-items:center;gap:7px">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2.4v6.4M4.6 6.6L7 9l2.4-2.4M2.6 11h8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download</button>
+          <button class="mini2" type="button">Open</button>
+          <button class="mini2" type="button">Move</button>
+          <button class="mini2" type="button">Delete</button>
+        </div>
+        <div class="pp">
+          <div class="r"><span class="k">Folder</span><span class="v">Documents / Manuals</span></div>
+          <div class="r"><span class="k">Added by</span><span class="v">You, 5 September</span></div>
+          <div class="r"><span class="k">Kind</span><span class="v">PDF · 14 pages · <span class="mono">1.2 MB</span></span></div>
+          <div class="r"><span class="k">Tags</span><span class="v"><span class="tags"><span class="tg2">cluster</span><span class="tg2">recovery</span><span class="tg2">certificates</span></span></span></div>
+          <div class="r"><span class="k">Used in</span><span class="v">6 sessions, last yesterday</span></div>
+        </div>
+
+        <hr class="div">
+        <div class="callout c-sheet">
+          <span class="ci" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 15 15" fill="none"><path d="M3.7 3.1h7.6v8.8H3.7z" stroke="currentColor" stroke-width="1.3"/><path d="M5.4 5.6h4.2M5.4 7.7h4.2M5.4 9.8h2.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg></span>
+          <div><p>How the home cluster is put together and what to do when part of it stops.
+          Covers the four machines, where each service runs, how certificates are renewed,
+          and the steps for a full restart.</p>
+          <p style="font-family:var(--fm);font-size:11.5px;color:var(--ink3)">Summary written when the file was read</p></div>
+        </div>
+
+        <h2>Memories from this file</h2>
+        <div class="mi"><div><p>The cluster runs on three Radxa boards and one Jetson, all on the home network.</p>
+          <div class="mt">Written yesterday</div></div><button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Certificates renew themselves, but DNS records are changed by hand.</p>
+          <div class="mt">Written yesterday</div></div><button class="x" type="button">Delete</button></div>
+      </section>
+
+      <!-- ══ SEARCH ══ -->
+      <section class="view doc narrow" id="v-search">
+        <div class="eyebrow">Search</div>
+        <h1>Find anything</h1>
+        <div class="sfield">
+          <span aria-hidden="true" style="color:var(--accent)"><svg width="17" height="17" viewBox="0 0 15 15" fill="none"><circle cx="6.7" cy="6.7" r="4.3" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          <input type="search" value="why were the database queries slow" aria-label="Search">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap">
+          <div class="seg" role="group" aria-label="Search mode">
+            <button type="button" aria-pressed="true">Hybrid</button>
+            <button type="button">By meaning</button>
+            <button type="button">Exact words</button>
+          </div>
+          <span style="flex:1"></span>
+          <button class="mini2" type="button">All types</button>
+          <button class="mini2" type="button">Any date</button>
+        </div>
+        <div class="callout c-teal" style="margin-top:16px">
+          <span class="ci" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.3" stroke="currentColor" stroke-width="1.35"/><path d="M7.5 4.9v.2M7.5 7v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+          <div><p><b>Hybrid</b> runs both searches at once and merges the results, so you find
+          things whether or not you remember the exact wording. Each result says how it matched.</p></div>
+        </div>
+
+        <h2>7 results</h2>
+        <button class="hit" type="button" data-go="file">
+          <div class="hh"><span class="hn">Postgres tuning notes</span><span class="chip hybrid">meaning + words</span></div>
+          <div class="hp">Notes / Databases · added by an agent, 3 days ago</div>
+          <div class="hs">…connection pooling made the difference, not the index type. The
+          database held eight connections where four would do, and every <mark>query</mark>
+          waited behind them…</div></button>
+        <button class="hit" type="button" data-go="sessions">
+          <div class="hh"><span class="hn">Tracking down slow queries</span><span class="chip hybrid">meaning + words</span></div>
+          <div class="hp">Session · 1 week ago</div>
+          <div class="hs">The run where <mark>slow queries</mark> were traced to held-open connections.</div></button>
+        <button class="hit" type="button" data-go="memories">
+          <div class="hh"><span class="hn">Postgres preferred over SQLite</span><span class="chip mean">meaning only</span></div>
+          <div class="hp">Memory · 1 week ago</div>
+          <div class="hs">Postgres is preferred over SQLite for anything more than one person uses.</div></button>
+        <button class="hit" type="button" data-go="file">
+          <div class="hh"><span class="hn">How pgvector indexes work</span><span class="chip word">words only</span></div>
+          <div class="hp">Saved pages · added by you, 1 week ago</div>
+          <div class="hs">…an exact scan is fine until the table grows, at which point the
+          <mark>database</mark> needs a real index or every <mark>query</mark> re-reads everything…</div></button>
+      </section>
+
+      <!-- ══ MEMORIES ══ -->
+      <section class="view doc narrow" id="v-memories">
+        <div class="eyebrow">What it remembers</div>
+        <h1>Memories</h1>
+        <p class="pdesc">Short facts written automatically from your files and sessions.
+        Delete any that are wrong and they stop being used immediately.</p>
+        <div class="strip">
+          <div><span class="n">23</span><span class="l">Total</span></div>
+          <div><span class="n">9</span><span class="l">From files</span></div>
+          <div><span class="n">14</span><span class="l">From sessions</span></div>
+        </div>
+
+        <h3>About how you work</h3>
+        <div class="mi"><div><p>Deployment steps should be written down before they are run.</p>
+          <div class="mt">From a session · <b>2 weeks ago</b></div></div><button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Postgres is preferred over SQLite for anything more than one person uses.</p>
+          <div class="mt">From <b>Tracking down slow queries</b> · <b>1 week ago</b></div></div><button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Ask before changing something rather than changing it silently.</p>
+          <div class="mt">From a session · <b>3 weeks ago</b></div></div><button class="x" type="button">Delete</button></div>
+
+        <h3>About your setup</h3>
+        <div class="mi"><div><p>The cluster runs on three Radxa boards and one Jetson, all on the home network.</p>
+          <div class="mt">From <b>Cluster runbook.pdf</b> · <b>yesterday</b></div></div><button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Certificates renew themselves, but DNS records are changed by hand.</p>
+          <div class="mt">From <b>Cluster runbook.pdf</b> · <b>yesterday</b></div></div><button class="x" type="button">Delete</button></div>
+        <div class="mi"><div><p>Backups run to object storage every night at 02:00.</p>
+          <div class="mt">From <b>Cluster runbook.pdf</b> · <b>yesterday</b></div></div><button class="x" type="button">Delete</button></div>
+
+        <h3>About people</h3>
+        <div class="mi"><div><p>Veerle looks after the DNS records.</p>
+          <div class="mt">From <b>Q3 planning</b> · <b>4 days ago</b></div></div><button class="x" type="button">Delete</button></div>
+      </section>
+
+      <!-- ══ SESSIONS ══ -->
+      <section class="view doc" id="v-sessions">
+        <div class="eyebrow">Agent runs</div>
+        <h1>Sessions</h1>
+        <p class="pdesc">Every run an agent made on your behalf, with what it stored and what
+        it wrote down.</p>
+        <div class="dbhead" style="grid-template-columns:minmax(0,1fr) 124px 84px 104px 128px">
+          <span>Session</span><span>Agent</span><span class="r">Files</span>
+          <span class="r">Memories</span><span class="r">When</span>
+        </div>
+        <div class="rows">
+          <div class="rw" style="grid-template-columns:minmax(0,1fr) 124px 84px 104px 128px">
+            <span class="cell nm">Credential rotation walkthrough</span><span class="cell d">Hermes</span>
+            <span class="cell r">1</span><span class="cell r">1</span><span class="cell r">2 hours ago</span></div>
+          <div class="rw" style="grid-template-columns:minmax(0,1fr) 124px 84px 104px 128px">
+            <span class="cell nm">Cluster recovery after reboot</span><span class="cell d">Hermes</span>
+            <span class="cell r">0</span><span class="cell r">2</span><span class="cell r">yesterday</span></div>
+          <div class="rw" style="grid-template-columns:minmax(0,1fr) 124px 84px 104px 128px">
+            <span class="cell nm">Q3 planning</span><span class="cell d">Hermes</span>
+            <span class="cell r">1</span><span class="cell r">1</span><span class="cell r">4 days ago</span></div>
+          <div class="rw" style="grid-template-columns:minmax(0,1fr) 124px 84px 104px 128px">
+            <span class="cell nm">Tracking down slow queries</span><span class="cell d">Hermes</span>
+            <span class="cell r">1</span><span class="cell r">1</span><span class="cell r">1 week ago</span></div>
+          <div class="rw" style="grid-template-columns:minmax(0,1fr) 124px 84px 104px 128px">
+            <span class="cell nm">Choosing an index type</span><span class="cell d">Hermes</span>
+            <span class="cell r">0</span><span class="cell r">0</span><span class="cell r">2 weeks ago</span></div>
+        </div>
+      </section>
+
+      <!-- ══ ADD ══ -->
+      <section class="view doc narrow" id="v-add">
+        <div class="eyebrow">Add</div>
+        <h1>Add a file</h1>
+        <p class="pdesc">Anything you add becomes searchable, and agents can use it from then on.</p>
+        <div class="drop">
+          <span class="di" aria-hidden="true" style="display:block;width:26px"><svg width="26" height="26" viewBox="0 0 15 15" fill="none"><path d="M7.5 10.6V2.8M4.6 5.6L7.5 2.7l2.9 2.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.6 9.4v2a1.2 1.2 0 001.2 1.2h7.4a1.2 1.2 0 001.2-1.2v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          <p style="font-size:17px;font-weight:600">Drop files here</p>
+          <p style="font-family:var(--fm);font-size:12px;color:var(--ink3);margin-top:6px">PDF · DOCX · MD · TXT · PNG</p>
+        </div>
+        <div class="tags" style="gap:8px;margin-top:16px">
+          <button class="mini2" type="button">Choose files</button>
+          <button class="mini2" type="button">Write a note</button>
+          <button class="mini2" type="button">Save a web page</button>
+        </div>
+        <div class="pp" style="margin-top:28px">
+          <div class="r"><span class="k">Goes to</span><span class="v">Inbox</span></div>
+          <div class="r"><span class="k">Visible to</span><span class="v">Only you</span></div>
+        </div>
+      </section>
+
+      <!-- ══ ACCOUNT ══ -->
+      <section class="view doc narrow" id="v-account">
+        <div class="eyebrow">Account</div>
+        <h1>Jasper</h1>
+        <p class="pdesc">You are signed in through your normal work account.</p>
+        <div class="pp">
+          <div class="r"><span class="k">Signed in as</span><span class="v">Jasper</span></div>
+          <div class="r"><span class="k">Method</span><span class="v">Single sign-on</span></div>
+          <div class="r"><span class="k">Session ends</span><span class="v">in 47 minutes</span></div>
+        </div>
+        <div class="callout c-sheet" style="margin-top:24px">
+          <span class="ci" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 15 15" fill="none"><rect x="3.1" y="6.5" width="8.8" height="5.7" rx="1.5" stroke="currentColor" stroke-width="1.35"/><path d="M5.2 6.5V4.9a2.3 2.3 0 014.6 0v1.6" stroke="currentColor" stroke-width="1.35"/></svg></span>
+          <div><p>No key or password is entered on this page. Signing out ends access everywhere.</p></div>
+        </div>
+        <div class="tags" style="gap:8px;margin-top:20px">
+          <button class="mini2" type="button">Sign out</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+var FS = {name:"Files", open:true, go:"files", kids:[
+  {name:"Notes", open:true, kids:[
+    {name:"Cluster", open:true, kids:[
+      {f:1,name:"Vault rotation checklist", kind:"Note", by:"agent", size:"1.1 KB", when:"2 hours ago"},
+      {f:1,name:"Recovery steps",           kind:"Note", by:"agent", size:"3.4 KB", when:"yesterday"},
+      {f:1,name:"Node inventory",           kind:"Note", by:"you",   size:"1.8 KB", when:"1 week ago"}
+    ]},
+    {name:"Databases", open:true, kids:[
+      {f:1,name:"Postgres tuning notes", kind:"Note", by:"agent", size:"5.2 KB", when:"3 days ago"},
+      {f:1,name:"Index choices",         kind:"Note", by:"agent", size:"2.1 KB", when:"2 weeks ago"}
+    ]},
+    {name:"Meetings", kids:[
+      {f:1,name:"Q3 planning",         kind:"Note", by:"you",   size:"2.4 KB", when:"4 days ago"},
+      {f:1,name:"Weekly sync, 2 Sept", kind:"Note", by:"agent", size:"1.6 KB", when:"4 days ago"}
+    ]}
+  ]},
+  {name:"Documents", open:true, kids:[
+    {name:"Manuals", open:true, kids:[
+      {f:1,name:"Cluster runbook.pdf", kind:"PDF", by:"you", size:"1.2 MB", when:"yesterday", go:"file"},
+      {f:1,name:"Radxa datasheet.pdf", kind:"PDF", by:"you", size:"840 KB", when:"3 weeks ago"}
+    ]},
+    {name:"Reports", kids:[
+      {f:1,name:"Vault hardening.pdf", kind:"PDF", by:"you",   size:"612 KB", when:"1 month ago"},
+      {f:1,name:"Uptime, August.pdf",  kind:"PDF", by:"agent", size:"224 KB", when:"1 month ago"}
+    ]}
+  ]},
+  {name:"Saved pages", kids:[
+    {f:1,name:"How pgvector indexes work", kind:"Page", by:"you", size:"84 KB", when:"1 week ago"},
+    {f:1,name:"Argon2 parameter choices",  kind:"Page", by:"you", size:"41 KB", when:"2 weeks ago"}
+  ]},
+  {name:"Images", kids:[
+    {f:1,name:"radxa-thermals.png",    kind:"Image", by:"you", size:"412 KB", when:"2 weeks ago"},
+    {f:1,name:"nomad-alloc-graph.png", kind:"Image", by:"you", size:"208 KB", when:"3 weeks ago"}
+  ]},
+  {name:"Inbox", kids:[
+    {f:1,name:"dns-migration-plan.md", kind:"Note", by:"you", size:"4.1 KB", when:"12 min ago"},
+    {f:1,name:"invoice-sept.pdf",      kind:"PDF",  by:"you", size:"96 KB",  when:"30 min ago"}
+  ]}
+]};
+
+var CH   = '<svg width="9" height="9" viewBox="0 0 14 14" fill="none"><path d="M5 3L9.3 7 5 11" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var FOLD = '<svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.9 4.5a1.3 1.3 0 011.3-1.3h2.2l1.1 1.4h5.3a1.3 1.3 0 011.3 1.3v5.1a1.3 1.3 0 01-1.3 1.3H3.2A1.3 1.3 0 011.9 11V4.5z" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/></svg>';
+var DOC  = '<svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3.9 2.3h4.2l3 3.1v7.3H3.9V2.3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.9 2.3v3.1h3.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+var DOWN = '<svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7 2.4v6.4M4.6 6.6L7 9l2.4-2.4M2.6 11h8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function build(n, depth, o, out){
+  var has = !!(n.kids && n.kids.length);
+  var b = document.createElement("div");
+  b.className = "tnode" + (n.open ? " open" : "");
+  b.setAttribute("role","treeitem");
+  b.tabIndex = 0;
+  if (has) b.setAttribute("aria-expanded", n.open ? "true" : "false");
+
+  var ind = "";
+  for (var i = 0; i < depth; i++) ind += '<span class="ind" aria-hidden="true"></span>';
+
+  var nameCell = '<span class="cell nm">' + ind +
+    '<span class="tw' + (has ? '' : ' leaf') + '" aria-hidden="true">' + CH + '</span>' +
+    '<span class="tg" aria-hidden="true">' + (n.f ? DOC : FOLD) + '</span>' +
+    '<span class="tlb">' + n.name + '</span></span>';
+
+  if (o.table){
+    b.innerHTML = nameCell +
+      '<span class="cell d">' + (n.f ? n.kind : "Folder") + '</span>' +
+      '<span class="cell">' + (n.by ? '<span class="chip ' + n.by + '">' +
+        (n.by === "agent" ? "Agent" : "You") + '</span>' : '') + '</span>' +
+      '<span class="cell r">' + (n.size || (has ? n.kids.length + " items" : "")) + '</span>' +
+      '<span class="cell r">' + (n.when || lastWhen(n)) + '</span>' +
+      '<span class="cell" style="padding:0 8px"><button class="dl" type="button" aria-label="Download ' +
+        n.name + (n.f ? '' : ' as a zip') + '">' + DOWN + '</button></span>';
+  } else {
+    b.innerHTML = nameCell;
+    b.style.display = "flex";
+  }
+
+  b.addEventListener("click", function(e){
+    if (e.target.closest(".dl")){ e.stopPropagation(); flash(e.target.closest(".dl")); return; }
+    e.stopPropagation();
+    if (has){ n.open = !n.open; o.redraw(); }
+    if (n.go) go(n.go); else if (n.f) go("file"); else if (!o.table) go("files");
+  });
+  b.addEventListener("keydown", function(e){
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      if (has){ n.open = !n.open; o.redraw(); }
+      if (n.go) go(n.go); else if (n.f) go("file");
+    }
+  });
+  out.appendChild(b);
+
+  if (has){
+    var w = document.createElement("div");
+    w.className = "kids" + (n.open ? " open" : "");
+    w.setAttribute("role","group");
+    n.kids.forEach(function(k){ build(k, depth + 1, o, w); });
+    out.appendChild(w);
+  }
+}
+function lastWhen(n){
+  if (n.when) return n.when;
+  if (!n.kids) return "";
+  for (var i = 0; i < n.kids.length; i++){ var w = lastWhen(n.kids[i]); if (w) return w; }
+  return "";
+}
+function flash(btn){
+  var old = btn.innerHTML;
+  btn.style.opacity = "1";
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M3 7.4l2.7 2.7L11 4.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  setTimeout(function(){ btn.innerHTML = old; btn.style.opacity = ""; }, 1100);
+}
+function draw(el, root, o){ el.innerHTML = ""; o.redraw = function(){ draw(el, root, o); }; build(root, 0, o, el); }
+
+var sideT = document.getElementById("sideTree");
+var fsT   = document.getElementById("fsTable");
+function drawAll(){ draw(sideT, FS, {table:false}); draw(fsT, FS, {table:true}); }
+function setOpen(n,v){ if (n.kids && n.kids.length){ n.open = v; n.kids.forEach(function(k){ setOpen(k,v); }); } }
+document.getElementById("expandAll").addEventListener("click", function(e){ e.stopPropagation(); setOpen(FS,true); drawAll(); });
+document.getElementById("collapseAll").addEventListener("click", function(e){ e.stopPropagation(); setOpen(FS,false); FS.open=true; drawAll(); });
+
+var closeB = document.getElementById("closeSide");
+var openB  = document.getElementById("openSide");
+function toggleSide(on){ document.body.classList.toggle("narrow", on); }
+closeB.addEventListener("click", function(e){ e.stopPropagation(); toggleSide(true); });
+closeB.addEventListener("keydown", function(e){
+  if (e.key === "Enter" || e.key === " "){ e.preventDefault(); e.stopPropagation(); toggleSide(true); }
+});
+openB.addEventListener("click", function(){ toggleSide(false); });
+
+var CRUMB = {
+  home:["Jasper"], files:["Jasper","Files"], file:["Jasper","Files","Documents","Manuals","Cluster runbook.pdf"],
+  search:["Search"], memories:["Jasper","Memories"], sessions:["Jasper","Sessions"],
+  add:["Add a file"], account:["Account"]
+};
+var views = document.querySelectorAll(".view");
+var bc = document.getElementById("bc");
+function go(name){
+  var t = document.getElementById("v-" + name);
+  if (!t) return;
+  views.forEach(function(v){ v.classList.toggle("on", v === t); });
+  document.querySelectorAll(".srow[data-go]").forEach(function(b){
+    b.setAttribute("aria-current", b.getAttribute("data-go") === name ? "true" : "false");
+  });
+  var parts = CRUMB[name] || [name];
+  bc.innerHTML = parts.map(function(p,i){
+    return '<button type="button"' + (i === parts.length - 1 ? ' class="cur"' : '') + '>' + p + '</button>';
+  }).join('<span class="sl">/</span>');
+  document.querySelector(".scroll").scrollTop = 0;
+}
+document.addEventListener("click", function(e){
+  if (e.target.closest(".dl")){
+    e.stopPropagation(); e.preventDefault();
+    flash(e.target.closest(".dl"));
+    return;
+  }
+  var t = e.target.closest("[data-go]");
+  if (t) go(t.getAttribute("data-go"));
+});
+document.querySelectorAll(".seg, .views").forEach(function(s){
+  s.addEventListener("click", function(e){
+    var b = e.target.closest("button");
+    if (!b || b.classList.contains("mini")) return;
+    s.querySelectorAll("button").forEach(function(x){
+      if (!x.classList.contains("mini")) x.setAttribute("aria-pressed","false");
+    });
+    b.setAttribute("aria-pressed","true");
+  });
+});
+
+drawAll();
+})();
+</script>

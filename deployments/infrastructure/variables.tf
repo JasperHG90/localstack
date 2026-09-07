@@ -89,12 +89,17 @@ variable "vault_operator_ov_identity" {
 }
 
 variable "vault_openviking_consumers" {
-  description = "People who use OpenViking and nothing else on this cluster, keyed by username. Each gets a userpass login, an entity carrying `ov_account`, and membership of the `openviking-user` group, whose policy grants exactly one Vault path. They are in no other group, so no Grafana, no Nomad UI, no MinIO console and no localstack CLI. The key is the username, the entity name and the OpenViking account id at once. `email` is optional and only feeds the OIDC provider's `email` scope, which a consumer has no client to use."
+  description = "People who use OpenViking and nothing else on this cluster, keyed by username. Each gets a userpass login, an entity carrying `ov_account`, and membership of the `openviking-user` group, whose policy grants exactly one Vault path. They are in no other group, so no Grafana, no Nomad UI, no MinIO console and no localstack CLI. The key is the username and the entity name. The account and user are separate because they differ: everyone shares the `lab` account, and the user inside it is what isolates one person's tree from another's while `viking://resources` stays common. `email` is optional and only feeds the OIDC provider's `email` scope, which a consumer has no client to use."
   type = map(object({
-    email = optional(string)
+    account = string
+    user    = string
+    email   = optional(string)
   }))
   default = {
-    veerle = {}
+    veerle = {
+      account = "lab"
+      user    = "veerle"
+    }
   }
 }
 

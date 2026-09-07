@@ -54,10 +54,16 @@ than pooled into the `default` account, which exists on this server with zero
 users. Every machine entity and every entity added later is therefore closed
 until someone stamps it.
 
-| Vault entity | Groups | `ov_account` | Reaches |
-|---|---|---|---|
-| `operator` | `developer`, `admin`, app tiers | `jasper` | the whole cluster |
-| `veerle` | `openviking-user` | `veerle` | one Vault path, and OpenViking |
+| Vault entity | Groups | `ov_account` | `ov_user` | Reaches |
+|---|---|---|---|---|
+| `operator` | `developer`, `admin`, app tiers | `lab` | `jasper` | the whole cluster |
+| `veerle` | `openviking-user` | `lab` | `veerle` | one Vault path, and OpenViking |
+
+Everyone shares the `lab` account and is told apart by the user inside it.
+That is what buys isolation without giving up the shared half: OpenViking
+isolates user scopes absolutely, so `viking://user/jasper` and
+`viking://user/veerle` cannot read each other, while `viking://resources`
+belongs to the account and is common to both.
 
 `openviking-user` grants one thing: reading `identity/oidc/token/openviking`.
 Vault issues that token for the calling entity only, so the grant cannot be

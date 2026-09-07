@@ -108,10 +108,17 @@ resource "vault_generic_endpoint" "openviking_consumer" {
   })
 }
 
-### `ov_account` equals the entity name here, unlike the operator's, because a
-### consumer has no second identity to keep it apart from. The key must exist:
-### an entity without it gets no OpenViking account, since ov.conf.json sets
-### `fallback: null`.
+### Account and user are separate, and for a consumer the account is SHARED.
+### Everyone sits in `lab` and is told apart by the user inside it: OpenViking
+### isolates user scopes absolutely, measured in OV1 as a 403 on a cross-user
+### read, while `viking://resources` stays common to the account. Giving each
+### person their own account would isolate them from the shared half too.
+###
+### Both keys must be set. An entity missing one does NOT get refused: Vault
+### renders an absent metadata key as an empty string, and upstream applies
+### `fallback` only to a null, so the caller lands in an account named `""`.
+### What keeps that unreachable is the ACL on the identity-token role, not the
+### mapping.
 resource "vault_identity_entity" "openviking_consumer" {
   for_each = var.vault_openviking_consumers
 
@@ -120,8 +127,8 @@ resource "vault_identity_entity" "openviking_consumer" {
     {
       managed_by = "terraform"
       kind       = "human"
-      ov_account = each.key
-      ov_user    = each.key
+      ov_account = each.value.account
+      ov_user    = each.value.user
     },
     each.value.email == null ? {} : { email = each.value.email },
   )
