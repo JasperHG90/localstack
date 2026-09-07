@@ -370,44 +370,18 @@ resource "vault_kv_secret_v2" "openviking_user_keys" {
   })
 }
 
-### Hermes's OpenViking key: JASPER's key, not its own.
+### NO HERMES OPENVIKING KEY. It mints its own Vault identity token.
 ###
-### An agent with its own user was the obvious shape and it is wrong here.
-### OpenViking isolates user scopes absolutely -- measured against the live
-### service, jasper with role ADMIN gets 403 on viking://user/hermes and
-### hermes gets 403 on viking://user/jasper. ADMIN manages users; it does not
-### read their data, and no role grants cross-user reads. So an agent with its
-### own identity can never see its principal's scope, which for a personal
-### assistant is the entire point.
+### This used to be a copy of JASPER's derived key under hermes's KV prefix,
+### because OpenViking isolates user scopes absolutely and an agent with its own
+### account could never see its principal's. That reasoning still holds, and it
+### is now expressed in Vault instead: hermes's identity-token role publishes
+### `ov_account: jasper` (infrastructure/oidc.tf), so its writes still land in
+### jasper's account, and its token expires in 12h rather than never.
 ###
-### Hermes therefore acts AS jasper: its reads and writes land in
-### viking://user/jasper, inside jasper's own account. Giving it its own line in
-### openviking_people would give it its own ACCOUNT, whose viking://resources is
-### shared with nobody -- which is the same isolation stated above, arriving by
-### a second route. The cost is real and accepted: Hermes's writes are indistinguishable from
-### jasper's, and revoking Hermes means rotating the seed, which rotates
-### jasper too.
-###
-### Copied under hermes's OWN KV prefix rather than read from
-### default/openviking-users/jasper.
-###
-### The nomad-workloads role grants a job read on
-### `secret/data/<namespace>/<job_id>/*` and nothing else, so job `hermes`
-### reading an openviking-users path gets a 403, consul-template never renders,
-### and the task never starts. Same reason bifrost_hermes_key and
-### embark_registry_credentials above are copies under their consumers.
-###
-### The same derived key as the human entries, not a second one: the value
-### comes from the same local, so one seed change still rotates every holder.
-resource "vault_kv_secret_v2" "hermes_openviking_key" {
-  mount = var.secret_mount
-  name  = "default/hermes/openviking"
-  data_json = jsonencode({
-    account = local.openviking_accounts["jasper"]
-    user    = "jasper"
-    api_key = local.openviking_user_keys["jasper"]
-  })
-}
+### What changed is revocation. Revoking hermes used to mean rotating the seed,
+### which rotated jasper too. It is now deleting one entry from
+### `var.vault_openviking_workloads`.
 
 resource "vault_kv_secret_v2" "openviking_db_credentials" {
   mount = var.secret_mount

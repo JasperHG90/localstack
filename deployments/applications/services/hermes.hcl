@@ -37,7 +37,13 @@ job "hermes" {
         destination = "/opt/data"
       }
 
-      vault {}
+      # The job's OWN Vault role, not the default `nomad-workloads`. It carries
+      # both policies, because a task holds a single token and naming a role
+      # replaces the default rather than adding to it. The extra policy is the
+      # one read that lets this job mint its OpenViking identity token.
+      vault {
+        role = "hermes"
+      }
 
       user = "0"
 
@@ -190,11 +196,11 @@ GITHUB_PERSONAL_ACCESS_TOKEN={{ .Data.data.pat }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
-{{- with secret "${openviking_user_secret}" }}
-OPENVIKING_API_KEY={{ .Data.data.api_key }}
-OPENVIKING_ACCOUNT={{ .Data.data.account }}
-OPENVIKING_USER={{ .Data.data.user }}
+{{- with secret "identity/oidc/token/openviking-hermes" }}
+OPENVIKING_API_KEY={{ .Data.token }}
 {{- end }}
+OPENVIKING_ACCOUNT=${openviking_account}
+OPENVIKING_USER=${openviking_account}
 OPENVIKING_ENDPOINT=http://${openviking_host}:1933
 NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
@@ -380,7 +386,13 @@ EOT
         }
       }
 
-      vault {}
+      # The job's OWN Vault role, not the default `nomad-workloads`. It carries
+      # both policies, because a task holds a single token and naming a role
+      # replaces the default rather than adding to it. The extra policy is the
+      # one read that lets this job mint its OpenViking identity token.
+      vault {
+        role = "hermes"
+      }
 
 
       template {
@@ -398,11 +410,11 @@ GH_TOKEN={{ .Data.data.pat }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
-{{- with secret "${openviking_user_secret}" }}
-OPENVIKING_API_KEY={{ .Data.data.api_key }}
-OPENVIKING_ACCOUNT={{ .Data.data.account }}
-OPENVIKING_USER={{ .Data.data.user }}
+{{- with secret "identity/oidc/token/openviking-hermes" }}
+OPENVIKING_API_KEY={{ .Data.token }}
 {{- end }}
+OPENVIKING_ACCOUNT=${openviking_account}
+OPENVIKING_USER=${openviking_account}
 {{- with secret "${api_server_secret}" }}
 API_SERVER_KEY={{ .Data.data.key }}
 {{- end }}

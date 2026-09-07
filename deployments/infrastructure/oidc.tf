@@ -104,6 +104,40 @@ resource "vault_identity_oidc_role" "openviking" {
   template = "{\"ov_account\":{{identity.entity.metadata.ov_account}}}"
 }
 
+### One role per Nomad workload, with the account as a LITERAL rather than a
+### metadata lookup.
+###
+### The human role above reads `ov_account` off the calling entity. A workload
+### cannot: Vault's JWT auth method creates an entity and an alias for every job
+### on first login and owns them, so Terraform cannot stamp metadata there
+### without fighting the auth method for the same objects. Confirmed live --
+### `hermes`, `leo-consumer`, `leo-shim` and a dozen others already exist on the
+### jwt-nomad mount.
+###
+### So the job-to-account mapping lives here, and the ACL is what makes it safe:
+### reading this path is granted by one policy attached to one job's JWT role
+### (machine_roles.tf), so no other caller can mint a token claiming this
+### account. Adding a workload adds an entry here and a policy there.
+###
+### `hermes` maps to `jasper` because it is a personal assistant: OpenViking
+### isolates user scopes absolutely, so an agent with its own account could not
+### see the scope of the person it works for. Its writes are indistinguishable
+### from jasper's, which is the same trade the API key made before.
+###
+### ttl is 12h rather than the human role's hour. A person re-mints on demand
+### from a live session; a Nomad task gets this rendered into its environment at
+### start, so the ttl is how often the task restarts to pick up a fresh one.
+resource "vault_identity_oidc_role" "openviking_workload" {
+  for_each = var.vault_openviking_workloads
+
+  name      = "openviking-${each.key}"
+  key       = vault_identity_oidc_key.identity_tokens.name
+  client_id = local.openviking_audience
+  ttl       = 43200 # 12h; the key's verification_ttl above must stay >= this
+
+  template = jsonencode({ ov_account = each.value })
+}
+
 locals {
   # The identity-token role's client_id, which is also `server.oidc.audience`
   # in ov.conf.json. One literal, asserted on both sides by

@@ -240,17 +240,21 @@ resource "nomad_job" "hermes" {
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       openviking_host                = "192.168.2.50"
-      openviking_user_secret         = vault_kv_secret_v2.hermes_openviking_key.path
-      github_secret                  = "${var.secret_mount}/data/default/hermes/github"
-      telegram_secret                = "${var.secret_mount}/data/default/hermes/telegram"
-      email_secret                   = "${var.secret_mount}/data/default/hermes/email"
-      nomad_secret                   = "${var.secret_mount}/data/default/hermes/nomad"
-      api_server_secret              = vault_kv_secret_v2.hermes_api_server.path
-      bifrost_key_secret             = vault_kv_secret_v2.bifrost_hermes_key.path
-      telegram_allowed_users         = var.telegram_allowed_users
-      hermes_email_address           = var.hermes_email_address
-      hermes_digest_email            = var.hermes_digest_email
-      soul_md                        = file("${path.module}/services/hermes/SOUL.md")
+      # Must equal the ov_account this job's identity-token role emits, set in
+      # the INFRASTRUCTURE root (var.vault_openviking_workloads). Two roots,
+      # two states, so nothing links them but this comment: change one and the
+      # job authenticates as one account while telling itself it is another.
+      openviking_account     = "jasper"
+      github_secret          = "${var.secret_mount}/data/default/hermes/github"
+      telegram_secret        = "${var.secret_mount}/data/default/hermes/telegram"
+      email_secret           = "${var.secret_mount}/data/default/hermes/email"
+      nomad_secret           = "${var.secret_mount}/data/default/hermes/nomad"
+      api_server_secret      = vault_kv_secret_v2.hermes_api_server.path
+      bifrost_key_secret     = vault_kv_secret_v2.bifrost_hermes_key.path
+      telegram_allowed_users = var.telegram_allowed_users
+      hermes_email_address   = var.hermes_email_address
+      hermes_digest_email    = var.hermes_digest_email
+      soul_md                = file("${path.module}/services/hermes/SOUL.md")
       skills = {
         for f in fileset("${path.module}/services/hermes/skills", "**/SKILL.md") :
         trimsuffix(f, "/SKILL.md") => file("${path.module}/services/hermes/skills/${f}")

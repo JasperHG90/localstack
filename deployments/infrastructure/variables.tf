@@ -97,3 +97,11 @@ variable "oidc_smoke_redirect_uris" {
   type        = list(string)
   default     = ["https://vault.lab.orangecluster.nl/ui/vault/auth/oidc/oidc/callback"]
 }
+
+variable "vault_openviking_workloads" {
+  description = "Nomad jobs that reach OpenViking, keyed by job id. The key IS the alias name Vault's jwt-nomad mount creates, because that role sets `user_claim = /nomad_job_id`. The value is the OpenViking account the job writes into: `hermes` maps to `jasper` because a personal assistant must see its principal's scope, and OpenViking grants no cross-user read. Each entry mints one identity-token role (oidc.tf) whose read is granted by one policy on that job's own JWT role (machine_roles.tf)."
+  type        = map(string)
+  default = {
+    hermes = "jasper"
+  }
+}

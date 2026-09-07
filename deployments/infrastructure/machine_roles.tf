@@ -367,3 +367,59 @@ resource "vault_jwt_auth_backend_role" "redis_cache" {
   token_period           = 1800
   token_explicit_max_ttl = 0
 }
+
+### --- OpenViking workload identity -------------------------------------------
+
+### A job reaches OpenViking by minting a Vault identity token for itself, not
+### by holding a key. One policy and one JWT role per job, because the identity
+### token's account is a literal in its own role (oidc.tf) and the ACL is the
+### only thing stopping another caller minting a token for someone else's
+### account.
+###
+### The read is scoped to that job's own role path, never to
+### `identity/oidc/token/*`: a wildcard would let any workload holding it mint
+### as any account this cluster maps.
+resource "vault_policy" "openviking_workload" {
+  for_each = var.vault_openviking_workloads
+
+  name = "openviking-workload-${each.key}"
+
+  policy = <<-EOT
+    path "identity/oidc/token/${vault_identity_oidc_role.openviking_workload[each.key].name}" {
+      capabilities = ["read"]
+    }
+  EOT
+}
+
+### token_policies carries BOTH, per the one-token rule recorded above: a task
+### performs a single JWT login and holds a single token, so naming a dedicated
+### role REPLACES `nomad-workloads` rather than adding to it. Dropping it here
+### would take away the job's ordinary KV reads.
+###
+### claim_mappings mirror the shared role for the same reason acme's do: the
+### nomad-workloads policy is templated on the alias metadata these produce.
+resource "vault_jwt_auth_backend_role" "openviking_workload" {
+  for_each = var.vault_openviking_workloads
+
+  backend   = "jwt-nomad"
+  role_name = each.key
+  role_type = "jwt"
+
+  bound_audiences = ["vault.io"]
+  bound_claims = {
+    nomad_namespace = "default"
+    nomad_job_id    = each.key
+  }
+
+  user_claim              = "/nomad_job_id"
+  user_claim_json_pointer = true
+
+  claim_mappings = {
+    nomad_namespace = "nomad_namespace"
+    nomad_job_id    = "nomad_job_id"
+    nomad_task      = "nomad_task"
+  }
+
+  token_type     = "service"
+  token_policies = ["nomad-workloads", vault_policy.openviking_workload[each.key].name]
+}
