@@ -71,11 +71,17 @@ resource "vault_identity_oidc" "lab" {
 ### of OpenViking. `allowed_client_ids` is inline here because nothing else
 ### registers against this key; `lab` uses the standalone resource instead and
 ### the provider forbids mixing the two forms on one key.
+###
+### Two constraints bind the numbers, and both are hard refusals at apply time:
+### verification_ttl must be >= the longest role ttl signed by this key, or a
+### token outlives the key that verifies it; and Vault caps verification_ttl at
+### 10x rotation_period. 30d against a 7d rotation is 4.3x, the same ratio
+### memex_human uses below, and it covers the 30d human role.
 resource "vault_identity_oidc_key" "identity_tokens" {
   name             = "identity-tokens"
   algorithm        = "RS256"
-  rotation_period  = 86400  # 24h
-  verification_ttl = 172800 # 48h; must be >= the role ttl below
+  rotation_period  = 604800  # 7d
+  verification_ttl = 2592000 # 30d; >= the longest role ttl, and 4.3x the rotation
 
   allowed_client_ids = [local.openviking_audience]
 }
@@ -92,6 +98,11 @@ resource "vault_identity_oidc_key" "identity_tokens" {
 ### with no `ov_account` renders the claim empty, which ov.conf.json refuses
 ### because its account mapping sets `fallback: null`.
 ###
+### The ttl is a month because a person should log in monthly, not daily. The
+### cost is that these tokens cannot be revoked one at a time: the only lever is
+### rotating or unpublishing the key above, which invalidates every token it
+### signed. A leaked one is therefore good until it expires.
+###
 ### The placeholder must NOT be quoted, for the same reason the `email` scope
 ### below is unquoted: Vault's templating emits fully-formed JSON per
 ### substitution, so quoting yields {"ov_account":""jasper""}.
@@ -99,7 +110,7 @@ resource "vault_identity_oidc_role" "openviking" {
   name      = "openviking"
   key       = vault_identity_oidc_key.identity_tokens.name
   client_id = local.openviking_audience
-  ttl       = 3600 # 1h; the caller re-mints from a long-lived Vault session
+  ttl       = 2592000 # 30d; a person logs in monthly, matching memex_human below
 
   template = "{\"ov_account\":{{identity.entity.metadata.ov_account}},\"ov_user\":{{identity.entity.metadata.ov_user}}}"
 }
@@ -125,16 +136,18 @@ resource "vault_identity_oidc_role" "openviking" {
 ### `jasper` holds a few dozen. Pointing hermes at `jasper` gave it an empty
 ### memory, which is what OV2's own commit warned would happen.
 ###
-### ttl is 12h rather than the human role's hour. A person re-mints on demand
-### from a live session; a Nomad task gets this rendered into its environment at
-### start, so the ttl is how often the task restarts to pick up a fresh one.
+### ttl is a week, shorter than the human role's month. A Nomad task gets this
+### rendered into its environment at start, so the ttl is how often the task
+### restarts to pick up a fresh one: at 12h Hermes would restart twice a day,
+### which for a personal assistant is worse than the shorter credential is
+### better.
 resource "vault_identity_oidc_role" "openviking_workload" {
   for_each = var.vault_openviking_workloads
 
   name      = "openviking-${each.key}"
   key       = vault_identity_oidc_key.identity_tokens.name
   client_id = local.openviking_audience
-  ttl       = 43200 # 12h; the key's verification_ttl above must stay >= this
+  ttl       = 604800 # 7d; the key's verification_ttl above must stay >= this
 
   template = jsonencode({ ov_account = each.value.account, ov_user = each.value.user })
 }
