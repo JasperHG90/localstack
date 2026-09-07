@@ -512,7 +512,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'bifrost_provider_key_up == bool 0'
+              expr: 'bifrost_provider_key_up{key_name!~"ollama-(proton|rituals)"} == bool 0'
               instant: true
               refId: A
           - refId: C

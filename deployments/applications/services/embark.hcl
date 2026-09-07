@@ -124,7 +124,7 @@ ${models_list}
         port    = "http"
         address = "${embark_host}"
 
-        tags = ["http", "llm"]
+        tags = ["http", "llm", "prometheus"]
 
         # /healthz, not /readyz, deliberately. Readiness stays false until
         # every model has warmed; a check on readiness would kill the task
@@ -194,6 +194,16 @@ ${models_list}
         EMBARK_TELEMETRY__ENABLED       = "true"
         EMBARK_TELEMETRY__OTLP_ENDPOINT = "${otlp_endpoint}"
         EMBARK_TELEMETRY__SERVICE_NAME  = "embark"
+
+        # embark guards /metrics behind an `admin` key by default, and the
+        # service is tagged "prometheus" so the shared consul_services scrape
+        # job picks it up -- a job that cannot carry per-target credentials
+        # (see the bifrost comment in infrastructure/services/prometheus.hcl).
+        # Off rather than minting an admin key: `admin` outranks the `read`
+        # role below and would also open the model routes, and /metrics is
+        # three counters and latency histograms. Same posture as OpenViking,
+        # and the ufw rules for port 8000 stay named-caller.
+        EMBARK_AUTH__GUARD_METRICS = "false"
       }
 
       # EMBARK_MODELS is JSON, so it cannot go in the `env` block above: its

@@ -20,7 +20,7 @@
 # the jobspec bind-mounts those from the host. Both halves live in
 # services/embark.hcl, and the image will not reach the GPU without them.
 
-ARG BASE_IMAGE=ghcr.io/jasperhg90/embark:v0.1.0
+ARG BASE_IMAGE=ghcr.io/jasperhg90/embark:v0.2.1
 FROM ${BASE_IMAGE}
 
 # pip writes into /app, which the base image chowns to the `embark` user.

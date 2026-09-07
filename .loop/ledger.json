@@ -2684,15 +2684,18 @@
     },
     "OV3-openviking-vault-identity": {
       "slug": "OV3-openviking-vault-identity",
-      "stage": "ready",
+      "stage": "blocked",
       "attempts": 0,
       "review_cycles": 0,
-      "blocker": null,
+      "blocker": {
+        "code": "unresolved-design-fork",
+        "reason": "Q5 was settled as rename operator->jasper by the coordinating agent while the operator was offline. That merges the cluster-admin Vault entity with an OpenViking data identity; the operator rejected it on sight. R1 follows from Q5 and must be rewritten. Proposed re-settle: Q5 option 3 - leave vault_identity_entity.operator untouched, add metadata ov_account to it, give veerle a fresh entity with no group membership, and have the identity-token role emit {{identity.entity.metadata.ov_account}} instead of the entity name. That keeps privilege separated, avoids an entity recreate (kills risk 1), and is fail-closed: an entity without ov_account has no OpenViking account at all. Needs operator sign-off, then plan amend + re-review before more Terraform. Salvaged WIP (ov.conf.json oidc block + check_openviking_config.py rewrite, unaffected by the fork bar the claim name): .loop/scratch/OV3-openviking-vault-identity/wip-config-and-guard.patch"
+      },
       "commit_sha": null,
       "review_verdict": null,
       "review_entry_tree": null,
-      "dropped": false,
-      "drop_reason": null,
+      "dropped": true,
+      "drop_reason": "Superseded and shipped outside the loop as 5ab5e30, 0007e46, 216f7e2 and aada321, applied to the live cluster on 2026-09-07. The plan's R1 and Q5 were rejected by the operator on sight: renaming vault_identity_entity.operator to jasper merges a cluster-admin identity with an OpenViking data identity. What shipped instead leaves that entity untouched and carries identity in two metadata claims, ov_account and ov_user, published by the identity-token role's template. R2 (key and role), R3 (the grant, as the openviking-user group), R4 (the oidc config block), R5 (the guard), R8 (the docs) and R9 (the probe) all shipped by that route. Three things the plan never anticipated and the implementation had to solve: account and user are DIFFERENT claims, because the operator is user jasper inside account lab and lab/user/lab does not exist; per-workload roles carry their account as a literal, because Vault's JWT auth method owns the entity and alias of every Nomad job and Terraform cannot stamp metadata on them; and OV2 left all content in the lab account, so everyone points there. R9's probe settled the plan's open P15 live: an account that was never created returns 200 and reads an empty tree, so adding a person needs no provisioning step.",
       "carried_over_finding": null,
       "epic": "openviking",
       "dependencies": [],

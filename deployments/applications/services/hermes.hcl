@@ -196,12 +196,10 @@ GITHUB_PERSONAL_ACCESS_TOKEN={{ .Data.data.pat }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
-{{- with secret "identity/oidc/token/openviking-hermes" }}
-OPENVIKING_API_KEY={{ .Data.token }}
-{{- end }}
+OPENVIKING_API_KEY=${openviking_proxy_placeholder}
 OPENVIKING_ACCOUNT=${openviking_account}
 OPENVIKING_USER=${openviking_user}
-OPENVIKING_ENDPOINT=http://${openviking_host}:1933
+OPENVIKING_ENDPOINT=http://127.0.0.1:${openviking_proxy_port}
 NOMAD_ADDR=http://192.168.2.30:4646
 CONSUL_ADDR=http://192.168.2.30:8500
 HERMES_YOLO_MODE=true
@@ -363,6 +361,70 @@ EOT
     # ── Gateway: main Hermes agent process ──
     # Uses the ORIGINAL entrypoint which creates dirs, syncs bundled skills,
     # then runs `hermes gateway run`.
+
+    # Hermes reads its OpenViking credential from the environment, and a running
+    # process cannot have its environment changed. Vault identity tokens carry
+    # no lease, so consul-template re-reads one every five minutes by default and
+    # every read mints a different JWT; rendering it into Hermes's env restarted
+    # the task on every poll. Measured, not predicted.
+    #
+    # So the token lives here instead. Nomad keeps the file fresh with
+    # `change_mode = "noop"`, the proxy reads it per request, and Hermes holds a
+    # constant endpoint for the life of the process.
+    task "ov-auth-proxy" {
+      driver = "podman"
+
+      lifecycle {
+        hook    = "prestart"
+        sidecar = true
+      }
+
+      vault {
+        role = "hermes"
+      }
+
+      config {
+        image        = "docker.io/library/python:3.13-alpine"
+        network_mode = "host"
+        entrypoint   = ["python3"]
+        args         = ["/local/ov_auth_proxy.py"]
+
+        volumes = [
+          "local/ov_auth_proxy.py:/local/ov_auth_proxy.py:ro",
+        ]
+      }
+
+      env {
+        OV_UPSTREAM    = "http://${openviking_host}:1933"
+        OV_TOKEN_FILE  = "/secrets/ov_token"
+        OV_LISTEN_HOST = "127.0.0.1"
+        OV_LISTEN_PORT = "${openviking_proxy_port}"
+      }
+
+      template {
+        data        = <<EOPROXY
+${ov_auth_proxy_script}
+EOPROXY
+        destination = "local/ov_auth_proxy.py"
+      }
+
+      # noop is the whole point: this file changes on every consul-template
+      # poll because each read mints a new token, and the proxy picks the new
+      # one up on the next request without anything restarting.
+      template {
+        data        = <<EOTOKEN
+{{- with secret "identity/oidc/token/openviking-hermes" }}{{ .Data.token }}{{ end }}
+EOTOKEN
+        destination = "secrets/ov_token"
+        change_mode = "noop"
+      }
+
+      resources {
+        cpu    = 100
+        memory = 64
+      }
+    }
+
     task "hermes" {
       driver = "podman"
 
@@ -410,9 +472,7 @@ GH_TOKEN={{ .Data.data.pat }}
 {{- with secret "${nomad_secret}" }}
 NOMAD_TOKEN={{ .Data.data.token }}
 {{- end }}
-{{- with secret "identity/oidc/token/openviking-hermes" }}
-OPENVIKING_API_KEY={{ .Data.token }}
-{{- end }}
+OPENVIKING_API_KEY=${openviking_proxy_placeholder}
 OPENVIKING_ACCOUNT=${openviking_account}
 OPENVIKING_USER=${openviking_user}
 {{- with secret "${api_server_secret}" }}
@@ -457,7 +517,7 @@ EOF
       env {
         HERMES_HOME            = "/opt/data"
         HERMES_YOLO_MODE       = "true"
-        OPENVIKING_ENDPOINT    = "http://${openviking_host}:1933"
+        OPENVIKING_ENDPOINT    = "http://127.0.0.1:${openviking_proxy_port}"
         NOMAD_ADDR             = "http://192.168.2.30:4646"
         CONSUL_ADDR            = "http://192.168.2.30:8500"
         TELEGRAM_ALLOWED_USERS = "${telegram_allowed_users}"

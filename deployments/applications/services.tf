@@ -109,8 +109,12 @@ locals {
     # added here on purpose. jetson-orin-nano admits itself because its own
     # Consul agent runs the health check against this address. .47 is
     # Prometheus scraping /metrics, which serves without a credential
-    # (EMBARK_AUTH__GUARD_METRICS in services/embark.hcl) -- so this list is
-    # the only thing standing in front of it.
+    # (EMBARK_AUTH__GUARD_METRICS in services/embark.hcl), so this list is
+    # what stands in front of it -- but these rules only ADD, and a wider rule
+    # for port 8000 would outrank every one of them. memex left such a rule on
+    # this host and port once (see the comment above null_resource.firewall).
+    # Confirm none survives before trusting this list:
+    #   ssh localstack@192.168.2.46 sudo ufw status numbered
     embark = {
       host     = "192.168.2.46"
       ssh_user = "localstack"
@@ -244,18 +248,28 @@ resource "nomad_job" "hermes" {
       # the INFRASTRUCTURE root (var.vault_openviking_workloads). Two roots,
       # two states, so nothing links them but this comment: change one and the
       # job authenticates as one account while telling itself it is another.
-      openviking_account     = "lab"
-      openviking_user        = "jasper"
-      github_secret          = "${var.secret_mount}/data/default/hermes/github"
-      telegram_secret        = "${var.secret_mount}/data/default/hermes/telegram"
-      email_secret           = "${var.secret_mount}/data/default/hermes/email"
-      nomad_secret           = "${var.secret_mount}/data/default/hermes/nomad"
-      api_server_secret      = vault_kv_secret_v2.hermes_api_server.path
-      bifrost_key_secret     = vault_kv_secret_v2.bifrost_hermes_key.path
-      telegram_allowed_users = var.telegram_allowed_users
-      hermes_email_address   = var.hermes_email_address
-      hermes_digest_email    = var.hermes_digest_email
-      soul_md                = file("${path.module}/services/hermes/SOUL.md")
+      openviking_account = "lab"
+      openviking_user    = "jasper"
+
+      # Hermes talks to a loopback sidecar, not to OpenViking. Its endpoint has
+      # to be constant for the life of the process (a running process cannot
+      # have its environment changed) while the token behind it rotates every
+      # few minutes, which is exactly what the sidecar exists to reconcile.
+      openviking_proxy_port = 1934
+      # Hermes requires the key to be set; the sidecar strips whatever arrives
+      # and substitutes the real token, so this value never reaches OpenViking.
+      openviking_proxy_placeholder = "unused-the-sidecar-supplies-the-token"
+      ov_auth_proxy_script         = file("${path.module}/services/hermes/ov_auth_proxy.py")
+      github_secret                = "${var.secret_mount}/data/default/hermes/github"
+      telegram_secret              = "${var.secret_mount}/data/default/hermes/telegram"
+      email_secret                 = "${var.secret_mount}/data/default/hermes/email"
+      nomad_secret                 = "${var.secret_mount}/data/default/hermes/nomad"
+      api_server_secret            = vault_kv_secret_v2.hermes_api_server.path
+      bifrost_key_secret           = vault_kv_secret_v2.bifrost_hermes_key.path
+      telegram_allowed_users       = var.telegram_allowed_users
+      hermes_email_address         = var.hermes_email_address
+      hermes_digest_email          = var.hermes_digest_email
+      soul_md                      = file("${path.module}/services/hermes/SOUL.md")
       skills = {
         for f in fileset("${path.module}/services/hermes/skills", "**/SKILL.md") :
         trimsuffix(f, "/SKILL.md") => file("${path.module}/services/hermes/skills/${f}")

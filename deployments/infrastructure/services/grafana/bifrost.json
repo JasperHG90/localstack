@@ -193,7 +193,7 @@
       "title": "Provider key health",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "bifrost_provider_key_up", "refId": "A", "instant": true, "format": "table"}],
+      "targets": [{"expr": "bifrost_provider_key_up{key_name!~\"ollama-(proton|rituals)\"}", "refId": "A", "instant": true, "format": "table"}],
       "transformations": [
         {"id": "organize", "options": {
           "renameByName": {"provider": "Provider", "key_name": "Key", "Value": "Up"},

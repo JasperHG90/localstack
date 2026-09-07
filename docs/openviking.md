@@ -91,11 +91,16 @@ moment a second person joins.
 
 Under `oidc` every caller resolves to role USER. The plugin never consults a
 role mapping and never consults `server.root_api_key`, so no admin route has a
-reachable credential and nothing can create an account. Both accounts here were
-created before the switch. Adding a person may therefore need a step that does
-not exist yet, and `scripts/ov_identity_probe.py` is what settles whether it
-does: it mints a token for an account that was never created and reports what
-the server does with it.
+reachable credential and nothing can create an account.
+
+Nothing needs to. MEASURED after the switch with
+`scripts/ov_identity_probe.py`: a token naming an account that was never
+created returns 200 and reads an empty tree. So adding a person is a Vault
+entity carrying `ov_account` and nothing else, and the provisioner that used
+to POST to the Admin API is gone rather than replaced.
+
+The cost of that is a typo. A misspelled `ov_account` does not fail; it opens
+a new empty account, and the person sees an empty tree rather than an error.
 
 ### Where a key comes from
 

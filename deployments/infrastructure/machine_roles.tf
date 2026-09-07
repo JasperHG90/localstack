@@ -422,4 +422,11 @@ resource "vault_jwt_auth_backend_role" "openviking_workload" {
 
   token_type     = "service"
   token_policies = ["nomad-workloads", vault_policy.openviking_workload[each.key].name]
+
+  # Both siblings on this mount set these, and so does the Ansible-owned
+  # default role. Without them the token is not periodic and is capped by the
+  # system max TTL instead of renewing for the life of the alloc, which the
+  # task only survives because something else restarts it.
+  token_period           = 1800
+  token_explicit_max_ttl = 0
 }

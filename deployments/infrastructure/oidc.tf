@@ -136,18 +136,19 @@ resource "vault_identity_oidc_role" "openviking" {
 ### `jasper` holds a few dozen. Pointing hermes at `jasper` gave it an empty
 ### memory, which is what OV2's own commit warned would happen.
 ###
-### ttl is a week, shorter than the human role's month. A Nomad task gets this
-### rendered into its environment at start, so the ttl is how often the task
-### restarts to pick up a fresh one: at 12h Hermes would restart twice a day,
-### which for a personal assistant is worse than the shorter credential is
-### better.
+### ttl matches the human role's month, and the jobspec renders it with
+### `change_mode = "noop"`. Every read of this path mints a NEW token, so a
+### template that restarts on change restarts the task on every consul-template
+### poll -- measured, Hermes flapped every few minutes. With noop the task holds
+### one token for the life of the alloc, so the ttl has to outlast the alloc
+### rather than pace its restarts.
 resource "vault_identity_oidc_role" "openviking_workload" {
   for_each = var.vault_openviking_workloads
 
   name      = "openviking-${each.key}"
   key       = vault_identity_oidc_key.identity_tokens.name
   client_id = local.openviking_audience
-  ttl       = 604800 # 7d; the key's verification_ttl above must stay >= this
+  ttl       = 2592000 # 30d; the key's verification_ttl above must stay >= this
 
   template = jsonencode({ ov_account = each.value.account, ov_user = each.value.user })
 }
