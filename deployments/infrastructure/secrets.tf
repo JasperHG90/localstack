@@ -166,6 +166,26 @@ resource "vault_kv_secret_v2" "prometheus_bifrost_admin" {
   }
 }
 
+### Each OpenViking consumer's userpass password. Same shape as the operator's
+### below, one entry per person, and the only way that person learns it.
+resource "vault_kv_secret_v2" "openviking_consumer_credentials" {
+  for_each = var.vault_openviking_consumers
+
+  mount = vault_mount.kvv2.path
+  name  = "default/vault/${each.key}"
+  data_json = jsonencode({
+    username = each.key
+    password = random_password.openviking_consumer[each.key].result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Human operator's userpass password. Generated, never in the repo or tfvars.
 resource "vault_kv_secret_v2" "vault_operator_credentials" {
   mount = vault_mount.kvv2.path

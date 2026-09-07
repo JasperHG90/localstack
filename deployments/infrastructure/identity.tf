@@ -47,12 +47,20 @@ resource "vault_generic_endpoint" "operator" {
 ### claim (oidc.tf), and Grafana refuses a login whose resolved email is empty.
 ### An entity with no `email` key renders the claim as an empty string, and the
 ### failure surfaces at the OIDC callback, not here.
+### `ov_account` is the person's OpenViking account id, and it is deliberately
+### NOT the entity name: this entity is a cluster-admin identity and the account
+### is a data identity, so collapsing the two would put OpenViking's account
+### namespace inside Vault's admin namespace. The identity-token role (oidc.tf)
+### publishes this metadata key as a claim and ov.conf.json maps the account
+### from it. An entity without this key gets no OpenViking account at all, which
+### is what makes `fallback: null` in that config fail closed.
 resource "vault_identity_entity" "operator" {
   name = var.vault_operator_username
   metadata = {
     managed_by = "terraform"
     kind       = "human"
     email      = var.vault_operator_email
+    ov_account = var.vault_operator_ov_account
   }
 }
 
@@ -64,6 +72,91 @@ resource "vault_identity_entity_alias" "operator" {
   canonical_id   = vault_identity_entity.operator.id
 
   depends_on = [vault_generic_endpoint.operator]
+}
+
+### --- openviking consumers -------------------------------------------------
+
+### People who use OpenViking and nothing else on this cluster.
+###
+### What defines them is what they are NOT in. No `developer`, no app-user
+### tier, no OIDC assignment, so nothing reaches Grafana, the Nomad UI, MinIO's
+### console or the localstack CLI. The single Vault path they hold is the
+### identity-token role, granted through the group at the end of this section.
+###
+### The operator is deliberately NOT one of these. That entity carries
+### `ov_account` too, but it reaches the same path through `developer`'s
+### `identity/*`, and adding it here would say the two identities are the same
+### kind of thing.
+
+resource "random_password" "openviking_consumer" {
+  for_each = var.vault_openviking_consumers
+
+  length  = 32
+  special = false
+}
+
+resource "vault_generic_endpoint" "openviking_consumer" {
+  for_each = var.vault_openviking_consumers
+
+  path                 = "auth/${vault_auth_backend.userpass.path}/users/${each.key}"
+  ignore_absent_fields = true
+
+  data_json = jsonencode({
+    password       = random_password.openviking_consumer[each.key].result
+    token_policies = []
+  })
+}
+
+### `ov_account` equals the entity name here, unlike the operator's, because a
+### consumer has no second identity to keep it apart from. The key must exist:
+### an entity without it gets no OpenViking account, since ov.conf.json sets
+### `fallback: null`.
+resource "vault_identity_entity" "openviking_consumer" {
+  for_each = var.vault_openviking_consumers
+
+  name = each.key
+  metadata = merge(
+    {
+      managed_by = "terraform"
+      kind       = "human"
+      ov_account = each.key
+    },
+    each.value.email == null ? {} : { email = each.value.email },
+  )
+}
+
+resource "vault_identity_entity_alias" "openviking_consumer" {
+  for_each = var.vault_openviking_consumers
+
+  name           = each.key
+  mount_accessor = vault_auth_backend.userpass.accessor
+  canonical_id   = vault_identity_entity.openviking_consumer[each.key].id
+
+  depends_on = [vault_generic_endpoint.openviking_consumer]
+}
+
+### One path, read-only. Minting an identity token is the whole grant: the
+### token is what OpenViking verifies, and Vault issues it for the calling
+### entity only, so this cannot be used to act as anyone else.
+resource "vault_policy" "openviking_user" {
+  name = "openviking-user"
+
+  policy = <<-EOT
+    path "identity/oidc/token/${vault_identity_oidc_role.openviking.name}" {
+      capabilities = ["read"]
+    }
+  EOT
+}
+
+resource "vault_identity_group" "openviking_user" {
+  name     = "openviking-user"
+  type     = "internal"
+  policies = [vault_policy.openviking_user.name]
+
+  member_entity_ids = [
+    for username in keys(var.vault_openviking_consumers) :
+    vault_identity_entity.openviking_consumer[username].id
+  ]
 }
 
 ### --- developer ------------------------------------------------------------

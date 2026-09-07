@@ -46,6 +46,71 @@ resource "vault_identity_oidc_key" "lab" {
   verification_ttl = 86400 # 24h; tokens signed by a rotated key stay valid this long
 }
 
+### --- identity tokens: a SECOND issuer, not a client of the one above -------
+###
+### Everything else in this file hangs off the OIDC PROVIDER at
+### `/v1/identity/oidc/provider/lab`, which serves browser logins through the
+### authorization-code flow. The three resources here are a different Vault
+### feature at a different issuer, `/v1/identity/oidc`: any authenticated caller
+### reads `identity/oidc/token/<role>` and gets a signed JWT for its OWN entity,
+### with no browser and no redirect. That is what lets a CLI and a Nomad job
+### authenticate as themselves.
+###
+### Setting the issuer is cluster-wide and affects only this second issuer: a
+### named provider reads its own field and falls back to the API address, never
+### to this config. Vault appends `/v1/<namespace>/identity/oidc` itself and
+### rejects an issuer carrying a path, so the value below is a bare host and
+### `ov.conf.json` carries the full string Vault will stamp into `iss`.
+resource "vault_identity_oidc" "lab" {
+  issuer = "https://${var.vault_issuer_host}"
+}
+
+### Its own key ring, not `lab`. Unpublishing `lab` kills every outstanding
+### memex human token at once (see memex_human below), and coupling identity
+### tokens to that blast radius would mean a memex revocation logs everyone out
+### of OpenViking. `allowed_client_ids` is inline here because nothing else
+### registers against this key; `lab` uses the standalone resource instead and
+### the provider forbids mixing the two forms on one key.
+resource "vault_identity_oidc_key" "identity_tokens" {
+  name             = "identity-tokens"
+  algorithm        = "RS256"
+  rotation_period  = 86400  # 24h
+  verification_ttl = 172800 # 48h; must be >= the role ttl below
+
+  allowed_client_ids = [local.openviking_audience]
+}
+
+### The role OpenViking trusts.
+###
+### `client_id` is set explicitly rather than generated, so `ov.conf.json` can
+### carry it as a literal and scripts/check_openviking_config.py can assert both
+### sides match. A generated one would drift silently.
+###
+### The template publishes the entity's `ov_account` metadata. It is NOT `sub`:
+### Vault reserves that for the entity UUID, so mapping an account from it would
+### give one account per UUID while every request still returned 200. An entity
+### with no `ov_account` renders the claim empty, which ov.conf.json refuses
+### because its account mapping sets `fallback: null`.
+###
+### The placeholder must NOT be quoted, for the same reason the `email` scope
+### below is unquoted: Vault's templating emits fully-formed JSON per
+### substitution, so quoting yields {"ov_account":""jasper""}.
+resource "vault_identity_oidc_role" "openviking" {
+  name      = "openviking"
+  key       = vault_identity_oidc_key.identity_tokens.name
+  client_id = local.openviking_audience
+  ttl       = 3600 # 1h; the caller re-mints from a long-lived Vault session
+
+  template = "{\"ov_account\":{{identity.entity.metadata.ov_account}}}"
+}
+
+locals {
+  # The identity-token role's client_id, which is also `server.oidc.audience`
+  # in ov.conf.json. One literal, asserted on both sides by
+  # scripts/check_openviking_config.py.
+  openviking_audience = "openviking"
+}
+
 ### The shared claim contract. Emits the entity's Vault group names as a
 ### `groups` array, which oauth2-proxy consumes via --oidc-groups-claim.
 ###

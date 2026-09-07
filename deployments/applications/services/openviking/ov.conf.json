@@ -64,8 +64,23 @@
   "server": {
     "host": "0.0.0.0",
     "port": 1933,
-    "auth_mode": "api_key",
+    "auth_mode": "oidc",
     "root_api_key": "{{ $root.Data.data.root_api_key }}",
+    "oidc": {
+      "issuer": "https://vault.lab.orangecluster.nl/v1/identity/oidc",
+      "audience": "openviking",
+      "identity": {
+        "account_id": {
+          "source": "claim",
+          "claim": "ov_account",
+          "fallback": null
+        },
+        "user_id": {
+          "source": "claim",
+          "claim": "ov_account"
+        }
+      }
+    },
     "public_base_url": "https://openviking.lab.orangecluster.nl",
     "observability": {
       "metrics": {

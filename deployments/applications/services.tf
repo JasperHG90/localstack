@@ -103,17 +103,21 @@ locals {
         "allow from 192.168.2.50 to any port 4318 proto tcp",
       ]
     }
-    # embark on jetson-orin-nano. Two callers, not the cluster: embark is
-    # reached through Bifrost (`embark/embedding`), so radxa is the only node
-    # that dials it and a direct consumer would have to be added here on
-    # purpose. jetson-orin-nano admits itself because its own Consul agent
-    # runs the health check against this address.
+    # embark on jetson-orin-nano. Three named callers, not the cluster: embark
+    # is reached through Bifrost (`embark/embedding`), so radxa is the only
+    # node that dials the model routes and a direct consumer would have to be
+    # added here on purpose. jetson-orin-nano admits itself because its own
+    # Consul agent runs the health check against this address. .47 is
+    # Prometheus scraping /metrics, which serves without a credential
+    # (EMBARK_AUTH__GUARD_METRICS in services/embark.hcl) -- so this list is
+    # the only thing standing in front of it.
     embark = {
       host     = "192.168.2.46"
       ssh_user = "localstack"
       rules = [
         "allow from 192.168.2.50 to any port 8000 proto tcp",
         "allow from 192.168.2.46 to any port 8000 proto tcp",
+        "allow from 192.168.2.47 to any port 8000 proto tcp",
       ]
     }
     # OCI registry on ubuntu (rpi4b). Single-caller shape: only HAProxy on
@@ -378,7 +382,7 @@ resource "nomad_job" "embark" {
       # asks for CUDA. Built and pushed by hand; see services/embark/README.md.
       # The `-1` is a build revision on top of base v0.1.0, not an upstream
       # version: nothing publishes embark:v0.1.0-1.
-      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.1.0-1"
+      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.2.1"
 
       registry_host = local.embark_registry
       # embark's OWN copy of the registry credential. The nomad-workloads
@@ -478,105 +482,25 @@ resource "nomad_job" "openviking" {
   ]
 }
 
-### Creates one OpenViking account per person through the Admin API.
+### NO ACCOUNT PROVISIONER HERE, AND THAT IS NOT AN OVERSIGHT.
 ###
-### Over SSH rather than a local-exec curl. Port 1933 is LAN-open, so this is
-### no longer forced -- it stays because it puts no dependency on where the
-### apply runs from, and because the root key then never leaves the node it is
-### used on. Same shape as null_resource.firewall above.
+### This root used to carry a `null_resource.openviking_users` that POSTed one
+### account per person to /api/v1/admin/accounts with the root key. Under
+### `auth_mode: "oidc"` that call cannot authenticate at all: the OIDC plugin
+### never consults `server.root_api_key`, and it resolves every caller to role
+### USER, so no admin route has a reachable credential.
 ###
-### One POST per person and that is the whole registration: POST /accounts
-### creates the account, makes admin_user_id its first user with role admin,
-### and initializes both directory trees. There is no separate user POST and no
-### role PUT, because neither has anything left to do.
+### Leaving it in place would have failed the apply rather than been inert. Its
+### trigger hashed the jobspec, the jobspec carries ov.conf.json, so flipping
+### the auth mode re-ran it, and its guarded curl exits 1 on anything but
+### 200/201/409.
 ###
-### Each account is created WITH THE SEED, so the key OpenViking stores is the
-### one Terraform already derived and wrote to Vault. Nothing is read back.
-###
-### Idempotent by construction: a re-run POSTs the same accounts and treats a
-### 409 as success, because the account existing is the desired state. The key
-### step below is a SEPARATE list element, not chained to that case guard, so
-### it still runs after a 409 -- which is what makes a seed rotation reach the
-### server. The trigger is the account map plus the seed, so adding a person or
-### rotating the seed re-runs this and nothing else does.
-resource "null_resource" "openviking_users" {
-  triggers = {
-    users = jsonencode(local.openviking_accounts)
-    seed  = sha256(random_password.openviking_user_seed.result)
-    # Accounts live in the server's own store, not in this state file. A
-    # redeploy that starts from empty leaves the users unregistered while the
-    # two triggers above are unchanged, so re-run whenever the job does.
-    jobspec = sha1(nomad_job.openviking.jobspec)
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      host        = "192.168.2.50"
-      user        = "radxa"
-      private_key = file("${path.root}/../../.ssh/id_rsa")
-    }
-
-    inline = concat(
-      [
-        # remote-exec joins these into ONE script, prepends `#!/bin/sh` and
-        # runs it with no errexit, so an unguarded script reports the LAST
-        # command's status and swallows every failure before it. `set -e` plus
-        # the trap is what makes a failed call fail the apply, and the trap is
-        # what removes the credential file on the failure paths too.
-        "set -e",
-
-        # Credentials go in a 0600 file rather than on the command line: an
-        # argv secret is visible in `ps` for the life of each call. This does
-        # not hide them from the script itself, which carries both as literals
-        # in the heredoc below.
-        "umask 077",
-        "cat > /tmp/ov-prov.env <<'OVENV'\nOV_ROOT_KEY=${random_password.openviking_root_key.result}\nOV_SEED=${random_password.openviking_user_seed.result}\nOVENV",
-        "trap 'rm -f /tmp/ov-prov.env' EXIT",
-        ". /tmp/ov-prov.env",
-
-        # Registration is not readiness and the health check is on a 30s
-        # interval, so this is not a narrow window. `if ...; then break; fi`
-        # rather than `... && break`: under errexit a failing `&&` list ends
-        # the script on the first miss. Same shape as null_resource.bifrost_ready.
-        "for i in $(seq 1 60); do if curl -fsS http://127.0.0.1:1933/ready >/dev/null 2>&1; then break; fi; echo 'waiting for openviking /ready...'; sleep 2; done",
-        "if ! curl -fsS http://127.0.0.1:1933/ready >/dev/null 2>&1; then echo 'openviking did not become ready' >&2; exit 1; fi",
-
-        # 409 means the account is already there, which is the desired state.
-        # The status is captured and matched rather than piped through grep:
-        # curl writes it with no trailing newline, and the exit code is the
-        # only thing that fails the apply. The seed interpolates directly --
-        # random_password sets special = false, so it needs no JSON escaping.
-        #
-        # ONE CALL PER PERSON, and it is the whole registration. POST /accounts
-        # creates the account, makes admin_user_id its first user with role
-        # admin, and initializes both the account and the user directory trees.
-        # The separate POST /users and the PUT /role that used to follow are
-        # gone because they now have nothing left to do.
-      ],
-      [
-        for user, account in local.openviking_accounts :
-        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"account_id\\\":\\\"${account}\\\",\\\"admin_user_id\\\":\\\"${user}\\\",\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201|409) ;; *) echo \"creating account ${account} returned $code\" >&2; exit 1 ;; esac"
-      ],
-      [
-        # THE RECONCILE STEP, and it is not optional. The POST above 409s on an
-        # existing account WITHOUT touching any key, so on a seed change the
-        # server would keep the old key while Vault holds the new one. This is
-        # what makes the stored key follow the seed.
-        #
-        # Nothing here DELETES, and under one account per person the old
-        # offboarding call no longer exists: the server refuses to remove an
-        # account's last active admin, and every account here has exactly one.
-        # Removing a person is `DELETE /api/v1/admin/accounts/<account>`, which
-        # takes their whole tree with it. It stays a hand step for the reason it
-        # always did -- it destroys content -- and docs/openviking.md carries it.
-        for user, account in local.openviking_accounts :
-        "code=$(curl -sS -o /dev/null -w '%%{http_code}' -X POST http://127.0.0.1:1933/api/v1/admin/accounts/${account}/users/${user}/key -H \"X-API-Key: $OV_ROOT_KEY\" -H 'Content-Type: application/json' -d \"{\\\"seed\\\":\\\"$OV_SEED\\\"}\"); case \"$code\" in 200|201) ;; *) echo \"regenerating ${user}'s key returned $code\" >&2; exit 1 ;; esac"
-      ],
-    )
-  }
-
-  depends_on = [nomad_job.openviking]
-}
+### What that leaves unmeasured: whether an OpenViking read or write succeeds
+### for an account whose directory tree was never initialized. The OIDC plugin
+### creates nothing, and account creation used to be what initialized both
+### trees. jasper and veerle already have accounts from before the flip, so
+### this is only a question for the next person added.
+### `scripts/ov_identity_probe.py` is what answers it.
 
 ### Dash — the cluster landing page (L3), split into a frontend and a
 ### backend task in the same job (L4). The tile list lives in

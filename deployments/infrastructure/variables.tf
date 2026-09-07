@@ -76,6 +76,22 @@ variable "vault_operator_email" {
   default     = "jasperginn@gmail.com"
 }
 
+variable "vault_operator_ov_account" {
+  description = "The operator's OpenViking account id, published as the entity's `ov_account` metadata and from there as a token claim. Deliberately not the entity name: that entity is a cluster-admin identity and this is a data identity."
+  type        = string
+  default     = "jasper"
+}
+
+variable "vault_openviking_consumers" {
+  description = "People who use OpenViking and nothing else on this cluster, keyed by username. Each gets a userpass login, an entity carrying `ov_account`, and membership of the `openviking-user` group, whose policy grants exactly one Vault path. They are in no other group, so no Grafana, no Nomad UI, no MinIO console and no localstack CLI. The key is the username, the entity name and the OpenViking account id at once. `email` is optional and only feeds the OIDC provider's `email` scope, which a consumer has no client to use."
+  type = map(object({
+    email = optional(string)
+  }))
+  default = {
+    veerle = {}
+  }
+}
+
 variable "oidc_smoke_redirect_uris" {
   description = "Redirect URIs for F2's throwaway smoke-test OIDC client. A placeholder is fine: the client exists to prove the issuer completes an auth-code flow, not to serve a real app. Consumer tickets set their own. WARNING: the default hardcodes the issuer host, because Terraform forbids interpolation in a default. Change vault_issuer_host and this must be changed with it, or the redirect silently stops matching."
   type        = list(string)

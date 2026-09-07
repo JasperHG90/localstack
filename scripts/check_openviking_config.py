@@ -2,21 +2,31 @@
 """Assert the parts of OpenViking's config that must not drift.
 
 The config is `services/openviking/ov.conf.json`, a real JSON document that
-Terraform round-trips into the jobspec. These twelve settings each fail in a way a
+Terraform round-trips into the jobspec. These fifteen settings each fail in a way a
 healthy-looking service would hide:
 
     dimension        a wrong value corrupts the collection silently
     backend          the vectordb one, not agfs's, which is declared first
     custom_params    ov-postgres forbids unknown keys; a typo fails at startup
     rerank target    pointing past Bifrost loses gateway governance
-    auth_mode        oidc and ldap leave Web Studio unusable
-    root_api_key     absent under api_key mode, the server exits at startup
-    api_key_hashing  off, the key store is a list of working credentials
+    auth_mode        anything but oidc means Vault stopped being the identity
+    oidc.issuer      a wrong value starts fine and 401s every request after
+    oidc.audience    must equal the identity-token role's client_id
+    oidc.account_id  read from the entity-name claim; `sub` is the entity UUID
+    oidc.user_id     the same claim, because account id equals user id here
+    oidc.fallback    null, or an unmapped caller pools into the real `default`
     vlm model        one that cannot see embeds an error string per image
     vlm api_base     past Bifrost loses gateway governance, as rerank does
     metrics          off, /metrics 404s and the Prometheus job scrapes nothing
     traces           off or unpointed, and Tempo receives nothing, silently
     query_planner    past Bifrost, or unset and it silently falls back to vlm
+
+Two settings this file used to assert are gone, and their mutants with them.
+Under `oidc` the auth plugin never consults `server.root_api_key`, so its
+absence no longer stops the server starting. Nothing on the request path issues
+or verifies a per-user API key either, so `encryption.api_key_hashing` governs
+nothing reachable. The `auth_mode` assertion above is what keeps both safe: a
+flip back to `api_key` is caught here before either matters again.
 
 Reading the document as JSON rather than as text is what makes the backend
 check honest: `agfs` declares its own `backend` first, so a textual search finds
@@ -39,8 +49,21 @@ from typing import Any
 CONFIG = Path("deployments/applications/services/openviking/ov.conf.json")
 
 EXPECTED_DIMENSION = 768
-EXPECTED_AUTH_MODE = "api_key"
+EXPECTED_AUTH_MODE = "oidc"
 EXPECTED_BACKEND = "ov_postgres.adapter.PgVectorCollectionAdapter"
+
+# Vault appends `/v1/<namespace>/identity/oidc` to whatever `identity/oidc/config`
+# holds, and refuses an issuer carrying a path, so Terraform writes the bare host
+# and this is the string that comes back in `iss`. Upstream compares it exactly.
+EXPECTED_ISSUER = "https://vault.lab.orangecluster.nl/v1/identity/oidc"
+
+# The identity-token role's `client_id`, set explicitly in oidc.tf so this stays
+# a literal both sides can be checked against.
+EXPECTED_AUDIENCE = "openviking"
+
+# Vault reserves `sub` for the entity UUID, so the entity NAME has to travel as
+# a claim the role's template adds.
+OV_ACCOUNT_CLAIM = "ov_account"
 BIFROST_PORT = "8080"
 # Tempo's OTLP gRPC receiver, on ubuntu beside Prometheus and Loki.
 TEMPO_OTLP = "192.168.2.47:4317"
@@ -130,16 +153,11 @@ def failures(config: dict[str, Any]) -> list[str]:
     if auth_mode != EXPECTED_AUTH_MODE:
         found.append(
             f"server.auth_mode is {auth_mode!r}, expected {EXPECTED_AUTH_MODE!r}. "
-            "Web Studio refuses to run against oidc and ldap, so those modes "
-            "leave the browser half of the service dead."
+            "Vault is the identity provider; another mode resolves callers from "
+            "OpenViking's own key store instead."
         )
 
-    if not server.get("root_api_key"):
-        found.append(
-            "server.root_api_key is absent. Under auth_mode='api_key' "
-            "ApiKeyAuthPlugin.validate_config calls sys.exit(1), so the server "
-            "never starts."
-        )
+    found.extend(_oidc_failures(server.get("oidc")))
 
     vlm = config.get("vlm", {})
     vlm_model = vlm.get("model")
@@ -206,12 +224,58 @@ def failures(config: dict[str, Any]) -> list[str]:
             "nothing for the life of the process."
         )
 
-    hashing = config.get("encryption", {}).get("api_key_hashing", {}).get("enabled")
-    if hashing is not True:
+    return found
+
+
+def _oidc_failures(oidc: Any) -> list[str]:
+    """Assert the four `server.oidc` values that fail quietly when wrong."""
+    if not isinstance(oidc, dict) or not oidc:
+        return [
+            (
+                "server.oidc is absent. Under auth_mode='oidc' OIDCAuthPlugin "
+                "raises at startup, so the job crash-loops instead of serving."
+            )
+        ]
+
+    found: list[str] = []
+
+    issuer = oidc.get("issuer")
+    if issuer != EXPECTED_ISSUER:
         found.append(
-            f"encryption.api_key_hashing.enabled is {hashing!r}, expected True. "
-            "Off, the server stores every key verbatim, so its key store is a "
-            "list of working credentials."
+            f"server.oidc.issuer is {issuer!r}, expected {EXPECTED_ISSUER!r}. "
+            "Upstream verifies iss exactly; a near-miss starts cleanly and then "
+            "refuses every request with an invalid-claims error."
+        )
+
+    audience = oidc.get("audience")
+    if audience != EXPECTED_AUDIENCE:
+        found.append(
+            f"server.oidc.audience is {audience!r}, expected {EXPECTED_AUDIENCE!r}, "
+            "the identity-token role's client_id. Audience verification is never "
+            "skipped, so a stale value refuses every token."
+        )
+
+    identity = oidc.get("identity") or {}
+    for field in ("account_id", "user_id"):
+        mapping = identity.get(field) or {}
+        if mapping.get("source") != "claim" or mapping.get("claim") != OV_ACCOUNT_CLAIM:
+            found.append(
+                f"server.oidc.identity.{field} does not read the "
+                f"{OV_ACCOUNT_CLAIM!r} claim. Vault's sub is the entity UUID, so "
+                "mapping to it yields one account per UUID and still returns 200."
+            )
+
+    if "fallback" not in (identity.get("account_id") or {}):
+        found.append(
+            "server.oidc.identity.account_id.fallback is absent. Upstream defaults "
+            "it to 'default', which is a real account on this server, so a token "
+            "missing the claim would pool into it instead of being refused."
+        )
+    elif (identity.get("account_id") or {}).get("fallback") is not None:
+        fallback = identity["account_id"]["fallback"]
+        found.append(
+            f"server.oidc.identity.account_id.fallback is {fallback!r}, expected "
+            "null. Any value pools unmapped callers into one shared account."
         )
 
     return found
@@ -240,8 +304,19 @@ CLEAN: dict[str, Any] = {
     },
     "encryption": {"api_key_hashing": {"enabled": True}},
     "server": {
-        "auth_mode": "api_key",
-        "root_api_key": "a-root-key",
+        "auth_mode": EXPECTED_AUTH_MODE,
+        "oidc": {
+            "issuer": EXPECTED_ISSUER,
+            "audience": EXPECTED_AUDIENCE,
+            "identity": {
+                "account_id": {
+                    "source": "claim",
+                    "claim": OV_ACCOUNT_CLAIM,
+                    "fallback": None,
+                },
+                "user_id": {"source": "claim", "claim": OV_ACCOUNT_CLAIM},
+            },
+        },
         "observability": {
             "metrics": {
                 "enabled": True,
@@ -285,8 +360,55 @@ def _self_test() -> int:
             _mutate(("rerank", "api_base"), "http://192.168.2.46:8000/v1"),
             "rerank",
         ),
-        "auth_mode": (_mutate(("server", "auth_mode"), "oidc"), "auth_mode"),
-        "root_api_key": (_mutate(("server", "root_api_key"), None), "root_api_key"),
+        "auth_mode": (_mutate(("server", "auth_mode"), "api_key"), "auth_mode"),
+        # Upstream exits the process on this, so the guard has to catch it here.
+        "oidc_absent": (_mutate(("server", "oidc"), None), "server.oidc is absent"),
+        "oidc_issuer": (
+            _mutate(
+                ("server", "oidc", "issuer"),
+                "https://vault.lab.orangecluster.nl/v1/identity/oidc/",
+            ),
+            "oidc.issuer",
+        ),
+        "oidc_audience": (
+            _mutate(("server", "oidc", "audience"), "openviking-api"),
+            "oidc.audience",
+        ),
+        # `sub` is the entity UUID, so this yields one account per UUID and
+        # every request still returns 200.
+        "oidc_claim_sub": (
+            _mutate(
+                ("server", "oidc", "identity", "account_id"),
+                {"source": "claim", "claim": "sub", "fallback": None},
+            ),
+            "identity.account_id",
+        ),
+        "oidc_user_claim_sub": (
+            _mutate(
+                ("server", "oidc", "identity", "user_id"),
+                {"source": "claim", "claim": "sub"},
+            ),
+            "identity.user_id",
+        ),
+        # `default` is a real account on the live server with zero users.
+        "oidc_fallback_default": (
+            _mutate(
+                ("server", "oidc", "identity", "account_id"),
+                {
+                    "source": "claim",
+                    "claim": OV_ACCOUNT_CLAIM,
+                    "fallback": "default",
+                },
+            ),
+            "fallback",
+        ),
+        "oidc_fallback_absent": (
+            _mutate(
+                ("server", "oidc", "identity", "account_id"),
+                {"source": "claim", "claim": OV_ACCOUNT_CLAIM},
+            ),
+            "fallback is absent",
+        ),
         # The model that started this: catalogued, answers text, refuses images.
         "vlm_model": (
             _mutate(("vlm", "model"), "ollama/deepseek-v4-flash:0731"),
@@ -329,10 +451,6 @@ def _self_test() -> int:
                 ("server", "observability", "traces", "endpoint"), "localhost:4317"
             ),
             "traces.endpoint",
-        ),
-        "api_key_hashing": (
-            _mutate(("encryption", "api_key_hashing", "enabled"), False),
-            "api_key_hashing",
         ),
     }
     for name, (config, marker) in mutants.items():

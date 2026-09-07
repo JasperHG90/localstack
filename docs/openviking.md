@@ -21,31 +21,52 @@ summaries through Bifrost to ollama, and browser logins through Vault.
 The image is derived, and building it is an operator step. See
 `deployments/applications/services/openviking/README.md`.
 
-## Authentication: OpenViking's own users, behind a Vault gate
+## Authentication: Vault is the identity
 
-Two layers, and they answer different questions.
+One layer, not two. A person logs into Vault, mints a short-lived JWT for
+themselves, and OpenViking verifies it. No OpenViking password exists, and no
+per-person API key is on the request path.
 
-**Who may reach the hostname** is oauth2-proxy's job. It gates
-`openviking.lab.orangecluster.nl` behind a Vault login, so nothing on the LAN
-reaches the service without an account in Vault.
+**Getting a token.** `vault login -method=userpass` returns a Vault token that
+renews for as long as its TTL allows. From that session,
+`vault read identity/oidc/token/openviking` mints an RS256 JWT that expires in
+an hour. Re-minting needs no browser, so the hourly expiry costs nothing.
 
-It does inject four headers, since `PASS_USER_HEADERS` defaults to true in v7:
-`X-Forwarded-Groups`, `-User`, `-Email` and `-Preferred-Username`. OpenViking
-reads none of them, so they are inert. It forwards no Vault ID token, injects
-no `Authorization` header, and leaves an incoming one alone, so a caller
-through the edge may send its key either way. Studio uses `X-API-Key`.
+**What the server checks.** `auth_mode` is `oidc`. OpenViking fetches Vault's
+discovery document and JWKS from
+`https://vault.lab.orangecluster.nl/v1/identity/oidc` at request time, verifies
+the signature, and compares `iss` and `aud` exactly. `aud` must equal the
+identity-token role's `client_id`, `openviking`.
 
-**Who you are once inside** is OpenViking's own multi-tenant model. An account
-holds users, each user has a key, and data ownership resolves from that key.
-The server enforces the role attached to each key, and a caller cannot assert
-a different one: there is no header or claim that changes who OpenViking
-thinks you are.
+**Who the caller is.** The token carries an `ov_account` claim and OpenViking
+maps both `account_id` and `user_id` from it. That claim comes from the Vault
+entity's `ov_account` metadata, published by the role's template.
 
-| Key | Held by | Account | Role | Purpose |
-|---|---|---|---|---|
-| Root | the job, from Vault | none | ROOT | accounts, and re-minting any user's key |
-| `jasper` | a person | `jasper` | ADMIN | everything in their own account |
-| `veerle` | a person | `veerle` | ADMIN | everything in their own account |
+It is deliberately not the entity name and not `sub`. `sub` is the entity UUID,
+so an account mapped from it would be one account per UUID while every request
+still returned 200. The entity name is wrong for a different reason: the
+operator's entity is a cluster-admin identity and its OpenViking account is a
+data identity, so those two names differ on purpose.
+
+An entity carrying no `ov_account` gets no OpenViking account at all.
+`identity.account_id.fallback` is `null`, so such a caller is refused rather
+than pooled into the `default` account, which exists on this server with zero
+users. Every machine entity and every entity added later is therefore closed
+until someone stamps it.
+
+| Vault entity | Groups | `ov_account` | Reaches |
+|---|---|---|---|
+| `operator` | `developer`, `admin`, app tiers | `jasper` | the whole cluster |
+| `veerle` | `openviking-user` | `veerle` | one Vault path, and OpenViking |
+
+`openviking-user` grants one thing: reading `identity/oidc/token/openviking`.
+Vault issues that token for the calling entity only, so the grant cannot be
+used to act as anyone else. The operator is not a member, because `developer`
+already reaches that path through `identity/*`.
+
+**Hermes is broken until its follow-up ships.** It authenticates with jasper's
+derived API key, and no key resolves under `oidc`. Re-pointing it at a Vault
+identity is a separate change.
 
 ### One account per person, and why it is the account rather than a setting
 
@@ -68,34 +89,13 @@ Inside an account `viking://resources` is still shared by every user in it.
 At one person per account that is a tree of one, and it stops being one the
 moment a second person joins.
 
-Everyone is ADMIN of their own account, which is forced rather than chosen:
-`POST /accounts` makes its `admin_user_id` the account's first user with that
-role, and `set_user_role` only ever promotes. ADMIN scopes to its own account
-and grants nothing over any other: every account-scoped admin route checks
-account access first, and creating, listing or deleting accounts is root-only.
-
-### Why not Vault as the identity itself
-
-Both modes that would do it are unusable here. Web Studio refuses to run
-against `oidc` and `ldap` outright:
-
-```js
-const isUnsupportedAuthMode = serverMode === 'oidc' || serverMode === 'ldap'
-```
-
-Under `oidc` the API works and the entire browser half of the service does not.
-
-`trusted` mode would let the proxy assert identity in headers, and it fails at
-both settings of its one switch. Without a root key, `TrustedAuthPlugin`
-refuses to start at all on a non-loopback bind, and this job binds `0.0.0.0`.
-With one configured, every call carries that same root credential, so the two
-people stop being distinguishable, which is the whole thing this deployment
-wants.
-
-`api_key` is the mode upstream recommends, and it is the only one with per-user
-isolation and a working Studio. The cost is that a person holds an OpenViking
-key as well as a Vault login: Vault gates the hostname and OpenViking decides
-who you are.
+Under `oidc` every caller resolves to role USER. The plugin never consults a
+role mapping and never consults `server.root_api_key`, so no admin route has a
+reachable credential and nothing can create an account. Both accounts here were
+created before the switch. Adding a person may therefore need a step that does
+not exist yet, and `scripts/ov_identity_probe.py` is what settles whether it
+does: it mints a token for an account that was never created and reports what
+the server does with it.
 
 ### Where a key comes from
 
@@ -197,18 +197,21 @@ Keep the throwaway seed nowhere: not in the file above, not in your shell
 history, not in a password manager. The key is derived from it, so retaining
 the seed retains the key.
 
-### What this costs against OIDC
+### What this costs
 
-Worth stating plainly, because the previous deployment did better on this axis.
-Under `oidc` OpenViking verified each caller cryptographically against Vault's
-JWKS, no long-lived secret existed anywhere, and a token expired in an hour.
-An API key does not expire, exists in Terraform state and in Vault, and is
-revoked only by regenerating it.
+Three things, all accepted.
 
-`encryption.api_key_hashing` is enabled so the server stores Argon2id hashes
-rather than the keys themselves, which keeps the key store from being a list of
-working credentials. The rest of the trade is real and is accepted because the
-alternative is a service whose UI nobody can open.
+**No admin path.** Role is always USER, so account and user management have no
+credential. The Terraform provisioner that used to create accounts is gone,
+because its call could not authenticate and its failure would have failed the
+whole apply.
+
+**Web Studio's settings page cannot collect a credential.** Upstream replaces
+the connection form with an unsupported-mode alert under `oidc`. Studio itself
+still renders; only that panel is dead, and there is nothing for it to collect
+because the token comes from Vault.
+
+**Hermes is broken** until it is re-pointed, as above.
 
 ## Using it from the CLI and from an agent
 
