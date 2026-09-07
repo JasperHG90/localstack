@@ -1,7 +1,11 @@
 ### oauth2-proxy: OIDC forward-gate for the cluster landing page (dash),
-### against Vault's `lab` provider. Flat access: any authenticated user is
-### let through (OAUTH2_PROXY_EMAIL_DOMAINS=*, and the Vault client is bound
-### to the built-in "allow_all" assignment in oidc.tf).
+### against Vault's `lab` provider.
+###
+### This job filters nobody: OAUTH2_PROXY_EMAIL_DOMAINS="*" and there is no
+### allowed-group. Who gets in is decided upstream of it, by the Vault client's
+### assignment in oidc.tf, which names the operator groups. It used to be the
+### built-in "allow_all", which admitted any entity that could log in at all;
+### that became wrong when OpenViking consumers got Vault identities.
 ###
 ### Reusable pattern: R1 (MLflow) and R4 (Phoenix) copy this job. Keep
 ### host/redirect/issuer values as template vars so it stays copyable without

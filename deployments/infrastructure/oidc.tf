@@ -94,9 +94,16 @@ resource "vault_identity_oidc_key" "identity_tokens" {
 ###
 ### The template publishes the entity's `ov_account` metadata. It is NOT `sub`:
 ### Vault reserves that for the entity UUID, so mapping an account from it would
-### give one account per UUID while every request still returned 200. An entity
-### with no `ov_account` renders the claim empty, which ov.conf.json refuses
-### because its account mapping sets `fallback: null`.
+### give one account per UUID while every request still returned 200.
+###
+### An entity missing that metadata is NOT refused, and no config makes it so.
+### Vault renders an absent key as an empty string; upstream applies `fallback`
+### only to a null, and its `regex` narrows a value without ever rejecting one
+### (a non-match leaves the value untouched). So such a caller resolves to an
+### account named `""`. Measured against the deployed version, not inferred.
+### What keeps it unreachable is the ACL on this role: only the operator and
+### the `openviking-user` group can mint, and Terraform sets the metadata on
+### every entity it puts in either.
 ###
 ### The ttl is a month because a person should log in monthly, not daily. The
 ### cost is that these tokens cannot be revoked one at a time: the only lever is
@@ -536,6 +543,28 @@ locals {
   registry_ui_redirect_url  = "https://registry-ui.lab.orangecluster.nl/oauth2/callback"
 }
 
+### Who reaches the operator-facing single sign-on surfaces.
+###
+### These clients used the built-in `allow_all`, which admits ANY entity that
+### can complete a Vault login. That was accurate while the only human entity
+### was the operator. It stopped being accurate the moment OpenViking consumers
+### got Vault identities: a consumer is in no operator group, holds one Vault
+### path, and would still have been let through to the cluster landing page,
+### the registry UI and Grafana, because none of those filters on groups
+### either (oauth2-proxy sets EMAIL_DOMAINS="*" and no allowed-group).
+###
+### Gating at the provider rather than in each proxy keeps it in one place and
+### fails closed for the next consumer added. Membership is unchanged: the
+### operator is in both groups, so nothing they reach today moves.
+resource "vault_identity_oidc_assignment" "operators" {
+  name = "operators"
+
+  group_ids = [
+    vault_identity_group.developer.id,
+    vault_identity_group.admin.id,
+  ]
+}
+
 resource "vault_identity_oidc_client" "oauth2_proxy" {
   name = "oauth2-proxy"
   key  = vault_identity_oidc_key.lab.name
@@ -545,7 +574,7 @@ resource "vault_identity_oidc_client" "oauth2_proxy" {
     local.registry_ui_redirect_url,
   ]
 
-  assignments      = ["allow_all"]
+  assignments      = [vault_identity_oidc_assignment.operators.name]
   client_type      = "confidential"
   id_token_ttl     = 3600
   access_token_ttl = 3600
@@ -621,7 +650,7 @@ resource "vault_identity_oidc_client" "grafana" {
     local.grafana_redirect_url,
   ]
 
-  assignments      = ["allow_all"]
+  assignments      = [vault_identity_oidc_assignment.operators.name]
   client_type      = "confidential"
   id_token_ttl     = 3600
   access_token_ttl = 3600

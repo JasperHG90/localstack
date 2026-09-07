@@ -172,9 +172,9 @@
           }
         ],
         "connect": {
-          "protocol": "OTLP over gRPC (4317) and HTTP (4318). No collector in between — apps export straight to Tempo.",
+          "protocol": "OTLP over gRPC (4317) and HTTP (4318). No collector in between \u2014 apps export straight to Tempo.",
           "address": "ubuntu:4317 or ubuntu:4318. Query API on ubuntu:3200.",
-          "auth": "None. Cluster-internal only: the firewall admits all five nodes on the OTLP ports, and only Grafana and the edge on 3200. Tempo has no UI — read traces through Grafana's Tempo datasource.",
+          "auth": "None. Cluster-internal only: the firewall admits all five nodes on the OTLP ports, and only Grafana and the edge on 3200. Tempo has no UI \u2014 read traces through Grafana's Tempo datasource.",
           "example": "OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4317 OTEL_SERVICE_NAME=myapp"
         }
       },
@@ -307,8 +307,8 @@
         "connect": {
           "protocol": "REST / MCP API",
           "address": "https://openviking-api.lab.orangecluster.nl",
-          "auth": "Per-user API key, in Vault at default/openviking-users/<name>. Send it as X-API-Key or Authorization: Bearer. The openviking hostname is browsers only -- it is gated by oauth2-proxy and no headless client can hold its session cookie.",
-          "example": "curl -H \"X-API-Key: $OV_KEY\" \"https://openviking-api.lab.orangecluster.nl/api/v1/fs/ls?uri=viking://\""
+          "auth": "Vault identity token. `vault login`, then `vault read -field=token identity/oidc/token/openviking`. Send it as Authorization: Bearer, or in X-API-Key, which upstream also accepts for a JWT. There is no API key any more. The openviking hostname is browsers only -- it is gated by oauth2-proxy and no headless client can hold its session cookie.",
+          "example": "OV_TOKEN=$(vault read -field=token identity/oidc/token/openviking); curl -H \"Authorization: Bearer $OV_TOKEN\" \"https://openviking-api.lab.orangecluster.nl/api/v1/fs/ls?uri=viking://\""
         }
       }
     ]
@@ -341,7 +341,7 @@
         "connect": {
           "protocol": "OCI Distribution API over HTTPS. Blobs are stored in the `registry` MinIO bucket, not on local disk.",
           "address": "https://registry.lab.orangecluster.nl",
-          "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC — the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
+          "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC \u2014 the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
           "example": "podman login registry.lab.orangecluster.nl -u push\npodman push registry.lab.orangecluster.nl/<image>:<tag>\n\nkit login registry.lab.orangecluster.nl -u push\nkit push registry.lab.orangecluster.nl/<modelkit>:<tag>"
         }
       }

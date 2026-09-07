@@ -79,10 +79,14 @@ resource "vault_identity_entity_alias" "operator" {
 
 ### People who use OpenViking and nothing else on this cluster.
 ###
-### What defines them is what they are NOT in. No `developer`, no app-user
-### tier, no OIDC assignment, so nothing reaches Grafana, the Nomad UI, MinIO's
-### console or the localstack CLI. The single Vault path they hold is the
-### identity-token role, granted through the group at the end of this section.
+### What defines them is what they are NOT in. No `developer`, no `admin`, no
+### app-user tier. The single Vault path they hold is the identity-token role,
+### granted through the group at the end of this section.
+###
+### That absence is only worth as much as what checks it. Nomad gates on the
+### `developer` group, and dash, the registry UI and Grafana gate on the
+### `operators` assignment in oidc.tf -- which exists BECAUSE those three used
+### `allow_all` and would otherwise have admitted anyone able to log in.
 ###
 ### The operator is deliberately NOT one of these. That entity carries
 ### `ov_account` too, but it reaches the same path through `developer`'s

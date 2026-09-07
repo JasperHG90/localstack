@@ -7,7 +7,8 @@ this ticket builds actually works. Run this by hand after an apply, from a host
 that reaches both Vault and the OpenViking API, holding a Vault token whose
 entity carries `ov_account`.
 
-Four assertions, each exiting non-zero on the first failure:
+Three assertions, each exiting non-zero on the first failure, and one
+question that reports rather than judges:
 
     1. a minted token is accepted, and resolves to the expected account
     2. no token at all is refused
@@ -42,7 +43,7 @@ DEFAULT_API = "https://openviking-api.lab.orangecluster.nl"
 
 # Any authenticated route that reads the caller's own tree. `viking://` is the
 # root of it, so a 200 here means the identity resolved to a real account.
-DATA_ROUTE = "/api/v1/fs/ls?uri=viking://"
+DATA_ROUTE = "/api/v1/fs/ls?uri="
 
 
 class ProbeFailure(Exception):
@@ -69,49 +70,83 @@ def claims(token: str) -> dict[str, Any]:
     return decoded
 
 
-def call(base: str, token: str | None) -> int:
-    """Status code from the data route, with the token or without one."""
-    request = urllib.request.Request(base.rstrip("/") + DATA_ROUTE)
+def call(base: str, token: str | None, uri: str = "viking://") -> tuple[int, bytes]:
+    """Status and body from the data route, with the token or without one."""
+    request = urllib.request.Request(f"{base.rstrip('/')}{DATA_ROUTE}{uri}")
     if token is not None:
         request.add_header("Authorization", f"Bearer {token}")
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
-            return int(response.status)
+            return int(response.status), response.read()
     except urllib.error.HTTPError as error:
-        return int(error.code)
+        return int(error.code), error.read()
+    except OSError as error:
+        # A connection failure is a result to report, not a traceback.
+        raise ProbeFailure(f"{base} unreachable: {error}") from error
 
 
-def scratch_role(name: str, key: str, client_id: str, account: str) -> None:
+def _discard(path: str) -> None:
+    """Delete a scratch object, reporting rather than raising.
+
+    Cleanup runs in a `finally`, so raising here would replace the real failure
+    with this one and skip whatever else still needs deleting.
+    """
+    try:
+        vault("delete", path)
+    except ProbeFailure as failure:
+        print(f"warn  could not delete {path}: {failure}", file=sys.stderr)
+
+
+def scratch_role(name: str, key: str, client_id: str, account: str, user: str) -> None:
+    """A role whose template carries BOTH claims.
+
+    Emitting only `ov_account` refuses on the missing `ov_user` instead of on
+    whatever the caller meant to test, which is a 401 that looks like a pass.
+    """
     vault(
         "write",
         f"identity/oidc/role/{name}",
         f"key={key}",
         f"client_id={client_id}",
         "ttl=300",
-        f'template={{"ov_account":"{account}"}}',
+        f'template={{"ov_account":"{account}","ov_user":"{user}"}}',
     )
 
 
-def assert_token_is_accepted(base: str, role: str, expected: str) -> None:
+def assert_token_is_accepted(base: str, role: str, expected: str, user: str) -> None:
     token = mint(role)
-    sent = claims(token).get("ov_account")
-    if sent != expected:
-        raise ProbeFailure(
-            f"the role published ov_account={sent!r}, expected {expected!r}. "
-            "Check the entity's metadata, not the config."
-        )
-    status = call(base, token)
+    sent = claims(token)
+    for claim, want in (("ov_account", expected), ("ov_user", user)):
+        if sent.get(claim) != want:
+            raise ProbeFailure(
+                f"the role published {claim}={sent.get(claim)!r}, expected "
+                f"{want!r}. Check the entity's metadata, not the config."
+            )
+    # `viking://user`, not `viking://`. Measured: a real account lists its user
+    # there and an account that was never created returns an empty list, while
+    # BOTH return 200 for `viking://`. The status alone cannot tell them apart.
+    status, body = call(base, token, "viking://user")
     if status != 200:
         raise ProbeFailure(
             f"a valid token for {expected!r} got HTTP {status}, expected 200. "
             "If 401, compare the token's iss and aud against server.oidc in "
             "ov.conf.json; upstream verifies both exactly."
         )
-    print(f"ok  a minted token for {expected!r} is accepted")
+    # A 200 on its own proves nothing: report_unknown_account below measures
+    # that an account which was never created ALSO returns 200, with an empty
+    # tree. The caller's own user directory is what distinguishes them.
+    wanted = f"viking://user/{user}"
+    if wanted.encode() not in body:
+        raise ProbeFailure(
+            f"viking://user lists {body.decode(errors='replace')[:200]!r}, which "
+            f"does not contain {wanted!r}. The token authenticated but resolved "
+            "to an account that is not the one holding the data."
+        )
+    print(f"ok  a minted token for {expected}/{user} reaches its own tree")
 
 
 def assert_no_token_is_refused(base: str) -> None:
-    status = call(base, None)
+    status, _ = call(base, None)
     if status not in (401, 403):
         raise ProbeFailure(
             f"an unauthenticated call got HTTP {status}, expected 401 or 403. "
@@ -120,7 +155,7 @@ def assert_no_token_is_refused(base: str) -> None:
     print(f"ok  an unauthenticated call is refused ({status})")
 
 
-def assert_foreign_audience_is_refused(base: str, account: str) -> None:
+def assert_foreign_audience_is_refused(base: str, account: str, user: str) -> None:
     """A token OpenViking can verify the signature of, but must reject on aud.
 
     It needs its OWN key: Vault refuses to mint a token whose client_id is not
@@ -141,8 +176,8 @@ def assert_foreign_audience_is_refused(base: str, account: str) -> None:
         f"allowed_client_ids={aud}",
     )
     try:
-        scratch_role(name, key, aud, account)
-        status = call(base, mint(name))
+        scratch_role(name, key, aud, account, user)
+        status, _ = call(base, mint(name))
         if status not in (401, 403):
             raise ProbeFailure(
                 f"a token with a foreign audience got HTTP {status}, expected "
@@ -150,19 +185,22 @@ def assert_foreign_audience_is_refused(base: str, account: str) -> None:
             )
         print(f"ok  a foreign audience is refused ({status})")
     finally:
-        vault("delete", f"identity/oidc/role/{name}")
-        vault("delete", f"identity/oidc/key/{key}")
+        # Separately, so a raising role-delete cannot strand the scratch signing
+        # key in the JWKS. A stranded key is unmanaged by Terraform and so
+        # invisible to `terraform plan`.
+        _discard(f"identity/oidc/role/{name}")
+        _discard(f"identity/oidc/key/{key}")
 
 
 def report_unknown_account(base: str, key: str, client_id: str) -> None:
     """Answer the open question: is an uninitialized account tree usable?"""
     account = f"neverseen-{uuid.uuid4().hex[:8]}"
     name = f"probe-unknown-{uuid.uuid4().hex[:8]}"
-    scratch_role(name, key, client_id, account)
+    scratch_role(name, key, client_id, account, account)
     try:
-        status = call(base, mint(name))
+        status, _ = call(base, mint(name))
     finally:
-        vault("delete", f"identity/oidc/role/{name}")
+        _discard(f"identity/oidc/role/{name}")
 
     verdict = {
         200: "an account that was never created is READABLE. Adding a person "
@@ -189,6 +227,11 @@ def main(argv: list[str]) -> int:
         help="the ov_account the calling Vault token's entity carries",
     )
     parser.add_argument(
+        "--user",
+        required=True,
+        help="the ov_user the calling Vault token's entity carries",
+    )
+    parser.add_argument(
         "--key",
         default="identity-tokens",
         help="named key the scratch roles sign with",
@@ -201,9 +244,9 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     try:
-        assert_token_is_accepted(args.api, args.role, args.account)
+        assert_token_is_accepted(args.api, args.role, args.account, args.user)
         assert_no_token_is_refused(args.api)
-        assert_foreign_audience_is_refused(args.api, args.account)
+        assert_foreign_audience_is_refused(args.api, args.account, args.user)
         report_unknown_account(args.api, args.key, args.audience)
     except ProbeFailure as failure:
         print(f"FAIL: {failure}", file=sys.stderr)

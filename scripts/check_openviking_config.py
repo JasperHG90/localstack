@@ -15,7 +15,13 @@ healthy-looking service would hide:
     oidc.account_id  read from ov_account; `sub` is the entity UUID
     oidc.user_id     read from ov_user, a DIFFERENT claim: the operator is
                      user jasper inside account lab, and lab/user/lab is empty
-    oidc.fallback    null, or an unmapped caller pools into the real `default`
+    oidc.fallback    null on both, or a caller with no claim pools into a
+                     shared tree. Note this does NOT make the mapping fail
+                     closed: Vault renders an absent metadata key as an empty
+                     string and upstream applies fallback only to a null, so an
+                     entity without the metadata resolves to account `""`. The
+                     ACL on the identity-token role is what prevents that, not
+                     this check.
     vlm model        one that cannot see embeds an error string per image
     vlm api_base     past Bifrost loses gateway governance, as rerank does
     metrics          off, /metrics 404s and the Prometheus job scrapes nothing
@@ -271,18 +277,26 @@ def _oidc_failures(oidc: Any) -> list[str]:
                 "lab/user/lab, which does not exist."
             )
 
-    if "fallback" not in (identity.get("account_id") or {}):
+    # The two fields differ and the difference is the whole point.
+    # AccountMappingConfig defaults `fallback` to "default", a real account on
+    # this server, so account_id must set it EXPLICITLY null. UserMappingConfig
+    # defaults it to None, so absent is already safe there and only a non-null
+    # value is a defect.
+    account = identity.get("account_id") or {}
+    if "fallback" not in account:
         found.append(
-            "server.oidc.identity.account_id.fallback is absent. Upstream defaults "
-            "it to 'default', which is a real account on this server, so a token "
-            "missing the claim would pool into it instead of being refused."
+            "server.oidc.identity.account_id.fallback is absent. Upstream "
+            "defaults it to 'default', a real account on this server, so a "
+            "caller whose claim is missing pools into it. Set it to null."
         )
-    elif (identity.get("account_id") or {}).get("fallback") is not None:
-        fallback = identity["account_id"]["fallback"]
-        found.append(
-            f"server.oidc.identity.account_id.fallback is {fallback!r}, expected "
-            "null. Any value pools unmapped callers into one shared account."
-        )
+    for field in ("account_id", "user_id"):
+        fallback = (identity.get(field) or {}).get("fallback")
+        if fallback is not None:
+            found.append(
+                f"server.oidc.identity.{field}.fallback is {fallback!r}, "
+                "expected null. Any value pools callers whose claim is missing "
+                "into one shared tree."
+            )
 
     return found
 
@@ -417,6 +431,13 @@ def _self_test() -> int:
                 },
             ),
             "fallback",
+        ),
+        "oidc_user_fallback_set": (
+            _mutate(
+                ("server", "oidc", "identity", "user_id"),
+                {"source": "claim", "claim": OV_USER_CLAIM, "fallback": "lab"},
+            ),
+            "identity.user_id.fallback",
         ),
         "oidc_fallback_absent": (
             _mutate(

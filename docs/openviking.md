@@ -30,7 +30,8 @@ per-person API key is on the request path.
 **Getting a token.** `vault login -method=userpass` returns a Vault token that
 renews for as long as its TTL allows. From that session,
 `vault read identity/oidc/token/openviking` mints an RS256 JWT that expires in
-an hour. Re-minting needs no browser, so the hourly expiry costs nothing.
+a month. Re-minting needs no browser, so the expiry costs nothing: a person
+logs in when their Vault session lapses, not when the token does.
 
 **What the server checks.** `auth_mode` is `oidc`. OpenViking fetches Vault's
 discovery document and JWKS from
@@ -38,8 +39,10 @@ discovery document and JWKS from
 the signature, and compares `iss` and `aud` exactly. `aud` must equal the
 identity-token role's `client_id`, `openviking`.
 
-**Who the caller is.** The token carries an `ov_account` claim and OpenViking
-maps both `account_id` and `user_id` from it. That claim comes from the Vault
+**Who the caller is.** The token carries two claims, `ov_account` and
+`ov_user`, and OpenViking maps one field from each. They are separate because
+they differ: the operator is user `jasper` inside account `lab`, and there is
+no `lab/user/lab`. Both come from the Vault
 entity's `ov_account` metadata, published by the role's template.
 
 It is deliberately not the entity name and not `sub`. `sub` is the entity UUID,
@@ -48,11 +51,17 @@ still returned 200. The entity name is wrong for a different reason: the
 operator's entity is a cluster-admin identity and its OpenViking account is a
 data identity, so those two names differ on purpose.
 
-An entity carrying no `ov_account` gets no OpenViking account at all.
-`identity.account_id.fallback` is `null`, so such a caller is refused rather
-than pooled into the `default` account, which exists on this server with zero
-users. Every machine entity and every entity added later is therefore closed
-until someone stamps it.
+An entity carrying no `ov_account` is NOT refused, and no configuration makes
+it so. Vault renders an absent metadata key as an empty string; upstream applies
+`fallback` only to a null, and its `regex` narrows a value without ever
+rejecting one, because a non-match leaves the value untouched. So such a caller
+resolves to an account named `""`. Measured against the deployed version.
+
+`identity.account_id.fallback` is still explicitly `null`, because absent means
+`"default"` upstream and `default` is a real account here. What actually keeps
+the empty case unreachable is the ACL on the identity-token role: only the
+operator and the `openviking-user` group can mint one, and Terraform sets both
+metadata keys on every entity it puts in either.
 
 | Vault entity | Groups | `ov_account` | `ov_user` | Reaches |
 |---|---|---|---|---|
@@ -70,9 +79,15 @@ Vault issues that token for the calling entity only, so the grant cannot be
 used to act as anyone else. The operator is not a member, because `developer`
 already reaches that path through `identity/*`.
 
-**Hermes is broken until its follow-up ships.** It authenticates with jasper's
-derived API key, and no key resolves under `oidc`. Re-pointing it at a Vault
-identity is a separate change.
+**Hermes mints its own token.** It authenticates to Vault with its Nomad
+workload identity and reads a role whose template carries `lab`/`jasper`, so its
+writes land in the same tree the operator sees. It holds no key.
+
+The token reaches it through a loopback sidecar rather than its environment. A
+running process cannot have its environment changed, and every read of an
+identity-token path mints a NEW token, so rendering one into Hermes's env
+restarted the task on every consul-template poll. The sidecar reads the token
+from disk per request instead, and Hermes holds a constant endpoint.
 
 ### One account per person, and why it is the account rather than a setting
 
@@ -222,7 +237,8 @@ the connection form with an unsupported-mode alert under `oidc`. Studio itself
 still renders; only that panel is dead, and there is nothing for it to collect
 because the token comes from Vault.
 
-**Hermes is broken** until it is re-pointed, as above.
+**Hermes needs a sidecar**, because its credential cannot live in its
+environment. See the authentication section above.
 
 ## Using it from the CLI and from an agent
 
