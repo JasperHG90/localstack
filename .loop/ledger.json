@@ -2623,7 +2623,7 @@
       "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
-      "commit_sha": "a5a48f3f36fe95437f3e332d8b5cc60da95f6657",
+      "commit_sha": "9d66d7815e241c76da27fa2ad492cbb2ec87dfdd",
       "review_verdict": ".loop/verdicts/OV2-openviking-user-scoped-resources.adversarial.md, .loop/verdicts/OV2-openviking-user-scoped-resources.documentation.md",
       "review_entry_tree": "e93b785de6317a53444963f577fb653507be41f2",
       "dropped": false,
@@ -2679,6 +2679,59 @@
           "reason": "Cycle-4 required fixes RF-A/RF-B/RF-C applied inside the verdict's own fix_sections (front-matter, 7, premises): corrected the hallucinated symbol _request_user_deletion to begin_user_deletion in P10, added the offboarding-runbook and Hermes-memory rows the R6 deliverables were missing from section 7, and stopped the front-matter summary presupposing Q1 option (a). Recorded P13, the now-verified re-mint premise. Operator settled Q1 in favour of option (b).",
           "counter_signer": "JasperHG90",
           "when": "2026-09-06"
+        }
+      ]
+    },
+    "OV3-openviking-vault-identity": {
+      "slug": "OV3-openviking-vault-identity",
+      "stage": "ready",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "openviking",
+      "dependencies": [],
+      "priority": 100,
+      "summary": "Make Vault the authentication provider for OpenViking. A person logs into Vault\nonce with userpass and holds a renewable token. A Vault identity-token role\nmints a short-lived RS256 JWT carrying the person's entity name, and OpenViking\nruns auth_mode \"oidc\" and verifies that JWT against Vault's identity JWKS.\nThis ticket is the foundation and proves the chain end to end. Hermes re-pointing, deleting\nthe seed and key apparatus, and the edge/hostname collapse are follow-up tickets\nand explicit non-goals. Hermes BREAKS the moment auth_mode flips.\n",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {
+        "Q1": "The runtime chain is proven by a probe script added to the code surface (widen-surface), not by a labelled proxy. Chosen over declared-proxy because OV1 took the proxy route and left its P22 unverified across two tickets.",
+        "Q4": "Vault's identity issuer is set to the edge base URL https://vault.lab.orangecluster.nl, giving the effective issuer https://vault.lab.orangecluster.nl/v1/identity/oidc.",
+        "Q5": "The operator entity is renamed to jasper. Entity names equal OpenViking account ids and no third identity is carried.",
+        "Q6": "The ovx client half is out of scope. This ticket is verified by the probe script, not by a CLI login."
+      },
+      "measured_against": {
+        "Q4": {
+          "kind": "package",
+          "version": "1.18.3",
+          "ref": "vault/identity_store_oidc.go",
+          "note": "getOIDCConfig appends /v1/<ns>/identity/oidc to the configured issuer and the config write rejects an issuer carrying a path."
+        }
+      },
+      "eval_amendments": [],
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "b01ea4fa057423fd0fb72f4752d1aa944b0aa49e8f0af58add37bbb4464c841a",
+          "after_plan": "84cbb09395a0a396dbe82d3962b55066bbe23ca6bd6eacea35c5542cb36990de",
+          "before_scope": "f4021293a2c90ec6317a830ffabda4c7404298e56c1186ab94c7f591cb930fa0",
+          "after_scope": "227079232244f8f79b16e84a6b35c69d2ed09ab59f0d3a1966342c188eacbbb2",
+          "sections": [
+            "5",
+            "6",
+            "7",
+            "premises"
+          ],
+          "reason": "Applied the four required fixes from the plan-validator verdict, all inside its declared fix_sections (5, 6, 7, premises): corrected the section 5 non-goal that wrongly called the openviking_users provisioner unused when its jobspec trigger re-runs it on the config flip; rewrote P10 and P15 so the uninitialized-tree question is stated as unprobeable against the LIVE server only, with a local trusted-mode run of the pinned image named as the probe; added the six missed code-surface rows for R1's operator blast radius including the three default-run cli test lines; re-anchored R2's verification_ttl constraint from oidc.tf:377 to :331 and :395. Also took four of the reviewer's recommendations, same sections: P3 now cites the separate-field mechanism in identity_store_oidc_provider.go rather than inferring independence from the strings differing, P14 is promoted to demonstrated with the no-path issuer requirement stated, and R4 names the explicit jwks_uri shape. loopctl verify-plan returns valid.",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-07T04:33:09Z"
         }
       ]
     }
