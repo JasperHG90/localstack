@@ -278,12 +278,23 @@ ${config_toml}
       # `memory.max = 4294967296` (4096 MiB), not 5120. Verified through podman
       # inspect and the container's own cgroup, not inferred.
       #
-      # 5120, not 6144: the rest of the host (OS, nomad, alloy, node-exporter)
-      # holds ~1019 MB, so 5120 leaves ~1480 MB and 6144 would leave ~460 MB.
-      # Measured with `free -m` and the container cgroup on the node.
+      # 5632, raised from 5120 after OpenViking's reranker started serving.
+      # Until then the rerank model was loaded but never invoked, so only the
+      # embedding session held CUDA arenas; now both do, concurrently, and the
+      # node started logging ENOMEM from NvMap.
+      #
+      # Still not 6144. The rest of the host (OS, nomad, alloy, node-exporter)
+      # holds ~1019 MB, measured with `free -m` and the container cgroup: 5632
+      # leaves ~967 MB, 6144 would leave ~460 MB. 460 moves the same failure
+      # off this cgroup and onto the host, where the OOM killer picks the
+      # victim instead of Nomad.
+      #
+      # If ENOMEM survives this, the next lever is demand, not supply:
+      # `rerank_batch_size` in services/embark/config.toml is 8, and peak
+      # activation memory scales with it.
       resources {
         cpu    = 2000
-        memory = 5120
+        memory = 5632
       }
     }
   }
