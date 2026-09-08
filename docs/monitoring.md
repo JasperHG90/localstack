@@ -29,6 +29,17 @@ reach on port 3000.
 Prometheus scraping is unaffected. It dials outward to its targets, and no
 inbound rule touches that.
 
+### Retrieval quality has its own page
+
+Three dashboards cover the retrieval stack: `/d/localstack-embark` for the
+models, `/d/localstack-openviking` for live retrieval, and
+`/d/localstack-retrieval-quality` for whether the models are still as good as
+they were. The last one reads `driftwatch`, a daily canary, and the alerts
+that go with it are the `retrieval-quality` group in `alert-rules.yaml`.
+
+How to read them, and what to do when one fires, is in
+`docs/retrieval-quality.md`.
+
 ### Signing in
 
 Go to `https://grafana.lab.orangecluster.nl` and press **Sign in with Vault**.

@@ -194,6 +194,21 @@ locals {
         "allow from 192.168.2.47 to any port 1933 proto tcp",
       ]
     }
+    # driftwatch on radxa. Two callers and no edge: .47 is Prometheus reading
+    # /metrics, and .50 is radxa's own Consul agent running the health check
+    # against this address. Nothing else has any reason to reach it -- the
+    # numbers are published through Prometheus, not through this port.
+    #
+    # No rule is needed in the other direction: driftwatch dials embark on
+    # 192.168.2.46:8000, and the embark entry above already admits .50.
+    driftwatch = {
+      host     = "192.168.2.50"
+      ssh_user = "radxa"
+      rules = [
+        "allow from 192.168.2.50 to any port 8010 proto tcp",
+        "allow from 192.168.2.47 to any port 8010 proto tcp",
+      ]
+    }
   }
 }
 
@@ -408,7 +423,7 @@ resource "nomad_job" "embark" {
       # asks for CUDA. Built and pushed by hand; see services/embark/README.md.
       # The `-1` is a build revision on top of base v0.1.0, not an upstream
       # version: nothing publishes embark:v0.1.0-1.
-      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.2.1"
+      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.2.2"
 
       registry_host = local.embark_registry
       # embark's OWN copy of the registry credential. The nomad-workloads
@@ -482,7 +497,7 @@ resource "nomad_job" "openviking" {
       openviking_host     = "192.168.2.50"
 
       openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
-      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-3"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-4"
 
       # The config document, already parsed, substituted and re-encoded. Every
       # host and endpoint it needs is baked in above, so the jobspec takes none
@@ -505,6 +520,71 @@ resource "nomad_job" "openviking" {
   depends_on = [
     postgresql_database.database,
     vault_kv_secret_v2.bifrost_openviking_key,
+  ]
+}
+
+### driftwatch — the daily canary over the two retrieval models.
+###
+### The goldset is round-tripped through jsondecode/jsonencode line by line,
+### the same shape dash's tiles.json and memex's auth_keys.json already use:
+### a malformed row fails `terraform plan` rather than reaching the job and
+### crashing it on startup. jsonencode also guarantees one compact line per
+### row, which is what the JSONL reader on the other side expects however the
+### source file happens to be wrapped.
+locals {
+  driftwatch_goldset = join(
+    "\n",
+    [
+      for line in split("\n", trimspace(file("${path.module}/services/driftwatch/goldset.jsonl"))) :
+      jsonencode(jsondecode(line))
+    ]
+  )
+
+  ### The rerank set, same treatment. Its rows carry a `candidates` array, so
+  ### a malformed one is a plan-time failure here rather than a job that
+  ### starts and scores nothing.
+  driftwatch_rerank_goldset = join(
+    "\n",
+    [
+      for line in split("\n", trimspace(file("${path.module}/services/driftwatch/rerank-goldset.jsonl"))) :
+      jsonencode(jsondecode(line))
+    ]
+  )
+}
+
+resource "nomad_job" "driftwatch" {
+  jobspec = templatefile(
+    "${path.module}/services/driftwatch.hcl",
+    {
+      # radxa, not the Jetson. embark's firewall entry already admits this
+      # address on port 8000, and the canary stays off the node it measures.
+      driftwatch_hostname = "radxa-dragon-q6a"
+      driftwatch_host     = "192.168.2.50"
+
+      # Built and pushed by hand; see services/driftwatch/README.md. The
+      # justfile beside it reads THIS line, so what is built and what is
+      # deployed cannot drift.
+      driftwatch_image = "ghcr.io/jasperhg90/driftwatch:v0.1.0"
+
+      # embark's own port, not the Bifrost gateway. See the header of
+      # services/driftwatch.hcl for why.
+      embark_url = "http://192.168.2.46:8000"
+
+      # The names embark itself serves, which are the keys of
+      # services/embark/models.json. NOT the `embark/embedding` form, which is
+      # Bifrost's provider-prefixed alias and means nothing to embark.
+      embedding_model = "embedding"
+      rerank_model    = "reranker"
+
+      embark_key_secret = vault_kv_secret_v2.driftwatch_embark_key.path
+      goldset           = local.driftwatch_goldset
+      rerank_goldset    = local.driftwatch_rerank_goldset
+    }
+  )
+
+  depends_on = [
+    nomad_job.embark,
+    vault_kv_secret_v2.driftwatch_embark_key,
   ]
 }
 

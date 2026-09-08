@@ -237,6 +237,33 @@ resource "nomad_dynamic_host_volume" "openviking_data" {
   }
 }
 
+### driftwatch's baseline: one file of reference vectors, 60 rows of 768
+### float32. Sized at the plugin's floor rather than the data's, which is
+### under a megabyte.
+###
+### It has to survive a restart, which is the whole reason this volume exists:
+### an in-memory baseline would re-seed on every deployment and report no
+### drift for a day after each one.
+resource "nomad_dynamic_host_volume" "driftwatch_data" {
+  name      = "driftwatch_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "1 GiB"
+  capacity_min = "100 MiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "radxa-dragon-q6a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 resource "nomad_dynamic_host_volume" "nats_data" {
   name      = "nats_data"
   namespace = "default"
@@ -512,19 +539,22 @@ resource "nomad_job" "grafana" {
   jobspec = templatefile(
     "${path.module}/services/grafana.hcl",
     {
-      grafana_secret             = vault_kv_secret_v2.grafana_admin_credentials.path
-      grafana_oidc_secret        = vault_kv_secret_v2.grafana_oidc_client.path
-      cluster_overview_dashboard = file("${path.module}/services/grafana/cluster-overview.json")
-      logs_dashboard             = file("${path.module}/services/grafana/logs.json")
-      services_dashboard         = file("${path.module}/services/grafana/services.json")
-      node_dashboard             = file("${path.module}/services/grafana/node-detail.json")
-      nomad_dashboard            = file("${path.module}/services/grafana/nomad.json")
-      postgres_dashboard         = file("${path.module}/services/grafana/postgres.json")
-      minio_dashboard            = file("${path.module}/services/grafana/minio.json")
-      ingress_dashboard          = file("${path.module}/services/grafana/ingress.json")
-      nats_dashboard             = file("${path.module}/services/grafana/nats.json")
-      bifrost_dashboard          = file("${path.module}/services/grafana/bifrost.json")
-      alert_rules                = file("${path.module}/services/grafana/alert-rules.yaml")
+      grafana_secret              = vault_kv_secret_v2.grafana_admin_credentials.path
+      grafana_oidc_secret         = vault_kv_secret_v2.grafana_oidc_client.path
+      cluster_overview_dashboard  = file("${path.module}/services/grafana/cluster-overview.json")
+      logs_dashboard              = file("${path.module}/services/grafana/logs.json")
+      services_dashboard          = file("${path.module}/services/grafana/services.json")
+      node_dashboard              = file("${path.module}/services/grafana/node-detail.json")
+      nomad_dashboard             = file("${path.module}/services/grafana/nomad.json")
+      postgres_dashboard          = file("${path.module}/services/grafana/postgres.json")
+      minio_dashboard             = file("${path.module}/services/grafana/minio.json")
+      ingress_dashboard           = file("${path.module}/services/grafana/ingress.json")
+      nats_dashboard              = file("${path.module}/services/grafana/nats.json")
+      bifrost_dashboard           = file("${path.module}/services/grafana/bifrost.json")
+      embark_dashboard            = file("${path.module}/services/grafana/embark.json")
+      openviking_dashboard        = file("${path.module}/services/grafana/openviking.json")
+      retrieval_quality_dashboard = file("${path.module}/services/grafana/retrieval-quality.json")
+      alert_rules                 = file("${path.module}/services/grafana/alert-rules.yaml")
       ### OrangeClusterAlertBot's token, not Hermes's. The two bots are separate
       ### and so are their Vault paths. Hermes reads default/hermes/telegram.
       ### No Terraform resource writes either value, so swapping the alert bot

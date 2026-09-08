@@ -25,11 +25,19 @@ FROM ${BASE_IMAGE}
 # Neither package is on PyPI; both install only from a git URL. The tags are
 # pinned: `main` would make the image non-reproducible.
 #
-# ov-postgres-v0.3.0 and ov-retrieval-v0.1.0 are the same commit, and that is
-# load-bearing rather than tidy. ov-retrieval's diversity pass reaches
+# ov-postgres-v0.4.0 and ov-retrieval-v0.2.0 are the same commit (3780884), and
+# that is load-bearing rather than tidy. ov-retrieval's diversity pass reaches
 # `pairwise_similarity` on the adapter through `getattr` and swallows its
 # absence, so an older ov-postgres yields a server that starts clean and
 # quietly ranks without the pass. Move the two pins together.
+#
+# Both carry OpenTelemetry spans as of this pin, and neither configures an
+# exporter: they take the process-global TracerProvider OpenViking's server
+# installs from ov.conf's observability.traces block. So the spans need no
+# jobspec change to reach Tempo, and with tracing off they are non-recording
+# and cost nothing. ov_retrieval's spans carry an `outcome` attribute naming
+# why a hybrid pass declined to run, which is the one thing the Prometheus
+# metrics cannot report -- see docs/retrieval-quality.md.
 #
 # The `#subdirectory=` fragment is required: the repository root is a uv
 # workspace with no `[project]` table, so pip cannot build it. Re-check the
@@ -45,7 +53,7 @@ FROM ${BASE_IMAGE}
 # imports ConnectionPool at startup.
 RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
     --target /app/.venv/lib/python3.13/site-packages \
-    "ov-postgres @ git+https://github.com/JasperHG90/openviking_extensions@ov-postgres-v0.3.0#subdirectory=packages/ov-postgres"
+    "ov-postgres @ git+https://github.com/JasperHG90/openviking_extensions@ov-postgres-v0.4.0#subdirectory=packages/ov-postgres"
 
 # Hybrid retrieval: an RRF keyword leg and an MMR diversity pass, installed by
 # the wrapper the jobspec starts instead of `openviking-server`.
@@ -56,7 +64,7 @@ RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
 # ships the bot. Verified in the published image, not assumed.
 RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
     --target /app/.venv/lib/python3.13/site-packages \
-    "ov-retrieval @ git+https://github.com/JasperHG90/openviking_extensions@ov-retrieval-v0.1.0#subdirectory=packages/ov-retrieval"
+    "ov-retrieval @ git+https://github.com/JasperHG90/openviking_extensions@ov-retrieval-v0.2.0#subdirectory=packages/ov-retrieval"
 
 # psycopg's binary wheel, so no libpq or compiler is needed at runtime, and
 # the pool the adapter opens per collection.

@@ -1,0 +1,50 @@
+[project]
+name = "driftwatch"
+version = "0.1.0"
+description = "Canary evaluation of the cluster's embedding and rerank models, exported to Prometheus"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "numpy>=2.2.0",
+    "prometheus-client>=0.24.0",
+    "starlette>=1.6.0",
+    "uvicorn>=0.52.4",
+]
+
+[project.scripts]
+driftwatch = "driftwatch.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/driftwatch"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "respx>=0.23.1",
+    "ruff>=0.16.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Same shape as dash/backend and cli: a test that needs the live cluster
+# carries this marker and stays out of the default run.
+markers = [
+    "cluster: hits the live cluster (network, a real embark)",
+]
+addopts = "-m 'not cluster'"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true

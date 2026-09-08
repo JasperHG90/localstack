@@ -1,0 +1,373 @@
+{
+  "uid": "localstack-retrieval-quality",
+  "title": "Retrieval Quality (Drift Canary)",
+  "tags": ["localstack", "driftwatch", "retrieval", "quality"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-30d", "to": "now"},
+  "refresh": "5m",
+  "timepicker": {},
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Embark", "url": "/d/localstack-embark/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "OpenViking", "url": "/d/localstack-openviking/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Last canary run",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Embedding recall@10",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "description": "Canary queries whose answer the vector search put in its top 10, out of a 60-document corpus.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "driftwatch_recall{stage=\"embedding\", k=\"10\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "decimals": 3, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.8}, {"color": "green", "value": 0.9}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Embedding recall@1",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "driftwatch_recall{stage=\"embedding\", k=\"1\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "decimals": 3, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.5}, {"color": "green", "value": 0.7}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Pipeline recall@1",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+      "description": "The embedder's top 10, reordered by the cross-encoder: what a caller gets. Below the embedding recall@1 beside it, reranking is making the shortlist worse rather than better.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "driftwatch_recall{stage=\"pipeline\", k=\"1\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "decimals": 3, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.5}, {"color": "green", "value": 0.7}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Rerank recall@1 (alone)",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+      "description": "The cross-encoder over a candidate pool fixed in rerank-goldset.jsonl, not one the embedder chose. This is the only number here that moves for the reranker and nothing else.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "driftwatch_recall{stage=\"rerank\", k=\"1\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "decimals": 3, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.6}, {"color": "green", "value": 0.8}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Cosine vs baseline",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+      "description": "Mean cosine between each canary document's vector now and the vector recorded when the baseline was seeded. No data means there is no baseline yet, which is what the first run after a re-seed reports.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "driftwatch_reference_cosine_mean", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "none", "min": 0, "max": 1, "decimals": 4, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.92}, {"color": "green", "value": 0.99}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Last successful run",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+      "description": "The canary runs daily. Anything past 48 hours means every number on this page is older than it looks.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "time() - driftwatch_last_success_timestamp_seconds", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 90000}, {"color": "red", "value": 172800}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "value"}
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Ranking quality over time",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Embedding recall, against its 14-day average",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 6},
+      "description": "The alert fires on the gap, not on the level: a canary set says nothing about the absolute number a healthy model should reach, and everything about whether today's number is the one it reached yesterday.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_recall{stage=\"embedding\", k=\"1\"}", "legendFormat": "recall@1", "refId": "A"},
+        {"expr": "driftwatch_recall{stage=\"embedding\", k=\"5\"}", "legendFormat": "recall@5", "refId": "B"},
+        {"expr": "driftwatch_recall{stage=\"embedding\", k=\"10\"}", "legendFormat": "recall@10", "refId": "C"},
+        {"expr": "avg_over_time(driftwatch_recall{stage=\"embedding\", k=\"10\"}[14d])", "legendFormat": "recall@10, 14d avg", "refId": "D"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "recall@10, 14d avg"}, "properties": [{"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [8, 6]}}, {"id": "custom.lineWidth", "value": 1}, {"id": "custom.showPoints", "value": "never"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "text"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "min"]}}
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Does reranking earn its place?",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 6},
+      "description": "Both stages over the same shortlist, so the difference is the cross-encoder's contribution. The pipeline line below the embedding line is a reranker demoting right answers.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_recall{stage=\"embedding\", k=\"1\"}", "legendFormat": "embedding recall@1", "refId": "A"},
+        {"expr": "driftwatch_recall{stage=\"pipeline\", k=\"1\"}", "legendFormat": "pipeline recall@1", "refId": "B"},
+        {"expr": "driftwatch_mrr{stage=\"embedding\"}", "legendFormat": "embedding MRR", "refId": "C"},
+        {"expr": "driftwatch_mrr{stage=\"pipeline\"}", "legendFormat": "pipeline MRR", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always"}}},
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "min"]}}
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "The reranker on its own",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 15},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Rerank on a fixed pool, against its 14-day average",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "description": "Ten candidates per query, the same ten every run, each pool holding the hard negative embark hand-authored for that query. No recall@10 here: every ranking of a pool that holds the answer puts it at 10 or better, so the series would be flat at 1.0 on any run that scored anything.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_recall{stage=\"rerank\", k=\"1\"}", "legendFormat": "recall@1", "refId": "A"},
+        {"expr": "driftwatch_recall{stage=\"rerank\", k=\"3\"}", "legendFormat": "recall@3", "refId": "B"},
+        {"expr": "driftwatch_mrr{stage=\"rerank\"}", "legendFormat": "MRR", "refId": "C"},
+        {"expr": "avg_over_time(driftwatch_recall{stage=\"rerank\", k=\"1\"}[14d])", "legendFormat": "recall@1, 14d avg", "refId": "D"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "recall@1, 14d avg"}, "properties": [{"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [8, 6]}}, {"id": "custom.lineWidth", "value": 1}, {"id": "custom.showPoints", "value": "never"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "text"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "min"]}}
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Which half moved",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "description": "Each stage over its own corpus, so neither depends on the other. Rerank falling while embedding holds is a reranker regression. Embedding falling while rerank holds is an embedder regression. Both falling together is usually the node, not the models.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_recall{stage=\"embedding\", k=\"1\"}", "legendFormat": "embedding recall@1", "refId": "A"},
+        {"expr": "driftwatch_recall{stage=\"rerank\", k=\"1\"}", "legendFormat": "rerank recall@1 (fixed pool)", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always"}}},
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "min"]}}
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Vector geometry",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 24},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "Cosine against the baseline",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 25},
+      "description": "A step down here is the served model changing under the store. A gap is a run that had no baseline to compare against, which is every first run after the baseline file is deleted.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_reference_cosine_mean", "legendFormat": "mean", "refId": "A"},
+        {"expr": "driftwatch_reference_cosine_min", "legendFormat": "worst document", "refId": "B"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 1,
+          "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always", "thresholdsStyle": {"mode": "dashed"}},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "transparent", "value": null}, {"color": "red", "value": 0.92}]}
+        }
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Vector length",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 25},
+      "description": "What cosine cannot see. A lost normalization step, a truncation, or a tokenizer change moves these while every cosine on this page stays at 1.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_embedding_norm_mean", "legendFormat": "mean", "refId": "A"},
+        {"expr": "driftwatch_embedding_norm_stddev", "legendFormat": "stddev", "refId": "B"},
+        {"expr": "avg_over_time(driftwatch_embedding_norm_stddev[14d])", "legendFormat": "stddev, 14d avg", "refId": "C"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "none", "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "stddev, 14d avg"}, "properties": [{"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [8, 6]}}, {"id": "custom.lineWidth", "value": 1}, {"id": "custom.showPoints", "value": "never"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "text"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Neighbor overlap across query pairs",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 25},
+      "description": "Unrelated queries should retrieve unrelated documents. This rising is the embedder losing the ability to tell them apart, and it moves before recall does.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_neighbor_overlap", "legendFormat": "overlap", "refId": "A"},
+        {"expr": "avg_over_time(driftwatch_neighbor_overlap[14d])", "legendFormat": "14d avg", "refId": "B"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 2, "fillOpacity": 0, "pointSize": 6, "showPoints": "always"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "14d avg"}, "properties": [{"id": "custom.lineStyle", "value": {"fill": "dash", "dash": [8, 6]}}, {"id": "custom.lineWidth", "value": 1}, {"id": "custom.showPoints", "value": "never"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "text"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Live retrieval, from OpenViking",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 33},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Zero-result ratio (1h)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 34},
+      "description": "The canary says whether the models still rank well. This says whether real queries are finding anything, which a canary on a fixed corpus cannot. It cannot say whether an empty result was WRONG: nothing may answer that question. Watch the change, not the level.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(openviking_retrieval_zero_result_total[1h])) / clamp_min(sum(rate(openviking_retrieval_requests_total[1h])), 0.0001)", "legendFormat": "zero results", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Rerank fallback ratio (1h)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 34},
+      "description": "Live retrievals served in vector order because the reranker could not answer. Nothing errors when this happens; the results are just worse.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(openviking_retrieval_rerank_fallback_total[1h]) or vector(0)) / clamp_min(sum(rate({__name__=~\"openviking_retrieval_rerank_(used|fallback)_total\"}[1h]) or vector(0)), 0.0001)", "legendFormat": "fallback", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Results per retrieval (1h)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 34},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (context_type) (rate(openviking_retrieval_results_total[1h])) / clamp_min(sum by (context_type) (rate(openviking_retrieval_requests_total[1h])), 0.0001)", "legendFormat": "{{context_type}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 1, "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "min"]}}
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Canary health",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 42},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 50,
+      "type": "timeseries",
+      "title": "Run outcomes (24h)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 43},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "increase(driftwatch_runs_total{outcome=\"ok\"}[24h])", "legendFormat": "ok", "refId": "A"},
+        {"expr": "increase(driftwatch_runs_total{outcome=\"error\"}[24h])", "legendFormat": "error", "refId": "B"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "error"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "ok"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 51,
+      "type": "timeseries",
+      "title": "Where the run spends its time",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 43},
+      "description": "A cheap run was answered from embark's cache. An expensive one means the model artifact changed, because that is what invalidates the cache key.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_stage_seconds{stage=\"embedding\"}", "legendFormat": "embedding", "refId": "A"},
+        {"expr": "driftwatch_stage_seconds{stage=\"pipeline\"}", "legendFormat": "pipeline", "refId": "B"},
+        {"expr": "driftwatch_stage_seconds{stage=\"rerank\"}", "legendFormat": "rerank", "refId": "C"},
+        {"expr": "driftwatch_run_seconds", "legendFormat": "whole run", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 52,
+      "type": "stat",
+      "title": "Canary sets",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 43},
+      "description": "Baseline age resets whenever the embedding gold set changes: a different corpus makes the stored vectors incomparable, and driftwatch re-seeds rather than reporting a cosine against the wrong documents. The rerank set holds no state, so changing it costs nothing.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "driftwatch_goldset_queries", "legendFormat": "queries", "refId": "A"},
+        {"expr": "driftwatch_goldset_documents", "legendFormat": "documents", "refId": "B"},
+        {"expr": "driftwatch_rerank_goldset_cases", "legendFormat": "rerank cases", "refId": "C"},
+        {"expr": "time() - driftwatch_baseline_recorded_timestamp_seconds", "legendFormat": "baseline age", "refId": "D"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "baseline age"}, "properties": [{"id": "unit", "value": "s"}]}
+        ]
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "value", "textMode": "value_and_name", "orientation": "horizontal"}
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Logs",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 60,
+      "type": "logs",
+      "title": "driftwatch logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 52},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"driftwatch.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=driftwatch&${__url_time_range}", "targetBlank": false}]
+    }
+  ]
+}

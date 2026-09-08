@@ -1,0 +1,287 @@
+{
+  "uid": "localstack-embark",
+  "title": "Embark (Embedding & Rerank)",
+  "tags": ["localstack", "embark", "llm", "retrieval"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-6h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Application Services", "url": "/d/localstack-services/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "OpenViking", "url": "/d/localstack-openviking/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Retrieval Quality", "url": "/d/localstack-retrieval-quality/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Overview",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Up",
+      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "up{job=\"embark\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "mappings": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "up", "color": "green"}}}], "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Request rate (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 3, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(http_requests_total{job=\"embark\"}[5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Error ratio (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 7, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(http_requests_total{job=\"embark\", status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"embark\"}[5m])), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.01}, {"color": "red", "value": 0.05}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "p95 latency (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 11, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"embark\"}[5m])))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 2.5}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Cache hit ratio (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 15, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(embark_cache_decisions_total{job=\"embark\", outcome=\"hit\"}[5m])) / clamp_min(sum(rate(embark_cache_decisions_total{job=\"embark\", outcome=~\"hit|miss\"}[5m])), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "green", "value": 0.5}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Coalesced share (5m)",
+      "gridPos": {"h": 4, "w": 5, "x": 19, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(embark_coalescing_decisions_total{job=\"embark\", outcome=\"joined\"}[5m])) / clamp_min(sum(rate(embark_coalescing_decisions_total{job=\"embark\"}[5m])), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Requests & latency",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Request rate by route (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (handler) (rate(http_requests_total{job=\"embark\"}[5m]))", "legendFormat": "{{handler}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Latency quantiles, all routes (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"embark\"}[5m])))", "legendFormat": "p50", "refId": "A"},
+        {"expr": "histogram_quantile(0.90, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"embark\"}[5m])))", "legendFormat": "p90", "refId": "B"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"embark\"}[5m])))", "legendFormat": "p95", "refId": "C"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"embark\"}[5m])))", "legendFormat": "p99", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Response codes (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 6},
+      "description": "Exact codes, not 2xx/5xx buckets. 429 is rate limiting and 503 is a model still warming; grouping loses both.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (status) (rate(http_requests_total{job=\"embark\"}[5m]))", "legendFormat": "{{status}}", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}},
+        "overrides": [
+          {"matcher": {"id": "byRegexp", "options": "5.."}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "429"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Embedding vs rerank",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "p95 latency by model route (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 15},
+      "description": "A batch-32 embedding pass runs near 650ms on this Jetson and a 50-candidate rerank near 225ms. The 2.5s bucket is where the histogram stops resolving.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, handler) (rate(http_request_duration_seconds_bucket{job=\"embark\", handler=~\"/v1/.*\"}[5m])))", "legendFormat": "{{handler}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "High-resolution latency quantiles (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 15},
+      "description": "http_request_duration_highr_seconds carries the library's own buckets out to 60s, unlabelled. It resolves the tail the 2.5s-capped histogram cannot.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"embark\"}[5m])))", "legendFormat": "p95", "refId": "A"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"embark\"}[5m])))", "legendFormat": "p99", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Mean body size by route (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (handler) (rate(http_request_size_bytes_sum{job=\"embark\"}[5m])) / clamp_min(sum by (handler) (rate(http_request_size_bytes_count{job=\"embark\"}[5m])), 0.0001)", "legendFormat": "{{handler}} in", "refId": "A"},
+        {"expr": "sum by (handler) (rate(http_response_size_bytes_sum{job=\"embark\"}[5m])) / clamp_min(sum by (handler) (rate(http_response_size_bytes_count{job=\"embark\"}[5m])), 0.0001)", "legendFormat": "{{handler}} out", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Cache, coalescing & auth",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Cache decisions (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+      "description": "Per input, not per request. The error series only appears once Redis has failed a lookup.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (outcome) (rate(embark_cache_decisions_total{job=\"embark\"}[5m]))", "legendFormat": "{{outcome}}", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "hit"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]},
+          {"matcher": {"id": "byName", "options": "miss"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]},
+          {"matcher": {"id": "byName", "options": "error"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Cache hit ratio (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 24},
+      "description": "Errors are excluded from the denominator: a failed lookup is neither a hit nor a miss, and counting it as one would report the cache as colder than it is.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(embark_cache_decisions_total{job=\"embark\", outcome=\"hit\"}[5m])) / clamp_min(sum(rate(embark_cache_decisions_total{job=\"embark\", outcome=~\"hit|miss\"}[5m])), 0.0001)", "legendFormat": "hit ratio", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Coalescing decisions (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 24},
+      "description": "led is work this request did; joined is work it took from a call already running. joined over the sum is duplicate work skipped.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (outcome) (rate(embark_coalescing_decisions_total{job=\"embark\"}[5m]))", "legendFormat": "{{outcome}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 43,
+      "type": "timeseries",
+      "title": "Auth decisions (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (outcome) (rate(embark_auth_decisions_total{job=\"embark\"}[5m]))", "legendFormat": "{{outcome}}", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "accepted"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 44,
+      "type": "timeseries",
+      "title": "Allocation memory & OOM kills",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+      "description": "The Orin Nano has unified memory, so every CUDA arena is charged to this cgroup. The task is capped at 5632 MB with no memory_max.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"embark\", task=\"embark\"})", "legendFormat": "rss", "refId": "A"},
+        {"expr": "max(nomad_client_allocs_memory_cache_value{exported_job=\"embark\", task=\"embark\"})", "legendFormat": "cache", "refId": "B"},
+        {"expr": "sum(increase(nomad_client_allocs_oom_killed{exported_job=\"embark\"}[1h]))", "legendFormat": "oom kills (1h)", "refId": "C"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 10}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "oom kills (1h)"}, "properties": [{"id": "unit", "value": "short"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}, {"id": "custom.axisPlacement", "value": "right"}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Logs",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 40},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 50,
+      "type": "logs",
+      "title": "embark logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 41},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"embark.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=embark&${__url_time_range}", "targetBlank": false}]
+    }
+  ]
+}

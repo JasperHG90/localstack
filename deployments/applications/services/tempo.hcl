@@ -141,10 +141,47 @@ job "tempo" {
             wal:
               path: /var/tempo/wal
 
-        # No metrics_generator block: the generator turns spans into RED
-        # metrics and needs a remote_write target. It stays off by default
-        # (processors are enabled per-tenant under `overrides`, not here), so
-        # the block would only be noise.
+        # The generator runs ONLY the local-blocks processor, which keeps
+        # recent spans queryable so Grafana can run TraceQL metrics over them.
+        # No span-metrics, no service-graphs, and so no remote_write and no
+        # Prometheus change: nothing here writes a time series. What it buys is
+        # the one thing span-metrics cannot do, aggregating a span ATTRIBUTE's
+        # value -- `avg_over_time(span.ov_retrieval.keyword_hits)` -- which is
+        # why ov-retrieval's spans are worth having.
+        #
+        # `storage.path` is NOT optional despite nothing being remote-written.
+        # Without it Tempo logs "metrics-generator is not configured ... will be
+        # disabled" at info level and starts anyway, so every TraceQL metrics
+        # query returns empty with no error. Verified by running this exact
+        # config under grafana/tempo:2.10.8: the warning is present without the
+        # key and the metrics-generator module starts with it.
+        #
+        # `max_live_traces` is set because its default is 0, meaning unbounded,
+        # and this task's cap is what the kernel enforces. The value is a
+        # guess sized to homelab trace volume, not a measurement.
+        #
+        # NOT set: `filter_server_spans`. Its name suggests it drops the
+        # INTERNAL spans ov_postgres and ov_retrieval emit, which would make
+        # this whole block pointless. Tested at the default of true against
+        # 2.10.8 by pushing one internal and one server span: both were
+        # counted and `avg_over_time` over an internal span's attribute
+        # returned its value. It does not need changing.
+        metrics_generator:
+          processor:
+            local_blocks:
+              flush_to_storage: true
+              max_live_traces: 5000
+          traces_storage:
+            path: /var/tempo/generator/traces
+          storage:
+            path: /var/tempo/generator/wal
+
+        # Processors are enabled per tenant, never in the block above.
+        overrides:
+          defaults:
+            metrics_generator:
+              processors: [local-blocks]
+
         usage_report:
           reporting_enabled: false
         EOF
@@ -152,9 +189,16 @@ job "tempo" {
         destination = "local/tempo-config.yaml"
       }
 
+      # Raised from 512 for the metrics generator, which holds live traces in
+      # memory and builds blocks. UNMEASURED: this is headroom, not a figure
+      # from a running generator. Watch
+      # `nomad_client_allocs_oom_killed{exported_job="tempo"}` on the Nomad
+      # dashboard after this ships, and raise it again rather than trimming
+      # `max_live_traces` first -- a smaller live-trace cap silently drops
+      # traces, while an OOM is at least loud.
       resources {
         cpu    = 500
-        memory = 512
+        memory = 768
       }
     }
   }

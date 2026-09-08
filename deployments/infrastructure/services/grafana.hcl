@@ -304,6 +304,36 @@ job "grafana" {
         destination = "local/dashboards/bifrost.json"
       }
 
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${embark_dashboard}
+        EOF
+
+        destination = "local/dashboards/embark.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${openviking_dashboard}
+        EOF
+
+        destination = "local/dashboards/openviking.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
+        ${retrieval_quality_dashboard}
+        EOF
+
+        destination = "local/dashboards/retrieval-quality.json"
+      }
+
       # ---- Unified alerting: contact point (Telegram) ----
       template {
         data = <<-EOF

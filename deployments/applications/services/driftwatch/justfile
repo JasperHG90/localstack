@@ -1,0 +1,69 @@
+set shell := ["bash", "-uc"]
+
+set dotenv-filename := "../../../../.devcontainer/.env"
+
+alias b := build
+alias p := push
+alias r := release
+
+# The tag, from the ONE `driftwatch_image` line in services.tf, so the image
+# this builds and the image Terraform deploys cannot drift.
+#
+# The grep tolerates a leading `#` so the image can still be built while the
+# job is commented out.
+_tag := ```
+    grep -E '^\s*#?\s*driftwatch_image\s*=' ../../services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/'
+    ```
+
+# Show what the recipes below would act on, without building anything.
+show:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "image : {{ _tag }}"
+
+# --platform linux/arm64 because it runs on radxa. The build context is this
+# directory alone; nothing outside it is needed.
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    if [ -z "${image}" ]; then
+        echo "!! driftwatch_image is missing from services.tf" >&2
+        exit 1
+    fi
+    echo ">> building ${image}"
+    docker build --pull --platform linux/arm64 -t "${image}" -f Dockerfile .
+
+# Nodes already authenticate to ghcr.io for pulls
+# (bootstrap/playbooks/configure_podman.yml). This login is for the write.
+push:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    echo ">> pushing ${image}"
+    docker push "${image}"
+
+release: build push
+
+# Rebuild rerank-goldset.jsonl from embark's own triplet set. Needs a checkout
+# of embark, which is a separate repository, so the path is an argument rather
+# than a pin. Deterministic: the same input writes the same bytes.
+#
+#   just rerank-goldset ~/src/embark/goldsets/embark-docs/eval.jsonl
+rerank-goldset source:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./build_rerank_goldset.py "{{ source }}"
+    echo ">> now run: uv run pytest tests/test_goldset.py"
+
+# Does the entry point import and start? numpy has no aarch64 wheel for every
+# release, and a missing one fails at import on the node rather than at build
+# time here.
+verify:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    image="{{ _tag }}"
+    echo ">> inspecting ${image}"
+    docker run --rm --platform linux/arm64 --entrypoint /app/.venv/bin/python "${image}" -c \
+        "import numpy, driftwatch.main; print('numpy', numpy.__version__)"

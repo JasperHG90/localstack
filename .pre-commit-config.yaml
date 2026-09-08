@@ -172,3 +172,32 @@ repos:
         language: system
         files: '^deployments/applications/services/registry-ui/backend/'
         pass_filenames: false
+      # driftwatch carries the same four hooks, for the same reason: its own uv
+      # project, its own interpreter and config. The pytest hook watches the
+      # whole directory rather than just the Python, because test_goldset.py
+      # loads both shipped .jsonl sets and a malformed row in either would
+      # otherwise reach the job.
+      - id: driftwatch-ruff
+        name: Ruff (lint, driftwatch)
+        entry: uv run --project deployments/applications/services/driftwatch ruff check --force-exclude
+        language: system
+        types: [python]
+        files: '^deployments/applications/services/driftwatch/'
+      - id: driftwatch-ruff-format
+        name: Ruff (format, driftwatch)
+        entry: uv run --project deployments/applications/services/driftwatch ruff format --check --force-exclude
+        language: system
+        types: [python]
+        files: '^deployments/applications/services/driftwatch/'
+      - id: driftwatch-mypy
+        name: Mypy (strict, driftwatch)
+        entry: uv run --project deployments/applications/services/driftwatch mypy --config-file deployments/applications/services/driftwatch/pyproject.toml deployments/applications/services/driftwatch/src deployments/applications/services/driftwatch/tests
+        language: system
+        files: '^deployments/applications/services/driftwatch/'
+        pass_filenames: false
+      - id: driftwatch-pytest
+        name: Pytest (driftwatch)
+        entry: uv run --project deployments/applications/services/driftwatch pytest deployments/applications/services/driftwatch/tests
+        language: system
+        files: '^deployments/applications/services/driftwatch/'
+        pass_filenames: false

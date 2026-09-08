@@ -127,6 +127,21 @@ resource "vault_kv_secret_v2" "bifrost_embark_key" {
   })
 }
 
+### The third copy of the same embark key, this one for driftwatch, and for
+### the same reason as the two above: the nomad-workloads role grants job
+### `driftwatch` read only under secret/data/default/driftwatch/*.
+###
+### The `read` key, not an admin one. driftwatch calls /v1/embeddings and
+### /v1/rerank and nothing else; embark's own /metrics is scraped straight
+### off port 8000 with no credential at all.
+resource "vault_kv_secret_v2" "driftwatch_embark_key" {
+  mount = var.secret_mount
+  name  = "default/driftwatch/embark"
+  data_json = jsonencode({
+    api_key = random_id.embark_api_key.b64_url
+  })
+}
+
 ### Registry
 
 resource "vault_kv_secret_v2" "registry_minio_credentials" {

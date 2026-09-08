@@ -1,0 +1,520 @@
+{
+  "uid": "localstack-openviking",
+  "title": "OpenViking (Context Store)",
+  "tags": ["localstack", "openviking", "retrieval", "context"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": {"from": "now-6h", "to": "now"},
+  "refresh": "30s",
+  "timepicker": {},
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "links": [
+    {"title": "Cluster Overview", "url": "/d/localstack-overview/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Application Services", "url": "/d/localstack-services/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Embark", "url": "/d/localstack-embark/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Retrieval Quality", "url": "/d/localstack-retrieval-quality/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "Logs Explorer", "url": "/d/localstack-logs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false}
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Readiness",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Scrape up",
+      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "up{job=\"openviking\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "mappings": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "up", "color": "green"}}}], "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Service",
+      "gridPos": {"h": 4, "w": 3, "x": 3, "y": 1},
+      "description": "The gauge drops to 0 and its valid label flips to 0 when the probe itself cannot refresh, so a stale probe reads as not ready rather than as the last good value.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max(openviking_service_readiness)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "mappings": [{"type": "value", "options": {"0": {"text": "not ready", "color": "red"}, "1": {"text": "ready", "color": "green"}}}], "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Storage probes",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max by (probe) (openviking_storage_readiness)", "legendFormat": "{{probe}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "mappings": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "ok", "color": "green"}}}], "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background", "textMode": "value_and_name"}
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Retrieval backend",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max by (probe) (openviking_retrieval_backend_readiness)", "legendFormat": "{{probe}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "mappings": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "ok", "color": "green"}}}], "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background", "textMode": "value_and_name"}
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Model provider",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+      "description": "Embedding, rerank, VLM and the query planner all reach their models through Bifrost, so this going red means the gateway, not the models.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "max by (provider) (openviking_model_provider_readiness)", "legendFormat": "{{provider}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "mappings": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "ok", "color": "green"}}}], "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "none", "colorMode": "background", "textMode": "value_and_name"}
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Retrieval",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "Retrieval rate (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(openviking_retrieval_requests_total[5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Zero-result ratio (1h)",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 6},
+      "description": "Retrievals that came back empty. Often the correct answer, since nobody may have ingested anything that matches, so watch the change rather than the level. The funnel panels below say which: candidates scanned but none returned is a content gap, nothing scanned at all is an empty or wrongly-scoped collection.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(openviking_retrieval_zero_result_total[1h])) / clamp_min(sum(rate(openviking_retrieval_requests_total[1h])), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 0.25}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Results per retrieval (1h)",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(openviking_retrieval_results_total[1h])) / clamp_min(sum(rate(openviking_retrieval_requests_total[1h])), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "Retrieval p95 (5m)",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(openviking_retrieval_latency_seconds_bucket[5m])))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 2}, {"color": "red", "value": 5}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Rerank fallback ratio (1h)",
+      "gridPos": {"h": 4, "w": 8, "x": 16, "y": 6},
+      "description": "Retrievals where the reranker was asked for and could not answer, so results were served in vector order. A rise here is a quality regression that no error rate reports.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(openviking_retrieval_rerank_fallback_total[1h]) or vector(0)) / clamp_min(sum(rate({__name__=~\"openviking_retrieval_rerank_(used|fallback)_total\"}[1h]) or vector(0)), 0.0001)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.01}, {"color": "red", "value": 0.05}]}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
+    },
+    {
+      "id": 25,
+      "type": "timeseries",
+      "title": "Retrieval rate by context type (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 10},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (context_type) (rate(openviking_retrieval_requests_total[5m]))", "legendFormat": "{{context_type}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "Zero-result ratio by context type (1h)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 10},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (context_type) (rate(openviking_retrieval_zero_result_total[1h])) / clamp_min(sum by (context_type) (rate(openviking_retrieval_requests_total[1h])), 0.0001)", "legendFormat": "{{context_type}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 27,
+      "type": "timeseries",
+      "title": "Retrieval latency quantiles (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 10},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(openviking_retrieval_latency_seconds_bucket[5m])))", "legendFormat": "p50", "refId": "A"},
+        {"expr": "histogram_quantile(0.90, sum by (le) (rate(openviking_retrieval_latency_seconds_bucket[5m])))", "legendFormat": "p90", "refId": "B"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(openviking_retrieval_latency_seconds_bucket[5m])))", "legendFormat": "p99", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Vector search funnel",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "Vectors through the funnel (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 19},
+      "description": "scanned to scored to passed to returned, per second. The index runs flat (exact), so scanned tracks collection size rather than an ANN probe count.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(rate(openviking_vector_scanned_total[5m]))", "legendFormat": "scanned", "refId": "A"},
+        {"expr": "sum(rate(openviking_vector_scored_total[5m]))", "legendFormat": "scored", "refId": "B"},
+        {"expr": "sum(rate(openviking_vector_passed_total[5m]))", "legendFormat": "passed", "refId": "C"},
+        {"expr": "sum(rate(openviking_vector_returned_total[5m]))", "legendFormat": "returned", "refId": "D"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Funnel selectivity (1h)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 19},
+      "description": "What survives each stage. A returned-over-passed collapse means the diversity pass (MMR, lambda 0.7) is throwing away most of what scored well.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(rate(openviking_vector_passed_total[1h])) / clamp_min(sum(rate(openviking_vector_scored_total[1h])), 0.0001)", "legendFormat": "passed / scored", "refId": "A"},
+        {"expr": "sum(rate(openviking_vector_returned_total[1h])) / clamp_min(sum(rate(openviking_vector_passed_total[1h])), 0.0001)", "legendFormat": "returned / passed", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Models",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 27},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Model call rate (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 28},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(rate(openviking_embedding_calls_total[5m]))", "legendFormat": "embedding", "refId": "A"},
+        {"expr": "sum(rate(openviking_rerank_calls_total[5m]))", "legendFormat": "rerank", "refId": "B"},
+        {"expr": "sum(rate(openviking_vlm_calls_total[5m]))", "legendFormat": "vlm", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Model call p95 (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 28},
+      "description": "Embedding and rerank both land on embark through Bifrost. Compare against the same quantiles on the Embark dashboard: a gap between them is gateway or network time.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(openviking_embedding_call_duration_seconds_bucket[5m])))", "legendFormat": "embedding", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(openviking_rerank_call_duration_seconds_bucket[5m])))", "legendFormat": "rerank", "refId": "B"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(openviking_vlm_call_duration_seconds_bucket[5m])))", "legendFormat": "vlm", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Embedding errors by code (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 28},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (error_code) (rate(openviking_embedding_errors_total[5m]))", "legendFormat": "{{error_code}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 43,
+      "type": "timeseries",
+      "title": "Token throughput by model (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (model_name) (rate(openviking_embedding_tokens_total[5m]))", "legendFormat": "embedding {{model_name}}", "refId": "A"},
+        {"expr": "sum by (model_name) (rate(openviking_rerank_tokens_total[5m]))", "legendFormat": "rerank {{model_name}}", "refId": "B"},
+        {"expr": "sum by (model_name) (rate(openviking_vlm_tokens_total[5m]))", "legendFormat": "vlm {{model_name}}", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 44,
+      "type": "timeseries",
+      "title": "Cache hit ratio by level (1h)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "(sum by (level) (rate(openviking_cache_hits_total[1h])) or (sum by (level) (rate(openviking_cache_misses_total[1h])) * 0)) / clamp_min(sum by (level) (rate({__name__=~\"openviking_cache_(hits|misses)_total\"}[1h])), 0.0001)", "legendFormat": "{{level}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Operations & HTTP",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 44},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 50,
+      "type": "timeseries",
+      "title": "Operation rate by status (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 45},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (operation, status) (rate(openviking_operation_requests_total[5m]))", "legendFormat": "{{operation}} {{status}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 51,
+      "type": "timeseries",
+      "title": "Operation p95 (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 45},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, operation) (rate(openviking_operation_duration_seconds_bucket[5m])))", "legendFormat": "{{operation}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 52,
+      "type": "timeseries",
+      "title": "HTTP rate by route and status (5m)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 45},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (route, status) (rate(openviking_http_requests_total[5m]))", "legendFormat": "{{route}} {{status}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 53,
+      "type": "timeseries",
+      "title": "Stage duration p95 (5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 53},
+      "description": "Where a request's time goes inside one operation: planning, vector search, rerank, diversity.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, stage) (rate(openviking_resource_stage_duration_seconds_bucket[5m])))", "legendFormat": "{{stage}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 54,
+      "type": "timeseries",
+      "title": "In-flight HTTP requests",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 53},
+      "description": "One CPU and 1536 MB, so a rising queue here is the task running out of room rather than a slow backend.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (route) (openviking_http_inflight_requests)", "legendFormat": "{{route}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10, "stacking": {"mode": "normal"}}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Queues, tasks & locks",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 61},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 60,
+      "type": "timeseries",
+      "title": "Queue depth",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 62},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (queue) (openviking_queue_pending)", "legendFormat": "{{queue}} pending", "refId": "A"},
+        {"expr": "sum by (queue) (openviking_queue_in_progress)", "legendFormat": "{{queue}} in progress", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 61,
+      "type": "timeseries",
+      "title": "Tasks by state",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 62},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (task_type) (openviking_task_running)", "legendFormat": "{{task_type}} running", "refId": "A"},
+        {"expr": "sum by (task_type) (openviking_task_pending)", "legendFormat": "{{task_type}} pending", "refId": "B"},
+        {"expr": "sum by (task_type) (openviking_task_failed)", "legendFormat": "{{task_type}} failed", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 62,
+      "type": "timeseries",
+      "title": "Locks",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 62},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(openviking_lock_active)", "legendFormat": "active", "refId": "A"},
+        {"expr": "sum(openviking_lock_waiting)", "legendFormat": "waiting", "refId": "B"},
+        {"expr": "sum(openviking_lock_stale)", "legendFormat": "stale", "refId": "C"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "stale"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 63,
+      "type": "timeseries",
+      "title": "Memory extraction actions (1h)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 70},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (action, result) (rate(openviking_memory_operations_total[1h]))", "legendFormat": "{{action}} {{result}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 64,
+      "type": "timeseries",
+      "title": "Dropped metric series",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 70},
+      "description": "The registry refusing a series, usually on a label-cardinality cap. Non-zero means this dashboard is reading an incomplete picture.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (metric) (openviking_metrics_dropped_series_total)", "legendFormat": "{{metric}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["max"]}}
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Hybrid retrieval, from traces",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 78},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 80,
+      "type": "timeseries",
+      "title": "Keyword pass: why it ran or did not (2h)",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 79},
+      "timeFrom": "2h",
+      "description": "The question the Prometheus funnel cannot answer. `fused` is the keyword leg doing its job; `no_keyword_hits` is a query nothing matched lexically; `backend_lacks_keyword_search` means the pass is not running at all, which is a silent downgrade to vector-only retrieval. Read from traces, not Prometheus. Tempo caps a TraceQL metrics query at a 3h range, so this panel is pinned to the last 2 hours and ignores the dashboard's time picker. For anything longer, use the Prometheus panels above.",
+      "datasource": {"type": "tempo", "uid": "tempo"},
+      "targets": [{"queryType": "traceql", "query": "{name=\"ov_retrieval.fuse_keywords\"} | count_over_time() by (span.ov_retrieval.outcome)", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 20, "stacking": {"mode": "normal"}}},
+        "overrides": [
+          {"matcher": {"id": "byRegexp", "options": ".*backend_lacks.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byRegexp", "options": ".*failed.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byRegexp", "options": ".*fused.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["sum"]}}
+    },
+    {
+      "id": 81,
+      "type": "timeseries",
+      "title": "Diversity pass: why it ran or did not (2h)",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 79},
+      "timeFrom": "2h",
+      "description": "`diversified` is the MMR pass reordering results. `too_few_candidates` is normal on small result sets. `backend_lacks_similarity` means ov-postgres is too old to offer pairwise_similarity, so the pass is skipped and results are ranked without it while nothing errors. Read from traces, not Prometheus. Tempo caps a TraceQL metrics query at a 3h range, so this panel is pinned to the last 2 hours and ignores the dashboard's time picker. For anything longer, use the Prometheus panels above.",
+      "datasource": {"type": "tempo", "uid": "tempo"},
+      "targets": [{"queryType": "traceql", "query": "{name=\"ov_retrieval.diversify\"} | count_over_time() by (span.ov_retrieval.outcome)", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 20, "stacking": {"mode": "normal"}}},
+        "overrides": [
+          {"matcher": {"id": "byRegexp", "options": ".*backend_lacks.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byRegexp", "options": ".*failed.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byRegexp", "options": ".*diversified.*"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["sum"]}}
+    },
+    {
+      "id": 82,
+      "type": "timeseries",
+      "title": "pgvector p95 by operation (2h)",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 79},
+      "timeFrom": "2h",
+      "description": "Every query ov-postgres issues, timed at the span. openviking_operation_duration_seconds times the whole retrieval; this says which SQL inside it was slow. Read from traces, not Prometheus. Tempo caps a TraceQL metrics query at a 3h range, so this panel is pinned to the last 2 hours and ignores the dashboard's time picker. For anything longer, use the Prometheus panels above.",
+      "datasource": {"type": "tempo", "uid": "tempo"},
+      "targets": [{"queryType": "traceql", "query": "{name=~\"ov_postgres.*\"} | quantile_over_time(duration, .95) by (name)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"lineWidth": 1, "fillOpacity": 0}}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    },
+    {
+      "id": 83,
+      "type": "timeseries",
+      "title": "Keyword hits per retrieval (2h)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 87},
+      "timeFrom": "2h",
+      "description": "How many URIs the keyword leg actually contributed to the fusion. Zero across the board with the pass enabled means the RRF fusion is running on one leg. This aggregates a span attribute's VALUE, which is the thing span-metrics cannot do and the reason this reads from traces. Read from traces, not Prometheus. Tempo caps a TraceQL metrics query at a 3h range, so this panel is pinned to the last 2 hours and ignores the dashboard's time picker. For anything longer, use the Prometheus panels above.",
+      "datasource": {"type": "tempo", "uid": "tempo"},
+      "targets": [{"queryType": "traceql", "query": "{name=\"ov_retrieval.fuse_keywords\"} | avg_over_time(span.ov_retrieval.keyword_hits)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 1, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 84,
+      "type": "timeseries",
+      "title": "Rows per pgvector search (2h)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 87},
+      "timeFrom": "2h",
+      "description": "Rows the vector search returned per query. Read beside the zero-result ratio: rows going to zero while retrievals continue is the empty-or-wrongly-scoped-collection case OpenVikingNoCandidates alerts on, seen at the SQL rather than inferred from the funnel. Read from traces, not Prometheus. Tempo caps a TraceQL metrics query at a 3h range, so this panel is pinned to the last 2 hours and ignores the dashboard's time picker. For anything longer, use the Prometheus panels above.",
+      "datasource": {"type": "tempo", "uid": "tempo"},
+      "targets": [{"queryType": "traceql", "query": "{name=\"ov_postgres.search_by_vector\"} | avg_over_time(span.ov_postgres.rows)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "custom": {"lineWidth": 1, "fillOpacity": 10}}},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Logs",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 95},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 70,
+      "type": "logs",
+      "title": "openviking logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 96},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{job=\"nomad\", task=~\"openviking.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=openviking&${__url_time_range}", "targetBlank": false}]
+    }
+  ]
+}

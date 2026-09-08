@@ -580,7 +580,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"})'
+              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"}) or absent(up{job="openviking"}) or absent(up{job="driftwatch"})'
               instant: true
               refId: A
           - refId: C
@@ -603,3 +603,382 @@ groups:
         annotations:
           summary: "Scrape job '{{ $labels.job }}' has zero targets"
           description: "The '{{ $labels.job }}' Prometheus scrape job is missing entirely (no targets, or all dropped before scrape). This silently disables all per-target down-alerts for that job. Inspect http://192.168.2.47:9090/targets."
+
+  - orgId: 1
+    name: retrieval-quality
+    folder: Alerts
+    interval: 5m
+    rules:
+      # Every rule in this group compares today against the last fortnight
+      # rather than against a fixed floor. A canary set says nothing about the
+      # number a healthy model should reach -- 60 documents of embark's own
+      # docs is not a benchmark -- and everything about whether the number
+      # moved. A fixed floor here would be a guess that either never fires or
+      # fires forever.
+      #
+      # `for` is 26h on the trend rules because the canary runs daily
+      # (DRIFTWATCH_INTERVAL_SECONDS in services/driftwatch.hcl). That is the
+      # blog's "two consecutive runs, not one anomaly", expressed in the unit
+      # Grafana understands.
+      - uid: alert-canary-recall-drop
+        title: CanaryRecallDrop
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1209600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_recall{stage="embedding", k="10"} < bool (0.95 * avg_over_time(driftwatch_recall{stage="embedding", k="10"}[14d]))'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 26h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "Canary recall@10 is more than 5% below its 14-day average"
+          description: "Two consecutive daily runs have ranked the canary answers worse than the fortnight before them. The embedding model, its quantization, or its prefixes changed. Compare driftwatch_reference_cosine_mean on /d/localstack-retrieval-quality: a cosine drop alongside this says the model changed, a stable cosine says the ranking moved without the vectors moving."
+
+      - uid: alert-embedding-model-drift
+        title: EmbeddingModelDrift
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_reference_cosine_mean < bool 0.92'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        labels: { severity: critical, component: retrieval }
+        annotations:
+          summary: "Canary vectors have drifted from the baseline (cosine < 0.92)"
+          description: "The served embedding model is producing different vectors for the same 60 documents than the ones the baseline recorded. Every vector already in Postgres was written by the OLD model, so the store is now mixing two embedding spaces. If the change was deliberate, re-embed the corpus and then delete /var/lib/driftwatch/baseline.npz on radxa to re-seed. A run with no baseline reports NaN, which does not fire this."
+
+      - uid: alert-embedding-norms-unstable
+        title: EmbeddingNormsUnstable
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1209600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_embedding_norm_stddev > bool (2 * avg_over_time(driftwatch_embedding_norm_stddev[14d]))'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 26h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "Canary vector lengths have twice the spread they had"
+          description: "Vector magnitudes scattered. This is a preprocessing fault rather than a ranking one -- a dropped normalization, a truncation, a tokenizer that changed under the model -- and cosine is blind to all three, so no other alert here will catch it."
+
+      - uid: alert-rerank-demotes-answers
+        title: RerankDemotesAnswers
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_recall{stage="pipeline", k="1"} < bool ignoring(stage) driftwatch_recall{stage="embedding", k="1"}'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 26h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "The reranker is ranking worse than the shortlist it was given"
+          description: "Both stages see the same top 10, and the cross-encoder is putting the answer lower than cosine already had it. Two consecutive runs, so the reranker is costing latency and quality at once. Check driftwatch_recall{stage=\"rerank\"} next: that stage scores a pool the embedder never touched, so if it fell too the reranker itself regressed, and if it held the shortlist changed under it."
+
+      - uid: alert-rerank-canary-drop
+        title: RerankCanaryDrop
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1209600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_recall{stage="rerank", k="1"} < bool (0.95 * avg_over_time(driftwatch_recall{stage="rerank", k="1"}[14d]))'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 26h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "The reranker is ranking worse than it was, on a pool that never changed"
+          description: "This stage scores ten candidates fixed in rerank-goldset.jsonl, so unlike the pipeline number it cannot move because the embedder moved. Two consecutive runs below the fortnight means the rerank model itself regressed. RerankDemotesAnswers will stay quiet through this whenever the reranker is still beating a bare cosine ordering, which is why this rule exists separately."
+
+      - uid: alert-pipeline-recall-drop
+        title: PipelineRecallDrop
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1209600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_recall{stage="pipeline", k="1"} < bool (0.95 * avg_over_time(driftwatch_recall{stage="pipeline", k="1"}[14d]))'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 26h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "What a caller actually receives got worse"
+          description: "The pipeline stage is the delivered result: the embedder's top 10 reordered by the cross-encoder. It is the number that maps to what someone asking OpenViking a question gets back, and the other two rerank rules can both miss a drop in it. RerankCanaryDrop watches a fixed pool, so it cannot see the reranker degrading on the live shortlist's distractors. RerankDemotesAnswers only fires once the reranker is ranking WORSE than bare cosine, so a reranker that is still net-positive but less so moves neither. Read this beside embedding and rerank on /d/localstack-retrieval-quality: if both of those held, the reranker got worse on inputs only the embedder produces."
+
+      - uid: alert-neighbor-overlap-rising
+        title: NeighborOverlapRising
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1209600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'driftwatch_neighbor_overlap > bool (1.25 * avg_over_time(driftwatch_neighbor_overlap[14d]))'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 26h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "Unrelated canary queries are retrieving the same documents"
+          description: "The top-10 sets of different queries overlap a quarter more than they did over the fortnight. The embedder is losing the ability to tell the queries apart, which shows here before it shows in recall."
+
+      - uid: alert-canary-stale
+        title: CanaryStale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '(time() - driftwatch_last_success_timestamp_seconds) > bool 172800'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        labels: { severity: warning, component: retrieval }
+        annotations:
+          summary: "No successful canary run in 48 hours"
+          description: "Every quality number on /d/localstack-retrieval-quality is stale, and the drift alerts beside them are comparing today against a fortnight that stopped moving. A driftwatch that has never succeeded reads the same way, because the gauge starts at 0. Check driftwatch_runs_total{outcome=\"error\"} and the task logs."
+
+      - uid: alert-openviking-rerank-fallback
+        title: OpenVikingRerankFallback
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'sum(rate(openviking_retrieval_rerank_fallback_total[1h]) or vector(0)) / clamp_min(sum(rate({__name__=~"openviking_retrieval_rerank_(used|fallback)_total"}[1h]) or vector(0)), 0.0001) > bool 0.05'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        labels: { severity: warning, component: openviking }
+        annotations:
+          summary: "More than 5% of live retrievals fell back to vector order"
+          description: "OpenViking asked for a rerank and did not get one, so those results were served in cosine order. Nothing errors when this happens and no HTTP status reports it -- the answers are just worse. The rerank path is embark through Bifrost; check both."
+
+      - uid: alert-openviking-no-candidates
+        title: OpenVikingNoCandidates
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '(sum(rate(openviking_vector_scanned_total[1h]) or vector(0)) / clamp_min(sum(rate(openviking_retrieval_requests_total[1h])), 0.0001) < bool 1) and (sum(rate(openviking_retrieval_requests_total[1h])) > 0.005)'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        labels: { severity: critical, component: openviking }
+        annotations:
+          summary: "Vector search is handing back no candidates at all"
+          description: "This is the zero-result case that is NOT a content gap. openviking_vector_scanned_total counts what each descent step returned (hierarchical_retriever.py counts len(quick_results)), so a populated store hands back candidates that then score badly, while an empty or wrongly-scoped one hands back nothing. Fewer than one candidate per retrieval means the search is running against an empty collection. Likeliest cause is account scoping: OpenViking resolves ov_account from the JWT claim and an account that was never created returns 200 over an empty tree. Check openviking_retrieval_backend_readiness and the Postgres collection next. Caveat: if a future OpenViking stops emitting the telemetry summary this metric reads, the series goes absent and this fires on nothing."
+
+      - uid: alert-openviking-zero-results
+        title: OpenVikingZeroResults
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '(sum(rate(openviking_retrieval_zero_result_total[1h])) / clamp_min(sum(rate(openviking_retrieval_requests_total[1h])), 0.0001) > bool clamp_min(1.5 * (sum(rate(openviking_retrieval_zero_result_total[14d])) / clamp_min(sum(rate(openviking_retrieval_requests_total[14d])), 0.0001)), 0.10)) and (sum(rate(openviking_retrieval_requests_total[1h])) > 0.005)'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        labels: { severity: warning, component: openviking }
+        annotations:
+          summary: "Empty retrievals have jumped well above their own fortnight"
+          description: "A zero result is often CORRECT: nobody ingested anything that answers that question. This metric cannot tell a correct empty from a broken one, so the level says nothing and only the CHANGE does. This fires when the last hour is half again worse than the trailing fortnight and above 10% in absolute terms, with at least ~18 requests in the hour so the ratio means something. It still cannot distinguish content being deleted from retrieval breaking, because no metric here records an ingest. OpenVikingNoCandidates is the unambiguous half; check it first."
