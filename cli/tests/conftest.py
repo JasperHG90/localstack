@@ -16,6 +16,47 @@ from localstack_cli.auth.vault_token_file import VAULT_TOKEN
 from localstack_cli.config import CONSUL_HTTP_ADDR, NOMAD_ADDR, VAULT_ADDR
 from tests.fixtures.cluster import HEALTHY_ROUTES, FakeCluster, Handler
 
+# --- pytest 9 compatibility shim for pytest-textual-snapshot ----------------
+#
+# Every snapshot test in test_monitor_tui.py dies with
+# `AttributeError: 'str' object has no attribute 'parent'`, raised inside the
+# plugin rather than our code.
+#
+# pytest_textual_snapshot.node_to_report_path does:
+#
+#     path, _, name = node.reportinfo()
+#     temp = Path(path.parent)          # <- assumes a Path
+#
+# but pytest 9's PyobjMixin.reportinfo returns whatever getfslineno() gives,
+# and its signature is `os.PathLike[str] | str` -- for a plain test function
+# that is a str, so `.parent` does not exist. Upstream 1.1.0 carries the same
+# line unchanged, so there is no release to upgrade to.
+#
+# Coercing the return value is the smallest fix that keeps this repo on
+# pytest 9: the alternative is pinning pytest below 9 for all 489 tests to
+# satisfy 7 of them. Delete this once the plugin accepts a str.
+try:  # pragma: no cover - import guard, not behaviour
+    import pytest_textual_snapshot as _pts  # type: ignore[import-untyped]
+except ImportError:  # the plugin is a dev-only dependency
+    pass
+else:
+    _original_node_to_report_path = _pts.node_to_report_path
+
+    def _node_to_report_path(node: Any) -> Path:
+        original_reportinfo = node.reportinfo
+
+        def reportinfo() -> tuple[Path, Any, Any]:
+            path, lineno, name = original_reportinfo()
+            return Path(path), lineno, name
+
+        node.reportinfo = reportinfo
+        try:
+            return Path(_original_node_to_report_path(node))
+        finally:
+            node.reportinfo = original_reportinfo
+
+    _pts.node_to_report_path = _node_to_report_path
+
 
 @pytest.fixture
 def cluster() -> Iterator[FakeCluster]:
