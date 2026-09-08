@@ -120,5 +120,13 @@ variable "vault_openviking_workloads" {
       account = "lab"
       user    = "jasper"
     }
+    # The Leo transcript consumer (talat-webhook-parser). Writes into
+    # viking://user/jasper/resources/leo/..., so it needs jasper's tree for the
+    # same reason hermes does: OpenViking grants no cross-user write, and the
+    # transcripts belong to the person, not the job.
+    leo-consumer = {
+      account = "lab"
+      user    = "jasper"
+    }
   }
 }
