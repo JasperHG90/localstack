@@ -31,7 +31,8 @@ show:
     echo "derived image : {{ _tag }}"
     echo "base image    : {{ _base }}"
 
-# Build the derived image: upstream OpenViking plus the Postgres backend.
+# Build the derived image: upstream OpenViking plus the Postgres backend
+# and the hybrid retrieval wrapper.
 #
 # --platform linux/arm64 because it runs on radxa. --pull so the base is the
 # current published one rather than a stale local copy; the pin makes that a
@@ -72,6 +73,11 @@ release: build push
 # Does the adapter import? A wrong --target path or a python version bump in
 # the base image breaks the dotted-path backend at OpenViking's startup, not
 # at build time, so this is the check that catches it before deploy.
+#
+# The second run covers the entry point the jobspec starts. `-m ov_retrieval`
+# exercises the import, `install()`'s patch of HierarchicalRetriever and the
+# argument parsing in one command, and it fails the same way a bad --target
+# would: at startup, on the node, with the job already scheduled.
 verify:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -79,3 +85,7 @@ verify:
     echo ">> inspecting ${image}"
     docker run --rm --platform linux/arm64 --entrypoint /app/.venv/bin/python "${image}" -c \
         "from ov_postgres.adapter import PgVectorCollectionAdapter as A; import psycopg; print('adapter', A.__name__); print('psycopg', psycopg.__version__)"
+    echo ">> checking the ov-retrieval entry point"
+    docker run --rm --platform linux/arm64 --entrypoint /app/.venv/bin/python "${image}" \
+        -m ov_retrieval --help > /dev/null
+    echo "ov_retrieval entry point ok"
