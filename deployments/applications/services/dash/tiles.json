@@ -300,14 +300,10 @@
             "node": "radxa-dragon-q6a"
           }
         ],
-        "fe": {
-          "url": "https://openviking.lab.orangecluster.nl",
-          "label": "open dashboard"
-        },
         "connect": {
           "protocol": "REST / MCP API",
           "address": "https://openviking-api.lab.orangecluster.nl",
-          "auth": "Vault identity token. `vault login`, then `vault read -field=token identity/oidc/token/openviking`. Send it as Authorization: Bearer, or in X-API-Key, which upstream also accepts for a JWT. There is no API key any more. The openviking hostname is browsers only -- it is gated by oauth2-proxy and no headless client can hold its session cookie.",
+          "auth": "Vault identity token. `vault login`, then `vault read -field=token identity/oidc/token/openviking`. Send it as Authorization: Bearer, or in X-API-Key, which upstream also accepts for a JWT. There is no API key any more. This is the only hostname: openviking.lab.orangecluster.nl served Web Studio behind oauth2-proxy and both are gone.",
           "example": "OV_TOKEN=$(vault read -field=token identity/oidc/token/openviking); curl -H \"Authorization: Bearer $OV_TOKEN\" \"https://openviking-api.lab.orangecluster.nl/api/v1/fs/ls?uri=viking://\""
         }
       }

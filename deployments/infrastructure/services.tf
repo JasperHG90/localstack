@@ -407,16 +407,21 @@ locals {
     # oauth2-proxy on radxa-dragon-q6a (L1). Only HAProxy (firebat) calls it
     # directly; no direct LAN access is needed since the gate's whole point
     # is that traffic goes through HAProxy first.
-    # Three proxies, three ports: 4180 gates dash, 4181 registry-ui, 4182
-    # OpenViking. All admit HAProxy's node alone, which is why the edge is the
-    # only route in.
+    # Two proxies, two ports: 4180 gates dash, 4181 registry-ui. Both admit
+    # HAProxy's node alone, which is why the edge is the only route in.
+    #
+    # 4182 gated OpenViking until its proxy was deleted. These rules are
+    # ONE-WAY -- `null_resource.firewall` below runs `ufw allow` on every apply
+    # and never revokes -- so that grant outlives this edit and has to be
+    # deleted on the node:
+    #   ssh radxa@192.168.2.50 \
+    #     'sudo ufw delete allow from 192.168.2.30 to any port 4182 proto tcp'
     oauth2_proxy = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
       rules = [
         "allow from 192.168.2.30 to any port 4180 proto tcp",
         "allow from 192.168.2.30 to any port 4181 proto tcp",
-        "allow from 192.168.2.30 to any port 4182 proto tcp",
       ]
     }
   }
@@ -588,24 +593,6 @@ resource "nomad_job" "oauth2_proxy_registry_ui" {
       # EXACTLY rather than as a prefix.
       frontend_upstream = "http://127.0.0.1:8002"
       backend_upstream  = "http://127.0.0.1:8003/api/registry"
-    }
-  )
-}
-
-### OV1: the third proxy, gating OpenViking. Same shape as its two siblings --
-### a network gate that forwards no Vault ID token. OpenViking runs auth_mode
-### api_key and identifies each caller from their own key.
-resource "nomad_job" "oauth2_proxy_openviking" {
-  jobspec = templatefile(
-    "${path.module}/services/oauth2-proxy-openviking.hcl",
-    {
-      oidc_secret   = vault_kv_secret_v2.oauth2_proxy_openviking_oidc_client.path
-      cookie_secret = vault_kv_secret_v2.oauth2_proxy_openviking_cookie_secret.path
-      redirect_url  = local.openviking_redirect_url
-
-      # OpenViking serves its API and Studio from one port, colocated with
-      # this proxy on radxa-dragon-q6a, so a single loopback upstream.
-      upstream = "http://127.0.0.1:1933"
     }
   )
 }

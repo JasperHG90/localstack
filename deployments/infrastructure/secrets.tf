@@ -311,42 +311,6 @@ resource "vault_kv_secret_v2" "oauth2_proxy_registry_ui_cookie_secret" {
   }
 }
 
-### OV1: OpenViking's proxy. Its OWN OIDC client rather than the shared
-### oauth2_proxy one -- see the reason in oidc.tf beside the client itself. The
-### cookie secret IS shared with the other two proxies: they gate different
-### hostnames, so their cookies never collide.
-resource "vault_kv_secret_v2" "oauth2_proxy_openviking_oidc_client" {
-  mount = vault_mount.kvv2.path
-  name  = "default/oauth2-proxy-openviking/oidc"
-  data_json = jsonencode({
-    client_id     = vault_identity_oidc_client.openviking.client_id
-    client_secret = vault_identity_oidc_client.openviking.client_secret
-    issuer        = "https://${var.vault_issuer_host}/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}"
-  })
-  delete_all_versions = false
-  custom_metadata {
-    max_versions = 5
-    data = {
-      managed_by = "terraform"
-    }
-  }
-}
-
-resource "vault_kv_secret_v2" "oauth2_proxy_openviking_cookie_secret" {
-  mount = vault_mount.kvv2.path
-  name  = "default/oauth2-proxy-openviking/cookie"
-  data_json = jsonencode({
-    secret = random_password.oauth2_proxy_cookie_secret.result
-  })
-  delete_all_versions = false
-  custom_metadata {
-    max_versions = 5
-    data = {
-      managed_by = "terraform"
-    }
-  }
-}
-
 ### --- backup job credentials -----------------------------------------------
 
 resource "vault_kv_secret_v2" "backup_postgres_db_credentials" {

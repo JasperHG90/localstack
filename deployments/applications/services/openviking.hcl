@@ -61,13 +61,43 @@ job "openviking" {
           method   = "GET"
           interval = "30s"
           timeout  = "5s"
+
+          ### Covers what bypassing the image entrypoint gave up. That script
+          ### polled /health for 120s and exited non-zero if the server never
+          ### became ready, which failed the task and let the restart policy
+          ### act. Without this stanza a server that starts but never readies
+          ### is deregistered and left running. Four intervals is the same 120s
+          ### budget, and grace covers the model and backend warm.
+          ###
+          ### Not the same behavior, deliberately: the entrypoint checked once,
+          ### at startup, and never again. This also restarts a task whose
+          ### /ready flaps for two minutes in steady state.
+          check_restart {
+            limit = 4
+            grace = "60s"
+          }
         }
       }
 
+      ### `command` and `args` land as the container command, so the image's
+      ### `openviking-entrypoint` receives them and `exec`s them on its first
+      ### non-bot argument. Three things it would have done are given up with
+      ### that exec: writing the config, which the template below already did;
+      ### polling /health, which `check_restart` above now covers; and honoring
+      ### `OPENVIKING_SERVER_HOST`, `OPENVIKING_SERVER_PORT` and
+      ### `OPENVIKING_WITH_BOT`, which are dead here since the flags are
+      ### written out. Those flags are what the entrypoint would have passed.
+      ###
+      ### `python -m`, not the `ov-retrieval-server` console script. A --target
+      ### install puts that script under site-packages/bin, which is not on
+      ### PATH, and stamps it with the building interpreter rather than the
+      ### venv's. Naming the venv python resolves both.
       config {
         image        = "${openviking_image}"
         ports        = ["http"]
         network_mode = "host"
+        command      = "/app/.venv/bin/python"
+        args         = ["-m", "ov_retrieval", "--host", "0.0.0.0", "--port", "1933", "--with-bot"]
       }
 
       volume_mount {
@@ -75,8 +105,41 @@ job "openviking" {
         destination = "/app/.openviking"
       }
 
+      ### Web Studio mounts itself from whatever this names, and skips the
+      ### mount when the directory holds no index.html (server/app.py). There
+      ### is no config-file switch. Pointing it at a path that does not exist
+      ### is how the bundle is turned off, and it takes `/` with it: the root
+      ### redirect is registered inside the same block. Studio always answered
+      ### without a token, so the api hostname served it to anyone who reached
+      ### the edge long before oauth2-proxy was deleted. Unmounting is what
+      ### closes that, not the proxy's removal.
+      ###
+      ### The OV_RETRIEVAL_ block restates ov-retrieval's own defaults rather
+      ### than inheriting them. Cost is one reason: `pool_factor` multiplies
+      ### how many candidates the hierarchical descent and the Bifrost rerank
+      ### both run over, and this task holds one CPU and 1536 MB. None of these
+      ### has been measured on this hardware, so pinning them keeps a future
+      ### upstream default from moving the retrieval path without a commit
+      ### here.
+      ###
+      ### `mmr_lambda` is pinned for a second reason: the diversity pass runs
+      ### only when it is below 1.0, so a default that moved to 1.0 would turn
+      ### the pass off while `OV_RETRIEVAL_MMR_ENABLED` still read as on.
+      ###
+      ### `mmr_embedding_weight` and `mmr_entity_weight` are left alone. They
+      ### split one similarity blend between cosine and tag overlap, so a
+      ### change to either shifts ranking within the pass rather than switching
+      ### anything off or multiplying any cost.
       env {
-        OPENVIKING_CONFIG_FILE = "/secrets/ov.conf"
+        OPENVIKING_CONFIG_FILE    = "/secrets/ov.conf"
+        OPENVIKING_WEB_STUDIO_DIR = "/nonexistent"
+
+        OV_RETRIEVAL_KEYWORD_ENABLED = "true"
+        OV_RETRIEVAL_KEYWORD_WEIGHT  = "0.7"
+        OV_RETRIEVAL_RRF_K           = "60"
+        OV_RETRIEVAL_POOL_FACTOR     = "4"
+        OV_RETRIEVAL_MMR_ENABLED     = "true"
+        OV_RETRIEVAL_MMR_LAMBDA      = "0.7"
       }
 
       ### ov.conf. The document itself is services/openviking/ov.conf.json,

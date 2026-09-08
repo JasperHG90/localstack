@@ -157,20 +157,27 @@ locals {
     # OpenViking on radxa-dragon-q6a. Three named callers, not the LAN: this
     # was briefly `192.168.0.0/16` because headless clients had no route in at
     # all, and HAProxy fronting 1933 as openviking-api.lab.orangecluster.nl is
-    # what made that unnecessary. 192.168.2.50 is the colocated oauth2-proxy,
-    # .30 is HAProxy, .47 is Prometheus scraping /metrics.
+    # what made that unnecessary. .30 is HAProxy, .47 is Prometheus scraping
+    # /metrics.
     #
-    # This port is NOT unauthenticated. Under auth_mode api_key every call
-    # needs a user key -- /api/v1/fs/ls without one is a 401 -- so the proxy is
-    # not the only thing standing here. It was under auth_mode oidc, which is
-    # when this rule was written node-only.
+    # 192.168.2.50 is this same host, and it stays for the reason the `dash`
+    # entry above keeps its twin. Its caller used to be the colocated
+    # oauth2-proxy, which is gone; hermes now dials 192.168.2.50:1933 and
+    # reaches it over lo, because it runs `network_mode = "host"` on this node.
+    # So the rule admits nothing today. It is here in case that ever changes,
+    # and dropping it would trade a live single-caller grant for a comment,
+    # which is not a trip-wire.
     #
-    # What IS open without a key, measured against the live service rather than
-    # assumed: /ready, /health, /bot/v1/health, /docs, /openapi.json (the full
-    # 113-path schema), the Studio bundle, and /metrics, which has no auth
-    # dependency and is now enabled. That is why .47 is on this list and why
-    # narrowing it mattered: those three callers can read the metrics, the LAN
-    # cannot.
+    # This port is NOT unauthenticated. Under auth_mode oidc every call needs a
+    # Vault-signed token -- /api/v1/fs/ls without one is a 401 -- so the edge is
+    # not the only thing standing here.
+    #
+    # What IS open without a token, measured against the live service rather
+    # than assumed: /ready, /health, /bot/v1/health, /docs, /openapi.json (the
+    # full 113-path schema) and /metrics, which has no auth dependency and is
+    # now enabled. That is why .47 is on this list and why narrowing it
+    # mattered: those callers can read the metrics, the LAN cannot. The Studio
+    # bundle was on that list until OPENVIKING_WEB_STUDIO_DIR unmounted it.
     #
     # These rules are ONE-WAY. An apply ADDS them and removes nothing, so the
     # earlier 192.168.0.0/16 rule outlives this edit and has to be deleted on
@@ -475,7 +482,7 @@ resource "nomad_job" "openviking" {
       openviking_host     = "192.168.2.50"
 
       openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
-      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-1"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-3"
 
       # The config document, already parsed, substituted and re-encoded. Every
       # host and endpoint it needs is baked in above, so the jobspec takes none

@@ -2,12 +2,14 @@
 """Assert the parts of OpenViking's config that must not drift.
 
 The config is `services/openviking/ov.conf.json`, a real JSON document that
-Terraform round-trips into the jobspec. These fifteen settings each fail in a way a
-healthy-looking service would hide:
+Terraform round-trips into the jobspec. These sixteen settings each fail in a way
+a healthy-looking service would hide:
 
     dimension        a wrong value corrupts the collection silently
     backend          the vectordb one, not agfs's, which is declared first
     custom_params    ov-postgres forbids unknown keys; a typo fails at startup
+    keyword_fields   unset, ov-postgres adds `content` and the index expression
+                     stops matching the one the collection already carries
     rerank target    pointing past Bifrost loses gateway governance
     auth_mode        anything but oidc means Vault stopped being the identity
     oidc.issuer      a wrong value starts fine and 401s every request after
@@ -27,6 +29,19 @@ healthy-looking service would hide:
     metrics          off, /metrics 404s and the Prometheus job scrapes nothing
     traces           off or unpointed, and Tempo receives nothing, silently
     query_planner    past Bifrost, or unset and it silently falls back to vlm
+
+Two more live in the jobspec rather than in that document, and are asserted here
+for the same reason.
+
+`OPENVIKING_WEB_STUDIO_DIR`: upstream mounts Web Studio whenever it finds an
+index.html and offers no config switch, so naming a path that does not exist is
+the only way to turn it off. Studio answers without a token, so dropping that
+line republishes the UI and every other gate stays green.
+
+`command` and `args`: the job starts `python -m ov_retrieval`, a wrapper that
+adds a keyword leg and a diversity pass before handing over to the ordinary
+server. Drop either line and the image entrypoint runs the stock server, which
+comes up healthy and answers every search without them.
 
 Two settings this file used to assert are gone, and their mutants with them.
 Under `oidc` the auth plugin never consults `server.root_api_key`, so its
@@ -49,11 +64,35 @@ Run with `--self-test` to check the checker.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 CONFIG = Path("deployments/applications/services/openviking/ov.conf.json")
+
+# The jobspec, checked for one env var only. See STUDIO_ENV below.
+JOBSPEC = Path("deployments/applications/services/openviking.hcl")
+STUDIO_ENV = "OPENVIKING_WEB_STUDIO_DIR"
+
+# The one blessed value. Upstream `.strip()`s the variable and treats the empty
+# result as unset, so "" and "   " REMOUNT Studio while reading as disabled.
+# Pinning one sentinel rather than "any non-empty path" also means a deliberate
+# remount has to edit this file, where the reason gets written down.
+STUDIO_DIR_OFF = "/nonexistent"
+
+_STUDIO_ASSIGNMENT = re.compile(rf'^\s*{STUDIO_ENV}\s*=\s*"([^"]*)"')
+
+# The hybrid retrieval entry point. `ov_retrieval.__main__` patches OpenViking's
+# HierarchicalRetriever and then hands over to the ordinary server, so dropping
+# these two lines falls back to the image's own entrypoint, `openviking-server`,
+# and retrieval goes back to vector-only. The wrapper's fatal-on-failure check
+# never fires, because the wrapper is what stopped running.
+RETRIEVAL_COMMAND = "/app/.venv/bin/python"
+RETRIEVAL_MODULE = "ov_retrieval"
+
+_COMMAND_ASSIGNMENT = re.compile(r'^\s*command\s*=\s*"([^"]*)"')
+_ARGS_ASSIGNMENT = re.compile(r"^\s*args\s*=\s*\[(.*)\]")
 
 EXPECTED_DIMENSION = 768
 EXPECTED_AUTH_MODE = "oidc"
@@ -114,6 +153,9 @@ ALLOWED_CUSTOM_PARAMS = frozenset(
         "iterative_scan",
         "distance",
         "keyword_fields",
+        "keyword_query_mode",
+        "keyword_rank",
+        "store_content",
         "text_search_config",
         "tz_policy",
         "min_pool_size",
@@ -122,6 +164,109 @@ ALLOWED_CUSTOM_PARAMS = frozenset(
         "application_name",
     }
 )
+
+# Written out rather than left to the default. From ov-postgres 0.3.0
+# `resolved_keyword_fields` appends `content` whenever `store_content` is on and
+# this key is unset, which changes the full-text index expression. The live
+# index carries the five below, `create_index` never re-runs on a collection
+# that already exists, and `ensure_indexes` is a manual call, so the drift shows
+# up as keyword search seq-scanning rather than as an error.
+EXPECTED_KEYWORD_FIELDS = [
+    "name",
+    "description",
+    "abstract",
+    "tags",
+    "search_tags",
+]
+
+
+def jobspec_failures(text: str) -> list[str]:
+    """Assert the two things the jobspec carries that fail silently.
+
+    The second is the hybrid retrieval entry point, checked by
+    `_retrieval_failures` below. The first is Web Studio:
+
+    Upstream mounts the SPA whenever it finds an index.html, and offers no
+    config switch: `OPENVIKING_WEB_STUDIO_DIR` naming a path that does not
+    exist is the only lever. Studio answers without a token and HAProxy
+    forwards every path to 1933, so dropping this one line republishes the UI
+    with every other gate still green.
+
+    Reads the VALUE, not the name. Presence alone would pass on `= ""`, which
+    upstream strips and treats as unset, and on the variable appearing in a
+    comment. Commented lines are skipped for the same reason.
+
+    It does NOT check which task's `env` block the assignment sits in. One
+    task exists today; a second one carrying the variable would satisfy this.
+    """
+    values = [
+        match.group(1)
+        for line in text.splitlines()
+        if not line.lstrip().startswith("#")
+        for match in [_STUDIO_ASSIGNMENT.match(line)]
+        if match
+    ]
+
+    if not values:
+        found = [
+            (
+                f"{STUDIO_ENV} is not assigned, so upstream mounts Web Studio "
+                "at /studio. It answers without a token and nothing else in "
+                "this repo refuses that request."
+            )
+        ]
+    else:
+        found = [
+            (
+                f"{STUDIO_ENV} is {value!r}, expected {STUDIO_DIR_OFF!r}. Upstream "
+                "strips the value and falls back to the packaged bundle when the "
+                "result is empty, so a blank path remounts Studio while reading "
+                "as disabled."
+            )
+            for value in values
+            if value != STUDIO_DIR_OFF
+        ]
+
+    return found + _retrieval_failures(text)
+
+
+def _retrieval_failures(text: str) -> list[str]:
+    """Assert the jobspec starts OpenViking through the ov-retrieval wrapper.
+
+    Both lines are load-bearing and neither errors when removed. Without
+    `command`, podman runs the image's own entrypoint, which starts
+    `openviking-server` directly; the server comes up, `/ready` passes, and
+    every search silently loses its keyword leg and its diversity pass.
+
+    Reads values, and skips commented lines, for the reasons the Studio check
+    above gives. `args` is matched on the module rather than on the whole list
+    so the host, port and bot flags stay editable without touching this file.
+    """
+    lines = [line for line in text.splitlines() if not line.lstrip().startswith("#")]
+
+    commands = [
+        m.group(1) for line in lines for m in [_COMMAND_ASSIGNMENT.match(line)] if m
+    ]
+    if RETRIEVAL_COMMAND not in commands:
+        return [
+            (
+                f"the jobspec does not set command = {RETRIEVAL_COMMAND!r}, so "
+                "the image entrypoint runs openviking-server and retrieval "
+                "falls back to vector-only with every other gate still green."
+            )
+        ]
+
+    args = [m.group(1) for line in lines for m in [_ARGS_ASSIGNMENT.match(line)] if m]
+    if not any(f'"{RETRIEVAL_MODULE}"' in arg and '"-m"' in arg for arg in args):
+        return [
+            (
+                f"the jobspec's args do not carry -m {RETRIEVAL_MODULE}, so the "
+                "python named by command starts something other than the "
+                "hybrid retrieval wrapper."
+            )
+        ]
+
+    return []
 
 
 def failures(config: dict[str, Any]) -> list[str]:
@@ -144,11 +289,22 @@ def failures(config: dict[str, Any]) -> list[str]:
             f"storage.vectordb.backend is {backend!r}, expected {EXPECTED_BACKEND!r}"
         )
 
-    unknown = set(vectordb.get("custom_params", {})) - ALLOWED_CUSTOM_PARAMS
+    custom_params = vectordb.get("custom_params", {})
+
+    unknown = set(custom_params) - ALLOWED_CUSTOM_PARAMS
     if unknown:
         found.append(
             f"custom_params carries {sorted(unknown)}, which ov-postgres forbids "
             "(its config model is extra=forbid, so this fails at startup)"
+        )
+
+    keyword_fields = custom_params.get("keyword_fields")
+    if keyword_fields != EXPECTED_KEYWORD_FIELDS:
+        found.append(
+            f"custom_params.keyword_fields is {keyword_fields!r}, expected "
+            f"{EXPECTED_KEYWORD_FIELDS!r}. Unset, ov-postgres appends 'content' "
+            "because store_content is on, and the six-column expression no "
+            "longer matches the index the collection already carries."
         )
 
     rerank_base = config.get("rerank", {}).get("api_base", "")
@@ -312,6 +468,8 @@ CLEAN: dict[str, Any] = {
             "custom_params": {
                 "dsn": "postgresql://u:p@h:5432/openviking",
                 "schema": "openviking",
+                "store_content": True,
+                "keyword_fields": list(EXPECTED_KEYWORD_FIELDS),
             },
         },
     },
@@ -375,6 +533,22 @@ def _self_test() -> int:
         "custom_params": (
             _mutate(("storage", "vectordb", "custom_params"), {"schemaa": "x"}),
             "custom_params",
+        ),
+        # Dropping the key is the silent one: ov-postgres then appends
+        # `content` on its own and the index expression stops matching.
+        "keyword_fields_absent": (
+            _mutate(
+                ("storage", "vectordb", "custom_params"),
+                {"dsn": "postgresql://u:p@h:5432/openviking", "store_content": True},
+            ),
+            "keyword_fields",
+        ),
+        "keyword_fields_with_content": (
+            _mutate(
+                ("storage", "vectordb", "custom_params", "keyword_fields"),
+                [*EXPECTED_KEYWORD_FIELDS, "content"],
+            ),
+            "keyword_fields",
         ),
         "rerank": (
             _mutate(("rerank", "api_base"), "http://192.168.2.46:8000/v1"),
@@ -499,6 +673,57 @@ def _self_test() -> int:
             )
             return 1
 
+    good_args = (
+        f'args = ["-m", "{RETRIEVAL_MODULE}", "--host", "0.0.0.0", '
+        '"--port", "1933", "--with-bot"]'
+    )
+
+    def config_block(*lines: str) -> str:
+        body = "".join(f"    {line}\n" for line in lines)
+        return "  config {\n" + body + "  }\n"
+
+    good_launch = config_block(f'command = "{RETRIEVAL_COMMAND}"', good_args)
+
+    def env_block(*lines: str) -> str:
+        body = "".join(f"    {line}\n" for line in lines)
+        return good_launch + "  env {\n" + body + "  }\n"
+
+    clean_jobspec = env_block(
+        'OPENVIKING_CONFIG_FILE = "/secrets/ov.conf"',
+        f'{STUDIO_ENV} = "{STUDIO_DIR_OFF}"',
+    )
+    if jobspec_failures(clean_jobspec):
+        print("self-test: a clean jobspec was flagged", file=sys.stderr)
+        return 1
+
+    good_env = "  env {\n" + f'    {STUDIO_ENV} = "{STUDIO_DIR_OFF}"\n' + "  }\n"
+
+    # The first five keep Studio mounted while reading as if it did not. The
+    # last three start the stock server while reading as if hybrid retrieval
+    # were installed.
+    jobspec_mutants = {
+        "absent": env_block('OPENVIKING_CONFIG_FILE = "/secrets/ov.conf"'),
+        "commented": env_block(f'# {STUDIO_ENV} = "{STUDIO_DIR_OFF}"'),
+        "empty": env_block(f'{STUDIO_ENV} = ""'),
+        "whitespace": env_block(f'{STUDIO_ENV} = "   "'),
+        "real_bundle": env_block(f'{STUDIO_ENV} = "/app/web_studio/dist"'),
+        "command_absent": config_block(good_args) + good_env,
+        "command_commented": (
+            config_block(f'# command = "{RETRIEVAL_COMMAND}"', good_args) + good_env
+        ),
+        "args_without_module": (
+            config_block(
+                f'command = "{RETRIEVAL_COMMAND}"',
+                'args = ["-m", "openviking_cli.server_bootstrap"]',
+            )
+            + good_env
+        ),
+    }
+    for name, jobspec in jobspec_mutants.items():
+        if not jobspec_failures(jobspec):
+            print(f"self-test: the {name} jobspec mutant passed", file=sys.stderr)
+            return 1
+
     print("self-test: ok")
     return 0
 
@@ -520,7 +745,16 @@ def main(argv: list[str]) -> int:
     found = failures(config)
     for failure in found:
         print(f"{CONFIG}: {failure}", file=sys.stderr)
-    return 1 if found else 0
+
+    if not JOBSPEC.exists():
+        print(f"{JOBSPEC}: not found", file=sys.stderr)
+        return 1
+
+    jobspec_found = jobspec_failures(JOBSPEC.read_text())
+    for failure in jobspec_found:
+        print(f"{JOBSPEC}: {failure}", file=sys.stderr)
+
+    return 1 if found or jobspec_found else 0
 
 
 if __name__ == "__main__":

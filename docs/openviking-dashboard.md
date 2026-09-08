@@ -9,6 +9,16 @@
 > that Web Studio "refuses to run" under `oidc` (it renders; only its connection
 > panel is replaced). The search and retrieval half is untouched and still
 > stands.
+>
+> **SUPERSEDED again, and further.** `oauth2-proxy-openviking` is gone, along
+> with its jobspec, its Vault OIDC client and its HAProxy backend. Web Studio
+> is unmounted, and `openviking.lab.orangecluster.nl` routes nowhere. So every
+> mechanism this document builds on is absent: there is no proxy to sit behind
+> and no `X-Forwarded-User` to read, and the two identity systems it proposes
+> to collapse are already one. What survives is the hostname, which is free,
+> and the search and retrieval half below. A dashboard built now would carry a
+> Vault session of its own. See "No browser surface, and the hostname that is
+> now free" in `docs/openviking.md`.
 
 **Worth doing, roughly four loop tickets, and the reason is authentication.**
 A dashboard we own can hold each person's OpenViking key server-side and
@@ -37,9 +47,9 @@ A dashboard we own removes that trade instead of paying it:
 
 1. The app sits behind oauth2-proxy, which already injects
    `X-Forwarded-User`, `-Email` and `-Preferred-Username`. That is not a
-   change we request. `PASS_USER_HEADERS` defaults true in v7 and
-   `deployments/infrastructure/services/oauth2-proxy-openviking.hcl` documents
-   the four headers as inert because OpenViking ignores them.
+   change we request. `PASS_USER_HEADERS` defaults true in v7. OpenViking's
+   own proxy documented the four headers as inert, until that jobspec was
+   deleted.
 2. The backend reads that header, fetches that person's key from Vault under
    `secret/default/openviking-users/<user>`, and calls OpenViking as them.
 3. The browser holds a session cookie that expires with the Vault token in an
@@ -139,6 +149,10 @@ at collection creation (`ddl.py:601`, called from `collection.py:525`), and
 
 No OpenViking HTTP route calls it. The index is maintained on every write and
 nothing can query it.
+
+**Shipped.** `ov-retrieval` now does exactly what the next paragraph proposes,
+as a wrapper that patches the retriever before the server starts. The heading
+above is kept as the record of the finding, not as current state.
 
 So we can have real hybrid search without sparse vectors: run
 `/api/v1/search/find` for the dense side, query that Postgres table for the
@@ -298,8 +312,9 @@ Read from the installed copies, not from upstream documentation:
 | Thing | Version | Where |
 |---|---|---|
 | OpenViking | 0.4.17.1 | the tag `deployments/applications/services.tf` pins as `openviking_base_image` |
-| ov-postgres | 0.2.0 | pinned by git tag in `deployments/applications/services/openviking/Dockerfile.openviking`, from our own `openviking_extensions` repo |
+| ov-postgres | 0.3.0 | pinned by git tag in `deployments/applications/services/openviking/Dockerfile.openviking`, from our own `openviking_extensions` repo |
+| ov-retrieval | 0.1.0 | pinned in the same file, same repo, same commit as ov-postgres 0.3.0 |
 
-That second row matters for the search plan. We own ov-postgres, so exposing
-`search_by_keywords` through a supported interface is a change we can make
-rather than one we must work around.
+Those rows matter for the search plan, and it has since been carried out. We
+own ov-postgres, so exposing `search_by_keywords` was a change we could make
+rather than one we had to work around. ov-retrieval is what calls it.

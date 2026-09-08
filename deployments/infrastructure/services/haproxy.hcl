@@ -107,7 +107,6 @@ frontend https_in
     acl is_dash       hdr(host) -i dash.lab.orangecluster.nl
     acl is_registry   hdr(host) -i registry.lab.orangecluster.nl
     acl is_registryui hdr(host) -i registry-ui.lab.orangecluster.nl
-    acl is_openviking hdr(host) -i openviking.lab.orangecluster.nl
     acl is_ovapi      hdr(host) -i openviking-api.lab.orangecluster.nl
 
     use_backend minio      if is_minio
@@ -122,7 +121,6 @@ frontend https_in
     use_backend dash       if is_dash
     use_backend registry   if is_registry
     use_backend registryui if is_registryui
-    use_backend openviking if is_openviking
     use_backend ovapi      if is_ovapi
 
 frontend stats
@@ -187,15 +185,12 @@ backend dash
 backend registryui
     server registryui1 192.168.2.50:4181 check
 
-backend openviking
-    server openviking1 192.168.2.50:4182 check
-
-# openviking-api: the SAME service as the backend above, reached on its own
-# port instead of through oauth2-proxy. The proxy gates browsers with a Vault
-# session cookie, which no CLI or MCP client can hold, so a headless caller had
-# no route through the edge at all.
+# openviking-api: the ONLY route to OpenViking. `openviking.lab` used to reach
+# the same service through oauth2-proxy on 4182; that proxy is gone, and the
+# name is now free for a dashboard we host ourselves. An unmatched host gets a
+# 503 here, since this frontend declares no default_backend.
 #
-# Not an auth exemption. OpenViking runs auth_mode api_key and refuses an
+# Not an auth exemption. OpenViking runs auth_mode oidc and refuses an
 # unauthenticated call on this port with a 401 -- measured against the live
 # service, on /api/v1/fs/ls and on /mcp. Only /ready and /health are open, and
 # they carry no data. Same shape as the bifrost backend above, which skips the

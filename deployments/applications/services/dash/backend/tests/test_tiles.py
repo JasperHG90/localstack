@@ -233,11 +233,13 @@ def test_the_shipped_config_has_no_memex_openviking_api_or_registry_ui_tile() ->
     assert "registry-ui" not in keys
 
 
-def test_the_shipped_openviking_tile_carries_both_fe_and_connect() -> None:
+def test_the_shipped_openviking_tile_carries_connect_and_no_frontend() -> None:
     tile = next(t for g in load_tiles(SHIPPED_TILES) for t in g.tiles if t.key == "openviking")
 
-    assert tile.fe is not None
-    assert tile.fe.url == "https://openviking.lab.orangecluster.nl"
+    # Web Studio is unmounted and the oauth2-proxy that fronted
+    # openviking.lab.orangecluster.nl is gone, so the card would link at a name
+    # that answers 503. Restore `fe` when a dashboard is hosted there.
+    assert tile.fe is None
     assert tile.connect is not None
     assert "openviking-api.lab.orangecluster.nl" in tile.connect.address
 

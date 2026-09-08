@@ -2,16 +2,15 @@
 
 A context store for agents, on radxa beside Bifrost. Vectors go to Postgres,
 blobs to MinIO, embeddings and rerank through Bifrost to embark, image
-summaries through Bifrost to ollama, and browser logins through Vault.
+summaries through Bifrost to ollama. There is no browser surface: callers
+authenticate to the API with a Vault identity token.
 
 ## What runs where
 
 | Piece | Where |
 |---|---|
 | Job | `openviking` on radxa-dragon-q6a, port 1933, open to the LAN |
-| Browsers | `https://openviking.lab.orangecluster.nl` |
 | CLI and agents | `https://openviking-api.lab.orangecluster.nl` |
-| Login gate | `oauth2-proxy-openviking` on port 4182, browsers only |
 | Vectors | Postgres `openviking` database, `openviking` schema, pgvector |
 | Blobs | MinIO `openviking` bucket |
 | Models | Bifrost, as `embark/embedding` and `embark/reranker` |
@@ -20,6 +19,32 @@ summaries through Bifrost to ollama, and browser logins through Vault.
 
 The image is derived, and building it is an operator step. See
 `deployments/applications/services/openviking/README.md`.
+
+## Retrieval: the job does not run `openviking-server`
+
+It runs `python -m ov_retrieval`, a wrapper from our own `openviking_extensions`
+repo. OpenViking offers no plugin hook, so the wrapper patches its retriever and
+then starts the ordinary server. Two things change for anyone reading results:
+
+- **A keyword leg.** Every search now also runs a lexical query against the
+  Postgres full-text index and fuses the two rankings with reciprocal rank
+  fusion. An exact identifier or acronym the embedding missed can now surface.
+- **A diversity pass.** Maximal marginal relevance drops results that mostly
+  repeat the one above them, so five near-identical documents no longer fill
+  five of ten slots.
+
+Fusion ranks by *position*, not by score, so a result's place in the answer no
+longer tracks its cosine similarity. Do not read the ordering as a distance.
+
+The knobs live in the jobspec's `env` block as `OV_RETRIEVAL_*`, pinned to the
+package defaults rather than inherited. `scripts/check_openviking_config.py`
+asserts the `command` and `args` that select the wrapper, because dropping
+either one starts the stock server, which comes up healthy and answers every
+search without both features.
+
+Bodies are stored but not indexed: `store_content` is on, `keyword_fields` names
+the five default columns, and the reasoning for that gap is in the service
+README beside `ov.conf.json`.
 
 ## Authentication: Vault is the identity
 
@@ -148,10 +173,10 @@ credential. The Terraform provisioner that used to create accounts is gone,
 because its call could not authenticate and its failure would have failed the
 whole apply.
 
-**Web Studio's settings page cannot collect a credential.** Upstream replaces
-the connection form with an unsupported-mode alert under `oidc`. Studio itself
-still renders; only that panel is dead, and there is nothing for it to collect
-because the token comes from Vault.
+**Web Studio is unmounted.** Its settings page could not collect a credential
+anyway: upstream replaces the connection form with an unsupported-mode alert
+under `oidc`, and there is nothing for it to collect because the token comes
+from Vault. See "No browser surface" below.
 
 **Hermes needs a sidecar**, because its credential cannot live in its
 environment. See the authentication section above.
@@ -159,14 +184,9 @@ environment. See the authentication section above.
 ## Using it from the CLI and from an agent
 
 Both authenticate with a Vault identity token, and both use
-`openviking-api.lab.orangecluster.nl`, which is its own HAProxy route straight
-to port 1933. The `openviking.` hostname is for browsers only: oauth2-proxy
-gates it with a Vault session cookie, and no CLI or MCP client can hold one.
-
-Two hostnames rather than an exemption on the proxy. `bifrost.` already works
-this way for the same reason, and `scripts/check_oauth2_proxy_guard.py` forbids
-a skip-auth route on an oauth2-proxy. The API hostname is not unguarded:
-OpenViking answers 401 there without a token, on the REST API and on `/mcp`.
+`openviking-api.lab.orangecluster.nl`, which is an HAProxy route straight to
+port 1933. That hostname is not unguarded: OpenViking answers 401 there without
+a token, on the REST API and on `/mcp`.
 
 ```console
 $ vault login -method=userpass username=jasper
@@ -218,7 +238,7 @@ flapped every few minutes. The sidecar reads the token from a file per request
 instead, Nomad keeps that file fresh with `change_mode = "noop"`, and Hermes
 holds a constant endpoint for the life of the process.
 
-## Two forks, and how they were settled
+## Three forks, and how they were settled
 
 ### MinIO uses a static key, not workload identity
 
@@ -255,6 +275,26 @@ Pointing rerank straight at embark would have worked without that upgrade, and
 was rejected: it would lose Bifrost's logging, governance and virtual-key
 accounting for one call type.
 
+### No browser surface, and the hostname that is now free
+
+`openviking.lab.orangecluster.nl` used to reach the same service through
+`oauth2-proxy-openviking` on port 4182, and the only thing on it was upstream's
+Web Studio. Studio cannot collect a credential under `oidc`, so the proxy gated
+a UI nobody could finish logging into. Both are gone: the job, its Vault OIDC
+client, its two KV entries, and the HAProxy backend.
+
+Studio is unmounted with `OPENVIKING_WEB_STUDIO_DIR` pointing at a path that
+does not exist. There is no config-file switch for it, and the variable takes
+`/` down with it, because the root redirect is registered inside the same block
+that mounts the bundle. Leaving it mounted with the proxy gone would have
+served the UI to anyone reaching the edge: Studio answers without a token.
+
+The name now resolves to a 503, since the HAProxy frontend declares no
+`default_backend`. It is reserved for a dashboard we host ourselves. See
+`docs/openviking-dashboard.md`, whose authentication half this change
+supersedes again: the case for holding a key server-side is dead, and what a
+dashboard would carry is a Vault session.
+
 ## Verifying a deployment
 
 `scripts/check_openviking_config.py` runs in pre-commit and asserts the config
@@ -264,6 +304,12 @@ values that fail silently: the embedding dimension, the vector backend, the
 fallbacks), the VLM's model and `api_base`, the query planner's model and
 `api_base`, `metrics.enabled` and its Prometheus exporter, and `traces.enabled`
 with its endpoint.
+
+It reads one value outside that document: `OPENVIKING_WEB_STUDIO_DIR` in
+`deployments/applications/services/openviking.hcl`, which must be
+`/nonexistent`. Upstream strips the value and falls back to the packaged
+bundle when the result is empty, so `""` remounts Studio while reading as
+disabled. The guard checks the value for that reason, not just the name.
 
 Two it used to assert are gone. Under `oidc` the plugin never consults
 `server.root_api_key`, and nothing on the request path issues or verifies a
@@ -275,16 +321,14 @@ It does **not** measure anything about a running service. These checks need a
 deployment and nothing in this repo automates them:
 
 ```console
-# the service is up and its backends opened. It MUST be the api hostname:
-# openviking.lab.orangecluster.nl/ready answers 200 with the body "OK", which
-# is oauth2-proxy's OWN health endpoint and says nothing about OpenViking.
-# That check passes with the service dead
+# the service is up and its backends opened
 $ curl -s "$OV_URL/ready"
 
-# a browser login lands authenticated. Studio renders, but its connection
-# panel shows an unsupported-auth-mode alert: under oidc there is no key for
-# it to collect, and the token comes from Vault
-$ open https://openviking.lab.orangecluster.nl/
+# Studio is unmounted and openviking.lab.orangecluster.nl routes nowhere.
+# Both are expected to fail: 404 from OpenViking, 503 from HAProxy
+$ curl -s -o /dev/null -w "%{http_code}\n" "$OV_URL/studio/"   # expect 404
+$ curl -s -o /dev/null -w "%{http_code}\n" \
+    https://openviking.lab.orangecluster.nl/                   # expect 503
 
 # the whole identity chain, both directions. Asserts the token is accepted and
 # reaches its OWN tree, that no credential and a foreign audience are refused,

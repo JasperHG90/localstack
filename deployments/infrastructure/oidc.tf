@@ -224,7 +224,6 @@ locals {
     vault_identity_oidc_client.memex.client_id,
     vault_identity_oidc_client.oauth2_proxy.client_id,
     vault_identity_oidc_client.grafana.client_id,
-    vault_identity_oidc_client.openviking.client_id,
   ]
 }
 
@@ -585,42 +584,6 @@ resource "vault_identity_oidc_client" "oauth2_proxy" {
 resource "vault_identity_oidc_key_allowed_client_id" "oauth2_proxy" {
   key_name          = vault_identity_oidc_key.lab.name
   allowed_client_id = vault_identity_oidc_client.oauth2_proxy.client_id
-}
-
-### --- OV1: OpenViking -------------------------------------------------------
-### Its OWN client rather than a redirect_uri on oauth2_proxy's, which already
-### carries dash's and registry-ui's. There is no live reason left: OpenViking
-### stopped validating the token's `aud` when it moved to auth_mode api_key,
-### and both clients run the same 3600s TTLs today. It stays separate because
-### it already exists and folding it in would rewrite a Vault KV entry to buy
-### nothing -- and because a per-service TTL stays available if OpenViking ever
-### wants a different session length.
-###
-### Flat access: branch 3 of the documented procedure
-### (docs/vault-human-auth.md:288-292) - the built-in "allow_all" assignment,
-### no group and no vault_identity_oidc_assignment. Confidential, because Vault
-### issues no secret to a public client and oauth2-proxy needs one.
-locals {
-  openviking_redirect_url = "https://openviking.lab.orangecluster.nl/oauth2/callback"
-}
-
-resource "vault_identity_oidc_client" "openviking" {
-  name = "openviking"
-  key  = vault_identity_oidc_key.lab.name
-
-  redirect_uris = [
-    local.openviking_redirect_url,
-  ]
-
-  assignments      = ["allow_all"]
-  client_type      = "confidential"
-  id_token_ttl     = 3600
-  access_token_ttl = 3600
-}
-
-resource "vault_identity_oidc_key_allowed_client_id" "openviking" {
-  key_name          = vault_identity_oidc_key.lab.name
-  allowed_client_id = vault_identity_oidc_client.openviking.client_id
 }
 
 ### --- G1: Grafana (native generic OAuth client) -----------------------------
