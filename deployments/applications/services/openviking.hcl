@@ -140,6 +140,9 @@ job "openviking" {
         OV_RETRIEVAL_POOL_FACTOR     = "4"
         OV_RETRIEVAL_MMR_ENABLED     = "true"
         OV_RETRIEVAL_MMR_LAMBDA      = "0.7"
+        # Cap the number of calls that can go out to the reranking service
+        # to speed up search
+        OV_RETRIEVAL_RERANK_MAX_CALLS = "3"
       }
 
       ### ov.conf. The document itself is services/openviking/ov.conf.json,

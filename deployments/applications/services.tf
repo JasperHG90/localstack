@@ -498,7 +498,7 @@ resource "nomad_job" "openviking" {
       openviking_host     = "192.168.2.50"
 
       openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
-      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-4"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-5"
 
       # The config document, already parsed, substituted and re-encoded. Every
       # host and endpoint it needs is baked in above, so the jobspec takes none

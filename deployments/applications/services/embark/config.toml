@@ -82,3 +82,13 @@ max_queue_depth = 256
 [limits]
 max_body_bytes = 4194304
 max_items_per_request = 128
+
+[rerank]
+# OV expects normalized reranking scores in range [0, 1]
+# This setting transforms reranking scores using a sigmoid transform
+score_transform = "sigmoid"
+
+[cache]
+# 50ms was measured on loopback. Client and server are on different
+# nodes here, and one TCP retransmit alone is 200ms (Linux min RTO).
+timeout_ms = 250

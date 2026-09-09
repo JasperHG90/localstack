@@ -64,7 +64,7 @@ RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
 # ships the bot. Verified in the published image, not assumed.
 RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
     --target /app/.venv/lib/python3.13/site-packages \
-    "ov-retrieval @ git+https://github.com/JasperHG90/openviking_extensions@ov-retrieval-v0.2.0#subdirectory=packages/ov-retrieval"
+    "ov-retrieval @ git+https://github.com/JasperHG90/openviking_extensions@ov-retrieval-v0.3.1#subdirectory=packages/ov-retrieval"
 
 # psycopg's binary wheel, so no libpq or compiler is needed at runtime, and
 # the pool the adapter opens per collection.
