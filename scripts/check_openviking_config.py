@@ -94,7 +94,7 @@ RETRIEVAL_MODULE = "ov_retrieval"
 _COMMAND_ASSIGNMENT = re.compile(r'^\s*command\s*=\s*"([^"]*)"')
 _ARGS_ASSIGNMENT = re.compile(r"^\s*args\s*=\s*\[(.*)\]")
 
-EXPECTED_DIMENSION = 768
+EXPECTED_DIMENSION = 384
 EXPECTED_AUTH_MODE = "oidc"
 EXPECTED_BACKEND = "ov_postgres.adapter.PgVectorCollectionAdapter"
 
@@ -473,7 +473,7 @@ CLEAN: dict[str, Any] = {
             },
         },
     },
-    "embedding": {"dense": {"dimension": 768}},
+    "embedding": {"dense": {"dimension": 384}},
     "rerank": {"api_base": "http://192.168.2.50:8080/v1"},
     "vlm": {"model": "ollama/glm-5.3-flash", "api_base": "http://192.168.2.50:8080/v1"},
     "query_planner": {

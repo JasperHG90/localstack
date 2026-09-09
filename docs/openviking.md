@@ -358,7 +358,7 @@ $ curl -s -o /dev/null -w "%{time_total}\n" \
     -H "Authorization: Bearer $OV_TOKEN" "$OV_URL/api/v1/fs/ls?uri=viking://"
 ```
 
-The dimension is **768**, measured against `embark/embedding` through Bifrost.
+The dimension is **384**, measured against `embark/embedding` through Bifrost.
 A wrong value corrupts the collection without erroring, which is why the
 checker asserts it rather than a comment recording it.
 

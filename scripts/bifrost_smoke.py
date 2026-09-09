@@ -48,7 +48,7 @@ TIMEOUT = 30
 # them going missing.
 EXPECTED_VIRTUAL_KEYS = frozenset({"Leo", "hermes", "jasper-laptop-cc", "memex"})
 
-EMBEDDING_DIMENSION = 768
+EMBEDDING_DIMENSION = 384
 
 
 class SmokeFailure(Exception):

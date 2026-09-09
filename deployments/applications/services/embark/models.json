@@ -1,4 +1,4 @@
 {
-  "embedding": "embeddinggemma-q8:latest",
+  "embedding": "granite-embedding-97m-r2-fp32:latest",
   "reranker": "mxbai-rerank-qat:latest"
 }

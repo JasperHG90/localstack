@@ -31,7 +31,7 @@
     "dense": {
       "provider": "openai",
       "model": "embark/embedding",
-      "dimension": 768,
+      "dimension": 384,
       "api_base": "http://192.168.2.50:8080/v1",
       "api_key": "{{ $bifrost.Data.data.API_KEY }}"
     }
