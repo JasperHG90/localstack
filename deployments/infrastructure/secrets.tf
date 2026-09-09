@@ -28,21 +28,6 @@ resource "vault_kv_secret_v2" "minio_credentials" {
   }
 }
 
-### OpenFang basic auth password
-resource "random_password" "openfang_basic_auth" {
-  length  = 24
-  special = false
-}
-
-resource "vault_kv_secret_v2" "openfang_basic_auth" {
-  mount = vault_mount.kvv2.path
-  name  = "default/openfang/basic_auth"
-  data_json = jsonencode({
-    username = "admin"
-    password = random_password.openfang_basic_auth.result
-  })
-}
-
 ### Grafana admin password
 resource "random_password" "grafana_admin" {
   length  = 24

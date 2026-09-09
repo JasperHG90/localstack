@@ -42,15 +42,6 @@ data "vault_identity_oidc_client_creds" "memex" {
 ### Firewall rules for application services
 locals {
   firewall_rules = {
-    # Phoenix on orange_pi_4a
-    phoenix = {
-      host     = "192.168.2.29"
-      ssh_user = "orangepi"
-      rules = [
-        "allow from 192.168.0.0/16 to any port 6006 proto tcp",
-        "allow from 192.168.0.0/16 to any port 4317 proto tcp",
-      ]
-    }
     # Hermes on radxa. The .46 rule was memex reaching the gateway; hermes now
     # uses openviking instead, so nothing dials 8642 from that host any more.
     # Left in place because these rules are one-way -- deleting the line here
@@ -240,19 +231,6 @@ resource "null_resource" "firewall" {
 
     inline = [for rule in each.value.rules : "sudo ufw ${rule}"]
   }
-}
-
-### Arize Phoenix
-resource "nomad_job" "phoenix" {
-  jobspec = templatefile(
-    "${path.module}/services/phoenix.hcl",
-    {
-      phoenix_secret = vault_kv_secret_v2.phoenix_db_credentials.path
-      postgres_host  = data.consul_service.postgres.service[0].node_address
-      phoenix_host   = "192.168.2.29"
-    }
-  )
-  depends_on = [postgresql_database.database]
 }
 
 ### Hermes
@@ -753,7 +731,6 @@ output "memex_auth_oidc_shape_check" {
 #       memex_auth_secret     = vault_kv_secret_v2.memex_auth_keys.path
 #       postgres_host         = data.consul_service.postgres.service[0].node_address
 #       minio_host            = data.consul_service.minio.service[0].node_address
-#       phoenix_host          = "192.168.2.29"
 #       memex_host            = "192.168.2.46"
 #       memex_auth_keys       = local.memex_auth_keys
 #       memex_auth_oidc       = local.memex_auth_oidc

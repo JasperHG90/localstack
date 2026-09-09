@@ -11,7 +11,7 @@ This is my lab, not a general-purpose template — topology, hostnames, and serv
 - **Core:** Nomad, Vault, Consul
 - **Data:** PostgreSQL, MinIO (S3-compatible), a private Docker registry, DuckLake
 - **Observability:** Prometheus, Loki, Grafana, HAProxy (reverse proxy + metrics)
-- **Applications:** [Hermes](https://github.com/JasperHG90/hermes) (AI gateway + agent), [Memex](https://github.com/JasperHG90/memex) (notes/memory service), Phoenix (LLM tracing)
+- **Applications:** [Hermes](https://github.com/JasperHG90/hermes) (AI gateway + agent), [Memex](https://github.com/JasperHG90/memex) (notes/memory service)
 - **Backups:** nightly GCS off-site jobs for PostgreSQL and MinIO
 
 ## Layout

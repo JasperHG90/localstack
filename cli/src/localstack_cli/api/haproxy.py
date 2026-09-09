@@ -3,12 +3,15 @@
 Pure: it takes the config text as an argument and returns dataclasses. That
 is not tidiness, it is the security boundary.
 
-The running haproxy jobspec carries the openfang basic-auth password in
+The running haproxy jobspec used to carry the openfang basic-auth password in
 plaintext, rendered by Terraform into the template Nomad serves. Any command
-that fetches that job holds a live credential in memory, and one `--json`
-dump or one traceback would print it. So this module copies out exactly four
-fields per route and nothing else. The input text is never stored on a
-dataclass, never returned, and never put into an exception message.
+that fetched that job held a live credential in memory, and one `--json` dump
+or one traceback would print it. That password went with the phoenix backend
+it guarded, so today's jobspec carries none. The boundary stays: a future
+backend can reintroduce one, and this module is what keeps that from becoming
+a leak. So it copies out exactly four fields per route and nothing else. The
+input text is never stored on a dataclass, never returned, and never put into
+an exception message.
 
 The routing table comes from the API, never from the Terraform source under
 the deployments tree. That file is a `templatefile` input holding `${...}`

@@ -160,7 +160,11 @@ MEMEX_SERVER__AUTH__KEYS='${memex_auth_keys}'
 # the id_token, and an id_token's `aud` carries the client id).
 MEMEX_SERVER__AUTH__OIDC='${memex_auth_oidc}'
 MEMEX_SERVER__TRACING__ENABLED=true
-MEMEX_SERVER__TRACING__ENDPOINT=http://${phoenix_host}:6006/v1/traces
+# The node's own Alloy, which batches and forwards to Tempo. This used to be
+# phoenix on 192.168.2.29:6006, and phoenix was retired. Tracing to loopback is
+# what Alloy's OTLP receiver is bound for: a producer never learns where the
+# trace backend lives, and nothing off-node can reach the receiver.
+MEMEX_SERVER__TRACING__ENDPOINT=http://127.0.0.1:4320/v1/traces
 MEMEX_SERVER__MEMORY__REFLECTION__MIN_PRIORITY=0.8
 MEMEX_SERVER__MEMORY__INBOX_ROUTER__ENABLED=true
 MEMEX_SERVER__MEMORY__INBOX_ROUTER__MIN_DECISIONS_BEFORE_AUTO_APPLY=30

@@ -22,10 +22,10 @@
       "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"})", "refId": "A", "instant": true, "format": "table", "legendFormat": "running"},
-        {"expr": "max by (exported_job) (increase(nomad_client_allocs_restart{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"}[24h]))", "refId": "B", "instant": true, "format": "table"},
-        {"expr": "max by (exported_job) (nomad_client_allocs_memory_rss_value{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"})", "refId": "C", "instant": true, "format": "table"},
-        {"expr": "max by (exported_job) (nomad_client_allocs_cpu_total_percent_value{exported_job=~\"vault|registry|phoenix|hermes|memex|redis\"})", "refId": "D", "instant": true, "format": "table"}
+        {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|hermes|memex|redis\"})", "refId": "A", "instant": true, "format": "table", "legendFormat": "running"},
+        {"expr": "max by (exported_job) (increase(nomad_client_allocs_restart{exported_job=~\"vault|registry|hermes|memex|redis\"}[24h]))", "refId": "B", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_memory_rss_value{exported_job=~\"vault|registry|hermes|memex|redis\"})", "refId": "C", "instant": true, "format": "table"},
+        {"expr": "max by (exported_job) (nomad_client_allocs_cpu_total_percent_value{exported_job=~\"vault|registry|hermes|memex|redis\"})", "refId": "D", "instant": true, "format": "table"}
       ],
       "transformations": [
         {"id": "joinByField", "options": {"byField": "exported_job", "mode": "outer"}},
@@ -64,7 +64,7 @@
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [
-        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|hermes.*|memex.*|redis.*\"}[1m]))", "legendFormat": "{{task}}", "refId": "A"}
+        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|hermes.*|memex.*|redis.*\"}[1m]))", "legendFormat": "{{task}}", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
@@ -78,7 +78,7 @@
       "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [
-        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|phoenix.*|hermes.*|memex.*|redis.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "legendFormat": "{{task}}", "refId": "A"}
+        {"expr": "sum by (task) (rate({job=\"nomad\", task=~\"vault.*|registry.*|hermes.*|memex.*|redis.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "legendFormat": "{{task}}", "refId": "A"}
       ],
       "fieldConfig": {
         "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 10}}
@@ -200,48 +200,10 @@
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
     },
     {
-      "id": 500,
-      "type": "row",
-      "title": "Phoenix (LLM tracing)",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51},
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 501,
-      "type": "logs",
-      "title": "phoenix logs",
-      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 52},
-      "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [{"expr": "{job=\"nomad\", task=~\"phoenix.*\"}", "refId": "A"}],
-      "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
-      "links": [{"title": "Open Logs Explorer", "url": "/d/localstack-logs/?var-task=phoenix&${__url_time_range}", "targetBlank": false}]
-    },
-    {
-      "id": 502,
-      "type": "stat",
-      "title": "phoenix error rate (5m)",
-      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 52},
-      "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"phoenix.*\"} |~ \"(?i)\\\\b(error|exception|traceback|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
-    },
-    {
-      "id": 503,
-      "type": "stat",
-      "title": "phoenix memory RSS",
-      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 57},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "max(nomad_client_allocs_memory_rss_value{exported_job=\"phoenix\"})", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "bytes"}},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "graphMode": "area", "colorMode": "value"}
-    },
-    {
       "id": 600,
       "type": "row",
       "title": "Vault",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 62},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51},
       "collapsed": false,
       "panels": []
     },
@@ -249,7 +211,7 @@
       "id": 601,
       "type": "logs",
       "title": "vault logs",
-      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 63},
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 52},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [{"expr": "{job=\"journald\", unit=~\"vault.*\"} or {job=\"nomad\", task=~\"vault.*\"}", "refId": "A"}],
       "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
@@ -258,7 +220,7 @@
       "id": 602,
       "type": "stat",
       "title": "vault error rate (5m)",
-      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 63},
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 52},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [{"expr": "sum(rate({job=\"journald\", unit=~\"vault.*\"} |~ \"(?i)\\\\b(error|exception|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
       "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
@@ -268,7 +230,7 @@
       "id": 700,
       "type": "row",
       "title": "Docker Registry",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 73},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 62},
       "collapsed": false,
       "panels": []
     },
@@ -276,7 +238,7 @@
       "id": 701,
       "type": "logs",
       "title": "registry logs",
-      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 74},
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 63},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [{"expr": "{job=\"nomad\", task=~\"registry.*\"}", "refId": "A"}],
       "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
@@ -285,7 +247,7 @@
       "id": 702,
       "type": "stat",
       "title": "registry error rate (5m)",
-      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 74},
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 63},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [{"expr": "sum(rate({job=\"nomad\", task=~\"registry.*\"} |~ \"(?i)\\\\b(error|exception|panic|fatal)\\\\b\" [5m]))", "refId": "A"}],
       "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.1}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},

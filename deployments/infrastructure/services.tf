@@ -511,8 +511,7 @@ resource "nomad_job" "haproxy" {
   jobspec = templatefile(
     "${path.module}/services/haproxy.hcl",
     {
-      openfang_password = random_password.openfang_basic_auth.result
-      tls_secret        = "${var.secret_mount}/data/default/haproxy/tls"
+      tls_secret = "${var.secret_mount}/data/default/haproxy/tls"
     }
   )
 }

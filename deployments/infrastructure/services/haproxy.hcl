@@ -85,9 +85,6 @@ defaults
     timeout server  300s
     timeout tunnel  3600s
 
-userlist openfang_users
-    user admin insecure-password ${openfang_password}
-
 frontend http_in
     bind *:80
     http-request redirect scheme https code 301 unless { ssl_fc }
@@ -100,7 +97,6 @@ frontend https_in
     acl is_vault      hdr(host) -i vault.lab.orangecluster.nl
     acl is_nomad      hdr(host) -i nomad.lab.orangecluster.nl
     acl is_consul     hdr(host) -i consul.lab.orangecluster.nl
-    acl is_phoenix    hdr(host) -i phoenix.lab.orangecluster.nl
     acl is_memex      hdr(host) -i memex.lab.orangecluster.nl
     acl is_grafana    hdr(host) -i grafana.lab.orangecluster.nl
     acl is_bifrost    hdr(host) -i bifrost.lab.orangecluster.nl
@@ -114,7 +110,6 @@ frontend https_in
     use_backend vault      if is_vault
     use_backend nomad      if is_nomad
     use_backend consul     if is_consul
-    use_backend phoenix    if is_phoenix
     use_backend memex      if is_memex
     use_backend grafana    if is_grafana
     use_backend bifrost    if is_bifrost
@@ -144,10 +139,6 @@ backend nomad
 
 backend consul
     server consul1 192.168.2.30:8500 check
-
-backend phoenix
-    http-request auth unless { http_auth(openfang_users) }
-    server phoenix1 192.168.2.29:6006 check
 
 backend memex
     server memex1 192.168.2.46:8000 check

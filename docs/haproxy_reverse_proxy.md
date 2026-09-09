@@ -17,7 +17,6 @@ to the HTTPS URL.
 | `vault.lab.orangecluster.nl` | firebat (192.168.2.30) | 8200 |
 | `nomad.lab.orangecluster.nl` | firebat (192.168.2.30) | 4646 |
 | `consul.lab.orangecluster.nl` | firebat (192.168.2.30) | 8500 |
-| `phoenix.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 6006 |
 | `memex.lab.orangecluster.nl` | jetson-orin-nano (192.168.2.46) | 8000 |
 | `grafana.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 3000 |
 | `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
@@ -26,17 +25,16 @@ to the HTTPS URL.
 | `registry-ui.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4181 |
 | `openviking-api.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 1933 |
 
-`phoenix` sits behind HTTP basic auth. `bifrost` authenticates
-with its own native `governance.auth_config` (admin creds from Vault), so
-HAProxy no longer gates it. `dash` and `registry-ui` each sit behind their own
-oauth2-proxy instance, on 4180 and 4181, both gated by Vault SSO with flat
-any-authenticated-user access. Both proxies are network gates and forward no
-Vault ID token: each service decides for itself who the caller is.
-`openviking-api` skips the proxy for the same reason `bifrost` does, and
-answers 401 without a Vault identity token. `grafana` reaches that same Vault
-SSO through its own built-in OIDC client, with no proxy in between, and keeps
-its local admin account as the way in when Vault is down. The rest are open to
-anyone who reaches the edge.
+`bifrost` authenticates with its own native `governance.auth_config` (admin
+creds from Vault), so HAProxy no longer gates it. `dash` and `registry-ui` each
+sit behind their own oauth2-proxy instance, on 4180 and 4181, both gated by
+Vault SSO with flat any-authenticated-user access. Both proxies are network
+gates and forward no Vault ID token: each service decides for itself who the
+caller is. `openviking-api` skips the proxy for the same reason `bifrost` does,
+and answers 401 without a Vault identity token. `grafana` reaches that same
+Vault SSO through its own built-in OIDC client, with no proxy in between, and
+keeps its local admin account as the way in when Vault is down. The rest are
+open to anyone who reaches the edge.
 
 **Prometheus, Loki and Tempo are deliberately not routed here.** All three
 serve their query APIs with no authentication, and nothing needs them through

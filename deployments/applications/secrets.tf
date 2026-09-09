@@ -8,6 +8,10 @@ resource "vault_kv_secret_v2" "postgres_credentials" {
   })
 }
 
+### Phoenix's database credential OUTLIVES the phoenix job, which was retired
+### when its last trace producer went away. The role, the database and this
+### secret stay so the stored traces stay: dropping them is a separate,
+### irreversible decision, and re-registering the job needs nothing else.
 resource "vault_kv_secret_v2" "phoenix_db_credentials" {
   mount = var.secret_mount
   name  = "default/phoenix/postgres"
