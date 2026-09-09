@@ -23,7 +23,7 @@
         "schema": "openviking",
         "index_method": "flat",
         "store_content": true,
-        "keyword_fields": ["name", "description", "abstract", "tags", "search_tags"]
+        "keyword_fields": ["name", "description", "abstract", "tags", "search_tags", "content"]
       }
     }
   },
@@ -41,7 +41,9 @@
     "model": "embark/reranker",
     "api_base": "http://192.168.2.50:8080/v1/rerank",
     "api_key": "{{ $bifrost.Data.data.API_KEY }}",
-    "timeout": 120
+    "timeout": 120,
+    "max_input_tokens": 512,
+    "threshold": 0.1
   },
   "vlm": {
     "provider": "openai",

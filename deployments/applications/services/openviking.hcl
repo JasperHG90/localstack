@@ -97,7 +97,7 @@ job "openviking" {
         ports        = ["http"]
         network_mode = "host"
         command      = "/app/.venv/bin/python"
-        args         = ["-m", "ov_retrieval", "--host", "0.0.0.0", "--port", "1933", "--with-bot"]
+        args         = ["-m", "ov_ext", "--host", "0.0.0.0", "--port", "1933", "--with-bot"]
       }
 
       volume_mount {
@@ -141,9 +141,33 @@ job "openviking" {
         OV_RETRIEVAL_MMR_ENABLED     = "true"
         OV_RETRIEVAL_MMR_LAMBDA      = "0.7"
         # Cap the number of calls that can go out to the reranking service
-        # to speed up search
-        OV_RETRIEVAL_RERANK_MAX_CALLS = "3"
+        # to speed up search. These settings reduce the overhead on the
+        # reranker model
+        OV_RETRIEVAL_RERANK_POOLING       = "true"
+        OV_RETRIEVAL_RERANK_MAX_CALLS     = "4"
+        OV_RETRIEVAL_RERANK_MAX_DOCUMENTS = "20"
+        OV_RETRIEVAL_RERANK_FINAL         = "true"
+        # These settings enable reflection
+        OV_REFLECT_ENABLED          = "true"
+        OV_REFLECT_USER_ID          = "jasper"
+        OV_REFLECT_LOCK             = "process" # postgres for db lock
+        OV_REFLECT_INTERVAL_SECONDS = "3600"
+        OV_REFLECT_DRY_RUN          = "false"
+        OV_REFLECT_BATCH_LIMIT      = "20"
+        OV_REFLECT_NEIGHBOUR_LIMIT  = "5"
+        OV_REFLECT_TAIL_SAMPLE      = "3"
       }
+
+      # Reflect lock DSN carries a vault-rendered password for postgresa
+      # template {
+      #   data        = <<-EOF
+      #   {{- $db := secret "${openviking_db_secret}" -}}
+      #   OV_REFLECT_LOCK_DSN=postgresql://{{ $db.Data.data.username }}:{{ $db.Data.data.password }}@\{postgres_host\}:5432/openviking
+      #   EOF
+      #   destination = "secrets/reflect.env"
+      #   env         = true
+      #   change_mode = "restart"
+      # }
 
       ### ov.conf. The document itself is services/openviking/ov.conf.json,
       ### parsed and re-injected by services.tf's `openviking_ov_conf` local,
@@ -175,7 +199,7 @@ job "openviking" {
       }
 
       resources {
-        cpu        = 1000
+        cpu        = 3000
         memory     = 1536
         memory_max = 2560
       }
