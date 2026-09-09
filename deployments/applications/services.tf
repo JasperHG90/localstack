@@ -42,6 +42,28 @@ data "vault_identity_oidc_client_creds" "memex" {
 ### Firewall rules for application services
 locals {
   firewall_rules = {
+    # ov-dash on orangepi4a, in the room phoenix left. Single caller: .30 is
+    # HAProxy, which is the only way to this dashboard. Its own host is absent
+    # deliberately -- orangepi4a's Consul agent checks the service at a
+    # locally-assigned address, and ufw's before-input accepts `-i lo`
+    # unconditionally, so that check never reaches these rules.
+    #
+    # No rule is needed in the other direction. ov-dash dials OpenViking on
+    # 192.168.2.50:1933, and the openviking entry below now admits .29.
+    #
+    # These rules ADD only, so phoenix's two LAN-wide grants outlived the entry
+    # that made them and are still live on this host. Nothing binds 6006 or
+    # 4317 there today, which is exactly why they are easy to forget -- and
+    # re-registering phoenix would put a service back on both. Delete them:
+    #   ssh orangepi@192.168.2.29 \
+    #     'sudo ufw delete allow from 192.168.0.0/16 to any port 6006 proto tcp'
+    #   ssh orangepi@192.168.2.29 \
+    #     'sudo ufw delete allow from 192.168.0.0/16 to any port 4317 proto tcp'
+    ov_dash = {
+      host     = "192.168.2.29"
+      ssh_user = "orangepi"
+      rules    = ["allow from 192.168.2.30 to any port 4182 proto tcp"]
+    }
     # Hermes on radxa. The .46 rule was memex reaching the gateway; hermes now
     # uses openviking instead, so nothing dials 8642 from that host any more.
     # Left in place because these rules are one-way -- deleting the line here
@@ -183,6 +205,7 @@ locals {
         "allow from 192.168.2.50 to any port 1933 proto tcp",
         "allow from 192.168.2.30 to any port 1933 proto tcp",
         "allow from 192.168.2.47 to any port 1933 proto tcp",
+        "allow from 192.168.2.29 to any port 1933 proto tcp",
       ]
     }
     # driftwatch on radxa. Two callers and no edge: .47 is Prometheus reading
@@ -499,6 +522,57 @@ resource "nomad_job" "openviking" {
     postgresql_database.database,
     vault_kv_secret_v2.bifrost_openviking_key,
   ]
+}
+
+### ov-dash — the browser face of OpenViking, on the node phoenix vacated.
+###
+### `openviking.lab.orangecluster.nl`, not a new name. That hostname used to
+### reach OpenViking itself through an oauth2-proxy on 4182; the proxy is gone,
+### the API answers on `openviking-api.lab` instead, and the shorter name is
+### what a person now types. HAProxy's own comment in
+### infrastructure/services/haproxy.hcl records the handover.
+###
+### `vault_oidc_role` is the literal "openviking", not a reference: the role is
+### `vault_identity_oidc_role.openviking` in the INFRASTRUCTURE root, and the two
+### roots are linked by static name rather than remote state, the same way the
+### memex OIDC client is read above. That role templates `ov_account` and
+### `ov_user` from the signing entity's metadata, which is the identity
+### OpenViking answers as -- and the token is minted with the PERSON's Vault
+### token, so this job needs no grant on that path.
+###
+### `vault_addr` is the edge hostname rather than 192.168.2.30:8200. The
+### sign-in form carries a real Vault password, so it goes over TLS even
+### in-cluster; every other address here is plaintext because none of them
+### carries one.
+resource "nomad_job" "ov_dash" {
+  jobspec = templatefile(
+    "${path.module}/services/ov-dash.hcl",
+    {
+      ov_dash_hostname = "orangepi4a"
+      ov_dash_host     = "192.168.2.29"
+
+      # Built and released from JasperHG90/openviking_extensions: Actions ->
+      # release, package ov-dash. Pinned rather than `latest`, which that
+      # workflow moves on every release. arm64 confirmed in the manifest list.
+      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.1.0"
+
+      ov_dash_public_origin  = "https://openviking.lab.orangecluster.nl"
+      ov_dash_session_secret = vault_kv_secret_v2.ov_dash_config.path
+
+      openviking_host = "192.168.2.50"
+      vault_addr      = "https://vault.lab.orangecluster.nl"
+      vault_oidc_role = "openviking"
+    }
+  )
+
+  ### APPLY THIS IN TWO STEPS, phoenix first. Terraform draws no edge between
+  ### a removed resource's destroy and an unrelated create, so this job can
+  ### register while phoenix still holds 2000 CPU and 1024 MB on the same node.
+  ### orangepi4a had 72 MB free before phoenix left, so the alloc does not fit
+  ### and Nomad parks a blocked evaluation until phoenix's is reaped. It
+  ### self-heals, but `terraform apply` reports a registered job with an
+  ### unplaced alloc, which reads exactly like a broken deploy.
+  depends_on = [vault_kv_secret_v2.ov_dash_config]
 }
 
 ### driftwatch — the daily canary over the two retrieval models.

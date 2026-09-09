@@ -10,15 +10,17 @@
 > panel is replaced). The search and retrieval half is untouched and still
 > stands.
 >
-> **SUPERSEDED again, and further.** `oauth2-proxy-openviking` is gone, along
-> with its jobspec, its Vault OIDC client and its HAProxy backend. Web Studio
-> is unmounted, and `openviking.lab.orangecluster.nl` routes nowhere. So every
-> mechanism this document builds on is absent: there is no proxy to sit behind
-> and no `X-Forwarded-User` to read, and the two identity systems it proposes
-> to collapse are already one. What survives is the hostname, which is free,
-> and the search and retrieval half below. A dashboard built now would carry a
-> Vault session of its own. See "No browser surface, and the hostname that is
-> now free" in `docs/openviking.md`.
+> **SUPERSEDED again, and now BUILT.** `oauth2-proxy-openviking` is gone,
+> along with its jobspec, its Vault OIDC client and its HAProxy backend, and
+> Web Studio is unmounted. So every mechanism this document builds on is
+> absent: there is no proxy to sit behind and no `X-Forwarded-User` to read,
+> and the two identity systems it proposes to collapse are already one. The
+> dashboard itself was built as `ov-dash` and now serves
+> `openviking.lab.orangecluster.nl` — it carries a Vault session of its own,
+> exactly as this banner predicted. Its source lives in
+> JasperHG90/openviking_extensions; the deployment is
+> `deployments/applications/services/ov-dash.hcl`. What survives here is the
+> search and retrieval half below.
 
 **Worth doing, roughly four loop tickets, and the reason is authentication.**
 A dashboard we own can hold each person's OpenViking key server-side and

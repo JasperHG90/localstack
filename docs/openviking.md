@@ -275,7 +275,7 @@ Pointing rerank straight at embark would have worked without that upgrade, and
 was rejected: it would lose Bifrost's logging, governance and virtual-key
 accounting for one call type.
 
-### No browser surface, and the hostname that is now free
+### No browser surface here, and where the hostname went
 
 `openviking.lab.orangecluster.nl` used to reach the same service through
 `oauth2-proxy-openviking` on port 4182, and the only thing on it was upstream's
@@ -289,11 +289,12 @@ does not exist. There is no config-file switch for it, and the variable takes
 that mounts the bundle. Leaving it mounted with the proxy gone would have
 served the UI to anyone reaching the edge: Studio answers without a token.
 
-The name now resolves to a 503, since the HAProxy frontend declares no
-`default_backend`. It is reserved for a dashboard we host ourselves. See
-`docs/openviking-dashboard.md`, whose authentication half this change
-supersedes again: the case for holding a key server-side is dead, and what a
-dashboard would carry is a Vault session.
+The name resolved to a 503 for a while, since the HAProxy frontend declares no
+`default_backend`. It now reaches ov-dash, the dashboard it was held for:
+a Node service on orangepi4a, routed by the `ovdash` backend, deployed by
+`nomad_job.ov_dash` from `deployments/applications/services/ov-dash.hcl`. It
+signs a person into Vault itself, mints their identity token server-side and
+never hands the browser one, which is why nothing gates it at the edge.
 
 ## Verifying a deployment
 
@@ -324,11 +325,12 @@ deployment and nothing in this repo automates them:
 # the service is up and its backends opened
 $ curl -s "$OV_URL/ready"
 
-# Studio is unmounted and openviking.lab.orangecluster.nl routes nowhere.
-# Both are expected to fail: 404 from OpenViking, 503 from HAProxy
+# Studio is unmounted, so this one is expected to fail with a 404.
 $ curl -s -o /dev/null -w "%{http_code}\n" "$OV_URL/studio/"   # expect 404
+
+# ov-dash answers on the short hostname. /health needs no session.
 $ curl -s -o /dev/null -w "%{http_code}\n" \
-    https://openviking.lab.orangecluster.nl/                   # expect 503
+    https://openviking.lab.orangecluster.nl/health             # expect 200
 
 # the whole identity chain, both directions. Asserts the token is accepted and
 # reaches its OWN tree, that no credential and a foreign audience are refused,

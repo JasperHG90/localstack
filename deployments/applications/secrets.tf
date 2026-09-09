@@ -444,3 +444,25 @@ resource "vault_kv_secret_v2" "minio_credentials" {
     secret_key = each.value.secret_key
   })
 }
+
+### ov-dash
+
+### The key that signs ov-dash's session cookies. 48 bytes rather than the
+### schema's 32-character floor, and generated here rather than by hand: the
+### cookie names an in-memory session and nothing else, so rotating this signs
+### everyone out and costs no stored data.
+###
+### `special = false` because this is rendered into an env file, where a `$` or
+### a quote would be re-interpreted by the shell that sources it.
+resource "random_password" "ov_dash_session_secret" {
+  length  = 48
+  special = false
+}
+
+resource "vault_kv_secret_v2" "ov_dash_config" {
+  mount = var.secret_mount
+  name  = "default/ov-dash/config"
+  data_json = jsonencode({
+    session_secret = random_password.ov_dash_session_secret.result
+  })
+}

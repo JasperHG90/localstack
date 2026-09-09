@@ -206,7 +206,7 @@ EXPECTED_TILES = {
     "storage": ["postgres", "redis", "minio"],
     "telemetry": ["grafana", "tempo", "prometheus", "alerting"],
     "events": ["nats"],
-    "agentic": ["bifrost", "hermes", "openviking"],
+    "agentic": ["bifrost", "hermes", "openviking", "ov-dash"],
     "artifacts": ["registry"],
 }
 

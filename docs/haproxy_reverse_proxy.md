@@ -24,6 +24,7 @@ to the HTTPS URL.
 | `registry.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 5000 |
 | `registry-ui.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4181 |
 | `openviking-api.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 1933 |
+| `openviking.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 4182 |
 
 `bifrost` authenticates with its own native `governance.auth_config` (admin
 creds from Vault), so HAProxy no longer gates it. `dash` and `registry-ui` each
@@ -31,9 +32,12 @@ sit behind their own oauth2-proxy instance, on 4180 and 4181, both gated by
 Vault SSO with flat any-authenticated-user access. Both proxies are network
 gates and forward no Vault ID token: each service decides for itself who the
 caller is. `openviking-api` skips the proxy for the same reason `bifrost` does,
-and answers 401 without a Vault identity token. `grafana` reaches that same
-Vault SSO through its own built-in OIDC client, with no proxy in between, and
-keeps its local admin account as the way in when Vault is down. The rest are
+and answers 401 without a Vault identity token. `openviking` is ov-dash, the
+browser face of that same service: it signs a person into Vault itself, mints
+their identity token server-side and never gives the browser one, so a proxy in
+front would be a second password for the same person. `grafana` reaches that
+same Vault SSO through its own built-in OIDC client, with no proxy in between,
+and keeps its local admin account as the way in when Vault is down. The rest are
 open to anyone who reaches the edge.
 
 **Prometheus, Loki and Tempo are deliberately not routed here.** All three

@@ -287,8 +287,25 @@
         "connect": {
           "protocol": "REST / MCP API",
           "address": "https://openviking-api.lab.orangecluster.nl",
-          "auth": "Vault identity token. `vault login`, then `vault read -field=token identity/oidc/token/openviking`. Send it as Authorization: Bearer, or in X-API-Key, which upstream also accepts for a JWT. There is no API key any more. This is the only hostname: openviking.lab.orangecluster.nl served Web Studio behind oauth2-proxy and both are gone.",
+          "auth": "Vault identity token. `vault login`, then `vault read -field=token identity/oidc/token/openviking`. Send it as Authorization: Bearer, or in X-API-Key, which upstream also accepts for a JWT. There is no API key any more. This is the API hostname; openviking.lab.orangecluster.nl is the ov-dash browser dashboard, which signs you in itself.",
           "example": "OV_TOKEN=$(vault read -field=token identity/oidc/token/openviking); curl -H \"Authorization: Bearer $OV_TOKEN\" \"https://openviking-api.lab.orangecluster.nl/api/v1/fs/ls?uri=viking://\""
+        }
+      },
+      {
+        "key": "ov-dash",
+        "name": "ov-dash",
+        "desc": "openviking dashboard",
+        "color": "#8d7fd6",
+        "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><rect x=\"3\" y=\"4\" width=\"16\" height=\"14\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M3 9 H19\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M9 9 V18\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg>",
+        "jobs": [
+          {
+            "name": "ov-dash",
+            "node": "orangepi4a"
+          }
+        ],
+        "fe": {
+          "url": "https://openviking.lab.orangecluster.nl",
+          "label": "open dashboard"
         }
       }
     ]

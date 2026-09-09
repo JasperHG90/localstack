@@ -104,6 +104,7 @@ frontend https_in
     acl is_registry   hdr(host) -i registry.lab.orangecluster.nl
     acl is_registryui hdr(host) -i registry-ui.lab.orangecluster.nl
     acl is_ovapi      hdr(host) -i openviking-api.lab.orangecluster.nl
+    acl is_ovdash     hdr(host) -i openviking.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -117,6 +118,7 @@ frontend https_in
     use_backend registry   if is_registry
     use_backend registryui if is_registryui
     use_backend ovapi      if is_ovapi
+    use_backend ovdash     if is_ovdash
 
 frontend stats
     bind *:8404
@@ -176,10 +178,11 @@ backend dash
 backend registryui
     server registryui1 192.168.2.50:4181 check
 
-# openviking-api: the ONLY route to OpenViking. `openviking.lab` used to reach
-# the same service through oauth2-proxy on 4182; that proxy is gone, and the
-# name is now free for a dashboard we host ourselves. An unmatched host gets a
-# 503 here, since this frontend declares no default_backend.
+# openviking-api: the ONLY route to OpenViking itself. `openviking.lab` used to
+# reach the same service through oauth2-proxy on 4182; that proxy is gone and
+# the short name now belongs to ov-dash below, which is the dashboard this
+# comment was holding it for. An unmatched host gets a 503 here, since this
+# frontend declares no default_backend.
 #
 # Not an auth exemption. OpenViking runs auth_mode oidc and refuses an
 # unauthenticated call on this port with a 401 -- measured against the live
@@ -188,6 +191,18 @@ backend registryui
 # proxy for the same reason: the service authenticates its own callers.
 backend ovapi
     server ovapi1 192.168.2.50:1933 check
+
+# ov-dash: the browser face of OpenViking, on orangepi4a rather than beside the
+# service it fronts -- radxa had no memory left and its neighbours there are
+# pinned by host volumes. It reuses 4182, the port the retired oauth2-proxy held
+# for this hostname.
+#
+# No `http-request auth`. The dashboard signs people into Vault itself and holds
+# the credential server-side, so a basic-auth prompt in front would be a second
+# password for the same person. Same reasoning as the bifrost and ovapi backends
+# above: the service authenticates its own callers.
+backend ovdash
+    server ovdash1 192.168.2.29:4182 check
         EOH
         destination = "local/haproxy.cfg"
       }
