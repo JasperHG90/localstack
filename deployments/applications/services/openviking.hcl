@@ -148,8 +148,9 @@ job "openviking" {
         OV_RETRIEVAL_RERANK_MAX_DOCUMENTS = "20"
         OV_RETRIEVAL_RERANK_FINAL         = "true"
         # These settings enable reflection
-        OV_REFLECT_ENABLED          = "true"
+        OV_REFLECT_ENABLED          = "false"
         OV_REFLECT_USER_ID          = "jasper"
+        OV_REFLECT_ACCOUNT_ID       = "lab"
         OV_REFLECT_LOCK             = "process" # postgres for db lock
         OV_REFLECT_INTERVAL_SECONDS = "3600"
         OV_REFLECT_DRY_RUN          = "false"
@@ -199,7 +200,7 @@ job "openviking" {
       }
 
       resources {
-        cpu        = 3000
+        cpu        = 4000
         memory     = 1536
         memory_max = 2560
       }

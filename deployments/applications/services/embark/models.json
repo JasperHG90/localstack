@@ -1,4 +1,4 @@
 {
   "embedding": "granite-embedding-97m-r2-fp32:latest",
-  "reranker": "mxbai-rerank-qat:latest"
+  "reranker": "ms-marco-minilm-l6-v2-qat:latest"
 }

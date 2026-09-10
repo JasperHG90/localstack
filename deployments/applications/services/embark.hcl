@@ -293,7 +293,7 @@ ${config_toml}
       # `rerank_batch_size` in services/embark/config.toml is 8, and peak
       # activation memory scales with it.
       resources {
-        cpu    = 2000
+        cpu    = 4000
         memory = 5632
       }
     }
