@@ -55,7 +55,16 @@ job "tempo" {
         change_mode = "noop"
       }
 
-      ### These two send tempo down minio-go's web-identity path.
+      ### GOMEMLIMIT is the one that stops the OOM. Go's GC targets a heap size
+      ### and knows nothing about the cgroup cap, so it grows past 768 MB and the
+      ### kernel kills it. The task dies on SIGKILL (exit 137), which reads as a
+      ### crash rather than a limit being hit. The soft limit makes the GC run
+      ### harder as it approaches, trading CPU for memory. Set below the cap, not
+      ### at it: GOMEMLIMIT covers the Go heap, while the cgroup also counts
+      ### goroutine stacks, page cache for block reads, and the runtime itself.
+      ###
+      ### AWS_WEB_IDENTITY_TOKEN_FILE and TEST_IAM_ENDPOINT send tempo down
+      ### minio-go's web-identity path.
       ###
       ### THE SCHEME ON TEST_IAM_ENDPOINT IS LOAD-BEARING and deliberately
       ### unlike the schemeless `endpoint:` the storage config further down
@@ -69,6 +78,7 @@ job "tempo" {
       ### claim mode, which is what makes the `tempo` policy apply to tempo
       ### alone.
       env {
+        GOMEMLIMIT                  = "600MiB"
         AWS_WEB_IDENTITY_TOKEN_FILE = "/secrets/nomad_minio.jwt"
         TEST_IAM_ENDPOINT           = "http://192.168.2.29:9000"
       }
@@ -121,8 +131,18 @@ job "tempo" {
                 http:
                   endpoint: 0.0.0.0:4318
 
+        # Cut from 30m, and this is a memory knob rather than a flush cadence.
+        # Every time the head block is cut, `walBlock.Flush` hands its trace-ID
+        # map to the flushed list (tempodb/encoding/vparquet4/wal_block.go) and
+        # those maps stay resident for as long as the block does, so a 5m block
+        # holds roughly a sixth of what a 30m one did.
+        #
+        # `max_block_bytes` is deliberately NOT set alongside it. It reads like
+        # a memory bound and is not one: it is compared against
+        # `walBlock.DataLength()`, whose own comment calls it the estimated size
+        # of the WAL files ON DISK.
         ingester:
-          max_block_duration: 30m
+          max_block_duration: 5m
 
         compactor:
           compaction:
@@ -156,9 +176,28 @@ job "tempo" {
         # config under grafana/tempo:2.10.8: the warning is present without the
         # key and the metrics-generator module starts with it.
         #
-        # `max_live_traces` is set because its default is 0, meaning unbounded,
-        # and this task's cap is what the kernel enforces. The value is a
-        # guess sized to homelab trace volume, not a measurement.
+        # `max_live_traces` is the ONLY bound on the generator's live-trace map
+        # on this deployment, which is why it is worth a paragraph.
+        #
+        # `max_live_traces_bytes` looks like the better knob, since a byte cap
+        # bounds memory directly and a trace count only proxies it. It is unset
+        # because it cannot run here: it is read only inside
+        # `Processor.backpressure`, which only `DeterministicPush` calls, which
+        # only runs on the queue-based processor, which exists only when
+        # `traces_query_storage` is set. The live path is `PushSpans`, which
+        # calls `push` with no backpressure at all. Setting that key to reach it
+        # would add a second per-tenant WAL and a second processor instance --
+        # more memory to bound memory, on the node with the least of it.
+        #
+        # So the count cap is the bound, and exceeding it DROPS traces. Not
+        # silently: watch
+        # `tempo_metrics_generator_processor_local_blocks_traces_dropped_total`
+        # with `reason="live_traces_exceeded"`, alerted as TempoTracesDropped.
+        #
+        # `complete_block_timeout` is also unset, deliberately. It is not just
+        # retention: `GetMetrics` rejects any query window older than it, so
+        # shortening it to save memory silently shortens how far back a TraceQL
+        # metrics query can reach.
         #
         # NOT set: `filter_server_spans`. Its name suggests it drops the
         # INTERNAL spans ov_postgres and ov_retrieval emit, which would make
@@ -189,13 +228,16 @@ job "tempo" {
         destination = "local/tempo-config.yaml"
       }
 
-      # Raised from 512 for the metrics generator, which holds live traces in
-      # memory and builds blocks. UNMEASURED: this is headroom, not a figure
-      # from a running generator. Watch
-      # `nomad_client_allocs_oom_killed{exported_job="tempo"}` on the Nomad
-      # dashboard after this ships, and raise it again rather than trimming
-      # `max_live_traces` first -- a smaller live-trace cap silently drops
-      # traces, while an OOM is at least loud.
+      # 768 is a ceiling this task fits inside, not headroom to grow into. Do
+      # not raise it to fix an OOM: this node is a Pi 4B already carrying
+      # Prometheus, Loki, Grafana and Alloy, so there is nothing to raise it
+      # with. GOMEMLIMIT is what holds it under, and it is enough -- on
+      # 2026-09-11 it settled at ~266 MiB replaying the same WAL the unbounded
+      # config had been dying on every 18 seconds.
+      #
+      # If it OOMs again, lower GOMEMLIMIT first. The next real knob is
+      # `parquet_row_group_size_bytes`, which defaults to ~95 MiB per writer
+      # and the ingester and generator each run one. This number is last.
       resources {
         cpu    = 500
         memory = 768

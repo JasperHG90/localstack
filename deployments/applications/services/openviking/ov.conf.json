@@ -23,6 +23,7 @@
         "schema": "openviking",
         "index_method": "flat",
         "store_content": true,
+        "keep_deltas": true,
         "keyword_fields": ["name", "description", "abstract", "tags", "search_tags", "content"]
       }
     }

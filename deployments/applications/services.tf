@@ -498,7 +498,7 @@ resource "nomad_job" "openviking" {
       openviking_host     = "192.168.2.50"
 
       openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
-      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-6"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-7"
 
       # The config document, already parsed, substituted and re-encoded. Every
       # host and endpoint it needs is baked in above, so the jobspec takes none
@@ -554,7 +554,7 @@ resource "nomad_job" "ov_dash" {
       # Built and released from JasperHG90/openviking_extensions: Actions ->
       # release, package ov-dash. Pinned rather than `latest`, which that
       # workflow moves on every release. arm64 confirmed in the manifest list.
-      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.2.1"
+      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.3.0"
 
       ov_dash_public_origin  = "https://openviking.lab.orangecluster.nl"
       ov_dash_session_secret = vault_kv_secret_v2.ov_dash_config.path
@@ -946,8 +946,8 @@ resource "bifrost_virtual_key" "openviking" {
   name = "openviking"
 
   provider_configs = [
-    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
+    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
 

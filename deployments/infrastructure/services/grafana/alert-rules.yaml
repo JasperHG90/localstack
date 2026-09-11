@@ -571,6 +571,116 @@ groups:
           summary: "Bifrost alloc memory > 80% of limit"
           description: "Peak RSS on the bifrost alloc is {{ printf \"%.0f\" $values.A.Value }}% of its 512 MiB limit for 10m. Raise resources.memory in bifrost.hcl before it OOMs (exit 137)."
 
+      - uid: alert-tempo-memory-high
+        title: TempoMemoryHigh
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              # Peak RSS for the tempo alloc vs its 768 MiB limit. max_usage is
+              # the high-water mark, so this leads the OOM rather than flapping.
+              expr: 'nomad_client_allocs_memory_max_usage{exported_job="tempo"} / (768 * 1024 * 1024) * 100 > 80'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: tempo }
+        annotations:
+          summary: "Tempo alloc memory > 80% of limit"
+          description: "Peak RSS on the tempo alloc is {{ printf \"%.0f\" $values.A.Value }}% of its 768 MiB limit for 10m. Unlike bifrost, do NOT raise resources.memory: tempo shares a Pi 4B with prometheus, loki, grafana and alloy, so there is nothing to raise it with. Lower GOMEMLIMIT in tempo.hcl instead."
+
+      # The counter tempo.hcl said to watch when the metrics generator shipped
+      # on 2026-09-08. Nothing alerted on it, so the 09-10 OOM loop ran for a
+      # day until a human noticed traces had stopped.
+      - uid: alert-tempo-oom-killed
+        title: TempoOOMKilled
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'increase(nomad_client_allocs_oom_killed{exported_job="tempo"}[15m]) > 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        # No `for`: the kill already happened and the 15m increase() window
+        # smooths it. Waiting would only delay the page.
+        for: 0m
+        labels: { severity: critical, component: tempo }
+        annotations:
+          summary: "Tempo was OOM-killed"
+          description: "The tempo task was killed by the kernel (exit 137) in the last 15m. It restarts twice, then the alloc fails and traces stop cluster-wide. Lower GOMEMLIMIT in tempo.hcl; do not raise resources.memory, there is nothing on that node to raise it with."
+
+      # The generator's live-trace map is bounded only by max_live_traces, and
+      # exceeding it drops traces rather than slowing ingest. This is what that
+      # looks like from outside. See the paragraph in tempo.hcl for why the
+      # byte cap is not available as an alternative.
+      - uid: alert-tempo-traces-dropped
+        title: TempoTracesDropped
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'increase(tempo_metrics_generator_processor_local_blocks_traces_dropped_total{reason="live_traces_exceeded"}[10m]) > 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: tempo }
+        annotations:
+          summary: "Tempo is dropping traces at the live-trace cap"
+          description: "The local-blocks generator dropped traces for tenant {{ $labels.tenant }} because max_live_traces (5000) was exceeded, so TraceQL metrics are now computed over an incomplete sample. Raise it in tempo.hcl only while TempoMemoryHigh is quiet: that cap is the only thing bounding the generator's live-trace map."
+
       - uid: alert-scrape-job-missing
         title: ScrapeJobMissing
         condition: C

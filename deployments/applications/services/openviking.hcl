@@ -148,7 +148,9 @@ job "openviking" {
         OV_RETRIEVAL_RERANK_MAX_DOCUMENTS = "20"
         OV_RETRIEVAL_RERANK_FINAL         = "true"
         # These settings enable reflection
-        OV_REFLECT_ENABLED          = "false"
+        OV_REFLECT_MODEL            = "ollama/deepseek-v4-flash:0731"
+        OV_REFLECT_DELTAS_SCHEMA    = "openviking"
+        OV_REFLECT_ENABLED          = "true"
         OV_REFLECT_USER_ID          = "jasper"
         OV_REFLECT_ACCOUNT_ID       = "lab"
         OV_REFLECT_LOCK             = "process" # postgres for db lock
@@ -200,7 +202,7 @@ job "openviking" {
       }
 
       resources {
-        cpu        = 4000
+        cpu        = 5000
         memory     = 1536
         memory_max = 2560
       }
