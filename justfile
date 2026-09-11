@@ -106,3 +106,38 @@ list_secrets namespace:
 # Get the value for a specific secret
 get_secret path:
     vault kv get -mount=secret "{{ path }}"
+
+# --- Vault login MFA ---------------------------------------------------------
+#
+# Terraform owns the TOTP method and the login enforcement
+# (deployments/infrastructure/identity.tf). These recipes own only the
+# per-person secret, which Terraform must never hold: that secret is the second
+# factor, so keeping it in state would file both factors in one place.
+#
+# Every trap worth knowing is in scripts/vault_mfa.sh; docs/vault-2fa.md is the
+# long form and the rollout order.
+
+# Show whether Vault login MFA is configured, and on which auth mounts
+mfa_status:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    eval "$(localstack env)"
+    bash scripts/vault_mfa.sh status
+
+# Enroll a person's authenticator, writing their QR code to tmp/
+mfa_enroll username:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    eval "$(localstack env)"
+    bash scripts/vault_mfa.sh enroll "{{ username }}"
+
+# Replace a person's authenticator after a lost phone; kills the old one
+mfa_reset username:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    eval "$(localstack env)"
+    bash scripts/vault_mfa.sh reset "{{ username }}"
+
+# Test the MFA recipes against a fake Vault; touches no real cluster
+mfa_test:
+    bash scripts/vault_mfa_test.sh

@@ -32,6 +32,10 @@ root token from bootstrap has an empty `entity_id`, so it cannot exercise
 anything gated on identity, which is why it is not a substitute for logging
 in.
 
+Two-factor auth is not enforced on this login yet. `docs/vault-2fa.md` has
+the TOTP rollout, the enrollment recipes, and the order that avoids a
+lockout.
+
 ## What Terraform creates
 
 All of it lives in `deployments/infrastructure/`:
