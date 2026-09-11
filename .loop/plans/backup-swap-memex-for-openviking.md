@@ -128,6 +128,8 @@ Gates, discovered from `.loop/config.json` and `.pre-commit-config.yaml`:
   test.
 - `uv run --project cli pytest cli/tests/test_backup_coverage.py` — the new
   tests, run directly during implementation.
+- The scenario set in `.loop/evals/backup-swap-memex-for-openviking.md` is
+  the acceptance layer above these gates.
 - `cd deployments/infrastructure && just plan` — expected to show
   `1 to change` (`nomad_job.backup_minio`, its `jobspec` attribute) and
   nothing else. Not a pre-commit hook; run it by hand and read the plan. This
