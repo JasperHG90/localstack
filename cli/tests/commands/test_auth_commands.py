@@ -476,3 +476,56 @@ def test_the_new_session_is_persisted_before_the_old_one_is_revoked(
     assert result.exit_code == 0
     assert revokes_at_save == [0], "the new session must be on disk before the old token is revoked"
     assert len(cluster.requests_for("/v1/auth/token/revoke-self")) == 1
+
+
+def _enforce_mfa(cluster: FakeCluster) -> None:
+    """Point the login route at a challenge and open the validate route."""
+    from tests.auth.test_vault import MFA_CHALLENGE, MFA_VALIDATED
+
+    cluster.routes["/v1/auth/userpass/login/operator"] = (
+        200,
+        json.dumps(MFA_CHALLENGE).encode(),
+    )
+    cluster.routes["/v1/sys/mfa/validate"] = (200, json.dumps(MFA_VALIDATED).encode())
+
+
+def test_login_completes_against_an_mfa_enforced_mount(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    """The end the whole 2FA rollout is blocked on. The second line of stdin is
+    the passcode; before this the command failed at the password step and told
+    the reader to check the username."""
+    _enforce_mfa(cluster)
+    result = runner.invoke(app, ["login", "--vault-addr", cluster_addr], input="hunter2\n123456\n")
+    assert result.exit_code == 0
+    session = load(session_path())
+    assert session is not None
+    assert session.vault.token == "hvs.mfa-validated-token"
+    assert token_path().read_text() == "hvs.mfa-validated-token"
+
+
+def test_login_under_mfa_still_brokers_the_other_tokens(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    """Brokering happens after the second factor, with the validated token."""
+    _enforce_mfa(cluster)
+    runner.invoke(app, ["login", "--vault-addr", cluster_addr], input="hunter2\n123456\n")
+    brokered = cluster.requests_for("/v1/nomad/creds/deploy")
+    assert len(brokered) == 1
+    assert brokered[0].token == "hvs.mfa-validated-token"
+
+
+def test_a_wrong_passcode_fails_the_login_and_keeps_the_old_session(
+    cluster_addr: str, cluster: FakeCluster, logged_in: Session
+) -> None:
+    """Same rule as a mistyped password: a failed second factor must not
+    destroy a working session."""
+    _enforce_mfa(cluster)
+    cluster.routes["/v1/sys/mfa/validate"] = (
+        400,
+        json.dumps({"errors": ["failed to satisfy enforcement userpass-totp"]}).encode(),
+    )
+    result = runner.invoke(app, ["login", "--vault-addr", cluster_addr], input="hunter2\n000000\n")
+    assert result.exit_code != 0
+    assert "failed to satisfy enforcement" in plain(result.stderr)
+    assert load(session_path()) == logged_in

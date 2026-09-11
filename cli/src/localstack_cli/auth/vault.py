@@ -27,6 +27,21 @@ class InsecureAddressError(VaultError):
     """The address would put a password on the wire in the clear."""
 
 
+class MFARequired(VaultError):
+    """The password was right and the mount wants a second factor.
+
+    Carries what `validate_mfa` needs, so the caller can prompt without
+    re-parsing the login reply. A `VaultError` subclass so an `except
+    VaultError` that predates Login MFA still catches it, which means callers
+    fail with a clear message rather than an AttributeError.
+    """
+
+    def __init__(self, request_id: str, method_ids: list[str]) -> None:
+        super().__init__("Vault wants a second factor for this login.")
+        self.request_id = request_id
+        self.method_ids = method_ids
+
+
 def is_plaintext_to_the_network(addr: str) -> bool:
     """True when sending a password here would cross a network unencrypted.
 
@@ -115,7 +130,13 @@ def _http_message(path: str, status: int, raw: bytes) -> str:
 
 
 def login_userpass(addr: str, username: str, password: str) -> dict[str, Any]:
-    """Authenticate and return the `auth` block of the response."""
+    """Authenticate and return the `auth` block of the response.
+
+    Raises `MFARequired` when the mount enforces Login MFA. Vault answers that
+    with HTTP 200, a null `auth` and an `mfa_requirement`, so a caller that
+    only looks for a token blames the username or the backend and sends the
+    reader to the wrong layer.
+    """
     response = _request(
         addr,
         f"auth/userpass/login/{username}",
@@ -123,11 +144,67 @@ def login_userpass(addr: str, username: str, password: str) -> dict[str, Any]:
         body={"password": password},
     )
     auth = response.get("auth")
-    if not isinstance(auth, dict) or not auth.get("client_token"):
+    if isinstance(auth, dict) and auth.get("client_token"):
+        return auth
+
+    requirement = response.get("mfa_requirement")
+    if isinstance(requirement, dict):
+        request_id, method_ids = _parse_mfa_requirement(requirement)
+        raise MFARequired(request_id, method_ids)
+
+    raise VaultError(
+        f"login at {addr} returned no token. "
+        "Check the username and that the `userpass` backend is enabled."
+    )
+
+
+def _parse_mfa_requirement(requirement: dict[str, Any]) -> tuple[str, list[str]]:
+    """The request id, and every method id that would satisfy the challenge.
+
+    Vault nests the ids two levels down, under a constraint name it chooses:
+    `{"mfa_request_id": ..., "mfa_constraints": {"<name>": {"any": [{"id": ...}]}}}`.
+    The constraint name is the login enforcement's, so nothing here may key on
+    a fixed one.
+    """
+    request_id = str(requirement.get("mfa_request_id") or "")
+    method_ids: list[str] = []
+    constraints = requirement.get("mfa_constraints")
+    if isinstance(constraints, dict):
+        for constraint in constraints.values():
+            if not isinstance(constraint, dict):
+                continue
+            options = constraint.get("any")
+            if not isinstance(options, list):
+                continue
+            method_ids += [
+                str(option["id"])
+                for option in options
+                if isinstance(option, dict) and option.get("id")
+            ]
+    if not request_id or not method_ids:
         raise VaultError(
-            f"login at {addr} returned no token. "
-            "Check the username and that the `userpass` backend is enabled."
+            "Vault asked for a second factor but named no method to satisfy it. "
+            "Check the login enforcement's `mfa_method_ids`."
         )
+    return request_id, method_ids
+
+
+def validate_mfa(addr: str, request_id: str, method_id: str, passcode: str) -> dict[str, Any]:
+    """Finish an MFA login and return the `auth` block.
+
+    The passcode goes in a per-method list because Vault's payload is keyed by
+    method id and takes several values for methods that need them. TOTP takes
+    exactly one.
+    """
+    response = _request(
+        addr,
+        "sys/mfa/validate",
+        method="POST",
+        body={"mfa_request_id": request_id, "mfa_payload": {method_id: [passcode]}},
+    )
+    auth = response.get("auth")
+    if not isinstance(auth, dict) or not auth.get("client_token"):
+        raise VaultError(f"Vault accepted the passcode at {addr} but returned no token.")
     return auth
 
 

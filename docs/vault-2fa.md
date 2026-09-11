@@ -1,53 +1,52 @@
 # Two-factor auth on Vault logins
 
-Handoff, 2026-09-11. Nothing is enforced yet, and the last step is blocked.
-The enrollment tooling is built, the Terraform below is written and not
-applied, and the method can land today. The enforcement cannot: `localstack
-login` and ov-dash both post straight at the userpass mount and neither can
-answer an MFA challenge. Fix those first. Then the order matters, because
-enforcing before everyone holds a secret locks every userpass login out.
+Handoff, 2026-09-11. Ready to apply, scoped to the operator. The enrollment
+tooling is built and tested, `localstack login` now speaks Login MFA, and the
+two Terraform resources are in `deployments/infrastructure/identity.tf`. What
+is left is to apply them, in the order below, because enforcing before the
+operator holds a secret locks that account out of userpass.
 
 ## Why the Vault login is the place to do it
 
 Vault is the OIDC provider for humans here, so a person reaches an app by
 completing a Vault login first. Five clients are registered with the `lab`
 provider (`deployments/infrastructure/oidc.tf`): the smoke client, nomad,
-memex, oauth2-proxy (which fronts dash) and grafana.
+memex, oauth2-proxy (which fronts dash) and grafana. A second factor on the
+Vault login therefore reaches all five without touching any of them.
 
-One enforcement on the `userpass` mount covers all five. It also covers
-everything that posts a username and password straight at
-`auth/userpass/login/*`, and two of those cannot answer an MFA challenge today.
-Read the blockers before applying anything.
+## Why the enforcement names one entity, not the mount
 
-## Blockers, as of 2026-09-11
+`auth_method_accessors = [vault_auth_backend.userpass.accessor]` is the obvious
+form and covers every human at once. It also covers everything that posts a
+username and password straight at `auth/userpass/login/*`, and there are two of
+those.
 
-Two first-party consumers log in at the userpass mount directly, and neither
-speaks Login MFA. The enforcement breaks both.
+**`localstack login` was one, and is now fixed.** `login_userpass` raised
+unless the reply carried `auth.client_token`, and Vault answers an enforced
+mount with HTTP 200, a null `auth` and an `mfa_requirement`. The CLI reported
+that as "returned no token. Check the username", which sends the reader looking
+for a typo that is not there. It now raises `MFARequired`, prompts for the
+passcode, and finishes at `sys/mfa/validate`. This mattered more than it
+looked: all three `mfa_*` recipes open with `eval "$(localstack env)"`, so an
+unfixed CLI would have stranded the operator with no way to reach
+`just mfa_reset` once a session lapsed.
 
-**`localstack login` stops working.** `login_userpass`
-(`cli/src/localstack_cli/auth/vault.py:117`) posts to
-`auth/userpass/login/<user>` and raises unless the response carries
-`auth.client_token`. Under Login MFA, Vault answers with a challenge and no
-token, so the CLI fails, and its message points at the wrong layer: "Check the
-username and that the `userpass` backend is enabled." Nothing in the CLI
-handles MFA, and `grep -rni mfa cli/src/` returns nothing.
-
-That bites harder than it looks. All three `mfa_*` recipes open with
-`eval "$(localstack env)"`, which needs a live session
-(`cli/src/localstack_cli/commands/env.py:33`). Existing sessions keep renewing,
-so the rollout looks clean on the day it lands. Once a session lapses, the
-operator cannot log in to reach `just mfa_reset`, which is the lost-phone
-recovery, and the root token becomes the only way back.
-
-**ov-dash stops working, and it is the only path `veerle` has.**
+**ov-dash is the other, and is not fixed.**
 `deployments/applications/services/ov-dash.hcl:94` sets
-`AUTH_MODE = "vault-userpass"` against the same mount, so a person signs in
-there with a Vault username and password. Whether `ov-dash:0.3.0` can answer a
-challenge is not knowable from this repo, and nothing here suggests it can.
+`AUTH_MODE = "vault-userpass"` against the same mount. Whether
+`ov-dash:0.3.0` can answer a challenge is not knowable from this repo, and
+nothing here suggests it can. ov-dash is the only service `veerle` reaches, so
+a mount-wide enforcement would trade her entire access for a factor she cannot
+supply.
 
-So the order is: teach the CLI the `sys/mfa/validate` exchange, check ov-dash
-against an enforced mount, then enforce. The method can land before any of
-that, because it enforces nothing on its own.
+So the enforcement names `vault_identity_entity.operator` and nothing else.
+That is the account worth protecting anyway: `developer` plus the `admin`
+group, which reach root in a few commands. Widening to the mount is a one-line
+change once somebody checks ov-dash against an enforced login.
+
+Scoping this way spares `veerle`, and only her. The operator still meets the
+challenge at every userpass login, ov-dash included. See the coverage section
+below before applying.
 
 ## What was decided, and why
 
@@ -75,36 +74,22 @@ an enforcement's targets as a union, so every target added widens what is
 enforced. Naming `vault_auth_backend.userpass.accessor` keeps `jwt-nomad`
 outside it, and workload identity is unaffected.
 
-## The Terraform, not yet applied
+## The Terraform
 
-Goes in `deployments/infrastructure/identity.tf`, beside
-`vault_auth_backend.userpass`. Human auth backends live in that file.
+Two resources in `deployments/infrastructure/identity.tf`, beside
+`vault_auth_backend.userpass`, because human auth backends live in that file:
+`vault_identity_mfa_totp.lab` and
+`vault_identity_mfa_login_enforcement.operator`. The comment above the second
+records why it names an entity rather than the mount.
 
-```hcl
-resource "vault_identity_mfa_totp" "lab" {
-  issuer                  = "vault.lab.orangecluster.nl"
-  period                  = 30
-  algorithm               = "SHA256"
-  digits                  = 6
-  key_size                = 20
-  max_validation_attempts = 5
-}
-
-### Accessor, not `auth_method_types`: Vault treats an enforcement's targets as
-### a union, so naming the type would sweep in any later userpass mount, and
-### naming a second target widens rather than narrows. jwt-nomad stays outside
-### this, which is what keeps workload identity working.
-resource "vault_identity_mfa_login_enforcement" "userpass" {
-  name                  = "userpass-totp"
-  mfa_method_ids        = [vault_identity_mfa_totp.lab.method_id]
-  auth_method_accessors = [vault_auth_backend.userpass.accessor]
-}
-```
+Neither has been applied. `terraform validate` and `terraform fmt` pass;
+`terraform plan` was never run, because this devcontainer's Consul token lacks
+`key:read` on `terraform/infrastructure`.
 
 ## Rollout order
 
-Apply the method on its own first. The enforcement is what locks people out,
-and it must land after every human holds a secret.
+Apply the method on its own first. The enforcement is what locks the account
+out, and it has to land after the operator holds a secret.
 
 ```sh
 cd deployments/infrastructure
@@ -113,25 +98,23 @@ CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} terraform apply \
   -target=vault_identity_mfa_totp.lab
 ```
 
-Then enroll each human and have them confirm a code works before going on.
-Two entities need it today. The names are the userpass usernames, not display
-names, and `just mfa_status` lists them:
+Then enroll, scan the QR, and confirm a code works before going on. Only the
+operator is in scope; `just mfa_status` lists who a mount-wide enforcement
+would cover if that changes later.
 
 ```sh
 just mfa_enroll operator
-just mfa_enroll veerle
 ```
 
-Then, and only once both blockers above are cleared, apply the rest, which
-adds the enforcement:
+Then apply the rest, which adds the enforcement:
 
 ```sh
 CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} terraform apply -var-file=./vars/prod.tfvars
 ```
 
-Verify by logging in fresh and expecting a passcode prompt. If the rollout goes
-wrong, the root token still logs in and can delete
-`identity/mfa/login-enforcement/userpass-totp`.
+Verify with `localstack login`, which should ask for the password and then a
+TOTP passcode. If the rollout goes wrong, the root token still logs in and can
+delete `identity/mfa/login-enforcement/operator-totp`.
 
 ## Running it
 
@@ -149,8 +132,46 @@ Terraform owns the method and the enforcement. The script owns only the
 per-person secret, and Terraform must never hold that: the secret is the second
 factor, so putting it in state files both factors in one place.
 
+## What a second factor on the Vault login actually reaches
+
+Covered, because they redirect to the `lab` provider and the prompt happens at
+Vault: nomad, memex, dash, registry-ui (it reuses the `oauth2_proxy` client)
+and Grafana's Vault sign-in button. The factor is asked once per VAULT
+session, not once per app, so every SSO redirect after that sails through on
+the browser's existing Vault session.
+
+Three surfaces never touch that login path, so no enforcement here reaches
+them:
+
+| Surface | Credential | Why it is missed |
+| --- | --- | --- |
+| Grafana | `GF_SECURITY_ADMIN_USER = "admin"` plus a KV password | The local login form is not disabled; `GF_AUTH_DISABLE_LOGIN_FORM` appears nowhere in `grafana.hcl` |
+| MinIO console | `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` | Its six `IDENTITY_OPENID_*` settings point at Nomad's provider for workload identity. There is no human OIDC on MinIO at all |
+| Vault | the root token | Token auth, not userpass |
+
+Neither password is reachable without an MFA-protected Vault login today,
+because both live in KV. They are still standing shared credentials, so one
+leak is a permanent bypass that a second factor cannot take back. Closing them
+is separate work: disable Grafana's login form, and give MinIO a human OIDC
+client on the `lab` provider.
+
+### ov-dash breaks for the operator, not for veerle
+
+Scoping the enforcement to an entity does NOT spare ov-dash. Vault matches the
+enforcement wherever that entity authenticates, and ov-dash posts straight at
+`auth/userpass/login/operator`. So if `ov-dash:0.3.0` cannot answer a
+challenge, applying the enforcement costs the operator ov-dash. `veerle` keeps
+it because she is out of scope.
+
+Test that before the third apply. If it breaks, either drop the enforcement or
+reach OpenViking through the Vault UI until ov-dash learns the exchange.
+
 ## What this does not cover
 
+- **Only the operator is enforced.** `veerle` logs in at the same mount and is
+  deliberately out of scope until ov-dash is checked, so her password is still
+  a single factor. Widening is one line, and the reason it is not that line
+  today is written above the resource.
 - **The root token bypasses it.** That is a token-auth login, not a userpass
   one. Terraform applies keep working and break-glass stays open, which is also
   the hole: this is only as strong as control of that token.
@@ -207,13 +228,14 @@ is no overlap window.
 
 ## Next steps
 
-1. Teach `login_userpass` the `sys/mfa/validate` exchange. Until that lands,
-   enforcing MFA costs the CLI, and with it the recovery recipes.
-2. Check `ov-dash:0.3.0` against an MFA-enforced mount. If it cannot answer a
-   challenge, decide whether `veerle` keeps ov-dash or gets MFA, because the
-   mount-wide enforcement cannot give her both.
-3. Apply the method, enroll both people, then enforce.
-4. Consider an audit device, so an enrollment or a reset is recorded. That gap
+1. Apply in the order above, and confirm `localstack login` prompts for a
+   passcode. That is the first time this runs against real Vault: the MFA
+   exchange is covered by tests against a fake one, not by a live login.
+2. Check `ov-dash:0.3.0` against an MFA-enforced login. If it can answer a
+   challenge, widen the enforcement to
+   `auth_method_accessors = [vault_auth_backend.userpass.accessor]` and enroll
+   `veerle`. If it cannot, `veerle` keeps ov-dash and stays out of scope.
+3. Consider an audit device, so an enrollment or a reset is recorded. That gap
    is older and wider than this work.
 
 ## Key references
@@ -225,4 +247,5 @@ is no overlap window.
   no cluster.
 - `justfile`: the three `mfa_*` recipes.
 - `docs/vault-human-auth.md`: the login flow this adds a factor to.
+- `cli/src/localstack_cli/auth/vault.py`: `MFARequired` and `validate_mfa`.
 - `docs/cluster-roles.md`: what `developer` and `admin` can already reach.
