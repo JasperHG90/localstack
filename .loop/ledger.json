@@ -2780,13 +2780,13 @@
     },
     "gcs-backups-doc-to-runbook": {
       "slug": "gcs-backups-doc-to-runbook",
-      "stage": "planning",
-      "attempts": 0,
+      "stage": "done",
+      "attempts": 1,
       "review_cycles": 0,
       "blocker": null,
       "commit_sha": null,
-      "review_verdict": null,
-      "review_entry_tree": null,
+      "review_verdict": ".loop/verdicts/gcs-backups-doc-to-runbook.adversarial.md, .loop/verdicts/gcs-backups-doc-to-runbook.documentation.md",
+      "review_entry_tree": "8072f87da51702cfc9a1d18ca8d740654fa46530",
       "dropped": false,
       "drop_reason": null,
       "carried_over_finding": null,
@@ -2800,7 +2800,24 @@
       "premise": {},
       "measured_against": {},
       "eval_amendments": [],
-      "plan_rebinds": []
+      "plan_rebinds": [
+        {
+          "pass_id": "plan-validator",
+          "before_plan": "10f6d86d172cd6b93bc00f705a4740cd65a5c28f0c54f3a4c7f9ff0d432d143b",
+          "after_plan": "ae9bba06d855fc94e97c158244a790614f267e05035d13da0fc7339098d8742f",
+          "before_scope": "dc68d9975987d7a1fe4d84c665dad4280f5ffbf156a3542a6ca8b5ed4eaedde9",
+          "after_scope": "3dab9b6e786b4088c1cc159b6f7ee6260fa8fc4d48433f7890c9e1091c18c3b2",
+          "sections": [
+            "6",
+            "8",
+            "9",
+            "premises"
+          ],
+          "reason": "Applied all five cycle-2 required fixes: corrected R3's fact counts to twelve (six CPU/memory figures across three tasks, three images) and required the rewrite to state both cron expressions literally so the schedule test is writable at all; bound each figure to its task; reworded R8 off the unverifiable 'none has been performed'; extended R9 to cover the H1; repointed P3's secret_mount anchor to the j2 policy template that hardcodes the prefix; corrected P4 to four drifts; rewrote P6, which fix 3 had falsified. Authored the missing eval marker that R7 and R9 cite. Edits confined to sections 6, 8, 9 and premises, matching fix_sections.",
+          "counter_signer": "JasperHG90",
+          "when": "2026-09-11T20:41:09+02:00"
+        }
+      ]
     }
   }
 }
