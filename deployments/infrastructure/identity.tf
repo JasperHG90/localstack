@@ -107,6 +107,12 @@ resource "vault_identity_mfa_totp" "lab" {
 ### `admin` group, which reach root in a few commands. It gets MFA now, and the
 ### mount waits on someone checking ov-dash against an enforced login.
 ###
+### This does NOT spare ov-dash for the operator. Vault matches the enforcement
+### wherever that entity authenticates, and ov-dash posts at
+### auth/userpass/login/operator, so the operator loses ov-dash unless that
+### image can answer a challenge. Only `veerle` is spared, by being out of
+### scope.
+###
 ### To widen later, REPLACE identity_entity_ids with the accessor line. Vault
 ### matches these targets as a union, so adding the accessor while leaving the
 ### entity id behind enforces on everyone rather than on the intersection.

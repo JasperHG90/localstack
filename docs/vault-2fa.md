@@ -44,6 +44,10 @@ That is the account worth protecting anyway: `developer` plus the `admin`
 group, which reach root in a few commands. Widening to the mount is a one-line
 change once somebody checks ov-dash against an enforced login.
 
+Scoping this way spares `veerle`, and only her. The operator still meets the
+challenge at every userpass login, ov-dash included. See the coverage section
+below before applying.
+
 ## What was decided, and why
 
 **Vault generates the QR, one person at a time.** The alternative was
@@ -127,6 +131,40 @@ it stays a secret until it is scanned and deleted.
 Terraform owns the method and the enforcement. The script owns only the
 per-person secret, and Terraform must never hold that: the secret is the second
 factor, so putting it in state files both factors in one place.
+
+## What a second factor on the Vault login actually reaches
+
+Covered, because they redirect to the `lab` provider and the prompt happens at
+Vault: nomad, memex, dash, registry-ui (it reuses the `oauth2_proxy` client)
+and Grafana's Vault sign-in button. The factor is asked once per VAULT
+session, not once per app, so every SSO redirect after that sails through on
+the browser's existing Vault session.
+
+Three surfaces never touch that login path, so no enforcement here reaches
+them:
+
+| Surface | Credential | Why it is missed |
+| --- | --- | --- |
+| Grafana | `GF_SECURITY_ADMIN_USER = "admin"` plus a KV password | The local login form is not disabled; `GF_AUTH_DISABLE_LOGIN_FORM` appears nowhere in `grafana.hcl` |
+| MinIO console | `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` | Its six `IDENTITY_OPENID_*` settings point at Nomad's provider for workload identity. There is no human OIDC on MinIO at all |
+| Vault | the root token | Token auth, not userpass |
+
+Neither password is reachable without an MFA-protected Vault login today,
+because both live in KV. They are still standing shared credentials, so one
+leak is a permanent bypass that a second factor cannot take back. Closing them
+is separate work: disable Grafana's login form, and give MinIO a human OIDC
+client on the `lab` provider.
+
+### ov-dash breaks for the operator, not for veerle
+
+Scoping the enforcement to an entity does NOT spare ov-dash. Vault matches the
+enforcement wherever that entity authenticates, and ov-dash posts straight at
+`auth/userpass/login/operator`. So if `ov-dash:0.3.0` cannot answer a
+challenge, applying the enforcement costs the operator ov-dash. `veerle` keeps
+it because she is out of scope.
+
+Test that before the third apply. If it breaks, either drop the enforcement or
+reach OpenViking through the Vault UI until ov-dash learns the exchange.
 
 ## What this does not cover
 
