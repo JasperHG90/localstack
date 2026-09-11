@@ -75,6 +75,47 @@ resource "vault_identity_entity_alias" "operator" {
   depends_on = [vault_generic_endpoint.operator]
 }
 
+### --- login MFA -------------------------------------------------------------
+
+### TOTP as a second factor on human logins.
+###
+### The per-person secrets are NOT here and must never be: that secret IS the
+### second factor, so holding it in state would file both factors in one place.
+### `just mfa_enroll <username>` mints one and writes the QR Vault returns.
+### docs/vault-2fa.md is the long form.
+resource "vault_identity_mfa_totp" "lab" {
+  issuer                  = "vault.lab.orangecluster.nl"
+  period                  = 30
+  algorithm               = "SHA256"
+  digits                  = 6
+  key_size                = 20
+  max_validation_attempts = 5
+}
+
+### SCOPED TO ONE ENTITY, NOT THE MOUNT, and that is the whole decision.
+###
+### `auth_method_accessors = [vault_auth_backend.userpass.accessor]` is the
+### obvious form and covers every human at once. It also breaks ov-dash, which
+### posts a username and password straight at this mount
+### (deployments/applications/services/ov-dash.hcl, AUTH_MODE =
+### "vault-userpass"). Whether that image can answer an MFA challenge is not
+### knowable from this repo, and ov-dash is the ONLY service `veerle` reaches,
+### so enforcing mount-wide trades her whole access for a factor she cannot
+### supply.
+###
+### The operator is the account worth the protection: `developer` plus the
+### `admin` group, which reach root in a few commands. It gets MFA now, and the
+### mount waits on someone checking ov-dash against an enforced login.
+###
+### To widen later, REPLACE identity_entity_ids with the accessor line. Vault
+### matches these targets as a union, so adding the accessor while leaving the
+### entity id behind enforces on everyone rather than on the intersection.
+resource "vault_identity_mfa_login_enforcement" "operator" {
+  name                = "operator-totp"
+  mfa_method_ids      = [vault_identity_mfa_totp.lab.method_id]
+  identity_entity_ids = [vault_identity_entity.operator.id]
+}
+
 ### --- openviking consumers -------------------------------------------------
 
 ### People who use OpenViking and nothing else on this cluster.

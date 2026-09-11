@@ -51,6 +51,23 @@ def _revoke_previous(previous: Session | None) -> None:
         )
 
 
+def _complete_mfa(addr: str, challenge: vault.MFARequired) -> dict[str, object]:
+    """Prompt for the second factor and finish the login.
+
+    Hidden like the password prompt, so a passcode never lands in terminal
+    scrollback. It is short-lived, but a recording of the session is not.
+    """
+    if len(challenge.method_ids) > 1:
+        warn(f"Vault offered {len(challenge.method_ids)} MFA methods. Using the first.")
+    passcode = getpass.getpass(f"TOTP passcode for {addr}: ")
+    try:
+        return vault.validate_mfa(addr, challenge.request_id, challenge.method_ids[0], passcode)
+    except vault.VaultError as error:
+        raise fail(str(error)) from error
+    finally:
+        del passcode
+
+
 @app.command()
 def login(
     username: str = typer.Option(
@@ -93,14 +110,21 @@ def login(
     password = getpass.getpass(f"Password for {who} at {addr}: ")
 
     try:
-        auth = vault.login_userpass(addr, who, password)
+        # MFARequired subclasses VaultError, so it has to be caught first or
+        # the broad clause below swallows the challenge and reports it as a
+        # failed login.
+        try:
+            auth = vault.login_userpass(addr, who, password)
+        except vault.MFARequired as challenge:
+            auth = _complete_mfa(addr, challenge)
     except vault.VaultError as error:
         # NOTHING has been touched yet, and that is deliberate. An earlier
         # revision ended the previous session before this call, so a mistyped
         # password destroyed a working one and left the cache holding a dead
         # token. A failed login must leave the existing session alone.
         raise fail(str(error)) from error
-    del password
+    finally:
+        del password
 
     vault_credential = credential_from_login(auth)
 

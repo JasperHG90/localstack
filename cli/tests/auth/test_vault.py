@@ -131,3 +131,117 @@ def test_identity_policies_includes_what_a_group_grants() -> None:
 def test_identity_policies_survives_a_lookup_missing_either_key() -> None:
     assert identity_policies({}) == []
     assert identity_policies({"policies": ["default"]}) == ["default"]
+
+
+# The shape Vault really answers an MFA-enforced login with, measured against
+# the Login MFA contract: HTTP 200, a NULL auth block, and the challenge under
+# `mfa_requirement`. A fake that returned 401 or an error body would let a
+# client pass while the real thing fell through to "returned no token".
+MFA_CHALLENGE = {
+    "request_id": "e9b1f0c2-1111-2222-3333-444455556666",
+    "auth": None,
+    "warnings": [
+        "A login request was issued that is subject to MFA validation. "
+        "Please make sure to validate the login by sending another request "
+        "to sys/mfa/validate endpoint."
+    ],
+    "mfa_requirement": {
+        "mfa_request_id": "d0c9eec7-6921-8d2a-3d8a-b8e1bd2e0e2f",
+        # The key is the login enforcement's name, so nothing may key on a
+        # fixed one.
+        "mfa_constraints": {
+            "userpass-totp": {
+                "any": [
+                    {
+                        "type": "totp",
+                        "id": "0c7722c7-3976-fe35-24a9-ace1971ef8c4",
+                        "uses_passcode": True,
+                    }
+                ]
+            }
+        },
+    },
+}
+
+MFA_VALIDATED = {
+    "auth": {
+        "client_token": "hvs.mfa-validated-token",
+        "accessor": "vault-accessor",
+        "entity_id": "351f302a",
+        "policies": ["default", "developer"],
+        "identity_policies": ["developer"],
+        "lease_duration": 2764800,
+        "renewable": True,
+    }
+}
+
+
+def _enforce_mfa(cluster: FakeCluster) -> None:
+    cluster.routes["/v1/auth/userpass/login/operator"] = (
+        200,
+        json.dumps(MFA_CHALLENGE).encode(),
+    )
+
+
+def test_an_mfa_challenge_is_not_reported_as_a_failed_login(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    """The whole point of MFARequired. Before it, an enforced mount raised
+    "returned no token. Check the username", which blames the wrong layer and
+    sends the reader looking for a typo that is not there."""
+    _enforce_mfa(cluster)
+    with pytest.raises(vault.MFARequired) as caught:
+        vault.login_userpass(cluster_addr, "operator", "hunter2")
+    assert caught.value.request_id == "d0c9eec7-6921-8d2a-3d8a-b8e1bd2e0e2f"
+    assert caught.value.method_ids == ["0c7722c7-3976-fe35-24a9-ace1971ef8c4"]
+
+
+def test_mfa_required_is_still_a_vault_error(cluster_addr: str, cluster: FakeCluster) -> None:
+    """Callers written before Login MFA catch VaultError. They must keep
+    catching this, or an enforced mount turns into an AttributeError."""
+    _enforce_mfa(cluster)
+    with pytest.raises(VaultError):
+        vault.login_userpass(cluster_addr, "operator", "hunter2")
+
+
+def test_a_challenge_naming_no_method_says_so(cluster_addr: str, cluster: FakeCluster) -> None:
+    """An enforcement with no reachable method is a config fault, and the
+    message has to name the field rather than the password."""
+    cluster.routes["/v1/auth/userpass/login/operator"] = (
+        200,
+        json.dumps({"auth": None, "mfa_requirement": {"mfa_request_id": "x"}}).encode(),
+    )
+    with pytest.raises(VaultError, match="mfa_method_ids"):
+        vault.login_userpass(cluster_addr, "operator", "hunter2")
+
+
+def test_validate_mfa_returns_the_auth_block(cluster_addr: str, cluster: FakeCluster) -> None:
+    cluster.routes["/v1/sys/mfa/validate"] = (200, json.dumps(MFA_VALIDATED).encode())
+    auth = vault.validate_mfa(cluster_addr, "req-1", "method-1", "123456")
+    assert auth["client_token"] == "hvs.mfa-validated-token"
+
+
+def test_validate_mfa_sends_the_payload_vault_expects(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    """Keyed by method id, and the passcode in a LIST. Vault rejects a bare
+    string, and the failure reads like a wrong code rather than a wrong shape."""
+    cluster.routes["/v1/sys/mfa/validate"] = (200, json.dumps(MFA_VALIDATED).encode())
+    vault.validate_mfa(cluster_addr, "req-1", "method-1", "123456")
+    sent = cluster.requests_for("/v1/sys/mfa/validate")
+    assert [item.method for item in sent] == ["POST"]
+    assert sent[0].json() == {
+        "mfa_request_id": "req-1",
+        "mfa_payload": {"method-1": ["123456"]},
+    }
+
+
+def test_a_wrong_passcode_surfaces_vaults_own_words(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    cluster.routes["/v1/sys/mfa/validate"] = (
+        400,
+        json.dumps({"errors": ["failed to satisfy enforcement userpass-totp"]}).encode(),
+    )
+    with pytest.raises(VaultError, match="failed to satisfy enforcement"):
+        vault.validate_mfa(cluster_addr, "req-1", "method-1", "000000")
