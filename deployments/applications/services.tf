@@ -946,6 +946,7 @@ resource "bifrost_virtual_key" "openviking" {
   name = "openviking"
 
   provider_configs = [
+    { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
