@@ -22,7 +22,7 @@ job "backup-minio" {
         image        = "docker.io/rclone/rclone:latest"
         network_mode = "host"
         entrypoint   = ["/bin/sh", "-c"]
-        args         = ["rclone sync minio:memex gcs:${gcs_bucket}/minio/memex/ --config /secrets/rclone.conf"]
+        args         = ["rclone sync minio:openviking gcs:${gcs_bucket}/minio/openviking/ --config /secrets/rclone.conf"]
       }
 
       vault {}

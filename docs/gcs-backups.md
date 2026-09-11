@@ -2,7 +2,7 @@
 
 ## Context
 
-No off-site backups exist. PostgreSQL data lives on a single host volume on `firebat`, and the MinIO memex bucket lives on `orangepi4a`. A disk failure on either node means total data loss. This change adds two Nomad periodic batch jobs that back up to Google Cloud Storage nightly.
+No off-site backups exist. PostgreSQL data lives on a single host volume on `firebat`, and the MinIO openviking bucket lives on `orangepi4a`. A disk failure on either node means total data loss. This change adds two Nomad periodic batch jobs that back up to Google Cloud Storage nightly.
 
 All GCS infrastructure (bucket, service account, IAM, key) is managed by Terraform in `storage.tf` -- no manual `gcloud` setup needed.
 
@@ -52,24 +52,24 @@ Periodic batch job running at 2:00 AM Europe/Amsterdam:
 - **Task group** with two tasks sharing the `/alloc/data/` directory
 - **Prestart task** (`pgdump`): uses `docker.io/library/postgres:18` image, runs `pg_dumpall | gzip` to `/alloc/data/pgdumpall-YYYY-MM-DD.sql.gz`
   - Vault template injects `PGUSER`/`PGPASSWORD` from `secret/data/default/backup-postgres/postgres`
-  - Constrained to `firebat` (co-located with postgres, avoids network transfer)
+  - Constrained to `radxa-dragon-q6a`, so it reads postgres over the network at `192.168.2.30`
   - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]` (postgres image has `docker-entrypoint.sh` as ENTRYPOINT)
-  - Resources: 1000 MHz CPU, 512 MB memory
+  - Resources: 500 MHz CPU, 512 MB memory
 - **Main task** (`upload`): uses `docker.io/rclone/rclone:latest`, runs `rclone copy` to upload today's dump
   - Vault template writes GCS service account JSON to `secrets/gcs-key.json`
   - Uses on-the-fly backend syntax (`:gcs:`) with `--gcs-service-account-file` flag (no rclone.conf needed)
   - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]` (rclone image has `rclone` as ENTRYPOINT)
-  - Resources: 500 MHz CPU, 256 MB memory
+  - Resources: 200 MHz CPU, 256 MB memory
   - No pruning step -- 180-day bucket lifecycle handles retention
 
 ### `deployments/infrastructure/services/backup-minio.hcl`
 
 Periodic batch job running at 3:00 AM Europe/Amsterdam (staggered):
-- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync minio:memex gcs:<bucket>/minio/memex/`
+- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync minio:openviking gcs:<bucket>/minio/openviking/`
 - Two Vault templates:
   1. `secrets/rclone.conf` -- rclone config with `[minio]` remote (S3/Minio provider, creds from Vault) and `[gcs]` remote (`service_account_file` pointing to the key file)
   2. `secrets/gcs-key.json` -- GCS service account JSON from Vault
-- No node constraint (any node with network access to MinIO)
+- Pinned to `radxa-dragon-q6a` by a node constraint, like `backup-postgres.hcl`
 - `network_mode = "host"` for MinIO access
 - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]`
 - Resources: 1000 MHz CPU, 512 MB memory
@@ -102,8 +102,8 @@ gs://<bucket>/
     pgdumpall-2026-04-08.sql.gz
     ...
   minio/
-    memex/
-      <mirror of memex bucket>
+    openviking/
+      <mirror of openviking bucket>
 ```
 
 - Postgres: dated dumps accumulate and are automatically deleted after 180 days by the bucket lifecycle rule.
@@ -134,5 +134,5 @@ nomad alloc logs <alloc-id> upload # upload task
 
 # Verify GCS contents
 gsutil ls gs://<bucket>/postgres/
-gsutil ls gs://<bucket>/minio/memex/
+gsutil ls gs://<bucket>/minio/openviking/
 ```
