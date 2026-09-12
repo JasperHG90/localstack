@@ -137,28 +137,38 @@ def test_identity_policies_survives_a_lookup_missing_either_key() -> None:
 # the Login MFA contract: HTTP 200, a NULL auth block, and the challenge under
 # `mfa_requirement`. A fake that returned 401 or an error body would let a
 # client pass while the real thing fell through to "returned no token".
+# Captured from the live cluster on 2026-09-12, not written from the docs. The
+# earlier version of this constant put `mfa_requirement` at the TOP LEVEL with a
+# null `auth`, which is what the API contract describes. Vault actually nests it
+# inside `auth`, beside an empty `client_token`. The fake matched the docs, so
+# every test passed while the real login fell through to "no token".
 MFA_CHALLENGE = {
     "request_id": "e9b1f0c2-1111-2222-3333-444455556666",
-    "auth": None,
     "warnings": [
         "A login request was issued that is subject to MFA validation. "
         "Please make sure to validate the login by sending another request "
         "to sys/mfa/validate endpoint."
     ],
-    "mfa_requirement": {
-        "mfa_request_id": "d0c9eec7-6921-8d2a-3d8a-b8e1bd2e0e2f",
-        # The key is the login enforcement's name, so nothing may key on a
-        # fixed one.
-        "mfa_constraints": {
-            "userpass-totp": {
-                "any": [
-                    {
-                        "type": "totp",
-                        "id": "0c7722c7-3976-fe35-24a9-ace1971ef8c4",
-                        "uses_passcode": True,
-                    }
-                ]
-            }
+    "auth": {
+        "client_token": "",
+        "accessor": "",
+        "entity_id": "",
+        "policies": ["default"],
+        "mfa_requirement": {
+            "mfa_request_id": "d0c9eec7-6921-8d2a-3d8a-b8e1bd2e0e2f",
+            # The key is the login enforcement's name, so nothing may key on a
+            # fixed one.
+            "mfa_constraints": {
+                "operator-totp": {
+                    "any": [
+                        {
+                            "type": "totp",
+                            "id": "0c7722c7-3976-fe35-24a9-ace1971ef8c4",
+                            "uses_passcode": True,
+                        }
+                    ]
+                }
+            },
         },
     },
 }

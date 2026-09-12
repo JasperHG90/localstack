@@ -58,6 +58,22 @@ userpass_entities() {
       done
 }
 
+# Strip surrounding whitespace and refuse what is left if it is not a plain
+# name. A trailing newline from `just mfa_reset 'operator<newline>'` still
+# RESOLVES: Vault matched the real operator entity, the reset destroyed that
+# person's working secret, and the replacement QR landed in a filename
+# containing a newline. Refusing late is no good, because entity_id succeeds
+# and admin-destroy has already run by then.
+clean_username() {
+  local name
+  name=$(printf '%s' "$1" | tr -d '[:space:]')
+  [ -n "$name" ] || { echo "empty username" >&2; exit 1; }
+  case "$name" in
+    *[!A-Za-z0-9._@-]*) echo "refusing username '$name': expected letters, digits, . _ @ or -" >&2; exit 1 ;;
+  esac
+  printf '%s' "$name"
+}
+
 # Exactly one method, or refuse. Two methods means an enforcement could name
 # either and this script would silently pick the wrong one.
 method_id() {
@@ -87,6 +103,59 @@ entity_id() {
     userpass_entities >&2
     exit 1
   }
+}
+
+# Confirm the authenticator actually holds the secret Vault just issued.
+#
+# Vault activates a TOTP secret the moment `admin-generate` returns: there is
+# no pending state to confirm against, so a mis-scan is only discovered at the
+# next login, by which time the PREVIOUS authenticator entry is already gone.
+# That is a lockout, and it is the reason this step exists.
+#
+# Checked locally against the otpauth URL rather than through Vault, because
+# validating through Vault needs a live login request, which needs the
+# password this script deliberately never sees. The URL carries the algorithm,
+# digit count and period, so nothing here hardcodes the method's settings.
+confirm_totp() {
+  local url=$1 code
+  printf '>> scan it now, then type the 6-digit code to confirm (empty to skip): '
+  read -r code || code=""
+  if [ -z "$code" ]; then
+    echo ">> SKIPPED. Nothing has checked that authenticator; a bad scan will" >&2
+    echo "   surface as a failed login, and the old entry is already gone." >&2
+    return 0
+  fi
+  if python3 - "$url" "$code" <<'PYEOF'
+import base64, hashlib, hmac, struct, sys, time, urllib.parse
+
+url, code = sys.argv[1], sys.argv[2].strip()
+q = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+secret = q["secret"][0]
+digits = int(q.get("digits", ["6"])[0])
+period = int(q.get("period", ["30"])[0])
+algo = {"sha1": hashlib.sha1, "sha256": hashlib.sha256, "sha512": hashlib.sha512}[
+    q.get("algorithm", ["SHA1"])[0].lower()
+]
+key = base64.b32decode(secret + "=" * (-len(secret) % 8), casefold=True)
+
+def at(counter: int) -> str:
+    mac = hmac.new(key, struct.pack(">Q", counter), algo).digest()
+    offset = mac[-1] & 0x0F
+    truncated = struct.unpack(">I", mac[offset : offset + 4])[0] & 0x7FFFFFFF
+    return str(truncated % (10**digits)).zfill(digits)
+
+# One step either side, matching the method's own skew allowance.
+now = int(time.time()) // period
+sys.exit(0 if any(at(now + drift) == code for drift in (-1, 0, 1)) else 1)
+PYEOF
+  then
+    echo ">> confirmed. That authenticator works."
+  else
+    echo ">> THAT CODE DOES NOT MATCH. The authenticator does not hold this" >&2
+    echo "   secret, and the old one is already destroyed. Re-scan the QR, or" >&2
+    echo "   run the reset again to issue a fresh one." >&2
+    return 1
+  fi
 }
 
 # Writes the QR to tmp/, which the repo gitignores. The PNG carries the seed in
@@ -123,6 +192,7 @@ generate() {
   echo ">> wrote $out"
   echo ">> scan it, confirm a code works, then delete it: rm '$out'"
   echo ">> the app will label this '<issuer> ($eid)'; rename it to '$username' by hand."
+  confirm_totp "$(echo "$response" | jq -r '.data.url')"
 }
 
 require_vault
@@ -166,17 +236,19 @@ case "${1:-}" in
 
   enroll)
     [ $# -eq 2 ] || usage
-    mid=$(method_id); eid=$(entity_id "$2")
-    generate "$mid" "$eid" "$2"
+    username=$(clean_username "$2")
+    mid=$(method_id); eid=$(entity_id "$username")
+    generate "$mid" "$eid" "$username"
     ;;
 
   reset)
     [ $# -eq 2 ] || usage
-    mid=$(method_id); eid=$(entity_id "$2")
+    username=$(clean_username "$2")
+    mid=$(method_id); eid=$(entity_id "$username")
     # Idempotent: succeeds whether or not a secret was there.
     vault write identity/mfa/method/totp/admin-destroy method_id="$mid" entity_id="$eid" >/dev/null
-    echo ">> destroyed any existing secret for '$2'"
-    generate "$mid" "$eid" "$2"
+    echo ">> destroyed any existing secret for '$username'"
+    generate "$mid" "$eid" "$username"
     ;;
 
   *) usage ;;

@@ -147,7 +147,15 @@ def login_userpass(addr: str, username: str, password: str) -> dict[str, Any]:
     if isinstance(auth, dict) and auth.get("client_token"):
         return auth
 
-    requirement = response.get("mfa_requirement")
+    # Vault nests the challenge INSIDE the auth block, next to an EMPTY
+    # client_token, rather than at the top level the docs imply. Measured
+    # against the live cluster 2026-09-12: the reply carries
+    # auth.mfa_requirement and no top-level key. The top-level lookup stays as
+    # a fallback, because it is what the API contract describes and this client
+    # does not control the server version it talks to.
+    requirement = auth.get("mfa_requirement") if isinstance(auth, dict) else None
+    if requirement is None:
+        requirement = response.get("mfa_requirement")
     if isinstance(requirement, dict):
         request_id, method_ids = _parse_mfa_requirement(requirement)
         raise MFARequired(request_id, method_ids)
