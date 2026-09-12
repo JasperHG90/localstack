@@ -152,9 +152,16 @@ def login_userpass(addr: str, username: str, password: str) -> dict[str, Any]:
         request_id, method_ids = _parse_mfa_requirement(requirement)
         raise MFARequired(request_id, method_ids)
 
+    # No token AND no challenge. Two causes, and the second is easy to reach:
+    # applying an MFA enforcement before enrolling anyone leaves the entity
+    # covered with no secret to offer, and Vault answers that with this same
+    # empty 200 rather than an error. Measured against the live cluster,
+    # 2026-09-12.
     raise VaultError(
-        f"login at {addr} returned no token. "
-        "Check the username and that the `userpass` backend is enabled."
+        f"login at {addr} returned no token and no MFA challenge. "
+        "Either the username is wrong or the `userpass` backend is disabled, "
+        "or a login MFA enforcement covers this entity and no second factor "
+        "is enrolled for it."
     )
 
 

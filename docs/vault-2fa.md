@@ -116,6 +116,61 @@ Verify with `localstack login`, which should ask for the password and then a
 TOTP passcode. If the rollout goes wrong, the root token still logs in and can
 delete `identity/mfa/login-enforcement/operator-totp`.
 
+## Turning it off
+
+**Delete the enforcement, not the method.** The enforcement is the only thing
+that makes Vault ask. Removing it stops every challenge at once, and it takes
+effect on the next login, because enforcement is read per login rather than
+baked into a token.
+
+The method and the per-person secrets survive that, which is the point: turning
+MFA back on later is one apply, and nobody rescans a QR code.
+
+Through Terraform, which leaves no drift:
+
+```sh
+# Delete the vault_identity_mfa_login_enforcement.operator block, then:
+cd deployments/infrastructure
+CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} terraform apply -var-file=./vars/prod.tfvars
+```
+
+In a hurry, at the cost of drift the next apply silently reverts:
+
+```sh
+vault delete identity/mfa/login-enforcement/operator-totp
+```
+
+Confirm either way with `just mfa_status`, which should report `(none)` under
+login enforcements.
+
+### If you cannot log in to do it
+
+A lost phone with no live session is the case this has to survive. The root
+token bypasses Login MFA, because it is token auth rather than a userpass
+login, so the break-glass path already documented still works: SSH to firebat
+and read `/opt/vault/init.json`, or run `localstack breakglass` for the
+runbook. Then run the `vault delete` above with that token.
+
+`docs/breakglass.md` is the long form. Nothing about MFA changes it.
+
+### Removing it completely
+
+Order matters, and getting it backwards is a lockout. **Delete the enforcement
+first, then the method.** An enforcement naming a method that no longer exists
+has no way to be satisfied, so logins fail closed with no route back except the
+root token. There is no reason to find out exactly how that presents.
+
+```sh
+# enforcement first
+vault delete identity/mfa/login-enforcement/operator-totp
+# then the method, which drops every enrolled secret with it
+vault delete identity/mfa/method/totp/<method-id>
+```
+
+`just mfa_status` prints the method id. Doing this in Terraform instead, by
+deleting both blocks in one apply, is safer: Terraform destroys the enforcement
+before the method it depends on.
+
 ## Running it
 
 | Command | Does |

@@ -245,3 +245,15 @@ def test_a_wrong_passcode_surfaces_vaults_own_words(
     )
     with pytest.raises(VaultError, match="failed to satisfy enforcement"):
         vault.validate_mfa(cluster_addr, "req-1", "method-1", "000000")
+
+
+def test_an_enforced_entity_with_no_secret_names_enrollment(
+    cluster_addr: str, cluster: FakeCluster
+) -> None:
+    """Applying the enforcement before enrolling anyone lands here, and Vault
+    reports it as an empty 200 rather than an error. The old message blamed the
+    username, which sent the reader hunting a typo that was not there.
+    Measured against the live cluster on 2026-09-12."""
+    cluster.routes["/v1/auth/userpass/login/operator"] = (200, b'{"auth":null}')
+    with pytest.raises(VaultError, match="no second factor"):
+        vault.login_userpass(cluster_addr, "operator", "hunter2")
