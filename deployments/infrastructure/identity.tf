@@ -92,34 +92,32 @@ resource "vault_identity_mfa_totp" "lab" {
   max_validation_attempts = 5
 }
 
-### SCOPED TO ONE ENTITY, NOT THE MOUNT, and that is the whole decision.
+### SCOPED TO THE USERPASS MOUNT, and deliberately not to the `jwt-lab` one.
 ###
-### `auth_method_accessors = [vault_auth_backend.userpass.accessor]` is the
-### obvious form and covers every human at once. It also breaks ov-dash, which
-### posts a username and password straight at this mount
-### (deployments/applications/services/ov-dash.hcl, AUTH_MODE =
-### "vault-userpass"). Whether that image can answer an MFA challenge is not
-### knowable from this repo, and ov-dash is the ONLY service `veerle` reaches,
-### so enforcing mount-wide trades her whole access for a factor she cannot
-### supply.
+### Every human login that carries a password lands here, including the one
+### Vault runs behind its own OIDC provider page — so a person reaching ov-dash
+### or any other SSO app meets the challenge once, at Vault, per Vault session.
 ###
-### The operator is the account worth the protection: `developer` plus the
-### `admin` group, which reach root in a few commands. It gets MFA now, and the
-### mount waits on someone checking ov-dash against an enforced login.
+### `jwt-lab` stays out of it because the token posted there was already earned
+### at this mount. ov-dash trades an ID token for a Vault token with no
+### password and no prompt, and it cannot answer a challenge: an enforcement
+### that reached that mount would break the sign-in it exists to protect.
 ###
-### This does NOT spare ov-dash for the operator. Vault matches the enforcement
-### wherever that entity authenticates, and ov-dash posts at
-### auth/userpass/login/operator, so the operator loses ov-dash unless that
-### image can answer a challenge. Only `veerle` is spared, by being out of
-### scope.
+### THAT IS WHY THIS NAMES THE ACCESSOR AND NOT AN ENTITY. Vault matches an
+### enforcement wherever the named entity authenticates, mount included, so
+### `identity_entity_ids = [operator]` — which this was until ov-dash learned
+### the trade — challenges the jwt-lab login too and strands the operator at
+### the first hop. Targets are a union: adding an entity id back here enforces
+### on the union, not the intersection.
 ###
-### To widen later, REPLACE identity_entity_ids with the accessor line. Vault
-### matches these targets as a union, so adding the accessor while leaving the
-### entity id behind enforces on everyone rather than on the intersection.
-resource "vault_identity_mfa_login_enforcement" "operator" {
-  name                = "operator-totp"
-  mfa_method_ids      = [vault_identity_mfa_totp.lab.method_id]
-  identity_entity_ids = [vault_identity_entity.operator.id]
+### Enroll everyone in `vault_openviking_consumers` BEFORE applying this.
+### Mount-wide means veerle now meets the challenge on the only service she
+### reaches, and an unenrolled account cannot complete the login at all:
+### `just mfa_enroll veerle`. docs/vault-2fa.md carries the order.
+resource "vault_identity_mfa_login_enforcement" "userpass" {
+  name                  = "userpass-totp"
+  mfa_method_ids        = [vault_identity_mfa_totp.lab.method_id]
+  auth_method_accessors = [vault_auth_backend.userpass.accessor]
 }
 
 ### --- openviking consumers -------------------------------------------------
@@ -217,6 +215,115 @@ resource "vault_identity_group" "openviking_user" {
     for username in keys(var.vault_openviking_consumers) :
     vault_identity_entity.openviking_consumer[username].id
   ]
+}
+
+### --- jwt-lab: ID tokens from the lab provider ----------------------------
+
+### A second human auth mount that holds no credential of its own. ov-dash
+### posts a provider ID token here, gets a Vault token for the person, spends
+### it once on `identity/oidc/token/openviking` and revokes it
+### (services/ov-dash.hcl in the applications root).
+###
+### That hop is the whole reason this mount exists. OpenViking pins one issuer
+### and one audience, and they are the identity-token role's, so a provider ID
+### token is not a credential it would accept. Trading here leaves ov-dash
+### holding the token shape the cluster already takes: ov.conf.json stays
+### pinned and hermes is untouched. The second factor is asked at Vault's own
+### login page, which is the point — ov-dash's password form cannot answer an
+### MFA challenge.
+###
+### `jwks_url` over plaintext loopback, not the public name. Vault's listener
+### is 0.0.0.0:8200 with tls_disable (bootstrap/roles/vault_server), so this
+### fetch never leaves the host and needs no CA. `oidc_discovery_url` would
+### have to be the public https URL byte for byte, because the jwt plugin
+### refuses a discovery document whose issuer differs from the URL it came
+### from, and that means trusting the edge certificate Vault's own PKI issued.
+###
+### `bound_issuer` is what the `iss` claim is checked against, and it carries
+### the PUBLIC issuer because that is what the provider stamps. Off `jwks_url`
+### alone the issuer would go unchecked.
+resource "vault_jwt_auth_backend" "lab" {
+  type        = "jwt"
+  path        = "jwt-lab"
+  description = "ID tokens from the lab OIDC provider, traded for a Vault token."
+
+  jwks_url     = "http://127.0.0.1:8200/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}/.well-known/keys"
+  bound_issuer = "https://${var.vault_issuer_host}/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}"
+}
+
+### `bound_audiences` is the ov-dash client id, so only a token minted for that
+### client can be traded here. An ID token for Grafana or the Nomad UI is
+### refused.
+###
+### `user_claim = ov_user` is what binds the login to a person: Vault looks for
+### an alias of that name on this mount and adopts the entity it belongs to.
+### The claim exists only because the `openviking` scope templates it, so that
+### scope is load-bearing for the login and not just for OpenViking.
+###
+### No `token_policies`. The mint grant rides the person's group —
+### `openviking-user`, or `developer`'s `identity/*` — which attaches to the
+### entity and therefore to any token issued for it on any mount. A policy here
+### would be a second, weaker copy of that grant.
+###
+### Five minutes because the token is spent at once: one mint, one revoke-self.
+### Nothing renews it and nothing stores it.
+resource "vault_jwt_auth_backend_role" "ov_dash" {
+  backend   = vault_jwt_auth_backend.lab.path
+  role_name = "ov-dash"
+  role_type = "jwt"
+
+  bound_audiences = [vault_identity_oidc_client.ov_dash.client_id]
+  user_claim      = "ov_user"
+
+  token_type    = "service"
+  token_ttl     = 300
+  token_max_ttl = 300
+}
+
+### One alias per person, and a missing one fails at the NEXT hop rather than
+### at the login: with no alias of the claimed name Vault creates a fresh
+### entity instead of refusing, and that entity is in no group, so its token
+### carries `default` alone and the mint answers 403. Fail-closed either way,
+### but the error is Vault's permission denied at hop 3, not anything ov-dash
+### says about claims.
+###
+### Such a login also leaves the invented entity and its alias behind on this
+### accessor, and the next apply then fails with "already exists" -- the same
+### Terraform-versus-JWT-mount collision the jwt-nomad note in oidc.tf records.
+### Apply the mount, the role and these aliases in one step.
+###
+### The name is the `ov_user` value, not the username, because that is the
+### claim the role reads. For the operator the two differ: the entity is
+### `operator` and the claim is `jasper`.
+###
+### `ov_user` is a DATA identity, and this repo treats it as non-unique on
+### purpose: two Nomad workloads already share `jasper`
+### (var.vault_openviking_workloads). Two PEOPLE sharing one would collide on
+### (mount accessor, name) here, so the precondition below asserts what the
+### login quietly depends on. `sub` needs no assertion, being the entity UUID,
+### at the cost of an alias no reader can match to a person.
+resource "vault_identity_entity_alias" "ov_dash_operator" {
+  name           = var.vault_operator_ov_identity.user
+  mount_accessor = vault_jwt_auth_backend.lab.accessor
+  canonical_id   = vault_identity_entity.operator.id
+}
+
+resource "vault_identity_entity_alias" "ov_dash_consumer" {
+  for_each = var.vault_openviking_consumers
+
+  name           = each.value.user
+  mount_accessor = vault_jwt_auth_backend.lab.accessor
+  canonical_id   = vault_identity_entity.openviking_consumer[each.key].id
+
+  lifecycle {
+    precondition {
+      condition = length(distinct(concat(
+        [var.vault_operator_ov_identity.user],
+        [for person in var.vault_openviking_consumers : person.user],
+      ))) == length(var.vault_openviking_consumers) + 1
+      error_message = "Two people share one ov_user. The jwt-lab aliases are keyed on that claim, so the pair would collide on (mount accessor, name) and ov-dash sign-in would resolve one person to the other's entity."
+    }
+  }
 }
 
 ### --- developer ------------------------------------------------------------

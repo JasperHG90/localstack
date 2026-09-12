@@ -135,6 +135,10 @@ VISION_MODELS = frozenset(
         "ollama/kimi-k3",
         "ollama/minimax-m3",
         "ollama/qwen3.5:397b",
+        # Measured 2026-09-12, the way this set requires: a 64x64 red PNG to
+        # /v1/chat/completions answered "Red". ov.conf.json picked it in
+        # 66bed3c and this set was not updated with it, so the check was red.
+        "gemini/gemini-3.5-flash-lite",
     }
 )
 
@@ -153,6 +157,10 @@ ALLOWED_CUSTOM_PARAMS = frozenset(
         "iterative_scan",
         "distance",
         "keyword_fields",
+        # Added at ov-postgres-v0.6.0 (config.py:184), the tag
+        # Dockerfile.openviking pins. This set omitted it, so a config that
+        # enables it was reported as forbidden.
+        "keep_deltas",
         "keyword_query_mode",
         "keyword_rank",
         "store_content",

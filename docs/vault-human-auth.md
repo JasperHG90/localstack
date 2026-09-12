@@ -43,7 +43,7 @@ All of it lives in `deployments/infrastructure/`:
 | File | Contents |
 | --- | --- |
 | `identity.tf` | The `userpass` auth mount, the operator user, the identity entity and alias that bind a login to an identity, and the `developer`, `admin` and app-user groups. The entity's `email` metadata is what the `email` scope reads |
-| `oidc.tf` | The OIDC signing key, the shared `groups` and `email` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (nomad, memex, oauth2-proxy, grafana, openviking) |
+| `oidc.tf` | The OIDC signing key, the shared `groups`, `email` and `openviking` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (nomad, memex, oauth2-proxy, grafana, openviking, ov-dash) |
 | `secrets.tf` | Two KV2 writes: the operator password, and the smoke client's credentials |
 
 Two secrets land in KV2:
@@ -309,7 +309,8 @@ refuses the authorization request.
 
 Finally, make your client **request** every scope it needs, not just read it.
 Send `scope=openid` plus the scopes you want: `groups` for group names,
-`email` for an email address. oauth2-proxy calls this `--scope`. Only `openid`
+`email` for an email address, `openviking` for the `ov_account` and `ov_user`
+pair OpenViking reads. oauth2-proxy calls this `--scope`. Only `openid`
 is required, so a client that sets `--oidc-groups-claim` and leaves its
 default scope alone gets a signed token with no `groups` claim, however
 correct the scope template is. Nothing errors. Verified live on 2026-07-31:

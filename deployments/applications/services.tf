@@ -498,12 +498,16 @@ resource "nomad_job" "openviking" {
       openviking_host     = "192.168.2.50"
 
       openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
-      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-7"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-8"
 
       # The config document, already parsed, substituted and re-encoded. Every
       # host and endpoint it needs is baked in above, so the jobspec takes none
       # of them separately.
       ov_conf = local.openviking_ov_conf
+
+      # Reflection's delta store. Same Consul lookup the ov.conf local does,
+      # because ov-ext opens its own pool rather than borrowing the backend's.
+      postgres_host = data.consul_service.postgres.service[0].node_address
 
       openviking_db_secret      = vault_kv_secret_v2.openviking_db_credentials.path
       openviking_minio_secret   = vault_kv_secret_v2.openviking_minio_credentials.path
@@ -532,18 +536,45 @@ resource "nomad_job" "openviking" {
 ### what a person now types. HAProxy's own comment in
 ### infrastructure/services/haproxy.hcl records the handover.
 ###
+### SIGN-IN IS A THREE-HOP CHAIN, and every hop is here or in the
+### infrastructure root:
+###
+###   1. The browser goes to Vault's `lab` provider and comes back to
+###      /auth/callback with an ID token. The second factor is asked there, at
+###      Vault's own page (infrastructure/identity.tf).
+###   2. ov-dash trades that token for a Vault token on the `jwt-lab` mount,
+###      which resolves to the person's entity through an alias.
+###   3. It mints `identity/oidc/token/openviking` as them and revokes the
+###      login token. That minted token is what every later request carries.
+###
+### Hop 3 is why this is not the plain `vault-oidc` mode: OpenViking pins one
+### issuer and one audience (services/openviking/ov.conf.json), and a provider
+### ID token carries neither, so the trade is what leaves ov-dash holding a
+### credential the API already accepts.
+###
 ### `vault_oidc_role` is the literal "openviking", not a reference: the role is
 ### `vault_identity_oidc_role.openviking` in the INFRASTRUCTURE root, and the two
 ### roots are linked by static name rather than remote state, the same way the
 ### memex OIDC client is read above. That role templates `ov_account` and
 ### `ov_user` from the signing entity's metadata, which is the identity
 ### OpenViking answers as -- and the token is minted with the PERSON's Vault
-### token, so this job needs no grant on that path.
+### token, so this job needs no grant on that path. `vault_jwt_mount`,
+### `vault_jwt_role` and the KV path under `ov_dash_oidc_client` are linked the
+### same way.
 ###
-### `vault_addr` is the edge hostname rather than 192.168.2.30:8200. The
-### sign-in form carries a real Vault password, so it goes over TLS even
+### `vault_addr` is the edge hostname rather than 192.168.2.30:8200. The token
+### exchange and the mint both carry credentials, so they go over TLS even
 ### in-cluster; every other address here is plaintext because none of them
 ### carries one.
+###
+### 0.5.0 is the release that carries hop 2: it trades the ID token at
+### `auth/jwt-lab/login` and mints from `identity/oidc/token/openviking`
+### itself, which is why the env below is `vault-oidc`. 0.4.0 read that mode
+### but handed the ID token straight to OpenViking, and 0.3.0 did not know it.
+###
+### APPLY ORDER STILL MATTERS: the Vault chain in the infrastructure root has
+### to exist first, or this job boots with an empty OIDC_CLIENT_ID and no
+### sign-in completes. docs/vault-2fa.md, rollout steps 3 and 4.
 resource "nomad_job" "ov_dash" {
   jobspec = templatefile(
     "${path.module}/services/ov-dash.hcl",
@@ -554,14 +585,18 @@ resource "nomad_job" "ov_dash" {
       # Built and released from JasperHG90/openviking_extensions: Actions ->
       # release, package ov-dash. Pinned rather than `latest`, which that
       # workflow moves on every release. arm64 confirmed in the manifest list.
-      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.3.0"
+      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.5.0"
 
       ov_dash_public_origin  = "https://openviking.lab.orangecluster.nl"
       ov_dash_session_secret = vault_kv_secret_v2.ov_dash_config.path
+      ov_dash_oidc_client    = "${var.secret_mount}/data/default/ov-dash/oidc"
 
-      openviking_host = "192.168.2.50"
-      vault_addr      = "https://vault.lab.orangecluster.nl"
-      vault_oidc_role = "openviking"
+      openviking_host   = "192.168.2.50"
+      vault_addr        = "https://vault.lab.orangecluster.nl"
+      vault_oidc_issuer = local.vault_oidc_issuer
+      vault_oidc_role   = "openviking"
+      vault_jwt_mount   = "jwt-lab"
+      vault_jwt_role    = "ov-dash"
     }
   )
 

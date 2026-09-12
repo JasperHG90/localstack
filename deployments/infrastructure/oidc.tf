@@ -224,6 +224,7 @@ locals {
     vault_identity_oidc_client.memex.client_id,
     vault_identity_oidc_client.oauth2_proxy.client_id,
     vault_identity_oidc_client.grafana.client_id,
+    vault_identity_oidc_client.ov_dash.client_id,
   ]
 }
 
@@ -243,6 +244,7 @@ resource "vault_identity_oidc_provider" "lab" {
   scopes_supported = [
     vault_identity_oidc_scope.groups.name,
     vault_identity_oidc_scope.email.name,
+    vault_identity_oidc_scope.openviking.name,
   ]
 }
 
@@ -622,4 +624,98 @@ resource "vault_identity_oidc_client" "grafana" {
 resource "vault_identity_oidc_key_allowed_client_id" "grafana" {
   key_name          = vault_identity_oidc_key.lab.name
   allowed_client_id = vault_identity_oidc_client.grafana.client_id
+}
+
+### --- ov-dash (the OpenViking dashboard) -----------------------------------
+### Browser sign-in for ov-dash, and the only client here whose token does not
+### stay the browser's business: the dashboard trades the ID token for a Vault
+### token on the `jwt-lab` mount (identity.tf) and mints an OpenViking identity
+### token as the person. OpenViking pins ONE issuer and ONE audience
+### (services/openviking/ov.conf.json in the applications root), and they are
+### the identity-token issuer's, so a provider ID token is not a credential
+### OpenViking would accept. The chain converts one into the other.
+###
+### What it buys: no password reaches the dashboard, and the second factor is
+### asked at Vault's own login page. ov-dash's own password form cannot answer
+### an MFA challenge, so `AUTH_MODE=vault-userpass` and Login MFA are mutually
+### exclusive (docs/vault-2fa.md).
+
+### The claims OpenViking reads. The same two keys
+### `vault_identity_oidc_role.openviking` templates: nothing shares a template
+### between the identity-token feature and the provider, and a provider token
+### without this scope carries no identity at all.
+###
+### The placeholders must NOT be quoted, for the reason the `email` scope above
+### records: Vault substitutes fully-formed JSON per placeholder and refuses a
+### template that quotes them, loudly, at apply.
+resource "vault_identity_oidc_scope" "openviking" {
+  name        = "openviking"
+  description = "OpenViking account and user of the authenticated entity"
+
+  template = "{\"ov_account\":{{identity.entity.metadata.ov_account}},\"ov_user\":{{identity.entity.metadata.ov_user}}}"
+}
+
+### Who may sign in: both human tiers. NOT the `operators` assignment above,
+### which is developer plus admin — that would lock the openviking-user tier
+### out of the one service it reaches.
+resource "vault_identity_oidc_assignment" "ov_dash" {
+  name = "ov-dash"
+
+  group_ids = [
+    vault_identity_group.openviking_user.id,
+    vault_identity_group.developer.id,
+  ]
+}
+
+### Must equal `ov_dash_public_origin` + /auth/callback in the applications
+### root (services.tf). ov-dash derives the redirect from PUBLIC_ORIGIN and
+### Vault refuses a callback it does not hold, so the two are wired together
+### only by agreeing.
+locals {
+  ov_dash_redirect_url = "https://openviking.lab.orangecluster.nl/auth/callback"
+}
+
+### Confidential, like every other client on this provider: Vault issues no
+### secret to a public one, and ov-dash authenticates the token exchange with
+### it.
+###
+### `id_token_ttl` is TEN MINUTES, and short on purpose. The token is spent at
+### the callback: ov-dash verifies it, trades it on `jwt-lab` and holds the
+### minted OpenViking token from there, so nothing needs it afterwards. What a
+### long TTL would buy instead is a replay window, because the trade takes the
+### ID token alone: no client secret, no second factor. For the operator the
+### token it yields carries `developer`, which reaches root in a few commands
+### (identity.tf), so this window is the exposure the 2FA work is otherwise
+### closing. Ten minutes covers a slow redirect and a clock a little out.
+###
+### It does NOT bound the minted OpenViking token. That lifetime is
+### `vault_identity_oidc_role.openviking`'s own `ttl`, 30d, above.
+###
+### The session length is ov-dash's, SESSION_TTL_SECONDS in
+### services/ov-dash.hcl, and should hold independently of this. EXPECTED, not
+### measured: the release that carries the trade does not exist yet. Rollout
+### step 4 in docs/vault-2fa.md checks it by leaving a session idle past ten
+### minutes, and a session that dies with the ID token means this TTL has to
+### rise to the session length.
+###
+### `access_token_ttl` is short because the dashboard discards the access
+### token: Vault's is opaque to everything but its own userinfo endpoint, so
+### the ID token is the only half of the exchange worth holding.
+resource "vault_identity_oidc_client" "ov_dash" {
+  name = "ov-dash"
+  key  = vault_identity_oidc_key.lab.name
+
+  redirect_uris = [
+    local.ov_dash_redirect_url,
+  ]
+
+  assignments      = [vault_identity_oidc_assignment.ov_dash.name]
+  client_type      = "confidential"
+  id_token_ttl     = 600
+  access_token_ttl = 600
+}
+
+resource "vault_identity_oidc_key_allowed_client_id" "ov_dash" {
+  key_name          = vault_identity_oidc_key.lab.name
+  allowed_client_id = vault_identity_oidc_client.ov_dash.client_id
 }

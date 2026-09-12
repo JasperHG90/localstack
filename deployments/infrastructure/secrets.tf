@@ -229,6 +229,34 @@ resource "vault_kv_secret_v2" "oauth2_proxy_oidc_client" {
   }
 }
 
+### ov-dash OIDC client credentials, under the job's own prefix because that is
+### the only place the shared `nomad-workloads` policy grants it a read
+### (secret/data/<ns>/<job_id>/*). ov-dash templates both halves from here, so
+### neither reaches the jobspec Nomad stores and `nomad job inspect` prints —
+### the applications root could read them by static name instead, with
+### `vault_identity_oidc_client_creds`, but that interpolates the secret into
+### the jobspec.
+###
+### Same shape as the two above: Vault mints the secret when it creates the
+### client, so this publishes what already exists. detect-private-key does NOT
+### guard it — that hook matches PEM headers, not `hvo_secret_...`.
+resource "vault_kv_secret_v2" "ov_dash_oidc_client" {
+  mount = vault_mount.kvv2.path
+  name  = "default/ov-dash/oidc"
+  data_json = jsonencode({
+    client_id     = vault_identity_oidc_client.ov_dash.client_id
+    client_secret = vault_identity_oidc_client.ov_dash.client_secret
+    issuer        = "https://${var.vault_issuer_host}/v1/identity/oidc/provider/${vault_identity_oidc_provider.lab.name}"
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### oauth2-proxy cookie secret. 32 raw ASCII characters, passed straight
 ### through with no base64 wrapping: oauth2-proxy's SecretBytes
 ### base64url-decodes the value before measuring it, so 32 alphanumerics

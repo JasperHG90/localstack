@@ -132,8 +132,8 @@ job "minio" {
       }
 
       resources {
-        cpu    = 4000
-        memory = 2048
+        cpu    = 5000
+        memory = 2560
       }
     }
   }

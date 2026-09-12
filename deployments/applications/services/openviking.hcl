@@ -172,6 +172,35 @@ job "openviking" {
       #   change_mode = "restart"
       # }
 
+      ### Reflection's delta store.
+      ###
+      ### ov-ext opens its OWN pool rather than borrowing the backend's: capture
+      ### installs during ov_ext.install(), before OpenViking's engine exists,
+      ### and neither package imports the other.
+      ###
+      ### Without this, reflection still runs, but it feeds the model whole
+      ### memory files instead of the diff. Measured upstream: a 23 KB memory
+      ### with two edited lines is 23,003 characters whole and 83 as a delta.
+      ### Whole files are also why a failing batch is lost rather than retried:
+      ### only the delta path records reflected_at.
+      ###
+      ### Its own destination, NOT the secrets/reflect.env the commented lock
+      ### template above names. Two templates writing one file leaves the last
+      ### one to win and drops the other's variable with nothing logged.
+      ###
+      ### A file rather than the env block above, because it carries the
+      ### postgres password: env lands in the jobspec Nomad stores and
+      ### `nomad job inspect` prints; secrets/ is a per-alloc tmpfs.
+      template {
+        data        = <<-EOF
+        {{- $db := secret "${openviking_db_secret}" -}}
+        OV_REFLECT_DELTAS_DSN=postgresql://{{ $db.Data.data.username }}:{{ $db.Data.data.password }}@${postgres_host}:5432/openviking
+        EOF
+        destination = "secrets/reflect-deltas.env"
+        env         = true
+        change_mode = "restart"
+      }
+
       ### ov.conf. The document itself is services/openviking/ov.conf.json,
       ### parsed and re-injected by services.tf's `openviking_ov_conf` local,
       ### so a syntax error fails at plan time rather than at startup.

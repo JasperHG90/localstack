@@ -133,9 +133,10 @@ def login_userpass(addr: str, username: str, password: str) -> dict[str, Any]:
     """Authenticate and return the `auth` block of the response.
 
     Raises `MFARequired` when the mount enforces Login MFA. Vault answers that
-    with HTTP 200, a null `auth` and an `mfa_requirement`, so a caller that
-    only looks for a token blames the username or the backend and sends the
-    reader to the wrong layer.
+    with HTTP 200 and an `auth` block whose `client_token` is EMPTY, carrying
+    the challenge at `auth.mfa_requirement`, so a caller that only looks for a
+    token blames the username or the backend and sends the reader to the wrong
+    layer.
     """
     response = _request(
         addr,

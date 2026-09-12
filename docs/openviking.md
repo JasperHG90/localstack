@@ -293,8 +293,10 @@ The name resolved to a 503 for a while, since the HAProxy frontend declares no
 `default_backend`. It now reaches ov-dash, the dashboard it was held for:
 a Node service on orangepi4a, routed by the `ovdash` backend, deployed by
 `nomad_job.ov_dash` from `deployments/applications/services/ov-dash.hcl`. It
-signs a person into Vault itself, mints their identity token server-side and
-never hands the browser one, which is why nothing gates it at the edge.
+sends a person to Vault's own login page, trades the ID token that comes back
+for a Vault token on the `jwt-lab` mount, mints their identity token
+server-side and never hands the browser one, which is why nothing gates it at
+the edge.
 
 ## Verifying a deployment
 

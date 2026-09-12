@@ -51,6 +51,9 @@ RUN uv tool install git+https://github.com/JasperHG90/agent-integrations-manager
 # Install loop engineering harness control CLI
 RUN uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.git
 
+# Install ovx
+RUN uv tool install ovx --from "git+https://github.com/JasperHG90/openviking_extensions@ovx-v0.4.0#subdirectory=packages/ovx"
+
 # Shims first, then the pinned binaries, then the system. `localstack deps`
 # writes both directories and never writes to one what belongs in the other.
 # A bare `nomad`, `consul` or `vault` finds its shim, which execs the pinned
