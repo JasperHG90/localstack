@@ -64,7 +64,7 @@ RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
 # ships the bot. Verified in the published image, not assumed.
 RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
     --target /app/.venv/lib/python3.13/site-packages \
-    "ov-ext @ git+https://github.com/JasperHG90/openviking_extensions@ov-ext-v0.6.2#subdirectory=packages/ov-ext"
+    "ov-ext @ git+https://github.com/JasperHG90/openviking_extensions@ov-ext-v0.7.1#subdirectory=packages/ov-ext"
 
 # psycopg's binary wheel, so no libpq or compiler is needed at runtime, and
 # the pool the adapter opens per collection.

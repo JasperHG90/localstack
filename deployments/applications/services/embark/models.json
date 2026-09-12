@@ -1,4 +1,4 @@
 {
-  "embedding": "granite-embedding-97m-r2-fp32:latest",
-  "reranker": "mmarco-mminilmv2-l12-h384-trimmed-qat:latest"
+  "embedding": "granite-embedding-97m-r2-trimmed-fp16:0.1.0",
+  "reranker": "mmarco-mminilmv2-l6-h384-trimmed-fp16:0.1.0"
 }
