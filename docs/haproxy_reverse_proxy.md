@@ -25,6 +25,7 @@ to the HTTPS URL.
 | `registry-ui.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4181 |
 | `openviking-api.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 1933 |
 | `openviking.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 4182 |
+| `hermes-gateway.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 9119 |
 
 `bifrost` authenticates with its own native `governance.auth_config` (admin
 creds from Vault), so HAProxy no longer gates it. `dash` and `registry-ui` each
@@ -37,8 +38,10 @@ browser face of that same service: it signs a person into Vault itself, mints
 their identity token server-side and never gives the browser one, so a proxy in
 front would be a second password for the same person. `grafana` reaches that
 same Vault SSO through its own built-in OIDC client, with no proxy in between,
-and keeps its local admin account as the way in when Vault is down. The rest are
-open to anyone who reaches the edge.
+and keeps its local admin account as the way in when Vault is down.
+`hermes-gateway` is the Hermes dashboard that Hermes Desktop connects to, not
+the API server on 8642. It also runs its own Vault OIDC login, limited to
+operators. The rest are open to anyone who reaches the edge.
 
 **Prometheus, Loki and Tempo are deliberately not routed here.** All three
 serve their query APIs with no authentication, and nothing needs them through

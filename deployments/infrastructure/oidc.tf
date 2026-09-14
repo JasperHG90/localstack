@@ -225,6 +225,7 @@ locals {
     vault_identity_oidc_client.oauth2_proxy.client_id,
     vault_identity_oidc_client.grafana.client_id,
     vault_identity_oidc_client.ov_dash.client_id,
+    vault_identity_oidc_client.hermes_dashboard.client_id,
   ]
 }
 
@@ -718,4 +719,72 @@ resource "vault_identity_oidc_client" "ov_dash" {
 resource "vault_identity_oidc_key_allowed_client_id" "ov_dash" {
   key_name          = vault_identity_oidc_key.lab.name
   allowed_client_id = vault_identity_oidc_client.ov_dash.client_id
+}
+
+### --- Hermes dashboard: the backend Hermes Desktop signs into ---------------
+### Hermes speaks OIDC itself (the image's `dashboard_auth/self_hosted` plugin),
+### so nothing proxies it.
+###
+### Operators only. The dashboard drives an agent that runs in YOLO mode with a
+### Nomad token and a GitHub PAT, so reaching it is admin-grade access.
+###
+### Must equal `hermes_dashboard_public_url` + /auth/callback in the
+### applications root (services.tf). Hermes builds its callback from
+### `dashboard.public_url`, and Vault refuses a callback it does not hold.
+locals {
+  hermes_dashboard_redirect_url = "https://hermes-gateway.lab.orangecluster.nl/auth/callback"
+}
+
+### A DEDICATED signing key, for the reason memex has one: a client's
+### id_token_ttl may not exceed its key's verification_ttl, and the shared `lab`
+### key's 24h would force a daily sign-in. Vault refuses a verification_ttl over
+### 10x the rotation_period, and 7d is 7x 1d.
+resource "vault_identity_oidc_key" "hermes_dashboard" {
+  name             = "hermes-dashboard"
+  algorithm        = "RS256"
+  rotation_period  = 86400  # 1d
+  verification_ttl = 604800 # 7d; caps the client's id_token_ttl below
+}
+
+### PUBLIC, like memex. The plugin treats an empty client_secret as a public
+### client and sends PKCE (S256), which Vault requires of one. `client_type` and
+### `key` are immutable after create.
+###
+### `id_token_ttl` is both the replay window and the time between sign-ins. The
+### ID token IS the dashboard credential: Desktop sends it as a bearer token on
+### every request until it expires. Vault issues no refresh token and the
+### plugin revokes nothing on logout, so neither signing out, leaving
+### `operators`, nor rotating the key ends a token early. 7d is one sign-in a
+### week.
+###
+### To end every session now, replace the client
+### (`terraform apply -replace=vault_identity_oidc_client.hermes_dashboard`),
+### then apply the applications root. The new client_id fails every old token's
+### audience check, and the job restarts with it. Dropping the client from
+### `local.oidc_provider_client_ids` is weaker: the dashboard caches keys it has
+### seen for up to an hour, and adding the client back revives old tokens.
+###
+### The token cannot be traded for a Vault token: no JWT auth role accepts this
+### client's audience (`jwt-lab` binds ov-dash's, identity.tf).
+###
+### `access_token_ttl` is short because the plugin discards the access token.
+resource "vault_identity_oidc_client" "hermes_dashboard" {
+  name = "hermes-dashboard"
+  key  = vault_identity_oidc_key.hermes_dashboard.name
+
+  redirect_uris = [
+    local.hermes_dashboard_redirect_url,
+  ]
+
+  assignments      = [vault_identity_oidc_assignment.operators.name]
+  client_type      = "public"
+  id_token_ttl     = 604800 # 7d; must be <= the key's verification_ttl
+  access_token_ttl = 600
+}
+
+### Registers the client against its own key. Without this the redirect works
+### and the token endpoint fails with `client is not authorized to use the key`.
+resource "vault_identity_oidc_key_allowed_client_id" "hermes_dashboard" {
+  key_name          = vault_identity_oidc_key.hermes_dashboard.name
+  allowed_client_id = vault_identity_oidc_client.hermes_dashboard.client_id
 }

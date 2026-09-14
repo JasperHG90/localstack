@@ -19,6 +19,9 @@ job "hermes" {
       port "gateway" {
         static = 8642
       }
+      port "dashboard" {
+        static = 9119
+      }
     }
 
     # ── Prestart: sync IaC config files to the persistent volume ──
@@ -227,6 +230,11 @@ fallback_model:
 agent:
   max_turns: 90
   reasoning_effort: "medium"
+
+dashboard:
+  public_url: "${hermes_dashboard_public_url}"
+  trusted_proxies:
+    - "192.168.2.30"
 
 # No entry for the memory provider here. `plugins/memory` is skipped by the
 # general plugin scanner (hermes_cli/plugins.py, skip_names), so a name listed
@@ -529,6 +537,14 @@ EOF
         API_SERVER_ENABLED     = "true"
         API_SERVER_HOST        = "0.0.0.0"
         GATEWAY_HEALTH_TIMEOUT = "5"
+
+        # The dashboard is what Hermes Desktop connects to. s6 supervises it
+        # beside the gateway once HERMES_DASHBOARD is set. It binds 0.0.0.0:9119
+        # and refuses to start on that bind without an auth provider.
+        HERMES_DASHBOARD                = "1"
+        HERMES_DASHBOARD_OIDC_ISSUER    = "${vault_oidc_issuer}"
+        HERMES_DASHBOARD_OIDC_CLIENT_ID = "${hermes_dashboard_oidc_client_id}"
+        HERMES_DASHBOARD_OIDC_SCOPES    = "openid email"
       }
 
       config {
@@ -544,7 +560,7 @@ EOF
       }
 
       resources {
-        cpu        = 2000
+        cpu        = 6000
         memory     = 2048
         memory_max = 2560
       }

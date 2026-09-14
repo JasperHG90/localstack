@@ -39,6 +39,12 @@ data "vault_identity_oidc_client_creds" "memex" {
   name = "memex"
 }
 
+### Same channel for the Hermes dashboard's public client. Apply the
+### infrastructure root first: this read fails until that client exists.
+data "vault_identity_oidc_client_creds" "hermes_dashboard" {
+  name = "hermes-dashboard"
+}
+
 ### Firewall rules for application services
 locals {
   firewall_rules = {
@@ -68,12 +74,16 @@ locals {
     # uses openviking instead, so nothing dials 8642 from that host any more.
     # Left in place because these rules are one-way -- deleting the line here
     # removes no rule from the node.
+    #
+    # 9119 is the dashboard Hermes Desktop signs into, reached only through
+    # HAProxy.
     hermes = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
       rules = [
         "allow from 192.168.2.30 to any port 8642 proto tcp",
         "allow from 192.168.2.46 to any port 8642 proto tcp",
+        "allow from 192.168.2.30 to any port 9119 proto tcp",
       ]
     }
     # Loki on ubuntu (rpi4b) — cluster nodes only. Alloy is a system job, so
@@ -264,6 +274,13 @@ resource "nomad_job" "hermes" {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
       hermes_version  = "0.21.0-1"
+
+      # Must equal the infrastructure root's `hermes_dashboard_redirect_url`
+      # (oidc.tf) minus /auth/callback. Nothing links the two roots but this.
+      hermes_dashboard_public_url     = "https://hermes-gateway.lab.orangecluster.nl"
+      hermes_dashboard_oidc_client_id = data.vault_identity_oidc_client_creds.hermes_dashboard.client_id
+      vault_oidc_issuer               = local.vault_oidc_issuer
+
       # Branch, tag, or full commit SHA — pin to a SHA for reproducibility.
       external_skills_jasperhg90_ref = "main"
       openviking_host                = "192.168.2.50"

@@ -105,6 +105,7 @@ frontend https_in
     acl is_registryui hdr(host) -i registry-ui.lab.orangecluster.nl
     acl is_ovapi      hdr(host) -i openviking-api.lab.orangecluster.nl
     acl is_ovdash     hdr(host) -i openviking.lab.orangecluster.nl
+    acl is_hermesgw   hdr(host) -i hermes-gateway.lab.orangecluster.nl
 
     use_backend minio      if is_minio
     use_backend s3         if is_s3
@@ -119,6 +120,7 @@ frontend https_in
     use_backend registryui if is_registryui
     use_backend ovapi      if is_ovapi
     use_backend ovdash     if is_ovdash
+    use_backend hermesgw   if is_hermesgw
 
 frontend stats
     bind *:8404
@@ -203,6 +205,19 @@ backend ovapi
 # above: the service authenticates its own callers.
 backend ovdash
     server ovdash1 192.168.2.29:4182 check
+
+# hermes-gateway: the Hermes dashboard, which is what Hermes Desktop connects
+# to. Not the OpenAI-compatible API server on 8642; Desktop does not speak it.
+#
+# No `http-request auth`: the dashboard runs its own Vault OIDC login. It marks
+# its session cookies Secure from X-Forwarded-Proto, which it accepts from this
+# node because `dashboard.trusted_proxies` in services/hermes.hcl lists it.
+# X-Forwarded-For is set, not appended, so a client cannot pick the address the
+# dashboard logs and rate-limits sign-ins by.
+backend hermesgw
+    http-request set-header X-Forwarded-Proto https
+    http-request set-header X-Forwarded-For %[src]
+    server hermesgw1 192.168.2.50:9119 check
         EOH
         destination = "local/haproxy.cfg"
       }
