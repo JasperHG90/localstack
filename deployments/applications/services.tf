@@ -441,7 +441,7 @@ resource "nomad_job" "embark" {
       # asks for CUDA. Built and pushed by hand; see services/embark/README.md.
       # The `-1` is a build revision on top of base v0.1.0, not an upstream
       # version: nothing publishes embark:v0.1.0-1.
-      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.2.2"
+      embark_image = "ghcr.io/jasperhg90/embark-jetson:v0.2.4"
 
       registry_host = local.embark_registry
       # embark's OWN copy of the registry credential. The nomad-workloads
