@@ -461,10 +461,10 @@ resource "nomad_acl_binding_rule" "developer" {
 ###
 ### It also gives memex its own revocation lever: dropping this client from
 ### `local.oidc_provider_client_ids` unpublishes this whole key ring from the
-### provider's JWKS and kills every outstanding memex human token at once,
-### touching nothing else. Rotating the key does NOT do that — rotation stamps
-### an expiry on the current signing key only, so it revokes just the tokens
-### issued since the last rotation.
+### provider's JWKS, so no outstanding memex human token verifies until the
+### client is added back. It touches nothing else. Rotating the key does NOT do
+### that: the outgoing public key stays published for verification_ttl, so a
+### rotation ends no token.
 resource "vault_identity_oidc_key" "memex_human" {
   name             = "memex-human"
   algorithm        = "RS256"
