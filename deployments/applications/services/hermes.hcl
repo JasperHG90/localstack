@@ -158,7 +158,7 @@ bifrost = ProviderProfile(
     description="Self-hosted Bifrost LLM gateway (Ollama Cloud + Gemini)",
     env_vars=("BIFROST_API_KEY",),
     base_url="http://127.0.0.1:8080/v1",
-    default_aux_model="ollama/deepseek-v4-flash:0731",
+    default_aux_model="ollama/deepseek-v4.1-flash",
 )
 
 register_provider(bifrost)
@@ -220,7 +220,7 @@ EOF
         data = <<EOF
 model:
   provider: "bifrost"
-  default: "ollama/glm-5.3-flash"
+  default: "ollama/deepseek-v4.1-flash"
   context_length: 128000
 
 fallback_model:
@@ -300,7 +300,7 @@ auxiliary:
     model: "ollama/gemma4:31b"
   flush_memories:
     provider: "bifrost"
-    model: "ollama/glm-5.3-flash"
+    model: "ollama/deepseek-v4.1-flash"
   title_generation:
     provider: "bifrost"
     model: "ollama/gemma4:31b"

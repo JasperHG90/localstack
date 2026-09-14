@@ -148,7 +148,7 @@ job "openviking" {
         OV_RETRIEVAL_RERANK_MAX_DOCUMENTS = "20"
         OV_RETRIEVAL_RERANK_FINAL         = "true"
         # These settings enable reflection
-        OV_REFLECT_MODEL            = "ollama/deepseek-v4-flash:0731"
+        OV_REFLECT_MODEL            = "ollama/deepseek-v4.1-flash"
         OV_REFLECT_DELTAS_SCHEMA    = "openviking"
         OV_REFLECT_ENABLED          = "true"
         OV_REFLECT_USER_ID          = "jasper"
