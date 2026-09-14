@@ -1,4 +1,9 @@
 {
+  "output_language_override": "en",
+  "memory": {
+    "eager_prefetch": true,
+    "prefetch_search_topn": 10
+  },
   "storage": {
     "workspace": "/app/.openviking/workspace",
     "agfs": {
