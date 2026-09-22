@@ -8,14 +8,19 @@
 # Nomad task to a non-root UID — the wrapper rejects arbitrary UIDs.
 FROM nousresearch/hermes-agent:v2026.8.31
 
-# jq and chromium only: the base already ships curl, but not these two.
+# jq, chromium and gh only: the base already ships curl, but not these three.
 # chromium is what lets the agent-browser fallback chain find a system Chrome
-# for browser_vision / screenshot workflows (see issue #8). Checked against
-# v2026.8.31 -- if a later base starts shipping both, this whole custom image
-# stops earning its keep and the job can point at the base directly.
+# for browser_vision / screenshot workflows (see issue #8). gh is the GitHub
+# CLI for issue/PR triage from the terminal; it authenticates via GH_TOKEN,
+# which the hermes job renders from Vault into the task env (see hermes.hcl,
+# secrets/file.env + config.yaml terminal env_passthrough). Debian stable
+# currently ships gh 2.46.0.
+# Checked against v2026.8.31 -- if a later base starts shipping these, this
+# whole custom image stops earning its keep and the job can point at the base
+# directly.
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      jq chromium \
+      jq chromium gh \
     && rm -rf /var/lib/apt/lists/*
 
 # No memory-provider packages are installed here. OpenViking's provider ships
