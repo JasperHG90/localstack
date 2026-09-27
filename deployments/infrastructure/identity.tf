@@ -82,7 +82,7 @@ resource "vault_identity_entity_alias" "operator" {
 ### The per-person secrets are NOT here and must never be: that secret IS the
 ### second factor, so holding it in state would file both factors in one place.
 ### `just mfa_enroll <username>` mints one and writes the QR Vault returns.
-### docs/vault-2fa.md is the long form.
+### docs/explanation/vault-login-mfa.md is the long form.
 resource "vault_identity_mfa_totp" "lab" {
   issuer                  = "vault.lab.orangecluster.nl"
   period                  = 30
@@ -113,7 +113,8 @@ resource "vault_identity_mfa_totp" "lab" {
 ### Enroll everyone in `vault_openviking_consumers` BEFORE applying this.
 ### Mount-wide means veerle now meets the challenge on the only service she
 ### reaches, and an unenrolled account cannot complete the login at all:
-### `just mfa_enroll veerle`. docs/vault-2fa.md carries the order.
+### `just mfa_enroll veerle`. docs/how-to/roll-out-vault-login-mfa.md carries
+### the order.
 resource "vault_identity_mfa_login_enforcement" "userpass" {
   name                  = "userpass-totp"
   mfa_method_ids        = [vault_identity_mfa_totp.lab.method_id]
@@ -517,7 +518,7 @@ resource "vault_identity_group" "developer" {
 ### The cluster's role taxonomy: `admin`, and the scaffold app-user tiers hang
 ### off. `developer` is F11's and is in the section above.
 ###
-### See docs/cluster-roles.md for what each role is for. Two things worth
+### See docs/reference/cluster-roles.md for what each role is for. Two things worth
 ### knowing before reading further:
 ###
 ###   - A group grants nothing on its own. It has to be named by an OIDC
@@ -658,7 +659,7 @@ resource "vault_identity_group" "admin" {
 ### entry here and its own members below.
 ###
 ### Naming convention is `app-<service>-<level>`, documented in
-### docs/cluster-roles.md and NOT enforced here. Whether a level is per-app or
+### docs/reference/cluster-roles.md and NOT enforced here. Whether a level is per-app or
 ### per-resource is the consumer's call, because only the consumer knows how
 ### its service expresses levels.
 ###

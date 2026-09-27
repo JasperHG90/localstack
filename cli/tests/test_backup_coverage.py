@@ -91,14 +91,14 @@ def test_minio_backup_syncs_the_openviking_bucket() -> None:
     )
 
 
-# -- Doc drift: docs/gcs-backups.md against the jobspecs -----------------------
+# -- Doc drift: docs/reference/gcs-backups.md against the jobspecs -------------
 #
-# Four claims in that runbook have already gone stale under commits that moved
+# Four claims in that page have already gone stale under commits that moved
 # the code and left the prose alone: both node constraints and two CPU figures.
 # These tests pin every fact the document states that a parser can also read
 # out of the source, so the next such commit reddens instead of rotting.
 
-DOC = REPO_ROOT / "docs" / "gcs-backups.md"
+DOC = REPO_ROOT / "docs" / "reference" / "gcs-backups.md"
 PROVIDERS = REPO_ROOT / "deployments" / "infrastructure" / "providers.tf"
 PG_JOBSPEC = REPO_ROOT / "deployments" / "infrastructure" / "services" / "backup-postgres.hcl"
 
@@ -176,7 +176,7 @@ def test_backup_doc_names_the_google_provider_version() -> None:
         declared.group(1) if declared else None, "google version in providers.tf"
     )
     assert doc_version == src_version, (
-        f"docs/gcs-backups.md says the Google provider is {doc_version}, "
+        f"docs/reference/gcs-backups.md says the Google provider is {doc_version}, "
         f"providers.tf declares {src_version}."
     )
 
@@ -195,7 +195,7 @@ def test_backup_doc_matches_jobspec_node_constraints() -> None:
         doc_nodes = re.findall(r"`([a-z0-9-]+)`", section)
         assert node in doc_nodes, (
             f"{name} is constrained to `{node}`, which its section of "
-            f"docs/gcs-backups.md never names."
+            f"docs/reference/gcs-backups.md never names."
         )
 
 
@@ -216,7 +216,7 @@ def test_backup_doc_matches_jobspec_resources() -> None:
             )
             assert f"{cpu} MHz CPU, {memory} MB memory" in _doc_task_block(section, task), (
                 f"{name} task `{task}` sets {cpu} MHz / {memory} MB, which the "
-                "bullet for that task in docs/gcs-backups.md does not state."
+                "bullet for that task in docs/reference/gcs-backups.md does not state."
             )
 
 
@@ -231,7 +231,7 @@ def test_backup_doc_matches_jobspec_schedules_and_images() -> None:
         )
         assert f"`{cron}`" in section, (
             f"{name} runs on cron `{cron}`, which its section of "
-            "docs/gcs-backups.md does not state literally."
+            "docs/reference/gcs-backups.md does not state literally."
         )
 
         configs = _hcl_blocks(path, "config")
@@ -244,5 +244,5 @@ def test_backup_doc_matches_jobspec_schedules_and_images() -> None:
             )
             assert f"`{image}`" in _doc_task_block(section, task), (
                 f"{name} task `{task}` runs `{image}`, which the bullet for that "
-                "task in docs/gcs-backups.md does not name."
+                "task in docs/reference/gcs-backups.md does not name."
             )

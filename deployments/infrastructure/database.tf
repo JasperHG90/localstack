@@ -8,7 +8,7 @@
 ### carries a Redis password that outlives its job.
 ###
 ### This is the closest real analogue to memex's own workload-identity
-### trust (R5, docs/workload-identity.md): memex verifies a caller's raw
+### trust (R5, docs/explanation/workload-identity.md): memex verifies a caller's raw
 ### Nomad WI JWT itself, against Nomad's own JWKS. Redis cannot do that — it
 ### has no JWT support, unlike memex or MinIO's `identity_openid` — so the
 ### JWT is verified one hop earlier instead, by Vault's `jwt-nomad` mount,
@@ -18,7 +18,7 @@
 ###
 ### Mounted at `redis`, a dedicated path, NOT the generic `database` mount
 ### name HashiCorp's own docs default to. `database-secrets-poc.tf`
-### (deleted in 19c1696, docs/postgres-vault-dynamic-creds-spike.md) already
+### (deleted in 19c1696, .okf/proposals/postgres-dynamic-credentials.md) already
 ### created and deliberately kept a `vault_mount` at `database/` from the
 ### *applications* root for an unfinished spike (S1,
 ### .loop/ledger.json:"blocked") — reusing that path here would either 400
@@ -84,12 +84,13 @@ resource "vault_database_secret_backend_connection" "redis" {
 ### One role per consumer, not one shared role for all of them: the first
 ### version of this file used a single shared `cache` role gated only on
 ### `nomad_namespace = "default"` — which is nearly every job on this
-### cluster (docs/workload-identity.md) — with every caller reading the
+### cluster (docs/explanation/workload-identity.md) — with every caller reading the
 ### identical `~cache:*` rule. That is rotation, not authorization: it does
 ### not deliver "callers authenticate with their own workload identity" so
 ### much as "every workload can read a Redis credential." This repo's own
-### spike doc already weighed and rejected that shortcut in writing
-### (docs/postgres-vault-dynamic-creds-spike.md: "widening the shared
+### spike already weighed and rejected that shortcut in writing
+### (.okf/decisions/0006-each-converted-job-gets-its-own-vault-jwt-role.md:
+### "widening the shared
 ### nomad-workloads policy... gives every workload on the cluster the
 ### ability to mint database users. Take the per-job cost."). Each entry
 ### here pays that per-job cost once, mirroring machine_roles.tf's

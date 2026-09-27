@@ -56,7 +56,7 @@ resource "vault_kv_secret_v2" "grafana_admin_credentials" {
 ###
 ### `detect-private-key` will NOT catch one of these if it leaks into a tracked
 ### file — it matches a fixed list of PEM headers, and `hvo_secret_...` is not
-### one (docs/vault-human-auth.md:315-318). The hook staying green is not
+### one (docs/how-to/add-a-vault-oidc-client.md, step 8). The hook staying green is not
 ### evidence the secret stayed out of the repo.
 resource "vault_kv_secret_v2" "grafana_oidc_client" {
   mount = vault_mount.kvv2.path

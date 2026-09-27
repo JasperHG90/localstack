@@ -316,7 +316,7 @@ def test_the_shipped_alerting_tile_does_not_claim_delivery_on_its_face() -> None
     """The status dot is grafana's job, and the card face has to say so.
 
     A card reading "grafana alerts to telegram" beside a green dot asserts a
-    delivery nobody checked. docs/monitoring.md documents that exact silent
+    delivery nobody checked. docs/reference/monitoring.md documents that exact silent
     failure: alerts fire in the UI and nothing arrives.
     """
     alerting = next(t for g in load_tiles(SHIPPED_TILES) for t in g.tiles if t.key == "alerting")

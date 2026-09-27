@@ -10,8 +10,8 @@
 ### a file.
 ###
 ### WHETHER IT ALSO CREATES A GROUP AND AN ASSIGNMENT DEPENDS. Four answers to
-### "who is allowed in", in the order to try them (docs/cluster-roles.md and
-### the "Adding a service" section of docs/vault-human-auth.md carry the same
+### "who is allowed in", in the order to try them (docs/reference/cluster-roles.md
+### and step 3 of docs/how-to/add-a-vault-oidc-client.md carry the same
 ### list):
 ###
 ###   1. Reference an existing tier group, `developer` or `admin`
@@ -530,7 +530,8 @@ resource "vault_identity_oidc_key_allowed_client_id" "memex" {
 
 ### --- L1: oauth2-proxy (landing page gate) ---------------------------------
 ### Flat access: anyone who completes Vault login is let through. Branch 3 of
-### the documented procedure (docs/vault-human-auth.md:282-290) — the built-in
+### the documented procedure (docs/how-to/add-a-vault-oidc-client.md, step 3)
+### — the built-in
 ### "allow_all" assignment, no group, no vault_identity_oidc_assignment
 ### resource. Confidential client: oauth2-proxy holds a real client secret,
 ### and Vault issues none to a public client (see the ticket's requirement 7a).
@@ -591,7 +592,8 @@ resource "vault_identity_oidc_key_allowed_client_id" "oauth2_proxy" {
 
 ### --- G1: Grafana (native generic OAuth client) -----------------------------
 ### Grafana speaks OIDC itself, so nothing proxies it. Flat access: branch 3 of
-### the documented procedure (docs/vault-human-auth.md:288-292) — the built-in
+### the documented procedure (docs/how-to/add-a-vault-oidc-client.md, step 3)
+### — the built-in
 ### "allow_all" assignment, no group and no vault_identity_oidc_assignment.
 ### Confidential, because Vault issues no secret to a public client.
 ###
@@ -639,7 +641,7 @@ resource "vault_identity_oidc_key_allowed_client_id" "grafana" {
 ### What it buys: no password reaches the dashboard, and the second factor is
 ### asked at Vault's own login page. ov-dash's own password form cannot answer
 ### an MFA challenge, so `AUTH_MODE=vault-userpass` and Login MFA are mutually
-### exclusive (docs/vault-2fa.md).
+### exclusive (.okf/decisions/0011-login-mfa-enforcement-names-the-userpass-mount.md).
 
 ### The claims OpenViking reads. The same two keys
 ### `vault_identity_oidc_role.openviking` templates: nothing shares a template
@@ -695,8 +697,8 @@ locals {
 ### The session length is ov-dash's, SESSION_TTL_SECONDS in
 ### services/ov-dash.hcl, and should hold independently of this. EXPECTED, not
 ### measured: the release that carries the trade does not exist yet. Rollout
-### step 4 in docs/vault-2fa.md checks it by leaving a session idle past ten
-### minutes, and a session that dies with the ID token means this TTL has to
+### step 4 in docs/how-to/roll-out-vault-login-mfa.md checks it by leaving a
+### session idle past ten minutes, and a session that dies with the ID token means this TTL has to
 ### rise to the session length.
 ###
 ### `access_token_ttl` is short because the dashboard discards the access

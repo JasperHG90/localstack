@@ -38,8 +38,8 @@ unseal_vault:
 # `admin` membership is deliberately outside Terraform
 # (deployments/infrastructure/identity.tf, external_member_entity_ids = true),
 # so
-# nothing plans it and nothing reminds you to leave. docs/cluster-roles.md is
-# the long form.
+# nothing plans it and nothing reminds you to leave. docs/reference/cluster-roles.md
+# is the long form.
 #
 # Both recipes REPLACE the whole membership list, because that is the only
 # thing the API offers: `identity/group-member-entity-ids` does not exist on
@@ -114,8 +114,8 @@ get_secret path:
 # per-person secret, which Terraform must never hold: that secret is the second
 # factor, so keeping it in state would file both factors in one place.
 #
-# Every trap worth knowing is in scripts/vault_mfa.sh; docs/vault-2fa.md is the
-# long form and the rollout order.
+# Every trap worth knowing is in scripts/vault_mfa.sh; docs/how-to/roll-out-vault-login-mfa.md
+# is the rollout order.
 
 # Show whether Vault login MFA is configured, and on which auth mounts
 mfa_status:

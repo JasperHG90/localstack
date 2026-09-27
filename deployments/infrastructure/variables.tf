@@ -22,7 +22,7 @@ variable "telegram_alert_chat_id" {
     It is that bot's entire outbound scope: Grafana writes to this chat and no
     other, so nobody else receives an alert. Inbound is not scoped here at all,
     because nothing reads the bot's updates. See "Where alerts go" in
-    docs/monitoring.md.
+    docs/reference/monitoring.md.
   EOT
   type        = string
   default     = "10650075"

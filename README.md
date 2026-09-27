@@ -27,7 +27,7 @@ The repo is three deploy layers, plus a CLI:
 
 Database schema changes live in `applications/migrations/` and run through [golang-migrate](https://github.com/golang-migrate/migrate).
 
-Service-level docs are in `docs/` (HAProxy routing, monitoring, GCS backups, credential rotation, break-glass recovery, etc.).
+User docs are in `docs/`, sorted into how-to guides, reference and explanation. Start at [docs/README.md](./docs/README.md). Decisions, lessons learned and unbuilt proposals for people working on this repo are in the [`.okf/`](./.okf/index.md) knowledge bundle.
 
 ## Conventions
 
@@ -70,7 +70,7 @@ On create, the container runs `just install_cli` and then `localstack deps
 Python interpreter setting points at, and puts `localstack` on your PATH. The
 second puts `vault`, `nomad` and `consul` at the versions the cluster runs
 under `~/.localstack/bin`, and their PATH shims under `~/.localstack/shims`.
-On a laptop the shims are opt-in. See [docs/cli-deps.md](./docs/cli-deps.md).
+On a laptop the shims are opt-in. See [docs/reference/cli-deps.md](./docs/reference/cli-deps.md).
 
 Both steps are guarded, so neither failing stops the container from coming
 up. If they did fail, run them by hand. Re-run `localstack deps --install`

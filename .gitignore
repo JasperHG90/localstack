@@ -20,6 +20,17 @@ tmp
 .DS_Store
 
 .claude
+# Track only the project rules that govern tracked content: the .okf/ bundle,
+# the docs/ layout, and the Terraform file layout those two cite. Everything
+# else under .claude/ stays local.
+!/.claude/
+/.claude/*
+!/.claude/rules/
+/.claude/rules/*
+!/.claude/rules/okf-bundle.md
+!/.claude/rules/docs-layout.md
+!/.claude/rules/how-to-skeleton.md
+!/.claude/rules/terraform-file-layout.md
 
 # APM dependencies
 apm_modules/

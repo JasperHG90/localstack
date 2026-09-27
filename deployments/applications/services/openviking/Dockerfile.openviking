@@ -37,7 +37,7 @@ FROM ${BASE_IMAGE}
 # jobspec change to reach Tempo, and with tracing off they are non-recording
 # and cost nothing. ov_retrieval's spans carry an `outcome` attribute naming
 # why a hybrid pass declined to run, which is the one thing the Prometheus
-# metrics cannot report -- see docs/retrieval-quality.md.
+# metrics cannot report -- see docs/reference/retrieval-quality.md.
 #
 # The `#subdirectory=` fragment is required: the repository root is a uv
 # workspace with no `[project]` table, so pip cannot build it. Re-check the

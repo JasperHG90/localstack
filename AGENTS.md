@@ -71,8 +71,26 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project overview
 
-<!-- Add your project's overview here. This section is not managed by aim. -->
+Infrastructure as code for a personal homelab cluster: Ansible bootstrap
+(`bootstrap/`), two Terraform roots (`deployments/infrastructure/`,
+`deployments/applications/`) that run Nomad jobs, Vault and Consul config, and
+the `localstack` CLI (`cli/`). `README.md` has the layout.
 
 ## Project conventions
 
-<!-- Add code-style notes, testing expectations, deploy steps, etc. Not managed. -->
+This file routes. Each entry below owns what it covers, so read the owner
+rather than a summary of it.
+
+- `.okf/`: the knowledge bundle, for anyone working on this repository. Start
+  at `.okf/index.md`. `decisions/` holds decision records, kept as written,
+  where a reversal is a new record. `practices/` holds lessons learned the hard
+  way, `proposals/` holds designs not yet built, and `components/` holds how a
+  part of the cluster was built. How to read and extend it:
+  `.claude/rules/okf-bundle.md`.
+- `docs/`: user docs for people who use the cluster, sorted into `how-to/`,
+  `reference/` and `explanation/`. Start at `docs/README.md`. Which of `docs/`
+  and `.okf/` a page belongs in: `.claude/rules/docs-layout.md`.
+- `.loop/`: ticket plans, verdicts and the ledger for the loop harness.
+
+Gates, from the repository root: `just pre_commit`, then
+`uv run --directory cli pytest`.

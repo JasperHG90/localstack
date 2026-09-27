@@ -1,0 +1,111 @@
+# HAProxy Reverse Proxy
+
+HAProxy runs as a Nomad job on `firebat` (192.168.2.30) and is the single
+HTTPS entry point for the cluster, routing by hostname. It terminates TLS with
+a publicly-trusted Let's Encrypt wildcard certificate, so browsers trust it
+with nothing installed on the client.
+
+## Service Routes
+
+Every route is `https://<name>`. Plain HTTP on port 80 answers only with a 301
+to the HTTPS URL.
+
+| Hostname | Backend | Port |
+|---|---|---|
+| `minio.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 9001 (console) |
+| `s3.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 9000 (API) |
+| `vault.lab.orangecluster.nl` | firebat (192.168.2.30) | 8200 |
+| `nomad.lab.orangecluster.nl` | firebat (192.168.2.30) | 4646 |
+| `consul.lab.orangecluster.nl` | firebat (192.168.2.30) | 8500 |
+| `memex.lab.orangecluster.nl` | jetson-orin-nano (192.168.2.46) | 8000 |
+| `grafana.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 3000 |
+| `bifrost.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 8080 |
+| `dash.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4180 |
+| `registry.lab.orangecluster.nl` | ubuntu (192.168.2.47) | 5000 |
+| `registry-ui.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 4181 |
+| `openviking-api.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 1933 |
+| `openviking.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 4182 |
+| `hermes-gateway.lab.orangecluster.nl` | radxa-dragon-q6a (192.168.2.50) | 9119 |
+
+`bifrost` authenticates with its own native `governance.auth_config` (admin
+creds from Vault), so HAProxy no longer gates it. `dash` and `registry-ui` each
+sit behind their own oauth2-proxy instance, on 4180 and 4181, both gated by
+Vault SSO with flat any-authenticated-user access. Both proxies are network
+gates and forward no Vault ID token: each service decides for itself who the
+caller is. `openviking-api` skips the proxy for the same reason `bifrost` does,
+and answers 401 without a Vault identity token. `openviking` is ov-dash, the
+browser face of that same service: it signs a person into Vault itself, mints
+their identity token server-side and never gives the browser one, so a proxy in
+front would be a second password for the same person. `grafana` reaches that
+same Vault SSO through its own built-in OIDC client, with no proxy in between,
+and keeps its local admin account as the way in when Vault is down.
+`hermes-gateway` is the Hermes dashboard that Hermes Desktop connects to, not
+the API server on 8642. It also runs its own Vault OIDC login, limited to
+operators. The rest are open to anyone who reaches the edge.
+
+**Prometheus, Loki and Tempo are deliberately not routed here.** All three
+serve their query APIs with no authentication, and nothing needs them through
+the proxy: Grafana's datasources dial `192.168.2.47` directly from the same
+node, Alloy pushes straight to Loki, and apps export traces straight to Tempo.
+Routing them would have meant every metric, log line and trace readable by
+anyone who can reach the edge, to save a browser tab. To reach one while
+debugging, use an SSH tunnel: see
+[How to reach Prometheus or Loki directly](../how-to/reach-prometheus-or-loki-directly.md).
+
+The stats dashboard is at `http://192.168.2.30:8404`, outside the TLS
+frontend.
+
+## Ports
+
+- **80** HTTP, 301-redirects everything to HTTPS
+- **443** HTTPS, terminates TLS and does all hostname routing
+- **8404** stats dashboard
+
+## DNS
+
+Nothing to configure. `*.lab.orangecluster.nl` and the bare
+`lab.orangecluster.nl` resolve from public DNS to `192.168.2.30`, so any
+device reaches the cluster through whatever resolver it already uses,
+including phones and guests. No `/etc/hosts` entries, no local resolver.
+
+The address is private, so the names only work from the LAN or over
+Tailscale's subnet route (`192.168.2.0/24`). Resolving from elsewhere returns
+an address that goes nowhere. See [DNS for the lab zone](dns.md).
+
+## TLS
+
+The certificate is a Let's Encrypt wildcard covering `*.lab.orangecluster.nl`
+and the bare `lab.orangecluster.nl`, issued over DNS-01 by the `acme` job and
+stored in Vault at `secret/default/haproxy/tls`. HAProxy reads it from there
+with a Vault template, concatenates the certificate and key into the single
+PEM its `crt` argument expects, and restarts when the stored secret changes.
+
+Renewal is automatic. [TLS certificates](tls-certificates.md) covers issuance
+and the storage format, and
+[How to recover a failed certificate renewal](../how-to/recover-a-failed-certificate-renewal.md)
+covers what to check when a renewal does not land.
+
+## PostgreSQL
+
+PostgreSQL is not routed through HAProxy. The proxy runs in HTTP mode and has
+no TCP frontend, so there is no `postgres` hostname. Connect to the node
+directly:
+
+```bash
+psql -h 192.168.2.30 -p 5432 -U <user> -d <database>
+```
+
+This works on the LAN and over Tailscale's subnet route. PostgreSQL runs on
+firebat, the same host as HAProxy, so proxying it would mean a second port for
+no benefit.
+
+## Adding a New Service
+
+See [How to add a service to the edge](../how-to/add-a-service-to-the-edge.md).
+
+## Files
+
+- `deployments/infrastructure/services/haproxy.hcl` — Nomad job spec with the
+  embedded HAProxy config and the certificate template
+- `deployments/infrastructure/services.tf` — Terraform resource that deploys
+  the job

@@ -338,7 +338,7 @@ resource "vault_policy" "redis_cache_read" {
 ### claim.
 ###
 ### token_policies carries BOTH policies deliberately, per the one-token
-### rule (docs/workload-identity.md): naming a dedicated role REPLACES
+### rule (docs/explanation/workload-identity.md): naming a dedicated role REPLACES
 ### `nomad-workloads` rather than adding to it, so a caller that also needs
 ### its own KV secrets must keep that policy attached too.
 resource "vault_jwt_auth_backend_role" "redis_cache" {

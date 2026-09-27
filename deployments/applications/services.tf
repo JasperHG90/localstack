@@ -591,7 +591,7 @@ resource "nomad_job" "openviking" {
 ###
 ### APPLY ORDER STILL MATTERS: the Vault chain in the infrastructure root has
 ### to exist first, or this job boots with an empty OIDC_CLIENT_ID and no
-### sign-in completes. docs/vault-2fa.md, rollout steps 3 and 4.
+### sign-in completes. docs/how-to/roll-out-vault-login-mfa.md, steps 3 and 4.
 resource "nomad_job" "ov_dash" {
   jobspec = templatefile(
     "${path.module}/services/ov-dash.hcl",
@@ -791,7 +791,8 @@ resource "nomad_job" "registry_ui" {
 ### Within each OIDC provider's grant_rules, ORDER IS LOAD-BEARING: memex
 ### takes the first matching rule and stops. The Vault provider's admin
 ### group must stay listed before its reader group, or a dual-tier human
-### silently downgrades. See docs/memex-oidc-verification.md's V5 check.
+### silently downgrades. See the V5 check (step 14) in
+### docs/how-to/verify-memex-oidc.md.
 ### Both `value`s there are Vault GROUP NAMES, spelled exactly as the keys in
 ### `local.app_user_groups` in the OTHER Terraform root
 ### (deployments/infrastructure/identity.tf) — Terraform cannot enforce that
