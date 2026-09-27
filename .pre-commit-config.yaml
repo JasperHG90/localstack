@@ -63,3 +63,19 @@ repos:
         # `strict = true` to `false` would commit ungated.
         files: '^(cli|scripts)/'
         pass_filenames: false
+
+      # The sixteen OpenViking config settings that fail silently. This hook is
+      # why the script exists; without it the script is documentation. Two
+      # settings had already drifted unnoticed while nothing ran it: the module
+      # name it asserts (ov_retrieval, renamed to ov_ext) and keyword_fields,
+      # which gained a sixth column and stopped matching the live index.
+      #
+      # pass_filenames:false and no `types`: the script resolves its own inputs
+      # (the jobspec and ov.conf.json), and a commit touching only one of them
+      # must still check the pair.
+      - id: openviking-config
+        name: OpenViking config (settings that fail silently)
+        entry: uv run python scripts/check_openviking_config.py
+        language: system
+        files: '^deployments/applications/services/openviking(\.hcl|/ov\.conf\.json)$|^scripts/check_openviking_config\.py$'
+        pass_filenames: false

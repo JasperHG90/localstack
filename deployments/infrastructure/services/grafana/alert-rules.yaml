@@ -714,6 +714,123 @@ groups:
           summary: "Scrape job '{{ $labels.job }}' has zero targets"
           description: "The '{{ $labels.job }}' Prometheus scrape job is missing entirely (no targets, or all dropped before scrape). This silently disables all per-target down-alerts for that job. Inspect http://192.168.2.47:9090/targets."
 
+      # KNOWN GAP: neither rule below watches restart churn, and a loop with
+      # fast boots produces no alert at all. The 115s clean boot holds `up` at
+      # 0 for about two minutes, far under OpenVikingDown's 50m `for`, and
+      # OpenVikingNotReady is green in between -- which is the shape of the
+      # very incident these two were written for.
+      #
+      # Not fixed here because the metric does not exist. This Nomad build
+      # exports no restart series on either agent: `/v1/metrics` on the server
+      # (192.168.2.30:4646) and on the radxa client (192.168.2.50:4646) both
+      # return nothing matching *restart*, and nomad_client_allocs_* carries
+      # only cpu_*, memory_* and the throttle counters. A rule shaped like
+      # TempoOOMKilled below would match no series and sit green forever,
+      # which is worse than a gap that is written down.
+      - uid: alert-openviking-down
+        title: OpenVikingDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              # == bool 0 yields 1 when the target is down (a plain `== 0`
+              # returns value 0, which never trips the `gt 0` threshold).
+              expr: 'up{job="openviking"} == bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        # 50m, not the 5m the other down-rules carry. Prometheus scrapes this
+        # job as a static target, so `up` reads 0 through a boot as well as
+        # through a wedge, and the worst measured boot is 44m46s. A shorter
+        # `for` fires on every ordinary restart.
+        for: 50m
+        labels: { severity: critical, component: openviking }
+        annotations:
+          summary: "OpenViking is unreachable"
+          description: "Prometheus cannot scrape OpenViking on 192.168.2.50:1933 and has not for 50m. This covers a dead or wedged process and the no-data case OpenVikingNotReady cannot see, because a stale readiness gauge leaves that rule's min() with an empty vector. Check the openviking alloc on radxa-dragon-q6a."
+
+      # The four families are named rather than matched with a bare
+      # `.*_readiness` wildcard, and that is load-bearing. Measured off
+      # /metrics on the live service: openviking_api_key_manager_readiness
+      # reads 0.0 permanently, because auth_mode is oidc and /ready reports
+      # that probe as "not_configured" rather than failed. A wildcard would
+      # pick it up and fire forever. openviking_async_system_readiness is
+      # left out for the opposite reason: it is not one of /ready's probes,
+      # so it is not part of what the Nomad check measures.
+      #
+      # service_readiness does NOT roll up the others: the same reading had it
+      # at 1.0 while api_key_manager sat at 0.0. So each family that can
+      # actually fail has to be named, or the gauge this alert watches stays
+      # green through exactly the outage it exists to catch.
+      #
+      # Do not narrow the selector either. Adding valid="1" would drop a probe
+      # OUT of it at the moment the probe stops refreshing, leaving min() over
+      # the healthy survivors: silent green through the outage. Unfiltered, a
+      # valid="0" series is a new series that min() picks up at 0, which is
+      # the direction that fires.
+      #
+      # The api_key_manager reading encodes a general rule rather than one
+      # quirk. Upstream's _is_ready_check_ok counts "not_configured" and
+      # "not_supported" as healthy, while the gauge for that same probe reads
+      # 0.0 -- so any family named above would false-fire forever if its probe
+      # ever became not-configured. All four are configured today.
+      #
+      # Triage key, since the gauge names do not match the probe names in
+      # /ready: agfs is storage_readiness{probe="agfs"}, vectordb is
+      # retrieval_backend_readiness{probe="vikingdb"} (upstream's label, but
+      # this deployment runs the ov_postgres adapter), and embedding is
+      # model_provider_readiness{provider="openai"}, which is Bifrost on to
+      # embark and the family the restart incident moved.
+      - uid: alert-openviking-not-ready
+        title: OpenVikingNotReady
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'min({__name__=~"openviking_(service|storage|model_provider|retrieval_backend)_readiness"}) < bool 1'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: warning, component: openviking }
+        annotations:
+          summary: "An OpenViking readiness gauge has read 0 for ten minutes"
+          description: "OpenViking is up and scraping but one of its backends is not answering, so searches against it return nothing and Hermes' 08:00 and 10:00 crons fail quietly. Nothing restarts the task for this on purpose -- the readiness probes cover MinIO, Postgres and embark as well as OpenViking itself, and cycling the task reaches none of them (services/openviking.hcl). Read which probe is down: curl -s http://192.168.2.50:1933/ready. This rule covers only a reachable OpenViking with a sick backend. A dead or wedged process reads as no data here, which noDataState resolves, and is covered by OpenVikingDown above; ScrapeJobMissing fires when the scrape block is deleted, not when the target it names is down, so it does not cover this either."
+
   - orgId: 1
     name: retrieval-quality
     folder: Alerts

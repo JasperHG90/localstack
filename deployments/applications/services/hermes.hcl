@@ -559,10 +559,15 @@ EOF
         ]
       }
 
+      # No `memory_max`. Oversubscription is off at the Nomad server, so the
+      # scheduler zeroes MemoryMaxMB and the cgroup comes from `memory` alone.
+      # embark.hcl carries the measurement. The 2560 that sat here was never
+      # granted and 2048 was always the cap, so nothing moves at steady state.
+      # The apply does: a task-resources diff replaces the alloc, and the
+      # `force_pull` above re-pulls the image on the way back up.
       resources {
-        cpu        = 6000
-        memory     = 2048
-        memory_max = 2560
+        cpu    = 6000
+        memory = 2048
       }
     }
   }

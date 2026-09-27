@@ -83,13 +83,18 @@ STUDIO_DIR_OFF = "/nonexistent"
 
 _STUDIO_ASSIGNMENT = re.compile(rf'^\s*{STUDIO_ENV}\s*=\s*"([^"]*)"')
 
-# The hybrid retrieval entry point. `ov_retrieval.__main__` patches OpenViking's
+# The hybrid retrieval entry point. `ov_ext.__main__` patches OpenViking's
 # HierarchicalRetriever and then hands over to the ordinary server, so dropping
 # these two lines falls back to the image's own entrypoint, `openviking-server`,
 # and retrieval goes back to vector-only. The wrapper's fatal-on-failure check
 # never fires, because the wrapper is what stopped running.
+#
+# Renamed from ov_retrieval when the jobspec moved to the ov-ext package
+# (Dockerfile.openviking installs `ov-ext`, and openviking.hcl's args say
+# `-m ov_ext`). This constant stayed behind and the guard went red unnoticed,
+# which is what a guard nothing runs buys.
 RETRIEVAL_COMMAND = "/app/.venv/bin/python"
-RETRIEVAL_MODULE = "ov_retrieval"
+RETRIEVAL_MODULE = "ov_ext"
 
 _COMMAND_ASSIGNMENT = re.compile(r'^\s*command\s*=\s*"([^"]*)"')
 _ARGS_ASSIGNMENT = re.compile(r"^\s*args\s*=\s*\[(.*)\]")
@@ -179,6 +184,13 @@ ALLOWED_CUSTOM_PARAMS = frozenset(
 # index carries the five below, `create_index` never re-runs on a collection
 # that already exists, and `ensure_indexes` is a manual call, so the drift shows
 # up as keyword search seq-scanning rather than as an error.
+#
+# Five is the documented intent (services/openviking/README.md, docs/reference/openviking.md,
+# which also spell out the manual re-key a sixth column needs) and `content`
+# arrived without that re-key. The live index expression has NOT been read back
+# to confirm it. To close that, against the openviking database:
+#     SELECT indexdef FROM pg_indexes WHERE schemaname = 'openviking';
+# If it carries six, this constant is not the drift and a re-key is owed.
 EXPECTED_KEYWORD_FIELDS = [
     "name",
     "description",

@@ -1,4 +1,4 @@
-manifest_version = 17
+manifest_version = 18
 targets = []
 managed_files = [
     "AGENTS.md",
@@ -382,10 +382,15 @@ flavor = "claude"
 source_path = ""
 target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
 marketplace_name = "aim-ef9f6a17bd3105b7"
-content_hash = "6fbf0487bc9feaf9e520e7740afde05f1c2941670c7b8557a39ffb6b6c537c04"
+content_hash = "7ed6cedcd4349cccef12c034807ae31320bc5d2b46c20314843aa92ae8cd9923"
 risk_acknowledged = false
 
 [plugin.current]
+tag = "1.10.1"
+sha = "39ad7cf9f9e3caba4c27da2dd7d52b066c4b9e8b"
+installed_at = "2026-09-15T07:34:06.935886Z"
+
+[[plugin.history]]
 tag = "1.9.0"
 sha = "f26e7d6fdacc6268f83f7662a490ff38b259ea53"
 installed_at = "2026-09-05T13:03:34.741204Z"
@@ -434,11 +439,6 @@ installed_at = "2026-07-24T08:17:36.632750Z"
 tag = "0.5.0"
 sha = "d23b34a1d8b0f3eedee82fe64a1ef53de18c797d"
 installed_at = "2026-07-23T22:09:30.197645Z"
-
-[[plugin.history]]
-tag = "0.4.1"
-sha = "c1d56b4b2f0be64fdc0a72c340bd1f06f3716870"
-installed_at = "2026-07-23T10:19:56.415790Z"
 
 [[plugin]]
 qualified_name = "10ae737f6885d841/caveman"

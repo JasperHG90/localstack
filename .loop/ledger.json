@@ -2820,6 +2820,65 @@
           "when": "2026-09-11T20:41:09+02:00"
         }
       ]
+    },
+    "hermes-veerle-profile": {
+      "slug": "hermes-veerle-profile",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "hermes",
+      "dependencies": [],
+      "priority": 20,
+      "summary": "Add Veerle as a second profile inside the ONE running Hermes instance, not a\nsecond instance: her own Telegram bot, cron, SOUL, and OpenViking identity,\nserved by the existing gateway under `gateway.multiplex_profiles`. Three forks\ngo back to the operator first: the dashboard is gateway-wide with no\nper-profile authorization, the bundled OpenViking memory provider reads\ncredentials from raw `os.environ` and so ignores per-profile scoping, and\n`var.vault_openviking_workloads` cannot express two identity roles for one\nNomad job.\n",
+      "relay_block_nonfork": null,
+      "tags": [],
+      "stub": false,
+      "premise": {},
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
+    },
+    "tailscale-role-apply-routes-when-joined": {
+      "slug": "tailscale-role-apply-routes-when-joined",
+      "stage": "planning",
+      "attempts": 0,
+      "review_cycles": 0,
+      "blocker": null,
+      "commit_sha": null,
+      "review_verdict": null,
+      "review_entry_tree": null,
+      "dropped": false,
+      "drop_reason": null,
+      "carried_over_finding": null,
+      "epic": "netsec",
+      "dependencies": [],
+      "priority": 10,
+      "summary": "The tailscale role applies `--advertise-routes` only inside `tailscale up`, and\nskips `tailscale up` on a node that is already Running. So a re-run on a joined\nmanager never restores a lost subnet route and still reports success. Firebat\nadvertised no route in 2026-09 and remote tailnet clients lost the LAN. Add a\nreconcile step that reads the node's prefs and runs `tailscale set` only when\nthey differ from the desired ones, with a real-ansible test against a fake\n`tailscale` on PATH.\n",
+      "relay_block_nonfork": null,
+      "tags": [
+        "tailscale",
+        "ansible",
+        "bootstrap",
+        "subnet-route",
+        "idempotency"
+      ],
+      "stub": false,
+      "premise": {
+        "Q1": "the repo has no Ansible test harness; the PATH ansible-playbook lacks ansible.posix",
+        "Q2": "just pre_commit runs no pytest",
+        "Q3": "only the manager runs the role today",
+        "Q7": "a fresh node always needs admin-console approval once, so failing would break first runs"
+      },
+      "measured_against": {},
+      "eval_amendments": [],
+      "plan_rebinds": []
     }
   }
 }

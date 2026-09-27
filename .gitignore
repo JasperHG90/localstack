@@ -42,3 +42,7 @@ cli/snapshot_report.html
 
 # Byte-compiled helpers under scripts/ (importing one for a test leaves these).
 __pycache__/
+
+# Ansible Galaxy collections installed locally by ansible-galaxy; vendored
+# upstream code, re-created on install, not content.
+bootstrap/.ansible/
