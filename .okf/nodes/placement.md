@@ -1,6 +1,6 @@
 ---
 type: component
-title: The cluster nodes
+title: Node placement
 description: "Five nodes on 192.168.2.0/24: firebat is the only amd64 host and runs every server, the four arm64 workers each carry a fixed set of jobs. Placement is by hostname constraint, host volume and literal IP, so moving a job touches four places and one of them is on the node."
 tags: [nodes, hardware, nomad, placement, firewall, ansible]
 status: stable
@@ -30,10 +30,14 @@ sources:
     resource: loop:U3-upgrade-nomad-2x
 ---
 
-# The cluster nodes
+# Node placement
 
 Five hosts on `192.168.2.0/24`. Every job is pinned to one of them by name,
-and nothing reschedules a job elsewhere when its node dies.
+and nothing reschedules a job elsewhere when its node dies. This page covers
+what is common to all five. Each node has its own page in this section:
+[firebat](/nodes/firebat.md), [orangepi4a](/nodes/orangepi4a.md),
+[jetson-orin-nano](/nodes/jetson-orin-nano.md), [ubuntu](/nodes/ubuntu.md)
+and [radxa-dragon-q6a](/nodes/radxa-dragon-q6a.md).
 
 ## The five hosts
 
@@ -59,6 +63,10 @@ The SSH user in this table appears three times in the repo: the inventory,
 and the `ssh_user` of each `null_resource.firewall` entry in both Terraform
 roots. They must agree.
 
+A sixth board, an Orange Pi RV2 (riscv64), is planned in
+[the RISC-V worker proposal](/proposals/riscv-worker-node.md) and is not in
+the inventory.
+
 ## What runs where
 
 Every service and batch job carries a `constraint` on
@@ -67,28 +75,14 @@ run everywhere.
 
 | Node | Jobs | Host volumes |
 |---|---|---|
-| `firebat` | haproxy, postgres | `postgres` |
-| `orangepi4a` | minio, ov-dash | `minio_data` |
-| `jetson-orin-nano` | embark | `embark_data`, `memex_data` |
-| `ubuntu` | prometheus, grafana, loki, tempo, registry, acme | `prometheus_data`, `grafana_data`, `loki_data`, `tempo_data`, `acme_lego_state` |
-| `radxa-dragon-q6a` | hermes, bifrost, openviking, dash, registry-ui, driftwatch, redis, nats, both oauth2-proxy jobs, backup-postgres, backup-minio | `hermes_data`, `openviking_data`, `driftwatch_data`, `registry_ui_data`, `nats_data` |
+| [`firebat`](/nodes/firebat.md) | haproxy, postgres | `postgres` |
+| [`orangepi4a`](/nodes/orangepi4a.md) | minio, ov-dash | `minio_data` |
+| [`jetson-orin-nano`](/nodes/jetson-orin-nano.md) | embark | `embark_data`, `memex_data` |
+| [`ubuntu`](/nodes/ubuntu.md) | prometheus, grafana, loki, tempo, registry, acme | `prometheus_data`, `grafana_data`, `loki_data`, `tempo_data`, `acme_lego_state` |
+| [`radxa-dragon-q6a`](/nodes/radxa-dragon-q6a.md) | hermes, bifrost, openviking, dash, registry-ui, driftwatch, redis, nats, both oauth2-proxy jobs, backup-postgres, backup-minio | `hermes_data`, `openviking_data`, `driftwatch_data`, `registry_ui_data`, `nats_data` |
 
-Why each node holds what it does:
-
-- **firebat** runs the HashiStack servers and the edge in front of them.
-  Postgres is there too, with its volume, which is what the nightly
-  `backup-postgres` job on radxa reaches over the LAN.
-- **jetson-orin-nano** is the only GPU. `configure_nvidia_ctk.yml` makes
-  `nvidia` root Podman's default runtime, and `embark.hcl` mounts the CUDA
-  libraries by path. memex also needs this node, so its job is commented out in
-  `deployments/applications/services.tf` with the condition for bringing it
-  back: its ~6.5 GB does not fit beside embark. `memex_data` stays on the
-  Jetson.
-- **ubuntu** holds the observability stack. The original plan put it on
-  firebat. [The monitoring build plan](/components/monitoring-stack.md)
-  records that it shipped on `ubuntu` instead.
-- **radxa-dragon-q6a** holds the application tier. dash runs next to
-  oauth2-proxy so the proxy reaches it on loopback.
+Why each node holds what it does, and what stops when it goes down, is on
+that node's page.
 
 ## Architecture
 
@@ -136,7 +130,8 @@ they agree:
    the other and the job stops placing.
 4. The `firewall_rules` entry (`host` and `ssh_user`). Terraform adds the new
    rules but never deletes the old ones, so the old node stays open until
-   someone runs `ufw delete` on it.
+   someone runs `ufw delete` on it. Rules on other nodes that admit this job's
+   node as a caller (`allow from <address>`) have to follow it too.
    [ufw rules outside user.rules](/practices/ufw-rules-outside-user-rules.md)
    has the details.
 
@@ -144,12 +139,11 @@ A volume's data does not move either, and nothing in the repo copies it.
 
 ## Node setup notes
 
-- Scratch notes on the Jetson's firmware, flashing it to NVMe and holding the
-  snap are [Jetson Orin Nano flashing](/practices/jetson-orin-nano-flashing.md).
-- Moving the Orange Pi's OS from SD card to NVMe is
-  `docs/how-to/move-orange-pi-os-to-nvme.md`.
 - Every node needs the repo's `.ssh/id_rsa` public key and passwordless sudo
   before Ansible can run (`bootstrap/README.md`).
+- Board-specific setup (the Jetson's flashing notes, the Orange Pi's move to
+  NVMe) is on [jetson-orin-nano](/nodes/jetson-orin-nano.md) and
+  [orangepi4a](/nodes/orangepi4a.md).
 
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md) and

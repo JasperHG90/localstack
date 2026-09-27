@@ -83,9 +83,11 @@ rather than a summary of it.
 
 - `.okf/`: the knowledge bundle, for anyone working on this repository. Start
   at `.okf/index.md`. `decisions/` holds decision records, kept as written,
-  where a reversal is a new record. `practices/` holds lessons learned the hard
-  way, `proposals/` holds designs not yet built, and `components/` holds how a
-  part of the cluster was built. How to read and extend it:
+  where a reversal is a new record. `architecture/` holds the boundaries
+  between Ansible and the two Terraform roots, `components/` holds how each
+  part of the cluster is built, `nodes/` holds one page per device,
+  `practices/` holds lessons learned the hard way, and `proposals/` holds
+  designs not yet built. How to read and extend it:
   `.claude/rules/okf-bundle.md`.
 - `docs/`: user docs for people who use the cluster, sorted into `how-to/`,
   `reference/` and `explanation/`. Start at `docs/README.md`. Which of `docs/`

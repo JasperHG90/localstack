@@ -55,7 +55,7 @@ The operator steps for SSH keys and passwordless sudo are in
 ## Layout
 
 - `bootstrap/inventory/cluster.ini`: one `manager` (firebat) and four `worker`
-  hosts. Per-node detail is [the cluster nodes](/components/cluster-nodes.md).
+  hosts. Per-node detail is [node placement](/nodes/placement.md).
 - `bootstrap/inventory/group_vars/all.yml`: `hashistack_versions`, the only
   place the Consul, Vault, Nomad and nomad-driver-podman versions are declared.
 - `bootstrap/ansible.cfg`: inventory, roles path, `become` via sudo, and the

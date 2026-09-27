@@ -151,7 +151,7 @@ only link is a comment beside each:
   registry-ui in applications, colocated on the same node.
 - Apart from MinIO and Postgres, which come from the Consul catalog, every
   node address is a literal (`*_host = "192.168.2.50"`). The node map is
-  [the cluster nodes](/components/cluster-nodes.md).
+  [node placement](/nodes/placement.md).
 
 ## Apply order
 

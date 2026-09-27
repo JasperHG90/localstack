@@ -11,3 +11,5 @@
 ## 2026-09-27
 
 - **Components filled in** (`components/`): Added 31 concepts, one per subsystem, covering how each part of the cluster is put together across both Terraform roots, the jobspecs, Ansible and the CLI, and the traps that shaped it. Written from the code, its `###` comment blocks and the archived loop tickets, because that is where this repository's build reasoning was kept and `docs/` never held it.
+- **Nodes section added** (`nodes/`): One page per device, so a reader can see what a node carries, why each job is pinned there and what breaks when it goes down, without assembling it from five jobspecs and two Terraform roots. The cross-node placement rules moved here from `components/cluster-nodes.md`, now [Node placement](/nodes/placement.md).
+- **Deployment layers** (`architecture/deployment-layers.md`): Wrote down what Ansible, the infrastructure root and the applications root each own, because the rule for the infrastructure-applications line was stated nowhere, and the written Ansible rule ("no management token in Terraform") has been false since G2 brokered one into the infrastructure root.
