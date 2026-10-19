@@ -1,0 +1,47 @@
+pages: 81
+--- markers  codes  words  page (only pages with any hit) ---
+      4     12   2069  docs/explanation/workload-identity.md
+      4      2    878  docs/reference/vault-human-auth.md
+      3     37   2760  docs/how-to/verify-memex-oidc.md
+      3      0   1043  docs/explanation/openviking-identity.md
+      3      0   1267  docs/reference/openviking.md
+      3      0    888  docs/how-to/narrow-the-monitoring-firewall-rules.md
+      2      1    627  docs/explanation/cluster-roles.md
+      2      0    236  docs/how-to/run-a-backup-job-on-demand.md
+      2      0    659  docs/reference/gcs-backups.md
+      2      0    670  docs/explanation/public-lab-dns.md
+      1      3    857  docs/how-to/add-a-vault-oidc-client.md
+      1      0   1246  docs/reference/monitoring.md
+      1      0    180  docs/how-to/exchange-a-workload-jwt-for-minio-credentials.md
+      1      0    345  docs/reference/dns.md
+      1      0    348  docs/how-to/join-and-leave-the-admin-group.md
+      1      0    396  docs/how-to/sign-in-to-nomad-with-vault.md
+      1      0    546  docs/reference/cluster-roles.md
+      1      0    725  docs/how-to/give-a-job-keyless-minio-access.md
+      1      0    757  docs/reference/tls-certificates.md
+      0      4    877  docs/reference/cli-login.md
+      0      1   1231  docs/how-to/revoke-a-lost-or-stolen-session.md
+      0      1    172  docs/how-to/check-jetstream-disk-usage.md
+      0      1    194  docs/how-to/log-in-to-memex-from-a-laptop.md
+      0      1    804  docs/reference/dash.md
+--- verdicts ---
+RESIDUE docs/how-to/verify-memex-oidc.md:417  G5 — the scaffold edit landed where it should, and only there.
+RESIDUE docs/how-to/verify-memex-oidc.md:384  `MEMEX_API_KEY` in `hermes.hcl` at both sites. Removal is a follow-up.
+RESIDUE docs/explanation/workload-identity.md:240  M1 landed this. A Nomad job can now read its bucket with no static S3 key: it
+RESIDUE docs/explanation/workload-identity.md:217  | `minio-poc2` | MinIO STS, `POC2` target | M1, replace in the human ticket |
+RESIDUE docs/explanation/workload-identity.md:71  and is applied by Ansible. As of F9 (2026-07-30) it is three `path` blocks:
+RESIDUE docs/reference/vault-human-auth.md:82  What G2 changed is the route: reaching it used to require someone handing you a
+RESIDUE docs/reference/cli-login.md:88  Removing the injected token entirely is F8's job, not this CLI's.
+RESIDUE docs/reference/cli-login.md:130  The `userpass` backend and the `operator` entity come from F2. The policy that
+RESIDUE docs/how-to/add-a-vault-oidc-client.md:32  `vault_identity_group`, because it reuses F11's existing `developer` group
+RESIDUE docs/how-to/revoke-a-lost-or-stolen-session.md:37  **`localstack logout` ships with `D2` and is the way to do this.** It revokes
+RESIDUE docs/explanation/cluster-roles.md:34  If you want a real boundary, that is a different design and a different ticket.
+RESIDUE docs/how-to/narrow-the-monitoring-firewall-rules.md:98  the time of writing (2026-07-26) that includes the dnsmasq removal, which is
+RESIDUE docs/reference/dash.md:37  `dash` sits entirely behind oauth2-proxy (L1), gated on a completed Vault
+RESIDUE docs/reference/tls-certificates.md:87  staging until the idempotency gate was cleared on 2026-07-26: the job ran
+RESIDUE docs/reference/cluster-roles.md:53  Whether a level is per-app or per-resource is the consumer ticket's call.
+KEEP docs/reference/dns.md:32  `.okf/proposals/postgres-nats-cdc-bridge.md` advertise
+KEEP docs/explanation/openviking-identity.md:56  provisioner that used to POST to the Admin API is gone rather than replaced.
+KEEP docs/reference/openviking.md:155  Two it used to assert are gone. Under `oidc` the plugin never consults
+MOVE pages: 0 of 81
+RESIDUE pages (edit in place): 11
