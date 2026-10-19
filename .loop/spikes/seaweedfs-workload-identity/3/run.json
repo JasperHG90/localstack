@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-workload-identity",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-wi-2/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-wi-2/spike.sh",
+      "copy": "files/spike.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-wi-2/main.go",
+      "copy": "files/main.go"
+    }
+  ],
+  "where": "worktree",
+  "head": "48ed037a6b23bd7e26ba02422dc40601fa0f7a8a",
+  "fingerprint": "cf9df7ebc1f7c401787eb940b74afc0ff87cc140953fb9c764c07ef2b8e69fe9",
+  "started_at": "2026-10-19T18:00:13+00:00",
+  "finished_at": "2026-10-19T18:03:05+00:00",
+  "duration_seconds": 172.168,
+  "timeout_seconds": 500.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

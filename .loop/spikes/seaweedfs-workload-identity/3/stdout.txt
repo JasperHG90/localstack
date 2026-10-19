@@ -1,0 +1,30 @@
+JWT claims: {"iss":"http://issuer:8080","aud":["seaweedfs"],"sub":"global:default:tempo:tempo:tempo","nomad_namespace":"default","nomad_job_id":"tempo","nomad_task":"tempo","nomad_allocation_id":"4353498a-0a39-424c-afe7-bf605bda9fe5","iat":1792432885,"nbf":1792432885,"exp":1792436485}
+registry.hcl helper is byte-identical to loki.hcl's
+
+== shell helper (loki, registry) ==
+[helper unchanged-claimsrv] exit 1: wget: server returned error: HTTP/1.1 400 Bad Request
+[helper unchanged-rolesrv] exit 1: wget: server returned error: HTTP/1.1 400 Bad Request
+[helper sessname-claimsrv] exit 0: {"Version":1,"AccessKeyId":"ASIA5057369fcd677a1a","SecretAccessKey":"...","SessionToken":"...","Expiration":"2026-10-19T19:02:02Z"}
+[helper roleArn-rolesrv] exit 1: wget: server returned error: HTTP/1.1 400 Bad Request
+[helper roleArn+sessname-rolesrv] exit 0: {"Version":1,"AccessKeyId":"ASIAa1022e4b9f2c1d80","SecretAccessKey":"...","SessionToken":"...","Expiration":"2026-10-19T19:02:21Z"}
+[helper sentinel+sessname-claimsrv] exit 0: {"Version":1,"AccessKeyId":"ASIAe82c2d7a6283cc83","SecretAccessKey":"...","SessionToken":"...","Expiration":"2026-10-19T19:02:26Z"}
+-- raw error body, unchanged request, claim server:
+<?xml version="1.0" encoding="UTF-8"?>
+<ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><Error><Type>Sender</Type><Code>MissingParameter</Code><Message>RoleSessionName is required</Message></Error><RequestId>18E00045B2E390893A6897ED</RequestId></ErrorResponse> [HTTP 400]
+-- raw error body, unchanged request, role server:
+<?xml version="1.0" encoding="UTF-8"?>
+<ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><Error><Type>Sender</Type><Code>AccessDenied</Code><Message>RoleArn is required when claim-based policy mode is not configured</Message></Error><RequestId>18E000469DC7A55B30554633</RequestId></ErrorResponse> [HTTP 403]
+-- raw error body, RoleArn but no RoleSessionName, role server:
+<?xml version="1.0" encoding="UTF-8"?>
+<ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><Error><Type>Sender</Type><Code>MissingParameter</Code><Message>RoleSessionName is required</Message></Error><RequestId>18E0004781731263C86FDFCA</RequestId></ErrorResponse> [HTTP 400]
+-- raw success body (element names the sed reads):
+<?xml version="1.0" encoding="UTF-8"?>
+<AssumeRoleWithWebIdentityResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><AssumeRoleWithWebIdentityResult><Credentials><AccessKeyId>ASIA1808ca7f49af0ef0</AccessKeyId><SecretAccessKey>...</SecretAccessKey><SessionToken>...</SessionToken><Expiration>2026-10-19T19:02:44Z</Expiration></Credentials><SubjectFromWebIdentityToken>global:default:tempo:tempo:tempo</SubjectFromWebIdentityToken></AssumeRoleWithWebIdentityResult><ResponseMetadata><RequestId>18E00048C02F47E7A4ADD7DF</RequestId></ResponseMetadata></AssumeRoleWithWebIdentityResponse> [HTTP 200]
+
+== minio-go v7.1.0 credentials.IAM as tempo 2.10.8 configures it ==
+[minio-go no-roleArn-claimsrv] exit 1: STS FAIL: chain gave anonymous creds; provider error: RoleSessionName is required 
+[minio-go no-roleArn-rolesrv] exit 1: STS FAIL: chain gave anonymous creds; provider error: RoleSessionName is required 
+[minio-go roleArn-rolesrv] exit 0: STS OK: access key ASIA62... PUT OK 
+[minio-go sentinel-claimsrv] exit 0: STS OK: access key ASIAef... PUT OK 
+
+unchanged helper exit=1, unchanged minio-go exit=1
