@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The safety gate before the destructive switch cannot pass as written, and the backup outcome can fail even when nothing is wrong. The plan says to `rclone check` each durable bucket between SeaweedFS and GCS before the apply. By then that check finds differences on purpose. The `seaweedfs-cutover-openviking` and `seaweedfs-cutover-registry` outcomes both need a new write on SeaweedFS after the restore. Meanwhile `backup-minio` keeps syncing the frozen MinIO buckets to GCS every night until this ticket. A two-way check therefore fails every time, so the check cannot tell the operator whether the switch is safe. What `rclone sync` can lose is a GCS object that SeaweedFS lacks. The gate should test that in one direction: GCS as source, SeaweedFS as destination, `--one-way`. Its contract also has to say how to treat a mismatch from an object the app changed or deleted on SeaweedFS after the restore. The same goes for the outcome \"GCS object count for each durable bucket is unchanged or higher\". It fails whenever OpenViking or the registry deleted an object on SeaweedFS after the switch, because the sync mirrors that delete. The real test is that GCS matches SeaweedFS after the run (`rclone check seaweedfs:<b> gcs:.../minio/<b>/` exits 0).",
+      "anchor": ".loop/plans/seaweedfs-cutover.md:33",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "\"No job's rendered config names MinIO or port 9000\" is false by the plan's own design, so the ticket cannot meet its outcome. The backup job keeps its id `backup-minio`, its Vault path `default/backup-minio/seaweedfs` and its `gcs:${gcs_bucket}/minio/<b>/` destination. The `minio` job keeps running and serving 9000 until `minio-removal`. Prometheus still scrapes MinIO (`deployments/infrastructure/services/prometheus.hcl:114`). Scope the clause to what this ticket controls, for example \"no job other than `minio` points an S3 client at MinIO's endpoint\", so a reviewer can check it.",
+      "anchor": ".loop/plans/seaweedfs-cutover.md:62",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "f73c2b1bf9b762ee928a0bf304d847105c89750b39746cceb725e7d90d297f58"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T20:56:35+00:00"
+}
