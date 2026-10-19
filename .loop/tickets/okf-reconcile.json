@@ -3,7 +3,7 @@
   "slug": "okf-reconcile",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -117,8 +117,27 @@
   ],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "e67e7b3580227462a26d20b5082286e05aadebf83a796089c302dc4c39e8fe6a",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "660011a26650901e8d6e356ed4c098bfe100e2ad9db47dcd2a7f49044805f1f0",
+    "started_at": "2026-10-19T17:51:20+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "660011a26650901e8d6e356ed4c098bfe100e2ad9db47dcd2a7f49044805f1f0",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -133,5 +152,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:50:59+00:00"
+  "at": "2026-10-19T17:51:20+00:00"
 }
