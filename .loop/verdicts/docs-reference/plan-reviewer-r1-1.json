@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "Row r4's fails_when is wider than the outcome it checks. The outcome says files in other codebases and runtime paths 'stay as they are', but r4 flags any backticked token whose basename matches a tracked file. docs/reference/registry-ui.md:52 names `embark.json`, the ModelKit layer that is embark's own serving config (see deployments/applications/services/registry-ui/backend/src/registry_ui/registry.py:12). r4 matches it to deployments/infrastructure/services/grafana/embark.json, an unrelated Grafana dashboard. As signed, r4 can only pass if the builder points the page at the wrong file or strips the backticks to dodge the regex. Either way the contract contradicts the outcome's carve-out. The command does assert its fails_when exactly; the fails_when is what needs fixing. Narrow it, for example with an explicit allow-list of tokens the audit classes as other-codebase or runtime (starting with registry-ui's `embark.json`), or let a token count as resolved when the page qualifies it as a non-repo file.",
+      "anchor": ".loop/evals/docs-reference/rows.json:r4",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "b1e236bbc38bf9184e27857fe5ae7c64e598316a1104957f067403548d2788cd"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T17:56:17+00:00"
+}
