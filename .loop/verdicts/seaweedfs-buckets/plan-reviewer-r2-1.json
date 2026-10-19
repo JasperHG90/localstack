@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "Provider address. The plan now adds `service \"seaweedfs\" { policy = \"read\" }` to the deploy policy in bootstrap/playbooks/enable_consul_secrets.yml and runs the playbook before the first apply. The policy already grants `node_prefix \"\"` read, which the lookup needs for node_address. The playbook is a standalone step in bootstrap/justfile and is safe to re-run (consul_policy updates in place; the other tasks are guarded or rewrite the same config). minio-removal plans the same edit-and-run for this file.",
+      "anchor": "bootstrap/playbooks/enable_consul_secrets.yml:43",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "Backup key placement. The applications root now creates the backup user and writes `default/backup-minio/seaweedfs`. The deployer Vault policy grants create/update on `secret/data/default/*` (deployments/infrastructure/identity.tf:458), and the applications root already writes under that prefix. The job is `job \"backup-minio\"`, so the nomad-workloads policy (secret/data/<namespace>/<job_id>/*) lets it read the new path at run time. The rebuild ordering gap is stated and accepted in the plan.",
+      "anchor": "deployments/infrastructure/identity.tf:458",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T18:10:27+00:00"
+}
