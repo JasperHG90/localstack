@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-cutover-registry",
+  "stage": "planning",
+  "attempts": 0,
+  "plan_rounds": 0,
+  "review_rounds": 0,
+  "extra_plan_rounds": 0,
+  "extra_review_rounds": 0,
+  "blocker": null,
+  "fix": null,
+  "ask": "j-20261019T173118+0000-f2537ae7",
+  "split": null,
+  "split_plan_hash": null,
+  "split_hold": false,
+  "commit_sha": null,
+  "closed_outside": false,
+  "dropped": false,
+  "archived": false,
+  "worktree": null,
+  "branch": null,
+  "stamps": [],
+  "signoff": null,
+  "delegation": null,
+  "budget_base": null,
+  "signed_rows": [],
+  "resigns": [],
+  "accepted_risks": [],
+  "waivers": [],
+  "overrides": [],
+  "round": null,
+  "plan_hash": "beade374c82e73d87cc7c5e7383994a92b546b85714b81859b05ab4473228a26",
+  "intent": {
+    "epic": "seaweedfs-migration",
+    "depends_on": [
+      "seaweedfs-workload-identity",
+      "seaweedfs-cutover-openviking"
+    ],
+    "priority": 7
+  },
+  "history": [
+    {
+      "from": "stub",
+      "to": "planning",
+      "at": "2026-10-19T20:52:58+00:00",
+      "by": "register"
+    }
+  ],
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T20:52:58+00:00"
+}

@@ -18,3 +18,4 @@
 {"at": "2026-10-19T19:07:44+00:00", "evidence": "the operator said so", "judgement": "j-20261019T190744+0000-53c6f934", "kind": "judgement-label", "label": "inline", "schema_version": "1.0", "source": "relayed"}
 {"at": "2026-10-19T20:52:57+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-cutover-observability"}
 {"at": "2026-10-19T20:52:58+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-cutover-openviking"}
+{"at": "2026-10-19T20:52:58+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-cutover-registry"}
