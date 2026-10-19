@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "cli-login.md now documents that login writes the Vault token to ~/.vault-token, but its sources omit cli/src/localstack_cli/auth/vault_token_file.py, the code that does it, so kmctl review due will not flag the page when that file changes.",
+      "anchor": "docs/reference/cli-login.md:4",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "The secrets.tf row in vault-human-auth.md reads as the file's full list of human-auth KV writes (operator, OpenViking consumers, smoke client), but secrets.tf also writes the OIDC client secrets for oauth2-proxy, its registry-ui copy, grafana and ov-dash. Either name those or say the row lists only the human credentials.",
+      "anchor": "docs/reference/vault-human-auth.md:31",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "Several prose lines added in this change run past 80 characters, against check 1 of slop-scan-for-docs.md. Examples are the repo-root path rewrites in gcs-backups.md (lines 26, 53-58, 62, 86), monitoring.md:66, edge-routes.md:43, registry-ui.md:102 and the Server bullet in nats.md:16. Rewrap them.",
+      "anchor": "docs/reference/gcs-backups.md:26",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "bb603ee847b48a3b00957b929b29bee14ba7101884119a9248d8238a022bf706",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T19:38:27+00:00"
+}
