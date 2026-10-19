@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T17:56:06+00:00'
+  at: '2026-10-19T17:56:36+00:00'
 slug: seaweedfs-buckets
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-buckets/1
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-buckets 1`.
+On SeaweedFS 4.48 (single `weed server -s3`, boto3), both mechanisms isolate buckets: 32/32 checks matched, 0 mismatches each for s3.config actions (`Read:bkt-a`, `Write:bkt-a`, `List:bkt-a`) and for IAM API users with `PutUserPolicy` scoped to `arn:aws:s3:::bkt-a` and `bkt-a/*`.
+writer-a could put/get/list/delete on bkt-a and got AccessDenied on all four against bkt-b; reader-a could get/list bkt-a and got AccessDenied on put/delete there and on everything in bkt-b; bkt-b's seed object survived.
+ListBuckets leaks no names: each user saw only `['bkt-a']`, like MinIO. Gap: an IAM-policy user gets AccessDenied on `GetBucketLocation` unless the policy also grants `s3:GetBucketLocation` (static-action users get it), so add that action for clients that call it.
+Limits: the IAM API needs `-s3.iam.readOnly=false` (default true), and the server logged "no signing key found for STS service" at start without breaking IAM user/policy calls. Rules out the "coarse per-identity actions only" failure. Settles risk 2.
 
 ## Files
 
