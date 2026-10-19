@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "backup-durable-buckets",
+  "n": 1,
+  "command": "python3 -I /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-backup-1/bucket_sizes.py",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-backup-1/bucket_sizes.py",
+      "copy": "files/bucket_sizes.py"
+    }
+  ],
+  "where": "worktree",
+  "head": "14ef760fa892102db40c8cbcfcc080b367648d72",
+  "fingerprint": "cf9df7ebc1f7c401787eb940b74afc0ff87cc140953fb9c764c07ef2b8e69fe9",
+  "started_at": "2026-10-19T17:52:54+00:00",
+  "finished_at": "2026-10-19T17:52:54+00:00",
+  "duration_seconds": 0.208,
+  "timeout_seconds": 30.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

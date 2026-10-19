@@ -1,0 +1,11 @@
+bucket                        bytes       GiB    objects
+datalake          *               0     0.000          0
+loki                      933305761     0.869      13564
+memex                     739156992     0.688       1635
+mlflow-artifacts          305585424     0.285       2867
+models            *               0     0.000          0
+openviking        *       836055102     0.779      45686
+registry          *      5340847012     4.974        399
+tempo                    7100896147     6.613       6470
+durable (*) total: 6176902114 bytes = 5.753 GiB = 6.177 GB
+GCS Standard europe-west4 @ $0.02/GB-month: $0.12/month
