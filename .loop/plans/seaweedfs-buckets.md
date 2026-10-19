@@ -30,15 +30,31 @@ policy for writers and a read-only one for readers, one user and access key
 each. Keys a running job reads go to Vault KV in
 `deployments/applications/secrets.tf` under new paths
 (`default/<job>/seaweedfs`), beside the MinIO ones, which stay until the
-cutover. The backup job's key goes to `default/backup-minio/seaweedfs` in
-`deployments/infrastructure/secrets.tf`, read-only on the four durable
-buckets.
+cutover.
+
+The backup job's user is created here too, read-only on the four durable
+buckets, and its key written to `default/backup-minio/seaweedfs` from
+`deployments/applications/secrets.tf`. The infrastructure root applies first
+and cannot reference this root's resources, so the user lives where the IAM
+provider is. The backup job (infrastructure root) reads the key at run time
+through Vault, not through Terraform, so on a rebuild from scratch it fails
+until this root has applied. Say so in the comment above the secret.
+
+The provider's address. The applications root runs with the brokered
+`consul/creds/deploy` token, whose policy in
+`bootstrap/playbooks/enable_consul_secrets.yml` reads only the `minio` and
+`postgres-db` services, under `default_policy = "deny"`. Add
+`service "seaweedfs" { policy = "read" }` there and run the playbook before
+the first apply, so `data "consul_service" "seaweedfs"` finds the service
+the way the MinIO provider finds `minio`. The admin key comes from an
+ephemeral read of `default/seaweedfs/admin`, as `minio_admin` does today.
 
 The MinIO resources and the `deployments/applications/modules/bucket` module
 stay in place. The SeaweedFS side lives beside them, in the same files.
 
-Outcome: after an apply, `aws s3 ls` with the admin key lists exactly the six
-buckets. For each user, its key can write and read its own bucket (or only
+Outcome: after the playbook run and an apply, `aws s3 ls` with the admin key
+lists exactly the six buckets. The backup user's key reads all four durable
+buckets and is refused a write. For each user, its key can write and read its own bucket (or only
 read, for a reader). The same key gets AccessDenied on another bucket. A
 second `terraform plan` reports no changes. `just pre_commit` and
 `uv run --directory cli pytest` pass.
