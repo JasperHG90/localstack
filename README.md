@@ -59,11 +59,15 @@ cp vars/prod.tfvars.example vars/prod.tfvars   # fill in bot identity, etc.
 just init && just apply
 ```
 
-Pre-commit hooks (JSON/YAML lint, HCL format, private-key detection, and for `cli/`: ruff lint and format, mypy in strict mode, pytest) — run `just setup` from the repo root, then `just pre_commit` before committing.
+Pre-commit hooks (JSON/YAML lint, HCL format, private-key detection, and for `cli/`: ruff lint and format, mypy in strict mode, pytest) run through [prek](https://github.com/j178/prek). Run `just setup` from the repo root, then `just pre_commit` before committing.
 
 ## Local dev container
 
 `.devcontainer/` has a Dockerfile for a reproducible shell with Terraform, Ansible, Nomad, Vault, Consul, MinIO CLI, and `just` preinstalled. Copy `.devcontainer/.env.example` to `.devcontainer/.env` and fill in your cluster credentials before starting the container.
+
+The uv and prek caches are the named volumes `loop-harness-uv-cache` and
+`loop-harness-prek-cache`, shared with the loop-engineering-harness
+devcontainer. Claude Code state and `cli/.venv` are volumes of their own.
 
 On create, the container runs `just install_cli` and then `localstack deps
 --install --with-shims`. The first builds `cli/.venv`, which the workspace's
@@ -76,6 +80,28 @@ Both steps are guarded, so neither failing stops the container from coming
 up. If they did fail, run them by hand. Re-run `localstack deps --install`
 after a version moves in `group_vars`. Creating the container is what
 triggers it, so a restart alone will not fetch new binaries.
+
+## Knowledge management with kmctl
+
+Needs [uv](https://docs.astral.sh/uv/) and [just](https://just.systems/).
+
+```
+just bootstrap
+```
+
+That installs the kmctl CLI (`just kmctl`), installs the APM dependencies in
+`apm.yml` and runs `kmctl plugin patch` (`just install`), and creates `docs/`
+and `.okf/` when they are missing (`just init`). `just check` confirms it
+worked.
+
+In OpenCode, start a new session in the repository. kmctl supports OpenCode
+2.x only. OpenCode has no rules scoped to paths, so all four of kmctl's rules
+load in every session. `apm install` puts APM's copies of the agents back over
+the ones `kmctl plugin patch` rewrites, so after any `apm install` run
+`just install` again, which runs both.
+
+Run `just` to see the other recipes. `AGENTS.md` says how this repository
+keeps its knowledge.
 
 ## License
 

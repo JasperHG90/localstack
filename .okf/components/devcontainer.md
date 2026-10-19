@@ -6,7 +6,7 @@ tags: [devcontainer, docker, tooling, path, tokens]
 status: stable
 generated:
   by: claude-opus/5.5
-  at: 2026-09-27
+  at: 2026-10-19
 sources:
   - id: dockerfile
     resource: git:3ec5d1e:.devcontainer/Dockerfile
@@ -35,37 +35,28 @@ Ansible playbook is run from. It matters to a maintainer for three reasons:
 it decides which `nomad`, `vault` and `consul` binary runs, it injects
 credentials into every process, and it is the only place images are built.
 
-This page describes the working tree on 2026-09-27, which carries
-uncommitted operator edits to `Dockerfile` and `devcontainer.json`. The
-`sources` above pin the committed versions, so every uncommitted change is
-marked in the text. Re-check those paragraphs once the edits are committed or
-dropped.
-
 ## The image
 
 `Dockerfile` starts from `jhginn/devcontainer:ubuntu2404-pyuv312-latest-gcloud`
 and adds:
 
-- `uv` pinned to 0.11.16 through pipx.
 - `nomad`, `vault` and `consul` from HashiCorp's apt repository, with no
   version pin. These are not the binaries a shell runs (see PATH below).
-- `pre-commit`, `ansible-core`, `ansible` and `ansible-lint` as uv tools.
-- `migrate` as an arm64 binary, and `mc`, whose architecture the uncommitted
-  edit below changes. `cli/src/localstack_cli/platforms.py` states the
-  container is `linux_arm64`.
+- `prek`, `ansible-core`, `ansible` and `ansible-lint` as uv tools. prek runs
+  the hooks in `.pre-commit-config.yaml`, and `just setup` installs its git
+  hook with `--overwrite` so a hook left by pre-commit does not survive as
+  `pre-commit.legacy` and fail every commit.
+- `migrate` and `mc` as arm64 binaries. `mc` comes from GitHub releases,
+  because `dl.min.io` answers 410. `cli/src/localstack_cli/platforms.py`
+  states the container is `linux_arm64`.
 - A set of agent tools (Claude Code, openviking, aim, ovx and others) that
   nothing in the repo's gates depends on.
 
-Uncommitted in the working tree:
-
-- HashiCorp rotated its apt signing key, and the base image ships the old
-  one, so the first `apt-get update` failed with `NO_PUBKEY`. The edit fetches
-  the key with `ADD` before updating. The comment explains why `ADD`: BuildKit
-  keys the layer on the fetched content, so the next rotation rebuilds it, and
-  a failed fetch fails the build instead of writing an empty keyring.
-- `mc` now comes from GitHub releases as `linux-arm64`, because `dl.min.io`
-  answers 410. The committed version fetched `linux-amd64`.
-- The loop harness install line is commented out.
+HashiCorp rotated its apt signing key, and the base image ships the old one,
+so the first `apt-get update` failed with `NO_PUBKEY`. The Dockerfile fetches
+the key with `ADD` before updating. The comment explains why `ADD`: BuildKit
+keys the layer on the fetched content, so the next rotation rebuilds it, and a
+failed fetch fails the build instead of writing an empty keyring.
 
 ## PATH, and which binary runs
 
@@ -132,7 +123,23 @@ version record, so bump it there before rebuilding.
 ## Mounts
 
 `devcontainer.json` bind-mounts `~/.config/gcloud`, which the `google`
-provider in the infrastructure root uses for the GCS backup bucket. The
-working tree also mounts `~/.ovx`, and has removed the committed bind mount
-of `~/.claude` and the `homelab-claude-plugins` volume. `bootstrap.sh` still
-carries the `HOST_HOME` symlink written for that `~/.claude` mount.
+provider in the infrastructure root uses for the GCS backup bucket, and
+`~/.ovx`.
+
+Four named volumes hold state that outlives a rebuild:
+
+- `loop-harness-uv-cache` at `/home/vscode/.cache/uv` and
+  `loop-harness-prek-cache` at `/home/vscode/.cache/prek`. The names are the
+  loop-engineering-harness devcontainer's, so both containers share one cache
+  ([ADR 0013](/decisions/0013-devcontainer-shares-caches-with-loop-harness.md)).
+  `UV_CACHE_DIR` and `PREK_HOME` in the Dockerfile point at them, and
+  `cli/tests/test_devcontainer_volumes.py` pins both names.
+- `localstack-claude` at `/home/vscode/.claude`, with `CLAUDE_CONFIG_DIR`
+  pointing there, so Claude Code's login, settings and plugins live in one
+  volume of this repository's own.
+- `localstack-cli-venv` at `cli/.venv`, which keeps the Linux venv apart from
+  the macOS one the bind-mounted workspace would otherwise share.
+
+A new named volume is owned by root when the image has nothing at its mount
+point, which is the case for `cli/.venv`. `bootstrap.sh` chowns all four to
+`vscode` before anything else runs.

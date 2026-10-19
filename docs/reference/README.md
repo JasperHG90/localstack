@@ -1,0 +1,22 @@
+<!-- kmctl writes this index from the pages in this folder: run kmctl check --fix to update it, do not edit it by hand. -->
+# Reference
+
+- [Bootstrap secrets](bootstrap-secrets.md)
+- [Break-glass recovery](cli-breakglass.md)
+- [Pinned CLIs and PATH shims](cli-deps.md)
+- [`localstack login`](cli-login.md)
+- [Reading the cluster](cli-read-commands.md)
+- [Cluster roles](cluster-roles.md)
+- [dash: the cluster landing page](dash.md)
+- [DNS for the lab zone](dns.md)
+- [HAProxy Reverse Proxy](edge-routes.md)
+- [Nightly GCS Backup Jobs](gcs-backups.md)
+- [Monitoring stack](monitoring.md)
+- [NATS and JetStream](nats.md)
+- [OpenViking](openviking.md)
+- [Python service observability](python-observability.md)
+- [registry-ui: what the cluster registry holds](registry-ui.md)
+- [Retrieval quality](retrieval-quality.md)
+- [TLS certificates](tls-certificates.md)
+- [Human login to Vault, and the OIDC issuer it feeds](vault-human-auth.md)
+- [Vault login MFA](vault-login-mfa.md)

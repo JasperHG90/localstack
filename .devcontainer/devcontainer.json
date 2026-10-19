@@ -1,4 +1,5 @@
 {
+    "name": "localstack",
     "build": {
       "dockerfile": "Dockerfile",
       "context": "."
@@ -28,11 +29,11 @@
           "Gruntfuggly.todo-tree"
         ],
         "settings": {
-          "python.pythonPath": "/home/vscode/workspace/cli/.venv/bin/python"
+          "python.defaultInterpreterPath": "/home/vscode/workspace/cli/.venv/bin/python"
         }
       }
     },
-    "postCreateCommand": "chmod +x ${containerWorkspaceFolder}/.devcontainer/bootstrap.sh && ${containerWorkspaceFolder}/.devcontainer/bootstrap.sh",
+    "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/bootstrap.sh ${containerWorkspaceFolder}",
     "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global --add credential.useHttpPath true",
     "runArgs": [
       "--env-file",
@@ -44,6 +45,10 @@
       "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "mounts": [
+      "source=localstack-claude,target=/home/vscode/.claude,type=volume",
+      "source=loop-harness-uv-cache,target=/home/vscode/.cache/uv,type=volume",
+      "source=loop-harness-prek-cache,target=/home/vscode/.cache/prek,type=volume",
+      "source=localstack-cli-venv,target=${containerWorkspaceFolder}/cli/.venv,type=volume",
       "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind",
       "source=${localEnv:HOME}/.ovx,target=/home/vscode/.ovx,type=bind"
     ]

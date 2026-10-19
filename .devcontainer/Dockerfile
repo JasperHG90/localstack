@@ -1,10 +1,19 @@
 FROM  jhginn/devcontainer:ubuntu2404-pyuv312-latest-gcloud
 
 ENV RUFF_CACHE_DIR=$HOME/workspace/.cache/ruff
-ENV PRE_COMMIT_HOME=$HOME/workspace/.cache/pre-commit
 ENV ANSIBLE_GALAXY_CACHE_DIR=$HOME/workspace/.cache/ansible-galaxy
 
-RUN pipx install --force uv==0.11.16
+# The uv and prek caches are named volumes that carry the loop-harness
+# devcontainer's volume names, so both containers share one cache (see
+# devcontainer.json). cli/.venv is a volume too, which keeps the Linux venv
+# apart from the host's macOS one. They are different filesystems, so uv
+# copies rather than hardlinks.
+ENV UV_CACHE_DIR=/home/vscode/.cache/uv
+ENV UV_LINK_MODE=copy
+ENV PREK_HOME=/home/vscode/.cache/prek
+# Claude Code keeps .claude.json inside this directory instead of in $HOME, so
+# one volume holds all of its state: login, settings, plugins, sessions.
+ENV CLAUDE_CONFIG_DIR=/home/vscode/.claude
 
 WORKDIR /home/vscode
 
@@ -28,7 +37,11 @@ RUN sudo rm -f /usr/share/keyrings/hashicorp-archive-keyring.gpg && \
 
 USER vscode
 
-RUN uv tool install pre-commit
+# Create the volume mount points owned by vscode. Docker copies a directory's
+# owner into a new named volume, so the volumes start out writable.
+RUN mkdir -p /home/vscode/.claude /home/vscode/.cache/uv /home/vscode/.cache/prek
+
+RUN uv tool install prek
 RUN uv tool install ansible-core
 RUN uv tool install ansible-lint
 RUN uv tool install ansible

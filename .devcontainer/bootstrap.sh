@@ -4,20 +4,29 @@ set -e
 
 echo "Configuring development container..."
 
-# Symlink the host home path so Claude Code plugins resolve correctly.
-# ~/.claude is bind-mounted from the host, so installed_plugins.json
-# contains host paths (e.g. /Users/<you>/...) that don't exist in the container.
-# Set HOST_HOME in .devcontainer/.env to your host home dir to enable the symlink.
-if [ -n "${HOST_HOME:-}" ] && [ ! -d "${HOST_HOME}" ]; then
-  sudo mkdir -p "${HOST_HOME}"
-  sudo ln -sf /home/vscode/.claude "${HOST_HOME}/.claude"
-fi
+workspace="${1:-/home/vscode/workspace}"
 
-mc alias set minio "${AWS_ENDPOINT_URL_S3}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
+# Docker creates a named volume owned by root when the image has nothing at the
+# mount point, which is the case for cli/.venv under the bind-mounted workspace.
+sudo chown -R vscode:vscode \
+  /home/vscode/.claude \
+  /home/vscode/.cache/uv \
+  /home/vscode/.cache/prek \
+  "${workspace}/cli/.venv"
+
+if ! mc alias set minio "${AWS_ENDPOINT_URL_S3}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"; then
+  echo "warning: could not set the minio alias. Check the AWS_* keys in .devcontainer/.env." >&2
+fi
 
 alias ansible='uv tool run --from=ansible-core ansible'
 
 alias j='just'
+
+cd "${workspace}"
+
+# The git hook in .git/hooks may still be pre-commit's, which this image no
+# longer has. `just setup` overwrites it with prek's.
+just setup
 
 # The HashiCorp CLIs at the versions this cluster runs, plus the PATH shims
 # that let a bare `nomad`, `consul` or `vault` see a `localstack login`

@@ -5,18 +5,28 @@ alias f := format
 alias p := pre_commit
 alias u := unseal_vault
 alias w := worktree_setup
+apm := "uvx --from apm-cli==0.33.0 apm"
+kmctl_ref := "v0.10.0"
+kmctl_src := "git+https://github.com/JasperHG90/kmctl@" + kmctl_ref
+# kmctl at the pinned release, without touching the kmctl on your PATH.
+kmctl := "uvx --from " + kmctl_src + " kmctl"
+
+# List the recipes.
+default:
+    @just --list
 
 # Format Nomad job files
 format:
     nomad fmt -recursive
 
-# Set up pre-commit hooks
+# Set up the git hooks. --overwrite drops a hook pre-commit left behind;
+# without it prek keeps that hook as .legacy and still runs it.
 setup:
-    pre-commit install
+    prek install --overwrite
 
 # Run pre-commit checks on all files
 pre_commit:
-    pre-commit run --all-files
+    prek run --all-files
 
 # Install the localstack CLI: a project venv for the IDE, and `localstack` on PATH.
 #
@@ -27,7 +37,6 @@ install_cli:
     uv sync --project cli
     uv tool install --editable ./cli
     @echo "installed. run it with: localstack --help"
-
 
 # Unseal Vault server
 unseal_vault:
@@ -141,3 +150,50 @@ mfa_reset username:
 # Test the MFA recipes against a fake Vault; touches no real cluster
 mfa_test:
     bash scripts/vault_mfa_test.sh
+
+# Set up a fresh clone: the kmctl CLI, the APM dependencies, the knowledge folders.
+bootstrap: kmctl kmctl-install kmctl-init
+
+# Install the kmctl CLI on your PATH unless one as new as the pin is there, then fetch the pin.
+# The kmctl on PATH runs each project's pinned release, so one install serves every project.
+kmctl:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    have=$(KMCTL_PINNED=1 kmctl --version 2>/dev/null | awk '{print $2}') || have=""
+    if [ -z "$have" ] || uv run --no-project --quiet --with packaging python -c 'import sys; from packaging.version import Version; sys.exit(0 if Version(sys.argv[1]) < Version(sys.argv[2]) else 1)' "$have" "{{kmctl_ref}}"; then
+        uv tool install --force "{{kmctl_src}}"
+    fi
+    kmctl --version
+
+# Install the APM dependencies in apm.yml for its targets, then what APM cannot install yet.
+kmctl-install:
+    {{apm}} install
+    {{kmctl}} plugin patch
+
+# Install exactly what apm.lock.yaml records (for a clean clone or CI).
+kmctl-install-frozen:
+    {{apm}} install --frozen
+    {{kmctl}} plugin patch
+
+# Resolve the dependencies again and rewrite apm.lock.yaml without installing.
+apm-lock:
+    {{apm}} lock
+
+# Show locked dependencies that have newer versions.
+apm-outdated:
+    {{apm}} outdated
+
+# Create docs/ and the .okf/ knowledge bundle, and kmctl's block in AGENTS.md (safe to run again).
+kmctl-init:
+    {{kmctl}} init
+
+# Check the knowledge bundle and that kmctl is installed correctly.
+kmctl-check:
+    {{kmctl}} check
+    {{kmctl}} doctor
+
+# Run `just` again rather than depending on recipes, so the second step reads the rewritten justfile.
+# Move to another kmctl release, such as v0.5.0: rewrite the pinned files, then reinstall at it.
+kmctl-upgrade ref:
+    uvx copier update --defaults --data kmctl_ref={{ref}}
+    just kmctl install

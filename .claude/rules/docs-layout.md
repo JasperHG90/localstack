@@ -1,61 +1,84 @@
 ---
-title: docs-layout
-description: What belongs in `docs/` and what belongs in `.okf/`. Read before adding or moving a page in either.
+paths:
+  - "docs/**"
+  - ".okf/**"
+  - "README.md"
 ---
 
 # `docs/` and `.okf/`
 
-Two folders hold prose, and they have different readers.
+Two places hold prose, and they have different readers.
 
-- `docs/` is for people who USE the cluster: the operator running it, a person
-  who logs in to a service on it, and anyone deploying a job onto it. Nothing
-  here is executed, so anything here that has to stay true needs something
-  outside this folder checking it (`cli/tests/test_backup_coverage.py` is the
-  model). `docs/README.md` is the index and lists every page.
+- `docs/` is for people who USE the project: someone installing it, calling
+  it, or reading why it failed. Its
+  index page, README.md at the top of `docs/`, links each folder's own
+  README.md index, which `kmctl check --fix` generates.
 - `.okf/` is for agents and people working ON this repository: decisions and
-  the alternative each rejected, lessons learned the hard way, proposals not
-  yet built, and history a user never needs. How to read and extend it is
-  `.claude/rules/okf-bundle.md`. Ticket plans and verdicts stay in `.loop/`,
-  and the bundle does not copy them.
+  the alternative each rejected, lessons learned the hard way, and proposals
+  not yet built. How to read and extend it is `.claude/rules/okf-bundle.md`.
+  The current design (vision, invariants, values) is the bundle's root
+  concept, `.okf/manifesto.md`. It links to the decisions for the why and
+  never repeats a decision record.
 
 <constraint name="docs-sorted-by-reader-intent">
-WHY: a page filed under the wrong heading is read by the wrong person and
-answers a question they did not ask.
+WHY: a page filed under the wrong heading is read by the wrong person.
 
-`docs/` has one subdirectory per Diátaxis type, and the test is what the reader
-is doing, never how the page is shaped.
-
-- `how-to/` is for a reader at work with one task. Every page has the shape
-  `.claude/rules/how-to-skeleton.md` sets.
-- `reference/` describes a surface without instructing: commands, routes,
-  ports, roles, what a service exposes. Architecture diagrams are under
-  `reference/architecture/`.
-- `explanation/` says why the cluster is shaped the way it is. There is no
-  Confluence here, so the "why" for users is in `docs/`.
-- `tutorials/` is a lesson for a learner at study, sure to succeed in one
-  sitting. It is created with its first such page.
-
-Mixing two intents in one page is a reason to split it, never to blend them.
+`docs/` has one subdirectory per Diataxis type, created with its first page:
+`docs/how-to/` (one task, one way), `docs/reference/` (commands, config keys,
+API entries, without instructing), `docs/explanation/` (why the project is
+shaped this way), and `docs/tutorials/` (a lesson sure to succeed in one
+sitting). Mixing two intents in one page is a reason to split it.
 </constraint>
 
 <constraint name="audience-gates-the-folder">
-WHY: a spike, a build plan or a handoff reads as current instructions to a user
-who finds it in `docs/`, and it goes stale where nobody maintaining the user
-docs looks.
+WHY: a spike, a build plan or a handoff reads as current instructions to a
+user who finds it in `docs/`.
 
-Audience decides the folder before intent does. A spike, a superseded proposal,
-a build plan, an audit, a handoff note, or the record of a choice goes to
-`.okf/`, even when it is shaped like a guide.
+A prototype, a proposal, a build plan, an audit, a handoff note, or the
+record of a choice goes to `.okf/`, even when it is shaped like a guide.
+</constraint>
+
+<constraint name="prototypes-hold-their-scripts">
+WHY: a spike's numbers are only evidence if someone can re-run them, and a
+script run from a heredoc or a scratch folder is gone when the session ends.
+
+A prototype is one folder, `.okf/prototypes/<name>/`, with its `README.md`
+concept, every script that produces a number in that README, and the raw
+results those scripts read. That covers one-off analysis too: a count, a
+control run, a benchmark. Write it as a script or a command in the folder and
+run that, never inline or from a scratch folder. Data that must stay private
+is git-ignored inside the folder, not kept elsewhere.
+</constraint>
+
+<constraint name="docs-describe-what-exists">
+WHY: a user page about a feature that does not exist yet is a hallucination
+with a table of contents.
+
+A `docs/` page lands in the same change as the behavior it describes. Until
+then the design lives in `.okf/manifesto.md` and `.okf/proposals/`.
 </constraint>
 
 <constraint name="index-tracks-the-folder">
-WHY: an index is believed, so an index that disagrees with its folder is worse
-than none.
+WHY: an index is believed, so an index that disagrees with its folder is
+worse than none.
 
-Adding, renaming or removing a page under `docs/` updates `docs/README.md` in
-the same change, and updates every link to the old path.
-`cli/tests/test_docs_index.py` refuses a page the index does not list. A path
-cited inside a Nomad jobspec, a Terraform heredoc or a state-bearing attribute
-stays as it is, per `.claude/rules/terraform-file-layout.md`, because editing
-it re-registers a job or rewrites live state.
+Each Diataxis folder's `README.md` lists its pages and is generated by
+kmctl from each page's `#` title and `description`: never edit it by hand.
+After adding, renaming or removing a page, run `kmctl check --fix` to write
+it again (`kmctl new doc` already does), and update every link to an old
+path. `docs/README.md` is written by hand: it links each folder's index and
+lists any page outside the four folders. `kmctl check` fails when an index
+disagrees with its folder.
+</constraint>
+
+<constraint name="docs-front-matter">
+WHY: a user page that never says what it describes cannot be flagged when
+that code changes.
+
+A `docs/` page may start with front matter holding only `description` (one
+line, also its index entry), `stale_after` (when to look at it again),
+`sources` (the files it describes) and, once someone has checked it against
+the code, `verified`. These are the OKF fields of those names; give a page
+no other OKF field, and no `type`. `kmctl review due` lists a page once its
+`stale_after` passes or a source changes after it.
 </constraint>

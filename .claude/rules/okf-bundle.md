@@ -1,200 +1,113 @@
 ---
-title: okf-bundle
-description: How to read, extend and validate the `.okf/` knowledge bundle.
+paths:
+  - ".okf/**"
 ---
 
 # Using the OKF bundle
 
-`.okf/` at the repository root holds durable knowledge as markdown. What
-belongs in it, and what belongs in `docs/` instead, is
-`.claude/rules/docs-layout.md`, and this rule does not repeat it. What is below
-is how to find something in the bundle, how to add to it without degrading it,
-and what has to pass before a change to it is done.
+`.okf/` at the repository root holds durable knowledge as markdown with YAML
+front matter (OKF v0.2). What belongs in it, and what belongs in `docs/`
+instead, is `.claude/rules/docs-layout.md`.
 
-## Start at the root index, every time
+## Sections
 
-`.okf/index.md` is the entry point and the only file you should open without a
-reason. It carries the bundle's `okf_version`, one link per section, and a
-count, so a reader sees the whole surface before opening anything. Each
-subdirectory carries its own `index.md` listing that section's concepts with
-the description from each concept's own frontmatter.
+Each section is created with its first concept, by `kmctl new`.
 
-Read the root index, pick the sections that bear on the task, then follow
-links. Grepping `.okf/` for a keyword skips the layer built to save you that
-work and returns the concept that happens to share your wording rather than the
-one that answers you.
+- `summary.md`: the first page to read, at most 500 words, which
+  `kmctl init` writes.
+- `manifesto.md`: the root concept, the project's current design. Invariants
+  in it follow `.claude/rules/manifesto-invariants.md`.
+- `.okf/decisions/`: one record per decision where a real alternative was
+  rejected, numbered `NNNN-kebab-summary.md`.
+- `.okf/practices/`: lessons learned the hard way, each backed by a count or a
+  code site.
+- `.okf/proposals/`: designs not yet built.
+- `.okf/handoffs/`: notes for an agent picking up the work, each with a
+  `stale_after` date, written by `kmctl new handoff`.
+- `.okf/architecture/`: the design as diagrams and implementation design, kept
+  current by `.claude/rules/diagrams-stay-current.md`.
+- `.okf/prototypes/`: throwaway spikes that measure an idea before it is
+  built, each a folder with a `README.md` concept, its scripts and its raw
+  results.
+
+## Start at the summary
+
+`.okf/summary.md` is the entry point: in at most 500 words it distils what
+the knowledge says as a whole, citing concepts inline as evidence, rather
+than giving one bullet per decision; the indexes list the concepts.
+`.okf/index.md` carries
+`okf_version` and links the summary, the manifesto and each section. Each
+section has its own `index.md` listing its concepts with the description
+from each concept's front matter. Follow links from the summary and the
+indexes rather than grepping the bundle.
+A bundle with no summary yet starts at `.okf/index.md`; `kmctl update`
+writes one.
 
 `index.md` and `log.md` are reserved names. Never use either for a concept.
 
-## One concept is one file, and its path is its id
+## One concept is one file
 
-A concept's path minus `.md` is its identifier, so a link reads
-`/practices/ufw-rules-outside-user-rules.md` from anywhere in the bundle.
-Filenames are kebab-case, `[a-z0-9-]` only, and they name a domain entity.
-`vault-login-mfa` is an entity. `feat-add-vault-2fa` is a change that touched
-one, and a bundle named that way becomes a commit log with worse ordering.
+A concept's path minus `.md` is its id. Filenames are kebab-case and name an
+entity, never a change. Prefer updating a concept to creating a neighbor.
 
-Prefer updating an existing concept to creating a neighbor. Two files on one
-entity split its history, and the thinner one is the one a reader finds first.
+Every non-reserved `.md` file needs parseable front matter with a non-empty
+`type`. Hand-written concepts also carry `title`, `description`, `tags` and
+`generated`. Quote a `description` that holds a colon. Write only the fields
+the OKF spec defines; `kmctl new` writes them for you.
 
-## The one hard rule
+## Trust
 
-A bundle is conformant when every non-reserved `.md` file has parseable YAML
-frontmatter carrying a non-empty `type`. Everything else in the frontmatter is
-optional and worth filling anyway: `title`, `description`, `tags`, `status`,
-`stale_after`, `generated`, `verified`, `sources`.
+An agent records itself in `generated.by` as `<producer>/<version>` (for
+example `claude-opus/5.5`) and leaves the concept unverified. Only a person
+who checked the content adds a `verified` entry with `by: human:<id>`.
 
-A `description` holding a colon has to be quoted or the whole document stops
-being YAML. That turns a concept into a file the validator rejects and a reader
-still sees.
-
-## Weigh what you read
-
-The bundle was hand-seeded from `docs/` pages that were written against the
-cluster as it stood on their date, and no person has re-confirmed them since.
-Treat an unverified claim as a lead. `status: draft` or `deprecated`, a
-`stale_after` already past, and an absent `verified` all mean the same thing,
-which is check before you rely on it.
-
-When a person confirms a concept, add a `verified` entry naming them in the
-actor convention `human:<id>`. Consumers key trust off that prefix, so an agent
-must never write one for work a person did not actually check.
+A concept with no `verified` entry stays in `kmctl review due`, however often
+an audit finds it holds. To clear one, the person reads it and confirms it is
+still right. When they ask you to record that, run
+`kmctl verify <id> --by human:<their id>` (ask for their id if you do not know
+it); add `--stale-after 6m` when it is listed as `stale_after passed`. Never
+run it on an audit verdict alone, or for a concept they did not confirm.
 
 ## Writing back
 
-Learning something durable while working is the moment to update the bundle,
-not a separate task to file. Touching a concept means updating its body, then
-appending a dated bullet to `log.md` saying why the change happened.
+Touching a concept means updating its body, then appending a dated bullet to
+`log.md` that says why. `log.md` is append-only.
 
-Which trust field moves depends on what you actually did. `generated.by` says
-who produced the CURRENT TEXT. Correcting a claim or tidying a paragraph leaves
-that text mostly the previous author's, so `generated.by` stays as it is. It
-becomes yours when you have rewritten enough that the previous author would not
-recognize it.
+When you add or change a concept, update `.okf/summary.md` in the same
+change, or run `kmctl summary ack` when it still holds. `kmctl review due`
+lists the summary until you do.
 
-Confirming content is what `verified` is for. Who wrote a concept need not be
-who checked it:
+<constraint name="every-touched-concept-is-logged">
+WHY: in the repository these rules came from, 43 of 53 commits that changed a
+concept left at least one changed concept out of the log, so the log read as
+complete and was not.
 
-```yaml
-verified:
-  by: human:jasperhg90
-  at: 2026-09-26
-```
-
-`generated.at` marks the content's last meaningful change, so a corrected claim
-moves it and a typo does not. Leave old `verified` entries in place when you do
-rewrite: a `verified.at` earlier than `generated.at` is the signal that the
-sign-off predates the text.
-
-`sources` is provenance. Reach for it when you cite something specific, such as
-a commit or the `docs/` page a concept was carved out of, and not before.
-Hand-writing a concept needs `type`, `title`, `description`, `tags` and
-`generated`, which is a complete frontmatter with no warnings.
-
-A log bullet carries intent. `Updated vault-login-mfa` restates the heading.
-`Recorded that enforcing MFA before enrollment locks the operator out` is the
-reason someone reads a log for. `log.md` is append-only history: correct a
-concept by editing the concept and logging the correction.
-
-## Capturing a decision
-
-A decision gets a record in `.okf/decisions/` at the moment it is made, in the
-same change that acts on it. Writing it later means writing what you now
-believe you thought, which is a different document.
-
-Something is a decision when a real alternative was rejected. A choice with no
-alternative was not a decision, and neither is an implementation note, a status
-update, or a summary of what a ticket did. Ticket history stays in `.loop/`.
-
-The file is `NNNN-kebab-summary.md`, taking the next number in sequence, zero
-padded to four digits. Order is part of what records say: 0007 can only
-supersede 0002 if a reader can see which came first.
-
-```markdown
----
-type: decision
-title: "ADR NNNN: The decision, stated as a claim"
-description: What changed and what it costs, in one or two sentences.
-generated:
-  by: claude-opus/5.5
-  at: 2026-09-26
-tags: [adr, decision]
-status: stable
-decision_status: Accepted
-decided_on: 2026-09-26
----
-
-# ADR NNNN: The decision, stated as a claim
-
-- Status: Accepted
-- Date: 2026-09-26
-
-## Context
-
-What was true, what was not known yet, and what forced a choice.
-
-## Decision
-
-The choice, in the imperative, with the alternative that was rejected.
-
-## Consequences
-
-What this costs, what it rules out, and what now has to stay true.
-```
-
-`status` is the OKF lifecycle field and answers "should a reader still follow
-this": `stable`, or `deprecated` once superseded. `decision_status` carries the
-record's own words, such as `Accepted`, `Superseded by ADR 0009`, or
-`Accepted, reasoning corrected`.
-
-A record is never written over. Correcting one means appending a
-`## Correction, YYYY-MM-DD` section saying what the record got wrong and what
-replaced it. A reversal is written in BOTH records, by marking the old one
-superseded and naming it from the new one.
-
-<constraint name="decisions-are-captured-as-records">
-WHY: the reasoning behind a choice is the first thing lost and the most
-expensive to reconstruct, and an agent that made the choice is the only party
-who still holds it.
-
-Reject a real alternative, write the record, in the same change. It goes in
-`.okf/decisions/` with the next number, carries Context, Decision and
-Consequences, and states the alternative it rejected. Appending a correction is
-how a record changes. Editing its body is not.
+Each concept a change touches is named by its id, in backticks, in a line
+that change appends to `log.md` (a file inside a prototype folder may be
+named by the folder). A change never removes or rewrites an earlier line.
+kmctl's own verbs write their log line; a hand edit writes its own.
 </constraint>
 
-<constraint name="okf-entry-point-is-the-root-index">
-WHY: the bundle exists to let a reader see what is available before opening
-anything, and a keyword search returns the concept that shares your wording
-rather than the one that answers you.
+## Decisions
 
-Open `.okf/index.md` before any other file in the bundle, and reach a concept
-by following a link from an index.
-</constraint>
+A decision gets a record at the moment it is made, in the same change that
+acts on it. The record carries Context, Decision (with the rejected
+alternative) and Consequences. `status` is `stable` or `deprecated`. A
+record is never rewritten: a correction is an appended
+`## Correction, YYYY-MM-DD` section, and a reversal is written in both
+records (`kmctl decision supersede` does this).
 
 <constraint name="okf-changes-are-validated">
-WHY: the single hard conformance rule is a YAML parse, which fails silently to
-a human reader. A malformed concept still renders and still reads as knowledge.
+WHY: a malformed concept still renders and still reads as knowledge.
 
-A change to `.okf/` is not done until `Skill(okf:validate)` passes against it
-with `--strict`. Fix every error and every warning rather than dropping the
-flag.
-</constraint>
-
-<constraint name="okf-trust-is-not-assumed">
-WHY: a concept reads with the same confidence whether or not anyone checked it.
-
-Never write a `verified` entry, and never write `human:` in any actor field,
-for work a person did not confirm. An agent records itself in `generated.by`
-using `<producer>/<version>` (for example `claude-opus/5.5`), and leaves the
-concept unverified.
+A change to `.okf/` is not done until `kmctl check` passes, and, where the
+okf plugin is installed, `Skill(okf:validate)` passes against it with
+`--strict`.
 </constraint>
 
 <constraint name="okf-indexes-track-their-directory">
-WHY: an index is a promise about what a directory contains, and a reader who
-trusts it stops looking when it is wrong.
+WHY: a reader who trusts an index stops looking when it is wrong.
 
-Adding, renaming or removing a concept updates that directory's `index.md` and
-the root index count in the same change. The entry carries the concept's own
-`description`, not a fresh one written at the index.
+Adding, renaming or removing a concept updates that section's `index.md`, and
+a new section adds its link to the root index, in the same change.
 </constraint>
