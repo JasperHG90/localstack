@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T17:56:49+00:00'
+  at: '2026-10-19T17:57:21+00:00'
 slug: seaweedfs-service
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-service/2
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-service 2`.
+On `chrislusf/seaweedfs:4.48` (arm64, docker), `weed server -dir=/data -s3 -s3.port=8333 -s3.config=/s3.json -s3.iam.readOnly=false` took an admin from a static JSON file (`identities[].credentials[].accessKey/secretKey`, `actions: [Admin, Read, Write, List, Tagging]`). That admin created a bucket and wrote an object, and a bad key got refused.
+The embedded IAM API is on the S3 port. With the admin key it accepted CreateUser, CreateAccessKey and PutUserPolicy. The new user could read its bucket and got AccessDenied on CreateBucket.
+After `docker restart` with the same file, the admin, the API-made user, its key and its policy all still worked, and ListUsers returned `[app, admin]`. The file does not overwrite filer-stored identities.
+This settles risk 2: a Vault-rendered config file is enough, with no `weed shell` bootstrap. Limits: `-s3.iam.readOnly` defaults to true, so IAM writes need `=false`. The filer logs its IAM gRPC as unauthenticated unless `jwt.filer_signing.key` is set. STS logged "no signing key". Admin key rotation through the file and env-var credentials were not tested.
 
 ## Files
 
