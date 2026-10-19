@@ -9,7 +9,6 @@ set -euo pipefail
 
 primary=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
 here=$(git rev-parse --show-toplevel)
-[ "$primary" = "$here" ] && exit 0
 
 if [ ! -e "$here/.ssh" ] && [ -e "$primary/.ssh" ]; then
   ln -s "$primary/.ssh" "$here/.ssh"

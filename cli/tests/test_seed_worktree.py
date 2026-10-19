@@ -61,14 +61,30 @@ def test_a_linked_worktree_gets_the_key_and_tfvars(primary: Path) -> None:
         assert (wt / f).read_text() == f"real {f}\n"
 
 
-def test_an_existing_file_in_the_worktree_is_kept(primary: Path) -> None:
+@pytest.mark.parametrize("name", [".ssh", *TFVARS])
+def test_an_existing_file_in_the_worktree_is_kept(primary: Path, name: str) -> None:
     wt = primary.parent / "wt"
     git(primary, "worktree", "add", "-q", str(wt))
-    (wt / TFVARS[0]).write_text("worktree's own\n")
+    (wt / name).write_text("worktree's own\n")
 
     seed(wt)
 
-    assert (wt / TFVARS[0]).read_text() == "worktree's own\n"
+    assert not (wt / name).is_symlink()
+    assert (wt / name).read_text() == "worktree's own\n"
+
+
+def test_a_worktree_whose_primary_lacks_the_files_gets_nothing(primary: Path) -> None:
+    wt = primary.parent / "wt"
+    git(primary, "worktree", "add", "-q", str(wt))
+    (primary / ".ssh" / "id_rsa").unlink()
+    (primary / ".ssh").rmdir()
+    for f in TFVARS:
+        (primary / f).unlink()
+
+    seed(wt)
+
+    assert not (wt / ".ssh").exists() and not (wt / ".ssh").is_symlink()
+    assert not any((wt / f).exists() for f in TFVARS)
 
 
 def files(repo: Path) -> list[Path]:
