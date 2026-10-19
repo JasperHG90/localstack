@@ -7,15 +7,25 @@ status: draft
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: credential-rotation
-    resource: git:3ec5d1e:docs/credential-rotation.md
-    last_modified: 2026-03-25
+  - id: bootstrap-justfile
+    resource: bootstrap/justfile
+  - id: seed-vault
+    resource: bootstrap/playbooks/seed_vault.yml
+  - id: configure-tailscale
+    resource: bootstrap/playbooks/configure_tailscale.yml
+  - id: tailscale-role
+    resource: bootstrap/roles/tailscale/tasks/main.yml
+  - id: configure-podman
+    resource: bootstrap/playbooks/configure_podman.yml
+  - id: bootstrap-env-example
+    resource: bootstrap/.env.example
 ---
 
 # Credential Rotation: TAILSCALE_AUTH_KEY & GITHUB_PAT
 
-> Not built as of 2026-09-26: neither `bootstrap/justfile` nor the root
+> Not built as of 2026-10-19: neither `bootstrap/justfile` nor the root
 > `justfile` has a `rotate_*` recipe, and
 > `bootstrap/playbooks/rotate_secrets.yml` does not exist.
 
@@ -38,7 +48,7 @@ These are **host-level** secrets, not application-level:
 
 ## Why a New Playbook
 
-- `configure_tailscale.yml` has an idempotency guard (`BackendState != "Running"`) that **skips** re-auth — rotation needs `--force-reauth`
+- The `tailscale` role that `configure_tailscale.yml` applies has an idempotency guard (`BackendState != "Running"`, in `bootstrap/roles/tailscale/tasks/main.yml`) that **skips** re-auth, and rotation needs `--force-reauth`
 - `configure_podman.yml` includes unrelated tasks (lingering, crun config)
 - `seed_vault.yml` reads from env vars — rotation should accept CLI args directly
 
@@ -144,3 +154,9 @@ Update comment near the existing bootstrap secrets section:
 | Tailscale re-auth fails | Post-auth verification checks `BackendState == "Running"` |
 | SSH agent not loaded | Just recipe depends on `ssh_add` |
 | Vault write succeeds but propagation fails | Vault already has new secret; re-run same command to retry (idempotent) |
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/credential-rotation.md` as of commit `3ec5d1e`, the page this concept was moved from

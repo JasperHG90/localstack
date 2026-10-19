@@ -79,3 +79,5 @@ the cluster on that page's date.
 The rule that governs the bundle is `.claude/rules/okf-bundle.md`, and
 `.claude/rules/docs-layout.md` says which of the two folders a page belongs in.
 Both are loaded every session, which is the overhead this decision accepts.
+
+Supersedes [ADR 0014](0014-keep-project-knowledge-in-an-okf-bundle.md).

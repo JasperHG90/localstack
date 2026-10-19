@@ -9,17 +9,17 @@ generated:
   at: 2026-09-27
 sources:
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: infra-machine-roles
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: embark-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/embark.hcl
+    resource: deployments/applications/services/embark.hcl
   - id: ov-dash-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/ov-dash.hcl
+    resource: deployments/applications/services/ov-dash.hcl
   - id: delete-volume-howto
-    resource: git:3ec5d1e:docs/how-to/delete-a-nomad-dynamic-host-volume.md
+    resource: docs/how-to/delete-a-nomad-dynamic-host-volume.md
 ---
 
 # Host volumes

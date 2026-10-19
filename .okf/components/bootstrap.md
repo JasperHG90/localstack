@@ -9,33 +9,23 @@ generated:
   at: 2026-09-27
 sources:
   - id: bootstrap-justfile
-    resource: git:3ec5d1e:bootstrap/justfile
+    resource: bootstrap/justfile
   - id: group-vars
-    resource: git:3ec5d1e:bootstrap/inventory/group_vars/all.yml
+    resource: bootstrap/inventory/group_vars/all.yml
   - id: install-dependencies
-    resource: git:3ec5d1e:bootstrap/playbooks/install_dependencies.yml
+    resource: bootstrap/playbooks/install_dependencies.yml
   - id: seed-vault
-    resource: git:3ec5d1e:bootstrap/playbooks/seed_vault.yml
+    resource: bootstrap/playbooks/seed_vault.yml
   - id: vault-server-role
-    resource: git:3ec5d1e:bootstrap/roles/vault_server/tasks/main.yml
+    resource: bootstrap/roles/vault_server/tasks/main.yml
   - id: nomad-server-role
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/tasks/main.yml
+    resource: bootstrap/roles/nomad_server/tasks/main.yml
   - id: nomad-server-template
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/templates/nomad.hcl.j2
+    resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
   - id: enable-consul-secrets
-    resource: git:3ec5d1e:bootstrap/playbooks/enable_consul_secrets.yml
+    resource: bootstrap/playbooks/enable_consul_secrets.yml
   - id: unseal-script
-    resource: git:3ec5d1e:scripts/unseal_vault.sh
-  - id: U1-upgrade-pin-hashistack-versions
-    resource: loop:U1-upgrade-pin-hashistack-versions
-  - id: U2-upgrade-vault-2x
-    resource: loop:U2-upgrade-vault-2x
-  - id: U3-upgrade-nomad-2x
-    resource: loop:U3-upgrade-nomad-2x
-  - id: U4-upgrade-consul-2x
-    resource: loop:U4-upgrade-consul-2x
-  - id: F9-foundation-scope-nomad-workloads-policy
-    resource: loop:F9-foundation-scope-nomad-workloads-policy
+    resource: scripts/unseal_vault.sh
 ---
 
 # Ansible bootstrap
@@ -173,3 +163,13 @@ Two paths unseal Vault:
 
 The unseal keys and the root token are stored together in
 `/opt/vault/init.json` on the manager, owned by `vault` with mode 0600.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `U1-upgrade-pin-hashistack-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U2-upgrade-vault-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U3-upgrade-nomad-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U4-upgrade-consul-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F9-foundation-scope-nomad-workloads-policy` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

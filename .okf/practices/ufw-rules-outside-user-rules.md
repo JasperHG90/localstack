@@ -7,10 +7,12 @@ status: stable
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: monitoring
-    resource: git:3ec5d1e:docs/monitoring.md
-    last_modified: 2026-09-09
+  - id: infra-firewall
+    resource: deployments/infrastructure/services.tf
+  - id: apps-firewall
+    resource: deployments/applications/services.tf
 ---
 
 # ufw rules outside user.rules
@@ -37,9 +39,19 @@ Check first: compare `iptables -S ufw-user-input` against the `### tuple ###`
 lines in `user.rules`, and use `ufw --dry-run` to see the chain the next write
 would leave. Re-assert a missing rule in the same apply that makes the change.
 
+The infrastructure root now re-asserts its own rules. Since commit `fef7eee`
+(2026-08-06), `null_resource.firewall` in
+`deployments/infrastructure/services.tf` carries `always_run = timestamp()`,
+so every apply re-runs `ufw allow` for every rule it declares, the Grafana
+3000 rule among them. That heals only rules this root declares. A hand-added
+rule still vanishes, and `null_resource.firewall` in
+`deployments/applications/services.tf` re-runs only when a rule or its host
+changes.
+
 ## Terraform never removes an old rule
 
-`null_resource.firewall` runs `ufw allow` and has no destroy provisioner. A
+`null_resource.firewall`, in both roots, runs `ufw allow` and has no destroy
+provisioner. A
 narrowed rule is added beside the broad one, and the broad one stays until
 someone deletes it by hand. Until then the change is cosmetic while looking
 applied. Delete by rule spec, because `ufw status numbered` renumbers after

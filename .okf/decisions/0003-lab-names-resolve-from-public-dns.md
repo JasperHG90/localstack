@@ -11,8 +11,9 @@ decision_status: Accepted
 decided_on: 2026-07-26
 sources:
   - id: dns
-    resource: git:3ec5d1e:docs/dns.md
-    last_modified: 2026-07-26
+    resource: docs/explanation/public-lab-dns.md
+  - id: dns-records
+    resource: docs/reference/dns.md
 ---
 
 # ADR 0003: Lab names resolve from public DNS, not a local resolver

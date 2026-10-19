@@ -9,6 +9,13 @@ tags: [adr, decision, documentation, diataxis]
 status: stable
 decision_status: Accepted
 decided_on: 2026-09-26
+sources:
+  - id: docs-index
+    resource: docs/README.md
+  - id: docs-layout-rule
+    resource: .claude/rules/docs-layout.md
+  - id: how-to-skeleton-test
+    resource: cli/tests/test_how_to_skeleton.py
 ---
 
 # ADR 0002: docs/ is sorted by reader intent, and holds only pages for people who use the cluster

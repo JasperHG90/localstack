@@ -9,27 +9,15 @@ generated:
   at: 2026-09-27
 sources:
   - id: oidc-tf
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: identity-tf
-    resource: git:3ec5d1e:deployments/infrastructure/identity.tf
+    resource: deployments/infrastructure/identity.tf
   - id: secrets-tf
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: applications-services-tf
-    resource: git:3ec5d1e:deployments/applications/services.tf
-  - id: vault-human-auth
-    resource: git:3ec5d1e:docs/vault-human-auth.md
-  - id: F2-foundation-vault-oidc-provider
-    resource: loop:F2-foundation-vault-oidc-provider
-  - id: G2-nomad-ui-oidc-login
-    resource: loop:G2-nomad-ui-oidc-login
-  - id: R5-rollout-memex-oidc-auth
-    resource: loop:R5-rollout-memex-oidc-auth
-  - id: R6-rollout-memex-human-oidc
-    resource: loop:R6-rollout-memex-human-oidc
-  - id: F14-foundation-role-taxonomy
-    resource: loop:F14-foundation-role-taxonomy
-  - id: S3-spike-oidc-version-claims
-    resource: loop:S3-spike-oidc-version-claims
+    resource: deployments/applications/services.tf
+  - id: nomad-server-role
+    resource: bootstrap/roles/nomad_server/tasks/main.yml
 ---
 
 # Vault's OIDC provider and its clients
@@ -197,3 +185,14 @@ proved the human memex path impossible with memex 1.1.0 (it verified access
 tokens, and Vault's are opaque), so R6 carried it once memex 1.2.0 could
 verify an id_token. S3, a spike to check version-dependent OIDC behavior of
 MinIO, MLflow, NATS and Postgres, was dropped without running.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F2-foundation-vault-oidc-provider` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `G2-nomad-ui-oidc-login` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R5-rollout-memex-oidc-auth` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R6-rollout-memex-human-oidc` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F14-foundation-role-taxonomy` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `S3-spike-oidc-version-claims` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

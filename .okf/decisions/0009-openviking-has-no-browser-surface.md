@@ -10,9 +10,14 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-09-08
 sources:
-  - id: openviking
-    resource: git:3ec5d1e:docs/openviking.md
-    last_modified: 2026-09-12
+  - id: openviking-job
+    resource: deployments/applications/services/openviking.hcl
+  - id: edge-routes
+    resource: deployments/infrastructure/services/haproxy.hcl
+  - id: ov-dash-job
+    resource: deployments/applications/services/ov-dash.hcl
+  - id: studio-check
+    resource: scripts/check_openviking_config.py
 ---
 
 # ADR 0009: OpenViking has no browser surface; Web Studio is unmounted and its proxy removed

@@ -9,21 +9,17 @@ generated:
   at: 2026-09-27
 sources:
   - id: redis-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/redis.hcl
+    resource: deployments/infrastructure/services/redis.hcl
   - id: infra-database
-    resource: git:3ec5d1e:deployments/infrastructure/database.tf
+    resource: deployments/infrastructure/database.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: embark-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/embark.hcl
+    resource: deployments/applications/services/embark.hcl
   - id: hashistack-server-playbook
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_hashistack_server.yml
-  - id: redis-room-commit
-    resource: git:528ef7f
-  - id: redis-firewall-narrowed
-    resource: git:da5e3d5
+    resource: bootstrap/playbooks/configure_hashistack_server.yml
 ---
 
 # Redis cache
@@ -104,3 +100,10 @@ Scripting (`EVAL`) and pub/sub are left out on purpose.
 
 No Redis exporter and no alert exist, so a dead cache shows up only in the
 consumer's own logs.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `528ef7f`
+- commit `da5e3d5`

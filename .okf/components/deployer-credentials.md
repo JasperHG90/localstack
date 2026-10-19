@@ -9,31 +9,19 @@ generated:
   at: 2026-09-27
 sources:
   - id: machine-roles-tf
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: infrastructure-providers-tf
-    resource: git:3ec5d1e:deployments/infrastructure/providers.tf
+    resource: deployments/infrastructure/providers.tf
   - id: applications-providers-tf
-    resource: git:3ec5d1e:deployments/applications/providers.tf
+    resource: deployments/applications/providers.tf
   - id: infrastructure-justfile
-    resource: git:3ec5d1e:deployments/infrastructure/justfile
+    resource: deployments/infrastructure/justfile
   - id: applications-justfile
-    resource: git:3ec5d1e:deployments/applications/justfile
+    resource: deployments/applications/justfile
   - id: env-py
-    resource: git:3ec5d1e:cli/src/localstack_cli/commands/env.py
+    resource: cli/src/localstack_cli/commands/env.py
   - id: identity-tf
-    resource: git:3ec5d1e:deployments/infrastructure/identity.tf
-  - id: F7-foundation-deployer-vault-oidc-login
-    resource: loop:F7-foundation-deployer-vault-oidc-login
-  - id: F11-foundation-human-read-role
-    resource: loop:F11-foundation-human-read-role
-  - id: F12-foundation-deployer-privilege-split
-    resource: loop:F12-foundation-deployer-privilege-split
-  - id: F13-foundation-infrastructure-deployer
-    resource: loop:F13-foundation-infrastructure-deployer
-  - id: G2-nomad-ui-oidc-login
-    resource: loop:G2-nomad-ui-oidc-login
-  - id: F8-plan
-    resource: git:3ec5d1e:.loop/plans/F8-foundation-deployer-provider-cutover.md
+    resource: deployments/infrastructure/identity.tf
 ---
 
 # Terraform deployer credentials
@@ -47,8 +35,9 @@ those tokens and why the design stopped here.
 ## What a run authenticates with
 
 Every Terraform recipe in `deployments/infrastructure/justfile` starts with
-`eval "$(uv run localstack env)"`, and so does every Terraform recipe in
-`deployments/applications/justfile`. `cli/src/localstack_cli/commands/env.py`
+`eval "$(uv run localstack env)"`, and every Terraform recipe in
+`deployments/applications/justfile` with `eval "$(localstack env)"`, which
+needs `localstack` on `PATH`. `cli/src/localstack_cli/commands/env.py`
 exports four variables from the session and refuses if the session holds no
 brokered tokens:
 
@@ -163,12 +152,13 @@ Nomad role writes out of this root too, and that ticket was never written.
 
 ## What F8 still owns
 
-F8 is blocked. Its plan predates D2 and describes the justfiles feeding the
-backend `CONSUL_HTTP_TOKEN=${CONSUL_TOKEN}` from static environment tokens.
-The recipes no longer write that prefix, although the applications root's
-dotenv load (above) is still a path for static tokens. What is left is its
-last step: removing the
-static tokens from `.devcontainer/.env.example` and whatever the devcontainer
+F8 was blocked and never built. Its plan left the loop when the loop was
+reinitialized in `5b2ed1b`, so no ticket owns this work now. The plan predates
+D2 and describes the justfiles feeding the backend
+`CONSUL_HTTP_TOKEN=${CONSUL_TOKEN}` from static environment tokens. The
+recipes no longer write that prefix, although the applications root's dotenv
+load (above) is still a path for static tokens. What is left is its last step:
+removing the static tokens from `.devcontainer/.env.example` and whatever the devcontainer
 still injects. `docs/reference/cli-login.md` explains how an injected root
 `VAULT_TOKEN` outranks the session until `localstack env` replaces it. Several
 comments still describe the pre-D2 state: `oidc.tf` says the default Nomad
@@ -178,3 +168,14 @@ as root and that consuming the brokered Consul token is future work.
 The Vault root token still exists in `/opt/vault/init.json` on the manager.
 Ansible uses it. `localstack breakglass` prints the recovery runbook and
 never reads or prints the token.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F7-foundation-deployer-vault-oidc-login` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F11-foundation-human-read-role` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F12-foundation-deployer-privilege-split` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F13-foundation-infrastructure-deployer` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `G2-nomad-ui-oidc-login` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- `.loop/plans/F8-foundation-deployer-provider-cutover.md` as of commit `3ec5d1e`, since deleted

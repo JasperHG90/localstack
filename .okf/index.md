@@ -14,7 +14,7 @@ docs. User docs are in `docs/`, starting at `docs/README.md`.
 - [Summary](summary.md): The whole project in at most 500 words: what the knowledge says, citing the concepts; start here.
 - [Manifesto](manifesto.md): what this project is for, its invariants and values.
 * [Architecture](architecture/) - The boundaries between the layers that deploy the cluster, and the rules for crossing them. (1 concepts)
-* [Decisions](decisions/) - Append-only records of choices that rejected a real alternative, never written over. (13 concepts)
+* [Decisions](decisions/) - Append-only records of choices that rejected a real alternative, never written over. (15 concepts)
 * [Components](components/) - How a part of the cluster was built or is shaped inside, for someone changing this repository. (33 concepts)
 * [Practices](practices/) - Lessons learned the hard way here, with the measurement or incident that taught each one. (7 concepts)
 * [Nodes](nodes/) - One concept per physical device in the cluster, and how jobs are placed across them. (6 concepts)

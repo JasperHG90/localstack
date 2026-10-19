@@ -10,9 +10,12 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-09-12
 sources:
-  - id: vault-2fa
-    resource: git:3ec5d1e:docs/vault-2fa.md
-    last_modified: 2026-09-12
+  - id: mfa-enforcement
+    resource: deployments/infrastructure/identity.tf
+  - id: oidc-clients
+    resource: deployments/infrastructure/oidc.tf
+  - id: cli-mfa
+    resource: cli/src/localstack_cli/auth/vault.py
 ---
 
 # ADR 0011: Login MFA is enforced on the userpass mount accessor, not on an entity or a mount type
@@ -80,3 +83,17 @@ Vault session, and the `jwt-lab` trade and `jwt-nomad` workload logins do not.
 Adding an entity id back to the enforcement enforces on the union of targets,
 so the enforcement has to keep naming only the accessor. What the enforcement
 still does not cover is listed in `docs/explanation/vault-login-mfa.md`.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/vault-2fa.md` as of commit `3ec5d1e`, since deleted
+
+## Correction, 2026-10-19
+
+Seven clients are now registered with the `lab` provider, not six:
+`local.oidc_provider_client_ids` in `deployments/infrastructure/oidc.tf` adds
+`hermes_dashboard`, which commit `fd5134d` added on 2026-09-14. The
+`oauth2_proxy` client fronts registry-ui as well as dash, through a second
+redirect URI. The second factor on the Vault login reaches all of them.

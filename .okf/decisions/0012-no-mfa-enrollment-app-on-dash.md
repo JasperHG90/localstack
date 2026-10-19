@@ -10,9 +10,10 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-09-12
 sources:
-  - id: vault-2fa
-    resource: git:3ec5d1e:docs/vault-2fa.md
-    last_modified: 2026-09-12
+  - id: dash-oidc-client
+    resource: deployments/infrastructure/oidc.tf
+  - id: mfa-recipes
+    resource: justfile
 ---
 
 # ADR 0012: TOTP enrollment has no app on dash
@@ -46,3 +47,9 @@ Enrollment stays with the operator (`just mfa_enroll`), per
 [ADR 0010](/decisions/0010-vault-generates-each-totp-qr.md). Any future
 self-service enrollment has to run at the Vault login itself, not in an app
 behind it.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/vault-2fa.md` as of commit `3ec5d1e`, since deleted

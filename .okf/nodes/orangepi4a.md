@@ -9,31 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: inventory
-    resource: git:3ec5d1e:bootstrap/inventory/cluster.ini
+    resource: bootstrap/inventory/cluster.ini
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: apps-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: minio-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/minio.hcl
+    resource: deployments/infrastructure/services/minio.hcl
   - id: ov-dash-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/ov-dash.hcl
+    resource: deployments/applications/services/ov-dash.hcl
   - id: alloy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/alloy.hcl
+    resource: deployments/infrastructure/services/alloy.hcl
   - id: alloy-128mb
-    resource: git:daf8619:deployments/infrastructure/services/alloy.hcl
+    resource: deployments/infrastructure/services/alloy.hcl
   - id: phoenix-retired
-    resource: git:74fc590:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: ov-dash-deployed
-    resource: git:30292e2:deployments/applications/services/ov-dash.hcl
+    resource: deployments/applications/services/ov-dash.hcl
   - id: nvme-howto
-    resource: git:73742f6:docs/how-to/move-orange-pi-os-to-nvme.md
-  - id: U1-upgrade-pin-hashistack-versions
-    resource: loop:U1-upgrade-pin-hashistack-versions
-  - id: U3-upgrade-nomad-2x
-    resource: loop:U3-upgrade-nomad-2x
-  - id: U4-upgrade-consul-2x
-    resource: loop:U4-upgrade-consul-2x
+    resource: docs/how-to/move-orange-pi-os-to-nvme.md
 ---
 
 # orangepi4a, the storage node
@@ -136,3 +130,11 @@ out by hand, so a move does not follow the lookup:
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),
 [the observability pipeline](/components/observability-pipeline.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `U1-upgrade-pin-hashistack-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U3-upgrade-nomad-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U4-upgrade-consul-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

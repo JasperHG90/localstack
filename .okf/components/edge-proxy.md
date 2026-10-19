@@ -9,39 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: haproxy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/haproxy.hcl
+    resource: deployments/infrastructure/services/haproxy.hcl
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: oauth2-proxy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/oauth2-proxy.hcl
+    resource: deployments/infrastructure/services/oauth2-proxy.hcl
   - id: oauth2-proxy-registry-ui-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/oauth2-proxy-registry-ui.hcl
+    resource: deployments/infrastructure/services/oauth2-proxy-registry-ui.hcl
   - id: oidc
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: cli-haproxy-parser
-    resource: git:3ec5d1e:cli/src/localstack_cli/api/haproxy.py
+    resource: cli/src/localstack_cli/api/haproxy.py
   - id: oauth2-proxy-guard
-    resource: git:3ec5d1e:scripts/check_oauth2_proxy_guard.py
-  - id: F3-foundation-haproxy-tls-vault-pki
-    resource: loop:F3-foundation-haproxy-tls-vault-pki
-  - id: T3-tls-edge-cutover-lab-domain
-    resource: loop:T3-tls-edge-cutover-lab-domain
-  - id: L1-landing-oauth2-proxy
-    resource: git:3ec5d1e:.loop/plans/L1-landing-oauth2-proxy.md
+    resource: scripts/check_oauth2_proxy_guard.py
   - id: nomad-workloads-policy
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
-  - id: unroute-monitoring
-    resource: git:fe681b4:deployments/infrastructure/services/haproxy.hcl
+    resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
   - id: guard-hook-removed
-    resource: git:f197702:.pre-commit-config.yaml
-  - id: N1-netsec-restrict-prometheus-loki-to-cluster
-    resource: loop:N1-netsec-restrict-prometheus-loki-to-cluster
-  - id: N2-netsec-remove-dnsmasq-for-public-dns
-    resource: loop:N2-netsec-remove-dnsmasq-for-public-dns
-  - id: T2-tls-dnsmasq-lab-zone-dns
-    resource: loop:T2-tls-dnsmasq-lab-zone-dns
+    resource: .pre-commit-config.yaml
 ---
 
 # The HAProxy edge and the oauth2-proxy gates behind it
@@ -209,6 +195,21 @@ Records are `docs/reference/dns.md`.
 
 No gate renders `haproxy.hcl`. F3, T3 and the N1 follow-on each rendered the
 config, ran `haproxy -c` in `haproxy:3.1-alpine`, and ran negative controls
-first. Repeat that before applying a config change. T5, the certificate
-expiry alert, is blocked and nothing measures days to expiry. N4, which would
-leave the edge as the only way into each service, is still in planning.
+first. Repeat that before applying a config change. Nothing measures days to
+certificate expiry, and
+`deployments/infrastructure/services/grafana/alert-rules.yaml` has no such
+rule. T5, which planned that alert, was blocked, and N4, which would leave
+the edge as the only way into each service, was in planning when `5b2ed1b`
+reset the loop. Neither is a ticket in the current loop.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F3-foundation-haproxy-tls-vault-pki` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `T3-tls-edge-cutover-lab-domain` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- `.loop/plans/L1-landing-oauth2-proxy.md` as of commit `3ec5d1e`, since deleted
+- loop ticket `N1-netsec-restrict-prometheus-loki-to-cluster` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `N2-netsec-remove-dnsmasq-for-public-dns` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `T2-tls-dnsmasq-lab-zone-dns` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- `.loop/plans/T5-tls-certificate-expiry-alert.md` and `.loop/plans/N4-netsec-edge-only-service-access.md` as of commit `48f52e2`, since deleted

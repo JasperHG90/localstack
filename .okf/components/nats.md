@@ -9,17 +9,13 @@ generated:
   at: 2026-09-27
 sources:
   - id: nats-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/nats.hcl
+    resource: deployments/infrastructure/services/nats.hcl
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: prometheus-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/prometheus.hcl
+    resource: deployments/infrastructure/services/prometheus.hcl
   - id: nats-reference
-    resource: git:3ec5d1e:docs/reference/nats.md
-  - id: nats-commit
-    resource: git:f0bfd08
-  - id: R2-rollout-nats-auth-callout
-    resource: loop:R2-rollout-nats-auth-callout
+    resource: docs/reference/nats.md
 ---
 
 # NATS and JetStream
@@ -71,7 +67,8 @@ also plans NATS on that node, unbuilt.
 
 - **No auth.** Anyone on `192.168.0.0/16` can publish, subscribe and create
   streams. The firewall is the only control. R2, a NATS auth-callout that
-  would accept Vault OIDC or Nomad JWTs, is blocked.
+  would accept Vault OIDC or Nomad JWTs, was blocked when `5b2ed1b`
+  reset the loop and is not in the current loop.
 - **JetStream limits sit below the volume.** `max_file_store: 10GB` against a
   volume declared up to 20 GiB, and `max_memory_store: 256MB` against a
   512 MB task. Raising the file store past the volume's size, or the memory
@@ -93,3 +90,10 @@ also plans NATS on that node, unbuilt.
   registry-ui, driftwatch and both backup jobs, among others. NATS
   reserves 500 MHz and 512 MB for the server and 50 MHz and 64 MB for the
   exporter.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `f0bfd08`
+- loop ticket `R2-rollout-nats-auth-callout` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

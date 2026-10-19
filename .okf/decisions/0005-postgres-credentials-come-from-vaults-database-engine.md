@@ -11,8 +11,13 @@ decision_status: Accepted, not yet rolled out
 decided_on: 2026-08-03
 sources:
   - id: postgres-vault-dynamic-creds-spike
-    resource: git:3ec5d1e:docs/postgres-vault-dynamic-creds-spike.md
-    last_modified: 2026-09-03
+    resource: .okf/proposals/postgres-dynamic-credentials.md
+  - id: postgres-admin-secret
+    resource: deployments/infrastructure/secrets.tf
+  - id: postgres-app-roles
+    resource: deployments/applications/database.tf
+  - id: redis-engine
+    resource: deployments/infrastructure/database.tf
 ---
 
 # ADR 0005: Short-lived Postgres credentials come from Vault's database secrets engine, not PostgreSQL 18 native OAuth
@@ -140,3 +145,17 @@ in [the proposal](/proposals/postgres-dynamic-credentials.md). The per-job JWT r
 The Redis cache credentials in `deployments/infrastructure/database.tf` use
 the same engine, mounted at `redis` rather than `database` for the reason that
 file records.
+
+## Correction, 2026-10-19
+
+The admin role's static password is at
+`deployments/infrastructure/secrets.tf:77-97` (`random_password.postgres_root`
+and `vault_kv_secret_v2.postgres_root_credentials`), not lines 98-112, which
+hold the Redis admin password. The other two citations still match.
+
+`.loop/ledger.json` is no longer in the tree. Its last copy, at commit
+`48f52e2`, still lists R3 as blocked, with R7 (consumer cutover) ready and R8
+(root consumers) a stub. Path A is still not rolled out: every role in
+`deployments/applications/database.tf` gets a `random_password`, and no
+Postgres `vault_database_secret_backend_role` exists. The only database
+secrets engine is the Redis one in `deployments/infrastructure/database.tf`.

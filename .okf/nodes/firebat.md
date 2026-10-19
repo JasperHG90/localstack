@@ -9,35 +9,29 @@ generated:
   at: 2026-09-27
 sources:
   - id: inventory
-    resource: git:3ec5d1e:bootstrap/inventory/cluster.ini
+    resource: bootstrap/inventory/cluster.ini
   - id: server-playbook
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_hashistack_server.yml
+    resource: bootstrap/playbooks/configure_hashistack_server.yml
   - id: nomad-server-template
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/templates/nomad.hcl.j2
+    resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
   - id: consul-server-template
-    resource: git:3ec5d1e:bootstrap/roles/consul_server/templates/consul.hcl.j2
+    resource: bootstrap/roles/consul_server/templates/consul.hcl.j2
   - id: vault-server-tasks
-    resource: git:3ec5d1e:bootstrap/roles/vault_server/tasks/main.yml
+    resource: bootstrap/roles/vault_server/tasks/main.yml
   - id: configure-network
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_network.yml
+    resource: bootstrap/playbooks/configure_network.yml
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: haproxy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/haproxy.hcl
+    resource: deployments/infrastructure/services/haproxy.hcl
   - id: postgres-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/postgres.hcl
+    resource: deployments/infrastructure/services/postgres.hcl
   - id: registry-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/registry.hcl
+    resource: deployments/applications/services/registry.hcl
   - id: backups-off-firebat
-    resource: git:4b0af46:deployments/infrastructure/services/backup-postgres.hcl
-  - id: U1-upgrade-pin-hashistack-versions
-    resource: loop:U1-upgrade-pin-hashistack-versions
-  - id: U3-upgrade-nomad-2x
-    resource: loop:U3-upgrade-nomad-2x
-  - id: U4-upgrade-consul-2x
-    resource: loop:U4-upgrade-consul-2x
+    resource: deployments/infrastructure/services/backup-postgres.hcl
   - id: breakglass-runbook
-    resource: git:3ec5d1e:cli/src/localstack_cli/commands/breakglass_runbook.md
+    resource: cli/src/localstack_cli/commands/breakglass_runbook.md
 ---
 
 # firebat, the manager
@@ -191,7 +185,11 @@ any part of it:
 - No Nomad server, so nothing schedules. Allocations already running on
   workers keep running, as the 2026-07-31 outage showed.
 - No edge: every `*.lab.orangecluster.nl` name stops answering, and off-site
-  access through the tailnet ends with it.
+  access through the tailnet ends with it. MinIO reads Nomad's OIDC
+  discovery at `https://nomad.lab.orangecluster.nl`, through this edge to the
+  Nomad server here, so loki, tempo and the registry cannot trade their
+  workload identity for fresh S3 credentials either
+  (`nomad_oidc_config_url` in `deployments/infrastructure/services.tf`).
 - No Postgres: OpenViking, Bifrost's config store and every other database
   consumer fails.
 
@@ -203,3 +201,11 @@ service on it is not.
 Related: [Ansible bootstrap](/components/bootstrap.md),
 [host volumes](/components/host-volumes.md),
 [Nomad OIDC discovery](/components/nomad-oidc-discovery.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `U1-upgrade-pin-hashistack-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U3-upgrade-nomad-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U4-upgrade-consul-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

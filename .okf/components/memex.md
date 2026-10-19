@@ -9,31 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: memex-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/memex.hcl
+    resource: deployments/applications/services/memex.hcl
   - id: memex-auth-oidc
-    resource: git:3ec5d1e:deployments/applications/services/memex/auth_oidc.json
+    resource: deployments/applications/services/memex/auth_oidc.json
   - id: memex-auth-keys
-    resource: git:3ec5d1e:deployments/applications/services/memex/auth_keys.json
+    resource: deployments/applications/services/memex/auth_keys.json
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: app-database
-    resource: git:3ec5d1e:deployments/applications/database.tf
+    resource: deployments/applications/database.tf
   - id: infra-oidc
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: infra-identity
-    resource: git:3ec5d1e:deployments/infrastructure/identity.tf
+    resource: deployments/infrastructure/identity.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: haproxy
-    resource: git:3ec5d1e:deployments/infrastructure/services/haproxy.hcl
-  - id: embark-commit
-    resource: git:db51630
-  - id: R5-rollout-memex-oidc-auth
-    resource: loop:R5-rollout-memex-oidc-auth
-  - id: R6-rollout-memex-human-oidc
-    resource: loop:R6-rollout-memex-human-oidc
+    resource: deployments/infrastructure/services/haproxy.hcl
 ---
 
 # memex, staged off the cluster
@@ -155,8 +149,16 @@ That is not enough, and no ticket has exercised it:
    answer 503. That holds only if no wider rule survives on the node. Not
    measured.
 
+The MinIO credentials are still the static `default/memex/minio` key. Ticket
+R12 planned to make memex keyless like tempo, loki and registry
+([MinIO](/components/minio.md)), and the operator dropped it (`a7aa595`):
+memex reads its key as two explicit settings
+(`MEMEX_SERVER__FILE_STORE__ACCESS_KEY_ID` and `__SECRET_ACCESS_KEY`), so
+the change needs a web-identity provider and credential refresh in the memex
+repo first.
+
 The Postgres credentials are still the static `default/memex/postgres` pair.
-Ticket R7 (ready) plans to move memex to Vault-minted users per
+Ticket R7 (ready when `5b2ed1b` reset the loop, never built) planned to move memex to Vault-minted users per
 [ADR 0005](/decisions/0005-postgres-credentials-come-from-vaults-database-engine.md)
 and [ADR 0006](/decisions/0006-each-converted-job-gets-its-own-vault-jwt-role.md).
 What that looks like against memex's tables is
@@ -167,9 +169,20 @@ What that looks like against memex's tables is
 - [Vault's OIDC provider and its clients](/components/vault-oidc-provider.md)
 - [embark, the embedding and rerank server](/components/embark.md), which holds the Jetson now
 - [The host firewall](/components/host-firewall.md)
+- [MinIO](/components/minio.md), which holds the `memex` bucket
 
 - `docs/how-to/verify-memex-oidc.md`, the V1 to V5 checks for both paths
 - `docs/explanation/vault-oidc-tokens.md`, why the ID token and not the access
   token
 - `docs/how-to/log-in-to-memex-from-a-laptop.md`
 - `docs/explanation/workload-identity.md`
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `db51630`
+- loop ticket `R5-rollout-memex-oidc-auth` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R6-rollout-memex-human-oidc` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R12-rollout-memex-keyless-minio`, a stub the operator dropped (its plan is `.loop/plans/` at commit `48f52e2`, dropped in `a7aa595`)
+- loop ticket `R7-rollout-postgres-consumer-cutover` (its plan is `.loop/plans/` at commit `48f52e2`)

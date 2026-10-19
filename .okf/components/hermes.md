@@ -9,31 +9,23 @@ generated:
   at: 2026-09-27
 sources:
   - id: hermes-jobspec
-    resource: worktree:deployments/applications/services/hermes.hcl
+    resource: deployments/applications/services/hermes.hcl
   - id: ov-auth-proxy
-    resource: git:3ec5d1e:deployments/applications/services/hermes/ov_auth_proxy.py
+    resource: deployments/applications/services/hermes/ov_auth_proxy.py
   - id: hermes-dockerfile
-    resource: git:3ec5d1e:deployments/applications/services/hermes/Dockerfile
+    resource: deployments/applications/services/hermes/Dockerfile
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: infra-oidc
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: infra-machine-roles
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: infra-variables
-    resource: git:3ec5d1e:deployments/infrastructure/variables.tf
+    resource: deployments/infrastructure/variables.tf
   - id: haproxy
-    resource: git:3ec5d1e:deployments/infrastructure/services/haproxy.hcl
-  - id: dashboard-oidc-commit
-    resource: git:fd5134d
-  - id: hermes-0-21-commit
-    resource: git:fe10862
-  - id: U5-upgrade-hermes-bifrost-versions
-    resource: loop:U5-upgrade-hermes-bifrost-versions
-  - id: hermes-veerle-profile
-    resource: git:3ec5d1e:.loop/plans/hermes-veerle-profile.md
+    resource: deployments/infrastructure/services/haproxy.hcl
 ---
 
 # Hermes, the agent gateway
@@ -41,9 +33,7 @@ sources:
 Hermes is one Nomad job, `hermes`, pinned to radxa-dragon-q6a (192.168.2.50).
 It runs the Hermes agent behind Telegram, email and an OpenAI-compatible API
 on 8642, plus the dashboard Hermes Desktop signs into on 9119. Its memory is
-OpenViking and every model call goes through Bifrost on the same node. This
-page describes the working tree as of 2026-09-27, which carries an
-uncommitted edit to `hermes.hcl` (the `resources` block, below).
+OpenViking and every model call goes through Bifrost on the same node.
 
 ## The pieces
 
@@ -162,9 +152,9 @@ the volume, then drops to the `hermes` user, which needs `CAP_SETGID`. radxa's
 podman driver is rootful, so this works. Do not set a non-root `user` on the
 `hermes` task.
 
-**No `memory_max` (uncommitted).** The working tree drops `memory_max = 2560`.
-Oversubscription is off at the Nomad server, so the scheduler zeroed it and
-2048 was always the cap. Applying it still replaces the alloc, because any
+**No `memory_max`.** `a055dcf` dropped `memory_max = 2560` from the `hermes`
+task. Oversubscription is off at the Nomad server, so the scheduler zeroed it
+and 2048 was always the cap. Applying it still replaces the alloc, because any
 task-resources diff does. The measurement is in `services/embark.hcl`.
 
 **The dashboard is admin-grade.** Hermes runs with `HERMES_YOLO_MODE=true`,
@@ -211,10 +201,24 @@ OIDC client.
 
 ## Planned, not built
 
-- `hermes-veerle-profile` (planning): Veerle as a second profile in the same
+Both items were tickets in the loop that `5b2ed1b` (2026-10-19) reset. Neither
+is a ticket in the current loop, so their plans survive only at `48f52e2`.
+
+- `hermes-veerle-profile` (was planning): Veerle as a second profile in the same
   instance under `gateway.multiplex_profiles`. It waits on three forks. The
   dashboard has no per-profile authorization. The OpenViking memory provider
   reads raw `os.environ`, so it ignores per-profile scoping.
   `var.vault_openviking_workloads` cannot give one job two identity roles.
-- `U6-evaluate-hermes-native-secrets` (stub): whether Hermes's own `secrets:`
+- `U6-evaluate-hermes-native-secrets` (was a stub): whether Hermes's own `secrets:`
   config should replace or join the Nomad template injection.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `a055dcf`
+- commit `fd5134d`
+- commit `fe10862`
+- loop ticket `U5-upgrade-hermes-bifrost-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- `.loop/plans/hermes-veerle-profile.md` as of commit `3ec5d1e`, since deleted
+- `.loop/plans/U6-evaluate-hermes-native-secrets.md` as of commit `48f52e2`, since deleted

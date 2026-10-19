@@ -9,33 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: openviking-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/openviking.hcl
-    note: "The working tree differs from 3ec5d1e (uncommitted operator edits), and this concept describes the working tree."
+    resource: deployments/applications/services/openviking.hcl
   - id: ov-conf
-    resource: git:3ec5d1e:deployments/applications/services/openviking/ov.conf.json
-    note: "The working tree differs from 3ec5d1e (uncommitted operator edits), and this concept describes the working tree."
+    resource: deployments/applications/services/openviking/ov.conf.json
   - id: openviking-dockerfile
-    resource: git:3ec5d1e:deployments/applications/services/openviking/Dockerfile.openviking
+    resource: deployments/applications/services/openviking/Dockerfile.openviking
   - id: openviking-justfile
-    resource: git:3ec5d1e:deployments/applications/services/openviking/justfile
+    resource: deployments/applications/services/openviking/justfile
   - id: openviking-readme
-    resource: git:3ec5d1e:deployments/applications/services/openviking/README.md
+    resource: deployments/applications/services/openviking/README.md
   - id: config-guard
-    resource: git:3ec5d1e:scripts/check_openviking_config.py
-    note: "The working tree differs from 3ec5d1e (uncommitted operator edits), and this concept describes the working tree."
+    resource: scripts/check_openviking_config.py
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: alert-rules
-    resource: git:3ec5d1e:deployments/infrastructure/services/grafana/alert-rules.yaml
-    note: "The working tree differs from 3ec5d1e (uncommitted operator edits), and this concept describes the working tree."
-  - id: OV1-openviking-service
-    resource: loop:OV1-openviking-service
-  - id: OV2-openviking-user-scoped-resources
-    resource: loop:OV2-openviking-user-scoped-resources
-  - id: OV3-openviking-vault-identity
-    resource: loop:OV3-openviking-vault-identity
+    resource: deployments/infrastructure/services/grafana/alert-rules.yaml
+  - id: pre-commit-config
+    resource: .pre-commit-config.yaml
 ---
 
 # The OpenViking service
@@ -47,10 +39,9 @@ works is `docs/explanation/openviking-identity.md`, and the database it adopted
 is [the OpenViking database](/components/openviking-database.md). This page is
 about how the job is built and what checks it.
 
-The operator has uncommitted edits to `openviking.hcl`, `ov.conf.json`,
-`scripts/check_openviking_config.py`, `.pre-commit-config.yaml`,
-`grafana/alert-rules.yaml` and a comment in `Dockerfile.openviking`. This page
-describes the working tree, and says so where it differs from `3ec5d1e`.
+The two-check health design, the config guard's hook, the five keyword
+fields and the OpenViking alerts all landed in `a055dcf` (2026-09-27). This
+page says where that commit changed what came before.
 
 ## The pieces and where they come from
 
@@ -132,8 +123,8 @@ granting nothing.
 
 ## Health checks, sized off a measured boot
 
-These are the working tree's checks. At `3ec5d1e` there was one check, on
-`/ready`, with `check_restart` and a 60s grace.
+Before `a055dcf` there was one check, on `/ready`, with `check_restart` and a
+60s grace.
 
 - **`openviking alive`** probes `/health`, which answers from the process and
   reaches no backend. It is the only check that may restart the task, with
@@ -201,10 +192,10 @@ Several constants tie it to other files and must move together:
 - `EXPECTED_KEYWORD_FIELDS` names five columns. From ov-postgres 0.3.0, leaving
   the key unset while `store_content` is on adds `content` and changes the index
   expression, and nothing re-keys an existing collection. `3ec5d1e` carried a
-  sixth field. The working tree drops it back to five. The live index has not
-  been read back to confirm which one it carries.
+  sixth field, `content`, and `a055dcf` dropped it back to five. The live index
+  has not been read back to confirm which one it carries.
 
-The pre-commit hook `openviking-config` is new in the working tree. Before it,
+The pre-commit hook `openviking-config` came with `a055dcf`. Before it,
 nothing ran the script, and two settings drifted while it sat red: the module
 name (`ov_retrieval`, renamed to `ov_ext`) and `keyword_fields`. The hook sets
 `pass_filenames: false` and matches the jobspec, the JSON and the script, so a
@@ -234,3 +225,11 @@ route.
 - [Hermes](/components/hermes.md)
 - [Vault human identity](/components/vault-identity.md)
 - [The HAProxy edge](/components/edge-proxy.md)
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `OV1-openviking-service` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `OV2-openviking-user-scoped-resources` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `OV3-openviking-vault-identity` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

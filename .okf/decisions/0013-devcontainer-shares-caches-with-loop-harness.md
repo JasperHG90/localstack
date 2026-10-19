@@ -9,6 +9,13 @@ tags: [adr, decision, devcontainer, uv, prek]
 status: stable
 decision_status: Accepted
 decided_on: 2026-10-19
+sources:
+  - id: devcontainer
+    resource: .devcontainer/devcontainer.json
+  - id: dockerfile
+    resource: .devcontainer/Dockerfile
+  - id: volume-test
+    resource: cli/tests/test_devcontainer_volumes.py
 ---
 
 # ADR 0013: The devcontainer shares its uv and prek caches with loop-harness by volume name

@@ -7,15 +7,21 @@ status: draft
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: riscv-integration
-    resource: git:3ec5d1e:docs/riscv-integration.md
-    last_modified: 2026-07-26
+  - id: inventory
+    resource: bootstrap/inventory/cluster.ini
+  - id: install-dependencies
+    resource: bootstrap/playbooks/install_dependencies.yml
+  - id: nats-jobspec
+    resource: deployments/infrastructure/services/nats.hcl
+  - id: node-exporter-jobspec
+    resource: deployments/infrastructure/services/node-exporter.hcl
 ---
 
 # Adding Orange Pi RV2 (RISC-V) to the Cluster
 
-> Not built as of 2026-09-26. `bootstrap/inventory/cluster.ini` has no RV2
+> Not built as of 2026-10-19. `bootstrap/inventory/cluster.ini` has no RV2
 > host, `bootstrap/cross-compile/` does not exist, and the `hashicorp_arch_map`
 > in `bootstrap/playbooks/install_dependencies.yml` has no `riscv64` entry.
 > NATS + JetStream was built without the RV2: it runs as
@@ -23,6 +29,13 @@ sources:
 > `podman` driver, and `nats_data` is a volume in
 > `deployments/infrastructure/services.tf` (commit `f0bfd08`). Steps 4 and 5
 > below are therefore moot for NATS, and Steps 1 to 3 and 6 remain unbuilt.
+> Two premises in Context have also moved. The cluster has five nodes, not
+> four: `cluster.ini` lists `firebat` as manager and four workers. Prometheus
+> and Grafana run on `ubuntu`, the Raspberry Pi 4B, not on `firebat`: both
+> jobspecs constrain `attr.unique.hostname` to `ubuntu`. node_exporter is
+> deployed, as a `podman` job in
+> `deployments/infrastructure/services/node-exporter.hcl`, so Step 6's
+> riscv64 variant would be added to that file.
 
 ## Context
 
@@ -245,3 +258,9 @@ Add NATS as a Prometheus scrape target (port 8222 exposes `/varz` metrics, or us
 5. `nats sub test` / `nats pub test hello` from any cluster node confirms connectivity
 6. Prometheus targets page shows RV2's node_exporter as UP
 7. `curl http://<rv2-ip>:8222/varz` returns NATS metrics
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/riscv-integration.md` as of commit `3ec5d1e`, the page this concept was moved from

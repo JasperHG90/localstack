@@ -6,7 +6,7 @@ tags: [decision]
 generated:
   by: process:kmctl/0.10.0
   at: 2026-10-19T14:02:12Z
-status: stable
+status: deprecated
 ---
 
 # ADR 0014: Keep project knowledge in an OKF bundle
@@ -42,3 +42,7 @@ Rejected:
   them.
 - A record costs a few minutes per choice and saves rereading the code to
   find out why.
+
+## Correction, 2026-10-19
+
+Superseded by [ADR 0001](0001-durable-knowledge-lives-in-an-okf-bundle.md).

@@ -9,33 +9,21 @@ generated:
   at: 2026-09-27
 sources:
   - id: pyproject
-    resource: git:3ec5d1e:cli/pyproject.toml
+    resource: cli/pyproject.toml
   - id: main
-    resource: git:3ec5d1e:cli/src/localstack_cli/main.py
+    resource: cli/src/localstack_cli/main.py
   - id: broker
-    resource: git:3ec5d1e:cli/src/localstack_cli/auth/broker.py
+    resource: cli/src/localstack_cli/auth/broker.py
   - id: session
-    resource: git:3ec5d1e:cli/src/localstack_cli/auth/session.py
+    resource: cli/src/localstack_cli/auth/session.py
   - id: shims
-    resource: git:3ec5d1e:cli/src/localstack_cli/shims.py
+    resource: cli/src/localstack_cli/shims.py
   - id: versions
-    resource: git:3ec5d1e:cli/src/localstack_cli/versions.py
+    resource: cli/src/localstack_cli/versions.py
   - id: token
-    resource: git:3ec5d1e:cli/src/localstack_cli/commands/token.py
+    resource: cli/src/localstack_cli/commands/token.py
   - id: read-guardrails
-    resource: git:3ec5d1e:cli/tests/test_read_guardrails.py
-  - id: D1-cli-package-skeleton
-    resource: loop:D1-cli-package-skeleton
-  - id: D2-cli-login-broker-tokens
-    resource: loop:D2-cli-login-broker-tokens
-  - id: D3-cli-read-commands
-    resource: loop:D3-cli-read-commands
-  - id: D4-cli-cluster-tui
-    resource: loop:D4-cli-cluster-tui
-  - id: D6-cli-deps-and-shims
-    resource: loop:D6-cli-deps-and-shims
-  - id: D10-cli-broker-nomad-manage
-    resource: loop:D10-cli-broker-nomad-manage
+    resource: cli/tests/test_read_guardrails.py
 ---
 
 # The localstack CLI
@@ -69,6 +57,8 @@ command does is in `docs/reference/cli-login.md`,
 - `tui/`: the Textual `monitor` panel.
 - `versions.py`, `install.py`, `platforms.py`, `shims.py`: `localstack deps`.
 - `status.py` and `branding.py`: the banner printed by a bare `localstack`.
+- `config.py`: the Vault, Nomad and Consul addresses, read from the
+  environment the dev shell exports.
 - `commands/breakglass_runbook.md`: packaged into the wheel by a
   `force-include` in `pyproject.toml`.
 
@@ -131,7 +121,8 @@ failure exits non-zero with empty stdout.
 `uv run pytest` in `cli/` runs the suite. No pre-commit hook runs pytest.
 `just pre_commit` from the root runs ruff, ruff-format and strict mypy over
 `cli/src`, `cli/tests` and `scripts/`, and `just check` in `cli/` runs all
-four.
+four. The loop runs both: its gates in `.loop/config.toml` are
+`just pre_commit` and `uv run --directory cli pytest`.
 
 - Tests that hit the live cluster carry the `cluster` marker, and `addopts`
   excludes them. Run them with `uv run pytest -m cluster` (`just
@@ -152,9 +143,13 @@ four.
   inventory or Vault role edit can turn it red.
 
 Some tests in `cli/tests/` guard the repo rather than the CLI.
-`test_docs_index.py`, `test_how_to_skeleton.py`, `test_backup_coverage.py`
-and `test_devcontainer_path.py` read files outside `cli/`, so a change to
-`docs/`, a jobspec or the devcontainer can turn this suite red.
+`test_docs_index.py`, `test_how_to_skeleton.py`, `test_backup_coverage.py`,
+`test_devcontainer_path.py` and `test_devcontainer_volumes.py` read files
+outside `cli/`, so a change to `docs/`, a jobspec or the devcontainer can turn
+this suite red. `test_devcontainer_volumes.py` (`48f52e2`) pins the names of
+the uv and prek cache volumes this devcontainer shares with the loop-harness
+one, because Docker shares a named volume only when both sides name it the
+same.
 
 ## Traps recorded in the ticket reflections
 
@@ -175,6 +170,19 @@ and `test_devcontainer_path.py` read files outside `cli/`, so a change to
 Done: D1 skeleton and gates, D2 login and brokering, D3 read commands, D4
 `monitor`, D5 `breakglass`, D6 `deps` and shims, D7 and D8 `service`
 resolution through the Consul catalog, D10 brokering `nomad/creds/manage`.
-Open: D9 (`service` renders one row per job) is ready, D11
+Not built: D9 (`service` renders one row per job) was ready and D11
 (`localstack vault admin status|join|leave`, replacing the `admin_*` recipes in
-the root `justfile`) is in planning.
+the root `justfile`) was in planning when `5b2ed1b` (2026-10-19) reset the
+loop. Neither is a ticket in the current loop, and the `admin_*` recipes are
+still in the root `justfile`.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `D1-cli-package-skeleton` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `D2-cli-login-broker-tokens` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `D3-cli-read-commands` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `D4-cli-cluster-tui` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `D6-cli-deps-and-shims` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `D10-cli-broker-nomad-manage` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

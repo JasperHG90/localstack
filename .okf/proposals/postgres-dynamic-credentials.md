@@ -7,18 +7,33 @@ status: draft
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: postgres-vault-dynamic-creds-spike
-    resource: git:3ec5d1e:docs/postgres-vault-dynamic-creds-spike.md
-    last_modified: 2026-09-03
+  - id: applications-database
+    resource: deployments/applications/database.tf
+  - id: applications-secrets
+    resource: deployments/applications/secrets.tf
+  - id: infrastructure-database
+    resource: deployments/infrastructure/database.tf
 ---
 
 # Short-lived Postgres credentials from Vault
 
-> The PoC this spike built, `deployments/applications/database-secrets-poc.tf`
-> and its job, was deleted in commit 19c1696, so the `-target` addresses in the
-> runbook below no longer resolve. R3 is blocked in `.loop/ledger.json`. The
-> choice of this path over PostgreSQL 18 OAuth is
+> Not built as of 2026-10-19. The PoC this spike built,
+> `deployments/applications/database-secrets-poc.tf` and its job, was deleted
+> in commit `19c1696` (2026-08-09), so the `-target` addresses in the runbook
+> below no longer resolve, and the paragraphs that say the file is still
+> declared are out of date. Read it with
+> `git show 19c1696^:deployments/applications/database-secrets-poc.tf`. memex
+> still reads a static password: `deployments/applications/database.tf`
+> creates the `memex` role and `deployments/applications/secrets.tf` writes its
+> password to `default/memex/postgres`. R3 and S1 were left `blocked` in the
+> old loop ledger (`git show 48f52e2:.loop/ledger.json`), and their plans are
+> at `.loop/plans/` in that commit. The only Vault database engine the code
+> declares today is the Redis one at `redis/`, in
+> `deployments/infrastructure/database.tf`, whose header explains why it
+> avoids the `database/` path this spike left mounted. The choice of this path
+> over PostgreSQL 18 OAuth is
 > [ADR 0005](/decisions/0005-postgres-credentials-come-from-vaults-database-engine.md).
 
 **Vault's database secrets engine works, and R3 should roll it out. It needs
@@ -293,3 +308,9 @@ Those three destroyed resources are still declared in
 working reference R3 copies. A full `terraform apply` of that root recreates
 them. The file header carries the one command that removes them again. R3
 deletes the file once it ships the real thing.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/postgres-vault-dynamic-creds-spike.md` as of commit `3ec5d1e`, the page this concept was moved from

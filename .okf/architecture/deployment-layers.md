@@ -9,39 +9,39 @@ generated:
   at: 2026-09-27
 sources:
   - id: bootstrap-justfile
-    resource: git:73742f6:bootstrap/justfile
+    resource: bootstrap/justfile
   - id: enable-consul-secrets
-    resource: git:73742f6:bootstrap/playbooks/enable_consul_secrets.yml
+    resource: bootstrap/playbooks/enable_consul_secrets.yml
   - id: nomad-server-tasks
-    resource: git:73742f6:bootstrap/roles/nomad_server/tasks/main.yml
+    resource: bootstrap/roles/nomad_server/tasks/main.yml
   - id: configure-network
-    resource: git:73742f6:bootstrap/playbooks/configure_network.yml
+    resource: bootstrap/playbooks/configure_network.yml
   - id: infra-services
-    resource: git:73742f6:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: infra-identity
-    resource: git:73742f6:deployments/infrastructure/identity.tf
+    resource: deployments/infrastructure/identity.tf
   - id: infra-machine-roles
-    resource: git:73742f6:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: infra-oidc
-    resource: git:73742f6:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: infra-secrets
-    resource: git:73742f6:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: apps-providers
-    resource: git:73742f6:deployments/applications/providers.tf
+    resource: deployments/applications/providers.tf
   - id: apps-services
-    resource: git:73742f6:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: apps-justfile
-    resource: git:73742f6:deployments/applications/justfile
+    resource: deployments/applications/justfile
   - id: readme
-    resource: git:73742f6:README.md
-  - id: roots-split-commit
-    resource: git:f76edbe
-  - id: F5-foundation-vault-nomad-secrets-engine
-    resource: loop:F5-foundation-vault-nomad-secrets-engine
-  - id: F6-foundation-vault-consul-secrets-engine
-    resource: loop:F6-foundation-vault-consul-secrets-engine
-  - id: G2-nomad-ui-oidc-login
-    resource: loop:G2-nomad-ui-oidc-login
+    resource: README.md
+  - id: apps-storage
+    resource: deployments/applications/storage.tf
+  - id: minio-jobspec
+    resource: deployments/infrastructure/services/minio.hcl
+  - id: infra-database
+    resource: deployments/infrastructure/database.tf
+  - id: infra-justfile
+    resource: deployments/infrastructure/justfile
 ---
 
 # The three deployment layers
@@ -59,6 +59,22 @@ No layer reads another's state. A later layer finds what an earlier one made by
 a fixed name in Vault, the Consul catalog, or Nomad, or by a literal someone
 kept equal by hand. That is why the order is fixed and why most cross-layer
 mistakes show up as a denied read or an unplaceable job at apply or run time.
+
+```mermaid
+flowchart LR
+  A["Ansible<br/>bootstrap/"]
+  I["Infrastructure root<br/>deployments/infrastructure"]
+  P["Applications root<br/>deployments/applications"]
+  A -->|"engine mounts, ACL policies by name"| I
+  A -->|"nomad-workloads role, Consul deploy policy"| P
+  I -->|"Consul catalog, KV paths, OIDC client names,<br/>JWT roles, host volumes"| P
+  P -.->|"literal addresses in infrastructure jobspecs,<br/>MinIO policy named after the job id"| I
+```
+
+Solid arrows run in apply order: the later layer reads a name the earlier one
+wrote. Dotted arrows run the other way: the infrastructure root's jobs name an
+application by address, or MinIO, an infrastructure job, applies a policy the
+applications root wrote. Nothing checks either kind.
 
 This page is the map of the boundaries. The inside of each layer is in
 [the Ansible bootstrap](/components/bootstrap.md) and [the two Terraform
@@ -180,6 +196,7 @@ Ansible's output. Every handoff is a name.
 | MinIO and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack` and `default/postgres/localstack` |
 | OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:34-46`) |
 | Host volumes and JWT roles | infrastructure, applications jobs | the name in the jobspec |
+| MinIO access by workload identity (loki, tempo, registry) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
 | Loki, Tempo, dash, registry-ui, every edge backend | applications, infrastructure jobs | literal addresses in infrastructure jobspecs |
 
 The literals kept equal by hand, each guarded only by a comment beside it, are
@@ -292,3 +309,45 @@ credentials](/components/deployer-credentials.md).
 - **The firewall writers do not converge.** Three layers add ufw rules and none
   removes one, and the two roots re-run theirs on different triggers
   ([the host firewall](/components/host-firewall.md)).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `f76edbe`
+- loop ticket `F5-foundation-vault-nomad-secrets-engine` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F6-foundation-vault-consul-secrets-engine` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `G2-nomad-ui-oidc-login` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+
+## Depicts
+
+Entry points:
+
+- `just bootstrap`, `bootstrap/justfile`
+- `just apply` in each root, `deployments/infrastructure/justfile` and
+  `deployments/applications/justfile`
+- `localstack env`, `cli/src/localstack_cli/commands/env.py`
+
+Modules and files:
+
+- `bootstrap/`, with `bootstrap/playbooks/enable_consul_secrets.yml` and
+  `bootstrap/roles/nomad_server/tasks/main.yml`
+- `deployments/infrastructure/`, with `services.tf`, `identity.tf`,
+  `oidc.tf`, `machine_roles.tf`, `secrets.tf`, `database.tf` and
+  `services/minio.hcl`
+- `deployments/applications/`, with `providers.tf`, `services.tf` and
+  `storage.tf`
+
+Manifesto invariants (from `.okf/manifesto.md`):
+
+- I1: HashiStack versions declared once, in `bootstrap/inventory/group_vars/all.yml` (Ansible layer, read by the CLI)
+- I2: `localstack deps` installs only checksum-verified binaries
+- I3: devcontainer PATH order, shims before binaries before the system PATH
+- I4: devcontainer uv and prek caches are the shared `loop-harness-*` volumes
+- I5: the CLI API layer and monitor panel only read from the cluster
+- I6: the CLI reads cluster state from the live APIs, never from `deployments/`
+- I7: no Vault token value in CLI test fixtures or snapshot baselines
+- I8: `docs/README.md` indexes every docs page and every link resolves
+- I9: every `docs/how-to/` page follows the how-to skeleton
+- I10: the nightly backup syncs only buckets the applications root declares in `storage.tf`
+- I11: every durable bucket is backed up nightly to GCS (planned)

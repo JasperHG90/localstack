@@ -8,12 +8,12 @@ generated:
   by: claude-opus/5.5
   at: 2026-09-26
 sources:
-  - id: openviking-dashboard
-    resource: git:3ec5d1e:docs/openviking-dashboard.md
-    last_modified: 2026-09-09
   - id: openviking-dashboard-mockup
-    resource: git:3ec5d1e:docs/openviking-dashboard-mockup.html
-    last_modified: 2026-09-07
+    resource: assets/openviking-dashboard-mockup.html
+  - id: ov-dash-jobspec
+    resource: deployments/applications/services/ov-dash.hcl
+  - id: openviking-dockerfile
+    resource: deployments/applications/services/openviking/Dockerfile.openviking
 ---
 
 # Building our own OpenViking dashboard
@@ -39,6 +39,17 @@ sources:
 > JasperHG90/openviking_extensions; the deployment is
 > `deployments/applications/services/ov-dash.hcl`. What survives here is the
 > search and retrieval half below.
+> [ov-dash](/components/ov-dash.md) is the concept that now describes it.
+>
+> The `file:line` anchors below (`services.tf:144`, `haproxy.hcl:110`,
+> `database.tf:11`, `storage.tf:5`) were right when this was written and have
+> since moved. The Provenance versions have too: at HEAD
+> `Dockerfile.openviking` pins `ov-postgres-v0.6.0` and installs the hybrid
+> retrieval wrapper from `ov-ext-v0.7.1`. The OpenViking base image is still
+> 0.4.17.1.
+> "Dependency on OV2" is out of date too: OV2 closed as `done`
+> (`git show 48f52e2:.loop/ledger.json`), and its plan is at
+> `.loop/plans/OV2-openviking-user-scoped-resources.md` in that commit.
 
 The mockup drawn for this proposal is `assets/openviking-dashboard-mockup.html`.
 
@@ -340,3 +351,9 @@ Read from the installed copies, not from upstream documentation:
 Those rows matter for the search plan, and it has since been carried out. We
 own ov-postgres, so exposing `search_by_keywords` was a change we could make
 rather than one we had to work around. ov-retrieval is what calls it.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/openviking-dashboard.md` as of commit `3ec5d1e`, the page this concept was moved from
