@@ -45,8 +45,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "7019109665682d2d24a67f7fc2fa1db4852728f0730465002ef3f1cc5a2c2ce0",
   "intent": {
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:58:36+00:00"
+  "at": "2026-10-19T18:06:49+00:00"
 }
