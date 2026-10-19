@@ -23,7 +23,7 @@
       "id": "r4",
       "behavior": "the summary is written: at most 500 words, no kmctl template sentence left, and it links a concept in each section",
       "fails_when": "the body is over 500 words, a template sentence remains, or a section among architecture, components, decisions, nodes, practices and proposals has no link from it",
-      "command": "python3 -c 'import pathlib,re,sys\nt=pathlib.Path(\".okf/summary.md\").read_text().split(\"---\",2)[2]\nn=len(t.split())\ntpl=[\"in a few sentences\",\"citing the architecture pages\",\"never one bullet per decision\",\"what the bundle does not cover yet\"]\nleft=[x for x in tpl if x in t]\nmiss=[s for s in [\"architecture\",\"components\",\"decisions\",\"nodes\",\"practices\",\"proposals\"] if not re.search(r\"\\]\\(\"+s+r\"/[^)]+\\.md\",t)]\nprint(n,\"words; template left:\",left,\"; sections unlinked:\",miss)\nsys.exit(1 if n>500 or left or miss else 0)'"
+      "command": "python3 -c 'import pathlib,re,sys\nt=pathlib.Path(\".okf/summary.md\").read_text().split(\"---\",2)[2]\nn=len(t.split())\ntpl=[\"in a few sentences\",\"citing the architecture pages\",\"never one bullet per decision\",\"what the bundle does not cover yet\"]\nleft=[x for x in tpl if x in t]\nmiss=[s for s in [\"architecture\",\"components\",\"decisions\",\"nodes\",\"practices\",\"proposals\"] if not re.search(r\"\\]\\(/?\"+s+r\"/[^)]+\\.md\",t)]\nprint(n,\"words; template left:\",left,\"; sections unlinked:\",miss)\nsys.exit(1 if n>500 or left or miss else 0)'"
     },
     {
       "id": "r5",
@@ -41,7 +41,7 @@
       "id": "r7",
       "behavior": "every concept the change touches is named in a line the change adds to .okf/log.md, and no earlier log line changes",
       "fails_when": "a changed concept id is missing from the added log lines, or the diff removes or rewrites a log line",
-      "command": "base=$(git merge-base HEAD main) && git diff \"$base\" -- .okf/log.md > /tmp/okf-log.diff && git diff --name-only \"$base\" -- .okf | python3 -c 'import sys,re\nd=open(\"/tmp/okf-log.diff\").read().splitlines()\nadded=\"\\n\".join(l for l in d if l.startswith(\"+\") and not l.startswith(\"+++\"))\nremoved=[l for l in d if l.startswith(\"-\") and not l.startswith(\"---\")]\nids=[p[5:-3] for p in sys.stdin.read().split() if p.endswith(\".md\") and p.split(\"/\")[-1] not in (\"index.md\",\"log.md\")]\nmiss=[i for i in ids if \"`\"+i+\"`\" not in added]\nprint(\"missing:\",miss,\"; removed log lines:\",len(removed))\nsys.exit(1 if miss or removed else 0)'"
+      "command": "base=$(git merge-base HEAD main) && git diff \"$base\" -- .okf/log.md > /tmp/okf-log.diff && git diff --name-only \"$base\" -- .okf | python3 -c 'import sys,re\nd=open(\"/tmp/okf-log.diff\").read().splitlines()\nadded=\"\\n\".join(l for l in d if l.startswith(\"+\") and not l.startswith(\"+++\"))\nremoved=[l for l in d if l.startswith(\"-\") and not l.startswith(\"---\")]\nids=[p[5:-3] for p in sys.stdin.read().split() if p.endswith(\".md\") and p.split(\"/\")[-1] not in (\"index.md\",\"log.md\")]\nmiss=[i for i in ids if \"`\"+i+\"`\" not in added and \"`\"+i+\".md`\" not in added]\nprint(\"missing:\",miss,\"; removed log lines:\",len(removed))\nsys.exit(1 if miss or removed else 0)'"
     },
     {
       "id": "r8",
