@@ -17,7 +17,6 @@ scope = "local"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
-ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"
 f2002c53d5747ac5 = "https://github.com/bencium/bencium-marketplace"
 
 [[rule]]
@@ -194,12 +193,4 @@ repo_alias = "10ae737f6885d841"
 flavor = "claude"
 source_path = ""
 marketplace_name = "caveman"
-risk_acknowledged = false
-
-[[plugin]]
-qualified_name = "ef9f6a17bd3105b7/loop-harness"
-repo_alias = "ef9f6a17bd3105b7"
-flavor = "claude"
-source_path = ""
-marketplace_name = "loop-harness"
 risk_acknowledged = false

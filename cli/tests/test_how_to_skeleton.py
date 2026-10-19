@@ -68,7 +68,8 @@ def skeleton_errors(text: str) -> list[str]:
 
 
 def how_to_pages() -> list[Path]:
-    return sorted(HOW_TO_DIR.glob("*.md"))
+    # README.md is the folder index kmctl generates, not a how-to.
+    return sorted(p for p in HOW_TO_DIR.glob("*.md") if p.name != "README.md")
 
 
 def test_how_to_pages_exist() -> None:

@@ -70,9 +70,6 @@ RUN curl -fsSL https://raw.githubusercontent.com/JasperHG90/clx/main/install.sh 
 # Install openviking
 RUN uv tool install openviking
 
-# Install aim
-RUN uv tool install git+https://github.com/JasperHG90/agent-integrations-manager.git
-
 # Install loop engineering harness control CLI
 #RUN uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.git
 

@@ -48,3 +48,14 @@ __pycache__/
 bootstrap/.ansible/
 
 apm_modules
+
+# loopctl: derived and local loop state
+.loop/index.md
+.loop/**/index.md
+.loop/log.md
+.loop/.lock
+.loop/.deferred
+.loop/exports/
+
+# loopctl plugin install links this to a machine-local path.
+/.opencode/plugins/loop-harness.js

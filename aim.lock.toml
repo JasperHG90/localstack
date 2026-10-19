@@ -376,71 +376,6 @@ sha = "d0f02626629875a5dd57ddbc611ba129cdb4092b"
 installed_at = "2026-07-30T19:39:40.008944Z"
 
 [[plugin]]
-qualified_name = "ef9f6a17bd3105b7/loop-harness"
-repo_alias = "ef9f6a17bd3105b7"
-flavor = "claude"
-source_path = ""
-target_dir = ".claude/plugins/aim-ef9f6a17bd3105b7/loop-harness"
-marketplace_name = "aim-ef9f6a17bd3105b7"
-content_hash = "7ed6cedcd4349cccef12c034807ae31320bc5d2b46c20314843aa92ae8cd9923"
-risk_acknowledged = false
-
-[plugin.current]
-tag = "1.10.1"
-sha = "39ad7cf9f9e3caba4c27da2dd7d52b066c4b9e8b"
-installed_at = "2026-09-15T07:34:06.935886Z"
-
-[[plugin.history]]
-tag = "1.9.0"
-sha = "f26e7d6fdacc6268f83f7662a490ff38b259ea53"
-installed_at = "2026-09-05T13:03:34.741204Z"
-
-[[plugin.history]]
-tag = "1.8.0"
-sha = "d52e8779d216c62cbcb1e53907ec8402bdd82888"
-installed_at = "2026-09-05T06:21:49.106712Z"
-
-[[plugin.history]]
-tag = "1.5.0"
-sha = "bd25eee0cca90963841433cc53a3ea44972d2f03"
-installed_at = "2026-08-21T10:42:57.638586Z"
-
-[[plugin.history]]
-tag = "1.2.0"
-sha = "d2e826ce42b0be4615b35e6e2dd8ab3991df1a47"
-installed_at = "2026-08-03T18:09:17.319769Z"
-
-[[plugin.history]]
-tag = "1.1.0"
-sha = "498ced0b99fd8fcee815cc832aec036f61e84a7e"
-installed_at = "2026-08-02T19:57:02.963616Z"
-
-[[plugin.history]]
-tag = "1.0.0"
-sha = "a22ff3447e219c34208af8fc7bd8322c66a0317e"
-installed_at = "2026-07-29T04:09:06.447264Z"
-
-[[plugin.history]]
-tag = "0.9.0"
-sha = "c453271721df1ca2d985cc430564915eda0eb4ee"
-installed_at = "2026-07-26T14:42:43.035771Z"
-
-[[plugin.history]]
-tag = "0.7.0"
-sha = "e84cca25ac04625772ab5237b175186de1bb702a"
-installed_at = "2026-07-24T17:59:53.795892Z"
-
-[[plugin.history]]
-tag = "0.6.0"
-sha = "5ad86c8acc8ac4f01d07ea647593546c15679f3b"
-installed_at = "2026-07-24T08:17:36.632750Z"
-
-[[plugin.history]]
-tag = "0.5.0"
-sha = "d23b34a1d8b0f3eedee82fe64a1ef53de18c797d"
-installed_at = "2026-07-23T22:09:30.197645Z"
-
-[[plugin]]
 qualified_name = "10ae737f6885d841/caveman"
 repo_alias = "10ae737f6885d841"
 flavor = "claude"
@@ -465,5 +400,4 @@ guidelines = "9f2811d5c944f66b8dd93552c313b774b0bb2ecc1796783b476131e17e808f69"
 1385a5f1be8c889c = "https://github.com/athola/claude-night-market"
 4290899e4697f267 = "https://github.com/jasperhg90/skills"
 53c3c880a0bf7ec7 = "https://github.com/uditakhourii/adhd"
-ef9f6a17bd3105b7 = "https://github.com/jasperhg90/loop-engineering-harness"
 f2002c53d5747ac5 = "https://github.com/bencium/bencium-marketplace"
