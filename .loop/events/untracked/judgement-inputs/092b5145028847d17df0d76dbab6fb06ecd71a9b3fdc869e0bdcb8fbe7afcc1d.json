@@ -1,0 +1,1 @@
+{"ask":"Make just pre_commit seed a linked git worktree with the gitignored SSH key and tfvars from the primary checkout, so loopctl ticket land can stamp its temporary merge worktree"}

@@ -1,2 +1,3 @@
 {"at": "2026-10-19T15:08:12+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "5b2ed1b4fdd6a1271e2bd2f51e7f0568160be9fe", "subject": "build: reinit loop"}
 {"at": "2026-10-19T18:01:38+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "d6860a312d6a857d8d8fde1b6ce4cf68958308cc", "subject": "build: keep loopctl's commit gate across container rebuilds"}
+{"at": "2026-10-19T19:05:35+00:00", "branch": "loop/okf-reconcile", "kind": "commit", "schema_version": "1.0", "sha": "d5033dce1dcad2bee14136e8ef48d2520d547588", "subject": "Merge branch 'main' into loop/okf-reconcile"}
