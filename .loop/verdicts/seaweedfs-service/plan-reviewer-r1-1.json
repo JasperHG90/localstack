@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan sizes the host volume from MinIO's (1.0 to 3.5 TiB) but says nothing about how much of it `weed server` will use. On 4.48, `weed server -h` gives `-volume.max` default \"8\" and `-master.volumeSizeLimitMB` default 30720. That caps the store at about 240 GiB, however big the host volume is. S3 also puts each bucket in its own collection, and the default volume growth for replication 000 allocates several volumes per collection at once. So the six buckets in seaweedfs-buckets, plus MinIO's data at cutover, may not fit in 8 slots. The outcome test here (one `mb`/`cp`/`rb`) passes either way, so the failure first shows up in later tickets. The server flags belong to this ticket, so they must be set here. Spike question: on 4.48 with the plan's flags, do six buckets each take a write under the defaults, and what do `-volume.max=0` (auto from free disk) and a smaller `-master.volumeSizeLimitMB` change in the master's reported max volumes and free slots?",
+      "anchor": ".loop/plans/seaweedfs-service.md (Intent, \"Its own dynamic host volume seaweedfs_data\")",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "The plan answers the unauthenticated filer IAM gRPC (spike 2) with a firewall rule that opens only the S3 and metrics ports. In this cluster that rule does not do the protecting. The worker base rule (bootstrap/playbooks/configure_network.yml) already admits 20000:32000 from 192.168.0.0/16, so any master, volume or filer port (or its +10000 gRPC port) the job maps on a dynamic Nomad port is open to the LAN whatever the new rule says. Podman-published ports are also DNAT'd and need not pass ufw's INPUT chain. The contract has to be that the jobspec publishes only the S3 and metrics ports, with master, volume and filer (HTTP and gRPC) left unmapped inside the container, or the filer's signing key set. Without that, a builder who maps the filer or master port (for `weed shell`, the UI, or a health check) exposes unauthenticated IAM writes to the LAN, and the outcome checks would not catch it.",
+      "anchor": ".loop/plans/seaweedfs-service.md (Could invalidate this plan, risk 2, last sentence)",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "7019109665682d2d24a67f7fc2fa1db4852728f0730465002ef3f1cc5a2c2ce0"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T18:01:11+00:00"
+}
