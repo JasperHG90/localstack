@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "docs-reference",
-  "stage": "building",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 0,
@@ -137,8 +137,14 @@
       "to": "building",
       "at": "2026-10-19T19:16:21+00:00",
       "by": "advance"
+    },
+    {
+      "from": "building",
+      "to": "verifying",
+      "at": "2026-10-19T19:32:03+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T19:31:57+00:00"
+  "at": "2026-10-19T19:32:03+00:00"
 }
