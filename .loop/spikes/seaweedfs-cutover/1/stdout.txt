@@ -1,0 +1,54 @@
+== push to registry on MinIO
+spike-cut-reg-a:5000/small@sha256:1d344e79cf1ca8935fddd5cdc9bfedd731c6ada7f0a2987a114910753d0b7683
+spike-cut-reg-a:5000/small@sha256:9155559a7d586a356c4e0a759c3d0fe645aa4e993551b000076de39377a6c357
+spike-cut-reg-a:5000/small@sha256:04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096
+spike-cut-reg-a:5000/big@sha256:fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f
+small sha256:04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096  big sha256:fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f
+small manifest digests: 1
+{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","size":233,"digest":"sha256:84d8280f814b420f00dbae2e503155bbb942fcc946da8703db5bd574785c969b"},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","size":31476702,"digest":"sha256:e4a1f323968cbdc846a3cf62d50862cdc1e7332d970df23a56a027036dadb941"}]}big layer bytes: 31476702
+== MinIO objects (data blobs, md5 empty means multipart ETag)
+754 "md5":"254fa853650adc85b6442d151c4527bb" docker/registry/v2/blobs/sha256/04/04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096/data
+233 "md5":"e9dd45bd413acfce9515617e63fddcb2" docker/registry/v2/blobs/sha256/07/071ae492fdb2a51dcef968fb3e480c84c712062ebc1db514aff54f81aada3a36/data
+427 "md5":"ccc407f46dcbd9944e8a074336a1a998" docker/registry/v2/blobs/sha256/1d/1d344e79cf1ca8935fddd5cdc9bfedd731c6ada7f0a2987a114910753d0b7683/data
+342 "md5":"f4bdd9e03652a8df4e35c7b209849513" docker/registry/v2/blobs/sha256/5f/5f2135b2345c12390b29e400def4abe576734ec198807949b4787549c3e7aee9/data
+524833 "md5":"8d7e7de9f434015a20a32eab24e2000a" docker/registry/v2/blobs/sha256/78/789037b1b1f20ee71dccbd66662339d02071c95370f71cf393f66773252303f9/data
+233 "md5":"82286d22abc34d755394e225da64aef1" docker/registry/v2/blobs/sha256/84/84d8280f814b420f00dbae2e503155bbb942fcc946da8703db5bd574785c969b/data
+591 "md5":"80fbb6936c7e3a300ad8be065c634207" docker/registry/v2/blobs/sha256/91/9155559a7d586a356c4e0a759c3d0fe645aa4e993551b000076de39377a6c357/data
+2098649 "md5":"d1a42275f0945168a9be282ec3fc31c2" docker/registry/v2/blobs/sha256/ad/adab67cb116bb33a7e6eab9fec59ee27a97bf1180af98ee9717548f5c2ce7868/data
+451 "md5":"02cfb3154582e10d820625bc6e9d2ec1" docker/registry/v2/blobs/sha256/af/af6c630578a194412e5033b3275772f3923699bce5926ccefd0713c9559809d3/data
+31476702 "md5":"199e1b8af2baa1a4fe020011df6fd6e5" docker/registry/v2/blobs/sha256/e4/e4a1f323968cbdc846a3cf62d50862cdc1e7332d970df23a56a027036dadb941/data
+1049428 "md5":"1a224bada7946bcebe2641c0bdf1237a" docker/registry/v2/blobs/sha256/fa/fa5a0fb50e177bce89a2c40147a8dd3dd2e160bb4bfb3d76833360af3180e395/data
+428 "md5":"cdd2496a3f2270425311d11fe191ad1a" docker/registry/v2/blobs/sha256/fb/fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f/data
+== rclone sync MinIO -> local dir (GCS stand-in)
+== rclone copy local dir -> SeaweedFS registry
+== rclone sync MinIO -> SeaweedFS registry-direct (S3 to S3)
+minio:registry           Total objects: 30 Total size: 33.526 MiB (35154349 Byte) 
+/backup/minio/registry   Total objects: 30 Total size: 33.526 MiB (35154349 Byte) 
+swfs:registry            Total objects: 30 Total size: 33.526 MiB (35154349 Byte) 
+swfs:registry-direct     Total objects: 30 Total size: 33.526 MiB (35154349 Byte) 
+== rclone check MinIO vs SeaweedFS (size only, ETags differ)
+2026/10/19 17:59:42 NOTICE: S3 bucket registry: 0 differences found
+2026/10/19 17:59:42 NOTICE: S3 bucket registry: 30 matching files
+2026/10/19 17:59:44 NOTICE: S3 bucket registry-direct: 0 differences found
+2026/10/19 17:59:44 NOTICE: S3 bucket registry-direct: 30 matching files
+== pull from spike-cut-reg-b
+big small 
+PASS: spike-cut-reg-b:5000/small:v1
+PASS: spike-cut-reg-b:5000/small@sha256:04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096
+small pulled by digest sha256:04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096 (3678208 bytes tar)
+small: every blob's sha256 matches its digest
+PASS: spike-cut-reg-b:5000/big:v1
+PASS: spike-cut-reg-b:5000/big@sha256:fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f
+big pulled by digest sha256:fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f (31480320 bytes tar)
+big: every blob's sha256 matches its digest
+== pull from spike-cut-reg-c
+big small 
+PASS: spike-cut-reg-c:5000/small:v1
+PASS: spike-cut-reg-c:5000/small@sha256:04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096
+small pulled by digest sha256:04eb33d680a0c0d41f84fbed1b0a075ce34debfb71782d0004c199e7f3d4a096 (3678208 bytes tar)
+small: every blob's sha256 matches its digest
+PASS: spike-cut-reg-c:5000/big:v1
+PASS: spike-cut-reg-c:5000/big@sha256:fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f
+big pulled by digest sha256:fbf498f0959ad48c6ed495b1976ca236fbf4c26162db8fa3bf53ef367345dd6f (31480320 bytes tar)
+big: every blob's sha256 matches its digest
+RESULT: both restore paths serve every image intact
