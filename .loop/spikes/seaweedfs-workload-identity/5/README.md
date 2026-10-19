@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T20:56:54+00:00'
+  at: '2026-10-19T20:57:08+00:00'
 slug: seaweedfs-workload-identity
 n: 5
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-workload-identity/5
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-workload-identity 5`.
+One `weed server` (4.48) with `-s3.config` admin, `-s3.iam.readOnly=false`, `-s3.iam.config` (OIDC provider, STS signing key, `policy.defaultEffect: Deny`, a `wi-probe` role bound by `nomad_job_id`/`sub`), the service/3 slot flags and master.toml passed 33 of 33 checks, before and after `docker restart`.
+The static admin still created buckets, put/got and read every bucket. hashicorp/aws (~> 6.0) applied a bucket, user, access key and inline policy (4 added), and both the second plan and the post-restart plan were clean (exit 0).
+The Terraform key put/got its own bucket and was denied on the admin bucket, the STS bucket and CreateBucket. A wi-probe token got creds for the wi-probe role and wrote its bucket only. A wi-probe-other token asking for that role got HTTP 403.
+Rules out `defaultEffect: Deny` or the IAM file changing how static or API-made identities are authorized. Settles risk 4. Limits: local container with a fake issuer, one role and one Terraform user; `roleMapping` was left out (STS ignores it, per spike 2).
 
 ## Files
 
