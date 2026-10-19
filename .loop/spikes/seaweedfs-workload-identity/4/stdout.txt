@@ -1,0 +1,15 @@
+buckets:   loki	size:0	logical:0	chunk:0   tempo	size:0	logical:0	chunk:0 
+== (a) shell helper (loki.hcl) with RoleArn + RoleSessionName
+[helper loki token, LokiRole, put loki] exit 0: {"Version":1,"AccessKeyId":"ASIAa817b10d50c9aa73","SecretAccessKey":"...","SessionToken":"...","Expiration":"2026-10-19T19:13:47Z"}
+[helper loki token, LokiRole, put loki put] exit 0: PUT loki OK 
+PASS a1 helper loki->LokiRole gets creds and puts to loki
+[helper loki token, TempoRole] exit 1: wget: server returned error: HTTP/1.1 403 Forbidden
+PASS a2 helper loki->TempoRole refused
+== (b) minio-go v7.1.0 with AWS_ROLE_ARN
+[minio-go tempo token, TempoRole, put tempo] exit 0: STS OK: access key ASIAa6... PUT tempo OK 
+PASS b1 minio-go tempo->TempoRole gets creds and puts to tempo
+[minio-go loki token, TempoRole] exit 1: STS FAIL: chain gave anonymous creds; provider error: trust policy validation failed: trust policy denies web identity assumption 
+PASS b2 minio-go loki->TempoRole refused
+-- raw STS answer for loki token asking TempoRole:
+<?xml version="1.0" encoding="UTF-8"?>
+<ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><Error><Type>Sender</Type><Code>AccessDenied</Code><Message>trust policy validation failed: trust policy denies web identity assumption</Message></Error><RequestId>18E000EAF471162A1D12A2E9</RequestId></ErrorResponse> [HTTP 403]
