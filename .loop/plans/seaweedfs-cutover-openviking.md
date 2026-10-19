@@ -27,9 +27,13 @@ Add a Nomad parameterized batch job `restore-s3` in the infrastructure root
 (`new:deployments/infrastructure/services/restore-s3.hcl`). Dispatched with a
 bucket name, it runs `rclone copy --create-empty-src-dirs
 --s3-directory-markers gcs:${gcs_bucket}/minio/<bucket>/ seaweedfs:<bucket>`,
-then `rclone check` between the two, then a count of keys ending in `/` on
-each side, failing on any difference. `rclone check` alone passes with
-every marker missing (`spike:seaweedfs-cutover-openviking/2`). `seaweedfs-cutover-registry` reuses it. A job reads only
+then `rclone check` between the two, then a one-way directory check: every
+directory `rclone lsf -R --dirs-only` lists under the GCS prefix must also
+be listed on SeaweedFS. It fails on any directory missing there. The marker
+counts are not compared, because they differ by design: a flagged sync onto
+the existing GCS copy adds markers only for empty directories, while a
+fresh flagged copy writes one for every directory. `rclone check` alone
+passes with every marker missing (`spike:seaweedfs-cutover-openviking/2`). `seaweedfs-cutover-registry` reuses it. A job reads only
 `secret/data/default/<job id>/*`, and a dispatched job carries its parent's
 id, so it gets its own keys:
 
