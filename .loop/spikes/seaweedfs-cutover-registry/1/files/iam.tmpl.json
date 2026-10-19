@@ -1,0 +1,63 @@
+{
+ "sts": {
+  "tokenDuration": "1h",
+  "maxSessionLength": "12h",
+  "issuer": "seaweedfs-sts",
+  "signingKey": "dGVzdC1zaWduaW5nLWtleS0zMi1jaGFyYWN0ZXJzLWxvbmc="
+ },
+ "policy": {
+  "defaultEffect": "Deny"
+ },
+ "providers": [
+  {
+   "name": "nomad",
+   "type": "oidc",
+   "enabled": true,
+   "config": {
+    "issuer": "http://issuer:8080",
+    "clientId": "seaweedfs"
+   },
+   "roleMapping": {
+    "rules": [
+     {"claim": "nomad_job_id", "value": "registry", "role": "arn:aws:iam::role/RegistryRole"}
+    ]
+   }
+  }
+ ],
+ "policies": [
+  {
+   "name": "registry",
+   "document": {
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Effect": "Allow",
+      "Action": [],
+      "Resource": ["arn:aws:s3:::registry", "arn:aws:s3:::registry/*"]
+     }
+    ]
+   }
+  }
+ ],
+ "roles": [
+  {
+   "roleName": "RegistryRole",
+   "roleArn": "arn:aws:iam::role/RegistryRole",
+   "trustPolicy": {
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Effect": "Allow",
+      "Principal": {"Federated": "nomad"},
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+       "StringEquals": {"oidc:nomad_job_id": "registry"},
+       "StringLike": {"oidc:sub": "global:default:registry:*"}
+      }
+     }
+    ]
+   },
+   "attachedPolicies": ["registry"]
+  }
+ ]
+}

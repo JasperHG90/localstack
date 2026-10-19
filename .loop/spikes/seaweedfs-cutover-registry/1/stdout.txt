@@ -1,0 +1,83 @@
+== make layers in volume spike-reg2-work: 110 MiB and 1 MiB random
+-rw-r--r--    1 root     root     115345408 Oct 19 21:00 lbig.tar
+-rw-r--r--    1 root     root       1050624 Oct 19 21:00 lbig2.tar
+-rw-r--r--    1 root     root       1050624 Oct 19 21:00 lsmall.tar
+weed server -dir=/data -s3 -s3.port=8333 -s3.config=/s3.json -s3.iam.config=/iam.json -s3.iam.readOnly=false -ip=127.0.0.1 -ip.bind=127.0.0.1 -s3.ip.bind=0.0.0.0 -metricsIp=0.0.0.0 -metricsPort=9327 -volume.max=0 -master.volumeSizeLimitMB=1024 -master.volumePreallocate=false -s3.port.iceberg=0 -s3.port.lance=0
+master.toml: copy_1 = 2
+
+===== phase full: Action = s3:*
+helper as the registry runs it: {"Version":1,"AccessKeyId":"ASIA5e9ab25f53bc296e","SecretAccessKey":"...","SessionToken":"...","Expiration":"2026-10-19T22:00:56Z"}
+-- push big (110 MiB layer) and small (1 MiB layer)
+big sha256:e670c0bb5babbd29afd08eb295510368ca70c0f55de3bad61eab578e45d96394 layer sha256:6d681ce898469566acbe8db162fc4fd89d55c1fe31fc2b0261de723473c0f5ff size "size":115353264
+small sha256:db3c36ca94b4328cc56c7634924838bcde8fe1d27e3f0f4dee4b4e09ac0ec0d4 layer sha256:9595f28fe003347fadbde4327fb3be77dbd20c8d905f3b2537d53544f4782765
+big blob ETag: "571995c2af4a5ef9de5761cbc3b6871d-4"
+HTTP 
+small blob ETag: "d6171652da0841bd6b565d787a954003-1"
+HTTP 
+-- pull both by digest, validate, check every blob sha256
+PASS: spike-reg2-reg:5000/big@sha256:e670c0bb5babbd29afd08eb295510368ca70c0f55de3bad61eab578e45d96394
+big: blobs match
+PASS: spike-reg2-reg:5000/small@sha256:db3c36ca94b4328cc56c7634924838bcde8fe1d27e3f0f4dee4b4e09ac0ec0d4
+small: blobs match
+-- delete big by digest (drops tag v1), garbage-collect with the same creds
+tags-left=0
+gc exit 0; 3 eligible, 3 deleting lines
+after gc: big layer objects left=0, small layer objects left=1
+big layer no longer served
+-- push again after gc (big layer re-upload plus a new image), then pull and validate
+PASS: spike-reg2-reg:5000/big:v2
+PASS: spike-reg2-reg:5000/small:v2
+PASS: spike-reg2-reg:5000/small:v1
+re-push ok: big small
+-- registry log errors
+      1 time="2026-10-19T21:00:56.526213716Z" level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=v1" err.message="manifest unknown" go.version=go1.25.9 http.request.host="spike-reg2-reg:5000" http.request.id=0
+      1 time="2026-10-19T21:00:56.52704866Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:71c941eff53a5ed96ebedff2ec2aa5f77c53deade754a14c49789108ead16c74" err.message="blob unknown to registry" go.version=go1.25
+      1 time="2026-10-19T21:00:56.527451468Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:6d681ce898469566acbe8db162fc4fd89d55c1fe31fc2b0261de723473c0f5ff" err.message="blob unknown to registry" go.version=go1.2
+      1 time="2026-10-19T21:00:58.48130706Z" level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=v1" err.message="manifest unknown" go.version=go1.25.9 http.request.host="spike-reg2-reg:5000" http.request.id=01
+      1 time="2026-10-19T21:00:58.482051978Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:4c15751a04d9648e022b5b315240d0f1c8998063cad6123c7538030634f1ef6a" err.message="blob unknown to registry" go.version=go1.2
+      1 time="2026-10-19T21:00:58.482426291Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:9595f28fe003347fadbde4327fb3be77dbd20c8d905f3b2537d53544f4782765" err.message="blob unknown to registry" go.version=go1.2
+RESULT phase full ok=1
+
+===== phase min: Action = s3:GetObject s3:PutObject s3:DeleteObject s3:ListBucket s3:ListBucketMultipartUploads s3:AbortMultipartUpload s3:ListMultipartUploadParts
+helper as the registry runs it: {"Version":1,"AccessKeyId":"ASIA606663197c2d054d","SecretAccessKey":"...","SessionToken":"...","Expiration":"2026-10-19T22:01:14Z"}
+-- push big (110 MiB layer) and small (1 MiB layer)
+big sha256:e670c0bb5babbd29afd08eb295510368ca70c0f55de3bad61eab578e45d96394 layer sha256:6d681ce898469566acbe8db162fc4fd89d55c1fe31fc2b0261de723473c0f5ff size "size":115353264
+small sha256:db3c36ca94b4328cc56c7634924838bcde8fe1d27e3f0f4dee4b4e09ac0ec0d4 layer sha256:9595f28fe003347fadbde4327fb3be77dbd20c8d905f3b2537d53544f4782765
+big blob ETag: "571995c2af4a5ef9de5761cbc3b6871d-4"
+HTTP 
+small blob ETag: "d6171652da0841bd6b565d787a954003-1"
+HTTP 
+-- pull both by digest, validate, check every blob sha256
+PASS: spike-reg2-reg:5000/big@sha256:e670c0bb5babbd29afd08eb295510368ca70c0f55de3bad61eab578e45d96394
+big: blobs match
+PASS: spike-reg2-reg:5000/small@sha256:db3c36ca94b4328cc56c7634924838bcde8fe1d27e3f0f4dee4b4e09ac0ec0d4
+small: blobs match
+-- delete big by digest (drops tag v1), garbage-collect with the same creds
+tags-left=0
+gc exit 0; 3 eligible, 3 deleting lines
+after gc: big layer objects left=0, small layer objects left=1
+big layer no longer served
+-- push again after gc (big layer re-upload plus a new image), then pull and validate
+PASS: spike-reg2-reg:5000/big:v2
+PASS: spike-reg2-reg:5000/small:v2
+PASS: spike-reg2-reg:5000/small:v1
+re-push ok: big small
+-- registry log errors
+      1 time="2026-10-19T21:01:15.020412825Z" level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=v1" err.message="manifest unknown" go.version=go1.25.9 http.request.host="spike-reg2-reg:5000" http.request.id=0
+      1 time="2026-10-19T21:01:15.021403952Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:71c941eff53a5ed96ebedff2ec2aa5f77c53deade754a14c49789108ead16c74" err.message="blob unknown to registry" go.version=go1.2
+      1 time="2026-10-19T21:01:15.02177264Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:6d681ce898469566acbe8db162fc4fd89d55c1fe31fc2b0261de723473c0f5ff" err.message="blob unknown to registry" go.version=go1.25
+      1 time="2026-10-19T21:01:17.571837327Z" level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=v1" err.message="manifest unknown" go.version=go1.25.9 http.request.host="spike-reg2-reg:5000" http.request.id=0
+      1 time="2026-10-19T21:01:17.574900984Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:4c15751a04d9648e022b5b315240d0f1c8998063cad6123c7538030634f1ef6a" err.message="blob unknown to registry" go.version=go1.2
+      1 time="2026-10-19T21:01:17.578075996Z" level=error msg="response completed with error" err.code="blob unknown" err.detail="sha256:9595f28fe003347fadbde4327fb3be77dbd20c8d905f3b2537d53544f4782765" err.message="blob unknown to registry" go.version=go1.2
+RESULT phase min ok=1
+
+===== ablation: min minus one action each (report only)
+without s3:GetObject: fails at: FAIL push
+without s3:PutObject: fails at: FAIL push
+without s3:DeleteObject: fails at: FAIL gc did not remove exactly the deleted blobs
+without s3:ListBucket: fails at: FAIL push
+without s3:ListBucketMultipartUploads: still passes (not needed)
+without s3:AbortMultipartUpload: still passes (not needed)
+without s3:ListMultipartUploadParts: still passes (not needed)
+
+SUMMARY full(s3:*)=0 min=0  MIN: s3:GetObject s3:PutObject s3:DeleteObject s3:ListBucket s3:ListBucketMultipartUploads s3:AbortMultipartUpload s3:ListMultipartUploadParts

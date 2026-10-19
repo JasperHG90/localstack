@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-cutover-registry",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-reg-2/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-reg-2/spike.sh",
+      "copy": "files/spike.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-reg-2/iam.tmpl.json",
+      "copy": "files/iam.tmpl.json"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-reg-2/issuer.py",
+      "copy": "files/issuer.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-reg-2/s3.json",
+      "copy": "files/s3.json"
+    }
+  ],
+  "where": "worktree",
+  "head": "276279654029077e9ef1ba09e7444f8b8115835e",
+  "fingerprint": "ab2389e6d17a4e4893006f0cc9ec1b03b66445f15113ca713f9643e404191636",
+  "started_at": "2026-10-19T21:00:44+00:00",
+  "finished_at": "2026-10-19T21:03:33+00:00",
+  "duration_seconds": 169.139,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
