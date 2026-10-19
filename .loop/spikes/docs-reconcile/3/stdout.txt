@@ -1,0 +1,32 @@
+== baseline check
+warning  index  docs/README.md  does not link how-to/; add '- [How-to guides](how-to/README.md)'
+warning  index  docs/README.md  does not link reference/; add '- [Reference](reference/README.md)'
+warning  index  docs/README.md  does not link explanation/; add '- [Explanation](explanation/README.md)'
+all checks passed, 3 warnings
+exit 0
+== pages: docs/how-to/log-in-to-vault.md docs/reference/bootstrap-secrets.md docs/explanation/cluster-roles.md
+## Additional resources
+## A group grants nothing on its own
+## Breaking glass
+## Credential flow
+## Directions
+## GITHUB_PAT
+## Introduction
+## Neither `developer` nor `admin` is a containment boundary
+## Prerequisites
+## TAILSCALE_AUTH_KEY
+## Why removing someone does not end their session
+== check --fix (regenerates folder indexes from new descriptions)
+== check with front matter
+warning  index  docs/README.md  does not link how-to/; add '- [How-to guides](how-to/README.md)'
+warning  index  docs/README.md  does not link reference/; add '- [Reference](reference/README.md)'
+warning  index  docs/README.md  does not link explanation/; add '- [Explanation](explanation/README.md)'
+all checks passed, 3 warnings
+exit 0
+== section findings:
+none
+== missing-source finding:
+none
+== review due:
+due     docs/how-to/log-in-to-vault  (source changed: justfile)
+notice  docs/explanation/cluster-roles  source not resolved: does/not/exist.tf

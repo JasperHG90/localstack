@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "docs-reconcile",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/5fcab3ba-3b32-4596-9541-452df76bd1a5/scratchpad/spike-docs-r1/check.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/5fcab3ba-3b32-4596-9541-452df76bd1a5/scratchpad/spike-docs-r1/check.sh",
+      "copy": "files/check.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "8eddc3c0a0656c62c1d598f497c65b006454184d",
+  "fingerprint": "cf9df7ebc1f7c401787eb940b74afc0ff87cc140953fb9c764c07ef2b8e69fe9",
+  "started_at": "2026-10-19T17:44:03+00:00",
+  "finished_at": "2026-10-19T17:44:14+00:00",
+  "duration_seconds": 10.979,
+  "timeout_seconds": 400.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
