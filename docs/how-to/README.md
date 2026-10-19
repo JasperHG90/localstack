@@ -1,54 +1,54 @@
 <!-- kmctl writes this index from the pages in this folder: run kmctl check --fix to update it, do not edit it by hand. -->
 # How-to guides
 
-- [How to add a service to the edge](add-a-service-to-the-edge.md)
-- [How to add a service that logs people in through Vault](add-a-vault-oidc-client.md)
-- [How to add an app-user tier](add-an-app-user-tier.md)
-- [How to apply a backup infrastructure change](apply-a-backup-infrastructure-change.md)
-- [How to call OpenViking from the CLI](call-openviking-from-the-cli.md)
-- [How to add, remove, or reorder a dash tile](change-a-dash-tile.md)
-- [How to check JetStream disk usage](check-jetstream-disk-usage.md)
-- [How to check that lab names resolve](check-lab-dns.md)
-- [How to check the edge certificate](check-the-edge-certificate.md)
-- [How to connect a Nomad job to NATS](connect-a-nomad-job-to-nats.md)
-- [How to connect Claude Code to OpenViking](connect-claude-code-to-openviking.md)
-- [How to create a JetStream stream](create-a-jetstream-stream.md)
-- [How to delete a lost session's Nomad and Consul tokens](delete-a-lost-sessions-brokered-tokens.md)
-- [How to delete a Nomad dynamic host volume](delete-a-nomad-dynamic-host-volume.md)
-- [How to exchange a workload JWT for MinIO credentials](exchange-a-workload-jwt-for-minio-credentials.md)
-- [How to expose Python metrics to Prometheus](expose-python-metrics-to-prometheus.md)
-- [How to get the operator password](get-the-operator-password.md)
-- [How to give a job keyless MinIO access](give-a-job-keyless-minio-access.md)
-- [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md)
-- [How to join and leave the admin group](join-and-leave-the-admin-group.md)
-- [How to log in to memex from a laptop](log-in-to-memex-from-a-laptop.md)
-- [How to log in to Vault](log-in-to-vault.md)
-- [How to move the Orange Pi OS to an NVMe drive](move-orange-pi-os-to-nvme.md)
-- [How to narrow the monitoring firewall rules](narrow-the-monitoring-firewall-rules.md)
-- [How to publish and subscribe with the nats CLI](publish-and-subscribe-with-the-nats-cli.md)
-- [How to reach Prometheus or Loki directly](reach-prometheus-or-loki-directly.md)
-- [How to rebuild and deploy the dash images](rebuild-the-dash-images.md)
-- [How to rebuild and deploy the registry-ui images](rebuild-the-registry-ui-images.md)
-- [How to recover a failed certificate renewal](recover-a-failed-certificate-renewal.md)
-- [How to remove a JetStream stream](remove-a-jetstream-stream.md)
-- [How to remove Vault login MFA completely](remove-vault-login-mfa.md)
-- [How to re-seed the driftwatch baseline](reseed-the-driftwatch-baseline.md)
-- [How to reset a JetStream consumer](reset-a-jetstream-consumer.md)
-- [How to respond to a retrieval-quality alert](respond-to-a-retrieval-quality-alert.md)
-- [How to revoke a lost or stolen session](revoke-a-lost-or-stolen-session.md)
-- [How to revoke memex human tokens](revoke-memex-human-tokens.md)
-- [How to roll out Vault login MFA](roll-out-vault-login-mfa.md)
-- [How to rotate the Vault operator password](rotate-the-vault-operator-password.md)
-- [How to run a backup job on demand](run-a-backup-job-on-demand.md)
-- [How to send Python traces to Tempo](send-python-traces-to-tempo.md)
-- [How to set up the nats CLI](set-up-the-nats-cli.md)
-- [How to ship Python logs to Loki](ship-python-logs-to-loki.md)
-- [How to sign in to Grafana without Vault](sign-in-to-grafana-without-vault.md)
-- [How to sign in to Grafana](sign-in-to-grafana.md)
-- [How to sign in to Nomad with Vault](sign-in-to-nomad-with-vault.md)
-- [How to test ACME job changes on staging](test-acme-job-changes-on-staging.md)
-- [How to turn off Vault login MFA](turn-off-vault-login-mfa.md)
-- [How to use NATS from Python](use-nats-from-python.md)
-- [How to verify an OpenViking deployment](verify-an-openviking-deployment.md)
-- [How to verify memex OIDC for workloads and humans](verify-memex-oidc.md)
-- [How to verify the workload identity chain](verify-the-workload-identity-chain.md)
+- [How to add a service to the edge](add-a-service-to-the-edge.md): Give a Nomad service an https://<name>.lab.orangecluster.nl route through the HAProxy edge.
+- [How to add a service that logs people in through Vault](add-a-vault-oidc-client.md): Register a service as a client of Vault's lab OIDC provider so people sign in to it with their Vault login.
+- [How to add an app-user tier](add-an-app-user-tier.md): Give a service its own access tier as a Vault group its OIDC client can admit, and put people in it.
+- [How to apply a backup infrastructure change](apply-a-backup-infrastructure-change.md): Apply a Terraform change to the GCS backup bucket, its service account, IAM or key.
+- [How to call OpenViking from the CLI](call-openviking-from-the-cli.md): Make an authenticated call to the OpenViking API from a shell with a Vault identity token.
+- [How to add, remove, or reorder a dash tile](change-a-dash-tile.md): Add, remove or reorder the tiles and headings https://dash.lab.orangecluster.nl shows.
+- [How to check JetStream disk usage](check-jetstream-disk-usage.md): See how much disk each JetStream stream uses and how much room is left on radxa-dragon-q6a.
+- [How to check that lab names resolve](check-lab-dns.md): Confirm that lab.orangecluster.nl names resolve to the edge and the apex still points at the public site.
+- [How to check the edge certificate](check-the-edge-certificate.md): See when the edge's wildcard certificate last renewed, whether the nightly acme job succeeded, and whether clients trust it.
+- [How to connect a Nomad job to NATS](connect-a-nomad-job-to-nats.md): Hand a Nomad task the NATS broker's URL through its environment.
+- [How to connect Claude Code to OpenViking](connect-claude-code-to-openviking.md): Give Claude Code recall from and capture into OpenViking through the memory plugin.
+- [How to create a JetStream stream](create-a-jetstream-stream.md): Create a JetStream stream, publish to it and read it back through a durable consumer.
+- [How to delete a lost session's Nomad and Consul tokens](delete-a-lost-sessions-brokered-tokens.md): Close a lost localstack session by deleting its brokered Nomad and Consul tokens when its Vault token cannot be revoked.
+- [How to delete a Nomad dynamic host volume](delete-a-nomad-dynamic-host-volume.md): Delete a Nomad dynamic host volume that Terraform does not manage, through the Nomad HTTP API.
+- [How to exchange a workload JWT for MinIO credentials](exchange-a-workload-jwt-for-minio-credentials.md): Trade a Nomad job's workload JWT for short-lived MinIO credentials by hand with curl.
+- [How to expose Python metrics to Prometheus](expose-python-metrics-to-prometheus.md): Expose a Python service's metrics and register them in Consul so Prometheus scrapes them with no config change.
+- [How to get the operator password](get-the-operator-password.md): Read the Vault operator password out of band once, so localstack login can prompt for it.
+- [How to give a job keyless MinIO access](give-a-job-keyless-minio-access.md): Give a minio-go-based Nomad job keyless MinIO access by trading its workload identity JWT for short-lived credentials, with tempo as the example.
+- [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md): Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry do.
+- [How to join and leave the admin group](join-and-leave-the-admin-group.md): Join the Vault admin group for an incident and leave it afterward, without wiping the group's other members.
+- [How to log in to memex from a laptop](log-in-to-memex-from-a-laptop.md): Log in to memex from a laptop as yourself through the Vault lab OIDC provider, so the memex CLI carries your own 30-day token.
+- [How to log in to Vault](log-in-to-vault.md): Log in to Vault as yourself with userpass and a TOTP passcode, so your token carries the identity that group membership and OIDC assignments need.
+- [How to move the Orange Pi OS to an NVMe drive](move-orange-pi-os-to-nvme.md): Move a running Orange Pi's operating system from its SD card to an NVMe drive and point the bootloader at it.
+- [How to narrow the monitoring firewall rules](narrow-the-monitoring-firewall-rules.md): Narrow who may connect to a monitoring port such as Prometheus or Loki, without ufw silently dropping rules, and delete the broad rule it replaces.
+- [How to publish and subscribe with the nats CLI](publish-and-subscribe-with-the-nats-cli.md): Send and receive fire-and-forget messages with core NATS pub/sub from the nats CLI.
+- [How to reach Prometheus or Loki directly](reach-prometheus-or-loki-directly.md): Reach the Prometheus UI or the Loki API without Grafana, through an SSH tunnel to the monitoring node.
+- [How to rebuild and deploy the dash images](rebuild-the-dash-images.md): Build, push and deploy new dash-backend and dash-frontend images.
+- [How to rebuild and deploy the registry-ui images](rebuild-the-registry-ui-images.md): Build, push and deploy new registry-ui backend and frontend images.
+- [How to recover a failed certificate renewal](recover-a-failed-certificate-renewal.md): Find out why an ACME certificate renewal for the edge failed before the 30-day margin runs out.
+- [How to remove a JetStream stream](remove-a-jetstream-stream.md): Delete a JetStream stream and the messages it holds.
+- [How to remove Vault login MFA completely](remove-vault-login-mfa.md): Remove Vault login MFA completely, enforcement first and then the TOTP method, without locking everyone out.
+- [How to re-seed the driftwatch baseline](reseed-the-driftwatch-baseline.md): Re-seed the driftwatch baseline after a deliberate embedding model change, so EmbeddingModelDrift stops firing.
+- [How to reset a JetStream consumer](reset-a-jetstream-consumer.md): Reset a misbehaving JetStream consumer by deleting it so the next subscriber re-creates it.
+- [How to respond to a retrieval-quality alert](respond-to-a-retrieval-quality-alert.md): Find the part of the retrieval stack behind a retrieval-quality alert and check it, rule by rule.
+- [How to revoke a lost or stolen session](revoke-a-lost-or-stolen-session.md): End a lost or stolen localstack session and its three brokered Nomad and Consul tokens, with or without the session file.
+- [How to revoke memex human tokens](revoke-memex-human-tokens.md): Cut off every outstanding memex human token at once by dropping the memex client from the Vault OIDC provider.
+- [How to roll out Vault login MFA](roll-out-vault-login-mfa.md): Turn on TOTP login MFA for Vault userpass logins in the order that locks nobody out, including the ov-dash sign-in chain.
+- [How to rotate the Vault operator password](rotate-the-vault-operator-password.md): Replace the operator's generated Vault userpass password with one targeted Terraform apply, and read the new one.
+- [How to run a backup job on demand](run-a-backup-job-on-demand.md): Force the nightly Postgres or MinIO backup job to run now, and check its logs and what landed in GCS.
+- [How to send Python traces to Tempo](send-python-traces-to-tempo.md): Send a Python service's OpenTelemetry traces to Tempo through the node-local Alloy receiver.
+- [How to set up the nats CLI](set-up-the-nats-cli.md): Install the nats CLI, point a context at the cluster's broker, and check the connection.
+- [How to ship Python logs to Loki](ship-python-logs-to-loki.md): Get a Python service's logs into Loki as JSON by writing them to stdout for Alloy to ship.
+- [How to sign in to Grafana without Vault](sign-in-to-grafana-without-vault.md): Sign in to Grafana with the local admin account when Vault is down.
+- [How to sign in to Grafana](sign-in-to-grafana.md): Sign in to Grafana with Vault SSO, and what to check when the sign-in fails.
+- [How to sign in to Nomad with Vault](sign-in-to-nomad-with-vault.md): Sign in to the Nomad UI or CLI with your Vault login instead of a Nomad token.
+- [How to test ACME job changes on staging](test-acme-job-changes-on-staging.md): Test a change to the acme job against Let's Encrypt staging, prove it does not re-issue, and switch back to production.
+- [How to turn off Vault login MFA](turn-off-vault-login-mfa.md): Stop Vault asking for a TOTP code by deleting the login enforcement, even when you cannot log in.
+- [How to use NATS from Python](use-nats-from-python.md): Publish, subscribe and consume JetStream streams on the cluster's NATS broker from Python with nats-py.
+- [How to verify an OpenViking deployment](verify-an-openviking-deployment.md): Check a deployed OpenViking after an apply: auth refusal, readiness, identity isolation, and the embark paths through Bifrost.
+- [How to verify memex OIDC for workloads and humans](verify-memex-oidc.md): Check that memex accepts and refuses the right workload and human OIDC tokens, once memex is deployed again.
+- [How to verify the workload identity chain](verify-the-workload-identity-chain.md): Prove end to end that a Nomad job reads its own Vault secret with its workload identity and cannot read another job's.

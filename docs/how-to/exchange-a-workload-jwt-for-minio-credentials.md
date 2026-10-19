@@ -1,3 +1,11 @@
+---
+description: Trade a Nomad job's workload JWT for short-lived MinIO credentials by hand with curl.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/minio.hcl
+  - resource: deployments/applications/storage.tf
+---
+
 # How to exchange a workload JWT for MinIO credentials
 
 ## Introduction
@@ -5,7 +13,9 @@
 A job can exchange the JWT itself. The request carries its parameters in the
 query string and needs no SDK, so `curl` is enough. Use this form to prove
 the mechanism by hand from a container that has a shell. It is also, in
-essence, what the [`credential_process` route](give-an-aws-sdk-go-service-keyless-minio-access.md) automates. You cannot run
+essence, what the
+[`credential_process` route](give-an-aws-sdk-go-service-keyless-minio-access.md)
+automates. You cannot run
 it against ANOTHER job's token, because Nomad refuses to read files under
 `secrets/` through `alloc fs`.
 
@@ -30,8 +40,7 @@ It returns XML holding an `<AccessKeyId>`, `<SecretAccessKey>`,
 
 ### Step 2: List the bucket with the returned credentials
 
-`mc` takes all three in
-one URL:
+`mc` takes all three in one URL:
 
 ```
 MC_HOST_sts="http://<AccessKeyId>:<SecretAccessKey>:<SessionToken>@<minio>:9000"

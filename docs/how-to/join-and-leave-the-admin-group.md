@@ -1,3 +1,10 @@
+---
+description: Join the Vault admin group for an incident and leave it afterward, without wiping the group's other members.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+---
+
 # How to join and leave the admin group
 
 ## Introduction
@@ -50,8 +57,8 @@ vault write identity/group/name/admin \
 ```
 
 Fields you omit are preserved, so there is no need to restate `policies` or
-`type`. Measured on 2026-08-02: writing only `member_entity_ids` left
-`policies ['admin']` and `type internal` untouched. What is *not* preserved is
+`type`: writing only `member_entity_ids` leaves `policies ['admin']` and
+`type internal` untouched. What is *not* preserved is
 the membership list itself, which is why joining means listing the existing
 members as well as yourself.
 

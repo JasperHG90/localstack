@@ -1,3 +1,11 @@
+---
+description: Narrow who may connect to a monitoring port such as Prometheus or Loki, without ufw silently dropping rules, and delete the broad rule it replaces.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/applications/services.tf
+---
+
 # How to narrow the monitoring firewall rules
 
 ## Introduction
@@ -9,7 +17,8 @@ monitoring port, as the table in the
 `null_resource.firewall` runs `ufw allow` and has no destroy provisioner, so
 narrowing a rule in Terraform does not remove the old permissive one. The
 broad rule must be deleted by hand or the change is cosmetic while looking
-applied.
+applied. Both roots have one: the infrastructure root holds the Prometheus,
+Grafana and node-exporter rules, and the applications root holds Loki's.
 
 ## Prerequisites
 
@@ -30,31 +39,35 @@ missing from that file is dropped by the next write of any kind. This is not
 a delete-only hazard: a plain `terraform apply` of a neighboring rule is
 enough to lose it, silently and with no error.
 
-Measured on 2026-07-26, `192.168.2.47` had two such rules: Grafana's LAN
-access on 3000, and node-exporter on 9100. Applying the narrowed
-Prometheus rule would have dropped both from the chain.
+The infrastructure root re-runs every rule it declares on every apply
+(`always_run = timestamp()` in its `null_resource.firewall`), so a declared
+rule that went missing comes back in that apply. Every one of its
+`null_resource.firewall` entries therefore shows as replaced in every plan.
+The applications root re-runs an entry only when its rules change. A rule
+that neither root declares never comes back.
 
-Only one of them matters, and it is the dangerous one. **Losing Grafana's
-3000 rule takes Grafana down by every route, tailnet included.** `ubuntu`
-has no tailscale interface (`lo`, `eth0`, `wlan0`, `podman0`, `veth0`), so
-the `100.64.0.0/10` rule beside it is already dead at the interface level and
-is not a fallback. Tailnet users arrive at `grafana.lab.orangecluster.nl`,
-which resolves to `192.168.2.30` and is reachable over Tailscale's subnet
-route, and HAProxy then dials `192.168.2.47:3000` from `192.168.2.30`, a LAN
-source admitted by the LAN rule. Everyone depends on the rule that would
-vanish, and nothing announces it.
+`192.168.2.47` has had two such rules before: Grafana's LAN access on 3000,
+and node-exporter on 9100. Only one of them matters, and it is the dangerous
+one. **Losing Grafana's 3000 rule takes Grafana down by every route, tailnet
+included.** `ubuntu` has no tailscale interface (`lo`, `eth0`, `wlan0`,
+`podman0`, `veth0`), so the `100.64.0.0/10` rule beside it is already dead at
+the interface level and is not a fallback. Tailnet users arrive at
+`grafana.lab.orangecluster.nl`, which resolves to `192.168.2.30` and is
+reachable over Tailscale's subnet route, and HAProxy then dials
+`192.168.2.47:3000` from `192.168.2.30`, a LAN source admitted by the LAN rule.
+Everyone depends on the rule that would vanish, and nothing announces it.
 
 Losing the 9100 rule, by contrast, breaks nothing. Its source and its host
 are the same machine, `.47` to `.47` routes over `lo`
 (`ip route get 192.168.2.47`), and ufw accepts loopback in
 `ufw-before-input` (`-A ufw-before-input -i lo -j ACCEPT`) before the user
 chain is consulted. The scrape keeps working and `NodeDown`
-(`services/grafana/alert-rules.yaml`) stays quiet. The same is true of the
-`192.168.2.47` entries added for 9090 and 3100: they are
-belt-and-braces, matching the shape of the neighboring rules, not load
-bearing.
+(`deployments/infrastructure/services/grafana/alert-rules.yaml`) stays
+quiet. The same is true of the `192.168.2.47` entries for 9090 and 3100:
+they match the shape of the neighboring rules and carry no traffic that
+needs them.
 
-`192.168.2.30` has one diverged rule of its own, `9187` from `192.168.2.47`.
+`192.168.2.30` has had one such rule of its own, `9187` from `192.168.2.47`.
 That one is between different machines, so it is real.
 
 Check it, and preview the result, without changing anything. `--dry-run`
@@ -69,34 +82,31 @@ sudo grep '^### tuple ###' /etc/ufw/user.rules
 sudo ufw --dry-run allow from 192.168.2.47 to any port 9090 proto tcp
 ```
 
-### Step 2: Apply the infrastructure root, re-asserting what is missing
+### Step 2: Apply the infrastructure root
 
 Re-assert anything missing in the **same** apply that narrows the rules,
 rather than in a separate pass beforehand. Every `ufw allow` writes its rule
 to `user.rules` before rebuilding the chain from it, so once all the writes
 have run the database holds everything and the order among them does not
-matter. Both diverged rules are already declared in Terraform, so adding
-`-replace` for their resources restores them through the normal path:
+matter. A rule step 1 found missing that this root declares comes back in
+this apply on its own. One it does not declare must be added to
+`local.firewall_rules` in `deployments/infrastructure/services.tf` first.
 
 ```bash
 cd deployments/infrastructure
 CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} terraform apply \
   -var-file=./vars/prod.tfvars \
-  -parallelism=1 \
-  -replace='null_resource.firewall["grafana"]' \
-  -replace='null_resource.firewall["node_exporter_ubuntu"]'
+  -parallelism=1
 ```
 
-`-parallelism=1` matters here: this apply drives three separate `ufw` writes
-against one host, and concurrent writes can lose each other's rules. ufw does
-take an exclusive lock on `/run/ufw.lock`, but it reads the rule set before
+`-parallelism=1` matters here: this apply re-runs every firewall entry, four
+of them against `192.168.2.47`, and concurrent writes can lose each other's
+rules. ufw does take an exclusive lock on `/run/ufw.lock`, but it reads the rule set before
 acquiring it, so two overlapping invocations can each start from the same
 pre-write state and the second then writes a file missing the first's rule.
 Serialized invocations are safe, which is why the order among them does not
-matter above. Check the plan
-before confirming. It also carries whatever else is pending in this root. At
-the time of writing (2026-07-26) that includes the dnsmasq removal, which is
-expected rather than a surprise.
+matter above. Check the plan before confirming: it also carries whatever
+else is pending in this root.
 
 ### Step 3: Apply the applications root
 
@@ -109,8 +119,10 @@ CONSUL_HTTP_TOKEN=${CONSUL_TOKEN} terraform apply -var-file=./vars/prod.tfvars
 
 ### Step 4: Delete the superseded broad rules
 
-Last, delete the superseded broad rules on `192.168.2.47`. Nothing in
-Terraform does this, and skipping it leaves the change cosmetic:
+Last, delete the broad rule each narrowed entry replaced, on the host it
+was on. Nothing in Terraform does this, and skipping it leaves the change
+cosmetic. For Prometheus and Loki on `192.168.2.47` the broad rules were these.
+ufw reports `Could not delete non-existent rule` for one already gone:
 
 ```bash
 sudo ufw delete allow from 192.168.0.0/16 to any port 9090 proto tcp

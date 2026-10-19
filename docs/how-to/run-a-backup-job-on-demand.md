@@ -1,9 +1,18 @@
+---
+description: Force the nightly Postgres or MinIO backup job to run now, and check its logs and what landed in GCS.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/backup-postgres.hcl
+  - resource: deployments/infrastructure/services/backup-minio.hcl
+---
+
 # How to run a backup job on demand
 
 ## Introduction
 
-`backup-postgres` and `backup-minio` run nightly. Use this to run one now,
-without waiting for the nightly schedule, and to check what it did.
+`backup-postgres` runs nightly at 02:00 and `backup-minio` at 03:00. Use
+this to run one now, without waiting for the schedule, and to check what it
+did.
 
 ## Prerequisites
 
@@ -30,9 +39,12 @@ nomad job status backup-minio
 ### Step 3: Read the allocation logs
 
 ```bash
-# Allocation logs, once you have an allocation ID
-nomad alloc logs <alloc-id>        # pgdump task
-nomad alloc logs <alloc-id> upload # upload task
+# backup-postgres, once you have an allocation ID
+nomad alloc logs <alloc-id> pgdump
+nomad alloc logs <alloc-id> upload
+
+# backup-minio has one task
+nomad alloc logs <alloc-id> sync
 ```
 
 Listing a job's child allocations requires a Nomad token with more privilege
@@ -49,7 +61,9 @@ gsutil ls gs://<bucket>/minio/openviking/
 ```
 
 They show what is in the bucket, not which run put it there: `nomad job
-periodic force` writes a dump under today's date exactly as a 02:00 run does.
+periodic force` writes a dump under today's date exactly as the 02:00 run
+does, and `backup-minio` syncs the `openviking` bucket the same way the
+03:00 run does.
 
 ## Additional resources
 

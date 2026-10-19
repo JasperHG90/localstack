@@ -1,3 +1,11 @@
+---
+description: Delete a Nomad dynamic host volume that Terraform does not manage, through the Nomad HTTP API.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/infrastructure/machine_roles.tf
+---
+
 # How to delete a Nomad dynamic host volume
 
 ## Introduction

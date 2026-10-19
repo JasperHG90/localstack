@@ -1,9 +1,19 @@
+---
+description: Reset a misbehaving JetStream consumer by deleting it so the next subscriber re-creates it.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+---
+
 # How to reset a JetStream consumer
 
 ## Introduction
 
 This resets a misbehaving consumer by deleting it and letting the next
-subscriber re-create it.
+subscriber re-create it. `hermes-events` and `worker` are the example stream
+and consumer from
+[How to create a JetStream stream](create-a-jetstream-stream.md). Use your
+own names.
 
 ## Prerequisites
 

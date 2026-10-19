@@ -1,23 +1,32 @@
+---
+description: Move a running Orange Pi's operating system from its SD card to an NVMe drive and point the bootloader at it.
+stale_after: 2027-01-19
+sources:
+  - resource: bootstrap/inventory/cluster.ini
+---
+
 # How to move the Orange Pi OS to an NVMe drive
 
 ## Introduction
 
-This guide provides a step-by-step procedure for migrating a live Orange Pi operating system from an SD card to an NVMe drive. This process dramatically improves system performance by leveraging the superior speed of NVMe storage.
+This moves a running Orange Pi's operating system from its SD card to an
+NVMe drive, which is much faster. The SD card keeps the bootloader, and the
+bootloader then loads the OS from the NVMe drive.
 
 ## Prerequisites
 
 *   An Orange Pi with an OS running on an SD card.
 *   An NVMe drive installed and recognized by the system.
-*   A backup of any critical data on both the SD card and the NVMe drive. **This process is destructive to the data on the NVMe drive.**
+*   A backup of any critical data on both the SD card and the NVMe drive.
+    **This erases everything on the NVMe drive.**
 *   Terminal access to the Orange Pi with `sudo` privileges.
 
 ## Directions
 
 ### Step 1: Identify your devices
 
-Before starting, we need to identify the storage devices and prepare the NVMe drive.
-
-Use the `lsblk` command to list all block devices. This is crucial for identifying the source (SD card) and destination (NVMe).
+List the block devices, to tell the source (SD card) from the destination
+(NVMe):
 
 ```bash
 lsblk
@@ -50,7 +59,7 @@ sudo mkfs.ext4 /dev/nvme0n1p1
 
 ### Step 3: Mount the new partition
 
-Now we will clone the running OS from the SD card to the newly prepared NVMe drive.
+Mount the new partition so the next step can copy the OS onto it.
 
 ```bash
 # 1. Create a temporary mount point
@@ -62,20 +71,21 @@ sudo mount /dev/nvme0n1p1 /mnt/new_root
 
 ### Step 4: Clone the filesystem
 
-We will use `rsync` to perform a file-by-file copy, which preserves permissions, ownership, and symbolic links.
+Copy the files with `rsync`, which keeps permissions, ownership and symbolic
+links.
 
 ```bash
 # This command copies the entire root filesystem to the new drive,
 # excluding virtual and temporary filesystems that shouldn't be copied.
 sudo rsync -aAXv --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} / /mnt/new_root
 ```
-**Note:** This process can take a significant amount of time, depending on the size of your OS.
+The copy can take a long time, depending on the size of your OS.
 
 ### Step 5: Update the filesystem table (`fstab`)
 
-Steps 5 and 6 are the final and most critical phase. We will tell the Orange Pi's bootloader to use the OS on the NVMe drive.
-
-We need to edit the `fstab` on the *new* NVMe drive so it knows where to find its own root partition upon booting.
+Edit the `fstab` on the *new* NVMe drive so it finds its own root partition
+at boot. A mistake here or in step 6 leaves the board unable to boot from the
+NVMe drive.
 
 ```bash
 # 1. Get the unique identifier (UUID) of the new NVMe partition
@@ -94,7 +104,8 @@ sudo nano /mnt/new_root/etc/fstab
 
 ### Step 6: Reconfigure the bootloader
 
-Now we edit the bootloader configuration on the **SD card** to point it to the new OS location.
+Edit the bootloader configuration on the **SD card** so it points at the new
+root partition.
 
 ```bash
 # 1. Get the UUID of the NVMe partition again if you don't have it
@@ -113,18 +124,18 @@ sudo nano /boot/orangepiEnv.txt
 
 ### Step 7: Reboot and verify
 
-The migration is complete. Reboot the system to boot from the NVMe drive.
+Reboot, to boot from the NVMe drive.
 
 ```bash
 sudo reboot
 ```
 
-After the system reboots, you can verify that the migration was successful by running `lsblk` again. The output should now show the root mount point (`/`) on your `nvme0n1p1` partition.
+After the reboot, run `lsblk` again. The root mount point (`/`) should now
+be on `nvme0n1p1`.
 
 ```bash
 lsblk
 ```
-Your system is now running on the high-speed NVMe drive.
 
 ## Additional resources
 

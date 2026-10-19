@@ -1,3 +1,10 @@
+---
+description: Log in to memex from a laptop as yourself through the Vault lab OIDC provider, so the memex CLI carries your own 30-day token.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # How to log in to memex from a laptop
 
 ## Introduction
@@ -9,7 +16,11 @@ CLI on your laptop carries your own 30-day token.
 
 - The memex CLI on the laptop whose browser you use.
 - A Vault login in `app-memex-readers` or `app-memex-admins`.
-- The memex OIDC `client_id`.
+- An authenticator enrolled for Vault login MFA, since the Vault page asks
+  for a TOTP passcode after the password
+  ([How to roll out Vault login MFA](roll-out-vault-login-mfa.md)).
+- The memex OIDC `client_id`, from
+  `vault read -field=client_id identity/oidc/client/memex`.
 
 ## Directions
 
@@ -42,5 +53,5 @@ memex auth status
 
 - [Vault OIDC tokens](../explanation/vault-oidc-tokens.md): why the config
   sends the id_token.
-- [How to verify memex OIDC](verify-memex-oidc.md): V1 has the full check of a
-  human login.
+- [How to verify memex OIDC](verify-memex-oidc.md): step 10 has the full
+  check of a human login.

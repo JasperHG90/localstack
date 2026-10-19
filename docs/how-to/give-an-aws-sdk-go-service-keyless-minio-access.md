@@ -1,3 +1,12 @@
+---
+description: Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry do.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/loki.hcl
+  - resource: deployments/applications/services/registry.hcl
+  - resource: deployments/applications/storage.tf
+---
+
 # How to give an aws-sdk-go v1 service keyless MinIO access
 
 ## Introduction
@@ -13,8 +22,8 @@ the JWT and no `RoleArn`, prints credentials as JSON, and the SDK re-runs it
 when they expire. Claim mode resolves the policy from `nomad_job_id` exactly
 as on the other route, so the MinIO side is identical.
 
-Four things per job (steps 2 to 5), and the env vars are the ones that break everything,
-loudly.
+Four things per job (steps 2 to 5), and the env vars are the ones that
+break everything, loudly.
 
 ## Prerequisites
 

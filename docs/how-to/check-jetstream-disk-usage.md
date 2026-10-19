@@ -1,3 +1,11 @@
+---
+description: See how much disk each JetStream stream uses and how much room is left on radxa-dragon-q6a.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+  - resource: deployments/infrastructure/services.tf
+---
+
 # How to check JetStream disk usage
 
 ## Introduction
@@ -21,17 +29,31 @@ nats stream report
 curl -s http://192.168.2.50:8222/jsz | jq '.config, .streams, .bytes'
 ```
 
-### Step 2: Check the volume's headroom
+### Step 2: Check the headroom
 
-JetStream's host volume is `nats_data` (2–20 GiB on radxa-dragon-q6a). Check headroom with:
+Two limits apply. JetStream refuses writes past `max_file_store`, which is
+10GB in `deployments/infrastructure/services/nats.hcl`. `nats account info`
+shows the file storage used against that limit:
 
 ```bash
-nomad node status -stats $(nomad node status | awk '/radxa/ {print $1}') | grep -A1 nats_data
+nats account info
 ```
 
-### Step 3: Make room if the volume is crowded
+The `nats_data` volume declares 2 to 20 GiB, but the `mkdir` plugin makes it
+a plain directory, so the other limit is radxa-dragon-q6a's own disk. Check
+the disk figure under the node's host resource use:
 
-If a stream's `max-bytes` plus the others starts to crowd the volume, either raise the volume's `capacity_max` in `deployments/infrastructure/services.tf` or trim the stream's retention.
+```bash
+nomad node status -stats $(nomad node status | awk '/radxa/ {print $1}')
+```
+
+### Step 3: Make room if storage is crowded
+
+If the streams' `max-bytes` together near `max_file_store`, trim a stream's
+retention, or raise `max_file_store` in
+`deployments/infrastructure/services/nats.hcl` while keeping it below the free
+disk on radxa. Raising the volume's `capacity_max` in
+`deployments/infrastructure/services.tf` alone frees nothing.
 
 ## Additional resources
 

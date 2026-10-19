@@ -1,9 +1,17 @@
+---
+description: Send and receive fire-and-forget messages with core NATS pub/sub from the nats CLI.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+---
+
 # How to publish and subscribe with the nats CLI
 
 ## Introduction
 
-Core pub/sub (no JetStream) is best for fire-and-forget signals — no
-durability, lost if no subscriber is connected.
+This sends and receives messages with core NATS pub/sub, without JetStream.
+Use it for fire-and-forget signals: nothing is stored, and a message sent
+while no subscriber is connected is lost.
 
 ## Prerequisites
 

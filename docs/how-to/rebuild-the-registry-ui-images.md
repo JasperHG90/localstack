@@ -1,10 +1,20 @@
+---
+description: Build, push and deploy new registry-ui backend and frontend images.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/justfile
+  - resource: deployments/applications/services.tf
+  - resource: deployments/infrastructure/services.tf
+---
+
 # How to rebuild and deploy the registry-ui images
 
 ## Introduction
 
 This builds new `registry-ui` backend and frontend images, pushes them, and
 deploys them. Each image builds from its own single-directory context
-(`services/registry-ui/backend/` and `services/registry-ui/frontend/`).
+(`deployments/applications/services/registry-ui/backend/` and
+`deployments/applications/services/registry-ui/frontend/`).
 
 ## Prerequisites
 
@@ -18,8 +28,8 @@ deploys them. Each image builds from its own single-directory context
 
 ### Step 1: Bump the image tags
 
-Both tags are read out of `services.tf`, so bump them there before
-rebuilding. They are `registry_ui_backend_version` and
+Both tags are read out of `deployments/applications/services.tf`, so bump
+them there before rebuilding. They are `registry_ui_backend_version` and
 `registry_ui_frontend_version`.
 
 ### Step 2: Apply the infrastructure root on a first deployment

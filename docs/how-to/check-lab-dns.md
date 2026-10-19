@@ -1,3 +1,11 @@
+---
+description: Confirm that lab.orangecluster.nl names resolve to the edge and the apex still points at the public site.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/haproxy.hcl
+  - resource: deployments/infrastructure/services/acme.hcl
+---
+
 # How to check that lab names resolve
 
 ## Introduction
@@ -35,7 +43,7 @@ caching an old answer or filtering the private address.
 **The failure mode worth knowing.** Some resolvers and routers refuse public
 DNS answers that point into private address ranges, because that pattern is
 how DNS rebinding attacks work. Where such filtering is enabled, lab names
-will not resolve, and there is no longer a local resolver to fall back on.
+will not resolve, and there is no local resolver to fall back on.
 
 Cloudflare (`1.1.1.1`) and Google (`8.8.8.8`) both return the answers
 normally. A consumer router with rebind protection is the likely culprit if

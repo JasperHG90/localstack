@@ -1,3 +1,16 @@
+---
+description: Turn on TOTP login MFA for Vault userpass logins in the order that locks nobody out, including the ov-dash sign-in chain.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/secrets.tf
+  - resource: deployments/applications/services.tf
+  - resource: deployments/applications/services/ov-dash.hcl
+  - resource: justfile
+  - resource: scripts/vault_mfa.sh
+---
+
 # How to roll out Vault login MFA
 
 ## Introduction
@@ -31,11 +44,14 @@ terraform apply -var-file=./vars/prod.tfvars \
 
 ### Step 2: Enroll everyone who logs in at userpass
 
-Scan each QR and confirm a code
-works before going further. The enforcement is mount-wide, so an unenrolled
-account cannot complete a login at all. `just mfa_status` lists who it covers.
+Run these from the repository root: the `mfa_*` recipes are in the root
+`justfile`, and `deployments/infrastructure/justfile` does not have them.
+Scan each QR and confirm a code works before going further. The enforcement
+is mount-wide, so an unenrolled account cannot complete a login at all.
+`just mfa_status` lists who it covers.
 
 ```sh
+cd ../..
 just mfa_enroll operator
 just mfa_enroll veerle
 ```
@@ -47,6 +63,7 @@ together: a login that arrives before its alias invents an entity and an alias
 of its own, and the next apply then fails on "already exists".
 
 ```sh
+cd deployments/infrastructure
 terraform apply -var-file=./vars/prod.tfvars \
   -target=vault_identity_oidc_scope.openviking \
   -target=vault_identity_oidc_assignment.ov_dash \
@@ -65,11 +82,10 @@ The provider is in that list because it gates on `allowed_client_ids` and
 
 ### Step 4: Deploy the dashboard
 
-Move `ov_dash_image` in
-`deployments/applications/services.tf` to a release that carries the jwt trade,
-then apply that one job. Applying it on an older image leaves a dashboard
-nobody can sign in to, because `AUTH_MODE=vault-oidc` is already set in the
-jobspec.
+Check that `ov_dash_image` in `deployments/applications/services.tf` names a
+release that carries the jwt trade, 0.5.0 or later, then apply that one job.
+Applying it on an older image leaves a dashboard nobody can sign in to,
+because `AUTH_MODE=vault-oidc` is already set in the jobspec.
 
 ```sh
 cd ../applications
@@ -86,9 +102,8 @@ so a session that dies with it means ov-dash holds the wrong token, and the
 client's TTL has to rise to SESSION_TTL_SECONDS with the exposure that carries
 (see [What this does not cover](../explanation/vault-login-mfa.md#what-this-does-not-cover)).
 
-Two things to check after the apply. That the deployed release carries the
-trade: `ov_dash_image` in `deployments/applications/services.tf`. And that each
-person has an alias on `jwt-lab`. Without the alias Vault invents a fresh
+If sign-in fails at the mint, check that each person has an alias on
+`jwt-lab`. Without the alias Vault invents a fresh
 entity for the login rather than refusing it, and that entity is in no group,
 so its token holds `default` alone and the mint answers 403. It fails closed,
 but the error to look for is Vault's permission denied at the mint, not

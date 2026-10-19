@@ -1,3 +1,11 @@
+---
+description: Read the Vault operator password out of band once, so localstack login can prompt for it.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/secrets.tf
+  - resource: deployments/infrastructure/identity.tf
+---
+
 # How to get the operator password
 
 ## Introduction
@@ -15,7 +23,7 @@ the CLI cannot fetch it for you.
 
 ### Step 1: Read the password out of band
 
-The `operator` password lives in Vault at `secret/default/vault/operator`,
+The `operator` password is in Vault at `secret/default/vault/operator`,
 and reading it needs a Vault token, which is what login produces. So the CLI
 cannot fetch the password it needs to log in. Get it out of band, once, with
 a token that already works:

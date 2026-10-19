@@ -1,3 +1,11 @@
+---
+description: Expose a Python service's metrics and register them in Consul so Prometheus scrapes them with no config change.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/prometheus.hcl
+  - resource: deployments/infrastructure/services.tf
+---
+
 # How to expose Python metrics to Prometheus
 
 ## Introduction
@@ -35,7 +43,7 @@ def main():
 
 For FastAPI, use `prometheus-fastapi-instrumentator`. For sync frameworks, `prometheus-client` exposes a WSGI app you can mount.
 
-**Naming:** prefix metrics with the app name (`myapp_*`). Use `_total` suffix on counters, `_seconds` on time histograms — Grafana queries assume these conventions.
+**Naming:** prefix metrics with the app name (`myapp_*`). Use `_total` suffix on counters, `_seconds` on time histograms. Grafana queries assume these conventions.
 
 ### Step 2: Register a metrics service in the Nomad job
 
@@ -51,7 +59,12 @@ service {
   name = "myapp"
   port = "http"
   tags = ["app"]
-  check { type = "http"; path = "/health"; interval = "10s"; timeout = "2s" }
+  check {
+    type     = "http"
+    path     = "/health"
+    interval = "10s"
+    timeout  = "2s"
+  }
 }
 
 service {
@@ -61,15 +74,22 @@ service {
   meta {
     metrics_path = "/metrics"
   }
-  check { type = "http"; path = "/metrics"; interval = "30s"; timeout = "3s" }
+  check {
+    type     = "http"
+    path     = "/metrics"
+    interval = "30s"
+    timeout  = "3s"
+  }
 }
 ```
 
-**Why two services.** A single Consul service can only register one port. The metrics port is registered separately so Prometheus's `consul_sd_config` can resolve it directly without dereferencing meta. The `prometheus` tag is what triggers scraping — drop the tag to opt out.
+**Why two services.** A single Consul service can only register one port. The metrics port is registered separately so Prometheus's `consul_sd_config` can resolve it directly without dereferencing meta. The `prometheus` tag is what triggers scraping. Drop the tag to opt out.
 
 ### Step 3: Check the Prometheus scrape config
 
-This is one-time, in the `services/prometheus.hcl` template:
+The `consul_services` job is already in the template in
+`deployments/infrastructure/services/prometheus.hcl`, so this is a check, not
+an edit. It reads:
 
 ```yaml
 scrape_configs:
@@ -89,11 +109,12 @@ scrape_configs:
         target_label: __metrics_path__
 ```
 
-After this is in place, **no Prometheus config changes are needed when adding a new app** — just register it in Consul with the `prometheus` tag.
+With this in place, **adding a new app needs no Prometheus config change**.
+Register it in Consul with the `prometheus` tag.
 
 ### Step 4: Open the metrics port in the firewall
 
-Open the chosen metrics port to `192.168.2.47` (Prometheus) on whichever node the app runs on. Add a rule entry alongside the per-app rules in `deployments/infrastructure/services.tf`'s `locals.firewall_rules`.
+Open the chosen metrics port to `192.168.2.47` (Prometheus) on whichever node the app runs on. Add a rule entry alongside the per-app rules in `deployments/infrastructure/services.tf`'s `local.firewall_rules`.
 
 ## Additional resources
 
