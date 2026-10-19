@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "r4 flagged registry-ui's `embark.json`, a file in another codebase, against an unrelated tracked Grafana dashboard. r4 now has ALLOW={\"embark.json\"}, and its fails_when and the outcome name the allow-list. Run on the current tree, r4 no longer reports embark.json.",
+      "anchor": ".loop/evals/docs-reference/rows.json",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "344b8b0efcce6705c547b4d7c51455f41bc503888a74f97ec5b0b310a19bb40e"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T18:06:02+00:00"
+}
