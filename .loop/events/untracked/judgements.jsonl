@@ -12,3 +12,4 @@
 {"at": "2026-10-19T17:50:30+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-workload-identity"}
 {"at": "2026-10-19T17:50:33+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-cutover"}
 {"at": "2026-10-19T17:50:35+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "minio-removal"}
+{"at": "2026-10-19T17:52:42+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "minio-volume-destroy"}
