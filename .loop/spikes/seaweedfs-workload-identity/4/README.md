@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T18:14:28+00:00'
+  at: '2026-10-19T18:14:45+00:00'
 slug: seaweedfs-workload-identity
 n: 4
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-workload-identity/4
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-workload-identity 4`.
+With the plan's fixes, both clients work on SeaweedFS 4.48 against per-job trust-policy roles (spike 2's role config: `oidc:nomad_job_id` plus `oidc:sub` conditions, `defaultEffect: Deny`). All 4 of 4 checks passed.
+- Shell helper from `loki.hcl`, with only `&RoleArn=<LokiRole>&RoleSessionName=loki` added to the query string: a loki token got creds and the `sed` parsed them, and a PutObject to `loki` with those creds succeeded. The same helper asking for TempoRole got 403 ("trust policy denies web identity assumption").
+- minio-go v7.1.0 `credentials.IAM` (as Tempo 2.10.8 sets it up) with `AWS_ROLE_ARN=TempoRole`: a tempo token got creds and wrote to `tempo`. A loki token with the same role was refused with the same 403, and the chain fell back to anonymous creds with no error, as spike 3 found.
+- Confirms the fix for risk 2. Limits: fake issuer, 2 jobs, buckets made with `weed shell`; the registry helper was not run separately (spike 3 showed it is byte-identical to loki's).
 
 ## Files
 
