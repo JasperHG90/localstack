@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "cli-login.md sources lacked cli/src/localstack_cli/auth/vault_token_file.py",
+      "anchor": "docs/reference/cli-login.md:13",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the secrets.tf row in vault-human-auth.md left out the OIDC client secret writes",
+      "anchor": "docs/reference/vault-human-auth.md:31",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "lines this change made longer than 80 characters",
+      "anchor": "docs/reference/edge-routes.md:43",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "b8632831bd2b5a27562edf7f82a0bc49012fd7883997816cbc01a9708f94008e",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T19:53:10+00:00"
+}
