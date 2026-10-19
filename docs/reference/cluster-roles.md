@@ -1,13 +1,22 @@
+---
+description: The human and machine roles on the cluster, where each is defined, how `admin` membership works, and which to use when a service logs people in through Vault.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # Cluster roles
 
-Four roles. The application-user role is a per-application scaffold; memex is
-its first consumer.
+Five roles. The application-user role is a per-application scaffold, and memex
+is its first consumer.
 
 | Role | Defined in | What it is for |
 |---|---|---|
 | **Application user** | `deployments/infrastructure/identity.tf`, `local.app_user_groups` | Access to one application, at one level. |
 | **Developer** | `deployments/infrastructure/identity.tf` | Everything a person does here: both Terraform roots, brokered Nomad and Consul tokens, users and groups, secrets under `default/`. |
 | **Admin** | `deployments/infrastructure/identity.tf`, `vault_policy.admin` | Wildcard mode, for when `developer` refuses legitimate work. |
+| **OpenViking consumer** | `deployments/infrastructure/identity.tf`, `vault_identity_group.openviking_user` | People who use OpenViking and nothing else. One grant: minting their own OpenViking identity token. No `developer`, no `admin`, no app-user tier. |
 | **Service account** | per-service, via `jwt-nomad` workload identity | Machines. Not a human role and not managed here. |
 
 There is no separate Deployer. Deploying is something a developer does, so the
@@ -50,8 +59,8 @@ reviewable in the repo. `admin` is the deliberate exception.
 
 Documented, not enforced. Nothing validates it.
 
-Whether a level is per-app or per-resource is the consumer ticket's call.
-Services express levels differently, and only the consumer knows its own
+Whether a level is per-app or per-resource is up to the service that adds the
+tier. Services express levels differently, and only the service knows its own
 constraint: MinIO thinks in bucket policies, Grafana in org roles. Forcing
 one shape here would be guessing on their behalf.
 
@@ -61,14 +70,18 @@ Adding a tier is [How to add an app-user tier](../how-to/add-an-app-user-tier.md
 
 When wiring a service that logs people in through Vault, the question is "who
 is allowed in", and there are four answers. They are listed in the order to try
-them, and the same list appears in `oidc.tf`'s header comment and in
+them, and the same list appears in the header comment of
+`deployments/infrastructure/oidc.tf` and in
 [How to add a service that logs people in through Vault](../how-to/add-a-vault-oidc-client.md).
 
-1. **An existing tier group** — `developer` or `admin` — when one already
-   names who should get in. You still create your own assignment.
+1. **An existing tier group**, `developer` or `admin`, when one already
+   names who should get in. You still create your own assignment. Nomad does
+   this with `developer`. Dash, the registry UI, Grafana and the Hermes
+   dashboard share the `operators` assignment, which names both groups.
 2. **A new entry in `local.app_user_groups`** when the service needs its own
    tier. This is the branch that keeps consumers on the scaffold.
 3. **No group at all**: `assignments = ["allow_all"]`, Vault's built-in, when
-   the answer is "anyone who can log in". Four of the six known consumers want
-   this.
+   the answer is "anyone who can log in". No client uses it now. Anyone who
+   can log in includes OpenViking consumers, so the clients that used it moved
+   to the `operators` assignment.
 4. **A service-specific group**, only when none of the three fits.

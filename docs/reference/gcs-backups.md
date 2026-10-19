@@ -1,16 +1,30 @@
+---
+description: What the two nightly jobs copy to Google Cloud Storage, where their credentials come from, and how the GCS bucket is set up.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/backup-postgres.hcl
+  - resource: deployments/infrastructure/services/backup-minio.hcl
+  - resource: deployments/infrastructure/storage.tf
+  - resource: deployments/infrastructure/secrets.tf
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/infrastructure/providers.tf
+  - resource: deployments/infrastructure/variables.tf
+---
+
 # Nightly GCS Backup Jobs
 
 Two Nomad periodic batch jobs copy cluster data off-site to Google Cloud
 Storage: `backup-postgres` at 02:00 and `backup-minio` at 03:00, Europe/Amsterdam.
 
-Without them, both datasets sit on one disk each. PostgreSQL lives on a host
+Without them, both datasets are on one disk each. PostgreSQL is on a host
 volume pinned to `firebat` (`deployments/infrastructure/services.tf:13`) and
 the MinIO `openviking` bucket on `orangepi4a`
 (`deployments/infrastructure/services.tf:33`), so a single node failure would
 take one of them with it.
 
 All GCS infrastructure (bucket, service account, IAM, key) is managed by
-Terraform in `storage.tf`. There is no manual `gcloud` setup.
+Terraform in `deployments/infrastructure/storage.tf`. There is no manual
+`gcloud` setup.
 
 ## What this page does not cover
 
@@ -31,20 +45,25 @@ is not a recovery runbook.
 
 The backup lifecycle spans three files, one per subsystem.
 
-**Google Cloud resources** (`storage.tf`):
+**Google Cloud resources** (`deployments/infrastructure/storage.tf`):
 - `google_storage_bucket.backups`: bucket with a 180-day lifecycle delete rule
 - `google_service_account.backup`: the `localstack-backup` service account
 - `google_storage_bucket_iam_member.backup_writer`: grants `roles/storage.objectAdmin` on the bucket
 - `google_service_account_key.backup`: JSON key (stored in Terraform state, written to Vault)
 
-**Vault secrets** (`secrets.tf`, credentials scoped per job):
-- `backup_postgres_db_credentials` -> `default/backup-postgres/postgres` (copies root PG creds)
-- `backup_postgres_gcs_credentials` -> `default/backup-postgres/gcs` (GCS service account JSON)
-- `backup_minio_s3_credentials` -> `default/backup-minio/minio` (copies root MinIO creds)
-- `backup_minio_gcs_credentials` -> `default/backup-minio/gcs` (GCS service account JSON)
+**Vault secrets** (`deployments/infrastructure/secrets.tf`, credentials scoped
+per job):
+- `backup_postgres_db_credentials` writes `default/backup-postgres/postgres`
+  (copies root PG creds)
+- `backup_postgres_gcs_credentials` writes `default/backup-postgres/gcs` (GCS
+  service account JSON)
+- `backup_minio_s3_credentials` writes `default/backup-minio/minio` (copies root
+  MinIO creds)
+- `backup_minio_gcs_credentials` writes `default/backup-minio/gcs` (GCS service
+  account JSON)
 
-**Nomad jobs** (`services.tf`): two `nomad_job` resources templating the job
-specs below.
+**Nomad jobs** (`deployments/infrastructure/services.tf`): two `nomad_job`
+resources templating the job specs below.
 
 ### `deployments/infrastructure/services/backup-postgres.hcl`
 
@@ -70,7 +89,8 @@ hour after the postgres job):
 - Two Vault templates:
   1. `secrets/rclone.conf`: rclone config with a `[minio]` remote (S3/Minio provider, creds from Vault) and a `[gcs]` remote (`service_account_file` pointing to the key file)
   2. `secrets/gcs-key.json`: GCS service account JSON from Vault
-- Pinned to `radxa-dragon-q6a` by a node constraint, like `backup-postgres.hcl`
+- Pinned to `radxa-dragon-q6a` by a node constraint, like
+  `deployments/infrastructure/services/backup-postgres.hcl`
 - `network_mode = "host"` for MinIO access
 - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]`
 - Resources: 1000 MHz CPU, 512 MB memory

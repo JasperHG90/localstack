@@ -1,3 +1,12 @@
+---
+description: Every hostname the HAProxy edge serves, the backend and port behind it, who may reach it, and the edge's ports and certificate.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/haproxy.hcl
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # HAProxy Reverse Proxy
 
 HAProxy runs as a Nomad job on `firebat` (192.168.2.30) and is the single
@@ -30,18 +39,19 @@ to the HTTPS URL.
 `bifrost` authenticates with its own native `governance.auth_config` (admin
 creds from Vault), so HAProxy no longer gates it. `dash` and `registry-ui` each
 sit behind their own oauth2-proxy instance, on 4180 and 4181, both gated by
-Vault SSO with flat any-authenticated-user access. Both proxies are network
-gates and forward no Vault ID token: each service decides for itself who the
-caller is. `openviking-api` skips the proxy for the same reason `bifrost` does,
-and answers 401 without a Vault identity token. `openviking` is ov-dash, the
-browser face of that same service: it signs a person into Vault itself, mints
-their identity token server-side and never gives the browser one, so a proxy in
-front would be a second password for the same person. `grafana` reaches that
-same Vault SSO through its own built-in OIDC client, with no proxy in between,
-and keeps its local admin account as the way in when Vault is down.
-`hermes-gateway` is the Hermes dashboard that Hermes Desktop connects to, not
-the API server on 8642. It also runs its own Vault OIDC login, limited to
-operators. The rest are open to anyone who reaches the edge.
+Vault SSO. Vault admits only members of `developer` or `admin`, through the
+`operators` assignment in `deployments/infrastructure/oidc.tf`. Both proxies are
+network gates and forward no Vault ID token: each service decides for itself who
+the caller is. `openviking-api` skips the proxy for the same reason `bifrost`
+does, and answers 401 without a Vault identity token. `openviking` is ov-dash,
+the browser face of that same service: it signs a person into Vault itself,
+mints their identity token server-side and never gives the browser one, so a
+proxy in front would be a second password for the same person. `grafana` reaches
+that same Vault SSO, with the same `operators` limit, through its own built-in
+OIDC client, with no proxy in between, and keeps its local admin account as the
+way in when Vault is down. `hermes-gateway` is the Hermes dashboard that Hermes
+Desktop connects to, not the API server on 8642. It also runs its own Vault OIDC
+login, limited to operators. The rest are open to anyone who reaches the edge.
 
 **Prometheus, Loki and Tempo are deliberately not routed here.** All three
 serve their query APIs with no authentication, and nothing needs them through
@@ -53,13 +63,13 @@ debugging, use an SSH tunnel: see
 [How to reach Prometheus or Loki directly](../how-to/reach-prometheus-or-loki-directly.md).
 
 The stats dashboard is at `http://192.168.2.30:8404`, outside the TLS
-frontend.
+frontend. The same port serves HAProxy's Prometheus metrics at `/metrics`.
 
 ## Ports
 
 - **80** HTTP, 301-redirects everything to HTTPS
 - **443** HTTPS, terminates TLS and does all hostname routing
-- **8404** stats dashboard
+- **8404** stats dashboard and `/metrics`
 
 ## DNS
 
@@ -105,7 +115,7 @@ See [How to add a service to the edge](../how-to/add-a-service-to-the-edge.md).
 
 ## Files
 
-- `deployments/infrastructure/services/haproxy.hcl` — Nomad job spec with the
+- `deployments/infrastructure/services/haproxy.hcl`: Nomad job spec with the
   embedded HAProxy config and the certificate template
-- `deployments/infrastructure/services.tf` — Terraform resource that deploys
+- `deployments/infrastructure/services.tf`: Terraform resource that deploys
   the job

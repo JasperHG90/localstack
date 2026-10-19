@@ -1,20 +1,32 @@
+---
+description: Where OpenViking runs, how its retrieval differs from stock, how callers authenticate with Vault tokens, and what its config guard asserts.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/openviking.hcl
+  - resource: deployments/applications/services/openviking/ov.conf.json
+  - resource: deployments/applications/services.tf
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/identity.tf
+  - resource: scripts/check_openviking_config.py
+---
+
 # OpenViking
 
 A context store for agents, on radxa beside Bifrost. Vectors go to Postgres,
 blobs to MinIO, embeddings and rerank through Bifrost to embark, image
-summaries through Bifrost to ollama. There is no browser surface: callers
+summaries through Bifrost to Gemini. There is no browser surface: callers
 authenticate to the API with a Vault identity token.
 
 ## What runs where
 
 | Piece | Where |
 |---|---|
-| Job | `openviking` on radxa-dragon-q6a, port 1933, open to the LAN |
+| Job | `openviking` on radxa-dragon-q6a, port 1933, open to the edge, Prometheus, ov-dash and the node itself |
 | CLI and agents | `https://openviking-api.lab.orangecluster.nl` |
 | Vectors | Postgres `openviking` database, `openviking` schema, pgvector |
 | Blobs | MinIO `openviking` bucket |
 | Models | Bifrost, as `embark/embedding` and `embark/reranker` |
-| Image summaries | Bifrost, as `ollama/glm-5.3-flash` |
+| Image summaries | Bifrost, as `gemini/gemini-3.5-flash-lite` |
 | Query planning | Bifrost, as `ollama/gemma4:31b` |
 
 The image is derived, and building it is an operator step. See
@@ -22,7 +34,7 @@ The image is derived, and building it is an operator step. See
 
 ## Retrieval: the job does not run `openviking-server`
 
-It runs `python -m ov_retrieval`, a wrapper from our own `openviking_extensions`
+It runs `python -m ov_ext`, a wrapper from our own `openviking_extensions`
 repo. OpenViking offers no plugin hook, so the wrapper patches its retriever and
 then starts the ordinary server. Two things change for anyone reading results:
 
@@ -36,15 +48,21 @@ then starts the ordinary server. Two things change for anyone reading results:
 Fusion ranks by *position*, not by score, so a result's place in the answer no
 longer tracks its cosine similarity. Do not read the ordering as a distance.
 
-The knobs live in the jobspec's `env` block as `OV_RETRIEVAL_*`, pinned to the
+The knobs are in the jobspec's `env` block as `OV_RETRIEVAL_*`, pinned to the
 package defaults rather than inherited. `scripts/check_openviking_config.py`
 asserts the `command` and `args` that select the wrapper, because dropping
 either one starts the stock server, which comes up healthy and answers every
 search without both features.
 
 Bodies are stored but not indexed: `store_content` is on, `keyword_fields` names
-the five default columns, and the reasoning for that gap is in the service
-README beside `ov.conf.json`.
+the five default columns, and the reasoning for that gap is in
+`deployments/applications/services/openviking/README.md`.
+
+The wrapper also runs reflection, an LLM pass over the `lab`/`jasper` scope with
+`ollama/deepseek-v4.1-flash`, once an hour. Its `OV_REFLECT_*` settings are in
+the same `env` block. A boot after an unclean stop runs that pass before the
+server binds its port, which is why the liveness check allows up to an hour of
+grace.
 
 ## Authentication: Vault is the identity
 
@@ -102,12 +120,13 @@ from disk per request instead, and Hermes holds a constant endpoint.
 
 ## Image summaries and query planning
 
-Image summaries go to `ollama/glm-5.3-flash` through Bifrost, the same route as
-embedding and rerank. The virtual key carries `ollama` alongside `embark`.
+Image summaries go to `gemini/gemini-3.5-flash-lite` through Bifrost, the same
+route as embedding and rerank. The virtual key carries `gemini` and `ollama`
+alongside `embark`.
 
 Retrieval planning runs on `ollama/gemma4:31b` through the same gateway.
 `query_planner` is optional and falls back to the `vlm` block when unset, so
-leaving it out is legal and silent -- and means planning runs on the vision
+leaving it out is legal and silent, and means planning runs on the vision
 model at vision cost. The checker asserts it is set for that reason.
 
 Which models accept an image, and why the checker pins that list, is recorded
@@ -132,9 +151,11 @@ the other block looks right and does nothing.
 asserts both for that reason.
 
 `/metrics` is the one OpenViking route with no auth dependency, so the
-Prometheus job carries no credential — and so can anything else on the LAN
-while 1933 is open LAN-wide. That is the cost of enabling it, recorded here
-because nothing else reports it.
+Prometheus job carries no credential. Every caller the firewall admits on 1933
+can read it the same way, and so can the whole LAN if the old
+`192.168.0.0/16` rule is still on the node: Terraform only adds firewall
+rules, so that one has to be deleted by hand. That is the cost of enabling it,
+recorded here because nothing else reports it.
 
 ## What the config guard asserts
 

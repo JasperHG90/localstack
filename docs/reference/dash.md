@@ -1,11 +1,24 @@
+---
+description: What the dash landing page shows, who can sign in, the tile config format, and what the status backend can read.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/dash.hcl
+  - resource: deployments/applications/services/dash/tiles.json
+  - resource: deployments/applications/services/dash/backend/src/dash_app/tiles.py
+  - resource: deployments/applications/services/dash/backend/src/dash_app/status.py
+  - resource: deployments/infrastructure/machine_roles.tf
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # dash: the cluster landing page
 
 `dash` is a small Nomad job that serves `https://dash.lab.orangecluster.nl`:
 one tile per service, grouped under headings the config names: Platform,
 Storage, Telemetry, Events, Agentic, Artifacts. A tile is one SERVICE, not
-one endpoint, so `openviking` is a single tile carrying both its dashboard
-and its API, and `registry` is a single tile covering the OCI API and the
-`registry-ui` browser view.
+one endpoint, so `registry` is a single tile covering the OCI API and the
+`registry-ui` browser view. OpenViking gets two tiles because it runs as two
+jobs: `openviking` carries the API and `ov-dash` links to the browser
+dashboard.
 
 One service may still get a second tile when a facet of it is worth finding on
 its own. `alerting` is the first: it names Grafana's Telegram channel and
@@ -25,17 +38,23 @@ browser view cannot hide behind a healthy API.
 
 The job holds two tasks: a `frontend` task (static files only, no Python)
 and a `backend` task (status computation). The backend carries its own
-copies of the narrow health/join/consul logic it needs
-(`dash/backend/src/dash_app/health.py`, `nomad_client.py`,
-`consul_client.py`, `services.py`), copied down from
-`cli/src/localstack_cli/api/` rather than imported: the backend does not
-depend on `cli` at all, by design (drift between the two copies is an
-accepted tradeoff, not a bug).
+copies of the narrow health/join/consul logic it needs, copied down from
+`cli/src/localstack_cli/api/` rather than imported:
+
+- `deployments/applications/services/dash/backend/src/dash_app/health.py`
+- `deployments/applications/services/dash/backend/src/dash_app/nomad_client.py`
+- `deployments/applications/services/dash/backend/src/dash_app/consul_client.py`
+- `deployments/applications/services/dash/backend/src/dash_app/services.py`
+
+The backend does not depend on `cli` at all, by design, and drift between the
+two copies is an accepted tradeoff.
 
 ## Signing in
 
-`dash` sits entirely behind oauth2-proxy (L1), gated on a completed Vault
-OIDC login against the `lab` provider. Any successful login is authorized.
+`dash` sits entirely behind oauth2-proxy, gated on a completed Vault OIDC
+login against the `lab` provider. Vault admits only members of `developer` or
+`admin`, through the `operators` assignment on the `oauth2-proxy` client in
+`deployments/infrastructure/oidc.tf`. The proxy itself filters nobody.
 See [How to log in to Vault](../how-to/log-in-to-vault.md) for the login
 flow itself. Nothing here repeats it.
 
@@ -44,10 +63,9 @@ existing Vault UI session can fail with a generic error and leave you
 unauthenticated. Retrying after logging into the Vault UI succeeds. This is
 the same behavior
 [step 1 of How to sign in to Nomad with Vault](../how-to/sign-in-to-nomad-with-vault.md)
-documents for the Nomad sign-in button. It has been observed but not root-caused, and fixing
-it is out of scope here.
+documents for the Nomad sign-in button. Its cause is not known.
 
-## `tiles.json`
+## The tile config
 
 `deployments/applications/services/dash/tiles.json` is an array of
 groups, and array order is display order, for the headings and for the
@@ -89,10 +107,11 @@ registration.
 (`deployments/infrastructure/machine_roles.tf`, the `dash` section): `read-job`,
 `list-jobs`, and `node:read`, nothing else. No `submit-job`, no
 `host-volume-*`, no management capability. It never reads HAProxy's own job
-spec (that spec embeds a live credential in plaintext), so tile-to-job
-matching comes entirely from each tile's own `jobs` array, not from
-HAProxy's routing table. The frontend task holds no credential, no Vault
-role, and no Nomad token at all — it serves `index.html` and nothing else.
+spec, which has carried a plaintext credential before and could again, so
+tile-to-job matching comes entirely from each tile's own `jobs` array, not
+from HAProxy's routing table. The frontend task holds no credential, no Vault
+role, and no Nomad token at all. It serves
+`deployments/applications/services/dash/frontend/index.html` and nothing else.
 
 ## Related pages
 

@@ -1,3 +1,15 @@
+---
+description: The three retrieval dashboards, the driftwatch canary metrics they read, and the alerts that compare each run against the last fortnight.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/driftwatch.hcl
+  - resource: deployments/applications/services/driftwatch/goldset.jsonl
+  - resource: deployments/applications/services/driftwatch/rerank-goldset.jsonl
+  - resource: deployments/infrastructure/services/grafana/retrieval-quality.json
+  - resource: deployments/infrastructure/services/grafana/openviking.json
+  - resource: deployments/infrastructure/services/grafana/alert-rules.yaml
+---
+
 # Retrieval quality
 
 Retrieval fails quietly. When an embedding model is swapped, requantized, or
@@ -62,7 +74,7 @@ to reject, which a corpus of other rows' answers does not supply.
 
 Every alert on these compares today against the last fortnight rather than
 against a fixed floor. Sixty documents of embark's own docs is not a
-benchmark, so the absolute number means little; the change means everything.
+benchmark, so the absolute number means little. The change is what counts.
 
 `for: 26h` on the trend alerts is "two consecutive runs" written in the unit
 Grafana understands, since the canary runs daily.
@@ -75,7 +87,7 @@ Grafana understands, since the canary runs daily.
 | OpenViking | `openviking` | `:1933/metrics`, its one route with no auth dependency |
 | driftwatch | `driftwatch` | `:8010/metrics`, found through the Consul `prometheus` tag |
 
-embark's cache, coalescing and auth counters carry an `embark_` prefix; its
+embark's cache, coalescing and auth counters carry an `embark_` prefix. Its
 HTTP series come from prometheus-fastapi-instrumentator and carry the
 library's `http_` names, so every query for them has to filter on
 `job="embark"`.
@@ -87,16 +99,16 @@ reachable from any log line through the trace id.
 ## The panels that read from traces
 
 The "Hybrid retrieval, from traces" row on `/d/localstack-openviking` is not
-Prometheus. ov-postgres and ov-retrieval emit spans, Tempo keeps recent ones
-queryable through its local-blocks processor, and Grafana runs TraceQL metrics
-over them.
+Prometheus. ov-postgres and the ov-ext retrieval wrapper emit spans, Tempo keeps
+recent ones queryable through its local-blocks processor, and Grafana runs
+TraceQL metrics over them.
 
 It earns its place by doing the one thing a counter cannot: aggregating a span
 attribute's value. `avg_over_time(span.ov_retrieval.keyword_hits)` is how many
 URIs the keyword leg contributed, a number that exists nowhere else.
 
 The `outcome` attribute is the other half. Prometheus can show the funnel
-collapsing; only the span says the pass declined to run and why.
+collapsing. Only the span says the pass declined to run and why.
 `backend_lacks_similarity` means ov-postgres is too old to offer
 `pairwise_similarity`, so hybrid retrieval quietly ranks without its diversity
 pass and every other signal stays green.
@@ -105,7 +117,7 @@ Those panels are pinned to a 2-hour window and ignore the dashboard time
 picker. Tempo rejects a TraceQL metrics query spanning more than 3 hours
 (`metrics query time range exceeds the maximum allowed duration of 3h0m0s`),
 and raising that cap would invite queries that scan days of blocks out of
-MinIO. Traces are for the last few hours; Prometheus keeps the 30-day trend.
+MinIO. Traces cover the last few hours, and Prometheus keeps the 30-day trend.
 
 ## See also
 

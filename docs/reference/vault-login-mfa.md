@@ -1,7 +1,19 @@
+---
+description: The just recipes that enroll and reset a TOTP second factor on Vault logins, and which sign-in surfaces that factor covers.
+stale_after: 2027-01-19
+sources:
+  - resource: scripts/vault_mfa.sh
+  - resource: justfile
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/services/grafana.hcl
+  - resource: deployments/infrastructure/services/minio.hcl
+---
+
 # Vault login MFA
 
 The commands that manage the TOTP second factor on the Vault `userpass`
-login, and which sign-in surfaces the factor reaches. Why it sits at the
+login, and which sign-in surfaces the factor reaches. Why it is on the
 Vault login is [Two-factor auth on Vault logins](../explanation/vault-login-mfa.md).
 
 ## Running it
@@ -24,21 +36,21 @@ factor, so putting it in state files both factors in one place.
 
 Covered, because they redirect to the `lab` provider and the prompt happens at
 Vault: nomad, memex, dash, registry-ui (it reuses the `oauth2_proxy` client),
-Grafana's Vault sign-in button and ov-dash. The factor is asked once per VAULT
-session, not once per app, so every SSO redirect after that sails through on
-the browser's existing Vault session.
+Grafana's Vault sign-in button, the Hermes dashboard and ov-dash. The factor is
+asked once per VAULT session, not once per app, so every SSO redirect after
+that passes on the browser's existing Vault session.
 
 Three surfaces never touch that login path, so no enforcement here reaches
 them:
 
 | Surface | Credential | Why it is missed |
 | --- | --- | --- |
-| Grafana | `GF_SECURITY_ADMIN_USER = "admin"` plus a KV password | The local login form is not disabled; `GF_AUTH_DISABLE_LOGIN_FORM` appears nowhere in `grafana.hcl` |
+| Grafana | `GF_SECURITY_ADMIN_USER = "admin"` plus a KV password | The local login form is not disabled. `GF_AUTH_DISABLE_LOGIN_FORM` appears nowhere in `deployments/infrastructure/services/grafana.hcl` |
 | MinIO console | `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` | Its six `IDENTITY_OPENID_*` settings point at Nomad's provider for workload identity. There is no human OIDC on MinIO at all |
 | Vault | the root token | Token auth, not userpass |
 
 Neither password is reachable without an MFA-protected Vault login today,
-because both live in KV. They are still standing shared credentials, so one
+because both are in KV. They are still standing shared credentials, so one
 leak is a permanent bypass that a second factor cannot take back. Closing them
 is separate work: disable Grafana's login form, and give MinIO a human OIDC
 client on the `lab` provider.
