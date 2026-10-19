@@ -1,0 +1,54 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  E501 Line too long (104 > 100)
+    --> cli/tests/test_seed_worktree.py:79:101
+     |
+  77 |     seed(primary)
+  78 |
+  79 |     assert sorted(p.relative_to(primary) for p in primary.rglob("*") if ".git" not in p.parts) == before
+     |                                                                                                     ^^^^
+
+  Found 1 error.
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  19 files already formatted
+  19 files already formatted
+  19 files already formatted
+  18 files already formatted
+  18 files already formatted
+  unformatted: File would be reformatted
+    --> cli/tests/test_seed_worktree.py:79:12
+     |
+  78 |
+     -     assert sorted(p.relative_to(primary) for p in primary.rglob("*") if ".git" not in p.parts) == before
+  79 +     assert (
+  80 +         sorted(p.relative_to(primary) for p in primary.rglob("*") if ".git" not in p.parts)
+  81 +         == before
+  82 +     )
+     |
+
+  1 file would be reformatted, 17 files already formatted
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
