@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "resolved",
+      "claim": "",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p4",
+      "disposition": "open",
+      "claim": "The restore job's marker-count check fails on real data. The GCS backup prefix already holds every file from earlier runs that had no marker flags. On that existing tree, an incremental `rclone sync --create-empty-src-dirs` writes markers only for directories the destination does not already list, which means only the empty ones. A fresh `rclone copy --create-empty-src-dirs --s3-directory-markers` into an empty SeaweedFS bucket writes a marker for every directory. The two counts differ by design, so \"failing on any difference\" fails every openviking restore during the cutover window, with OpenViking stopped. Compare in one direction instead: every `/` key under the GCS prefix must exist in SeaweedFS. Or compare the directory sets from `rclone lsf -R --dirs-only`. Either still catches the case that spike 2 proved `rclone check` misses.",
+      "anchor": ".loop/plans/seaweedfs-cutover-openviking.md:27",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "e1c1206f12fb056523353620831244800a82e77f7b13cc02d599072898a9935a"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T21:14:56+00:00"
+}
