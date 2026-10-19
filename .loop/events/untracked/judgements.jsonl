@@ -13,3 +13,4 @@
 {"at": "2026-10-19T17:50:33+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-cutover"}
 {"at": "2026-10-19T17:50:35+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "minio-removal"}
 {"at": "2026-10-19T17:52:42+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "minio-volume-destroy"}
+{"at": "2026-10-19T19:02:43+00:00", "evidence": "3 review round(s), 0 block(s), 2350 changed line(s)", "judgement": "j-20261019T151831+0000-8dc900b8", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "outcome"}
