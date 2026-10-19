@@ -9,27 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: embark-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/embark.hcl
+    resource: deployments/applications/services/embark.hcl
   - id: embark-config
-    resource: git:3ec5d1e:deployments/applications/services/embark/config.toml
+    resource: deployments/applications/services/embark/config.toml
   - id: embark-models
-    resource: git:3ec5d1e:deployments/applications/services/embark/models.json
+    resource: deployments/applications/services/embark/models.json
   - id: embark-pull
-    resource: git:3ec5d1e:deployments/applications/services/embark/pull.sh
+    resource: deployments/applications/services/embark/pull.sh
   - id: embark-readme
-    resource: git:3ec5d1e:deployments/applications/services/embark/README.md
+    resource: deployments/applications/services/embark/README.md
   - id: embark-dockerfile
-    resource: git:3ec5d1e:deployments/applications/services/embark/Dockerfile.embark
+    resource: deployments/applications/services/embark/Dockerfile.embark
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: infra-database
-    resource: git:3ec5d1e:deployments/infrastructure/database.tf
+    resource: deployments/infrastructure/database.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
-  - id: embedder-swap
-    resource: git:d2cf84d
+    resource: deployments/infrastructure/services.tf
 ---
 
 # embark, the embedding and rerank server
@@ -213,3 +211,9 @@ memory and batch figures above came with OpenViking's rerank path in
 - [Redis cache](/components/redis.md)
 - [Host volumes](/components/host-volumes.md)
 - [The host firewall](/components/host-firewall.md)
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `d2cf84d`

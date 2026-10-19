@@ -7,16 +7,30 @@ status: stable
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
   - id: postgres-vault-dynamic-creds-spike
-    resource: git:3ec5d1e:docs/postgres-vault-dynamic-creds-spike.md
-    last_modified: 2026-09-03
+    resource: .okf/proposals/postgres-dynamic-credentials.md
+  - id: redis-engine
+    resource: deployments/infrastructure/database.tf
+  - id: machine-roles
+    resource: deployments/infrastructure/machine_roles.tf
+  - id: enable-consul-secrets
+    resource: bootstrap/playbooks/enable_consul_secrets.yml
 ---
 
 # Terraform write-only credential chains
 
 Measured while building the Postgres dynamic-credentials spike,
 [the proposal](/proposals/postgres-dynamic-credentials.md), on 2026-08-03.
+
+The chain this was measured on,
+`deployments/applications/database-secrets-poc.tf`, was deleted in commit
+`19c1696` (2026-08-09). Read it with
+`git show 19c1696^:deployments/applications/database-secrets-poc.tf`. Its
+`ephemeral "random_password"`, `disable_read = true` and explicit `roles`
+lines are where the three defects below were handled. No write-only chain is
+left at HEAD.
 
 ## A Terraform trap worth knowing about
 
@@ -56,3 +70,9 @@ that credential out of the Consul-backed state. The write-only chain achieves
 the same end, so the exception is earned rather than assumed. It is earned only
 while the chain stays intact: swap the ephemeral for a `random_password`
 resource and the password lands in state, and the exception collapses.
+
+The Redis engine shows that shape at HEAD.
+`vault_database_secret_backend_connection.redis` in
+`deployments/infrastructure/database.tf` takes its admin password from
+`random_password.redis_admin.result`, a plain resource, so that password is in
+the infrastructure root's state.

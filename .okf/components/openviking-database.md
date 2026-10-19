@@ -8,20 +8,25 @@ generated:
   by: claude-opus/5.5
   at: 2026-09-26
 sources:
-  - id: openviking
-    resource: git:3ec5d1e:docs/openviking.md
-    last_modified: 2026-09-12
+  - id: app-database
+    resource: deployments/applications/database.tf
+  - id: ov-conf
+    resource: deployments/applications/services/openviking/ov.conf.json
 ---
 
 # The OpenViking database
 
-The service that uses this database is described in
-`docs/reference/openviking.md`.
+The service that uses this database is
+[the OpenViking service](/components/openviking-service.md), and the server it
+runs on is [Postgres](/components/postgres.md).
 
 ## The database already existed
 
 The `openviking` database, its role and the `vector` extension were created
-before this service was. Its `openviking` schema already held empty
+before this service was: `623abf8` added them to `local.roles` and
+`local.databases` in `deployments/applications/database.tf` a week before OV1
+added the job. The `openviking` schema that `ov.conf.json` names is not a
+Terraform resource. It already held empty
 `ov_collections` and `ov_indexes` tables matching ov-postgres v0.2.0's DDL, so
 the adapter adopts them rather than migrating.
 

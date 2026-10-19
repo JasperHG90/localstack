@@ -9,23 +9,19 @@ generated:
   at: 2026-09-27
 sources:
   - id: ov-dash-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/ov-dash.hcl
+    resource: deployments/applications/services/ov-dash.hcl
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: infra-oidc
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: infra-identity
-    resource: git:3ec5d1e:deployments/infrastructure/identity.tf
+    resource: deployments/infrastructure/identity.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: haproxy
-    resource: git:3ec5d1e:deployments/infrastructure/services/haproxy.hcl
-  - id: ov-dash-deploy
-    resource: git:30292e2
-  - id: ov-dash-vault-chain
-    resource: git:bafb562
+    resource: deployments/infrastructure/services/haproxy.hcl
 ---
 
 # ov-dash, OpenViking's browser face
@@ -173,3 +169,10 @@ unnecessary.
 - `docs/explanation/openviking-identity.md`
 - `docs/reference/vault-login-mfa.md`
 - `docs/how-to/verify-an-openviking-deployment.md`, step 4
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `30292e2`
+- commit `bafb562`

@@ -9,23 +9,13 @@ generated:
   at: 2026-09-27
 sources:
   - id: acme-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/acme.hcl
+    resource: deployments/infrastructure/services/acme.hcl
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: machine-roles
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: variables
-    resource: git:3ec5d1e:deployments/infrastructure/variables.tf
-  - id: move-off-firebat
-    resource: git:5a1b16b:deployments/infrastructure/services/acme.hcl
-  - id: relocate-volume
-    resource: git:871ed68:deployments/infrastructure/services/acme.hcl
-  - id: T1-tls-acme-letsencrypt-transip
-    resource: loop:T1-tls-acme-letsencrypt-transip
-  - id: T3-tls-edge-cutover-lab-domain
-    resource: loop:T3-tls-edge-cutover-lab-domain
-  - id: T4-tls-fix-podman-image-digest-refs
-    resource: loop:T4-tls-fix-podman-image-digest-refs
+    resource: deployments/infrastructure/variables.tf
 ---
 
 # The ACME certificate job
@@ -97,8 +87,8 @@ changes.
   named role replaces the default instead of adding to it. With only the
   write policy, the TransIP template would block forever. `claim_mappings`
   must mirror the shared role, or the templated policy paths resolve to
-  nothing. `vault_jwt_auth_backend_role.dash` and `.redis_cache` copy this
-  shape.
+  nothing. `vault_jwt_auth_backend_role.dash`, `.redis_cache` and
+  `.openviking_workload` copy this shape.
 - **The schedule is daily.** A daily run with a 30-day margin gives 30
   retries before expiry. A cron matching the 60-day renewal interval would
   spend the whole margin on one unseen failure.
@@ -135,10 +125,20 @@ CPU left to reserve. The reference page gives the numbers.
 
 ## Gaps
 
-Nothing alerts on a failed run or on days to expiry. T5 would add the expiry
-alert. It was deferred out of T3 because nothing in the cluster measures
-expiry, and it is blocked because its plan has never been reviewed.
+Nothing alerts on a failed run or on days to expiry. Ticket T5 planned the
+expiry alert after T3 deferred it, because nothing in the cluster measures
+expiry. T5 was never built, and its plan left the loop when the loop was
+reinitialized in `5b2ed1b`.
 `docs/how-to/check-the-edge-certificate.md` and
 `docs/how-to/recover-a-failed-certificate-renewal.md` are the manual checks,
 and `docs/how-to/test-acme-job-changes-on-staging.md` is the safe way to
 change the job.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `T1-tls-acme-letsencrypt-transip` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `T3-tls-edge-cutover-lab-domain` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `T4-tls-fix-podman-image-digest-refs` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `T5-tls-certificate-expiry-alert`, never built (its plan is `.loop/plans/` in git history before `5b2ed1b`)

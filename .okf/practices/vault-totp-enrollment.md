@@ -7,10 +7,16 @@ status: stable
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: vault-2fa
-    resource: git:3ec5d1e:docs/vault-2fa.md
-    last_modified: 2026-09-12
+  - id: vault-mfa-sh
+    resource: scripts/vault_mfa.sh
+  - id: vault-mfa-test
+    resource: scripts/vault_mfa_test.sh
+  - id: cli-vault-auth
+    resource: cli/src/localstack_cli/auth/vault.py
+  - id: vault-version-pin
+    resource: bootstrap/inventory/group_vars/all.yml
 ---
 
 # Traps in Vault TOTP enrollment
@@ -21,13 +27,16 @@ same traps in its comments.
 
 ## Traps measured while building this
 
-All measured against Vault 2.0.3 on 2026-09-11.
+All measured against Vault 2.0.3 on 2026-09-11, the version
+`bootstrap/inventory/group_vars/all.yml` pins (`2.0.3-1`). Re-measure after a
+Vault upgrade.
 
 **`admin-generate` on an already-enrolled entity exits 0 and returns
 `data: null`**, with `Entity already has a secret for MFA method ""` in
 `warnings`. Piping that to `base64 -d` writes a 0-byte PNG and reports success.
-`scripts/vault_mfa.sh` checks for the null, and `just mfa_enroll` refuses and
-points at `mfa_reset`.
+`scripts/vault_mfa.sh` checks for the null and for the PNG magic bytes,
+because a non-null answer can still carry an empty barcode. `just mfa_enroll`
+refuses and points at `mfa_reset`.
 
 **Nothing lists who is enrolled.** Reading an entity returns the same keys
 before and after enrollment, and there is no MFA field. Re-enrollment is the
@@ -46,6 +55,8 @@ finds nothing and reports "no token" against a perfectly good password. This
 cost an afternoon, because the CLI's test fixture was written from the contract
 rather than captured from the wire: every test passed while every real login
 failed. Capture the response, do not transcribe the docs.
+`cli/src/localstack_cli/auth/vault.py` now reads `auth.mfa_requirement` first
+and keeps the top-level lookup as a fallback.
 
 **Vault activates a TOTP secret the moment it issues one.** There is no pending
 state to confirm against, so a mis-scan is only discovered at the next login,
@@ -77,3 +88,9 @@ one method exists rather than guessing.
 **Re-enrolling always invalidates the old authenticator.** Vault stores one
 secret per entity per method, so `mfa_reset` is destroy-then-generate and there
 is no overlap window.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/vault-2fa.md` as of commit `3ec5d1e`, since deleted

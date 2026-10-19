@@ -9,29 +9,23 @@ generated:
   at: 2026-09-27
 sources:
   - id: registry-ui-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/registry-ui.hcl
+    resource: deployments/applications/services/registry-ui.hcl
   - id: registry-ui-main
-    resource: git:3ec5d1e:deployments/applications/services/registry-ui/backend/src/registry_ui/main.py
+    resource: deployments/applications/services/registry-ui/backend/src/registry_ui/main.py
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: infra-oidc
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: oauth2-proxy-registry-ui
-    resource: git:3ec5d1e:deployments/infrastructure/services/oauth2-proxy-registry-ui.hcl
+    resource: deployments/infrastructure/services/oauth2-proxy-registry-ui.hcl
   - id: oauth2-proxy-guard
-    resource: git:3ec5d1e:scripts/check_oauth2_proxy_guard.py
-  - id: registry-ui-commit
-    resource: git:7e93194
-  - id: hooks-removed
-    resource: git:f197702
-  - id: L5-landing-registry-tab
-    resource: git:3ec5d1e:.loop/plans/L5-landing-registry-tab.md
+    resource: scripts/check_oauth2_proxy_guard.py
 ---
 
 # registry-ui, the registry browser
@@ -139,7 +133,7 @@ exemption, and that page says how narrow it must be.
 Today the guard runs only when someone runs it. Commit `f197702` (2026-09-09)
 removed its pre-commit hooks, along with the four `registry-ui-backend-*`
 hooks (ruff, format, mypy, pytest). Nothing runs either automatically.
-`docs/reference/registry-ui.md` still says both run as hooks. On 2026-09-27
+`docs/reference/registry-ui.md` still says both run as hooks. On 2026-10-19
 the guard passed by hand, and the backend suite passed 55 tests.
 
 ## History
@@ -147,8 +141,9 @@ the guard passed by hand, and the backend suite passed 55 tests.
 L5 planned a registry tab inside dash, on a `dash_data` volume. Mid-ticket it
 became its own job, so either service can fail without the other. It landed
 as `7e93194` under `loopctl halt`: the ticket hit its review-cycle cap, and
-the final adversarial pass read a tree that edits had moved. The ledger still
-shows L5 as `blocked` with no commit. Three defects no gate caught were fixed
+the final adversarial pass read a tree that edits had moved. The old loop
+ledger showed L5 as `blocked` with no commit until `5b2ed1b` reset the loop
+and removed it. Three defects no gate caught were fixed
 before landing. The copied `nginx.conf` listened on 8000 while the job
 allocated 8002. The split dropped every test of `main.py` and `config.py`.
 The guard covered dash alone. The plan and signed eval still describe the
@@ -157,10 +152,12 @@ is `1 + R + T + D + B`, because a manifest `HEAD` returns only a digest.
 
 ## Port 4181 is taken
 
-Ticket `B2-bifrost-oauth2-proxy` (stage `ready`) plans an oauth2-proxy for
-Bifrost on "port 4181, same node", and its premise says 4181 "appears
-nowhere in `deployments/`" (grep of 2026-09-03). registry-ui's proxy took
-4181 on radxa on 2026-09-05. B2 needs another port before it runs.
+Ticket `B2-bifrost-oauth2-proxy` planned an oauth2-proxy for Bifrost on
+"port 4181, same node", and its premise says 4181 "appears nowhere in
+`deployments/`" (grep of 2026-09-03). registry-ui's proxy took 4181 on radxa
+on 2026-09-05. B2 was still at stage `ready`, never built, when `5b2ed1b`
+reset the loop, and the current loop has no such ticket. Anyone who revives
+it needs another port.
 
 ## Related
 
@@ -170,3 +167,12 @@ nowhere in `deployments/`" (grep of 2026-09-03). registry-ui's proxy took
 - `docs/reference/registry-ui.md`
 - `docs/explanation/registry-ui-cost.md`
 - `docs/how-to/rebuild-the-registry-ui-images.md`
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `7e93194`
+- commit `f197702`
+- `.loop/plans/L5-landing-registry-tab.md` as of commit `3ec5d1e`, since deleted
+- `.loop/plans/B2-bifrost-oauth2-proxy.md` and `.loop/ledger.json` as of commit `48f52e2`, since deleted

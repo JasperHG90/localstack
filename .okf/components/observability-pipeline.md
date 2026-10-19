@@ -9,34 +9,23 @@ generated:
   at: 2026-09-27
 sources:
   - id: prometheus-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/prometheus.hcl
+    resource: deployments/infrastructure/services/prometheus.hcl
   - id: grafana-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/grafana.hcl
+    resource: deployments/infrastructure/services/grafana.hcl
   - id: alert-rules
-    resource: git:3ec5d1e:deployments/infrastructure/services/grafana/alert-rules.yaml
-    note: "The working tree differs from 3ec5d1e (uncommitted operator edits), and this concept describes the working tree."
+    resource: deployments/infrastructure/services/grafana/alert-rules.yaml
   - id: alloy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/alloy.hcl
+    resource: deployments/infrastructure/services/alloy.hcl
   - id: loki-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/loki.hcl
+    resource: deployments/applications/services/loki.hcl
   - id: tempo-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/tempo.hcl
+    resource: deployments/applications/services/tempo.hcl
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-storage
-    resource: git:3ec5d1e:deployments/applications/storage.tf
-  - id: N1-netsec-restrict-prometheus-loki-to-cluster
-    resource: loop:N1-netsec-restrict-prometheus-loki-to-cluster
-  - id: G1-grafana-native-oidc-login
-    resource: loop:G1-grafana-native-oidc-login
-  - id: G3-alerts-standalone-telegram-bot
-    resource: loop:G3-alerts-standalone-telegram-bot
-  - id: R9-rollout-tempo-keyless-minio
-    resource: loop:R9-rollout-tempo-keyless-minio
-  - id: R13-rollout-loki-registry-keyless-minio
-    resource: loop:R13-rollout-loki-registry-keyless-minio
+    resource: deployments/applications/storage.tf
 ---
 
 # The observability pipeline
@@ -195,9 +184,8 @@ Two rules couple the file to other jobs:
   infrastructure apply that names it.
 - `OpenVikingDown` carries a 50m `for`, sized off OpenViking's measured 44m46s
   worst boot. `OpenVikingNotReady` carries 10m and sees no data during a boot.
-  See [the OpenViking service](/components/openviking-service.md). In the
-  working tree these two rules are new and uncommitted. The block above them
-  records a known gap: this Nomad build exports no restart series, so a restart
+  See [the OpenViking service](/components/openviking-service.md). Both rules
+  came with `a055dcf`. The block above them records a known gap: this Nomad build exports no restart series, so a restart
   loop with fast boots raises no alert.
 
 ## Firewall
@@ -242,3 +230,13 @@ blackbox exporter first.
 - [The workload identity chain, as
   built](/components/workload-identity-chain.md)
 - [The two Terraform roots](/components/terraform-roots.md)
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `N1-netsec-restrict-prometheus-loki-to-cluster` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `G1-grafana-native-oidc-login` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `G3-alerts-standalone-telegram-bot` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R9-rollout-tempo-keyless-minio` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R13-rollout-loki-registry-keyless-minio` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

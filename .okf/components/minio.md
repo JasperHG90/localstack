@@ -9,25 +9,19 @@ generated:
   at: 2026-09-27
 sources:
   - id: minio-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/minio.hcl
+    resource: deployments/infrastructure/services/minio.hcl
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: app-storage
-    resource: git:3ec5d1e:deployments/applications/storage.tf
+    resource: deployments/applications/storage.tf
   - id: bucket-module
-    resource: git:3ec5d1e:deployments/applications/modules/bucket/main.tf
+    resource: deployments/applications/modules/bucket/main.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
-  - id: M1-minio-poc-service-account
-    resource: loop:M1-minio-poc-service-account
-  - id: R9-rollout-tempo-keyless-minio
-    resource: loop:R9-rollout-tempo-keyless-minio
-  - id: R13-rollout-loki-registry-keyless-minio
-    resource: loop:R13-rollout-loki-registry-keyless-minio
+    resource: deployments/applications/services.tf
 ---
 
 # MinIO
@@ -99,8 +93,22 @@ an AWS `credential_process` helper, because both vendor aws-sdk-go v1). Their
 static keys, users and KV entries stay provisioned as the rollback path and
 are simply not rendered into the jobs.
 
+R13 replaced two stubs that were never built. R10 (loki) had found a
+config-only route: loki 3.4.2's `use_thanos_objstore` reaches thanos-io's S3
+provider, which has a real `sts_endpoint` field. But that swaps loki's whole
+storage client and moves its config block, which puts the existing logs in
+the `loki` bucket at risk. R11 (registry) had ruled config-only out, because
+distribution v3.1.1 vendors aws-sdk-go v1, and found the Alpine-based image
+could run a `credential_process` helper. R13 took R11's helper for both jobs,
+so loki keeps its storage client. R12 (memex) was dropped by the operator
+when the stubs were written (`a7aa595`): memex takes its key as two explicit
+settings in its own config, so going keyless needs a web-identity provider
+and credential refresh in the memex repo, not a jobspec change. R10 and R11
+were still stubs, and R12 was dropped, in the loop ledger when `5b2ed1b` reset
+the loop.
+
 Still keyed: openviking (by design, ADR 0007), memex (its job is commented
-out, and its fix needs changes in the memex repo), and `backup-minio`, which
+out, and its fix needs changes in the memex repo, see R12 above), and `backup-minio`, which
 reads a copy of the ROOT key. Keys that nothing consumes are still minted for
 `ducklake_writer`, `ducklake_reader`, `models_writer`, `models_reader` and
 `mlflow`. Removing the rollback keys is what actually shrinks this list, and
@@ -139,5 +147,30 @@ no ticket owns it yet.
 - **The registry names MinIO twice.** Its STS helper uses the Consul address,
   its storage config a literal `192.168.2.29`. Moving MinIO means changing
   both.
-- **Human console tiers are not built.** M2 is blocked. Whoever builds it
+- **Human console tiers are not built.** M2 was blocked when `5b2ed1b` reset the loop and
+  is not in the current loop. Whoever builds it
   replaces `POC2` rather than adding a third target.
+
+## Planned, not built
+
+MinIO is due to be replaced by SeaweedFS. Ticket `seaweedfs-service` plans a
+SeaweedFS job with an S3 gateway beside MinIO on orangepi4a,
+`seaweedfs-buckets` its buckets, users and keys from the applications root,
+and `minio-removal` the removal of the MinIO job, provider, resources, routes
+and monitoring once nothing uses it. `backup-durable-buckets` plans a nightly
+GCS copy of every durable bucket first, so the migration can restore from
+off-site. The `minio_data` volume and its data stay until the operator
+promotes the stub `minio-volume-destroy`. When `minio-removal` lands, this
+page is marked superseded.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `M1-minio-poc-service-account` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R9-rollout-tempo-keyless-minio` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R13-rollout-loki-registry-keyless-minio` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R10-rollout-loki-keyless-minio`, a stub superseded by R13 (its plan is `.loop/plans/` at commit `48f52e2`, with the premise answered in `64c656e`)
+- loop ticket `R11-rollout-registry-keyless-minio`, a stub superseded by R13 (its plan is `.loop/plans/` at commit `48f52e2`, with the premise answered in `64c656e`)
+- loop ticket `R12-rollout-memex-keyless-minio`, a stub the operator dropped (its plan is `.loop/plans/` at commit `48f52e2`, dropped in `a7aa595`)
+- commit `84b69a1`, the R13 plan that supersedes R10 and R11

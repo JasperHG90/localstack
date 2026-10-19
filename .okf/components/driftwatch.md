@@ -9,24 +9,21 @@ generated:
   at: 2026-09-27
 sources:
   - id: driftwatch-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/driftwatch.hcl
+    resource: deployments/applications/services/driftwatch.hcl
   - id: driftwatch-readme
-    resource: git:3ec5d1e:deployments/applications/services/driftwatch/README.md
+    resource: deployments/applications/services/driftwatch/README.md
   - id: driftwatch-baseline
-    resource: git:3ec5d1e:deployments/applications/services/driftwatch/src/driftwatch/baseline.py
+    resource: deployments/applications/services/driftwatch/src/driftwatch/baseline.py
   - id: driftwatch-runner
-    resource: git:3ec5d1e:deployments/applications/services/driftwatch/src/driftwatch/runner.py
+    resource: deployments/applications/services/driftwatch/src/driftwatch/runner.py
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: alert-rules
-    resource: git:3ec5d1e:deployments/infrastructure/services/grafana/alert-rules.yaml
-    note: "The working tree differs from 3ec5d1e (uncommitted operator edits), and this concept describes the working tree."
-  - id: observability-commit
-    resource: git:2411a2f
+    resource: deployments/infrastructure/services/grafana/alert-rules.yaml
 ---
 
 # driftwatch, the retrieval-quality canary
@@ -180,3 +177,9 @@ runs it.
 - [embark](/components/embark.md)
 - [The observability pipeline](/components/observability-pipeline.md)
 - [Host volumes](/components/host-volumes.md)
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `2411a2f`

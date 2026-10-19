@@ -9,25 +9,21 @@ generated:
   at: 2026-09-27
 sources:
   - id: inventory
-    resource: git:3ec5d1e:bootstrap/inventory/cluster.ini
+    resource: bootstrap/inventory/cluster.ini
   - id: consul-client-template
-    resource: git:3ec5d1e:bootstrap/roles/consul_client/templates/consul.hcl.j2
+    resource: bootstrap/roles/consul_client/templates/consul.hcl.j2
   - id: nomad-client-template
-    resource: git:3ec5d1e:bootstrap/roles/nomad_client/templates/nomad.hcl.j2
+    resource: bootstrap/roles/nomad_client/templates/nomad.hcl.j2
   - id: configure-tailscale
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_tailscale.yml
+    resource: bootstrap/playbooks/configure_tailscale.yml
   - id: configure-nvidia-ctk
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_nvidia_ctk.yml
+    resource: bootstrap/playbooks/configure_nvidia_ctk.yml
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: apps-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: apps-justfile
-    resource: git:3ec5d1e:deployments/applications/justfile
-  - id: U4-upgrade-consul-2x
-    resource: loop:U4-upgrade-consul-2x
-  - id: U3-upgrade-nomad-2x
-    resource: loop:U3-upgrade-nomad-2x
+    resource: deployments/applications/justfile
 ---
 
 # Node placement
@@ -148,3 +144,10 @@ A volume's data does not move either, and nothing in the repo copies it.
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md) and
 [the Tailscale subnet router](/components/tailscale-subnet-router.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `U4-upgrade-consul-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U3-upgrade-nomad-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

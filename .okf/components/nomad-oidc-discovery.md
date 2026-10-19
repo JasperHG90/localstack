@@ -8,9 +8,14 @@ generated:
   by: claude-opus/5.5
   at: 2026-09-26
 sources:
-  - id: workload-identity
-    resource: git:3ec5d1e:docs/workload-identity.md
-    last_modified: 2026-09-05
+  - id: nomad-server-template
+    resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
+  - id: hashistack-server-playbook
+    resource: bootstrap/playbooks/configure_hashistack_server.yml
+  - id: minio-jobspec
+    resource: deployments/infrastructure/services/minio.hcl
+  - id: infra-services
+    resource: deployments/infrastructure/services.tf
 ---
 
 # Nomad's OIDC discovery document, and why MinIO waited for it
@@ -22,7 +27,7 @@ the old `docs/workload-identity.md`. The chain it describes is
 ## What F1 delivers for M1, and what it does not
 
 F1 delivered the **JWKS URL** (`http://192.168.2.30:4646/.well-known/jwks.json`)
-and nothing more. Its scope was JWKS only; it did not deliver an OIDC
+and nothing more. Its scope was JWKS only. It did not deliver an OIDC
 discovery document, which is what MinIO actually needs, so M1 could not
 proceed on F1 alone.
 
@@ -40,6 +45,10 @@ curl -sk https://nomad.lab.orangecluster.nl/.well-known/openid-configuration
 MinIO's `identity_openid` consumes a discovery document
 (`MINIO_IDENTITY_OPENID_CONFIG_URL`), not a bare JWKS, which is why it had to
 wait. Enabling discovery meant setting `server { oidc_issuer = ... }` in the
-Nomad server config and restarting the single Nomad server; that was
-`F10-foundation-nomad-oidc-issuer`, and it is done. A verifier that needs
+Nomad server config and restarting the single Nomad server. That was
+`F10-foundation-nomad-oidc-issuer`, and it is done. The issuer is
+`nomad_oidc_issuer` in `bootstrap/playbooks/configure_hashistack_server.yml`,
+rendered by `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`. MinIO reads
+the discovery URL as `MINIO_IDENTITY_OPENID_CONFIG_URL_NOMAD` in `minio.hcl`,
+from `nomad_oidc_config_url` in `deployments/infrastructure/services.tf`. A verifier that needs
 discovery (memex in R5, MinIO in M1) can now point at the issuer directly.

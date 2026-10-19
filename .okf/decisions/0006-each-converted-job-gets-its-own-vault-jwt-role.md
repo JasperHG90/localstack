@@ -11,8 +11,11 @@ decision_status: Accepted
 decided_on: 2026-08-03
 sources:
   - id: postgres-vault-dynamic-creds-spike
-    resource: git:3ec5d1e:docs/postgres-vault-dynamic-creds-spike.md
-    last_modified: 2026-09-03
+    resource: .okf/proposals/postgres-dynamic-credentials.md
+  - id: jwt-roles
+    resource: deployments/infrastructure/machine_roles.tf
+  - id: redis-consumers
+    resource: deployments/infrastructure/database.tf
 ---
 
 # ADR 0006: Each job that mints database credentials gets its own Vault JWT role, and the shared nomad-workloads policy is not widened
@@ -55,3 +58,17 @@ and its `claim_mappings` must mirror the shared role
 cache engine in `deployments/infrastructure/database.tf` pays this cost with
 one role per consumer, and cites this reasoning for rejecting a single shared
 role gated only on the namespace.
+
+## Correction, 2026-10-19
+
+mlflow and phoenix no longer run. A conversion today covers memex's
+`db-migrate` prestart and the other running jobs with a role in
+`deployments/applications/database.tf`: bifrost and openviking. The phoenix role and its KV entry
+outlive the job (`deployments/applications/secrets.tf`), and mlflow's bucket
+outlives its job (`deployments/applications/storage.tf`).
+
+The Redis cache's per-consumer JWT roles are
+`vault_jwt_auth_backend_role.redis_cache` in
+`deployments/infrastructure/machine_roles.tf`, one per entry in
+`local.redis_cache_consumers`. `deployments/infrastructure/database.tf` holds
+that list and the comment that cites this record.

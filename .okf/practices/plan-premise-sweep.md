@@ -8,9 +8,14 @@ generated:
   by: claude-opus/5.5
   at: 2026-09-26
 sources:
-  - id: plan-premise-sweep-2026-07
-    resource: git:3ec5d1e:docs/notes/audit/plan-premise-sweep-2026-07.md
-    last_modified: 2026-07-31
+  - id: nomad-workloads-policy
+    resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
+  - id: nomad-server-config
+    resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
+  - id: memex-jobspec
+    resource: deployments/applications/services/memex.hcl
+  - id: memex-auth-oidc
+    resource: deployments/applications/services/memex/auth_oidc.json
 ---
 
 # Plan premise sweep, 2026-07
@@ -18,6 +23,7 @@ sources:
 > Moved on 2026-09-26 from `docs/notes/audit/plan-premise-sweep-2026-07.md`,
 > which removed `docs/notes/` again. The text below describes the file and the
 > repository as they stood on 2026-07-31, including Fork 6's "This file is".
+> What no longer holds at HEAD is under "What has changed since", at the end.
 
 Thirteen loop tickets had never had a plan-level review. Each was reviewed
 by the loop's `loop-plan-reviewer` agent against the repo and the live
@@ -480,3 +486,33 @@ The limits worth stating:
 - **The verdicts bind the plans as of 2026-07-30.** Each `plan:` fingerprint
   is the sha256 reviewed. Editing a plan stales its verdict, which is the
   intended behavior: the fix and the re-review travel together.
+
+## What has changed since
+
+The sections above are a dated record and stay as written. Four of their
+statements no longer describe HEAD (checked 2026-10-19):
+
+- **The `.loop/` paths it cites are gone.**
+  `.loop/verdicts/<slug>.plan-validator.md`, `.loop/plans/` for these slugs
+  and `.loop/ledger.json` no longer exist at HEAD. At commit `48f52e2` a
+  closed ticket's files sit under `.loop/archive/<slug>/` (for example
+  `verdict.plan-validator.md`) and an open one's under `.loop/plans/` and
+  `.loop/verdicts/`. Read them with `git show 48f52e2:<path>`.
+- **Nomad now serves OIDC discovery.** Commit `eb66e92` (ticket
+  `F10-foundation-nomad-oidc-issuer`, 2026-08-03) set `oidc_issuer` in
+  `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`, which settles Fork 3.
+- **memex now verifies Workload Identity JWTs.** The epic brief's claim was
+  false on 2026-07-30 and is true at HEAD: `memex.hcl` passes
+  `MEMEX_SERVER__AUTH__OIDC`, and
+  `deployments/applications/services/memex/auth_oidc.json` trusts the Nomad
+  issuer for `hermes` and `leo-consumer`. The static key list is still there
+  beside it.
+- **F9 narrowed the policy in the repo.**
+  `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2` holds
+  three `path` blocks, as the dated note under "Ground truth" records.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/notes/audit/plan-premise-sweep-2026-07.md` as of commit `3ec5d1e`, the page this concept was moved from

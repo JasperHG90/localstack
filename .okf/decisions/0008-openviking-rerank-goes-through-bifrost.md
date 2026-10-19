@@ -10,9 +10,12 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-09-05
 sources:
-  - id: openviking
-    resource: git:3ec5d1e:docs/openviking.md
-    last_modified: 2026-09-12
+  - id: openviking-config
+    resource: deployments/applications/services/openviking/ov.conf.json
+  - id: bifrost-version
+    resource: deployments/applications/services.tf
+  - id: rerank-check
+    resource: scripts/embark_rerank.py
 ---
 
 # ADR 0008: OpenViking's rerank goes through Bifrost, not straight to embark

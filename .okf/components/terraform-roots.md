@@ -9,31 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: infra-backend
-    resource: git:3ec5d1e:deployments/infrastructure/backend.tf
+    resource: deployments/infrastructure/backend.tf
   - id: apps-providers
-    resource: git:3ec5d1e:deployments/applications/providers.tf
+    resource: deployments/applications/providers.tf
   - id: apps-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: infra-machine-roles
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: enable-consul-secrets
-    resource: git:3ec5d1e:bootstrap/playbooks/enable_consul_secrets.yml
+    resource: bootstrap/playbooks/enable_consul_secrets.yml
   - id: tf-validate
-    resource: git:3ec5d1e:scripts/tf_validate.sh
+    resource: scripts/tf_validate.sh
   - id: pre-commit
-    resource: git:3ec5d1e:.pre-commit-config.yaml
+    resource: .pre-commit-config.yaml
   - id: root-justfile
-    resource: git:3ec5d1e:justfile
+    resource: justfile
   - id: cli-env
-    resource: git:3ec5d1e:cli/src/localstack_cli/commands/env.py
-  - id: F6-foundation-vault-consul-secrets-engine
-    resource: loop:F6-foundation-vault-consul-secrets-engine
-  - id: F11-foundation-human-read-role
-    resource: loop:F11-foundation-human-read-role
-  - id: U4-upgrade-consul-2x
-    resource: loop:U4-upgrade-consul-2x
+    resource: cli/src/localstack_cli/commands/env.py
 ---
 
 # The two Terraform roots
@@ -226,7 +220,16 @@ subsystem files.
 
 F7, F12 and F13, which would each have given a root a narrower Vault identity,
 were dropped. F8, moving the Nomad and Consul providers fully onto brokered
-tokens, is blocked on a design fork. The credential side of both roots is
+tokens, was blocked on a design fork when `5b2ed1b` reset the loop, and the
+current loop carries none of these tickets. The credential side of both roots is
 [the deployer credentials](/components/deployer-credentials.md). The ufw
 behavior is also in [the host firewall](/components/host-firewall.md), and the
 volumes in [host volumes](/components/host-volumes.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F6-foundation-vault-consul-secrets-engine` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F11-foundation-human-read-role` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U4-upgrade-consul-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

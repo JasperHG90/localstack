@@ -9,25 +9,15 @@ generated:
   at: 2026-09-27
 sources:
   - id: identity-tf
-    resource: git:3ec5d1e:deployments/infrastructure/identity.tf
+    resource: deployments/infrastructure/identity.tf
   - id: oidc-tf
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
   - id: variables-tf
-    resource: git:3ec5d1e:deployments/infrastructure/variables.tf
+    resource: deployments/infrastructure/variables.tf
   - id: root-justfile
-    resource: git:3ec5d1e:justfile
+    resource: justfile
   - id: vault-mfa-sh
-    resource: git:3ec5d1e:scripts/vault_mfa.sh
-  - id: F2-foundation-vault-oidc-provider
-    resource: loop:F2-foundation-vault-oidc-provider
-  - id: F11-foundation-human-read-role
-    resource: loop:F11-foundation-human-read-role
-  - id: F14-foundation-role-taxonomy
-    resource: loop:F14-foundation-role-taxonomy
-  - id: F14-foundation-app-user-groups
-    resource: loop:F14-foundation-app-user-groups
-  - id: R6-rollout-memex-human-oidc
-    resource: loop:R6-rollout-memex-human-oidc
+    resource: scripts/vault_mfa.sh
 ---
 
 # Vault human identity
@@ -196,3 +186,13 @@ moved daily work off the root token. F14 added `admin` and the scaffold, R6
 the memex tiers, and the OpenViking work the consumers and jwt-lab. The MFA
 resources came in commits 8500637 and 59ad3b3. No audit device is enabled,
 so none of these groups gives attribution.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F2-foundation-vault-oidc-provider` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F11-foundation-human-read-role` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F14-foundation-role-taxonomy` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F14-foundation-app-user-groups` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R6-rollout-memex-human-oidc` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

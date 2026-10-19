@@ -10,9 +10,10 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-07-26
 sources:
-  - id: dns
-    resource: git:3ec5d1e:docs/dns.md
-    last_modified: 2026-07-26
+  - id: dns-records
+    resource: docs/reference/dns.md
+  - id: nats-job
+    resource: deployments/infrastructure/services/nats.hcl
 ---
 
 # ADR 0004: The .consul zone is not forwarded to Consul

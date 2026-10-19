@@ -9,25 +9,19 @@ generated:
   at: 2026-09-27
 sources:
   - id: bifrost-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/bifrost.hcl
+    resource: deployments/applications/services/bifrost.hcl
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-providers
-    resource: git:3ec5d1e:deployments/applications/providers.tf
+    resource: deployments/applications/providers.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: app-database
-    resource: git:3ec5d1e:deployments/applications/database.tf
+    resource: deployments/applications/database.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: bifrost-smoke
-    resource: git:3ec5d1e:scripts/bifrost_smoke.py
-  - id: B1-bifrost-native-auth-and-virtual-keys
-    resource: loop:B1-bifrost-native-auth-and-virtual-keys
-  - id: U5-upgrade-hermes-bifrost-versions
-    resource: loop:U5-upgrade-hermes-bifrost-versions
-  - id: U7-upgrade-bifrost-2x
-    resource: loop:U7-upgrade-bifrost-2x
+    resource: scripts/bifrost_smoke.py
 ---
 
 # Bifrost, the model gateway
@@ -166,9 +160,11 @@ bare-string probe returns 400 and never reaches auth.
 
 ## Not built
 
-B2 (ready, not started) would put an oauth2-proxy in front of Bifrost's
-dashboard and admin API while leaving `/v1/*` on virtual keys. SY1 (planning)
-would put NVIDIA's Switchyard in front of Bifrost.
+Two tickets were planned and never built. B2 would put an oauth2-proxy in
+front of Bifrost's dashboard and admin API while leaving `/v1/*` on virtual
+keys. SY1 would put NVIDIA's Switchyard in front of Bifrost. Both plans left
+the loop when it was reinitialized in `5b2ed1b`, and read from git history
+before that commit.
 
 ## Related
 
@@ -176,3 +172,11 @@ would put NVIDIA's Switchyard in front of Bifrost.
 - [The OpenViking service](/components/openviking-service.md)
 - [The HAProxy edge](/components/edge-proxy.md)
 - [Postgres](/components/postgres.md)
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `B1-bifrost-native-auth-and-virtual-keys` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U5-upgrade-hermes-bifrost-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U7-upgrade-bifrost-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

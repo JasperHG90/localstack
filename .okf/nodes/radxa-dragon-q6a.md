@@ -9,33 +9,27 @@ generated:
   at: 2026-09-27
 sources:
   - id: inventory
-    resource: git:3ec5d1e:bootstrap/inventory/cluster.ini
+    resource: bootstrap/inventory/cluster.ini
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: apps-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: infra-database
-    resource: git:3ec5d1e:deployments/infrastructure/database.tf
+    resource: deployments/infrastructure/database.tf
   - id: hermes-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/hermes.hcl
+    resource: deployments/applications/services/hermes.hcl
   - id: openviking-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/openviking.hcl
+    resource: deployments/applications/services/openviking.hcl
   - id: driftwatch-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/driftwatch.hcl
+    resource: deployments/applications/services/driftwatch.hcl
   - id: redis-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/redis.hcl
+    resource: deployments/infrastructure/services/redis.hcl
   - id: ov-dash-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/ov-dash.hcl
+    resource: deployments/applications/services/ov-dash.hcl
   - id: backups-off-firebat
-    resource: git:4b0af46:deployments/infrastructure/services/backup-postgres.hcl
+    resource: deployments/infrastructure/services/backup-postgres.hcl
   - id: hermes-deployed
-    resource: git:669435d:deployments/applications/services.tf
-  - id: sy1-node-probe
-    resource: git:3ec5d1e:.loop/verdicts/SY1-switchyard-deployment.plan-validator.snapshot.md
-  - id: U1-upgrade-pin-hashistack-versions
-    resource: loop:U1-upgrade-pin-hashistack-versions
-  - id: U4-upgrade-consul-2x
-    resource: loop:U4-upgrade-consul-2x
+    resource: deployments/applications/services.tf
 ---
 
 # radxa-dragon-q6a, the application node
@@ -138,3 +132,11 @@ embark's `redis_host`. The NATS exporter. Vault's Redis connection. ov-dash's
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),
 [Vault's dynamic secrets engines](/components/vault-secrets-engines.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `.loop/verdicts/SY1-switchyard-deployment.plan-validator.snapshot.md` as of commit `3ec5d1e`, since deleted
+- loop ticket `U1-upgrade-pin-hashistack-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U4-upgrade-consul-2x` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

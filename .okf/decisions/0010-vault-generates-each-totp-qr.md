@@ -10,9 +10,12 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-09-11
 sources:
-  - id: vault-2fa
-    resource: git:3ec5d1e:docs/vault-2fa.md
-    last_modified: 2026-09-12
+  - id: mfa-method
+    resource: deployments/infrastructure/identity.tf
+  - id: mfa-recipes
+    resource: justfile
+  - id: mfa-script
+    resource: scripts/vault_mfa.sh
 ---
 
 # ADR 0010: Vault generates each person's TOTP QR, and self-enrollment stays off
@@ -49,3 +52,9 @@ traps in that path are in
 [Traps in Vault TOTP enrollment](/practices/vault-totp-enrollment.md).
 Revisit if a provider release exposes `enable_self_enrollment`, or if the
 number of people grows past what one-at-a-time enrollment serves.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/vault-2fa.md` as of commit `3ec5d1e`, since deleted

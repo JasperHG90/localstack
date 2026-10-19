@@ -9,25 +9,19 @@ generated:
   at: 2026-09-27
 sources:
   - id: postgres-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/postgres.hcl
+    resource: deployments/infrastructure/services/postgres.hcl
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: app-database
-    resource: git:3ec5d1e:deployments/applications/database.tf
+    resource: deployments/applications/database.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
   - id: app-providers
-    resource: git:3ec5d1e:deployments/applications/providers.tf
+    resource: deployments/applications/providers.tf
   - id: migrations
-    resource: git:3ec5d1e:applications/migrations/justfile
-  - id: S2-spike-postgres-vault-creds
-    resource: loop:S2-spike-postgres-vault-creds
-  - id: R8-rollout-postgres-root-consumers
-    resource: loop:R8-rollout-postgres-root-consumers
-  - id: backup-swap-memex-for-openviking
-    resource: loop:backup-swap-memex-for-openviking
+    resource: applications/migrations/justfile
 ---
 
 # Postgres
@@ -134,8 +128,9 @@ of handing Vault this one.
 [ADR 0005](/decisions/0005-postgres-credentials-come-from-vaults-database-engine.md)
 chose Vault's database secrets engine over PostgreSQL 18 OAuth, and
 [ADR 0006](/decisions/0006-each-converted-job-gets-its-own-vault-jwt-role.md)
-gives each converted job its own JWT role. Neither is rolled out: R3 is
-blocked, R7 is ready, R8 is a stub. The spike's findings are in
+gives each converted job its own JWT role. Neither is rolled out: R3, R7 and R8
+never went further than blocked, ready and stub before `5b2ed1b` reset the
+loop, and none of them is in the current loop. The spike's findings are in
 [Short-lived Postgres credentials from Vault](/proposals/postgres-dynamic-credentials.md).
 The spike's Terraform, `database-secrets-poc.tf`, was deleted from the
 applications root in 19c1696. Any applications apply since then plans to
@@ -151,3 +146,11 @@ The one migration creates a role `ducklake` with an empty password, which
 Terraform does not declare, and its down file drops a `users` table instead.
 Services own their schema (Bifrost migrates its own) and Terraform owns roles.
 Treat the folder as dead until someone decides otherwise.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `S2-spike-postgres-vault-creds` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R8-rollout-postgres-root-consumers` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `backup-swap-memex-for-openviking` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

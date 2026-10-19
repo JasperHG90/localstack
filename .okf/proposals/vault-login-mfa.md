@@ -1,19 +1,40 @@
 ---
 type: proposal
 title: Two-factor auth on Vault logins, the handoff
-description: "Built and tested but not applied as of 2026-09-12: TOTP on the userpass mount, localstack login speaking Login MFA, and the ov-dash jwt-lab chain that lets the enforcement name the mount. Holds the Terraform inventory and the next steps."
+description: "Built: the 2026-09-12 handoff for TOTP on the userpass mount, localstack login speaking Login MFA, and the ov-dash jwt-lab chain that lets the enforcement name the mount. The code is in identity.tf, oidc.tf, ov-dash.hcl and scripts/vault_mfa.sh, and the vault-identity and ov-dash concepts now describe it."
 tags: [vault, mfa, ov-dash, handoff]
 status: draft
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: vault-2fa
-    resource: git:3ec5d1e:docs/vault-2fa.md
-    last_modified: 2026-09-12
+  - id: identity
+    resource: deployments/infrastructure/identity.tf
+  - id: oidc
+    resource: deployments/infrastructure/oidc.tf
+  - id: ov-dash-jobspec
+    resource: deployments/applications/services/ov-dash.hcl
+  - id: vault-mfa-sh
+    resource: scripts/vault_mfa.sh
+  - id: cli-vault-auth
+    resource: cli/src/localstack_cli/auth/vault.py
 ---
 
 # Two-factor auth on Vault logins, the handoff
+
+> **Built.** Everything this handoff lists is in the code at HEAD
+> (2026-10-19): `vault_identity_mfa_totp.lab` and
+> `vault_identity_mfa_login_enforcement.userpass` in
+> `deployments/infrastructure/identity.tf`, the `jwt-lab` mount beside them,
+> the ov-dash client in `deployments/infrastructure/oidc.tf`,
+> `AUTH_MODE = "vault-oidc"` in `deployments/applications/services/ov-dash.hcl`,
+> the `mfa_*` recipes in `justfile`, and `MFARequired` and `validate_mfa` in
+> `cli/src/localstack_cli/auth/vault.py`. The repository does not record
+> whether the rollout was applied to the live cluster. What the code does now
+> is [Vault human identity](/components/vault-identity.md), section Login MFA,
+> and [ov-dash](/components/ov-dash.md). The text below is the handoff as
+> written on 2026-09-12.
 
 Handoff, updated 2026-09-12. Ready to apply, mount-wide. The enrollment
 tooling is built and tested, `localstack login` speaks Login MFA, and the
@@ -73,8 +94,9 @@ lacked `key:read` on `terraform/infrastructure`, and that is no longer true.
   `jwt-lab` mount, role and aliases the ov-dash chain needs.
 - `deployments/applications/services/ov-dash.hcl`: the dashboard's own
   settings, and what each one is for.
-- `deployments/infrastructure/oidc.tf`: the six clients this covers, ov-dash
-  among them.
+- `deployments/infrastructure/oidc.tf`: the clients this covers, ov-dash
+  among them. It held six on 2026-09-12. The Hermes dashboard client, added
+  later in `fd5134d`, makes seven.
 - `scripts/vault_mfa.sh`: enrollment, reset, status, and the traps.
 - `scripts/vault_mfa_test.sh`: `just mfa_test`, a fake-Vault suite that needs
   no cluster.
@@ -83,3 +105,9 @@ lacked `key:read` on `terraform/infrastructure`, and that is no longer true.
 - `cli/src/localstack_cli/auth/vault.py`: `MFARequired` and `validate_mfa`.
 - `docs/explanation/cluster-roles.md`: what `developer` and `admin` can
   already reach.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/vault-2fa.md` as of commit `3ec5d1e`, since deleted

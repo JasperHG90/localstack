@@ -9,23 +9,13 @@ generated:
   at: 2026-09-27
 sources:
   - id: firewall-role
-    resource: git:3ec5d1e:bootstrap/roles/firewall/tasks/main.yml
+    resource: bootstrap/roles/firewall/tasks/main.yml
   - id: configure-network
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_network.yml
+    resource: bootstrap/playbooks/configure_network.yml
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: apps-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
-  - id: always-run-trigger
-    resource: git:fef7eee:deployments/infrastructure/services.tf
-  - id: N1-netsec-restrict-prometheus-loki-to-cluster
-    resource: loop:N1-netsec-restrict-prometheus-loki-to-cluster
-  - id: N2-netsec-remove-dnsmasq-for-public-dns
-    resource: loop:N2-netsec-remove-dnsmasq-for-public-dns
-  - id: N3-netsec-converging-firewall-provisioner
-    resource: git:3ec5d1e:.loop/verdicts/N3-netsec-converging-firewall-provisioner.plan-validator.md
-  - id: N4-netsec-edge-only-service-access
-    resource: git:3ec5d1e:.loop/verdicts/N4-netsec-edge-only-service-access.plan-validator.md
+    resource: deployments/applications/services.tf
 ---
 
 # The host firewall (ufw) and the three things that write it
@@ -127,15 +117,26 @@ dropping one address silently stops that node's data.
 
 ## Planned, not built
 
-- N3 (blocked) would make the Terraform half reconcile: add what is missing
-  and delete rules the map owns and no longer declares. Its plan review
-  (`.loop/verdicts/N3-netsec-converging-firewall-provisioner.plan-validator.md`)
-  failed it on premise: the reconcile would not run on a plain apply, the
-  first-apply migration errors, and the prune scope deletes nothing. The
-  ledger's blocker text, which says no review ever ran, is stale. The ufw lock
-  race above is from that same review.
+Neither ticket below is in the current loop. Both were open when `5b2ed1b`
+(2026-10-19) reset it, and their plans and verdicts survive only in git
+history.
+
+- N3 (was blocked) would make the Terraform half reconcile: add what is
+  missing and delete rules the map owns and no longer declares. Its plan
+  review failed it on premise: the reconcile would not run on a plain apply,
+  the first-apply migration errors, and the prune scope deletes nothing. The
+  ufw lock race above is from that same review.
   `docs/how-to/narrow-the-monitoring-firewall-rules.md` is the manual version
   today.
-- N4 (planning) would close direct LAN access to every service with an edge
-  route. Its review found the tailnet bypass above, which the plan's
+- N4 (was planning) would close direct LAN access to every service with an
+  edge route. Its review found the tailnet bypass above, which the plan's
   mechanism cannot close.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `N1-netsec-restrict-prometheus-loki-to-cluster` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `N2-netsec-remove-dnsmasq-for-public-dns` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- `.loop/verdicts/N3-netsec-converging-firewall-provisioner.plan-validator.md` as of commit `3ec5d1e`, since deleted
+- `.loop/verdicts/N4-netsec-edge-only-service-access.plan-validator.md` as of commit `3ec5d1e`, since deleted

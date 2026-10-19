@@ -10,9 +10,10 @@ status: stable
 decision_status: Accepted
 decided_on: 2026-09-05
 sources:
-  - id: openviking
-    resource: git:3ec5d1e:docs/openviking.md
-    last_modified: 2026-09-12
+  - id: openviking-job
+    resource: deployments/applications/services/openviking.hcl
+  - id: minio-policies
+    resource: deployments/applications/storage.tf
 ---
 
 # ADR 0007: OpenViking's static MinIO key carries no claim-mode policy

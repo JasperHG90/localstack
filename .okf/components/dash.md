@@ -9,29 +9,21 @@ generated:
   at: 2026-09-27
 sources:
   - id: dash-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/dash.hcl
+    resource: deployments/applications/services/dash.hcl
   - id: dash-backend
-    resource: git:3ec5d1e:deployments/applications/services/dash/backend/src/dash_app/health.py
+    resource: deployments/applications/services/dash/backend/src/dash_app/health.py
   - id: dash-tiles-test
-    resource: git:3ec5d1e:deployments/applications/services/dash/backend/tests/test_tiles.py
+    resource: deployments/applications/services/dash/backend/tests/test_tiles.py
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: infra-machine-roles
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: oauth2-proxy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/oauth2-proxy.hcl
+    resource: deployments/infrastructure/services/oauth2-proxy.hcl
   - id: infra-oidc
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
-  - id: hooks-removed
-    resource: git:f197702
-  - id: L3-landing-dash-app
-    resource: git:3ec5d1e:.loop/reflections/L3-landing-dash-app.md
-  - id: L4-landing-dash-fe-be-split
-    resource: git:3ec5d1e:.loop/reflections/L4-landing-dash-fe-be-split.md
-  - id: L6-landing-dash-service-groups
-    resource: git:3ec5d1e:.loop/reflections/L6-landing-dash-service-groups.md
+    resource: deployments/infrastructure/oidc.tf
 ---
 
 # dash, the landing page
@@ -63,8 +55,8 @@ infrastructure root, or it falls through to the frontend.
 - `services/dash/frontend/`: `index.html`, and an `nginx.conf` that listens
   on 8000 because host networking makes the container port the host port.
 - `services/dash/backend/`: its own uv project (`dash_app`: `main.py`,
-  `tiles.py`, `status.py`, `live.py`, and the copied `health.py`,
-  `nomad_client.py`, `consul_client.py`, `services.py`).
+  `tiles.py`, `status.py`, `live.py`, `config.py`, and the copied `health.py`,
+  `nomad_client.py`, `consul_client.py`, `services.py` and `_http.py`).
 - `services/dash/tiles.json`: the groups and tiles.
 - `services.tf`: `local.dash_tiles_json` and `nomad_job.dash`, with the two
   image tags pinned separately and the Nomad and Consul addresses as literals.
@@ -103,7 +95,7 @@ default one rather than adding to it.
 
 **No dependency on `cli/`.** L3 imported cli's health logic through a uv
 path dependency, and the Docker multi-stage build shipped a broken editable
-install that crashed only at runtime. L4 copied the four modules down
+install that crashed only at runtime. L4 copied the modules down
 instead (`docs/reference/dash.md`). No test compares the copies with
 `cli/src/localstack_cli/api/`.
 
@@ -143,9 +135,10 @@ instead (`docs/reference/dash.md`). No test compares the copies with
   `f197702` ("fix: openviking code", 2026-09-09) deleted the
   `dash-backend-*` hooks from `.pre-commit-config.yaml`, together with the
   registry-ui and driftwatch hooks, the `oauth2-proxy-guard` hooks and cli's
-  pytest hook. The loop's only gate is `just pre_commit`, so none of these run
-  unless someone runs `uv run pytest` in `services/dash/backend/` by hand.
-  The suite passed (75 tests) on 2026-09-27.
+  pytest hook. The loop's gates are `just pre_commit` and
+  `uv run --directory cli pytest` (`.loop/config.toml`), so cli's tests run
+  again, but dash's suite runs only when someone runs `uv run pytest` in
+  `services/dash/backend/` by hand. It passed (75 tests) on 2026-10-19.
 
 ## History
 
@@ -165,3 +158,12 @@ Why TOTP enrollment has no page here is
 - `docs/explanation/dash-routing.md`
 - `docs/how-to/change-a-dash-tile.md`
 - `docs/how-to/rebuild-the-dash-images.md`
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `f197702`
+- `.loop/reflections/L3-landing-dash-app.md` as of commit `3ec5d1e`, since deleted
+- `.loop/reflections/L4-landing-dash-fe-be-split.md` as of commit `3ec5d1e`, since deleted
+- `.loop/reflections/L6-landing-dash-service-groups.md` as of commit `3ec5d1e`, since deleted

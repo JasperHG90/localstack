@@ -7,18 +7,28 @@ status: draft
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: nats-postgres-cdc-bridge
-    resource: git:3ec5d1e:docs/nats-postgres-cdc-bridge.md
-    last_modified: 2026-07-05
+  - id: nats-jobspec
+    resource: deployments/infrastructure/services/nats.hcl
+  - id: memex-db-credentials
+    resource: deployments/applications/secrets.tf
+  - id: nomad-workloads-policy
+    resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
 ---
 
 # PostgreSQL CDC → NATS bridge
 
-> Not built. No `pg-nats-bridge` job, trigger or image exists under
-> `deployments/`. The names below (`registry.localstack:5000`,
+> Not built as of 2026-10-19. No `pg-nats-bridge` job, trigger or image
+> exists under `deployments/`. The names below (`registry.localstack:5000`,
 > `kv/data/infrastructure/postgres`) do not appear under `deployments/`, and
-> the `.consul` URL does not resolve for ordinary clients.
+> the `.consul` URL does not resolve for ordinary clients. Three more things
+> in the jobspec are wrong for this cluster. The datacenter is `localstack`,
+> not `dc1`. The cluster's own OCI registry is `registry.lab.orangecluster.nl`.
+> memex's Postgres password is at `secret/default/memex/postgres`
+> (`deployments/applications/secrets.tf`), which the shared `nomad-workloads`
+> policy lets only the `memex` job read, so a bridge job needs its own
+> credential and its own grant.
 
 Capture row-level changes from PostgreSQL tables and publish them as NATS JetStream messages — without modifying the application that writes to the database. Uses PostgreSQL's built-in `LISTEN/NOTIFY` mechanism as the change-data-capture (CDC) source.
 
@@ -351,3 +361,9 @@ For guaranteed CDC with no gaps, you'd need PostgreSQL logical replication (`wal
 - [PostgreSQL NOTIFY docs](https://www.postgresql.org/docs/current/sql-notify.html)
 - [psycopg async notifications](https://www.psycopg.org/psycopg3/docs/advanced/async.html)
 - NATS job spec — `deployments/infrastructure/services/nats.hcl`
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `docs/nats-postgres-cdc-bridge.md` as of commit `3ec5d1e`, the page this concept was moved from

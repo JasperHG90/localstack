@@ -9,23 +9,21 @@ generated:
   at: 2026-10-19
 sources:
   - id: dockerfile
-    resource: git:3ec5d1e:.devcontainer/Dockerfile
+    resource: .devcontainer/Dockerfile
   - id: devcontainer-json
-    resource: git:3ec5d1e:.devcontainer/devcontainer.json
+    resource: .devcontainer/devcontainer.json
   - id: devcontainer-bootstrap
-    resource: git:3ec5d1e:.devcontainer/bootstrap.sh
+    resource: .devcontainer/bootstrap.sh
   - id: env-example
-    resource: git:3ec5d1e:.devcontainer/.env.example
+    resource: .devcontainer/.env.example
   - id: devcontainer-path-test
-    resource: git:3ec5d1e:cli/tests/test_devcontainer_path.py
+    resource: cli/tests/test_devcontainer_path.py
+  - id: devcontainer-volumes-test
+    resource: cli/tests/test_devcontainer_volumes.py
   - id: vault-token-file
-    resource: git:3ec5d1e:cli/src/localstack_cli/auth/vault_token_file.py
+    resource: cli/src/localstack_cli/auth/vault_token_file.py
   - id: apps-justfile
-    resource: git:3ec5d1e:deployments/applications/justfile
-  - id: D2-cli-login-broker-tokens
-    resource: loop:D2-cli-login-broker-tokens
-  - id: D6-cli-deps-and-shims
-    resource: loop:D6-cli-deps-and-shims
+    resource: deployments/applications/justfile
 ---
 
 # The devcontainer
@@ -113,6 +111,11 @@ local `.env` no longer sets the tokens, so on this machine the session is what
 runs. The tracked example, the CLI's warnings and the `shims.py` docstring
 still describe the injected-root case as the normal one.
 
+`bootstrap.sh` also sets an `mc` alias named `minio` from
+`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, which
+`.env.example` does not list. It prints a warning and carries on when
+they are missing.
+
 `deployments/applications/justfile` also loads the same file with
 `set dotenv-filename := "../../.devcontainer/.env"`. Its `rebuild_*` recipes
 need `GITHUB_WRITE_PAT` and `GITHUB_USER` from it, a write-scoped token that
@@ -149,3 +152,10 @@ Four named volumes hold state that outlives a rebuild:
 A new named volume is owned by root when the image has nothing at its mount
 point, which is the case for `cli/.venv`. `bootstrap.sh` chowns all four to
 `vscode` before anything else runs.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `D2-cli-login-broker-tokens` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `D6-cli-deps-and-shims` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

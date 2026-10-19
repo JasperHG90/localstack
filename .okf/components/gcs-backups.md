@@ -1,7 +1,7 @@
 ---
 type: component
 title: GCS backups
-description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and one MinIO bucket (openviking) to a GCS bucket, each reading copies of the root credential and the same GCS key. A drift test pins the bucket name and the reference page's facts, but no gate runs it, no alert watches the jobs, and no restore has been tried."
+description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and one MinIO bucket (openviking) to a GCS bucket, each reading copies of the root credential and the same GCS key. A drift test pins the bucket name and the reference page's facts and runs in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and no restore has been tried."
 tags: [backup, gcs, postgres, minio, nomad, vault, component]
 status: stable
 generated:
@@ -9,25 +9,17 @@ generated:
   at: 2026-09-27
 sources:
   - id: backup-postgres-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/backup-postgres.hcl
+    resource: deployments/infrastructure/services/backup-postgres.hcl
   - id: backup-minio-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/backup-minio.hcl
+    resource: deployments/infrastructure/services/backup-minio.hcl
   - id: infra-storage
-    resource: git:3ec5d1e:deployments/infrastructure/storage.tf
+    resource: deployments/infrastructure/storage.tf
   - id: infra-secrets
-    resource: git:3ec5d1e:deployments/infrastructure/secrets.tf
+    resource: deployments/infrastructure/secrets.tf
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: backup-coverage-test
-    resource: git:3ec5d1e:cli/tests/test_backup_coverage.py
-  - id: move-off-firebat-commit
-    resource: git:4b0af46
-  - id: backup-swap-memex-for-openviking
-    resource: loop:backup-swap-memex-for-openviking
-  - id: gcs-backups-doc-to-runbook
-    resource: loop:gcs-backups-doc-to-runbook
-  - id: R8-rollout-postgres-root-consumers
-    resource: loop:R8-rollout-postgres-root-consumers
+    resource: cli/tests/test_backup_coverage.py
 ---
 
 # GCS backups
@@ -65,9 +57,9 @@ key. Both copies follow their source in the same apply, because they reference
 the same `random_password`. For Postgres that is not enough, since the server
 keeps its first password (see [Postgres](/components/postgres.md)).
 
-R8 owns moving `backup-postgres` off root. Its open question is whether
-`pg_dumpall` works at all without superuser, since it dumps roles and their
-passwords. `backup-minio` could use a claim-mode policy named `backup-minio`
+R8 planned moving `backup-postgres` off root, and was still a stub when
+`5b2ed1b` reset the loop. Its open question is whether `pg_dumpall` works at
+all without superuser, since it dumps roles and their passwords. `backup-minio` could use a claim-mode policy named `backup-minio`
 ([MinIO](/components/minio.md)). No ticket covers that.
 
 The GCS key is a long-lived JSON key held in Terraform state and in two KV
@@ -97,10 +89,11 @@ finds nothing, and the doc checks bind figures to their task: a reviewer
 swapped the `pgdump` and `upload` figures and a section-wide check stayed
 green, and that pair is the one that had drifted before.
 
-`just pre_commit`, which is also the loop's gate, runs ruff and mypy over
-`cli/` but not pytest. The tests run only from `cli/` (`just test` or
-`uv run pytest`). Nothing checks the Vault paths, the GCS bucket, the host
-literals, or that a backup can be read back.
+`just pre_commit` runs ruff and mypy over `cli/` but not pytest, so a plain
+commit does not run this test. The loop runs it: since `5b2ed1b` its gates in
+`.loop/config.toml` are `just pre_commit` and `uv run --directory cli pytest`,
+so every ticket's stamp runs it. Nothing checks the Vault paths, the GCS
+bucket, the host literals, or that a backup can be read back.
 
 ## Traps
 
@@ -127,3 +120,21 @@ literals, or that a backup can be read back.
   radxa before upload, so a very large database needs that much free disk
   there.
 - **Restore is unproven.** No read-back has been recorded.
+
+## Planned, not built
+
+Ticket `backup-durable-buckets` widens `backup-minio` to the four durable
+buckets, `openviking`, `registry`, `models` and `datalake`, each under
+`minio/<bucket>/`, and the test to match. It is the first step of the move
+from MinIO to SeaweedFS, which restores from these GCS copies rather than
+copying between the two stores. `loki`, `tempo`, `memex` and
+`mlflow-artifacts` stay out.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `4b0af46`
+- loop ticket `backup-swap-memex-for-openviking` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `gcs-backups-doc-to-runbook` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R8-rollout-postgres-root-consumers` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

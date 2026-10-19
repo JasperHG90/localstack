@@ -9,25 +9,17 @@ generated:
   at: 2026-09-27
 sources:
   - id: machine-roles-tf
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: database-tf
-    resource: git:3ec5d1e:deployments/infrastructure/database.tf
+    resource: deployments/infrastructure/database.tf
   - id: nomad-server-tasks
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/tasks/main.yml
+    resource: bootstrap/roles/nomad_server/tasks/main.yml
   - id: enable-consul-secrets
-    resource: git:3ec5d1e:bootstrap/playbooks/enable_consul_secrets.yml
+    resource: bootstrap/playbooks/enable_consul_secrets.yml
   - id: broker-py
-    resource: git:3ec5d1e:cli/src/localstack_cli/auth/broker.py
+    resource: cli/src/localstack_cli/auth/broker.py
   - id: infrastructure-services-tf
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
-  - id: F5-foundation-vault-nomad-secrets-engine
-    resource: loop:F5-foundation-vault-nomad-secrets-engine
-  - id: F6-foundation-vault-consul-secrets-engine
-    resource: loop:F6-foundation-vault-consul-secrets-engine
-  - id: S2-spike-postgres-vault-creds
-    resource: loop:S2-spike-postgres-vault-creds
-  - id: G2-nomad-ui-oidc-login
-    resource: loop:G2-nomad-ui-oidc-login
+    resource: deployments/infrastructure/services.tf
 ---
 
 # Vault's dynamic secrets engines
@@ -37,8 +29,9 @@ Three Vault engines mint short-lived credentials on this cluster: `nomad/`,
 identity tokens described in
 [the workload identity chain](/components/workload-identity-chain.md).
 Postgres credentials still come from KV. Moving them to an engine was decided
-in [ADR 0005](/decisions/0005-postgres-credentials-come-from-vaults-database-engine.md),
-and the rollout ticket, R3, is blocked.
+in [ADR 0005](/decisions/0005-postgres-credentials-come-from-vaults-database-engine.md).
+Its rollout ticket, R3, was blocked when `5b2ed1b` reset the loop, and the
+current loop has no ticket for it.
 
 ## Who owns what
 
@@ -48,10 +41,18 @@ and the rollout ticket, R3, is blocked.
 | `consul/` | Ansible, `bootstrap/playbooks/enable_consul_secrets.yml` (`secrets enable`, `config/access` with the Consul management token) | Terraform, `machine_roles.tf` | Ansible (`community.general.consul_policy`) |
 | `redis/` | Terraform, `database.tf` | Terraform, `database.tf` | none, Redis ACL rules are inline |
 
-The split follows one rule: a management token for Nomad or Consul never
-reaches Terraform. Ansible reads them on the manager and writes them into
-`config/access`, and Vault never returns them. F5 set this up for Nomad and
-F6 copied it for Consul.
+The split follows one rule: the bootstrap management token Vault holds for
+Nomad or Consul never reaches Terraform. Ansible reads each on the manager
+and writes it into `config/access`, and Vault never returns it. F5 set this
+up for Nomad and F6 copied it for Consul.
+
+That rule does not keep management rights out of Terraform. Every
+infrastructure plan and apply reads `data.vault_nomad_access_token.manage`,
+a fresh Nomad management token minted from `nomad/creds/manage`, and feeds
+it to `provider "nomad" { alias = "manage" }` in `machine_roles.tf`. The
+token is short-lived (30m lease) and lands in Terraform state, but it is a
+full management token. Consul has no such role, so no Consul management
+token reaches Terraform.
 
 The two sides are not symmetric. Nomad ACL policies are Terraform's, written
 through the aliased `nomad.manage` provider. The Consul `deploy` policy is
@@ -138,7 +139,9 @@ Traps:
 - **The firewall rule names the consumer's node.**
   `deployments/infrastructure/services.tf` allows 6379
   only from the embark node. A new consumer on another node cannot connect
-  until its address is added there.
+  until its address is added there. Vault's own node, firebat, is not on the
+  list either. The connection works today only through an older LAN-wide
+  rule left on the node, as [the Redis cache](/components/redis.md) explains.
 
 ## What was proven but not built
 
@@ -148,3 +151,13 @@ expires. The findings and the runbook are the
 [Postgres dynamic credentials proposal](/proposals/postgres-dynamic-credentials.md),
 and the traps it hit are the
 [write-only credentials practice](/practices/terraform-write-only-credentials.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F5-foundation-vault-nomad-secrets-engine` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F6-foundation-vault-consul-secrets-engine` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `S2-spike-postgres-vault-creds` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `G2-nomad-ui-oidc-login` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R3-rollout-postgres-vault-db-creds`: stage `blocked` in `.loop/ledger.json` as of commit `48f52e2`, since deleted

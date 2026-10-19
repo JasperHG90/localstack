@@ -9,31 +9,25 @@ generated:
   at: 2026-09-27
 sources:
   - id: inventory
-    resource: git:3ec5d1e:bootstrap/inventory/cluster.ini
+    resource: bootstrap/inventory/cluster.ini
   - id: infra-services
-    resource: git:3ec5d1e:deployments/infrastructure/services.tf
+    resource: deployments/infrastructure/services.tf
   - id: apps-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: registry-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/registry.hcl
+    resource: deployments/applications/services/registry.hcl
   - id: tempo-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/tempo.hcl
+    resource: deployments/applications/services/tempo.hcl
   - id: acme-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/acme.hcl
+    resource: deployments/infrastructure/services/acme.hcl
   - id: grafana-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/grafana.hcl
+    resource: deployments/infrastructure/services/grafana.hcl
   - id: alloy-jobspec
-    resource: git:3ec5d1e:deployments/infrastructure/services/alloy.hcl
+    resource: deployments/infrastructure/services/alloy.hcl
   - id: registry-added
-    resource: git:f1091dc:deployments/applications/services/registry.hcl
+    resource: deployments/applications/services/registry.hcl
   - id: tempo-added
-    resource: git:9a84f24:deployments/applications/services/tempo.hcl
-  - id: sy1-node-probe
-    resource: git:3ec5d1e:.loop/verdicts/SY1-switchyard-deployment.plan-validator.snapshot.md
-  - id: N1-netsec-restrict-prometheus-loki-to-cluster
-    resource: loop:N1-netsec-restrict-prometheus-loki-to-cluster
-  - id: U1-upgrade-pin-hashistack-versions
-    resource: loop:U1-upgrade-pin-hashistack-versions
+    resource: deployments/applications/services/tempo.hcl
 ---
 
 # ubuntu, the observability node
@@ -123,3 +117,11 @@ on radxa. Moving Prometheus off this node means rewriting each of those.
 Related: [the observability pipeline](/components/observability-pipeline.md),
 [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md).
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- `.loop/verdicts/SY1-switchyard-deployment.plan-validator.snapshot.md` as of commit `3ec5d1e`, since deleted
+- loop ticket `N1-netsec-restrict-prometheus-loki-to-cluster` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `U1-upgrade-pin-hashistack-versions` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

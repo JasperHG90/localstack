@@ -9,25 +9,19 @@ generated:
   at: 2026-09-27
 sources:
   - id: registry-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/registry.hcl
+    resource: deployments/applications/services/registry.hcl
   - id: app-services
-    resource: git:3ec5d1e:deployments/applications/services.tf
+    resource: deployments/applications/services.tf
   - id: app-secrets
-    resource: git:3ec5d1e:deployments/applications/secrets.tf
+    resource: deployments/applications/secrets.tf
+  - id: app-storage
+    resource: deployments/applications/storage.tf
   - id: haproxy
-    resource: git:3ec5d1e:deployments/infrastructure/services/haproxy.hcl
+    resource: deployments/infrastructure/services/haproxy.hcl
   - id: embark-jobspec
-    resource: git:3ec5d1e:deployments/applications/services/embark.hcl
+    resource: deployments/applications/services/embark.hcl
   - id: embark-pull
-    resource: git:3ec5d1e:deployments/applications/services/embark/pull.sh
-  - id: registry-commit
-    resource: git:f1091dc
-  - id: relativeurls-commit
-    resource: git:b9dbaf1
-  - id: T4-tls-fix-podman-image-digest-refs
-    resource: loop:T4-tls-fix-podman-image-digest-refs
-  - id: R13-rollout-loki-registry-keyless-minio
-    resource: loop:R13-rollout-loki-registry-keyless-minio
+    resource: deployments/applications/services/embark/pull.sh
 ---
 
 # Container registry
@@ -68,7 +62,10 @@ literal, so moving the job off ubuntu means editing the other root too.
   credentials from `local/minio-creds.sh`, a `credential_process` helper that
   trades the job's Nomad JWT at MinIO's STS. Mechanism and helper contract:
   `docs/how-to/give-an-aws-sdk-go-service-keyless-minio-access.md`. The job
-  keeps `vault {}` because the htpasswd still comes from Vault.
+  keeps `vault {}` because the htpasswd still comes from Vault. The old static
+  key is still generated in `storage.tf` and stored at
+  `default/registry/minio` as the rollback path, though no job reads it. R13
+  superseded the R11 stub, which planned the registry alone.
 
 ## One user for everything
 
@@ -128,3 +125,13 @@ the driver rejects it, at pull time.
 
 Pin by digest alone with the version in a comment, as `acme.hcl` does, or by
 tag alone, as every other jobspec does.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- commit `f1091dc`
+- commit `b9dbaf1`
+- loop ticket `T4-tls-fix-podman-image-digest-refs` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R13-rollout-loki-registry-keyless-minio` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R11-rollout-registry-keyless-minio`, a stub R13 superseded (its plan is in `.loop/plans/` in git history before `5b2ed1b`)

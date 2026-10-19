@@ -9,27 +9,21 @@ generated:
   at: 2026-09-27
 sources:
   - id: machine-roles-tf
-    resource: git:3ec5d1e:deployments/infrastructure/machine_roles.tf
+    resource: deployments/infrastructure/machine_roles.tf
   - id: nomad-server-tasks
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/tasks/main.yml
+    resource: bootstrap/roles/nomad_server/tasks/main.yml
   - id: nomad-workloads-policy
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
+    resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
   - id: nomad-workloads-role
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json
+    resource: bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json
   - id: nomad-server-config
-    resource: git:3ec5d1e:bootstrap/roles/nomad_server/templates/nomad.hcl.j2
+    resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
   - id: oidc-tf
-    resource: git:3ec5d1e:deployments/infrastructure/oidc.tf
+    resource: deployments/infrastructure/oidc.tf
+  - id: minio-jobspec
+    resource: deployments/infrastructure/services/minio.hcl
   - id: workload-identity-explanation
-    resource: git:3ec5d1e:docs/workload-identity.md
-  - id: F1-foundation-nomad-wi-jwt-trust
-    resource: loop:F1-foundation-nomad-wi-jwt-trust
-  - id: F9-foundation-scope-nomad-workloads-policy
-    resource: loop:F9-foundation-scope-nomad-workloads-policy
-  - id: F10-foundation-nomad-oidc-issuer
-    resource: loop:F10-foundation-nomad-oidc-issuer
-  - id: R5-rollout-memex-oidc-auth
-    resource: loop:R5-rollout-memex-oidc-auth
+    resource: docs/explanation/workload-identity.md
 ---
 
 # The workload identity chain, as built
@@ -139,8 +133,12 @@ explanation page. Two traps from that ticket:
 memex (R5) verifies a raw workload JWT itself, against Nomad's JWKS, with
 `aud = memex` and a grant rule on `nomad_job_id`
 (`deployments/applications/services/memex/auth_oidc.json`). MinIO trusts the
-discovery document with `aud = minio`. Neither touches `jwt-nomad`. The
-audience registry is in the explanation page.
+discovery document with `aud = minio` (`MINIO_IDENTITY_OPENID_*_NOMAD` in
+`deployments/infrastructure/services/minio.hcl`, claim `nomad_job_id`). loki,
+tempo and registry each carry a `minio` identity block and trade it with
+`AssumeRoleWithWebIdentity` for short-lived keys. memex still reads a static
+MinIO key from KV. Neither verifier touches `jwt-nomad`. The audience
+registry is in the explanation page.
 
 ## History
 
@@ -149,3 +147,12 @@ that `nomad alloc fs` refuses to read `secrets/`, so proving a rendered
 secret means printing it to the task's logs. F9 narrowed the shared policy.
 F10 turned on discovery. `acme` was the first dedicated role and is the
 pattern the others copy.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `F1-foundation-nomad-wi-jwt-trust` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F9-foundation-scope-nomad-workloads-policy` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `F10-foundation-nomad-oidc-issuer` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
+- loop ticket `R5-rollout-memex-oidc-auth` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

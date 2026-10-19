@@ -9,21 +9,15 @@ generated:
   at: 2026-09-27
 sources:
   - id: tailscale-role
-    resource: git:3ec5d1e:bootstrap/roles/tailscale/tasks/main.yml
+    resource: bootstrap/roles/tailscale/tasks/main.yml
   - id: configure-tailscale
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_tailscale.yml
+    resource: bootstrap/playbooks/configure_tailscale.yml
   - id: seed-vault
-    resource: git:3ec5d1e:bootstrap/playbooks/seed_vault.yml
+    resource: bootstrap/playbooks/seed_vault.yml
   - id: bootstrap-justfile
-    resource: git:3ec5d1e:bootstrap/justfile
+    resource: bootstrap/justfile
   - id: configure-network
-    resource: git:3ec5d1e:bootstrap/playbooks/configure_network.yml
-  - id: tailscale-role-apply-routes-when-joined
-    resource: loop:tailscale-role-apply-routes-when-joined
-  - id: N4-netsec-edge-only-service-access
-    resource: git:3ec5d1e:.loop/verdicts/N4-netsec-edge-only-service-access.plan-validator.md
-  - id: N1-netsec-restrict-prometheus-loki-to-cluster
-    resource: loop:N1-netsec-restrict-prometheus-loki-to-cluster
+    resource: bootstrap/playbooks/configure_network.yml
 ---
 
 # The Tailscale subnet router on firebat
@@ -103,8 +97,9 @@ from a remote device, not from the play result.
 
 ## Planned, not built
 
-`tailscale-role-apply-routes-when-joined` is in planning. Its plan passed
-review with required fixes. It would add a `routes.yml` that reads
+Ticket `tailscale-role-apply-routes-when-joined` was in planning when
+`5b2ed1b` reset the loop, and the current loop has no such ticket. Its plan
+passed review with required fixes. It would add a `routes.yml` that reads
 `tailscale debug prefs`, runs `tailscale set` only when `AdvertiseRoutes` or
 `RouteAll` differ, fails the play if that unstable output changes shape, and
 warns, without failing, when `.Self.PrimaryRoutes` shows the route
@@ -112,5 +107,15 @@ unapproved. It would also be the repository's first Ansible behavior test,
 real `ansible-playbook` against a fake `tailscale` on `PATH`. None of this
 exists yet.
 
-C1 (blocked) would have CI join the tailnet as `tag:ci` to reach the cluster.
-N4 (planning) found that it cannot narrow tailnet access with ufw alone.
+Two more tickets stopped at the same reset. C1 (blocked) would have had CI
+join the tailnet as `tag:ci` to reach the cluster. N4 (planning) found that
+it cannot narrow tailnet access with ufw alone.
+
+## Evidence
+
+Built or recorded from these, which a `sources` entry cannot point at:
+
+- loop ticket `tailscale-role-apply-routes-when-joined`: its plan and plan-validator verdict are `.loop/plans/` and `.loop/verdicts/` as of commit `48f52e2`, since deleted
+- loop ticket `C1-cicd-tailscale-github-actions-deploy`: `.loop/plans/` as of commit `48f52e2`, since deleted
+- `.loop/verdicts/N4-netsec-edge-only-service-access.plan-validator.md` as of commit `3ec5d1e`, since deleted
+- loop ticket `N1-netsec-restrict-prometheus-loki-to-cluster` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

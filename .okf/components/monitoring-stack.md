@@ -1,25 +1,29 @@
 ---
 type: component
 title: Monitoring stack original build plan
-description: "The original build plan for Prometheus, Grafana and node-exporter, kept as history. It placed the stack on firebat, but the stack shipped on ubuntu (192.168.2.47) and later gained Loki and Tempo, so its addresses and file lists are not current state."
+description: "The original build plan for Prometheus, Grafana and node-exporter, kept as history. It placed the stack on firebat, but the stack shipped on ubuntu (192.168.2.47) alongside Loki and Promtail, and later gained Tempo and swapped Promtail for Alloy, so its addresses and file lists are not current state."
 tags: [monitoring, prometheus, grafana, history]
 status: deprecated
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
 sources:
-  - id: monitoring
-    resource: git:3ec5d1e:docs/monitoring.md
-    last_modified: 2026-09-09
+  - id: prometheus-jobspec
+    resource: deployments/infrastructure/services/prometheus.hcl
+  - id: grafana-jobspec
+    resource: deployments/infrastructure/services/grafana.hcl
+  - id: node-exporter-jobspec
+    resource: deployments/infrastructure/services/node-exporter.hcl
 ---
 
 # Monitoring stack original build plan
 
-This is the original build plan for the stack. It predates the move of
-Prometheus and Grafana from firebat to `ubuntu` (`192.168.2.47`) and the
-addition of Loki, so treat the addresses and file lists below as history
-rather than as current state. The current stack is described in
-`docs/reference/monitoring.md`.
+This is the original build plan for the stack. Treat the
+addresses and file lists below as history rather than as current state. The
+commit that built it also added Loki and Promtail, and `9a84f24` later added
+Tempo and replaced Promtail with Alloy. The current stack is
+[The observability pipeline](/components/observability-pipeline.md), and what
+each service exposes to a user is `docs/reference/monitoring.md`.
 
 The firebat placement below never shipped. The commit that first added
 Prometheus, Grafana and node-exporter (`663663a`, 2026-04-26) constrained them

@@ -7,26 +7,35 @@ status: stable
 generated:
   by: claude-opus/5.5
   at: 2026-09-26
+stale_after: 6m
 sources:
-  - id: openviking
-    resource: git:3ec5d1e:docs/openviking.md
-    last_modified: 2026-09-12
+  - id: check-openviking-config
+    resource: scripts/check_openviking_config.py
+  - id: ov-conf
+    resource: deployments/applications/services/openviking/ov.conf.json
 ---
 
 # Measure a vision model before OpenViking uses it
 
-Image summaries route through Bifrost to ollama, as recorded in
-`docs/reference/openviking.md`.
+Image summaries route through Bifrost. The `vlm` block in
+`deployments/applications/services/openviking/ov.conf.json` names
+`gemini/gemini-3.5-flash-lite`, picked in commit `66bed3c` (2026-09-11).
+Before that it was `ollama/glm-5.3-flash`.
 
-Being in Bifrost's catalog is not enough. Of the models tried, only
-`glm-5.3-flash` accepted an image; plain `glm-5.3`, `glm-5.2`, `glm-5.1` and
-both `deepseek-v4` variants are cataloged, answer text, and refuse an image
-with `this model does not support image input`. `gemma4:31b`, `kimi-k3`,
-`minimax-m3` and `qwen3.5:397b` also work.
+Being in Bifrost's catalog is not enough. Of the ollama models tried, only
+`glm-5.3-flash` of the GLM line accepted an image. Plain `glm-5.3`,
+`glm-5.2`, `glm-5.1` and both `deepseek-v4` variants are cataloged and answer
+text, but refuse an image with `this model does not support image input`.
+`gemma4:31b`, `kimi-k3`, `minimax-m3` and `qwen3.5:397b` also work.
+`gemini/gemini-3.5-flash-lite` was measured on 2026-09-12: a 64x64 red PNG
+sent to `/v1/chat/completions` came back as "Red".
 
 Picking a blind model is not a loud failure, which is why
-`scripts/check_openviking_config.py` pins the list. OpenViking catches the
-error and returns a normal-looking summary:
+`scripts/check_openviking_config.py` pins the list as `VISION_MODELS` and fails
+when `vlm.model` is not in it. That check caught its own gap: `66bed3c`
+switched `ov.conf.json` to the Gemini model without adding it to the set, and
+the check stayed red until the model was measured and added. OpenViking
+catches the error and returns a normal-looking summary:
 
 ```python
 except Exception as e:
