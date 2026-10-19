@@ -1,0 +1,77 @@
+{
+  "identities": [
+    {
+      "name": "admin",
+      "credentials": [{"accessKey": "SPIKEADMINKEY0000001", "secretKey": "spikeAdminSecret0000000000000000000000001"}],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
+-rw-r--r--    1 seaweed  seaweed        244 Oct 19 17:55 /s3.json
+s3 up on 32778 (http 403)
+== phase 1: fresh start
+PASS bad key refused: ClientError
+PASS admin create bucket: 200
+PASS admin put object: "49f68a5c8493ec2c0bf489821c21fc3b"
+PASS iam CreateUser: app
+PASS iam CreateAccessKey: {'UserName': 'app', 'AccessKeyId': 'AKIAXFX4YLPMU8EWCAHW', 'Status': 'Active', 'SecretAccessKey': 'AC4CYvEy9fYTfuCNDfkOVz3kfTdrmw6psf9OztLw'}
+PASS iam PutUserPolicy: 200
+PASS app key reads spike/a.txt: b'hi'
+PASS app key denied CreateBucket: AccessDenied
+RESULT first ok
+{
+  "identities": [
+    {
+      "name": "app",
+      "credentials": [
+        {
+          "accessKey": "AKIAXFX4YLPMU8EWCAHW",
+          "secretKey": "AC4CYvEy9fYTfuCNDfkOVz3kfTdrmw6psf9OztLw",
+          "status": "Active"
+        }
+      ],
+      "actions": [
+        "Read:spike",
+        "Write:spike",
+        "List:spike"
+      ],
+      "account": null,
+      "disabled": false,
+      "serviceAccountIds": [],
+      "policyNames": [],
+      "isStatic": false,
+      "tags": []
+    },
+    {
+      "name": "admin",
+      "credentials": [
+        {
+          "accessKey": "SPIKEADMINKEY0000001",
+          "secretKey": "spikeAdminSecret0000000000000000000000001",
+          "status": ""
+        }
+      ],
+      "actions": [
+        "Admin",
+        "Read",
+        "Write",
+        "List",
+        "Tagging"
+      ],
+      "account": null,
+== phase 2: docker restart, same static file
+s3 up on 32779 (http 403)
+PASS bad key refused: ClientError
+PASS admin still lists buckets: ['spike']
+PASS admin still reads object: b'hi'
+PASS iam ListUsers: ['app', 'admin']
+PASS iam GetUserPolicy app: p
+PASS app key still reads after restart: b'hi'
+RESULT second ok
+I1019 17:55:48.345600 filer.go:477 Registered IAM gRPC service on filer (unauthenticated; set jwt.filer_signing.key in security.toml to require admin Bearer token)
+I1019 17:55:49.233283 s3.go:344 Starting S3 API Server with standard IAM
+E1019 17:55:49.239421 s3api_server.go:403 Failed to load IAM configuration: no signing key found for STS service; please provide 'signingKey' in IAM config, configure 'jwt.filer_signing.key' in security.toml, or ensure SSE-S3 is initialized
+I1019 17:56:28.209038 filer.go:477 Registered IAM gRPC service on filer (unauthenticated; set jwt.filer_signing.key in security.toml to require admin Bearer token)
+I1019 17:56:28.918800 s3.go:344 Starting S3 API Server with standard IAM
+E1019 17:56:29.049051 s3api_server.go:403 Failed to load IAM configuration: no signing key found for STS service; please provide 'signingKey' in IAM config, configure 'jwt.filer_signing.key' in security.toml, or ensure SSE-S3 is initialized
+rc1=0 rc2=0
