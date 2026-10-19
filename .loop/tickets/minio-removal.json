@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "slug": "minio-removal",
+  "stage": "planning",
+  "attempts": 0,
+  "plan_rounds": 0,
+  "review_rounds": 0,
+  "extra_plan_rounds": 0,
+  "extra_review_rounds": 0,
+  "blocker": null,
+  "fix": null,
+  "ask": "j-20261019T173118+0000-f2537ae7",
+  "split": null,
+  "split_plan_hash": null,
+  "split_hold": false,
+  "commit_sha": null,
+  "closed_outside": false,
+  "dropped": false,
+  "archived": false,
+  "worktree": null,
+  "branch": null,
+  "stamps": [],
+  "signoff": null,
+  "delegation": null,
+  "budget_base": null,
+  "signed_rows": [],
+  "resigns": [],
+  "accepted_risks": [],
+  "waivers": [],
+  "overrides": [],
+  "round": null,
+  "plan_hash": "63da7fc6478c7077567a4ed29d84d95ea87672a32f01d7f858eed569c38d5fba",
+  "intent": {
+    "epic": "seaweedfs-migration",
+    "depends_on": [
+      "seaweedfs-cutover"
+    ],
+    "priority": 6
+  },
+  "history": [
+    {
+      "from": "stub",
+      "to": "planning",
+      "at": "2026-10-19T17:50:35+00:00",
+      "by": "register"
+    }
+  ],
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T17:50:35+00:00"
+}
