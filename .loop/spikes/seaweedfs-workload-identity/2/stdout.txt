@@ -1,0 +1,24 @@
+== Config A: roles + trust policies on oidc:nomad_job_id and oidc:sub, roleMapping, no policyClaim (chrislusf/seaweedfs:4.48)
+[PASS] A1 tempo token -> TempoRole issues creds: HTTP 200
+[PASS] A2 loki token -> TempoRole REFUSED: HTTP 403 AccessDenied: trust policy validation failed: trust policy denies web identity assumption
+[PASS] A2c control: loki token -> OpenRole (no condition) issues creds: HTTP 200
+[PASS] A3 forged tempo token (rogue key) -> TempoRole REFUSED: HTTP 400 InvalidParameterValue: failed to validate web identity token: invalid token format: provider: invalid token format: token signature is invalid: crypto/rsa: verification error
+[PASS] A3b tempo token aud=minio -> TempoRole REFUSED: HTTP 400 InvalidParameterValue: failed to validate web identity token: invalid token audience: provider: invalid token audience: token audience matches none of the configured client IDs
+[PASS] A3c job tempo in namespace prod -> TempoRole REFUSED (sub condition): HTTP 403 AccessDenied: trust policy validation failed: trust policy denies web identity assumption
+[PASS] A4 TempoRole creds: put/get/list tempo OK: {'put': 'OK', 'get': 'OK', 'list': 'OK'}
+[PASS] A4 TempoRole creds: put/get/list loki AccessDenied: {'put': 'AccessDenied', 'get': 'AccessDenied', 'list': 'AccessDenied'}
+[PASS] A5 loki token -> LokiRole issues creds: HTTP 200
+[PASS] A5 LokiRole creds: loki OK, tempo AccessDenied: loki={'put': 'OK', 'get': 'OK', 'list': 'OK'} tempo={'put': 'AccessDenied', 'get': 'AccessDenied', 'list': 'AccessDenied'}
+[PASS] A6 tempo token, no RoleArn, no policyClaim -> refused (roleMapping not used by STS): HTTP 403 AccessDenied: RoleArn is required when claim-based policy mode is not configured
+[PASS] A7 Bearer: loki JWT GET tempo/seed.txt denied: HTTP 403
+[PASS] A7b Bearer: evil JWT (roleMapping -> TempoRole) GET tempo denied by trust gate: HTTP 403
+[PASS] (info) A7c Bearer: tempo JWT GET tempo (informational): HTTP 200
+[PASS] A7d Bearer: forged tempo JWT GET tempo denied: HTTP 403
+== Config B: same, plus provider policyClaim = nomad_job_id (claim mode, MinIO-like)
+[PASS] (info) B1 tempo token, no RoleArn -> claim-mode creds: HTTP 200
+[PASS] B1 claim creds: tempo vs loki: tempo={'put': 'OK', 'get': 'OK', 'list': 'OK'} loki={'put': 'AccessDenied', 'get': 'AccessDenied', 'list': 'AccessDenied'}
+[PASS] B2 loki claim creds: loki OK, tempo denied: loki={'put': 'OK', 'get': 'OK', 'list': 'OK'} tempo={'put': 'AccessDenied', 'get': 'AccessDenied', 'list': 'AccessDenied'}
+[PASS] B3 claim mode on: loki token -> TempoRole still REFUSED: HTTP 403 AccessDenied: trust policy validation failed: trust policy denies web identity assumption
+[PASS] (info) B4 job id 'evil,tempo' (comma) in claim mode (informational: gets tempo?): HTTP 200 tempo={'put': 'OK', 'get': 'OK', 'list': 'OK'}
+
+required checks: 17, failed: 0
