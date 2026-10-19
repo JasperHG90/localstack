@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "docs-howto",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 2,
@@ -47,7 +47,7 @@
   "split": "j-20261019T174759+0000-cc8c9c72",
   "split_plan_hash": "07829e5d42a2c5f2a9a62a3cd7b38c1e3b882b6f6c7086a37eeea49869d5a366",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "bf21cc75ac9f1eef63dc46869b22db8a0fb6e237",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -197,8 +197,14 @@
       "to": "verifying",
       "at": "2026-10-19T19:57:20+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-19T20:02:11+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T20:02:09+00:00"
+  "at": "2026-10-19T20:02:11+00:00"
 }
