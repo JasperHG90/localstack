@@ -1,17 +1,25 @@
 ---
 type: eval
 title: 'Eval: seaweedfs-buckets'
-description: 'Definition of done for seaweedfs-buckets: 0 row(s).'
+description: 'Definition of done for seaweedfs-buckets: 3 row(s).'
 tags:
 - eval
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T17:50:27+00:00'
+  at: '2026-10-19T20:54:56+00:00'
 slug: seaweedfs-buckets
-signoff: null
+signoff:
+  signer: delegated:jasperginn@gmail.com/planner
+  hash: d68df05f2c66706e257b1ca695e8a12c5e74b0d6175f986bfdaf5d5643303ed9
+  at: '2026-10-19T20:54:56+00:00'
 verified: null
 ---
 
 Rows: rows.json; the fields each row takes: loopctl schema eval-rows.
 
-No rows yet.
+- r1: The applications root declares exactly the SeaweedFS buckets datalake, models, registry, openviking, loki and tempo, each with the reader and writer users of its MinIO counterpart, and a backup user whose policy grants only read actions on the four durable buckets.
+  Fails when: a SeaweedFS bucket is missing or extra (memex or mlflow-artifacts included), a user's grant differs from its MinIO counterpart's, or the backup user's policy grants a write action or another bucket
+- r2 (judgment): After the playbook run and an apply, the admin key lists exactly the six buckets, each user's key reads and writes (or only reads) its own bucket and gets AccessDenied on another, the backup key reads all four durable buckets and is refused a write, and a second terraform plan reports no changes.
+  Fails when: any of those checks fails, or the evidence is not recorded in the review
+- r3 (judgment): bootstrap/playbooks/enable_consul_secrets.yml grants the deploy policy read on the seaweedfs service, and each job's SeaweedFS key is in Vault at default/<job>/seaweedfs beside its MinIO key.
+  Fails when: the grant is missing, or a key is at another path or replaces the MinIO one

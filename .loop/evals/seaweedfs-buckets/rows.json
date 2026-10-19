@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "The applications root declares exactly the SeaweedFS buckets datalake, models, registry, openviking, loki and tempo, each with the reader and writer users of its MinIO counterpart, and a backup user whose policy grants only read actions on the four durable buckets.",
+      "fails_when": "a SeaweedFS bucket is missing or extra (memex or mlflow-artifacts included), a user's grant differs from its MinIO counterpart's, or the backup user's policy grants a write action or another bucket",
+      "command": "uv run --directory cli pytest tests/test_seaweedfs_buckets.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "After the playbook run and an apply, the admin key lists exactly the six buckets, each user's key reads and writes (or only reads) its own bucket and gets AccessDenied on another, the backup key reads all four durable buckets and is refused a write, and a second terraform plan reports no changes.",
+      "fails_when": "any of those checks fails, or the evidence is not recorded in the review",
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": "bootstrap/playbooks/enable_consul_secrets.yml grants the deploy policy read on the seaweedfs service, and each job's SeaweedFS key is in Vault at default/<job>/seaweedfs beside its MinIO key.",
+      "fails_when": "the grant is missing, or a key is at another path or replaces the MinIO one",
+      "judgment": true
+    }
+  ]
+}
