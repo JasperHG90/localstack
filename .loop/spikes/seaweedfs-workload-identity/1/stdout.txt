@@ -1,0 +1,7 @@
+issuer: https://nomad.lab.orangecluster.nl
+jwks_uri: https://nomad.lab.orangecluster.nl/.well-known/jwks.json
+id_token_signing_alg_values_supported: ['RS256', 'EdDSA']
+keys: [('5c090acf-fb10-116c-b7c6-c5d02048c437', 'RSA', 'RS256'), ('8a5e2222-9b4c-a151-766e-d0d82851dd22', 'RSA', 'RS256'), ('98ab8625-4522-b485-3428-f5bca6172696', 'RSA', 'RS256'), ('a20913ef-f69c-043a-136f-a8f70bf70749', 'RSA', 'RS256')]
+seaweedfs 4.40: parseJWK kty=['RSA', 'EC'] signing methods=*jwt.SigningMethodRSA, *jwt.SigningMethodECDSA
+seaweedfs 4.48: parseJWK kty=['RSA', 'EC'] signing methods=*jwt.SigningMethodRSA, *jwt.SigningMethodECDSA
+OK: discovery, issuer match, all JWKS keys parseable by SeaweedFS
