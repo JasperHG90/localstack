@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "kmctl check passes on the bundle with no warning line",
+      "fails_when": "kmctl check exits nonzero or prints any line starting with warning",
+      "command": "out=$(uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl check 2>&1); rc=$?; printf \"%s\\n\" \"$out\"; [ $rc -eq 0 ] && ! printf \"%s\\n\" \"$out\" | grep -q \"^warning\""
+    },
+    {
+      "id": "r2",
+      "behavior": "kmctl review due reports no notices, and every due entry is due only because no person has verified it",
+      "fails_when": "the notices list is not empty, or any due entry has a reason other than unverified",
+      "command": "uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl review due --json | python3 -c 'import json,sys\nd=json.load(sys.stdin)\nbad=[e for e in d[\"due\"] if e[\"reasons\"]!=[\"unverified\"]]\nprint(len(d[\"notices\"]),\"notices;\",len(bad),\"other reasons\")\nsys.exit(1 if d[\"notices\"] or bad else 0)'"
+    },
+    {
+      "id": "r3",
+      "behavior": "every concept in components, nodes, practices, proposals and architecture names at least one source",
+      "fails_when": "any such concept other than index.md has no sources entry",
+      "command": "python3 -c 'import yaml,pathlib,sys\ndef fm(p):\n    t=pathlib.Path(p).read_text()\n    return yaml.safe_load(t.split(\"---\",2)[1]) if t.startswith(\"---\") else None\nbad=[str(p) for s in [\"components\",\"nodes\",\"practices\",\"proposals\",\"architecture\"] for p in pathlib.Path(\".okf\",s).glob(\"*.md\") if p.name!=\"index.md\" and not (fm(p) or {}).get(\"sources\")]\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'"
+    },
+    {
+      "id": "r4",
+      "behavior": "the summary is written: at most 500 words, no kmctl template sentence left, and it links a concept in each section",
+      "fails_when": "the body is over 500 words, a template sentence remains, or a section among architecture, components, decisions, nodes, practices and proposals has no link from it",
+      "command": "python3 -c 'import pathlib,re,sys\nt=pathlib.Path(\".okf/summary.md\").read_text().split(\"---\",2)[2]\nn=len(t.split())\ntpl=[\"in a few sentences\",\"citing the architecture pages\",\"never one bullet per decision\",\"what the bundle does not cover yet\"]\nleft=[x for x in tpl if x in t]\nmiss=[s for s in [\"architecture\",\"components\",\"decisions\",\"nodes\",\"practices\",\"proposals\"] if not re.search(r\"\\]\\(\"+s+r\"/[^)]+\\.md\",t)]\nprint(n,\"words; template left:\",left,\"; sections unlinked:\",miss)\nsys.exit(1 if n>500 or left or miss else 0)'"
+    },
+    {
+      "id": "r5",
+      "behavior": "the manifesto is written: each of its three sections has content, every invariant carries a planned or enforced status, and the values are marked as a draft",
+      "fails_when": "a section is empty, an invariant line has neither planned nor enforced, or the Values section does not say it is a draft for the operator",
+      "command": "python3 -c 'import pathlib,re,sys\nt=pathlib.Path(\".okf/manifesto.md\").read_text().split(\"---\",2)[2]\nparts=dict((m.group(1),m.group(2).strip()) for m in re.finditer(r\"^## (.+?)\\n(.*?)(?=^## |\\Z)\",t,re.S|re.M))\nempty=[k for k in [\"What this is for\",\"Invariants\",\"Values\"] if not parts.get(k)]\ninv=[l for l in parts.get(\"Invariants\",\"\").splitlines() if l.startswith(\"- \")]\nnostat=[l for l in inv if \"planned\" not in l and \"enforced\" not in l]\ndraft=\"draft\" in parts.get(\"Values\",\"\").lower()\nprint(\"empty:\",empty,\"; invariants:\",len(inv),\"; without status:\",nostat,\"; values draft:\",draft)\nsys.exit(1 if empty or not inv or nostat or not draft else 0)'"
+    },
+    {
+      "id": "r6",
+      "behavior": "every enforced invariant names a test in cli/tests that passes, and every invariant id appears in the Depicts section of an architecture page",
+      "fails_when": "an enforced invariant names no test, its test fails or does not exist, or an invariant id is in no Depicts section",
+      "judgment": true
+    },
+    {
+      "id": "r7",
+      "behavior": "every concept the change touches is named in a line the change adds to .okf/log.md, and no earlier log line changes",
+      "fails_when": "a changed concept id is missing from the added log lines, or the diff removes or rewrites a log line",
+      "command": "base=$(git merge-base HEAD main) && git diff \"$base\" -- .okf/log.md > /tmp/okf-log.diff && git diff --name-only \"$base\" -- .okf | python3 -c 'import sys,re\nd=open(\"/tmp/okf-log.diff\").read().splitlines()\nadded=\"\\n\".join(l for l in d if l.startswith(\"+\") and not l.startswith(\"+++\"))\nremoved=[l for l in d if l.startswith(\"-\") and not l.startswith(\"---\")]\nids=[p[5:-3] for p in sys.stdin.read().split() if p.endswith(\".md\") and p.split(\"/\")[-1] not in (\"index.md\",\"log.md\")]\nmiss=[i for i in ids if \"`\"+i+\"`\" not in added]\nprint(\"missing:\",miss,\"; removed log lines:\",len(removed))\nsys.exit(1 if miss or removed else 0)'"
+    },
+    {
+      "id": "r8",
+      "behavior": "decision record bodies only grow by appended sections; front matter may change; ADR 0001 and 0014 are left to r9",
+      "fails_when": "the body after the front matter of any decision other than 0001 and 0014 is not a prefix-preserving extension of its body at the merge base",
+      "command": "base=$(git merge-base HEAD main) && for f in $(git ls-tree --name-only \"$base\" .okf/decisions/ | grep -E \"/0[0-9]{3}-\" | grep -v -E \"/000[1]-|/0014-\"); do git show \"$base:$f\" > /tmp/adr.old; python3 -c 'import sys\nold=open(\"/tmp/adr.old\").read().split(\"---\",2)[2]\nnew=open(sys.argv[1]).read().split(\"---\",2)[2]\nok=new.startswith(old.rstrip(\"\\n\"))\nprint(sys.argv[1],\"ok\" if ok else \"BODY CHANGED\")\nsys.exit(0 if ok else 1)' \"$f\" || exit 1; done"
+    },
+    {
+      "id": "r9",
+      "behavior": "ADR 0014 is marked superseded by ADR 0001, and ADR 0001 names 0014",
+      "fails_when": "0014 is not status deprecated or does not link 0001, or 0001 does not mention 0014",
+      "command": "grep -q \"^status: deprecated\" .okf/decisions/0014-*.md && grep -q \"0001\" .okf/decisions/0014-*.md && grep -q \"0014\" .okf/decisions/0001-*.md"
+    },
+    {
+      "id": "r10",
+      "behavior": "no agent marks a concept verified",
+      "fails_when": "the diff adds a verified entry anywhere under .okf",
+      "command": "base=$(git merge-base HEAD main) && ! git diff \"$base\" -- .okf | grep -E \"^\\+\\s*verified:\""
+    },
+    {
+      "id": "r11",
+      "behavior": "each audited concept matches the code its sources name, R10 to R12 keyless MinIO for loki, registry and memex are recorded, and the drafted values come from the decisions and practices",
+      "fails_when": "a reviewer finds a concept claim the code contradicts, R10 to R12 are absent, or a value has no grounding in a decision or practice",
+      "judgment": true
+    }
+  ]
+}
