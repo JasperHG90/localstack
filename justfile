@@ -32,6 +32,7 @@ setup:
 
 # Run pre-commit checks on all files
 pre_commit:
+    bash scripts/seed_worktree.sh
     prek run --all-files
 
 # Install the localstack CLI: a project venv for the IDE, and `localstack` on PATH.
