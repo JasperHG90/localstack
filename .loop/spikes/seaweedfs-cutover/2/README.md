@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T18:09:39+00:00'
+  at: '2026-10-19T18:15:50+00:00'
 slug: seaweedfs-cutover
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-cutover/2
@@ -24,7 +24,9 @@ The command timed out:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-cutover 2`.
+Timed out (540 s). Not evidence on risk 1. The MinIO -> local dir -> SeaweedFS restore finished, then the direct S3-to-S3 sync into a second bucket got HTTP 500 from SeaweedFS on every PutObject: "No writable volumes and no free volumes left for collection registry-direct".
+Each bucket is its own SeaweedFS collection and takes its own volumes, and the spike's single node ran out of volume slots under its default limits. Run 3 fixed this with -volume.max=64 -master.volumeSizeLimitMB=256.
+Takeaway for seaweedfs-service: size -volume.max and the volume size limit for six buckets, or a bucket's first write fails with 500.
 
 ## Files
 
