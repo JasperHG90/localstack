@@ -1,0 +1,43 @@
+host arch: aarch64, kernel 6.19.13-orbstack-gbd1dc07b8cf4
+image arch: arm64 version label: 4.48
+version 30GB 4.48 530be3e37 linux arm64
+ports: s3=32770 master=32773 filer=32771 volume=32769 metrics=32772
+S3 port answered HTTP 403 after 4s
+--- health candidates (HTTP code)
+s3 /healthz -> 200
+s3 /status -> 200
+master /cluster/healthz -> 200
+master /cluster/status -> 200
+filer /healthz -> 200
+volume /healthz -> 200
+volume /status -> 200
+--- metrics
+metrics :9327/metrics SeaweedFS_ series: 185
+SeaweedFS_admin_maintenance_last_scan_timestamp_seconds
+SeaweedFS_admin_maintenance_next_scan_timestamp_seconds
+SeaweedFS_admin_workers_connected
+SeaweedFS_build_info
+SeaweedFS_filer
+SeaweedFS_filer_in_flight_upload_bytes
+SeaweedFS_filer_in_flight_upload_count
+SeaweedFS_filer_last_send_timestamp_of_subscribe
+SeaweedFS_filer_object_size_bytes_bucket
+SeaweedFS_filer_object_size_bytes_count
+SeaweedFS_filer_object_size_bytes_sum
+SeaweedFS_master_broadcast_to_full
+SeaweedFS_master_is_leader
+SeaweedFS_master_leader_changes
+SeaweedFS_master_pick_for_write_error
+idle: 64.12MiB / 512MiB ; cgroup memory.current=67264512 ; weed VmRSS=146188kB
+--- S3 load (boto3, admin identity)
+put+get 40 objects (25 MiB), list KeyCount=40
+wrong key refused: ClientError InvalidAccessKeyId
+delete objects + bucket ok
+after load: 139.4MiB / 512MiB ; cgroup memory.current=146612224 ; weed VmRSS=225052kB
+15s after load: 175.4MiB / 512MiB ; cgroup memory.current=190746624 ; weed VmRSS=190112kB
+state: running oom=false restarts=0
+I1019 17:54:45.579633 volume_grpc_client_to_master.go:98 checkWithMaster 127.0.0.1:9333: get master 127.0.0.1:9333 configuration: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial unix /tmp/seaweedfs-master-grpc-19333.sock: connect: no such file or directory"
+I1019 17:54:45.669529 masterclient.go:271 .master masterClient failed to receive from 127.0.0.1:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:54:46.602200 masterclient.go:271 .filer masterClient failed to receive from 127.0.0.1:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:54:46.675363 masterclient.go:271 .master masterClient failed to receive from 127.0.0.1:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:54:47.400405 volume_grpc_client_to_master.go:127 heartbeat to 127.0.0.1:9333 error: rpc error: code = Unknown desc = raft.Server: Not current leader
