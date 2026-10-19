@@ -1,3 +1,11 @@
+---
+description: Build, push and deploy new dash-backend and dash-frontend images.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/justfile
+  - resource: deployments/applications/services.tf
+---
+
 # How to rebuild and deploy the dash images
 
 ## Introduction
@@ -19,8 +27,9 @@ on `cli/`.
 
 ### Step 1: Bump the image tags
 
-Both tags are read out of `services.tf`, so bump them there before
-rebuilding. They are `dash_backend_version` and `dash_frontend_version`.
+Both tags are read out of `deployments/applications/services.tf`, so bump
+them there before rebuilding. They are `dash_backend_version` and
+`dash_frontend_version`.
 
 ### Step 2: Rebuild the backend image
 

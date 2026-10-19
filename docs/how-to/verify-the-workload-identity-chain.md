@@ -1,15 +1,27 @@
+---
+description: "Prove end to end that a Nomad job reads its own Vault secret with its workload identity and cannot read another job's."
+stale_after: 2027-01-19
+sources:
+  - resource: tests/wi-vault-probe.nomad.hcl
+  - resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
+  - resource: bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json
+---
+
 # How to verify the workload identity chain
 
 ## Introduction
 
-This proves the chain end to end. It writes a throwaway probe secret, runs a
-scratch job that reads it keylessly, captures the WI JWT, and checks the
+This proves the Nomad-to-Vault workload identity chain end to end. It
+writes a throwaway probe secret, runs a scratch job that reads it with no
+stored key, captures the job's workload identity (WI) JWT, and checks the
 positive and negative policy results. Purge the secret and stop the job
 afterward so nothing is left running.
 
 ## Prerequisites
 
-- An operator Vault token and a Nomad token, with `NOMAD_ADDR` set.
+- A `localstack login` session with the `developer` policy, and
+  `eval "$(localstack env)"` run in your shell for the Vault and Nomad
+  tokens, with `NOMAD_ADDR` set.
 - A checkout of this repo, for `tests/wi-vault-probe.nomad.hcl`.
 
 ## Directions
@@ -30,7 +42,8 @@ vault read -format=json auth/jwt-nomad/role/nomad-workloads | \
 
 ### Step 2: Write the probe secret
 
-Write the probe secret by hand (operator token; no Terraform state):
+Write the probe secret by hand with your own token. Terraform does not
+track it:
 
 ```
 vault kv put -mount=secret default/wi-test/probe \
@@ -49,16 +62,16 @@ nomad job status -short wi-test      # status: running
 ### Step 4: Read the job's output
 
 The job prints the WI JWT, the rendered probe secret, and its byte count to
-stdout (the secret files under `secrets/` are read-protected, so read them
-through `nomad alloc logs`, not `nomad alloc fs`):
+stdout. The secret files under `secrets/` are read-protected, so read them
+through `nomad alloc logs`, not `nomad alloc fs`:
 
 ```
 alloc=$(nomad job allocations wi-test | awk 'NR==2{print $1}')
 nomad alloc logs "$alloc" probe
 ```
 
-Expected: `---JWT---` is a non-empty `eyJ...` string; `---PROBE-LEN---` is
-non-zero; `---PROBE---` shows `PROBE_KEY=wi-test-value` and
+Expected: `---JWT---` is a non-empty `eyJ...` string, `---PROBE-LEN---` is
+non-zero, and `---PROBE---` shows `PROBE_KEY=wi-test-value` and
 `PROBE_NONCE=probe`. The non-empty probe proves the keyless read succeeded.
 
 ### Step 5: Prove the login leg
@@ -94,9 +107,10 @@ VAULT_TOKEN="$witoken" vault kv list -mount=secret default
 # -> exit 0, lists every job's path in the default namespace
 ```
 
-The first two are [the narrowed policy](../explanation/workload-identity.md#threat-model-narrowed-but-not-per-job) working. The third is the surviving
-gap: any workload in the `default` namespace can enumerate every other job's
-secret paths (not values).
+The first two are
+[the narrowed policy](../explanation/workload-identity.md#threat-model-narrowed-but-not-per-job)
+working. The third is the surviving gap: any workload in the `default`
+namespace can enumerate every other job's secret paths (not values).
 
 ### Step 7: Tear down
 

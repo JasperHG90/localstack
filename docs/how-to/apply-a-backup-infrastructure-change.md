@@ -1,9 +1,18 @@
+---
+description: Apply a Terraform change to the GCS backup bucket, its service account, IAM or key.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/storage.tf
+  - resource: deployments/infrastructure/providers.tf
+  - resource: deployments/infrastructure/justfile
+---
+
 # How to apply a backup infrastructure change
 
 ## Introduction
 
 All GCS infrastructure for the backups (bucket, service account, IAM, key) is
-managed by Terraform in `storage.tf`. Use this to apply a change to it.
+managed by Terraform in `deployments/infrastructure/storage.tf`. Use this to apply a change to it.
 
 ## Prerequisites
 

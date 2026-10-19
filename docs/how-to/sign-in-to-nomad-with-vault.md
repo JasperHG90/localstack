@@ -1,3 +1,10 @@
+---
+description: Sign in to the Nomad UI or CLI with your Vault login instead of a Nomad token.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # How to sign in to Nomad with Vault
 
 ## Introduction
@@ -7,7 +14,7 @@ Nomad token someone hands you.
 
 **What signing in grants is stated in
 [Human login to Vault](../reference/vault-human-auth.md#what-the-operator-can-do-the-developer-group)**,
-under "What the operator can do: the `developer` group" — a shell as root
+under "What the operator can do: the `developer` group": a shell as root
 inside any container and write on every host volume. It belongs there rather
 than here, because that is the section someone reads when asking what
 membership buys.
@@ -44,13 +51,13 @@ admits, and retrying will not help.
 ### Step 3: Sign in from a terminal instead, if you need a CLI token
 
 From a terminal, `nomad login -method=vault` needs `xdg-open` to launch a
-browser. Without it the command prints the URL and waits, which works fine —
+browser. Without it the command prints the URL and waits, which works fine:
 paste it into any browser. **Its default output prints the issued token's Secret
 ID in full**, so treat that output as a secret. A script can select fields
 instead, with `nomad login -method=vault -t '{{ .AccessorID }}'`. `nomad login`
 also takes `-json`, but that marshals the whole token object and has not been
 checked here for whether it includes the Secret ID, so prefer `-t`. Note
-`nomad acl token self` takes neither flag; both fail there before any network
+`nomad acl token self` takes neither flag, and both fail there before any network
 call.
 
 ## Additional resources

@@ -1,3 +1,11 @@
+---
+description: Give a Nomad service an https://<name>.lab.orangecluster.nl route through the HAProxy edge.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/haproxy.hcl
+  - resource: deployments/infrastructure/services.tf
+---
+
 # How to add a service to the edge
 
 ## Introduction

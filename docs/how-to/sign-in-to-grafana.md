@@ -1,3 +1,12 @@
+---
+description: Sign in to Grafana with Vault SSO, and what to check when the sign-in fails.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/services/grafana.hcl
+  - resource: deployments/infrastructure/identity.tf
+---
+
 # How to sign in to Grafana
 
 ## Introduction
@@ -7,7 +16,8 @@ login is Vault SSO, so a Vault login gets you in.
 
 ## Prerequisites
 
-- A Vault account you can log in with.
+- A Vault account you can log in with, in the `developer` or `admin` group
+  ([How to log in to Vault](log-in-to-vault.md)).
 - An `email` on your Vault entity. Step 1 says why.
 
 ## Directions
@@ -16,18 +26,20 @@ login is Vault SSO, so a Vault login gets you in.
 
 Go to `https://grafana.lab.orangecluster.nl` and press **Sign in with Vault**.
 Grafana speaks OIDC itself, so there is no proxy in front of it: it redirects
-to Vault's `lab` provider, and you come back as an Editor. Every user who
-completes a Vault login gets in, and gets the same role.
+to Vault's `lab` provider, and you come back as an Editor. The Grafana
+client's `operators` assignment admits members of `developer` and `admin`,
+and every one of them gets the same role.
 
 Two behaviors are worth knowing before you meet them.
 
 **The first attempt can fail if your browser holds no Vault session.** Vault's
 authorization endpoint is a UI path, so a cold browser can bounce with a
 generic "Failed to sign in with SSO". Log in to the Vault UI, then retry.
-If the retry also fails, stop retrying: the Grafana client admits anyone who
-completes a Vault login, so a repeated failure is a configuration or claim
-fault, not a permission one. The likeliest cause is a missing `email` on your
-Vault entity.
+If the retry also fails, stop retrying. A refusal by the assignment says so:
+`error=access_denied&error_description=identity entity not authorized by client
+assignment` means you are in neither group. Any other repeated failure is a
+configuration or claim fault, and the likeliest cause is a missing `email`
+on your Vault entity.
 
 **Your Vault entity needs an `email`.** Grafana refuses a login whose email is
 empty and offers no setting to turn that off. The operator entity carries one

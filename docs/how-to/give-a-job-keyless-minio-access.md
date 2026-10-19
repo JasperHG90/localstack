@@ -1,3 +1,11 @@
+---
+description: Give a minio-go-based Nomad job keyless MinIO access by trading its workload identity JWT for short-lived credentials, with tempo as the example.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/tempo.hcl
+  - resource: deployments/applications/storage.tf
+---
+
 # How to give a job keyless MinIO access
 
 ## Introduction
@@ -5,13 +13,11 @@
 Let a Nomad job read its bucket with no static S3 key, by trading its
 Workload Identity JWT for short-lived MinIO credentials.
 
-**To give a new job keyless access**, two things must line up. A job whose
-client library does the exchange needs two more. Tempo is that case, and is
-the worked example here.
-
-Tempo is the first service to run keyless, and it never calls `curl`. Its
-client library does the exchange, which takes four things rather
-than two. The pattern generalizes to any minio-go-based service.
+**To give a new job keyless access**, two things must line up: a named
+identity and a policy named after the job. A job whose client library does
+the exchange needs two more. Tempo is that case, and is the worked example
+here: it never calls `curl`, and minio-go does the exchange for it. The
+pattern works for any minio-go-based service.
 
 A service built on aws-sdk-go v1 takes a different route:
 [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md).
@@ -62,7 +68,7 @@ than an anonymous signer, so the failure is loud and names itself:
 Either way, a service that suddenly cannot read its own bucket is more
 often a missing policy than a revoked permission.
 
-Tempo's is a `minio_iam_policy` named `tempo`, in
+Tempo's is `minio_iam_policy.tempo_wi`, whose `name` is `tempo`, in
 `deployments/applications/storage.tf`.
 
 ### Step 3: Point the client library at MinIO's STS
@@ -93,7 +99,7 @@ minio-go tries providers in order: static config, `EnvAWS`, `EnvMinio`,
 files, and only then web identity. Six variable names have to be absent
 on this route. `EnvMinio` checks `MINIO_ROOT_USER` and
 `MINIO_ROOT_PASSWORD` FIRST, then `MINIO_ACCESS_KEY` and
-`MINIO_SECRET_KEY`; `EnvAWS` reads `AWS_ACCESS_KEY_ID` and
+`MINIO_SECRET_KEY`, and `EnvAWS` reads `AWS_ACCESS_KEY_ID` and
 `AWS_SECRET_ACCESS_KEY`. Leave any of the six set and the service keeps
 using its old key while every check looks green: the job runs, the bucket
 reads, nothing errors. Delete the config keys AND whatever renders those
@@ -108,8 +114,8 @@ The check that catches step 4 is `nomad job inspect <job>`: a
 `template { env = true }` stanza is itself part of the submitted jobspec, so
 grepping the jobspec for those names covers both the `env` block and
 anything rendered from Vault. Expect no matches. A credential that is NOT an
-env var escapes this check entirely: registry's used to be two YAML keys in
-its rendered config, so grep the jobspec for those too.
+env var escapes this check entirely, such as keys in a rendered YAML config,
+so grep the jobspec for those keys too.
 
 ## Additional resources
 

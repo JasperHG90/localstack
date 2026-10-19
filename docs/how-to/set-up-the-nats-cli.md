@@ -1,3 +1,10 @@
+---
+description: "Install the nats CLI, point a context at the cluster's broker, and check the connection."
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+---
+
 # How to set up the nats CLI
 
 ## Introduction
@@ -24,6 +31,9 @@ go install github.com/nats-io/natscli/nats@latest
 
 ### Step 2: Add a context for the cluster
 
+Point the context at radxa's address. The `.consul` zone is not forwarded
+to Consul, so `nats.service.localstack.consul` does not resolve on the LAN.
+
 ```bash
 # context once, then everything else is short
 nats context add localstack \
@@ -35,8 +45,14 @@ nats context add localstack \
 
 ```bash
 nats server check connection
-nats server info
+nats account info
 ```
+
+The first should print `OK Connection OK`. The second should show your
+account with JetStream enabled. `nats server info` does not work here: it
+asks the system account, and the server defines no user in it. Read server
+details from the monitor port instead, with
+`curl http://192.168.2.50:8222/varz`.
 
 ## Additional resources
 

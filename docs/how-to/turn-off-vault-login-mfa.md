@@ -1,3 +1,11 @@
+---
+description: Stop Vault asking for a TOTP code by deleting the login enforcement, even when you cannot log in.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+  - resource: justfile
+---
+
 # How to turn off Vault login MFA
 
 ## Introduction
@@ -23,7 +31,8 @@ MFA back on later is one apply, and nobody rescans a QR code.
 Through Terraform, which leaves no drift:
 
 ```sh
-# Delete the vault_identity_mfa_login_enforcement.userpass block, then:
+# Delete the vault_identity_mfa_login_enforcement.userpass block in
+# deployments/infrastructure/identity.tf, then:
 cd deployments/infrastructure
 eval "$(localstack env)"
 terraform apply -var-file=./vars/prod.tfvars \
@@ -40,18 +49,21 @@ In a hurry, at the cost of drift the next apply silently reverts:
 vault delete identity/mfa/login-enforcement/userpass-totp
 ```
 
-**If you cannot log in to do it.** A lost phone with no live session is the case this has to survive. The root
-token bypasses Login MFA, because it is token auth rather than a userpass
-login, so the break-glass path already documented still works: SSH to firebat
-and read `/opt/vault/init.json`, or run `localstack breakglass` for the
-runbook. Then run the `vault delete` above with that token.
+**If you cannot log in to do it.** A lost phone with no live session is the
+case this has to survive. The root token bypasses Login MFA, because it is
+token auth rather than a userpass login, so the break-glass path still
+works: SSH to firebat and read `/opt/vault/init.json`, or run
+`localstack breakglass` for the runbook. Then run the `vault delete` above
+with that token, and delete the Terraform block as well before anyone applies
+the infrastructure root again, or that apply turns MFA back on.
 
-[`localstack breakglass`](../reference/cli-breakglass.md) is the long form. Nothing about MFA changes it.
+[`localstack breakglass`](../reference/cli-breakglass.md) is the long form.
+Nothing about MFA changes it.
 
 ### Step 2: Confirm no enforcement is left
 
-Confirm either way with `just mfa_status`, which should report `(none)` under
-login enforcements.
+Confirm either way with `just mfa_status`, run from the repository root,
+which should report `(none)` under login enforcements.
 
 ## Additional resources
 

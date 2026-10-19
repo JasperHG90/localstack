@@ -1,9 +1,17 @@
+---
+description: Hand a Nomad task the NATS broker's URL through its environment.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+  - resource: deployments/infrastructure/services.tf
+---
+
 # How to connect a Nomad job to NATS
 
 ## Introduction
 
-Treat NATS the way other shared infra is treated — Consul DNS, no secrets,
-just env vars. This hands a Nomad task the broker's URL.
+This hands a Nomad task the broker's URL as an environment variable. NATS
+has no auth, so the task needs no secret.
 
 ## Prerequisites
 
@@ -25,7 +33,7 @@ task "myapp" {
 
   template {
     data = <<EOF
-NATS_URL=nats://nats.service.localstack.consul:4222
+NATS_URL=nats://192.168.2.50:4222
 EOF
     destination = "secrets/file.env"
     env         = true
@@ -33,7 +41,12 @@ EOF
 }
 ```
 
-No firewall changes needed for clients — outbound to `192.168.2.50:4222` is allowed by default within the LAN. The inbound rule on radxa is already open from `192.168.0.0/16`.
+Use the node address, not `nats.service.localstack.consul`. Nodes do not
+forward `.consul` names to Consul, and Consul would answer with the
+container's bridge address, which nothing outside radxa can reach.
+
+No firewall change is needed. The rule on radxa already admits port 4222 from
+`192.168.0.0/16`.
 
 ## Additional resources
 

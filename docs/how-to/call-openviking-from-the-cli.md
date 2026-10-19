@@ -1,3 +1,12 @@
+---
+description: Make an authenticated call to the OpenViking API from a shell with a Vault identity token.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/services/haproxy.hcl
+  - resource: deployments/applications/services/openviking.hcl
+---
+
 # How to call OpenViking from the CLI
 
 ## Introduction
@@ -20,7 +29,7 @@ without a token, on the REST API and on `/mcp`.
 ### Step 1: Log in to Vault
 
 ```console
-$ vault login -method=userpass username=jasper
+$ vault login -method=userpass username=<your-username>
 ```
 
 ### Step 2: Mint an identity token
@@ -30,8 +39,8 @@ $ export OV_URL=https://openviking-api.lab.orangecluster.nl
 $ export OV_TOKEN=$(vault read -field=token identity/oidc/token/openviking)
 ```
 
-The Vault login lasts as long as its token renews; the identity token expires
-in 30 days and is re-minted by reading that path again, with no browser.
+The Vault login lasts as long as its token renews. The identity token expires
+in 30 days. Read that path again to mint a new one, with no browser.
 
 ### Step 3: Call the API with the token
 

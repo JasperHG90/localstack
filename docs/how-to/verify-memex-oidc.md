@@ -1,3 +1,14 @@
+---
+description: Check that memex accepts and refuses the right workload and human OIDC tokens, once memex is deployed again.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/memex/auth_oidc.json
+  - resource: deployments/applications/services/memex.hcl
+  - resource: deployments/applications/services.tf
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/identity.tf
+---
+
 # How to verify memex OIDC for workloads and humans
 
 ## Introduction
@@ -6,16 +17,24 @@ memex authenticates two kinds of caller without a static key: WORKLOADS
 (hermes, via a Nomad Workload Identity JWT) and HUMANS (via `memex auth
 login` against the Vault `lab` provider). This runbook holds the checks that
 prove both, including the denials. Run them after a deploy that touches the
-memex auth config, the hermes `identity` stanza, the hermes image, or the
-Vault OIDC client.
+memex auth config, the `identity` stanza or image of a job that calls memex,
+or the Vault OIDC client.
 
-Checks are grouped: S* server-wide, W*/D*/H* the workload path, V* the human
-path, G* guardrails.
+**memex is not running now.** `nomad_job.memex` in
+`deployments/applications/services.tf` is commented out to free
+jetson-orin-nano for embark, and hermes no longer carries a memex identity.
+Run these checks once memex is deployed again. The workload checks (W1, H1
+to H3) also need a job with a memex `identity` stanza: they are written for
+hermes, which `deployments/applications/services/memex/auth_oidc.json`
+still grants `admin`.
+
+The page names each check with its own id, grouped by letter: S server-wide,
+W, D and H the workload path, V the human path, G the config guardrails.
 
 Most failure modes here are **silent**: the request still returns `200`
-because hermes falls back to its API key, which is deliberately still
-present. So several checks below assert on a log line, or on the absence of
-one, rather than on a status code.
+because a memex client that also holds an API key falls back to it. So
+several checks below assert on a log line, or on the absence of one, rather
+than on a status code.
 
 That fallback is narrower than it looks. It applies only when the bearer
 fails to resolve at all (no token file, or config that will not validate).
@@ -30,7 +49,7 @@ memex rejects is a hard failure with no second credential behind it.
 - A laptop with the memex CLI for the V checks
   ([How to log in to memex from a laptop](log-in-to-memex-from-a-laptop.md)).
 - Addresses: memex is `http://192.168.2.46:8000`. The workload issuer is
-  `https://nomad.lab.orangecluster.nl`; the human issuer is
+  `https://nomad.lab.orangecluster.nl`, and the human issuer is
   `https://vault.lab.orangecluster.nl/v1/identity/oidc/provider/lab`.
 
 ## Directions
@@ -64,18 +83,19 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "X-API-Key: $MEMEX_ADMIN_KEY" http:/
 ```
 
 `MEMEX_ADMIN_KEY` is the `admin_key` field of the memex auth secret in Vault
-(written by `vault_kv_secret_v2.memex_auth_keys`,
-`deployments/applications/secrets.tf:79-86`):
+(written by `vault_kv_secret_v2.memex_auth_keys` in
+`deployments/applications/secrets.tf`):
 
 ```
 export MEMEX_ADMIN_KEY=$(vault kv get -field=admin_key secret/default/memex/auth)
 ```
 
-(`secret` here is `var.secret_mount`. The real `vars/prod.tfvars` is
-gitignored; `deployments/applications/vars/prod.tfvars.example:1` shows the
-value. Substitute if yours differs.)
+(`secret` here is `var.secret_mount`. The real
+`deployments/applications/vars/prod.tfvars` is gitignored, and
+`deployments/applications/vars/prod.tfvars.example` shows the value.
+Substitute if yours differs.)
 
-Expect `401` / `403` / `200`, unchanged from before the rollout. Run this
+Expect `401`, `403` and `200`, unchanged from before the deploy. Run this
 again at the end: it is the regression check, and the static keys are meant
 to keep working.
 
@@ -88,7 +108,7 @@ wired up.
 **There is no "before the client config" window, so do not look for one.**
 The `identity` stanza and the three `MEMEX_OIDC__*` vars all render from one
 `templatefile` into one `nomad_job.hermes`, so any apply that touches hermes
-lands them together. `-target` separates memex from hermes; it cannot
+lands them together. `-target` separates memex from hermes, but it cannot
 separate hermes from itself.
 
 That changes what a W1 failure costs. Once the bearer **resolves**, the
@@ -98,10 +118,10 @@ the bearer does NOT resolve at all, which is precisely what H2 hunts for.)
 Two consequences:
 
 - **Apply memex first and let it come up**, then hermes:
-  `just apply true nomad_job.memex` (the two arguments are positional,
-  `refresh` then `target`; the recipe wraps the tfvars and Consul token that
-  a bare `terraform apply` here lacks), then a full
-  `just apply`. The two jobs share no Terraform dependency edge, so an
+  `just apply true nomad_job.memex` from `deployments/applications/`, then
+  a full `just apply`. The two arguments are positional, `refresh` then
+  `target`, and the recipe wraps the tfvars and the Consul token that a bare
+  `terraform apply` here lacks. The two jobs share no Terraform dependency edge, so an
   untargeted apply sends them in parallel, and hermes will 403 against the
   old memex alloc until the new one is healthy.
 - **Run W1 immediately after the hermes apply**, as the first thing you
@@ -226,7 +246,7 @@ Either line means hermes is back on the API key while requests still return
 
 Through the hermes agent, run the H1 one-liner twice: once via the terminal
 tool, once via code_execution. Both `env_passthrough` lists must carry the
-three `MEMEX_OIDC__*` names; updating only one is silent.
+three `MEMEX_OIDC__*` names, and updating only one fails silently.
 
 Expect `{'Authorization': 'Bearer ...'}` in **both**. Checking `env | grep
 MEMEX_OIDC` is necessary but not sufficient. The vars can be present while
@@ -270,14 +290,16 @@ memex auth status
 
 Then decode the cached id_token from `token.json` in the memex user config
 dir and assert `iss` matches the issuer above, `aud` equals the client id
-(NOT `memex` — an id_token's `aud` carries the client id), `groups` contains
+(NOT `memex`: an id_token's `aud` carries the client id), `groups` contains
 `app-memex-readers`, and **`groups` does NOT contain `app-memex-admins`**.
 
 That last clause is the precondition for the write assertion below, and it
-is easy to lose. The resting state puts the operator in
-BOTH tiers, so re-running V1 later — as this runbook's header tells you to
-after any memex auth deploy — will correctly resolve to `admin` and the
-write will NOT be refused. Check the claim before reading the result.
+is easy to lose. `local.app_user_group_members` in
+`deployments/infrastructure/identity.tf` puts the operator in
+`app-memex-admins` only, so the operator's own login resolves to `admin`
+and the write will NOT be refused. Run V1 as an entity in
+`app-memex-readers` alone, which takes a reviewed edit to that map and an
+apply. Check the claim before reading the result.
 
 - READ `GET /api/v1/vaults` returns `200`.
 - WRITE `PATCH /api/v1/notes/<random-uuid>/title` returns **`403`**, and the
@@ -300,7 +322,7 @@ Expect `403` and:
 OIDC bearer rejected: not a parseable JWT (2 dot-separated segments).
 ```
 
-Two, not one: Vault's batch token is `hvb.` + base64url, and memex logs
+Two, not one: Vault's batch token is `hvb.` followed by base64url, and memex logs
 `token.count('.') + 1`. Confirm the count against the token you actually got.
 
 This is the one-line diagnosis of a client that forgot `credential:
@@ -349,8 +371,9 @@ working config is what is left in place.
 
 ### Step 14: Check V5, a member of both tiers lands on admin
 
-Add your entity to `app-memex-admins` in `local.app_user_group_members` (a
-reviewed Terraform edit) and apply, so you are in both tiers. Log in again
+Put your entity in both `app-memex-admins` and `app-memex-readers` in
+`local.app_user_group_members` in `deployments/infrastructure/identity.tf`
+(a reviewed Terraform edit) and apply. Restore the map afterward. Log in again
 and perform an admin-only operation.
 
 Assert all three:
@@ -374,52 +397,39 @@ Immediately after login, read `expires_at` from `token.json`.
 
 Expect roughly 30 days out, NOT roughly one hour. The client caches
 `min(now + expires_in, id_token exp)`, and Vault returns `access_token_ttl`
-as `expires_in` — so a short `access_token_ttl` silently truncates the
+as `expires_in`, so a short `access_token_ttl` silently truncates the
 session and drops you back to the API key, with every request still `200`.
 Both TTLs are 30 days for this reason.
 
-### Step 16: Check G1-G5, the guardrails
+### Step 16: Check G1 to G4, the config guardrails
 
-- **G1 — static keys survive.** `MEMEX_SERVER__AUTH__KEYS` in `memex.hcl`,
-  `MEMEX_API_KEY` in `hermes.hcl` at both sites. Removal is a follow-up.
-- **G2 — hermes's own grant is unchanged.** As of the auth-config extraction
-  (`deployments/applications/services/memex/auth_oidc.json`, parsed and
-  re-injected by a `services.tf` local), Terraform's `jsonencode` sorts
-  object keys, so a byte/substring match against the rendered
-  `MEMEX_SERVER__AUTH__OIDC` no longer holds even when nothing changed.
-  Assert JSON equality instead: element 0 still carries the Nomad issuer and
-  `"audience":["memex"]`, and its `grant_rules` still contains
-  `{"claim":"nomad_job_id","policy":"admin","value":"hermes"}` (key order
-  aside) as one of its entries.
-- **G2b — element 0 now also grants `leo-consumer`.** A second `grant_rule`,
-  `{"claim":"nomad_job_id","policy":"writer","value":"leo-consumer"}`, was
-  added alongside hermes's. No `vault_ids` field: per memex's own config
-  schema, that means unrestricted, i.e. `writer` on every vault. `writer`
-  bundles read with write (`POLICY_PERMISSIONS` in memex's
-  `memex_common/config.py` has no write-only policy, and `vault_ids` /
-  `read_vault_ids` only scope *which* vaults a policy's permission bundle
-  applies to, never *which* permissions apply) — so this grant can also
-  **read** every vault, not just write. That's a deliberate tradeoff: a
-  scoped, write-only grant isn't expressible in memex 1.2.0's policy model.
-  **No W-series check exists for this yet** — the leo-consumer Nomad job
-  doesn't exist in this repo or cluster today. Before relying on this
-  grant: confirm the actual job id matches the `value` here (a mismatch
-  fails safe — D2's silent-403 path — but is easy to miss without a check),
-  and once the job's `identity` stanza lands, add a W-series check
-  mirroring W1 against its token.
-- **G3 — the provider list was appended, not replaced.** Every pre-existing
-  client id is still in `local.oidc_provider_client_ids`. A replace silently
-  unpublishes other consumers' keys from the provider JWKS.
-- **G4 — the shared `lab` key is untouched.** `vault_identity_oidc_key.lab`
-  shows no diff and still reads `rotation_period`/`verification_ttl` of
-  `86400`. Editing it would change rotation for the Nomad UI, Grafana and the
-  smoke client.
-- **G5 — the scaffold edit landed where it should, and only there.** Expect
-  the members map, the two tiers, and `vault_identity_oidc_assignment.smoke`
-  `group_ids` growing from 1 to 3. That growth is EXPECTED, not a mistake:
-  the smoke assignment binds `local.all_app_user_group_ids` by design, and
-  effective access does not change. Nothing else in `identity.tf` or `oidc.tf`
-  should move.
+Read these off the Terraform config and `terraform plan`, not the running
+service.
+
+- **G1: the static keys are still set.** `MEMEX_SERVER__AUTH__KEYS` in
+  `deployments/applications/services/memex.hcl` still renders
+  `deployments/applications/services/memex/auth_keys.json`.
+- **G2: element 0's grants are what you expect.** Terraform's `jsonencode`
+  sorts object keys, so a byte or substring match against the rendered
+  `MEMEX_SERVER__AUTH__OIDC` fails even when nothing changed. Compare as
+  JSON instead: element 0 of
+  `deployments/applications/services/memex/auth_oidc.json` carries the Nomad
+  issuer and `"audience":["memex"]`, and its `grant_rules` hold
+  `{"claim":"nomad_job_id","value":"hermes","policy":"admin"}` and
+  `{"claim":"nomad_job_id","value":"leo-consumer","policy":"writer"}`.
+  The `leo-consumer` rule has no `vault_ids`, which memex reads as every
+  vault, and `writer` bundles read with write, so that job can read every
+  vault as well as write it. No `leo-consumer` job exists in this repo, so
+  no W check covers its token: before relying on the grant, confirm the job
+  id matches the rule's `value`, and run W1 against that job's token.
+- **G3: the provider list still holds every client.** Every client id is
+  still in `local.oidc_provider_client_ids` in
+  `deployments/infrastructure/oidc.tf`. A client missing from it has its key
+  unpublished from the provider JWKS, and its tokens stop verifying.
+- **G4: the shared `lab` key is untouched.** `vault_identity_oidc_key.lab`
+  shows no diff and still reads `rotation_period` and `verification_ttl` of
+  `86400`. Editing it changes rotation for the Nomad UI, Grafana and every
+  other client on that key.
 
 ## Additional resources
 

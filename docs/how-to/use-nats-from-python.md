@@ -1,9 +1,16 @@
+---
+description: "Publish, subscribe and consume JetStream streams on the cluster's NATS broker from Python with nats-py."
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+---
+
 # How to use NATS from Python
 
 ## Introduction
 
-`nats-py` is the official asyncio client. JetStream API is on the same
-connection object. This covers plain pub/sub, publishing to a JetStream
+`nats-py` is the official asyncio client, and its JetStream API is on the
+same connection object. This covers plain pub/sub, publishing to a JetStream
 stream, and the durable pull consumer.
 
 ## Prerequisites
@@ -27,7 +34,7 @@ import asyncio
 import nats
 
 async def main():
-    nc = await nats.connect("nats://nats.service.localstack.consul:4222")
+    nc = await nats.connect("nats://192.168.2.50:4222")
 
     async def handler(msg):
         print(msg.subject, msg.data.decode())
@@ -39,6 +46,10 @@ async def main():
 
 asyncio.run(main())
 ```
+
+Connect to radxa's address, not `nats.service.localstack.consul`: the
+`.consul` zone is not forwarded to Consul, so that name does not resolve on
+the LAN.
 
 ### Step 3: Publish to a JetStream stream
 
@@ -76,7 +87,9 @@ while True:
             await msg.nak(delay=30)   # retry in 30s
 ```
 
-`ack=explicit` + `nak(delay=...)` gives you at-least-once with a retry/backoff. If a message is poisoning the consumer, set a `max_deliver` on the consumer config and use `term()` to drop it permanently.
+An explicit ack with `nak(delay=...)` gives you at-least-once delivery with
+a retry delay. If a message is poisoning the consumer, set a `max_deliver`
+on the consumer config and use `term()` to drop it permanently.
 
 ## Additional resources
 

@@ -1,3 +1,11 @@
+---
+description: Sign in to Grafana with the local admin account when Vault is down.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/secrets.tf
+  - resource: deployments/infrastructure/services/grafana.hcl
+---
+
 # How to sign in to Grafana without Vault
 
 ## Introduction
@@ -14,8 +22,9 @@ file yourself, as root on the manager.
 
 ## Prerequisites
 
-- The Grafana admin password, read from Vault KV2 at `default/grafana/admin`
-  while Vault was still up.
+- The Grafana admin password, read while Vault was still up with
+  `vault kv get -field=password secret/default/grafana/admin`. The
+  `developer` policy can read it.
 
 ## Directions
 

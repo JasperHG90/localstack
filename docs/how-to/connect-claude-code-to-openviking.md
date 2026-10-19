@@ -1,3 +1,11 @@
+---
+description: Give Claude Code recall from and capture into OpenViking through the memory plugin.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/openviking.hcl
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # How to connect Claude Code to OpenViking
 
 ## Introduction
@@ -24,7 +32,7 @@ main/examples/memory-plugin-shared/install.sh)
 
 It hooks the session lifecycle for auto-recall and auto-capture and reads
 `~/.openviking/ovcli.conf`. The installer's legacy path registers a stdio MCP
-proxy instead; plugin mode does not, so a separate `claude mcp add` is
+proxy instead. Plugin mode does not, so a separate `claude mcp add` is
 redundant with it.
 
 ## Additional resources

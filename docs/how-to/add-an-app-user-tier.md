@@ -1,3 +1,11 @@
+---
+description: Give a service its own access tier as a Vault group its OIDC client can admit, and put people in it.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/oidc.tf
+---
+
 # How to add an app-user tier
 
 ## Introduction
@@ -19,7 +27,8 @@ should get in, which is branch 2 in
 
 ### Step 1: Add the tier
 
-Add an entry to `local.app_user_groups` in `identity.tf`:
+Add an entry to `local.app_user_groups` in
+`deployments/infrastructure/identity.tf`:
 
 ```hcl
 locals {
@@ -39,9 +48,9 @@ group_ids = [local.app_user_group_ids["app-minio-readers"]]
 ```
 
 `local.app_user_group_ids` is keyed by group name for exactly this reason. Do
-not bind every value: with one tier that happens to be correct, and with two it
-silently admits the other consumer's members to your client, with nothing
-changing in your own file to show it.
+not bind every value: the map already holds memex's two tiers, so binding them
+all silently admits memex's members to your client, and the next tier anyone
+adds joins them with nothing changing in your own file to show it.
 
 ### Step 3: Add people to the tier
 

@@ -1,3 +1,12 @@
+---
+description: Add, remove or reorder the tiles and headings https://dash.lab.orangecluster.nl shows.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/dash/tiles.json
+  - resource: deployments/applications/services/dash.hcl
+  - resource: deployments/applications/services.tf
+---
+
 # How to add, remove, or reorder a dash tile
 
 ## Introduction
@@ -21,11 +30,13 @@ groups, and array order is display order, for the headings and for the
 tiles inside each one. Moving a tile up the page is moving it up the file.
 
 Two characters are forbidden anywhere in the file: `${` and `%{`. Terraform
-splices this config into a Nomad heredoc (`services/dash.hcl`), where both
-open a template. An expression-shaped `${...}` fails `terraform apply`;
-`%{ ... }` is worse, parsing cleanly and rewriting the text on its way to
-the job. A bare `$` is fine and already ships. The backend suite asserts
-both openers are absent.
+splices this config into a Nomad heredoc
+(`deployments/applications/services/dash.hcl`), where both open a template.
+An expression-shaped `${...}` fails `terraform apply`. `%{ ... }` is worse:
+it parses cleanly and rewrites the text on its way to the job. A bare `$` is
+fine and already ships. The backend suite
+(`deployments/applications/services/dash/backend/tests/test_tiles.py`)
+asserts both openers are absent.
 
 ### Step 2: Apply the change
 

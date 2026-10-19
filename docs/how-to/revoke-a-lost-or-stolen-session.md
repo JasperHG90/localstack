@@ -1,3 +1,12 @@
+---
+description: End a lost or stolen localstack session and its three brokered Nomad and Consul tokens, with or without the session file.
+stale_after: 2027-01-19
+sources:
+  - resource: cli/src/localstack_cli/commands/logout.py
+  - resource: cli/src/localstack_cli/commands/whoami.py
+  - resource: deployments/infrastructure/identity.tf
+---
+
 # How to revoke a lost or stolen session
 
 ## Introduction
@@ -30,15 +39,15 @@ tokens directly, is
 **If a session is lost, do this first: `localstack logout`.** It calls
 `auth/token/revoke-self`, which `default` grants, and revoking the parent
 cascades to all three brokered leases (Nomad `deploy`, Nomad `manage`, Consul
-`deploy`). It ends all four credentials in one command, needs no root, and
-works only while you still have the file — so it is the first thing to try
-and the first thing to lose.
+`deploy`). Then it deletes the session file and `~/.vault-token`. It ends all
+four credentials in one command and needs no root. It works only while you
+still have the session file, so it is the first thing to try and the first
+thing to lose.
 
-**`localstack logout` ships with `D2` and is the way to do this.** It revokes
-the Vault token, and with it the three brokered leases (Nomad `deploy`,
-Nomad `manage`, Consul `deploy`), then deletes the session file and
-`~/.vault-token`. See [`localstack login`](../reference/cli-login.md). If this
-worked, go to step 6.
+It prints `logged out <user>. Vault, Nomad and Consul tokens revoked.` If
+the revoke fails, it prints the four accessors instead and exits non-zero:
+revoke those by accessor in step 4. See
+[`localstack login`](../reference/cli-login.md). If this worked, go to step 6.
 
 ### Step 2: Revoke the token by hand, if you have it but not the session file
 
@@ -51,7 +60,7 @@ VAULT_TOKEN=<the lost session's token> vault token revoke -self
 
 **Set `VAULT_TOKEN` on that line and nowhere else.** `-self` revokes whatever
 `VAULT_TOKEN` currently holds, and in this devcontainer that is the **root
-token** — running it bare would revoke root and take the cluster's admin
+token**. Running it bare would revoke root and take the cluster's admin
 credential with it. Deleting the placeholder instead of filling it is safe:
 an empty `VAULT_TOKEN` returns 403 rather than falling back to
 `~/.vault-token` (measured). Same endpoint and same cascade as `logout` once the token
@@ -60,15 +69,15 @@ is right.
 ### Step 3: Get the right to revoke by accessor
 
 **Revoke by accessor**, if you do not have the session. Revoking the parent
-cascades to the child leases — one action, all four credentials, and it
+cascades to the child leases: one action ends all four credentials, and it
 needs only your Vault password. But it needs `auth/token/revoke-accessor`,
 which `developer` does not grant.
 
-**Join `admin`** — it exists for exactly this. It carries `path "*"` with
+**Join `admin`**, which exists for exactly this. It carries `path "*"` with
 `sudo`, so it covers all three accessor paths with no policy to write and
-none to clean up, and its membership survives a `terraform apply` running
-mid-incident, because `identity.tf` sets `external_member_entity_ids = true`
-on the group. Both the join and leave commands, including the empty-group
+none to clean up. Its membership survives a `terraform apply` running
+mid-incident, because `deployments/infrastructure/identity.tf` sets
+`external_member_entity_ids = true` on the group. Both the join and leave commands, including the empty-group
 case, are also in
 [How to join and leave the admin group](join-and-leave-the-admin-group.md).
 
@@ -106,16 +115,15 @@ path "auth/token/revoke-accessor" { capabilities = ["update"] }
 
 Clean up the throwaway policy yourself, because Terraform will not: a policy
 attached to a throwaway entity is invisible to it, so nothing removes the
-orphan when the incident ends. An earlier version of this page said the
-opposite — that a `terraform apply` would strip the grant mid-incident,
-citing the `developer` policy in `identity.tf`. That is true only if you attach it
-to the `developer` **group**, which the paragraph above forbids.
+orphan when the incident ends. A `terraform apply` strips the grant only if
+you attach it to the `developer` **group**, which the paragraph above
+forbids.
 
 ### Step 4: Revoke every accessor at the operator path except yours
 
 You cannot pick the target by path. Every live session at
 `auth/userpass/login/operator` shares the same display name, entity and
-policy list, and they differ only on `creation_time` — which does not
+policy list, and they differ only on `creation_time`. That does not
 identify which one was lost, since sessions minted seconds apart are common
 and no audit device records when the lost one started. Each carries
 `developer` for another month. **So revoke every accessor at that path
@@ -147,7 +155,7 @@ vault write identity/group/name/admin member_entity_ids="<current-without-you>"
 delete the entity, the alias, the user and the policy.** Deleting the user
 and entity does not revoke what they minted. Measured on this cluster: a
 scratch `userpass` token survived its own user and entity by 30.6 days. It
-had decayed to `default` because the entity was gone, so it was litter — but
+had decayed to `default` because the entity was gone, so it was litter. But
 a throwaway torn down the same way while its token still carried the
 escalation policy would have left that policy live and unattached to
 anything you could find by listing users.

@@ -1,3 +1,11 @@
+---
+description: Reach the Prometheus UI or the Loki API without Grafana, through an SSH tunnel to the monitoring node.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/applications/services.tf
+---
+
 # How to reach Prometheus or Loki directly
 
 ## Introduction

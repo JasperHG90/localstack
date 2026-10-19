@@ -1,3 +1,11 @@
+---
+description: Re-seed the driftwatch baseline after a deliberate embedding model change, so EmbeddingModelDrift stops firing.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/driftwatch.hcl
+  - resource: deployments/applications/services/driftwatch/src/driftwatch/runner.py
+---
+
 # How to re-seed the driftwatch baseline
 
 ## Introduction
@@ -11,20 +19,26 @@ the new model the reference.
 - The model change confirmed as deliberate.
 - The corpus in Postgres re-embedded with the new model. Until it is, the
   store is not trustworthy, so re-seed only after it.
-- SSH access to `radxa@192.168.2.50`.
+- A Nomad token that can `alloc exec` into the `driftwatch` job.
 
 ## Directions
 
 ### Step 1: Delete the baseline
 
+The file is on the `driftwatch_data` host volume, which the task mounts at
+`/var/lib/driftwatch`. That path exists only inside the task, so delete the
+file from there rather than over SSH on radxa:
+
 ```
-ssh radxa@192.168.2.50 sudo rm /var/lib/driftwatch/baseline.npz
+nomad alloc exec -job driftwatch -task driftwatch \
+  rm /var/lib/driftwatch/baseline.npz
 ```
 
 ### Step 2: Wait for two canary runs
 
-The next run writes a fresh baseline and reports no cosine at all. The run
-after that starts measuring drift against the new model.
+The canary runs once a day. The next run writes a fresh baseline and
+reports no cosine at all, which Grafana draws as a gap. The run after that
+starts measuring drift against the new model.
 
 ## Additional resources
 

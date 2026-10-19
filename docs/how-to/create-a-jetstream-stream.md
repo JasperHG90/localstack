@@ -1,3 +1,10 @@
+---
+description: Create a JetStream stream, publish to it and read it back through a durable consumer.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/nats.hcl
+---
+
 # How to create a JetStream stream
 
 ## Introduction
@@ -29,14 +36,14 @@ nats stream add hermes-events \
 ### Step 2: Publish to it
 
 ```bash
-# publish — same pub command, but now persisted
+# publish: same pub command, but now persisted
 nats pub hermes.events.skill_run '{"name":"medium-reader","status":"ok"}'
 ```
 
 ### Step 3: Add a durable consumer and read one message
 
 ```bash
-# durable consumer (pull) — survives restarts, tracks ack position
+# durable pull consumer: survives restarts and tracks its ack position
 nats consumer add hermes-events worker \
   --pull --deliver=all --ack=explicit --defaults
 nats consumer next hermes-events worker --count 1
