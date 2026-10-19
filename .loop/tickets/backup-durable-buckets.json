@@ -21,7 +21,8 @@
   "branch": "loop/backup-durable-buckets",
   "stamps": [
     "5823b55b5a47e5aaaf49e2103f91134e3a7f84727fd97f57675f9af5529d73b4",
-    "70ca94eb707a4876c38c6d4b297a5c2612011de71362ff98f1a334f33e38f385"
+    "70ca94eb707a4876c38c6d4b297a5c2612011de71362ff98f1a334f33e38f385",
+    "d1abcc95545281d0d1e91e6a7616eab45c192b4572b41b109378c121e91e0217"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/planner",
@@ -111,5 +112,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T18:04:29+00:00"
+  "at": "2026-10-19T21:11:54+00:00"
 }
