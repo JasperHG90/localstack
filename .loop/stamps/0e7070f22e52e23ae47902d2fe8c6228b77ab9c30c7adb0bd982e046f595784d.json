@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "fingerprint": "0e7070f22e52e23ae47902d2fe8c6228b77ab9c30c7adb0bd982e046f595784d",
+  "slug": null,
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 1,
+      "passed": false,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    }
+  ],
+  "green": false,
+  "at": "2026-10-19T19:10:10+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696"
+}
