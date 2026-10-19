@@ -1,0 +1,57 @@
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Failed
+- hook id: terraform-validate
+- exit code: 1
+
+  ==> terraform validate deployments/infrastructure
+
+  Warning: Deprecated Resource
+
+    with data.vault_kv_secret_v2.bifrost_admin,
+    on secrets.tf line 133, in data "vault_kv_secret_v2" "bifrost_admin":
+   133: data "vault_kv_secret_v2" "bifrost_admin" {
+
+  Deprecated. Please use new Ephemeral KVV2 Secret resource
+  `vault_kv_secret_v2` instead
+
+  Warning: Deprecated value used
+
+    with vault_kv_secret_v2.prometheus_bifrost_admin,
+    on secrets.tf line 141, in resource "vault_kv_secret_v2" "prometheus_bifrost_admin":
+   141:   data_json = jsonencode({
+   142:     username = data.vault_kv_secret_v2.bifrost_admin.data.username
+   143:     password = data.vault_kv_secret_v2.bifrost_admin.data.password
+   144:   })
+
+    The deprecation originates from data.vault_kv_secret_v2.bifrost_admin
+
+  Deprecated resource used as value. Refer to the provider documentation for
+  details.
+
+  Error: Invalid function argument
+
+    on services.tf line 473, in resource "null_resource" "firewall":
+   473:       private_key = file("${path.root}/../../.ssh/id_rsa")
+      ├────────────────
+      │ while calling file(path)
+      │ path.root is "."
+
+  Invalid value for "path" parameter: no file exists at "./../../.ssh/id_rsa";
+  this function works only with files that are distributed as part of the
+  configuration source code, so if this file will be created by a resource in
+  this configuration you must instead obtain this result from an attribute of
+  that resource.
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 35 with exit code 1
