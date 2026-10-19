@@ -1,0 +1,133 @@
+=== phase 1: init + apply with provider
+
+Apply complete! Resources: 9 added, 0 changed, 0 destroyed.
+state before:
+minio_accesskey.users["tester"]
+minio_iam_policy.wi
+minio_iam_user.users["tester"]
+module.buckets["alpha"].minio_iam_policy.policy_read_write
+module.buckets["alpha"].minio_iam_user_policy_attachment.bucket_writer["tester"]
+module.buckets["alpha"].minio_s3_bucket.bucket
+module.buckets["beta"].minio_iam_policy.policy_read_write
+module.buckets["beta"].minio_iam_user_policy_attachment.bucket_writer["tester"]
+module.buckets["beta"].minio_s3_bucket.bucket
+=== phase 2a: removed blocks + dummy static provider, MinIO stopped
+MinIO unreachable: ok
+Initializing provider plugins...
+- Reusing previous version of aminueza/minio from the dependency lock file
+- Using previously-installed aminueza/minio v3.8.3
+
+Terraform has been successfully initialized!
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+
+Terraform will perform the following actions:
+
+ # minio_accesskey.users["tester"] will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_accesskey" "users" {
+        id         = "ZCF07M2CQEIKATKEPQZJ"
+        # (5 unchanged attributes hidden)
+    }
+
+ # minio_iam_policy.wi will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_iam_policy" "wi" {
+        id     = "wi"
+        name   = "wi"
+        # (1 unchanged attribute hidden)
+    }
+
+ # minio_iam_user.users["tester"] will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_iam_user" "users" {
+        id            = "tester"
+        name          = "tester"
+        # (5 unchanged attributes hidden)
+    }
+
+ # module.buckets["alpha"].minio_iam_policy.policy_read_write will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_iam_policy" "policy_read_write" {
+        id     = "alpha_rw"
+        name   = "alpha_rw"
+        # (1 unchanged attribute hidden)
+    }
+
+ # module.buckets["alpha"].minio_iam_user_policy_attachment.bucket_writer["tester"] will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_iam_user_policy_attachment" "bucket_writer" {
+        id          = "tester-20261019180155409600000002"
+        # (2 unchanged attributes hidden)
+    }
+
+ # module.buckets["alpha"].minio_s3_bucket.bucket will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_s3_bucket" "bucket" {
+        id                 = "alpha"
+        # (6 unchanged attributes hidden)
+    }
+
+ # module.buckets["beta"].minio_iam_policy.policy_read_write will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_iam_policy" "policy_read_write" {
+        id     = "beta_rw"
+        name   = "beta_rw"
+        # (1 unchanged attribute hidden)
+    }
+
+ # module.buckets["beta"].minio_iam_user_policy_attachment.bucket_writer["tester"] will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_iam_user_policy_attachment" "bucket_writer" {
+        id          = "tester-20261019180155360800000001"
+        # (2 unchanged attributes hidden)
+    }
+
+ # module.buckets["beta"].minio_s3_bucket.bucket will no longer be managed by Terraform, but will not be destroyed
+ # (destroy = false is set in the configuration)
+ . resource "minio_s3_bucket" "bucket" {
+        id                 = "beta"
+        # (6 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 0 to change, 0 to destroy.
+
+Warning: Some objects will no longer be managed by Terraform
+
+If you apply this plan, Terraform will discard its tracking information for
+the following objects, but it will not delete them:
+ - module.buckets["alpha"].minio_iam_user_policy_attachment.bucket_writer["tester"]
+ - module.buckets["beta"].minio_iam_user_policy_attachment.bucket_writer["tester"]
+ - minio_accesskey.users["tester"]
+ - minio_iam_user.users["tester"]
+ - minio_iam_policy.wi
+ - module.buckets["beta"].minio_iam_policy.policy_read_write
+ - module.buckets["alpha"].minio_iam_policy.policy_read_write
+ - module.buckets["beta"].minio_s3_bucket.bucket
+ - module.buckets["alpha"].minio_s3_bucket.bucket
+
+After applying this plan, Terraform will no longer manage these objects. You
+will need to import them into Terraform to manage them again.
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+resources left in state: 0
+=== phase 2b: delete provider block and required_providers, MinIO stopped
+
+Terraform has been successfully initialized!
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+plan 2b exit 0
+providers in state after:
+
+Providers required by configuration:
+.
+
+=== phase 3: MinIO back up, data intact
+[2026-10-19 20:01:54 CEST]     0B alpha/
+[2026-10-19 20:01:54 CEST]     0B beta/
+object alpha/obj.txt present
+user tester present
+alpha_rw beta_rw wi 
+exit 0
