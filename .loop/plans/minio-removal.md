@@ -55,13 +55,26 @@ later steps delete, so the order is fixed:
 4. Devcontainer: drop `mc` from `.devcontainer/Dockerfile` and its alias in
    `.devcontainer/bootstrap.sh`, and the stale MinIO entries in
    `bootstrap/.env.example` and `bootstrap/README.md`.
+5. Applications root: delete the old backup key path (see the backup job
+   below). Apply.
 
 The backup job. The cutover leaves it reading SeaweedFS under its old name.
 Rename it here: `nomad_job.backup_minio` and
 `deployments/infrastructure/services/backup-minio.hcl` become `backup_s3` and
-`backup-s3.hcl`, and its Vault paths move from `default/backup-minio/` to
-`default/backup-s3/`. The job is re-registered under the new name and the
-old one is purged. `cli/tests/test_backup_coverage.py` and
+`backup-s3.hcl`. A job with a bare `vault {}` reads only
+`secret/data/default/<job id>/*`, so every secret it reads moves with it, in
+the step order above:
+
+- Step 1A also writes the SeaweedFS backup key at `default/backup-s3/seaweedfs`
+  from `deployments/applications/secrets.tf`, beside the
+  `default/backup-minio/seaweedfs` copy that `seaweedfs-buckets` made, so the
+  old job keeps its key until it is gone.
+- Step 2 moves the GCS key to `default/backup-s3/gcs` in
+  `deployments/infrastructure/secrets.tf`, registers `backup-s3`, and runs
+  `nomad job stop -purge backup-minio`, because `nomad_job` here sets no
+  `purge_on_destroy` and a stopped periodic job otherwise lingers.
+- Step 5, after step 2: an applications-root apply deletes
+  `default/backup-minio/seaweedfs`. `cli/tests/test_backup_coverage.py` and
 `cli/tests/test_health_rules.py` follow the rename. The GCS prefix `minio/`
 stays as it is, so the backup history carries on. It is the one MinIO name
 left in the code on purpose, and the jobspec says why in one comment.
