@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "No ticket mints the key restore-s3 needs, and no Vault path exists for it. The plan says the job \"reads the GCS key and a SeaweedFS key that can write the durable buckets\", but seaweedfs-buckets creates only per-consumer keys (openviking's is scoped to openviking alone) and a backup user that is read-only. The nomad-workloads role grants a job read only on secret/data/<namespace>/<job_id>/*, so restore-s3 cannot borrow default/backup-minio/gcs or default/openviking/seaweedfs. It needs its own default/restore-s3/gcs (infrastructure secrets.tf, as backup_minio_gcs_credentials does) and a SeaweedFS user with write on the four durable buckets. That user must be created in the applications root, where the IAM provider is, and written to default/restore-s3/seaweedfs there, the same cross-root pattern seaweedfs-buckets uses for the backup user. Without naming that, the job cannot render its rclone config, and seaweedfs-cutover-registry, which reuses the job, inherits the gap.",
+      "anchor": ".loop/plans/seaweedfs-cutover-openviking.md:26",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "Restored data is not covered by the cited spike. spike:seaweedfs-cutover-openviking/1 proved the AGFS s3fs client works on a fresh SeaweedFS bucket that it wrote itself. It did not test a bucket filled by rclone from GCS. AGFS treats directories as \"dir/\" keys (the spike's raw mv failed on a CopyObject of `.../deep2/`). By default rclone skips zero-byte keys that end in \"/\" and does not write them back, so empty directories and any marker objects are missing from the GCS copy and from the restore. `rclone check` still exits 0. If OpenViking's stat, ls or tree of an old URI, or the dirs it creates before writing, depend on those markers or on empty dirs, old content breaks after the switch. The registry ticket settled the same question with spike:seaweedfs-cutover/3. This ticket has no matching spike. Spike question: write a small tree through create_agfs_client onto MinIO (with mkdir'd empty dirs), move it MinIO -> local dir -> SeaweedFS with the backup job's rclone flags, then run stat, ls, tree, glob, read and the VikingFS.mv sequence on the old paths through create_agfs_client. Also count keys ending in \"/\" in prod MinIO's openviking bucket against its GCS prefix.",
+      "anchor": ".loop/plans/seaweedfs-cutover-openviking.md:52",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "open",
+      "claim": "\"A search returns results that existed before the switch\" does not show the bucket was restored. ov.conf.json sets the vector store to Postgres with store_content true, and Postgres is not touched by the cutover, so a search can return its old hits even when the openviking bucket on SeaweedFS is empty or partial. No baseline is captured either. The outcome needs a pre-switch record (a named query and its result URIs, or a list of resource URIs) taken before step 1, and a post-switch read of the content of those URIs through OpenViking's API, which goes through AGFS to the bucket. Otherwise the contract passes on a broken restore.",
+      "anchor": ".loop/plans/seaweedfs-cutover-openviking.md:44",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "6c2c625d701d347d936c1dd9cf554cc2dfa588f61944d531299f93d5bfe283de"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T21:00:56+00:00"
+}
