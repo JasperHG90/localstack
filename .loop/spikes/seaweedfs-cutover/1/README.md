@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T18:00:09+00:00'
+  at: '2026-10-19T18:15:46+00:00'
 slug: seaweedfs-cutover
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-cutover/1
@@ -24,7 +24,8 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-cutover 1`.
+Passed (exit 0), but did not test multipart blobs. The 30 MiB layer's blob landed on MinIO with a single-part MD5 ETag, because registry 3 commits a blob with one CopyObject below multipartcopythresholdsize (32 MiB default). Both restore paths served both images by tag and digest with matching blob sha256s.
+Run 3 replaces this one with a 40 MiB layer and a check that its blob has a multipart ETag.
 
 ## Files
 
