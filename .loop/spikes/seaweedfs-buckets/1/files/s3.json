@@ -1,0 +1,5 @@
+{"identities": [
+ {"name": "admin", "credentials": [{"accessKey": "ADMINKEY", "secretKey": "ADMINSECRET"}], "actions": ["Admin", "Read", "Write", "List", "Tagging"]},
+ {"name": "writer-a", "credentials": [{"accessKey": "WRITERAKEY", "secretKey": "WRITERASECRET"}], "actions": ["Read:bkt-a", "Write:bkt-a", "List:bkt-a"]},
+ {"name": "reader-a", "credentials": [{"accessKey": "READERAKEY", "secretKey": "READERASECRET"}], "actions": ["Read:bkt-a", "List:bkt-a"]}
+]}

@@ -1,0 +1,55 @@
+IAM get_user_policy iam-writer-a {'Version': '2012-10-17', 'Statement': [{'Effect': 'Allow', 'Action': ['s3:GetObject', 's3:PutObject', 's3:DeleteObject', 's3:ListBucket'], 'Resource': ['arn:aws:s3:::bkt-a', 'arn:aws:s3:::bkt-a/*']}]}
+IAM get_user_policy iam-reader-a {'Version': '2012-10-17', 'Statement': [{'Effect': 'Allow', 'Action': ['s3:GetObject', 's3:ListBucket'], 'Resource': ['arn:aws:s3:::bkt-a', 'arn:aws:s3:::bkt-a/*']}]}
+static writer-a put    bkt-a: want allow got ok             PASS
+static writer-a get    bkt-a: want allow got ok             PASS
+static writer-a list   bkt-a: want allow got ok             PASS
+static writer-a delete bkt-a: want allow got ok             PASS
+static writer-a put    bkt-b: want deny  got AccessDenied   PASS
+static writer-a get    bkt-b: want deny  got AccessDenied   PASS
+static writer-a list   bkt-b: want deny  got AccessDenied   PASS
+static writer-a delete bkt-b: want deny  got AccessDenied   PASS
+static writer-a ListBuckets: ok ['bkt-a']
+static writer-a GetBucketLocation a: ok
+static reader-a put    bkt-a: want deny  got AccessDenied   PASS
+static reader-a get    bkt-a: want allow got ok             PASS
+static reader-a list   bkt-a: want allow got ok             PASS
+static reader-a delete bkt-a: want deny  got AccessDenied   PASS
+static reader-a put    bkt-b: want deny  got AccessDenied   PASS
+static reader-a get    bkt-b: want deny  got AccessDenied   PASS
+static reader-a list   bkt-b: want deny  got AccessDenied   PASS
+static reader-a delete bkt-b: want deny  got AccessDenied   PASS
+static reader-a ListBuckets: ok ['bkt-a']
+static reader-a GetBucketLocation a: ok
+== static: 0 mismatches
+iam    writer-a put    bkt-a: want allow got ok             PASS
+iam    writer-a get    bkt-a: want allow got ok             PASS
+iam    writer-a list   bkt-a: want allow got ok             PASS
+iam    writer-a delete bkt-a: want allow got ok             PASS
+iam    writer-a put    bkt-b: want deny  got AccessDenied   PASS
+iam    writer-a get    bkt-b: want deny  got AccessDenied   PASS
+iam    writer-a list   bkt-b: want deny  got AccessDenied   PASS
+iam    writer-a delete bkt-b: want deny  got AccessDenied   PASS
+iam    writer-a ListBuckets: ok ['bkt-a']
+iam    writer-a GetBucketLocation a: AccessDenied
+iam    reader-a put    bkt-a: want deny  got AccessDenied   PASS
+iam    reader-a get    bkt-a: want allow got ok             PASS
+iam    reader-a list   bkt-a: want allow got ok             PASS
+iam    reader-a delete bkt-a: want deny  got AccessDenied   PASS
+iam    reader-a put    bkt-b: want deny  got AccessDenied   PASS
+iam    reader-a get    bkt-b: want deny  got AccessDenied   PASS
+iam    reader-a list   bkt-b: want deny  got AccessDenied   PASS
+iam    reader-a delete bkt-b: want deny  got AccessDenied   PASS
+iam    reader-a ListBuckets: ok ['bkt-a']
+iam    reader-a GetBucketLocation a: AccessDenied
+== iam: 0 mismatches
+bkt-b/seed.txt still present: ok
+--- container log tail
+I1019 17:55:44.472255 volume_grpc_client_to_master.go:98 checkWithMaster 172.17.0.2:9333: get master 172.17.0.2:9333 configuration: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial unix /tmp/seaweedfs-master-grpc-19333.sock: connect: no such file or directory"
+I1019 17:55:44.524400 masterclient.go:271 .master masterClient failed to receive from 172.17.0.2:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:55:45.551176 masterclient.go:271 .master masterClient failed to receive from 172.17.0.2:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:55:45.557374 masterclient.go:271 .filer masterClient failed to receive from 172.17.0.2:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:55:46.299290 volume_grpc_client_to_master.go:127 heartbeat to 172.17.0.2:9333 error: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 17:55:46.581654 filer.go:477 Registered IAM gRPC service on filer (unauthenticated; set jwt.filer_signing.key in security.toml to require admin Bearer token)
+I1019 17:55:46.581971 meta_aggregator.go:351 subscribing remote 172.17.0.2:8888 meta change: connecting to peer filer 172.17.0.2:8888: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial unix /tmp/seaweedfs-filer-grpc-18888.sock: connect: no such file or directory"
+I1019 17:55:47.473992 s3.go:344 Starting S3 API Server with standard IAM
+E1019 17:55:47.478320 s3api_server.go:403 Failed to load IAM configuration: no signing key found for STS service; please provide 'signingKey' in IAM config, configure 'jwt.filer_signing.key' in security.toml, or ensure SSE-S3 is initialized

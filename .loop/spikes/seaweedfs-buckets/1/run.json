@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-buckets",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-buckets-2/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-buckets-2/spike.sh",
+      "copy": "files/spike.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-buckets-2/check.py",
+      "copy": "files/check.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-buckets-2/s3.json",
+      "copy": "files/s3.json"
+    }
+  ],
+  "where": "worktree",
+  "head": "2a1375691ce7b46f701f68ed4c37eb252b68d775",
+  "fingerprint": "cf9df7ebc1f7c401787eb940b74afc0ff87cc140953fb9c764c07ef2b8e69fe9",
+  "started_at": "2026-10-19T17:55:39+00:00",
+  "finished_at": "2026-10-19T17:56:05+00:00",
+  "duration_seconds": 26.764,
+  "timeout_seconds": 240.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
