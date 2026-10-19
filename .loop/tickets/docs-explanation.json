@@ -20,10 +20,50 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/orchestrator",
+    "hash": "cd2fde645c663a1516ace5e6ad96b0df5fa14565444523f4cc175e0bbcc21705",
+    "at": "2026-10-19T17:51:10+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "every page in docs/explanation has front matter with description, stale_after and non-empty sources, and no other key than those and verified",
+      "fails_when": "a page other than README.md lacks one of the three keys, has empty sources, or carries another key",
+      "command": "python3 -c 'import yaml,pathlib,sys\ndef fm(p):\n    t=pathlib.Path(p).read_text()\n    return yaml.safe_load(t.split(\"---\",2)[1]) if t.startswith(\"---\") else None\nbad=[]\nfor p in pathlib.Path(\"docs/explanation\").glob(\"*.md\"):\n    if p.name==\"README.md\": continue\n    f=fm(p) or {}\n    if not f.get(\"description\") or not f.get(\"stale_after\") or not f.get(\"sources\") or set(f)-{\"description\",\"stale_after\",\"sources\",\"verified\"}: bad.append(str(p))\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "kmctl review due reports no notice for a page in docs/explanation",
+      "fails_when": "any notice has a path under docs/explanation/",
+      "command": "uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl review due --json | python3 -c 'import json,sys\nn=[x for x in json.load(sys.stdin)[\"notices\"] if x[\"path\"].startswith(\"docs/explanation/\")]\nprint(json.dumps(n,indent=1))\nsys.exit(1 if n else 0)'",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "kmctl check passes and prints no warning that names docs/explanation",
+      "fails_when": "kmctl check exits nonzero, or a warning line contains docs/explanation/",
+      "command": "out=$(uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl check 2>&1); rc=$?; printf \"%s\\n\" \"$out\"; [ $rc -eq 0 ] && ! printf \"%s\\n\" \"$out\" | grep \"^warning\" | grep -q \"docs/explanation/\"",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "no backticked file name in docs/explanation is shorthand for a tracked file: each one that names a tracked file is written from the repo root",
+      "fails_when": "an inline-code token with a file extension does not exist from the repo root while a tracked file ends with /<token>",
+      "command": "git ls-files > /tmp/tracked.txt && python3 -c 'import pathlib,re,sys\ntr=open(\"/tmp/tracked.txt\").read().split()\nbad=[]\nfor p in pathlib.Path(\"docs/explanation\").glob(\"*.md\"):\n    t=re.sub(r\"^(```|~~~).*?^(```|~~~)\",\"\",p.read_text(),flags=re.S|re.M)\n    for tok in re.findall(r\"`([^`\\s]+\\.[A-Za-z0-9]+)`\",t):\n        if tok.startswith((\"/\",\"~\")) or pathlib.Path(tok).exists(): continue\n        if any(f.endswith(\"/\"+tok.lstrip(\"./\")) for f in tr): bad.append(f\"{p}: {tok}\")\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'",
+      "judgment": false
+    },
+    {
+      "id": "r5",
+      "behavior": "each page in docs/explanation matches the code it describes, its build-history lines (ticket codes as provenance, at-the-time-of-writing state) listed in spike:docs-reconcile/1 are rewritten as current facts, and changed pages follow the plain-language and slop-scan rules",
+      "fails_when": "a reviewer finds a claim the code contradicts, a listed build-history line left as is, or a slop pattern the rules name",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -46,5 +86,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:48:07+00:00"
+  "at": "2026-10-19T17:51:10+00:00"
 }
