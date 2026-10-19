@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "Evidence lines said a ticket's plan and verdicts are in `.loop/archive/` before `5b2ed1b`, false for 14 tickets.",
+      "anchor": ".okf/components/observability-pipeline.md:238",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "minio.md said R10 to R12 were all stubs at the reset.",
+      "anchor": ".okf/components/minio.md:106",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "The new Evidence wording calls `48f52e2` \"the last commit before the `5b2ed1b` loop reset\", but the parent of `5b2ed1b` is `2259e07`, with three stamp-only commits between them. The files the lines point to are the same at both commits, so readers still find them.",
+      "anchor": ".okf/components/observability-pipeline.md:238",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "f0b89f97b30326f7e85c1b2f5e9fc369c61242195419301dda9dde60d5734577",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T18:57:27+00:00"
+}
