@@ -3,7 +3,7 @@
   "slug": "minio-removal",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "63da7fc6478c7077567a4ed29d84d95ea87672a32f01d7f858eed569c38d5fba",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "6f8df75a75bdfe1c033cf3ffb4e21e1e83e7b3e49612d2e75539e69f8da0efe8",
+    "started_at": "2026-10-19T17:53:48+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "6f8df75a75bdfe1c033cf3ffb4e21e1e83e7b3e49612d2e75539e69f8da0efe8",
   "intent": {
     "epic": "seaweedfs-migration",
     "depends_on": [
@@ -46,5 +65,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:53:18+00:00"
+  "at": "2026-10-19T17:53:48+00:00"
 }

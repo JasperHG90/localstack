@@ -1,1 +1,2 @@
 {"at": "2026-10-19T17:50:35+00:00", "kind": "register", "schema_version": "1.0", "stage": "planning"}
+{"at": "2026-10-19T17:53:48+00:00", "binds": "6f8df75a75bdfe1c033cf3ffb4e21e1e83e7b3e49612d2e75539e69f8da0efe8", "kind": "round-start", "n": 1, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
