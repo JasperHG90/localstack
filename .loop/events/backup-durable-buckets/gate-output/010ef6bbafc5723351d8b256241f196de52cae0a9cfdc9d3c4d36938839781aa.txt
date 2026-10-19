@@ -1,0 +1,112 @@
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Failed
+- hook id: terraform-validate
+- exit code: 1
+
+  ==> terraform validate deployments/infrastructure
+
+  Warning: Deprecated Resource
+
+    with data.vault_kv_secret_v2.bifrost_admin,
+    on secrets.tf line 133, in data "vault_kv_secret_v2" "bifrost_admin":
+   133: data "vault_kv_secret_v2" "bifrost_admin" {
+
+  Deprecated. Please use new Ephemeral KVV2 Secret resource
+  `vault_kv_secret_v2` instead
+
+  Warning: Deprecated value used
+
+    with vault_kv_secret_v2.prometheus_bifrost_admin,
+    on secrets.tf line 141, in resource "vault_kv_secret_v2" "prometheus_bifrost_admin":
+   141:   data_json = jsonencode({
+   142:     username = data.vault_kv_secret_v2.bifrost_admin.data.username
+   143:     password = data.vault_kv_secret_v2.bifrost_admin.data.password
+   144:   })
+
+    The deprecation originates from data.vault_kv_secret_v2.bifrost_admin
+
+  Deprecated resource used as value. Refer to the provider documentation for
+  details.
+
+  Error: Invalid function argument
+
+    on services.tf line 473, in resource "null_resource" "firewall":
+   473:       private_key = file("${path.root}/../../.ssh/id_rsa")
+      ├────────────────
+      │ while calling file(path)
+      │ path.root is "."
+
+  Invalid value for "path" parameter: no file exists at "./../../.ssh/id_rsa";
+  this function works only with files that are distributed as part of the
+  configuration source code, so if this file will be created by a resource in
+  this configuration you must instead obtain this result from an attribute of
+  that resource.
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  E501 Line too long (102 > 100)
+    --> cli/tests/test_backup_coverage.py:26:101
+     |
+  24 | EXPECTED_BUCKETS = {"openviking", "registry", "models", "datalake"}
+  25 |
+  26 | SYNC_LINE = re.compile(r"^\s*rclone sync minio:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M)
+     |                                                                                                     ^^
+
+  Found 1 error.
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  19 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  19 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  unformatted: File would be reformatted
+    --> cli/tests/test_backup_coverage.py:26:24
+     |
+  25 |
+     - SYNC_LINE = re.compile(r"^\s*rclone sync minio:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M)
+  26 + SYNC_LINE = re.compile(
+  27 +     r"^\s*rclone sync minio:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M
+  28 + )
+  29 |
+  --------------------------------------------------------------------------------
+  85 |     assert sorted(sources) == sorted(EXPECTED_BUCKETS), (
+     -         f"backup-minio.hcl syncs {sorted(sources)}, expected {sorted(EXPECTED_BUCKETS)}, "
+     -         "each once."
+  86 +         f"backup-minio.hcl syncs {sorted(sources)}, expected {sorted(EXPECTED_BUCKETS)}, each once."
+  87 |     )
+     |
+
+  1 file would be reformatted, 17 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 29 with exit code 1
