@@ -22,8 +22,8 @@
   "stamps": [],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/orchestrator",
-    "hash": "cd2fde645c663a1516ace5e6ad96b0df5fa14565444523f4cc175e0bbcc21705",
-    "at": "2026-10-19T17:51:10+00:00"
+    "hash": "e352718d8dc35c5d66986be2df12cdfa964fe32e445e16737860a8ec77087967",
+    "at": "2026-10-19T18:04:04+00:00"
   },
   "delegation": null,
   "budget_base": null,
@@ -37,9 +37,9 @@
     },
     {
       "id": "r2",
-      "behavior": "kmctl review due reports no notice for a page in docs/explanation",
-      "fails_when": "any notice has a path under docs/explanation/",
-      "command": "uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl review due --json | python3 -c 'import json,sys\nn=[x for x in json.load(sys.stdin)[\"notices\"] if x[\"path\"].startswith(\"docs/explanation/\")]\nprint(json.dumps(n,indent=1))\nsys.exit(1 if n else 0)'",
+      "behavior": "kmctl review due reports no notice anywhere: no page in docs/explanation names a missing source, and no .okf concept is left pointing at a page this change renamed or deleted",
+      "fails_when": "the notices list from kmctl review due --json is not empty",
+      "command": "uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl review due --json | python3 -c 'import json,sys\nn=json.load(sys.stdin)[\"notices\"]\nprint(json.dumps(n,indent=1))\nsys.exit(1 if n else 0)'",
       "judgment": false
     },
     {
@@ -52,8 +52,8 @@
     {
       "id": "r4",
       "behavior": "no backticked file name in docs/explanation is shorthand for a tracked file: each one that names a tracked file is written from the repo root",
-      "fails_when": "an inline-code token with a file extension does not exist from the repo root while a tracked file ends with /<token>",
-      "command": "git ls-files > /tmp/tracked.txt && python3 -c 'import pathlib,re,sys\ntr=open(\"/tmp/tracked.txt\").read().split()\nbad=[]\nfor p in pathlib.Path(\"docs/explanation\").glob(\"*.md\"):\n    t=re.sub(r\"^(```|~~~).*?^(```|~~~)\",\"\",p.read_text(),flags=re.S|re.M)\n    for tok in re.findall(r\"`([^`\\s]+\\.[A-Za-z0-9]+)`\",t):\n        if tok.startswith((\"/\",\"~\")) or pathlib.Path(tok).exists(): continue\n        if any(f.endswith(\"/\"+tok.lstrip(\"./\")) for f in tr): bad.append(f\"{p}: {tok}\")\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'",
+      "fails_when": "an inline-code token with a file extension, outside fenced code and not on the allow-list of other-codebase names (embark.json), does not exist from the repo root while a tracked file ends with /<token>",
+      "command": "git ls-files > /tmp/tracked.txt && python3 -c 'import pathlib,re,sys\ntr=open(\"/tmp/tracked.txt\").read().split()\nALLOW={\"embark.json\"}\nbad=[]\nfor p in pathlib.Path(\"docs/explanation\").glob(\"*.md\"):\n    t=re.sub(r\"^(```|~~~).*?^(```|~~~)\",\"\",p.read_text(),flags=re.S|re.M)\n    for tok in re.findall(r\"`([^`\\s]+\\.[A-Za-z0-9]+)`\",t):\n        if tok in ALLOW or tok.startswith((\"/\",\"~\")) or pathlib.Path(tok).exists(): continue\n        if any(f.endswith(\"/\"+tok.lstrip(\"./\")) for f in tr): bad.append(f\"{p}: {tok}\")\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'",
       "judgment": false
     },
     {
@@ -64,7 +64,28 @@
       "judgment": true
     }
   ],
-  "resigns": [],
+  "resigns": [
+    {
+      "signer": "delegated:jasperginn@gmail.com/orchestrator",
+      "reason": "plan review round 1: r2 requires no notice bundle-wide, r4 gains an allow-list for other-codebase names",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": {
+          "r2": [
+            "behavior",
+            "fails_when",
+            "command"
+          ],
+          "r4": [
+            "fails_when",
+            "command"
+          ]
+        }
+      },
+      "at": "2026-10-19T18:04:04+00:00"
+    }
+  ],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
@@ -111,5 +132,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:55:30+00:00"
+  "at": "2026-10-19T18:04:04+00:00"
 }
