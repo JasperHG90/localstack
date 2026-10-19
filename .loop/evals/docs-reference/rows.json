@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "every page in docs/reference has front matter with description, stale_after and non-empty sources, and no other key than those and verified",
+      "fails_when": "a page other than README.md lacks one of the three keys, has empty sources, or carries another key",
+      "command": "python3 -c 'import yaml,pathlib,sys\ndef fm(p):\n    t=pathlib.Path(p).read_text()\n    return yaml.safe_load(t.split(\"---\",2)[1]) if t.startswith(\"---\") else None\nbad=[]\nfor p in pathlib.Path(\"docs/reference\").glob(\"*.md\"):\n    if p.name==\"README.md\": continue\n    f=fm(p) or {}\n    if not f.get(\"description\") or not f.get(\"stale_after\") or not f.get(\"sources\") or set(f)-{\"description\",\"stale_after\",\"sources\",\"verified\"}: bad.append(str(p))\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'"
+    },
+    {
+      "id": "r2",
+      "behavior": "kmctl review due reports no notice for a page in docs/reference",
+      "fails_when": "any notice has a path under docs/reference/",
+      "command": "uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl review due --json | python3 -c 'import json,sys\nn=[x for x in json.load(sys.stdin)[\"notices\"] if x[\"path\"].startswith(\"docs/reference/\")]\nprint(json.dumps(n,indent=1))\nsys.exit(1 if n else 0)'"
+    },
+    {
+      "id": "r3",
+      "behavior": "kmctl check passes and prints no warning that names docs/reference",
+      "fails_when": "kmctl check exits nonzero, or a warning line contains docs/reference/",
+      "command": "out=$(uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl check 2>&1); rc=$?; printf \"%s\\n\" \"$out\"; [ $rc -eq 0 ] && ! printf \"%s\\n\" \"$out\" | grep \"^warning\" | grep -q \"docs/reference/\""
+    },
+    {
+      "id": "r4",
+      "behavior": "no backticked file name in docs/reference is shorthand for a tracked file: each one that names a tracked file is written from the repo root",
+      "fails_when": "an inline-code token with a file extension does not exist from the repo root while a tracked file ends with /<token>",
+      "command": "git ls-files > /tmp/tracked.txt && python3 -c 'import pathlib,re,sys\ntr=open(\"/tmp/tracked.txt\").read().split()\nbad=[]\nfor p in pathlib.Path(\"docs/reference\").glob(\"*.md\"):\n    t=re.sub(r\"^(```|~~~).*?^(```|~~~)\",\"\",p.read_text(),flags=re.S|re.M)\n    for tok in re.findall(r\"`([^`\\s]+\\.[A-Za-z0-9]+)`\",t):\n        if tok.startswith((\"/\",\"~\")) or pathlib.Path(tok).exists(): continue\n        if any(f.endswith(\"/\"+tok.lstrip(\"./\")) for f in tr): bad.append(f\"{p}: {tok}\")\nprint(\"\\n\".join(bad))\nsys.exit(1 if bad else 0)'"
+    },
+    {
+      "id": "r5",
+      "behavior": "each page in docs/reference matches the code it describes, its build-history lines (ticket codes as provenance, at-the-time-of-writing state) listed in spike:docs-reconcile/1 are rewritten as current facts, and changed pages follow the plain-language and slop-scan rules",
+      "fails_when": "a reviewer finds a claim the code contradicts, a listed build-history line left as is, or a slop pattern the rules name",
+      "judgment": true
+    }
+  ]
+}
