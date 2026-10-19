@@ -2,3 +2,4 @@
 {"at": "2026-10-19T17:22:56+00:00", "kind": "spike-note", "n": 1, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-10-19T17:23:29+00:00", "kind": "spike-note", "n": 2, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-10-19T17:44:33+00:00", "kind": "spike-note", "n": 3, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-19T17:48:13+00:00", "kind": "drop", "reason": "split by folder into docs-howto, docs-reference and docs-explanation (operator, 2026-10-19)", "schema_version": "1.0"}
