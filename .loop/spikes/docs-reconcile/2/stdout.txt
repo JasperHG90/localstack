@@ -1,0 +1,63 @@
+== (a) unresolved backticked paths ==
+docs-bug:shorthand           docs/explanation/vault-login-mfa.md: `oidc.tf` -> deployments/infrastructure/oidc.tf
+docs-bug:shorthand           docs/explanation/workload-identity.md: `storage.tf` -> deployments/applications/storage.tf, deployments/infrastructure/storage.tf
+docs-bug:shorthand           docs/how-to/add-a-vault-oidc-client.md: `identity.tf` -> deployments/infrastructure/identity.tf
+docs-bug:shorthand           docs/how-to/add-a-vault-oidc-client.md: `oidc.tf` -> deployments/infrastructure/oidc.tf
+docs-bug:shorthand           docs/how-to/add-an-app-user-tier.md: `identity.tf` -> deployments/infrastructure/identity.tf
+docs-bug:shorthand           docs/how-to/apply-a-backup-infrastructure-change.md: `storage.tf` -> deployments/applications/storage.tf, deployments/infrastructure/storage.tf
+docs-bug:shorthand           docs/how-to/change-a-dash-tile.md: `services/dash.hcl` -> deployments/applications/services/dash.hcl
+docs-bug:shorthand           docs/how-to/expose-python-metrics-to-prometheus.md: `services/prometheus.hcl` -> deployments/infrastructure/services/prometheus.hcl
+not-drift:runtime-path       docs/how-to/give-an-aws-sdk-go-service-keyless-minio-access.md: `local/minio-creds.sh` -> named in deployments/applications/services/loki.hcl, deployments/applications/services/registry.hcl
+docs-bug:shorthand           docs/how-to/narrow-the-monitoring-firewall-rules.md: `services/grafana/alert-rules.yaml` -> deployments/infrastructure/services/grafana/alert-rules.yaml
+docs-bug:shorthand           docs/how-to/rebuild-the-dash-images.md: `services.tf` -> deployments/applications/services.tf, deployments/infrastructure/services.tf
+docs-bug:shorthand           docs/how-to/rebuild-the-registry-ui-images.md: `services.tf` -> deployments/applications/services.tf, deployments/infrastructure/services.tf
+docs-bug:shorthand           docs/how-to/remove-vault-login-mfa.md: `identity.tf` -> deployments/infrastructure/identity.tf
+docs-bug:shorthand           docs/how-to/respond-to-a-retrieval-quality-alert.md: `services/embark/models.json` -> deployments/applications/services/embark/models.json
+docs-bug:shorthand           docs/how-to/revoke-a-lost-or-stolen-session.md: `identity.tf` -> deployments/infrastructure/identity.tf
+docs-bug:shorthand           docs/how-to/verify-an-openviking-deployment.md: `bifrost_smoke.py` -> scripts/bifrost_smoke.py
+possible-code-bug:missing    docs/how-to/verify-memex-oidc.md: `token.json` -> no tracked file, history or code match
+docs-bug:shorthand           docs/how-to/verify-memex-oidc.md: `memex.hcl` -> deployments/applications/services/memex.hcl
+docs-bug:shorthand           docs/how-to/verify-memex-oidc.md: `hermes.hcl` -> deployments/applications/services/hermes.hcl
+docs-bug:shorthand           docs/how-to/verify-memex-oidc.md: `services.tf` -> deployments/applications/services.tf, deployments/infrastructure/services.tf
+possible-code-bug:missing    docs/how-to/verify-memex-oidc.md: `memex_common/config.py` -> no tracked file, history or code match
+docs-bug:shorthand           docs/how-to/verify-memex-oidc.md: `identity.tf` -> deployments/infrastructure/identity.tf
+docs-bug:shorthand           docs/how-to/verify-memex-oidc.md: `oidc.tf` -> deployments/infrastructure/oidc.tf
+not-drift:runtime-path       docs/reference/bootstrap-secrets.md: `bootstrap/tailscale` -> named in bootstrap/playbooks/configure_tailscale.yml, bootstrap/playbooks/seed_vault.yml
+docs-bug:shorthand           docs/reference/bootstrap-secrets.md: `configure_tailscale.yml` -> bootstrap/playbooks/configure_tailscale.yml
+not-drift:runtime-path       docs/reference/bootstrap-secrets.md: `bootstrap/github` -> named in bootstrap/playbooks/configure_podman.yml, bootstrap/playbooks/seed_vault.yml
+docs-bug:shorthand           docs/reference/bootstrap-secrets.md: `configure_podman.yml` -> bootstrap/playbooks/configure_podman.yml
+not-drift:runtime-path       docs/reference/bootstrap-secrets.md: `auth.json` -> named in bootstrap/playbooks/configure_podman.yml
+not-drift:runtime-path       docs/reference/cli-read-commands.md: `local/haproxy.cfg` -> named in cli/src/localstack_cli/commands/service.py, cli/tests/cluster/test_live.py
+docs-bug:shorthand           docs/reference/cluster-roles.md: `oidc.tf` -> deployments/infrastructure/oidc.tf
+docs-bug:shorthand           docs/reference/dash.md: `dash/backend/src/dash_app/health.py` -> deployments/applications/services/dash/backend/src/dash_app/health.py
+docs-bug:shorthand           docs/reference/dash.md: `nomad_client.py` -> deployments/applications/services/dash/backend/src/dash_app/nomad_client.py
+docs-bug:shorthand           docs/reference/dash.md: `consul_client.py` -> deployments/applications/services/dash/backend/src/dash_app/consul_client.py
+docs-bug:shorthand           docs/reference/dash.md: `services.py` -> cli/src/localstack_cli/api/services.py, deployments/applications/services/dash/backend/src/dash_app/services.py
+docs-bug:shorthand           docs/reference/dash.md: `tiles.json` -> deployments/applications/services/dash/tiles.json
+docs-bug:shorthand           docs/reference/gcs-backups.md: `storage.tf` -> deployments/applications/storage.tf, deployments/infrastructure/storage.tf
+docs-bug:shorthand           docs/reference/gcs-backups.md: `secrets.tf` -> deployments/applications/secrets.tf, deployments/infrastructure/secrets.tf
+docs-bug:shorthand           docs/reference/gcs-backups.md: `services.tf` -> deployments/applications/services.tf, deployments/infrastructure/services.tf
+possible-code-bug:missing    docs/reference/gcs-backups.md: `docker-entrypoint.sh` -> no tracked file, history or code match
+not-drift:runtime-path       docs/reference/gcs-backups.md: `secrets/gcs-key.json` -> named in deployments/infrastructure/services/backup-minio.hcl, deployments/infrastructure/services/backup-postgres.hcl
+not-drift:runtime-path       docs/reference/gcs-backups.md: `secrets/rclone.conf` -> named in deployments/infrastructure/services/backup-minio.hcl
+docs-bug:shorthand           docs/reference/gcs-backups.md: `backup-postgres.hcl` -> deployments/infrastructure/services/backup-postgres.hcl
+docs-bug:renamed             docs/reference/gcs-backups.md: `deployments/infrastructure/vars/prod.tfvars` -> deleted in 529d176 chore: variabilise PII (email, Telegram user ID, GCP project, host home)
+docs-bug:shorthand           docs/reference/monitoring.md: `alert-rules.yaml` -> deployments/infrastructure/services/grafana/alert-rules.yaml
+docs-bug:shorthand           docs/reference/monitoring.md: `services/grafana.hcl` -> deployments/infrastructure/services/grafana.hcl
+docs-bug:shorthand           docs/reference/openviking.md: `ov.conf.json` -> deployments/applications/services/openviking/ov.conf.json
+possible-code-bug:missing    docs/reference/openviking.md: `telemetry/tracer.py` -> no tracked file, history or code match
+docs-bug:shorthand           docs/reference/python-observability.md: `services/grafana.hcl` -> deployments/infrastructure/services/grafana.hcl
+docs-bug:shorthand           docs/reference/registry-ui.md: `embark.json` -> deployments/infrastructure/services/grafana/embark.json
+docs-bug:shorthand           docs/reference/registry-ui.md: `nginx.conf` -> deployments/applications/services/dash/frontend/nginx.conf, deployments/applications/services/registry-ui/frontend/nginx.conf
+docs-bug:shorthand           docs/reference/vault-human-auth.md: `identity.tf` -> deployments/infrastructure/identity.tf
+docs-bug:shorthand           docs/reference/vault-human-auth.md: `oidc.tf` -> deployments/infrastructure/oidc.tf
+docs-bug:shorthand           docs/reference/vault-human-auth.md: `secrets.tf` -> deployments/applications/secrets.tf, deployments/infrastructure/secrets.tf
+docs-bug:shorthand           docs/reference/vault-human-auth.md: `variables.tf` -> deployments/applications/modules/bucket/variables.tf, deployments/applications/variables.tf, deployments/infrastructure/variables.tf
+docs-bug:shorthand           docs/reference/vault-login-mfa.md: `grafana.hcl` -> deployments/infrastructure/services/grafana.hcl
+counts (a): {'docs-bug:shorthand': 43, 'not-drift:runtime-path': 7, 'possible-code-bug:missing': 4, 'docs-bug:renamed': 1}
+
+== (b) just recipes and localstack commands ==
+pages with commands: 23
+counts (b): {'ok': 100}
+
+summary: docs-bug 44 paths + 0 commands, possible-code-bug 4
