@@ -1,3 +1,16 @@
+---
+description: Who can reach Prometheus, Loki, Tempo and Grafana, where alerts go, how to send traces, and what `localstack monitor` shows.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/applications/services.tf
+  - resource: deployments/infrastructure/services/grafana.hcl
+  - resource: deployments/infrastructure/services/grafana/alert-rules.yaml
+  - resource: deployments/infrastructure/services/alloy.hcl
+  - resource: deployments/applications/services/tempo.hcl
+  - resource: cli/src/localstack_cli/commands/monitor.py
+---
+
 # Monitoring stack
 
 ## Who can reach the monitoring stack
@@ -17,17 +30,16 @@ See [How to sign in to Grafana](../how-to/sign-in-to-grafana.md).
 
 | Service | Port | Who may connect |
 |---|---|---|
-| Prometheus | 9090 | `192.168.2.47` only, which is Grafana's datasource on the same node |
+| Prometheus | 9090 | `192.168.2.47` (Grafana's datasource on the same node) and `192.168.2.30` (the edge, which routes nothing to it) |
 | Loki | 3100 | all five node addresses, because Alloy is a `system` job and ships from every node |
 | Tempo | 3200 | `192.168.2.47` (Grafana) and `192.168.2.30` (the edge) |
 | Tempo OTLP | 4317, 4318 | all five node addresses, since any workload may export traces |
-| Grafana | 3000 | `192.168.0.0/16` and `100.64.0.0/10`, unchanged |
+| Grafana | 3000 | `192.168.0.0/16` and `100.64.0.0/10` |
 
-Grafana is unchanged. It requires a login, so it keeps its LAN and tailnet
-reach on port 3000.
+Grafana requires a login, so it keeps its LAN and tailnet reach on port
+3000.
 
-Prometheus scraping is unaffected. It dials outward to its targets, and no
-inbound rule touches that.
+Prometheus scraping needs no inbound rule. It dials outward to its targets.
 
 Why none of them is routed through the edge proxy is in
 [Why monitoring is not behind the edge](../explanation/why-monitoring-is-not-behind-the-edge.md).
@@ -40,7 +52,8 @@ Three dashboards cover the retrieval stack: `/d/localstack-embark` for the
 models, `/d/localstack-openviking` for live retrieval, and
 `/d/localstack-retrieval-quality` for whether the models are still as good as
 they were. The last one reads `driftwatch`, a daily canary, and the alerts
-that go with it are the `retrieval-quality` group in `alert-rules.yaml`.
+that go with it are the `retrieval-quality` group in
+`deployments/infrastructure/services/grafana/alert-rules.yaml`.
 
 How to read them is in [Retrieval quality](retrieval-quality.md), and what to
 do when one fires is in
@@ -48,11 +61,11 @@ do when one fires is in
 
 ## Where alerts go
 
-Grafana sends every alert to one Telegram chat: the operator's private chat
-with **OrangeClusterAlertBot**. The contact point is provisioned from
-`services/grafana.hcl`, which reads the bot token from Vault KV2 at
-`default/grafana/telegram` and the chat id from the `telegram_alert_chat_id`
-variable.
+Grafana sends every alert to one Telegram chat: the operator's private chat with
+**OrangeClusterAlertBot**. The contact point is provisioned from
+`deployments/infrastructure/services/grafana.hcl`, which reads the bot token
+from Vault KV2 at `default/grafana/telegram` and the chat id from the
+`telegram_alert_chat_id` variable.
 
 Hermes uses a different bot, **@OrangeHermes**, with a different token, at
 `default/hermes/telegram`. Terraform writes neither value. Both are
@@ -97,10 +110,18 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4317   # gRPC
 OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.2.47:4318   # HTTP
 ```
 
-There is no collector in between. Apps speak OTLP straight to Tempo, the same
-way they log to stdout and let Alloy pick it up. Alloy runs on every node but
-handles logs only, so adding an OTLP hop there is a later change, not a
-prerequisite.
+Alloy also runs an OTLP receiver on every node, bound to loopback, and
+forwards what it gets to Tempo at `192.168.2.47:4317`:
+
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4319   # gRPC
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4320   # HTTP
+```
+
+A workload that exports to Alloy never learns where Tempo is, so moving Tempo
+does not mean redeploying it. Alloy forwards traces only. Logs still go to
+stdout, where Alloy picks them up. embark exports this way. Nothing off the
+node can reach the loopback receiver, so it needs no firewall rule.
 
 Traces and logs cross-link in both directions once an app emits a `trace_id`
 on its log lines:
@@ -113,7 +134,7 @@ on its log lines:
   minutes either side.
 
 Retention is 30 days, matching Loki, so a trace and the logs that reference it
-expire together. Completed blocks live in the `tempo` MinIO bucket. The
+expire together. Completed blocks are in the `tempo` MinIO bucket. The
 `tempo_data` host volume holds only the write-ahead log and blocks not yet
 flushed.
 
@@ -133,7 +154,7 @@ browser.
 It is not part of this stack and does not overlap with it. No metrics, no
 charts, no history, no logs, no alerting. Current control-plane state only,
 read from the Nomad, Vault and Consul APIs. Everything else
-stays Grafana's, Prometheus's and Loki's job.
+is Grafana's, Prometheus's and Loki's job.
 
 Each source is fetched on its own with its own timeout, so a sealed Vault
 degrades one panel instead of hanging the screen. A fetch that fails keeps
@@ -157,8 +178,8 @@ NOMAD_ADDR=https://nomad.lab.orangecluster.nl
 CONSUL_HTTP_ADDR=https://consul.lab.orangecluster.nl
 ```
 
-Those work from the LAN and over tailscale, and they keep working when the
-plaintext ports 4646, 8200 and 8500 close to the LAN.
+Those work from the LAN and over tailscale. They do not depend on the
+plaintext ports 4646, 8200 and 8500, which are still open to the LAN.
 
 The seal-state and Consul reads need no token, so those two panels work for
 anyone. The node and job panels need a Nomad token carrying `list-jobs` and

@@ -1,3 +1,13 @@
+---
+description: How the wildcard edge certificate is issued, renewed, stored in Vault and served, and why the lego state volume matters.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/acme.hcl
+  - resource: deployments/infrastructure/services.tf
+  - resource: deployments/infrastructure/variables.tf
+  - resource: deployments/infrastructure/services/haproxy.hcl
+---
+
 # TLS certificates
 
 The cluster's edge certificate is a Let's Encrypt wildcard for
@@ -13,7 +23,7 @@ ubuntu. It has two tasks.
 
 It runs there rather than on firebat, which hosts the edge, because the
 certificate travels through Vault rather than through the filesystem, so the
-job does not need to sit next to the proxy that serves it. Firebat is also
+job does not need to run next to the proxy that serves it. Firebat is also
 fully reserved: 3200 of 3200 MHz, most of it held by Postgres, which leaves no
 room to schedule anything new even though actual usage across the node is near
 zero.
@@ -83,10 +93,11 @@ record during issuance and removes it afterward.
 
 ## ACME environment
 
-`var.acme_server` points at the Let's Encrypt production endpoint. It was on
-staging until the idempotency gate was cleared on 2026-07-26: the job ran
-twice, lego reported `Skip renewal` with the certificate serial unchanged, and
-only then was production enabled.
+`var.acme_server` in `deployments/infrastructure/variables.tf` points at the
+Let's Encrypt production endpoint. The job does not reissue on every run: run
+twice in a row against staging, lego reported `Skip renewal` and the
+certificate serial stayed the same. Test a change to the job against staging
+first, so a mistake costs no production issuance.
 
 ## See also
 

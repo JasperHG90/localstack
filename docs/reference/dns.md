@@ -1,3 +1,12 @@
+---
+description: The public DNS records that point the lab zone at the cluster edge, and why `.consul` names do not resolve from the LAN.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/acme.hcl
+  - resource: deployments/infrastructure/services/haproxy.hcl
+  - resource: deployments/infrastructure/variables.tf
+---
+
 # DNS for the lab zone
 
 Names under `lab.orangecluster.nl` resolve from public DNS to the cluster
@@ -26,13 +35,10 @@ certificate authority may issue for the zone. Certificate renewal also
 creates `_acme-challenge` TXT records under the zone and removes them when it
 finishes.
 
-## `.consul` names are still not usable
+## `.consul` names do not resolve
 
-The [NATS pages](nats.md) and the unbuilt
-`.okf/proposals/postgres-nats-cdc-bridge.md` advertise
-`nats://nats.service.localstack.consul:4222` as a client URL in several
-places. That does not work, and removing the resolver did not change it
-either way.
+A client URL such as `nats://nats.service.localstack.consul:4222` does not
+work from the LAN.
 
 Consul answers `.consul` names on port 8600 only, so an ordinary client never
 resolves them. Forwarding the zone to Consul was considered and rejected:
@@ -42,8 +48,8 @@ routable from the LAN and is unreachable even from firebat, while
 `192.168.2.50:4222` is open. Forwarding would have replaced an honest
 NXDOMAIN with an answer that connects to nothing and times out.
 
-Use the node address and port. Correcting those documents, or making Consul
-advertise routable addresses, belongs to whoever owns NATS.
+Use the node address and port instead, for example `192.168.2.50:4222` for
+NATS. See [NATS and JetStream](nats.md).
 
 ## See also
 

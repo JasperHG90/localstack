@@ -1,3 +1,13 @@
+---
+description: Where human Vault credentials are, which OIDC issuer a service points at, what the developer group grants, and the claims a service can read.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/secrets.tf
+  - resource: bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl
+---
+
 # Human login to Vault, and the OIDC issuer it feeds
 
 Vault is the OIDC provider for humans on this cluster. This page covers where
@@ -12,17 +22,19 @@ to add a service that logs people in is
 
 ## What Terraform creates
 
-All of it lives in `deployments/infrastructure/`:
+All of it is in `deployments/infrastructure/`:
 
 | File | Contents |
 | --- | --- |
-| `identity.tf` | The `userpass` auth mount, the operator user, the identity entity and alias that bind a login to an identity, and the `developer`, `admin` and app-user groups. The entity's `email` metadata is what the `email` scope reads |
-| `oidc.tf` | The OIDC signing key, the shared `groups`, `email` and `openviking` scopes, the provider, one throwaway smoke-test client, and the consumer clients added since (nomad, memex, oauth2-proxy, grafana, openviking, ov-dash) |
-| `secrets.tf` | Two KV2 writes: the operator password, and the smoke client's credentials |
+| `deployments/infrastructure/identity.tf` | The `userpass` auth mount, the operator user, the identity entity and alias that bind a login to an identity, the TOTP login MFA, the OpenViking consumer users and their `openviking-user` group, the `jwt-lab` mount ov-dash signs people in through, and the `developer`, `admin` and app-user groups. The entity's `email` metadata is what the `email` scope reads |
+| `deployments/infrastructure/oidc.tf` | The OIDC signing key, the shared `groups`, `email` and `openviking` scopes, the provider, one throwaway smoke-test client, the consumer clients (nomad, memex, oauth2-proxy, grafana, ov-dash, hermes-dashboard), and the identity-token roles OpenViking verifies |
+| `deployments/infrastructure/secrets.tf` | Among its KV2 writes, the human-login ones: the operator password, each OpenViking consumer's password, the smoke client's credentials, and the OIDC client secrets for Grafana, oauth2-proxy (and its registry-ui copy) and ov-dash |
 
-Two secrets land in KV2:
+These secrets land in KV2:
 
 - `secret/default/vault/operator`: the operator's username and password.
+- `secret/default/vault/<username>`: each OpenViking consumer's username and
+  password.
 - `secret/default/vault/oidc-smoke`: the smoke-test client's `client_id`,
   `client_secret`, and the issuer URL.
 
@@ -57,14 +69,15 @@ and Consul tokens, creating users and groups, and every secret under
 **Two of those are bigger than they sound. Read this before adding anyone to
 the group.**
 
-**"Brokered Nomad tokens" now includes a full management token.** It used to
-mean only the deliberately narrow `deploy` role. Since G2 the policy also
-grants `nomad/creds/manage`, which mints a global Nomad **management** token:
-anything in Nomad, including minting more Nomad tokens. This is not a new
-ceiling — a holder could always overwrite `nomad/role/deploy` to
-`type = "management"` and read the creds they already had — but that route
-clobbers a Terraform-managed role and shows as drift on the next plan. This one
-leaves no trace. What changed is detectability, not privilege.
+**"Brokered Nomad tokens" includes a full management token.** Besides the
+deliberately narrow `deploy` role, the policy grants `nomad/creds/manage`,
+which mints a global Nomad **management** token: anything in Nomad, including
+minting more Nomad tokens. `localstack login` brokers it for
+`localstack monitor`. It raises no ceiling. A holder could already overwrite
+`nomad/role/deploy` to `type = "management"` and read the creds they had, but
+that route clobbers a Terraform-managed role and shows as drift on the next
+plan. Reading `manage` leaves no trace, so the difference is detectability,
+not privilege.
 
 **Signing in to the Nomad UI gives you root over the cluster's data.** The
 binding rule maps this group to Nomad's `developer` ACL policy, which grants
@@ -72,16 +85,15 @@ binding rule maps this group to Nomad's `developer` ACL policy, which grants
 `host_volume "*" { policy = "write" }`. Combined with `submit-job`, that means
 a signed-in developer can attach any host volume read-write and exec into it as
 root. Measured: `nomad alloc exec` into a running container returns
-`uid=0(root)`, and the attachable volumes include `postgres`, `minio_data`,
-`grafana_data`, `loki_data`, `memex_data`, `hermes_data`, `nats_data`,
-`prometheus_data` and `acme_lego_state` — the Postgres data directory, the
-MinIO object store and the ACME account key among them.
+`uid=0(root)`, and every host volume in the cluster is attachable:
+`postgres`, `minio_data` and `acme_lego_state` among them, which hold the
+Postgres data directory, the MinIO object store and the ACME account key.
 
-None of that is new either; the policy predates the sign-in button and is
-Ansible's (`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`).
-What G2 changed is the route: reaching it used to require someone handing you a
-token, and now it requires logging in. Narrowing it is a change in Ansible, not
-here.
+The policy is Ansible's
+(`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`), and the
+Nomad UI's sign-in button is only a shorter route to it: logging in is enough,
+where before someone had to hand you a token. Narrowing it is a change in
+Ansible, not here.
 
 **Check `identity_policies`, not `policies`.** The group carries the policy, so
 a fresh login reports:
@@ -108,16 +120,17 @@ it: its generic OAuth client refuses a login whose resolved email is empty and
 offers no setting to turn that off. An entity with no `email` key yields an
 empty string, not an error, and the login fails at the callback. **Every human
 entity needs that metadata key**, or its owner cannot sign in to Grafana. The
-operator's is set from `vault_operator_email` (`identity.tf`,
-`variables.tf`).
+operator's is set from `vault_operator_email`
+(`deployments/infrastructure/identity.tf`,
+`deployments/infrastructure/variables.tf`).
 
 Whether your service needs it depends on the service, not on a rule. Grafana
 does. oauth2-proxy does not: it identifies a user from `sub`
 (`OAUTH2_PROXY_OIDC_EMAIL_CLAIM="sub"`), so dash logs people in with no
-`email` scope at all. Phoenix will need it, for the same reason Grafana does.
+`email` scope at all.
 
-Not every service reads the `groups` claim either. MinIO tiers on
-`role_policy`, which bypasses the claim and gates on the per-client assignment
-instead. Decide which mechanism
-your service uses and say so in its ticket, rather than assuming the claim is
-read everywhere.
+Not every service reads the `groups` claim either. A client's assignment
+decides who may log in at all, before any claim is read: the `oauth2-proxy`,
+`grafana` and `hermes-dashboard` clients carry the `operators` assignment, so
+Vault refuses anyone outside `developer` and `admin`. Decide which mechanism
+your service uses rather than assuming the claim is read everywhere.

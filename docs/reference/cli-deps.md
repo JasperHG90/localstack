@@ -1,3 +1,14 @@
+---
+description: How `localstack deps` pins the vault, nomad and consul CLIs to the cluster's versions, and what its PATH shims do.
+stale_after: 2027-01-19
+sources:
+  - resource: cli/src/localstack_cli/commands/deps.py
+  - resource: cli/src/localstack_cli/versions.py
+  - resource: cli/src/localstack_cli/install.py
+  - resource: cli/src/localstack_cli/shims.py
+  - resource: bootstrap/inventory/group_vars/all.yml
+---
+
 # Pinned CLIs and PATH shims
 
 `localstack deps` installs `vault`, `nomad` and `consul` at the versions this

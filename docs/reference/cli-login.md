@@ -1,3 +1,21 @@
+---
+description: What `localstack login` brokers, where it keeps the session, and how `env`, `token`, `whoami`, `config` and `logout` use it.
+stale_after: 2027-01-19
+sources:
+  - resource: cli/src/localstack_cli/commands/login.py
+  - resource: cli/src/localstack_cli/commands/logout.py
+  - resource: cli/src/localstack_cli/commands/env.py
+  - resource: cli/src/localstack_cli/commands/token.py
+  - resource: cli/src/localstack_cli/commands/whoami.py
+  - resource: cli/src/localstack_cli/commands/config.py
+  - resource: cli/src/localstack_cli/auth/vault.py
+  - resource: cli/src/localstack_cli/auth/broker.py
+  - resource: cli/src/localstack_cli/auth/vault_token_file.py
+  - resource: cli/src/localstack_cli/auth/session.py
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/machine_roles.tf
+---
+
 # `localstack login`
 
 One command authenticates you to Vault and brokers your Nomad and Consul
@@ -29,18 +47,34 @@ Or pass --insecure if you really mean to.
 ```
 
 `--insecure` is the only way past and it warns on stderr. Loopback `http://`
-is allowed, since nothing leaves the host. Once N4 moves `.devcontainer/.env`
-to the edge hostnames, the bare `localstack login` will work and this flag
-becomes unnecessary.
+is allowed, since nothing leaves the host. Once `VAULT_ADDR` in
+`.devcontainer/.env` names the edge hostname, a bare `localstack login` works
+and the flag is no longer needed.
 
 ## Getting the password, once
 
 See [How to get the operator password](../how-to/get-the-operator-password.md).
 
+## The second factor
+
+The `userpass` backend enforces TOTP login MFA. After the password, `login`
+asks for `TOTP passcode for <addr>:`, hidden like the password prompt. If Vault
+offers more than one MFA method, `login` says so and uses the first.
+
+A login that returns neither a token nor an MFA challenge fails with a message
+naming three causes: a wrong username, a disabled `userpass` backend, or an
+MFA enforcement covering an entity with no second factor enrolled. Vault
+answers all three the same way. See [Vault login MFA](vault-login-mfa.md).
+
+A failed login leaves your existing session alone. A successful one saves the
+new session first and then revokes the one it replaced.
+
 ## What you get
 
 Four credentials in one `0600` file at
-`${XDG_CONFIG_HOME:-$HOME/.config}/localstack/session.json`:
+`${XDG_CONFIG_HOME:-$HOME/.config}/localstack/session.json`. `login` also
+writes the Vault token to `~/.vault-token`, the file the stock `vault` CLI
+reads.
 
 | Credential | Lives for | Refresh |
 | --- | --- | --- |
@@ -49,7 +83,7 @@ Four credentials in one `0600` file at
 | Nomad `manage` token | 30 minutes, capped at 1 hour | re-brokered |
 | Consul `deploy` token | 30 minutes, capped at 1 hour | re-brokered |
 
-`deploy` is scoped for Terraform's own job submission; `manage` is a full
+`deploy` is scoped for Terraform's own job submission. `manage` is a full
 Nomad management token, brokered only so `status`, `service` and `monitor`
 can read `list-jobs` and node state that `deploy` withholds. It is never
 exported to your shell: `eval "$(localstack env)"` and `localstack token`
@@ -85,7 +119,8 @@ case, naming the policies the environment's token carries. Two ways out:
 - the `vault` shim on PATH, which `localstack deps --with-shims` installs
   and the devcontainer installs for you.
 
-Removing the injected token entirely is F8's job, not this CLI's.
+The CLI does not remove the injected token. It comes from `VAULT_TOKEN` in
+`.devcontainer/.env`, which the devcontainer loads with `--env-file`.
 
 ## `env` emits both Consul spellings
 
@@ -127,12 +162,13 @@ Follow [How to revoke a lost or stolen session](../how-to/revoke-a-lost-or-stole
 
 ## Preconditions
 
-The `userpass` backend and the `operator` entity come from F2. The policy that
-lets your session read `nomad/creds/deploy`, `nomad/creds/manage` and
-`consul/creds/deploy` comes from F11, which binds `developer` through an
-identity group. Both are applied.
+The `userpass` backend and the `operator` entity are defined in
+`deployments/infrastructure/identity.tf`. The `developer` policy, in the same
+file, lets your session read `nomad/creds/deploy`, `nomad/creds/manage` and
+`consul/creds/deploy`. It reaches you through the `developer` identity group.
+The roles it reads are in `deployments/infrastructure/machine_roles.tf`.
 
 If brokering fails with a 403, the message names the path that was denied and
 the policies your token actually carries. It reads `identity_policies`, not
-`policies` — a group-granted policy lands in the former, and a message
+`policies`. A group-granted policy lands in the former, and a message
 reporting the latter would tell you that you have no grants when you do.

@@ -1,3 +1,18 @@
+---
+description: What `localstack status`, `service`, `secret` and `vault grants` report, where each reads from, and which token it uses.
+stale_after: 2027-01-19
+sources:
+  - resource: cli/src/localstack_cli/commands/status.py
+  - resource: cli/src/localstack_cli/commands/service.py
+  - resource: cli/src/localstack_cli/commands/secret.py
+  - resource: cli/src/localstack_cli/commands/vault.py
+  - resource: cli/src/localstack_cli/commands/render.py
+  - resource: cli/src/localstack_cli/api/services.py
+  - resource: cli/src/localstack_cli/api/haproxy.py
+  - resource: cli/src/localstack_cli/api/secrets.py
+  - resource: cli/src/localstack_cli/api/grants.py
+---
+
 # Reading the cluster
 
 Four commands that answer questions no single native CLI can, by joining
@@ -42,7 +57,7 @@ a column. The disagreements are the output, so nothing is dropped:
 | `consul-name` | No such job, but Consul's catalog lists a service by that name. `vault`, `nomad` and `consul` resolve this way: they are agent endpoints. |
 | `consul-tag` | No service by that name, but exactly one Consul service carries a tag of that name. `s3` resolves this way: MinIO declares the tag on the port the route points at. |
 | `unresolved` | A routed hostname matching no job, no catalog service and no unique tag. The row still renders, with its backend. |
-| `no-route` | A job the edge does not serve. Thirteen exist. |
+| `no-route` | A job the edge does not serve. |
 
 Health comes from each job's own registered service names, read off the job
 rather than guessed from its id. A job with no check reads `no check`, never
@@ -107,8 +122,8 @@ them from arguments. The output says so.
 `localstack login` brokers two Nomad credentials: `nomad/creds/deploy`,
 whose policy deliberately withholds `list-jobs` and node read, and
 `nomad/creds/manage`, a full Nomad management token, for exactly the reads
-`deploy` withholds. `status`, `service` and `monitor` use `manage`; `secret`
-and `env` still use `deploy`, since neither needs more than `read-job` and
+`deploy` withholds. `status`, `service` and `monitor` use `manage`. `secret`
+and `env` still use `deploy`, since neither needs more than `read-job`, and
 Terraform's own `terraform apply` must never receive a management-scoped
 token.
 
