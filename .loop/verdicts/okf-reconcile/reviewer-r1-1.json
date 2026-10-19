@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "19 Evidence lines across 9 concepts say a ticket's plan and verdicts are in `.loop/archive/` before `5b2ed1b`, but 14 of those tickets were never archived. Their files are under `.loop/plans/`, `.loop/evals/`, `.loop/reflections/` and `.loop/verdicts/` at `48f52e2`, and R8 only ever had a plan (it was a stub, with no verdicts).",
+      "anchor": ".okf/components/minio.md:168",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r11"
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "minio.md says R10, R11 and R12 'were all still stubs in the loop ledger when 5b2ed1b reset the loop', but R12 was marked dropped in the ledger in a7aa595 (dropped: true), which the paragraph itself says two sentences earlier.",
+      "anchor": ".okf/components/minio.md:107",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "86dc1dc21a7c87ab8ac8b25952389749faf031de1e4c212d6e49847770ac1860",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T18:45:52+00:00"
+}
