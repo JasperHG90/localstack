@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T17:22:46+00:00'
+  at: '2026-10-19T17:22:56+00:00'
 slug: docs-reconcile
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike docs-reconcile/1
@@ -24,7 +24,9 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note docs-reconcile 1`.
+None of the 81 pages under docs/how-to, docs/reference and docs/explanation is mainly repo-worker content: 0 are a plan, audit, handoff or decision record, so none has to move to `.okf/`. 24 pages hit a build-history marker or a ticket code (F9, G2, M1); read by hand, 11 are user pages carrying a few lines of build history to edit in place (ticket codes as provenance, "M1 landed this", "Since G2", "at the time of writing", verify-memex-oidc's G1-G5 change-guardrails), and the rest are log strings, dated measurements or backup file names.
+This settles risk 3: the work stays in docs/ and does not move into okf-reconcile. The heaviest residue is verify-memex-oidc Step 16 and workload-identity's audience-registry owner column.
+Limit: "mainly" is a reading, recorded as verdict lines in the script; the grep only finds candidates and can miss build history written without a marker.
 
 ## Files
 
