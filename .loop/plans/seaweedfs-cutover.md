@@ -36,9 +36,14 @@ every consumer. MinIO keeps running untouched until `minio-removal`.
   run `rclone check gcs:${gcs_bucket}/minio/<b>/ seaweedfs:<b> --one-way` for
   each durable bucket: every object in GCS must be on SeaweedFS. The other
   direction differs on purpose, because consumers write to SeaweedFS after
-  their restore. An object an app deleted on SeaweedFS after its restore
-  shows as missing. Record each one with the app that deleted it, and stop
-  if one cannot be explained.
+  their restore. Write the two kinds of mismatch to separate lists
+  (`--missing-on-dst` and `--differ`). An object missing on SeaweedFS was
+  deleted there after its restore, and an object that differs was rewritten
+  there after it, such as the registry's tag `link` files on every re-push.
+  For each, record the app that wrote it and check its SeaweedFS modtime is
+  later than that bucket's restore. Stop if one cannot be explained that
+  way. An empty bucket (`models`, `datalake`) may have no GCS prefix at all,
+  which counts as nothing to check.
   `cli/tests/test_backup_coverage.py` follows the remote name.
 - The `s3` Consul tag moves from `minio` to `seaweedfs`, so the CLI's `s3`
   route follows it (`cli/src/localstack_cli/api/services.py`). The CLI tests
