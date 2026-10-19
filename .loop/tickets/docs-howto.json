@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "docs-howto",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
   "plan_rounds": 1,
   "review_rounds": 0,
@@ -109,8 +109,14 @@
       "to": "planning",
       "at": "2026-10-19T17:47:45+00:00",
       "by": "register"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-10-19T17:55:47+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:55:39+00:00"
+  "at": "2026-10-19T17:55:47+00:00"
 }
