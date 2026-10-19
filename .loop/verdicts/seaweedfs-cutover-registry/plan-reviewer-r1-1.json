@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The write path to SeaweedFS is unproven and not listed as a risk. The outcome needs \"a new push succeeds and its blobs land in SeaweedFS\". spike:seaweedfs-cutover/3 pushed only to MinIO. The SeaweedFS registries in that spike only served pulls, and they used static admin keys. spike:seaweedfs-workload-identity/4 proved one PutObject with role credentials. A registry push is different. The S3 driver writes blobs through multipart uploads, resumes through ListMultipartUploads, and commits each upload by moving it from _uploads to blobs. Above about 32 MiB that move is a multipart UploadPartCopy, and below it is a CopyObject. GC uses DeleteObject. The haproxy comment shows this registry stores multi-GB ModelKit layers. If SeaweedFS 4.48 gets any of those calls wrong, or the per-job role policy from seaweedfs-workload-identity leaves out a multipart or copy action, the registry serves old images but refuses pushes. The cutover then has to be rolled back, and the plan has no fallback for that. Settle it with a spike that extends the seaweedfs-cutover/3 harness. Run registry:3.1.1 on SeaweedFS 4.48 with credential_process STS credentials from a per-job trust-policy role whose policy is only the registry bucket, as in seaweedfs-workload-identity/4. Push one image with a layer of at least 100 MiB (multipart write and UploadPartCopy) and one small image (CopyObject). Pull both by digest and check each blob's sha256. Then delete a tag and run `registry garbage-collect`. Record the exact S3 action list the role policy needed, so seaweedfs-workload-identity can take it.",
+      "anchor": ".loop/plans/seaweedfs-cutover-registry.md",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "beade374c82e73d87cc7c5e7383994a92b546b85714b81859b05ab4473228a26"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T20:56:05+00:00"
+}
