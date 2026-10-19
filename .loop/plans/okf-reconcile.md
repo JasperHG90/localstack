@@ -91,6 +91,20 @@ The work, all inside `.okf/`:
    concept id. Keep the section indexes and `.okf/index.md` in step (the
    root index counts are already wrong: it says 13 decisions, there are 15).
 
+Build setup: `.claude/rules/` is gitignored apart from four files, so a fresh
+worktree lacks the manifesto-invariants and diagrams-stay-current rules, the
+SSH key and the tfvars that `just pre_commit` needs. Run `just worktree_setup
+<worktree>` right after `loopctl ticket advance okf-reconcile building`.
+
+Write each invariant bullet with its `planned` or `enforced` status on its
+first line, since r5 reads only that line. Write or ack the summary last, in
+the ticket's final commit, so kmctl does not count it behind.
+
+The docs tickets that depend on this one (`docs-howto`, `docs-reference`,
+`docs-explanation`) repoint any `.okf` source that names a page they rename or
+delete, and their evals require `kmctl review due` to report no notice at all,
+so the empty notices this ticket reaches stay empty.
+
 Decision records keep their bodies byte for byte (`.claude/rules/okf-bundle.md`).
 A wrong claim in one gets an appended `## Correction, YYYY-MM-DD` section. No
 agent adds a `verified` entry or runs `kmctl verify`: only a person can.
