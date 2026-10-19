@@ -1,0 +1,59 @@
+
+===== phase A-defaults: weed server -ip.bind=0.0.0.0
+PASS bucket registry: write+read
+PASS bucket models: write+read
+PASS bucket datalake: write+read
+PASS bucket openviking: write+read
+FAIL bucket loki: ClientError: An error occurred (InternalError) when calling the PutObject operation (reached max retries: 1): We encountered an internal error, please try again.
+FAIL bucket tempo: ClientError: An error occurred (InternalError) when calling the PutObject operation (reached max retries: 1): We encountered an internal error, please try again.
+RESULT buckets_ok=4/6 big_ok=True
+-- master /vol/status (slots)
+Max 27 Free 0
+volumes per collection: {'registry': 7, 'datalake': 7, 'openviking': 6, 'models': 7}
+dir/status Max 27 Free 0
+      1 E1019 18:14:08.852457 upload_chunked.go:281 chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:loki replication:000 ttl: error: No writable volumes (returning 0 partial chunks for cleanup)
+      1 E1019 18:14:08.852501 s3api_object_handlers_put.go:626 putToFiler: chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:loki replication:000 ttl: error: No writable volumes
+      1 E1019 18:14:09.171275 upload_chunked.go:281 chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:loki replication:000 ttl: error: No writable volumes and no free volumes left for {"collection":"loki","replication":{},"ttl":{"Count":0,"Unit":0},"version":3} (returning 0 partial chunks for cleanup)
+      1 E1019 18:14:09.171292 s3api_object_handlers_put.go:626 putToFiler: chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:loki replication:000 ttl: error: No writable volumes and no free volumes left for {"collection":"loki","replication":{},"ttl":{"Count":0,"Unit":0},"version":3}
+      1 E1019 18:14:09.175435 upload_chunked.go:281 chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:tempo replication:000 ttl: error: No writable volumes and no free volumes left for {"collection":"tempo","replication":{},"ttl":{"Count":0,"Unit":0},"version":3} (returning 0 partial chunks for cleanup)
+      1 E1019 18:14:09.175445 s3api_object_handlers_put.go:626 putToFiler: chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:tempo replication:000 ttl: error: No writable volumes and no free volumes left for {"collection":"tempo","replication":{},"ttl":{"Count":0,"Unit":0},"version":3}
+      1 E1019 18:14:09.266499 upload_chunked.go:281 chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:tempo replication:000 ttl: error: No writable volumes and no free volumes left for {"collection":"tempo","replication":{},"ttl":{"Count":0,"Unit":0},"version":3} (returning 0 partial chunks for cleanup)
+      1 E1019 18:14:09.266518 s3api_object_handlers_put.go:626 putToFiler: chunked upload failed: assign volume: assign volume: assign volume: rpc error: code = Unknown desc = failed to find writable volumes for collection:tempo replication:000 ttl: error: No writable volumes and no free volumes left for {"collection":"tempo","replication":{},"ttl":{"Count":0,"Unit":0},"version":3}
+-- data dir size
+404.0K	/data
+
+===== phase B-candidate: weed server -ip=127.0.0.1 -ip.bind=127.0.0.1 -s3.ip.bind=0.0.0.0 -metricsIp=0.0.0.0 -metricsPort=9327 -volume.max=0 -master.volumeSizeLimitMB=1024 -master.volumePreallocate=false -s3.port.iceberg=0 -s3.port.lance=0 -s3.iam.readOnly=false
+master.toml: [master.volume_growth]
+copy_1 = 2
+PASS bucket registry: write+read
+PASS bucket models: write+read
+PASS bucket datalake: write+read
+PASS bucket openviking: write+read
+PASS bucket loki: write+read
+PASS bucket tempo: write+read
+PASS 300 MiB into registry: 314572800 bytes listed
+RESULT buckets_ok=6/6 big_ok=True
+-- master /vol/status (slots)
+Max 27 Free 15
+volumes per collection: {'tempo': 2, 'registry': 2, 'models': 2, 'datalake': 2, 'loki': 2, 'openviking': 2}
+dir/status Max 27 Free 15
+      1 I1019 18:14:30.668502 master_grpc_server_volume.go:143 volume grow &{Option:{"collection":"registry","replication":{},"ttl":{"Count":0,"Unit":0},"version":3} Count:0 Force:false Reason:grpc assign}
+      1 I1019 18:14:30.756132 volume_growth.go:395 Created Volume 1 on topo:DefaultDataCenter:DefaultRack:127.0.0.1:8080
+      1 I1019 18:14:30.756153 volume_growth.go:408 Registered Volume 1 on topo:DefaultDataCenter:DefaultRack:127.0.0.1:8080
+      1 I1019 18:14:30.794984 volume_growth.go:395 Created Volume 2 on topo:DefaultDataCenter:DefaultRack:127.0.0.1:8080
+      1 I1019 18:14:30.794993 volume_growth.go:408 Registered Volume 2 on topo:DefaultDataCenter:DefaultRack:127.0.0.1:8080
+      1 I1019 18:14:30.883804 master_grpc_server_volume.go:143 volume grow &{Option:{"collection":"models","replication":{},"ttl":{"Count":0,"Unit":0},"version":3} Count:0 Force:false Reason:grpc assign}
+      1 I1019 18:14:30.922214 volume_growth.go:395 Created Volume 3 on topo:DefaultDataCenter:DefaultRack:127.0.0.1:8080
+      1 I1019 18:14:30.922240 volume_growth.go:408 Registered Volume 3 on topo:DefaultDataCenter:DefaultRack:127.0.0.1:8080
+-- data dir size
+300.3M	/data
+-- listeners inside container (B)
+127.0.0.11:42523 127.0.0.1:18080 127.0.0.1:18888 127.0.0.1:19333 127.0.0.1:8080 127.0.0.1:8888 127.0.0.1:9333 :::18333 :::8333 :::9327 
+-- ports reachable from another container on spike-swfs-svc-3-net (B)
+open: 8333 18333 9327 
+metrics series: 965
+
+SUMMARY A(defaults) rc=1  B(candidate) rc=0 bind_ok=1
+FLAGS: -ip=127.0.0.1 -ip.bind=127.0.0.1 -s3.ip.bind=0.0.0.0 -metricsIp=0.0.0.0 -metricsPort=9327 -volume.max=0 -master.volumeSizeLimitMB=1024 -master.volumePreallocate=false -s3.port.iceberg=0 -s3.port.lance=0 -s3.iam.readOnly=false
+master.toml: [master.volume_growth]
+copy_1 = 2

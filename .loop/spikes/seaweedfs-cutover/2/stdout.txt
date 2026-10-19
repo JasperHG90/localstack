@@ -1,0 +1,25 @@
+== push to registry on MinIO
+spike-cut-reg-a:5000/small@sha256:bc183ebb6eda922e6bc115cedf913c03d0ad42efe54cadc44254fb5960f674ae
+spike-cut-reg-a:5000/small@sha256:29122529e72064e322e2a189af0d93857465c544988382885573ebe51f9dac32
+spike-cut-reg-a:5000/small@sha256:e73a33fe50472d2bd5e4d8218e86dd910768090cf5de87bc6a34009d71ab3411
+spike-cut-reg-a:5000/big@sha256:1156b9e28ae3ff986a2f17ba3555a9c456804087077b1c9e5617bc01e5acc460
+small sha256:e73a33fe50472d2bd5e4d8218e86dd910768090cf5de87bc6a34009d71ab3411  big sha256:1156b9e28ae3ff986a2f17ba3555a9c456804087077b1c9e5617bc01e5acc460
+small manifest digests: 1
+{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","size":233,"digest":"sha256:246d056d32034d8669bf79febf2377de2befe8be6776c1e501dfbb03bdf96b11"},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","size":41968843,"digest":"sha256:de8beca0f2e7c6a6e038978ab6d46d3395a5309161401557699b5f97064b5961"}]}big layer bytes: 41968843
+== MinIO objects (data blobs, md5 empty means multipart ETag)
+428 "md5":"a5e5c6d3e91f821a32930ee0033a74d8" docker/registry/v2/blobs/sha256/11/1156b9e28ae3ff986a2f17ba3555a9c456804087077b1c9e5617bc01e5acc460/data
+233 "md5":"be0e8f74d4558d0cb2aa72901d7ce956" docker/registry/v2/blobs/sha256/24/246d056d32034d8669bf79febf2377de2befe8be6776c1e501dfbb03bdf96b11/data
+591 "md5":"627ff4b8b3bc39c5e1143529a44fcdb2" docker/registry/v2/blobs/sha256/29/29122529e72064e322e2a189af0d93857465c544988382885573ebe51f9dac32/data
+2098656 "md5":"123293e3158c6c8ae30b5944e6a4e7a3" docker/registry/v2/blobs/sha256/2d/2d16c21a85ffff2f2667e131567b441855501db97c4cf815fa04fdf369a3187c/data
+233 "md5":"3018eecb46fe07d8564725a4dda4ceef" docker/registry/v2/blobs/sha256/56/5643472f788b39ec925b2dbc96b96f92666bba278157e0a536a145acb7337adf/data
+524836 "md5":"8e2b883f85a81e90bf5405ddfde3b078" docker/registry/v2/blobs/sha256/96/96d325a937babcaa9b9fac548f4cbce24b188fb0aa6574ae24eccf9de4fcc38b/data
+451 "md5":"5bd8d31d30fb185ac5ff99f3254b4df4" docker/registry/v2/blobs/sha256/9d/9da9eed1f582250fb7f926f839d64aa011265fa4a4906b286bc22984f5322071/data
+427 "md5":"d9fbdd491c9e1966710ae886f704cf1a" docker/registry/v2/blobs/sha256/bc/bc183ebb6eda922e6bc115cedf913c03d0ad42efe54cadc44254fb5960f674ae/data
+342 "md5":"530208b26e46022d7e117323ecd16f19" docker/registry/v2/blobs/sha256/dd/dd92f1d275e564f33ca739d1d7aacdb0aa8442571377dfcad78b28668a0e4594/data
+{"Path":"docker/registry/v2/blobs/sha256/de/de8beca0f2e7c6a6e038978ab6d46d3395a5309161401557699b5f97064b5961/data","Name":"data","Size":41968843,"MimeType":"application/octet-stream","ModTime":"2026-10-19T18:01:50.907000000Z","IsDir":false},
+754 "md5":"a295e56cd12b2b79284249e15b47d3d2" docker/registry/v2/blobs/sha256/e7/e73a33fe50472d2bd5e4d8218e86dd910768090cf5de87bc6a34009d71ab3411/data
+1049438 "md5":"a7d98088dae8df9991a055275f81a2e2" docker/registry/v2/blobs/sha256/f3/f3940dec7c7498dbd8438ef244b722755cbc0772905fa8e9476be1ec401cde59/data
+big layer blob de8beca0f2e7c6a6e038978ab6d46d3395a5309161401557699b5f97064b5961 stored with a multipart ETag (no md5)
+== rclone sync MinIO -> local dir (GCS stand-in)
+== rclone copy local dir -> SeaweedFS registry
+== rclone sync MinIO -> SeaweedFS registry-direct (S3 to S3)

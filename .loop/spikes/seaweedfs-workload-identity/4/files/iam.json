@@ -1,0 +1,130 @@
+{
+ "sts": {
+  "tokenDuration": "1h",
+  "maxSessionLength": "12h",
+  "issuer": "seaweedfs-sts",
+  "signingKey": "dGVzdC1zaWduaW5nLWtleS0zMi1jaGFyYWN0ZXJzLWxvbmc="
+ },
+ "policy": {
+  "defaultEffect": "Deny"
+ },
+ "providers": [
+  {
+   "name": "nomad",
+   "type": "oidc",
+   "enabled": true,
+   "config": {
+    "issuer": "http://issuer:8080",
+    "clientId": "seaweedfs"
+   },
+   "roleMapping": {
+    "rules": [
+     {
+      "claim": "nomad_job_id",
+      "value": "tempo",
+      "role": "arn:aws:iam::role/TempoRole"
+     },
+     {
+      "claim": "nomad_job_id",
+      "value": "loki",
+      "role": "arn:aws:iam::role/LokiRole"
+     }
+    ]
+   }
+  }
+ ],
+ "policies": [
+  {
+   "name": "tempo",
+   "document": {
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Effect": "Allow",
+      "Action": [
+       "s3:*"
+      ],
+      "Resource": [
+       "arn:aws:s3:::tempo",
+       "arn:aws:s3:::tempo/*"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "loki",
+   "document": {
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Effect": "Allow",
+      "Action": [
+       "s3:*"
+      ],
+      "Resource": [
+       "arn:aws:s3:::loki",
+       "arn:aws:s3:::loki/*"
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "roles": [
+  {
+   "roleName": "TempoRole",
+   "roleArn": "arn:aws:iam::role/TempoRole",
+   "trustPolicy": {
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Effect": "Allow",
+      "Principal": {
+       "Federated": "nomad"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+       "StringEquals": {
+        "oidc:nomad_job_id": "tempo"
+       },
+       "StringLike": {
+        "oidc:sub": "global:default:tempo:*"
+       }
+      }
+     }
+    ]
+   },
+   "attachedPolicies": [
+    "tempo"
+   ]
+  },
+  {
+   "roleName": "LokiRole",
+   "roleArn": "arn:aws:iam::role/LokiRole",
+   "trustPolicy": {
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Effect": "Allow",
+      "Principal": {
+       "Federated": "nomad"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+       "StringEquals": {
+        "oidc:nomad_job_id": "loki"
+       },
+       "StringLike": {
+        "oidc:sub": "global:default:loki:*"
+       }
+      }
+     }
+    ]
+   },
+   "attachedPolicies": [
+    "loki"
+   ]
+  }
+ ]
+}

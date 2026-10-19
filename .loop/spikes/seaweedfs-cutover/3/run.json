@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-cutover",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-cutover-1/registry_restore.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-cutover-1/registry_restore.sh",
+      "copy": "files/registry_restore.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "42437e05a0d159b071170c99fc3a532375df8767",
+  "fingerprint": "3874059d9c728a6d15922381e39e71d24d2bb6cb19a6e066d3a91528d0bc664a",
+  "started_at": "2026-10-19T18:10:39+00:00",
+  "finished_at": "2026-10-19T18:15:19+00:00",
+  "duration_seconds": 280.604,
+  "timeout_seconds": 400.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

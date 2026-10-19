@@ -3,15 +3,15 @@
   "slug": "minio-removal",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
   "fix": null,
   "ask": "j-20261019T173118+0000-f2537ae7",
-  "split": "j-20261019T175753+0000-4025ee55",
-  "split_plan_hash": "7620d5fde2109945d1d3b9e3322a432d95fb8f9d881ba65bd176197459c2f038",
+  "split": "j-20261019T180750+0000-63a3cd74",
+  "split_plan_hash": "16a56562e9afa67d1e1858d7e2b80a0c5909aa3fb3b989c185dd6c09d6eee084",
   "split_hold": false,
   "commit_sha": null,
   "closed_outside": false,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "6f8df75a75bdfe1c033cf3ffb4e21e1e83e7b3e49612d2e75539e69f8da0efe8",
-    "started_at": "2026-10-19T17:53:48+00:00",
+    "n": 2,
+    "binds": "16a56562e9afa67d1e1858d7e2b80a0c5909aa3fb3b989c185dd6c09d6eee084",
+    "started_at": "2026-10-19T18:08:39+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "6f8df75a75bdfe1c033cf3ffb4e21e1e83e7b3e49612d2e75539e69f8da0efe8",
+  "plan_hash": "16a56562e9afa67d1e1858d7e2b80a0c5909aa3fb3b989c185dd6c09d6eee084",
   "intent": {
     "epic": "seaweedfs-migration",
     "depends_on": [
@@ -65,5 +65,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:58:12+00:00"
+  "at": "2026-10-19T18:08:39+00:00"
 }

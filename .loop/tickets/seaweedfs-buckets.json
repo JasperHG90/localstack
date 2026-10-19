@@ -3,15 +3,15 @@
   "slug": "seaweedfs-buckets",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
   "fix": null,
   "ask": "j-20261019T173118+0000-f2537ae7",
-  "split": "j-20261019T175830+0000-adfd955c",
-  "split_plan_hash": "625700e2493efc31aa114409c230da11ce61a98f6de299264bf40079a395a4ed",
+  "split": "j-20261019T180813+0000-34ce1826",
+  "split_plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
   "split_hold": false,
   "commit_sha": null,
   "closed_outside": false,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "625700e2493efc31aa114409c230da11ce61a98f6de299264bf40079a395a4ed",
-    "started_at": "2026-10-19T17:58:39+00:00",
+    "n": 2,
+    "binds": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
+    "started_at": "2026-10-19T18:08:41+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "625700e2493efc31aa114409c230da11ce61a98f6de299264bf40079a395a4ed",
+  "plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
   "intent": {
     "epic": "seaweedfs-migration",
     "depends_on": [
@@ -65,5 +65,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T18:06:58+00:00"
+  "at": "2026-10-19T18:08:41+00:00"
 }
