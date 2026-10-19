@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "No file under deployments/, bootstrap/, cli/src or .devcontainer/Dockerfile names MinIO, except the GCS prefix minio/ and its one comment in the backup-s3 jobspec.",
+      "fails_when": "any other case-insensitive match for minio exists in those paths",
+      "command": "uv run --directory cli pytest tests/test_no_minio.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "After the applies in the plan's order, terraform state list in the applications root has no minio_ address and nothing under module.buckets, and terraform plan in both roots reports no changes.",
+      "fails_when": "a MinIO address remains in state, a plan shows changes, or a bucket or object on MinIO was deleted, or the evidence is not recorded",
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": "nomad job status minio and nomad job status backup-minio report no such job, and backup-s3's next run exits 0 reading its keys from default/backup-s3/.",
+      "fails_when": "either old job is still listed, or backup-s3's run fails",
+      "judgment": true
+    },
+    {
+      "id": "r4",
+      "behavior": "The MinIO keyless how-tos are replaced by SeaweedFS ones, docs/explanation/workload-identity.md describes SeaweedFS, .okf/components/minio.md is marked superseded, and a decision record covers the removal.",
+      "fails_when": "a docs page still tells a reader to use MinIO, or the superseded mark or decision record is missing",
+      "judgment": true
+    }
+  ]
+}
