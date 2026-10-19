@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan never says where the OIDC provider, the three roles and trust policies, the policies, the STS signing key and policy.defaultEffect are declared or how they reach SeaweedFS. Every spike loaded them from a JSON file passed with -s3.iam.config. No spike shows SeaweedFS's IAM API taking CreateRole with an assume-role policy document (aws_iam_role) or creating an OIDC provider. The provider, signing key and defaultEffect have no API path at all. So the proven route is a file rendered from Vault into deployments/infrastructure/services/seaweedfs.hcl, with a new flag, a template and a random signing key in deployments/infrastructure/secrets.tf. That is the infrastructure root and the job seaweedfs-service owns, and the plan names neither. The plan must pick a route and name its files. If it picks the IAM API for roles, a spike must first answer whether hashicorp/aws aws_iam_role plus aws_iam_role_policy against SeaweedFS 4.48 creates a role whose trust policy STS enforces, and whether a second plan is clean.",
+      "anchor": ".loop/plans/seaweedfs-workload-identity.md",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "No spike ran the IAM config that this plan needs (-s3.iam.config with defaultEffect Deny, a signing key and roles) on the server the earlier tickets build: -s3.config holding the admin, -s3.iam.readOnly=false, and users, keys and inline policies made through the IAM API by seaweedfs-buckets. The workload-identity spikes had no static admin and no API users. The buckets and service spikes had no -s3.iam.config. If defaultEffect Deny or the IAM config file changes how static or API-made identities are authorized, or replaces the filer-stored IAM state, turning it on breaks the admin key, every static-key user and the aws provider's clean plan. Those are already live when this ticket lands. Spike question: on 4.48 with -s3.config admin, -s3.iam.readOnly=false and -s3.iam.config (defaultEffect Deny, signing key, one per-job role), do the admin key and an aws-provider-made user with an inline bucket policy still work as before? Does a second terraform plan stay clean? Does the per-job role exchange still succeed and refuse the other job, also after a restart?",
+      "anchor": ".loop/plans/seaweedfs-service.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "open",
+      "claim": "The outcome test registers a throwaway Nomad job named tempo. A job ID is unique per namespace, and the trust policy pins sub to global:default:tempo:*, so the probe has to run in namespace default. Registering it there replaces the live tempo job, which Terraform manages as nomad_job.tempo in deployments/applications/services.tf. Tempo goes down, the applications root drifts, and the ticket switches the job, which the plan says it does not do. The plan must name a test that leaves tempo alone. Options: add a second identity with aud seaweedfs to the live tempo job and run the exchange with nomad alloc exec, prove the binding on a probe-only role and job name, or accept a planned tempo outage and say how it is restored.",
+      "anchor": "deployments/applications/services/tempo.hcl:1",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "6fa778b20975f59d17d338dfe718eb14e1c558edaa581d0fac341a8d38cf68d4"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T20:52:28+00:00"
+}
