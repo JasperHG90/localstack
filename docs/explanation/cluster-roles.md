@@ -1,3 +1,11 @@
+---
+description: What the developer, admin and app-user roles buy, what they do not, and why removing someone does not end their session.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/identity.tf
+  - resource: deployments/infrastructure/machine_roles.tf
+---
+
 # Why the cluster roles are shaped the way they are
 
 The roles themselves, and where each is defined, are in
@@ -30,29 +38,20 @@ detour.
 What the roles buy is **per-person credentials that can be revoked**, and no
 unseal or rekey when someone leaves. What they do not buy is isolation, and
 they do not buy audit attribution either, because no audit device is enabled.
-
-If you want a real boundary, that is a different design and a different ticket.
+A real boundary would need a different design.
 
 ### It is not a security boundary, and that is deliberate
 
-A `developer` can write `identity/*` and `sys/policies/acl/*`, so they can
-grant themselves anything short of `root` in about three commands. Vault
-refuses to attach the `root` policy and refuses nothing else. Developer and
-Deployer are one role on this cluster by choice — there is one person, and a
-boundary between "develops" and "deploys" would protect nothing while making
+Vault refuses to attach the `root` policy and refuses nothing else. Developer
+and Deployer are one role on this cluster by choice. One person holds it, and
+a boundary between "develops" and "deploys" would protect nothing while making
 every task need two credentials.
 
 So the `bootstrap` mount, `sys/audit` and the unseal surface are **outside what
 the policy grants**, not outside what the holder can reach.
 
-What the credential does buy over the root token:
-
-- It is per-person.
-- It cannot be used to unseal or rekey.
-
-What it does **not** buy: audit attribution. **No audit device is enabled on
-this cluster**, so nothing records who did what, whichever credential is used.
-That is worth fixing, and is separate work.
+With no audit device, nothing records who did what, whichever credential is
+used. That is worth fixing.
 
 ## Why removing someone does not end their session
 
@@ -69,7 +68,7 @@ up to their `max_ttl` of one hour.
 
 **Disabling the entity does not close it either.** `vault path-help
 identity/entity/id/<id>` is explicit: *"tokens tied to this identity will not
-be able to be used (**but will not be revoked**)."* It stops renewal; the
+be able to be used (**but will not be revoked**)."* It stops renewal. The
 brokered Nomad and Consul tokens still live out their current lease in those
 services' own state.
 
@@ -80,6 +79,6 @@ and [How to delete a lost session's Nomad and Consul tokens](../how-to/delete-a-
 ## Breaking glass
 
 If Vault is sealed, down, or you have locked yourself out, a Vault policy is
-worthless. SSH to firebat and read `/opt/vault/init.json` — see `localstack
-breakglass` (D5) for the runbook. `developer` is for when Vault is up and your
-policy is too narrow; breakglass is for when Vault will not answer.
+worthless. SSH to firebat and read `/opt/vault/init.json`. `localstack
+breakglass` prints the runbook. `developer` is for when Vault is up and your
+policy is too narrow, and breakglass is for when Vault will not answer.

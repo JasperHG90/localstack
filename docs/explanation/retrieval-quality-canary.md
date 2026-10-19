@@ -1,3 +1,13 @@
+---
+description: Why driftwatch dials embark directly, and what a canary over a fixed corpus cannot tell you.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/driftwatch.hcl
+  - resource: deployments/applications/services/driftwatch/src/driftwatch/client.py
+  - resource: deployments/infrastructure/services/grafana/alert-rules.yaml
+  - resource: deployments/infrastructure/services/grafana/openviking.json
+---
+
 # The retrieval-quality canary
 
 driftwatch is a daily canary that runs a fixed set of questions through the
