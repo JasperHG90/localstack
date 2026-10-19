@@ -20,10 +20,43 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/planner",
+    "hash": "43d3c2be951595c239cdde7f722155a721cff9371de14f9e965e2ff354cd9ead",
+    "at": "2026-10-19T17:56:41+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "The backup jobspec syncs exactly openviking, registry, models and datalake, each to gcs:${gcs_bucket}/minio/<bucket>/, and every synced bucket is declared in deployments/applications/storage.tf.",
+      "fails_when": "the jobspec syncs a bucket set other than those four, a bucket's GCS prefix differs from its name, or a synced bucket is missing from local.buckets",
+      "command": "uv run --directory cli pytest tests/test_backup_coverage.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "A failed sync of any one bucket makes the backup task exit nonzero, while the other buckets are still attempted.",
+      "fails_when": "the task's command lets a failed rclone sync exit 0 (for example joined by ';' with no exit-status tracking), or stops before syncing later buckets after one fails",
+      "command": null,
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": "After a deploy and one on-demand run, the backup job exits 0 and, for each of the four buckets, rclone size of the MinIO bucket and of its GCS prefix report the same object count and bytes.",
+      "fails_when": "the run exits nonzero, or any bucket's object count or bytes differ between MinIO and GCS beyond writes that landed during the run, or the evidence (job status and the eight rclone size outputs) is not recorded in the review",
+      "command": null,
+      "judgment": true
+    },
+    {
+      "id": "r4",
+      "behavior": "docs/reference/gcs-backups.md and .okf/components/gcs-backups.md list the four backed-up buckets and say the 180-day lifecycle rule re-uploads unchanged objects.",
+      "fails_when": "either page still says only openviking is backed up, or omits the 180-day re-upload behavior",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -69,5 +102,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:55:49+00:00"
+  "at": "2026-10-19T17:56:41+00:00"
 }
