@@ -1,0 +1,45 @@
+openviking IAM user key: AKIA5B7RA73BAINZGS9H
+2026-10-19 20:57:27,879 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+2026-10-19 20:57:27,879 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+mounts: [{'path': '/local', 'fstype': 's3fs'}, {'fstype': 'queuefs', 'path': '/queue'}, {'fstype': 'serverinfofs', 'path': '/serverinfo'}]
+PASS mkdir: {'message': 'created'}
+PASS ensure_parent_dirs: {'message': 'parent directories ensured'}
+PASS write small: Written 13 bytes
+PASS write odd name: Written 3 bytes
+PASS write 12MB: Written 12582912 bytes
+PASS read small: True
+PASS read 12MB intact: True
+PASS read range: True
+PASS read odd name: b'odd'
+PASS stat file: {'name': 'a.md', 'size': 13, 'mode': 420, 'modTime': '2026-10-19T20:57:28Z', 'isDir': False}
+PASS stat dir: {'name': 'spike', 'size': 0, 'mode': 493, 'modTime': '2026-10-19T20:57:27Z', 'isDir': True}
+PASS ls: ['a.md', 'big.bin', 'odd name+@#%.md']
+PASS touch: {'message': 'touched'}
+PASS create: {'message': 'created'}
+PASS copy_within_mount: {'performed': True}
+PASS read copy: b'hello seaweed'
+PASS mv file: {'message': 'renamed'}
+PASS write in deep dir: Written 12 bytes
+PASS stat dir for mv: {'name': 'deep', 'size': 0, 'mode': 493, 'modTime': '2026-10-19T20:57:28Z', 'isDir': True}
+PASS cp -r (VikingFS.mv): None
+PASS rm -r source (VikingFS.mv): {'message': 'deleted'}
+PASS read moved deep file: True
+INFO raw binding mv dir (not used by OpenViking): AGFSInternalError: internal error: S3 CopyObject error: bucket=openviking src_key=viking/default/resources/spike/deep2/ dst_key=viking/default/resources/spike/deep3/ code=NoSuchKey message=The specified key does not exist. request_id=18E009D1D2C930E04FBDFF9E raw=HTTP 404: unhandled error (NoSuchKey)
+PASS tree: 9
+PASS glob: {'entries': [{'is_dir': False, 'name': 'a.md', 'path': '/local/viking/default/resources/spike/a.md', 'rel_path': 'a.md'}, {'is_dir': False, 'name': 'empty.md', 
+PASS grep: {'matches': [{'file': 'a.md', 'line': 1, 'content': 'hello seaweed'}, {'file': 'moved.md', 'line': 1, 'content': 'hello seaweed'}, {'file': 'deep2/x/y.md', 'lin
+PASS rm file: {'message': 'deleted'}
+PASS rm -r: {'message': 'deleted'}
+PASS stat after rm: gone
+RESULT ok
+== objects in bucket openviking (admin view)
+-rw-rw----   0 seaweed seaweed      0 /buckets/openviking/backend_meta.json
+drwxrwxrwx   0 seaweed seaweed      0 /buckets/openviking/viking
+total 2
+== seaweedfs log errors
+I1019 20:57:12.463924 volume_grpc_client_to_master.go:98 checkWithMaster 172.18.0.2:9333: get master 172.18.0.2:9333 configuration: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial unix /tmp/seaweedfs-master-grpc-19333.sock: connect: no such file or directory"
+I1019 20:57:12.468325 masterclient.go:271 .master masterClient failed to receive from 172.18.0.2:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 20:57:13.469283 masterclient.go:271 .master masterClient failed to receive from 172.18.0.2:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 20:57:13.475307 masterclient.go:271 .filer masterClient failed to receive from 172.18.0.2:9333: rpc error: code = Unknown desc = raft.Server: Not current leader
+I1019 20:57:14.265821 volume_grpc_client_to_master.go:127 heartbeat to 172.18.0.2:9333 error: rpc error: code = Unknown desc = raft.Server: Not current leader
+probe rc=0
