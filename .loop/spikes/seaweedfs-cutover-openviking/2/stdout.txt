@@ -1,0 +1,78 @@
+== stage 0: OpenViking writes the tree onto MinIO
+2026-10-19 21:09:09,046 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+2026-10-19 21:09:09,047 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+built tree on openviking: 24 views, errors on source: none
+openviking: 10 keys, 6 end in '/': viking/default/resources/spk/ viking/default/resources/spk/docs/ viking/default/resources/spk/docs/sub/ viking/default/resources/spk/empty1/ viking/default/resources/spk/nested/b/deeper/ viking/default/resources/spk/nested/empty2/
+== scenario a: backup flags [none] restore flags [none] via local
+  local copy: 4 files, 7 dirs, 0 empty dirs
+  seaweedfs ov-a: 4 keys, 0 end in '/': 
+  rclone check exit 0
+2026-10-19 21:09:15,124 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+2026-10-19 21:09:15,125 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+  DIFF ls /local/viking/default/resources/spk
+    source:   ["a.md", "docs", "empty1", "nested"]
+    restored: ["a.md", "docs", "nested"]
+  DIFF ls /local/viking/default/resources/spk/docs
+    source:   ["d.md", "sub"]
+    restored: ["d.md"]
+  DIFF ls /local/viking/default/resources/spk/nested
+    source:   ["b", "empty2"]
+    restored: ["b"]
+  DIFF ls /local/viking/default/resources/spk/nested/b
+    source:   ["c.md", "deeper"]
+    restored: ["c.md"]
+  DIFF stat /local/viking/default/resources/spk/docs/sub
+    source:   {"isDir": true, "name": "sub", "size": 0}
+    restored: "ERR AGFSNotFoundError"
+  DIFF stat /local/viking/default/resources/spk/empty1
+    source:   {"isDir": true, "name": "empty1", "size": 0}
+    restored: "ERR AGFSNotFoundError"
+  DIFF stat /local/viking/default/resources/spk/nested/b/deeper
+    source:   {"isDir": true, "name": "deeper", "size": 0}
+    restored: "ERR AGFSNotFoundError"
+  DIFF stat /local/viking/default/resources/spk/nested/empty2
+    source:   {"isDir": true, "name": "empty2", "size": 0}
+    restored: "ERR AGFSNotFoundError"
+  DIFF tree
+    source:   [{"extra": {}, "info": {"isDir": false, "name": "a.md", "size": 3}, "path": "/local/viking/default/resources/spk/a.md", "rel_path": "a.md"}, {"extra": {}, "info": {"isDir": false, "name": "c.md", "siz
+    restored: [{"extra": {}, "info": {"isDir": false, "name": "a.md", "size": 3}, "path": "/local/viking/default/resources/spk/a.md", "rel_path": "a.md"}, {"extra": {}, "info": {"isDir": false, "name": "c.md", "siz
+  ov-a: 15/24 views match the source
+  PASS mv: stat /nested
+  PASS mv: cp -r /nested /moved
+  PASS mv: rm -r /nested
+  PASS after mv: read moved/b/c.md
+  FAIL after mv: stat moved/empty2 is dir: AGFSNotFoundError: not found: /viking/default/resources/spk/moved/empty2
+  FAIL after mv: stat moved/b/deeper is dir: AGFSNotFoundError: not found: /viking/default/resources/spk/moved/b/deeper
+  FAIL mv of empty dir: cp -r /empty1 /empty1mv: AGFSNotFoundError: not found: /viking/default/resources/spk/empty1
+  RESULT ov-a: 12 failures
+== scenario b: backup flags [--create-empty-src-dirs] restore flags [--create-empty-src-dirs --s3-directory-markers] via local
+  local copy: 4 files, 11 dirs, 4 empty dirs
+  seaweedfs ov-b: 15 keys, 11 end in '/': viking/ viking/default/ viking/default/resources/ viking/default/resources/spk/ viking/default/resources/spk/docs/ viking/default/resources/spk/docs/sub/ viking/default/resources/spk/empty1/ viking/default/resources/spk/nested/ viking/default/resources/spk/nested/b/ viking/default/resources/spk/nested/b/deeper/ viking/default/resources/spk/nested/empty2/
+  rclone check exit 0
+2026-10-19 21:09:19,622 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+2026-10-19 21:09:19,622 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+  ov-b: 24/24 views match the source
+  PASS mv: stat /nested
+  PASS mv: cp -r /nested /moved
+  PASS mv: rm -r /nested
+  PASS after mv: read moved/b/c.md
+  PASS after mv: stat moved/empty2 is dir
+  PASS after mv: stat moved/b/deeper is dir
+  PASS mv of empty dir: cp -r /empty1 /empty1mv
+  RESULT ov-b: ok
+== scenario c: backup flags [--create-empty-src-dirs --s3-directory-markers] restore flags [--create-empty-src-dirs --s3-directory-markers] via bucket
+  bucket stand-in standin-c: 15 keys, 11 end in '/': viking/ viking/default/ viking/default/resources/ viking/default/resources/spk/ viking/default/resources/spk/docs/ viking/default/resources/spk/docs/sub/ viking/default/resources/spk/empty1/ viking/default/resources/spk/nested/ viking/default/resources/spk/nested/b/ viking/default/resources/spk/nested/b/deeper/ viking/default/resources/spk/nested/empty2/
+  seaweedfs ov-c: 15 keys, 11 end in '/': viking/ viking/default/ viking/default/resources/ viking/default/resources/spk/ viking/default/resources/spk/docs/ viking/default/resources/spk/docs/sub/ viking/default/resources/spk/empty1/ viking/default/resources/spk/nested/ viking/default/resources/spk/nested/b/ viking/default/resources/spk/nested/b/deeper/ viking/default/resources/spk/nested/empty2/
+  rclone check exit 0
+2026-10-19 21:09:25,531 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+2026-10-19 21:09:25,532 - openviking.pyagfs - INFO - Loaded RAGFS Rust binding
+  ov-c: 24/24 views match the source
+  PASS mv: stat /nested
+  PASS mv: cp -r /nested /moved
+  PASS mv: rm -r /nested
+  PASS after mv: read moved/b/c.md
+  PASS after mv: stat moved/empty2 is dir
+  PASS after mv: stat moved/b/deeper is dir
+  PASS mv of empty dir: cp -r /empty1 /empty1mv
+  RESULT ov-c: ok
+== summary: default flags (backup job today) exit 1, chosen flags pass
