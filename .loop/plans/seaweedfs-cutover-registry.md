@@ -51,3 +51,16 @@ fixed. `just pre_commit` and `uv run --directory cli pytest` pass.
   directory (standing in for GCS) and into SeaweedFS 4.48 with 0 size
   differences. A fresh registry on SeaweedFS served both by tag and by
   digest, `crane validate --remote` passed, and every blob's sha256 matched.
+- Pushes on SeaweedFS. The restore spike pushed only to MinIO and pulled from
+  SeaweedFS with an admin key. A push writes blobs as multipart uploads,
+  resumes them through ListMultipartUploads, commits each with CopyObject or
+  UploadPartCopy, and garbage collection deletes objects. If SeaweedFS 4.48
+  gets one of those wrong, or the per-job role's policy leaves out an action
+  they need, the registry serves old images but refuses new pushes, and the
+  cutover has to roll back.
+  Settled by `spike:seaweedfs-cutover-registry/1`: registry 3.1.1 with only
+  per-job role credentials from the fixed helper pushed a 110 MiB layer
+  (UploadPartCopy) and a 1 MiB layer (CopyObject) to SeaweedFS 4.48, served
+  both by digest, garbage-collected a deleted image and pushed again. The
+  role needs at least `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` and
+  `s3:ListBucket` on the bucket. `s3:*` on the bucket covers them.
