@@ -25,7 +25,14 @@
   "budget_base": null,
   "signed_rows": [],
   "resigns": [],
-  "accepted_risks": [],
+  "accepted_risks": [
+    {
+      "risk_hash": "8d305f0e57529e2732dfca0ecacc2ffd2703f7f4495178a5f2c07fcc621b5d00",
+      "reason": "front matter sources are not the record",
+      "by": "human:jasperginn@gmail.com",
+      "at": "2026-10-19T17:47:56+00:00"
+    }
+  ],
   "waivers": [],
   "overrides": [],
   "round": null,
@@ -44,5 +51,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:21:15+00:00"
+  "at": "2026-10-19T17:47:56+00:00"
 }
