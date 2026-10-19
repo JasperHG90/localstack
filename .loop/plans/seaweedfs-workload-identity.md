@@ -41,15 +41,33 @@ This ticket rebuilds the same guarantee on SeaweedFS:
 - A new audience, `seaweedfs`, so a job's MinIO identity and its SeaweedFS
   identity stay apart during the cutover.
 
-No job switches here. The cutover ticket does that. Update
-`.okf/components/workload-identity-chain.md` and write a decision record for
-how the per-job binding works.
+Where the config lives. SeaweedFS takes the OIDC provider, the roles with
+their trust policies, the role policies, the STS signing key and
+`policy.defaultEffect` from one file passed with `-s3.iam.config`. Only that
+route is proven (spikes 2 and 4), so this ticket adds it to the job
+`seaweedfs-service` owns:
 
-Outcome: from a throwaway Nomad job named `tempo`, the JWT exchange at
-SeaweedFS's STS returns credentials that read and write `tempo` and get
-AccessDenied on `loki`. A job named something else gets no credentials for
-the `tempo` role, even when it sets audience `seaweedfs` and passes the
-`tempo` role ARN. `just pre_commit` and
+- `deployments/infrastructure/secrets.tf`: a `random_password` STS signing
+  key written to Vault KV at `default/seaweedfs/sts`.
+- `deployments/infrastructure/services.tf`: a local listing the keyless jobs
+  (`tempo`, `loki`, `registry`) and their buckets, passed into the jobspec.
+- the SeaweedFS jobspec under deployments/infrastructure/services/ (from
+  `seaweedfs-service`): a template rendering the IAM config from that list
+  and the Vault key, and the `-s3.iam.config` flag.
+
+No job switches here. The cutover tickets do that. Update
+`.okf/components/workload-identity-chain.md` and write a decision record for
+how the per-job binding works and why claim mode is ruled out.
+
+Outcome, proven on a probe so no live job is touched: the job list also
+holds a role for a throwaway job `wi-probe` on a throwaway bucket
+`wi-probe`. A batch job `wi-probe` in namespace `default`, with an identity
+of audience `seaweedfs`, exchanges its JWT and writes to `wi-probe`. A
+second throwaway job `wi-probe-other` asking for the `wi-probe` role gets
+403. Both probe jobs are purged, and the probe role and bucket are removed,
+before the ticket closes. The admin key, the static-key users from
+`seaweedfs-buckets` and a second `terraform plan` in the applications root
+all still work with the IAM config loaded. `just pre_commit` and
 `uv run --directory cli pytest` pass.
 
 ## Could invalidate this plan
@@ -100,3 +118,16 @@ the `tempo` role, even when it sets audience `seaweedfs` and passes the
   The Let's Encrypt cert verifies against system roots, so no `tlsCaCert`.
   If Nomad ever adds an EdDSA key, SeaweedFS rejects those tokens. Write that
   into the component page as a trap.
+- One server, both kinds of identity. The workload identity spikes ran
+  without the `-s3.config` admin, `-s3.iam.readOnly=false` or API-made users,
+  and the service and buckets spikes never loaded `-s3.iam.config`. If
+  `defaultEffect: Deny` or the IAM config file changes how the static admin
+  or the Terraform-made users are authorized, turning it on breaks every
+  static key and the applications root's clean plan, and the config needs
+  another shape.
+  Settled by `spike:seaweedfs-workload-identity/5`: one 4.48 server with the
+  `-s3.config` admin, `-s3.iam.readOnly=false`, the slot flags and an
+  `-s3.iam.config` holding the provider, STS signing key, `defaultEffect:
+  Deny` and a per-job role passed 33 of 33 checks, before and after a
+  restart. The admin, a Terraform-made user (clean second plan) and the role
+  exchange all worked, and another job was refused the role.
