@@ -33,7 +33,12 @@ every consumer. MinIO keeps running untouched until `minio-removal`.
   carries on. This switch waits for every restore: `rclone sync` makes the
   destination match the source, so a sync from a SeaweedFS bucket that was
   not yet restored would delete that bucket's GCS copy. Before the apply,
-  `rclone check` each durable bucket between SeaweedFS and GCS.
+  run `rclone check gcs:${gcs_bucket}/minio/<b>/ seaweedfs:<b> --one-way` for
+  each durable bucket: every object in GCS must be on SeaweedFS. The other
+  direction differs on purpose, because consumers write to SeaweedFS after
+  their restore. An object an app deleted on SeaweedFS after its restore
+  shows as missing. Record each one with the app that deleted it, and stop
+  if one cannot be explained.
   `cli/tests/test_backup_coverage.py` follows the remote name.
 - The `s3` Consul tag moves from `minio` to `seaweedfs`, so the CLI's `s3`
   route follows it (`cli/src/localstack_cli/api/services.py`). The CLI tests
@@ -50,12 +55,15 @@ every consumer. MinIO keeps running untouched until `minio-removal`.
   SeaweedFS, and the user docs under `docs/` that tell a reader to use MinIO
   are rewritten for SeaweedFS.
 
-Outcome: the backup job's next run exits 0 against SeaweedFS, and the GCS
-object count for each durable bucket is unchanged or higher. `localstack`'s
-`s3` route resolves to `seaweedfs`. `s3.lab.orangecluster.nl` serves
-SeaweedFS. MinIO's S3 request rate in Prometheus drops to zero for an hour,
-and no job's rendered config names MinIO or port 9000. `just pre_commit` and
-`uv run --directory cli pytest` pass.
+Outcome: the backup job's next run exits 0 against SeaweedFS, and after it
+`rclone check seaweedfs:<b> gcs:${gcs_bucket}/minio/<b>/` exits 0 for each
+durable bucket. `localstack`'s `s3` route resolves to `seaweedfs`.
+`s3.lab.orangecluster.nl` serves SeaweedFS. No job other than `minio` itself
+points an S3 client at MinIO's endpoint; Prometheus still scrapes MinIO until
+`minio-removal`. MinIO's S3 request rate drops to zero for an hour, counted
+from the last applications-root run, since that root still manages MinIO's
+resources. `.devcontainer/.env.example` names which SeaweedFS key the `mc`
+alias uses. `just pre_commit` and `uv run --directory cli pytest` pass.
 
 ## Could invalidate this plan
 
