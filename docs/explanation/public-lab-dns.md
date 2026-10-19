@@ -1,3 +1,11 @@
+---
+description: Why lab names resolve from public DNS to a private address, what that exposes, and why there is no local resolver.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/acme.hcl
+  - resource: deployments/infrastructure/services/haproxy.hcl
+---
+
 # Why lab names are in public DNS
 
 Names under `lab.orangecluster.nl` resolve from public DNS to a private
@@ -60,21 +68,3 @@ The ACME job pins its own resolver (`LEGO_DNS_RESOLVERS="1.1.1.1:53"`) rather
 than using whatever the host is configured with. Renewal therefore keeps
 working regardless of what happens to LAN DNS, which is why removing the local
 resolver could not break certificate issuance.
-
-## What is public and what is not, from the certificate's side
-
-The lab zone also has public A records: `*.lab` and the bare `lab` both
-answer `192.168.2.30`. That address is RFC1918 and unroutable from the
-internet, so resolving a lab name from outside gains an attacker the internal
-address and the knowledge that the zone exists, not a route to it. The local
-resolver that used to serve these names privately was removed once the public
-records existed, because keeping it meant household DNS depending on a
-machine in the cluster. [What this exposes](#what-this-exposes-and-what-it-does-not)
-and [Why there is no local resolver](#why-there-is-no-local-resolver) cover
-that trade and the exposure it accepts.
-
-One thing is public and permanent: certificate transparency logs record every
-Let's Encrypt certificate, so `*.lab.orangecluster.nl` is a matter of public
-record. That is one entry naming the wildcard, not a list of every service,
-which is a reason to prefer the wildcard over a certificate enumerating each
-hostname.

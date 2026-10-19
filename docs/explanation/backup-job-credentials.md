@@ -1,3 +1,13 @@
+---
+description: Why each backup job reads its own copy of the PostgreSQL, MinIO and GCS credentials under its own job path.
+stale_after: 2027-01-19
+sources:
+  - resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
+  - resource: deployments/infrastructure/secrets.tf
+  - resource: deployments/infrastructure/services/backup-postgres.hcl
+  - resource: deployments/infrastructure/services/backup-minio.hcl
+---
+
 # Why each backup job has its own credentials
 
 The backup jobs read copies of the root PostgreSQL and MinIO credentials, and

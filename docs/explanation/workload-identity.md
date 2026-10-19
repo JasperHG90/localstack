@@ -1,12 +1,27 @@
+---
+description: How a Nomad task's Workload Identity JWT becomes a scoped Vault token or MinIO credential, and the conventions a new consumer follows.
+stale_after: 2027-01-19
+sources:
+  - resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
+  - resource: bootstrap/roles/nomad_server/tasks/main.yml
+  - resource: bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json
+  - resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
+  - resource: deployments/infrastructure/machine_roles.tf
+  - resource: deployments/infrastructure/services/minio.hcl
+  - resource: deployments/applications/storage.tf
+  - resource: deployments/applications/services/memex/auth_oidc.json
+  - resource: deployments/infrastructure/services.tf
+---
+
 # Nomad Workload Identity and the Vault JWT trust chain
 
 Nomad issues a Workload Identity (WI) JWT to every task. Vault trusts that JWT
 through the `jwt-nomad` auth mount and hands the task a scoped token. That is
-the cluster's machine identity: no static credentials reach a workload, and
-every secret read is keyed on the job that asked for it. This page documents
+the cluster's machine identity: the default path carries no static credential,
+and every secret read is keyed on the job that asked for it. This page documents
 the chain as it runs today, the ownership split between Ansible and Terraform,
-and the convention downstream consumers (MinIO STS in M1, service bearer auth)
-follow when they need their own audience.
+and the convention downstream consumers (MinIO STS, service bearer auth) follow
+when they need their own audience.
 
 ## The chain, end to end
 
@@ -67,8 +82,9 @@ vault read -format=json auth/jwt-nomad/role/nomad-workloads | jq '.data.claim_ma
 
 ## The shared `nomad-workloads` policy
 
-The policy lives in `bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2`
-and is applied by Ansible. As of F9 (2026-07-30) it is three `path` blocks:
+The policy is in
+`bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2` and is
+applied by Ansible. It is three `path` blocks:
 
 - `read` on `secret/data/<namespace>/<job_id>/*` and the bare
   `secret/data/<namespace>/<job_id>` path. A task can read the **values** of
@@ -76,8 +92,8 @@ and is applied by Ansible. As of F9 (2026-07-30) it is three `path` blocks:
 - `list` on `secret/metadata/<namespace>/*`. A task can enumerate the
   **paths** of every secret in its own Nomad namespace, not just its own
   job's.
-- Zero `bootstrap/*` access. F9 removed the prior `bootstrap/data/*`
-  read/create/update and `bootstrap/metadata/*` list grants.
+- Zero `bootstrap/*` access. The policy grants nothing on the `bootstrap`
+  mount.
 
 ### Threat model: narrowed, but not per-job
 
@@ -86,13 +102,13 @@ Secret **values** are job-scoped. Secret **paths** are not: the
 path any other job in the same Nomad namespace has written. Nearly every job
 on this cluster runs in the `default` namespace, so in practice that grant is
 cluster-wide path enumeration. It does not leak values, only that a path
-exists. The `bootstrap` mount is closed to workload tokens. Describing this
-policy as strictly per-job scoped would ship a false claim; the doc records
-both halves.
+exists. The `bootstrap` mount is closed to workload tokens. So the policy is
+per-job for values and per-namespace for paths, and calling it strictly
+per-job would be false.
 
 ## The ownership split: Ansible root, Terraform per-job
 
-The root of trust lives in Ansible because it must exist before Terraform can
+The root of trust is in Ansible because it must exist before Terraform can
 authenticate to Vault at all: the `jwt-nomad` mount, its JWKS config, the
 default `nomad-workloads` role, and the shared policy are all created by
 `bootstrap/roles/nomad_server/tasks/main.yml`.
@@ -125,8 +141,9 @@ A task gets a Vault WI JWT one of two ways:
 - **Implicit.** A bare `vault {}` block rides the server-side
   `default_identity` (`aud = ["vault.io"]`). No JWT is written to the alloc
   (`File: null`, `Env: null`), so the token cannot be captured or replayed.
-  This is how every current workload (minio, memex, hermes, grafana) reads
-  KV secrets, through `template { env = true }`.
+  This is how minio, memex and grafana read KV secrets, through
+  `template { env = true }`. hermes rides the same default identity but
+  names its own role with `vault { role = ... }`.
 - **Explicit.** A named `identity` block overrides the default for that
   task. Use this when a consumer needs the raw JWT on disk or a different
   audience.
@@ -156,7 +173,7 @@ identity" below.)
 cluster. `file = true` writes the JWT to `secrets/nomad_vault_default.jwt`
 inside the alloc, which a raw-JWT consumer reads. Confirmed live on Nomad
 2.0.4: an unnamed block populates the task's singular default `Identity`
-field; a named block populates the `Identities` array. Only the named form
+field, and a named block populates the `Identities` array. Only the named form
 lands a JWT on disk.
 
 ### Pin the path with `filepath`, do not discover it
@@ -176,7 +193,7 @@ identity {
 }
 ```
 
-`filepath` is alloc-relative; the in-container path gains a leading slash
+`filepath` is alloc-relative. The in-container path gains a leading slash
 (`/secrets/nomad_memex.jwt`).
 
 ### Prefer `change_mode = "noop"` for a file identity
@@ -184,14 +201,14 @@ identity {
 Nomad restarts the task on **every** renewal after the first, with no test
 for whether anything material changed. At `ttl = "1h"` that is an hourly
 restart. A consumer that re-reads the file per request needs no restart, so
-`noop` is the right default for `file = true`; the restart warning in
+`noop` is the right default for `file = true`. The restart warning in
 Nomad's own validation is scoped to `Env`, not `File`.
 
 ### Do not pin a token-reading task to a non-root user
 
 Nomad skips the chown and leaves the JWT world-readable only when the task
 sets no `user`. Adding `user =` to a task whose process runs unprivileged
-breaks its ability to read its own identity file — and the failure is
+breaks its ability to read its own identity file, and the failure is
 silent if that consumer falls back to another credential.
 
 ### One audience per verifying service, never per job
@@ -204,17 +221,17 @@ or provider per client, for no scoping gain.
 - Keep `vault.io` for the existing Vault path. Renaming breaks every running
   workload at once.
 - Add a distinct audience only per new consumer class that verifies tokens
-  (for example `minio` for MinIO STS). M1 has since added that one; see
-  "Keyless MinIO access" below.
+  (for example `minio` for MinIO STS, described in "Keyless MinIO access"
+  below).
 
 Audience registry:
 
-| `aud` | Verifier | Owner |
-|-------|----------|-------|
-| `vault.io` | Vault, via the `jwt-nomad` mount | F1 |
-| `memex` | the memex server, against Nomad's JWKS | R5 |
-| `minio` | MinIO STS, `NOMAD` target | M1 |
-| `minio-poc2` | MinIO STS, `POC2` target | M1, replace in the human ticket |
+| `aud` | Verifier | Defined in |
+|-------|----------|------------|
+| `vault.io` | Vault, via the `jwt-nomad` mount | `bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json` |
+| `memex` | the memex server, against Nomad's JWKS | `deployments/applications/services/memex/auth_oidc.json` |
+| `minio` | MinIO STS, `NOMAD` target | `deployments/infrastructure/services/minio.hcl` |
+| `minio-poc2` | MinIO STS, `POC2` target | `deployments/infrastructure/services/minio.hcl` |
 
 The last two rows share a verifier, which the rule above forbids. They are
 the documented exception, not a precedent: MinIO refuses more than one
@@ -232,25 +249,26 @@ itself and needs no Vault role. Per-job authorization is a `grant_rule` on
 - **Env** (`template { env = true }`) is the default for Vault-templated
   secrets. The existing workloads all use it.
 - **File** (`identity { file = true }`) is for consumers that read a raw JWT
-  (MinIO STS, service bearer auth). Both carry ephemeral credentials; no
+  (MinIO STS, service bearer auth). Both carry ephemeral credentials, and no
   static secret is reintroduced.
 
 ## Keyless MinIO access
 
-M1 landed this. A Nomad job can now read its bucket with no static S3 key: it
-trades its Workload Identity JWT for short-lived MinIO credentials. The
-static keys in `deployments/applications/storage.tf` still exist and still
-work. Tempo (R9), loki and registry (R13) have since been moved off theirs,
-and each keeps its key provisioned as a rollback path. memex is the only one
-of those four still using one. Other holders exist outside this set: the
-`backup-minio` job runs on the root credential, and `storage.tf` still mints
-keys for buckets no job consumes. `openviking` is no longer one of those: its
+A Nomad job can read its bucket with no static S3 key: it trades its
+Workload Identity JWT for short-lived MinIO credentials. The static keys in
+`deployments/applications/storage.tf` still exist and still work. Tempo, loki
+and registry run keyless, and each keeps its key provisioned as a rollback
+path. memex is the only one of those four still using one. Other holders
+exist outside this set: the `backup-minio` job runs on the root credential,
+and `deployments/applications/storage.tf` still mints keys for buckets no job
+consumes. `openviking` is no longer one of those: its
 job reads that key deliberately, because OpenViking's config layer makes
 `access_key` and `secret_key` mandatory for an s3 backend and its S3 client
 drops the session token STS credentials require. See `.okf/decisions/0007-openviking-static-key-has-no-claim-policy.md`.
 
 **What MinIO trusts.** Three env vars on the MinIO job
-(`deployments/infrastructure/services/minio.hcl`) define the `NOMAD` target:
+(`deployments/infrastructure/services/minio.hcl`, with the URL filled from
+`deployments/infrastructure/services.tf`) define the `NOMAD` target:
 
 ```
 MINIO_IDENTITY_OPENID_CONFIG_URL_NOMAD=https://nomad.lab.orangecluster.nl/.well-known/openid-configuration
@@ -258,11 +276,12 @@ MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD=minio
 MINIO_IDENTITY_OPENID_CLAIM_NAME_NOMAD=nomad_job_id
 ```
 
-The config URL is the discovery document F10 turned on, not a bare JWKS: the
-pinned release removed `jwks_url`. The client id is why a consumer's identity
-block must carry `aud = ["minio"]`, because MinIO validates the audience
-against it in every mode. The trailing `_NOMAD` names the target and MinIO
-reads it verbatim, so the target is `NOMAD` and never `nomad`.
+The config URL is the discovery document Nomad serves as an OIDC issuer
+(`oidc_issuer` in `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`), not a
+bare JWKS: the pinned release removed `jwks_url`. The client id is why a
+consumer's identity block must carry `aud = ["minio"]`, because MinIO validates
+the audience against it in every mode. The trailing `_NOMAD` names the target
+and MinIO reads it verbatim, so the target is `NOMAD` and never `nomad`.
 
 **How access is decided.** `claim_name = nomad_job_id` tells MinIO to apply
 the policy whose NAME matches the JWT's `nomad_job_id` claim. So a job called
@@ -280,7 +299,8 @@ Proving the exchange by hand is
 
 **A second target already exists.** `POC2` (`aud = minio-poc2`) is configured
 alongside `NOMAD`, on the same discovery document under a different client
-id, and proves MinIO can hold two IdPs at once for the human-access work.
+id, and proves MinIO can hold two IdPs at once. MinIO has no human login
+through Vault yet.
 Its `role_policy` names `poc2-intentionally-undefined`, a policy that does
 not exist and must not be created. MinIO's only principal check is `aud`
 matching `client_id`, and any jobspec author chooses their own `aud`, so a

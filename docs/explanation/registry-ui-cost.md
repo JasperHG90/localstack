@@ -1,3 +1,13 @@
+---
+description: Why the registry-ui walk of the cluster registry stays cheap, and at what size it stops fitting.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/applications/services/registry-ui.hcl
+  - resource: deployments/applications/services/registry-ui/backend/src/registry_ui/registry_client.py
+  - resource: deployments/applications/services/registry-ui/backend/src/registry_ui/registry_store.py
+  - resource: deployments/applications/services/registry-ui/frontend/index.html
+---
+
 # Why registry-ui stays cheap, and where it stops scaling
 
 `registry-ui` walks the cluster registry to show what it holds, described in
@@ -22,9 +32,9 @@ eyebrow carries a `refresh` button that bypasses the floor after a push.
 about 147 ms against 181 ms. The sweep count does not change.
 
 Cards render server-side with `markdown-it-py`, once per digest and never
-again — the rendered HTML is what the store holds. Rendering in Python
+again. The rendered HTML is what the store holds. Rendering in Python
 rather than in the browser puts the logic where this repo's tests already
-reach; there is no JS or browser test harness here.
+reach, because there is no JS or browser test harness here.
 
 The walk runs eight requests in flight, bounded by an
 `httpx.Limits(max_connections=8)` and a matching semaphore. Eight because
@@ -42,7 +52,8 @@ backend task's 128 MB reservation.
 
 ## Where this stops scaling
 
-Sweep cost is `1 + R + T`, and `T` grows fastest because a model registry
+Sweep cost is `1 + R + T`: one catalog call, one tag list per repository
+(`R`) and one `HEAD` per tag (`T`). `T` grows fastest because a model registry
 accumulates versions: four repositories at twenty tags each is worse than
 twenty at two. At eight-way concurrency it is comfortable to roughly 25
 repositories, strained near 50, and past about 100 the sweep no longer fits

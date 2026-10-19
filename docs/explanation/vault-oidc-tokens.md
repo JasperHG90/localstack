@@ -1,3 +1,11 @@
+---
+description: What a service that verifies Vault OIDC tokens itself has to know, and how to revoke a long-lived ID token.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: deployments/infrastructure/identity.tf
+---
+
 # Vault OIDC tokens, and what a relying party has to know
 
 Vault's `lab` provider signs the tokens a service verifies when a person logs
@@ -5,12 +13,13 @@ in through Vault. memex was the first service to verify them itself, and what
 building it proved applies to every later consumer. The provider itself is
 described in [Human login to Vault](../reference/vault-human-auth.md).
 
-## memex: the first branch-2 consumer, and what it proves
+## memex: the first service with its own tier, and what it proves
 
-memex logs humans in through the `lab` provider with two tiers,
+memex logs humans in through the `lab` provider with two tiers of its own,
 `app-memex-admins` and `app-memex-readers`, both added to
-`local.app_user_groups` (branch 2) and named by one assignment. Four rules
-came out of building it, and every later consumer needs them.
+`local.app_user_groups` in `deployments/infrastructure/identity.tf` and named
+by one assignment. Four rules came out of building it, and every later
+consumer needs them.
 
 **A service that verifies the token ITSELF must read the id_token, and accept
 the client id as `aud`.** Vault issues an opaque batch token as its
@@ -45,7 +54,7 @@ the path must match character for character. Register both host literals.
 
 ## Revoking a long-lived id_token, and what rotation does not do
 
-A long id_token is a stateless bearer; Vault cannot revoke one once issued.
+A long id_token is a stateless bearer. Vault cannot revoke one once issued.
 
 **This lever works only for a client on its OWN key.** Removing the client
 from `local.oidc_provider_client_ids` unpublishes the keys that client
@@ -63,6 +72,13 @@ a dedicated key unpublishes that whole key ring and every outstanding token
 for it fails verification. One reversible line, no other consumer affected.
 For memex, the steps are
 [How to revoke memex human tokens](../how-to/revoke-memex-human-tokens.md).
+
+hermes-dashboard also has its own key, but this lever is weaker there: the
+dashboard caches keys it has seen for up to an hour, and adding the client
+back revives old tokens. Replacing the client
+(`terraform apply -replace=vault_identity_oidc_client.hermes_dashboard`, then
+an apply of the applications root) gives it a new client id, and every old
+token fails its audience check.
 
 For a client on the shared key, there is no complete lever. Shorten its
 `id_token_ttl` and wait the old tokens out, or move it to its own key first.

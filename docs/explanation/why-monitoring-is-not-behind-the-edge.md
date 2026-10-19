@@ -1,3 +1,12 @@
+---
+description: Why Prometheus, Loki and Tempo have no route through the edge proxy, and what that costs.
+stale_after: 2027-01-19
+sources:
+  - resource: deployments/infrastructure/services/haproxy.hcl
+  - resource: deployments/infrastructure/services/grafana.hcl
+  - resource: deployments/infrastructure/services/alloy.hcl
+---
+
 # Why monitoring is not behind the edge
 
 Prometheus, Loki and Tempo serve their query APIs with no authentication, and
