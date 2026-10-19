@@ -3,7 +3,7 @@
   "slug": "seaweedfs-buckets",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "1fb3f6a5aedb0774d37262d79d6da71ee4a2961d2088fa8324fcc073359aa3f9",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "625700e2493efc31aa114409c230da11ce61a98f6de299264bf40079a395a4ed",
+    "started_at": "2026-10-19T17:58:39+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "625700e2493efc31aa114409c230da11ce61a98f6de299264bf40079a395a4ed",
   "intent": {
     "epic": "seaweedfs-migration",
     "depends_on": [
@@ -46,5 +65,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T17:58:30+00:00"
+  "at": "2026-10-19T17:58:39+00:00"
 }
