@@ -5,3 +5,4 @@
 {"at": "2026-10-19T17:55:30+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-10-19T18:04:04+00:00", "diff": {"added": [], "changed": {"r2": ["behavior", "fails_when", "command"], "r4": ["fails_when", "command"]}, "removed": []}, "grant": "g1", "hash": "e352718d8dc35c5d66986be2df12cdfa964fe32e445e16737860a8ec77087967", "kind": "signoff", "reason": "plan review round 1: r2 requires no notice bundle-wide, r4 gains an allow-list for other-codebase names", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/orchestrator", "step": "eval-sign"}
 {"at": "2026-10-19T19:16:32+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-19T19:43:15+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
