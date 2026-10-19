@@ -1,0 +1,63 @@
+weed server -dir=/data -s3 -s3.port=8333 -s3.config=/s3.json -s3.iam.config=/iam.json -s3.iam.readOnly=false -ip=127.0.0.1 -ip.bind=127.0.0.1 -s3.ip.bind=0.0.0.0 -metricsIp=0.0.0.0 -metricsPort=9327 -volume.max=0 -master.volumeSizeLimitMB=1024 -master.volumePreallocate=false -s3.port.iceberg=0 -s3.port.lance=0
+s3 on 32786, issuer on 32785
+== phase first
+PASS [first] unknown key refused (denied) ClientError: An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The access key ID you provided does not exist in our records.
+PASS [first] 1 admin create bucket adminb (allowed) 200
+PASS [first] 1 admin create bucket wi-probe (allowed) 200
+PASS [first] 1 admin put/get adminb (allowed) put+get ok
+PASS [first] 1 admin lists buckets (allowed) ['adminb', 'wi-probe']
+RESULT first fails=0
+aws_iam_user.u: Creation complete after 0s [id=tfapp]
+aws_s3_bucket.b: Creation complete after 0s [id=tfapp]
+aws_iam_access_key.k: Creation complete after 0s [id=AKIAMPC2EJBC7REVDXY6]
+aws_iam_user_policy.p: Creation complete after 0s [id=tfapp:tfapp-rw]
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+apply exit 0
+No changes. Your infrastructure matches the configuration.
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+second plan exit 0 (0 clean)
+PASS [first-tf] unknown key refused (denied) ClientError: An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The access key ID you provided does not exist in our records.
+PASS [first-tf] 1 admin put/get adminb (allowed) put+get ok
+PASS [first-tf] 1 admin lists buckets (allowed) ['adminb', 'tfapp', 'wi-probe']
+PASS [first-tf] 2 terraform key put/get tfapp (allowed) put+get ok
+PASS [first-tf] 2 terraform key put adminb (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [first-tf] 2 terraform key get adminb (denied) AccessDenied: An error occurred (AccessDenied) when calling the GetObject operation: Access Denied.
+PASS [first-tf] 2 terraform key put wi-probe (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [first-tf] 2 terraform key create bucket (denied) AccessDenied: An error occurred (AccessDenied) when calling the CreateBucket operation: Access Denied.
+PASS [first-tf] 1 admin reads tfapp object (allowed) b'x-t-first-tf'
+PASS [first-tf] 3 STS wi-probe token -> wi-probe role (allowed) ASIAba61e2754c283462
+PASS [first-tf] 3 STS creds put/get wi-probe (allowed) put+get ok
+PASS [first-tf] 3 STS creds put tfapp (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [first-tf] 3 STS creds put adminb (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [first-tf] 3 STS wi-probe-other token -> wi-probe role (denied) RuntimeError: HTTP 403: <?xml version="1.0" encoding="UTF-8"?>
+<ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><Error><Type>Sen
+RESULT first-tf fails=0
+== docker restart
+s3 on 32788, issuer on 32785
+PASS [restart] unknown key refused (denied) ClientError: An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The access key ID you provided does not exist in our records.
+PASS [restart] 1 admin put/get adminb (allowed) put+get ok
+PASS [restart] 1 admin lists buckets (allowed) ['adminb', 'tfapp', 'wi-probe']
+PASS [restart] 2 terraform key put/get tfapp (allowed) put+get ok
+PASS [restart] 2 terraform key put adminb (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [restart] 2 terraform key get adminb (denied) AccessDenied: An error occurred (AccessDenied) when calling the GetObject operation: Access Denied.
+PASS [restart] 2 terraform key put wi-probe (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [restart] 2 terraform key create bucket (denied) AccessDenied: An error occurred (AccessDenied) when calling the CreateBucket operation: Access Denied.
+PASS [restart] 1 admin reads tfapp object (allowed) b'x-t-restart'
+PASS [restart] 3 STS wi-probe token -> wi-probe role (allowed) ASIAad0bab211150009d
+PASS [restart] 3 STS creds put/get wi-probe (allowed) put+get ok
+PASS [restart] 3 STS creds put tfapp (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [restart] 3 STS creds put adminb (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [restart] 3 STS wi-probe-other token -> wi-probe role (denied) RuntimeError: HTTP 403: <?xml version="1.0" encoding="UTF-8"?>
+<ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><Error><Type>Sen
+RESULT restart fails=0
+No changes. Your infrastructure matches the configuration.
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+post-restart plan exit 0 (0 clean)
+-- server log lines on iam/sts/policy
+      1 I1019 20:56:47.804293 s3.go:342 Starting S3 API Server with advanced IAM integration
+      1 I1019 20:56:46.978387 filer.go:477 Registered IAM gRPC service on filer (unauthenticated; set jwt.filer_signing.key in security.toml to require admin Bearer token)
+      1 I1019 20:55:55.535646 s3.go:342 Starting S3 API Server with advanced IAM integration
+      1 I1019 20:55:54.574306 filer.go:477 Registered IAM gRPC service on filer (unauthenticated; set jwt.filer_signing.key in security.toml to require admin Bearer token)
+SUMMARY admin_first=0 apply=0 plan2=0 checks_first=0 checks_restart=0 plan_restart=0

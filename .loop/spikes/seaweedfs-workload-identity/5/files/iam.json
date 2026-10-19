@@ -1,0 +1,15 @@
+{
+  "sts": {"tokenDuration": "1h", "maxSessionLength": "12h", "issuer": "seaweedfs-sts",
+          "signingKey": "dGVzdC1zaWduaW5nLWtleS0zMi1jaGFyYWN0ZXJzLWxvbmc="},
+  "policy": {"defaultEffect": "Deny"},
+  "providers": [{"name": "nomad", "type": "oidc", "enabled": true,
+                 "config": {"issuer": "http://issuer:8080", "clientId": "seaweedfs"}}],
+  "policies": [{"name": "wi-probe", "document": {"Version": "2012-10-17", "Statement": [
+      {"Effect": "Allow", "Action": ["s3:*"], "Resource": ["arn:aws:s3:::wi-probe", "arn:aws:s3:::wi-probe/*"]}]}}],
+  "roles": [{"roleName": "wi-probe", "roleArn": "arn:aws:iam::role/wi-probe",
+    "trustPolicy": {"Version": "2012-10-17", "Statement": [{"Effect": "Allow",
+      "Principal": {"Federated": "nomad"}, "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {"StringEquals": {"oidc:nomad_job_id": "wi-probe"},
+                    "StringLike": {"oidc:sub": "global:default:wi-probe:*"}}}]},
+    "attachedPolicies": ["wi-probe"]}]
+}
