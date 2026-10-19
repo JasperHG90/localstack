@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan removes every minio_* resource and the minio provider but does not say how they leave state or in what order. That is how this ticket would break. (a) Destroying them against a live MinIO fails: minio_s3_bucket in modules/bucket/main.tf has no force_destroy, and the buckets still hold objects (memex and mlflow-artifacts were never moved, and the moved buckets keep their originals), so apply stops on BucketNotEmpty. Adding force_destroy would delete the data the plan says stays until minio-volume-destroy. (b) The applications root's provider \"minio\" gets its endpoint from data.consul_service.minio.service[0] and its login from the Vault key default/minio/localstack, both owned by the infrastructure root and the Consul deploy-policy grant. Suppose the infrastructure apply (nomad_job.minio, vault_kv_secret_v2.minio_credentials) or the playbook's removal of the grant runs first. Then the applications plan cannot configure the provider, and the minio_* resources are stuck in state. Dropping the provider block while they are still in state leaves Terraform with an empty provider config. The plan has to name the method, for example `removed { from = module.buckets / minio_*; lifecycle { destroy = false } }` (Terraform 1.16 is installed), which forgets the resources instead of destroying them. It also has to name the order: the applications root first, then the infrastructure root, then the playbook. Its outcome line (\"plan shows only MinIO resources being destroyed\") must change to match. The infrastructure plan will also show in-place updates to the haproxy, prometheus and grafana jobs. Spike question: in deployments/applications, with `removed ... destroy = false` blocks for module.buckets and every minio_* resource, and no provider \"minio\" block or required_providers entry, does `terraform plan` succeed while MinIO and its Vault key are unreachable? Or does Terraform still configure or refresh the provider for resources it is forgetting?",
+      "anchor": "deployments/applications/providers.tf:44",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "The done check (`grep -ri minio deployments/ ...` finds only historical mentions) cannot be decided for the backup job. After the cutover it is still nomad_job.backup_minio with jobspec services/backup-minio.hcl. Its Vault paths are default/backup-minio/{minio,gcs}, and on purpose it keeps writing to the GCS prefix minio/ so the history carries on. The plan says only \"remove the backup job's MinIO key\". It does not say whether the job, its jobspec and its Vault paths are renamed or are left as accepted mentions. A rename re-registers the job and moves its Vault entries, so that is a scope choice. The key it removes, vault_kv_secret_v2.backup_minio_s3_credentials, shares random_password.minio_secret_key with the root key. Settle what stays named minio before building, or the done check will fail or be argued after the build.",
+      "anchor": "deployments/infrastructure/services.tf:713",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "6f8df75a75bdfe1c033cf3ffb4e21e1e83e7b3e49612d2e75539e69f8da0efe8"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T17:55:57+00:00"
+}
