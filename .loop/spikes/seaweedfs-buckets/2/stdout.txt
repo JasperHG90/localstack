@@ -1,0 +1,46 @@
+=== PHASE 0: default flags (s3.iam.readOnly default) - can IAM be written at all? ===
+s3 on port 32774
+aws_s3_bucket.b["alpha"]: Creation complete after 0s [id=spike-alpha]
+aws_s3_bucket.b["beta"]: Creation complete after 0s [id=spike-beta]
+Error: creating IAM User (spike-alpha): operation error IAM: CreateUser, https response error StatusCode: 403, RequestID: 18DFFFE430403C3478719FA1, api error AccessDenied: IAM write operations are disabled on this server
+Error: creating IAM User (spike-beta): operation error IAM: CreateUser, https response error StatusCode: 403, RequestID: 18DFFFE430EA70D06DD96AE0, api error AccessDenied: IAM write operations are disabled on this server
+
+=== PHASE 1: -s3.iam.readOnly=false, aws provider apply ===
+s3 on port 32777
+aws_iam_user.u["alpha"]: Creation complete after 0s [id=spike-alpha]
+aws_iam_user.u["beta"]: Creation complete after 0s [id=spike-beta]
+aws_s3_bucket.b["alpha"]: Creation complete after 0s [id=spike-alpha]
+aws_s3_bucket.b["beta"]: Creation complete after 0s [id=spike-beta]
+aws_iam_access_key.k["beta"]: Creation complete after 0s [id=AKIAQD24YPD7YTC3HHA0]
+aws_iam_user_policy.p["beta"]: Creation complete after 0s [id=spike-beta:spike-beta-rw]
+aws_iam_access_key.k["alpha"]: Creation complete after 0s [id=AKIA38PQK020O4S5XJ0L]
+aws_iam_user_policy.p["alpha"]: Creation complete after 0s [id=spike-alpha:spike-alpha-rw]
+Apply complete! Resources: 8 added, 0 changed, 0 destroyed.
+apply exit 0
+
+=== PHASE 2: second plan ===
+No changes. Your infrastructure matches the configuration.
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+second plan detailed exit 0 (0 = clean, 2 = changes)
+
+=== PHASE 3: restart container, plan again (IAM persistence) ===
+s3 on port 32780
+No changes. Your infrastructure matches the configuration.
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+post-restart plan detailed exit 0
+
+=== PHASE 4: aminueza/minio ~> 3.8 against the same server ===
+minio_s3_bucket.b: Creation complete after 0s [id=spike-gamma]
+Error: [FATAL] reading IAM user (spike-gamma): The specified key does not exist.
+  with minio_iam_user.u,
+Error: Server Response Details
+  with minio_iam_user.u,
+Error: [FATAL] unable to read policy (spike-gamma-rw): The specified key does not exist.
+  with minio_iam_policy.p,
+Error: Server Response Details
+  with minio_iam_policy.p,
+minio apply exit 1
+
+SUMMARY aws_apply=0 aws_plan2=0 aws_plan_after_restart=0 minio_apply=1
