@@ -3,7 +3,7 @@
   "slug": "seaweedfs-cutover",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "c8428ec7e4a82158ffdff6378ade3871bb6bb9aaa763864fe9605b5c880d7f0b",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "f73c2b1bf9b762ee928a0bf304d847105c89750b39746cceb725e7d90d297f58",
+    "started_at": "2026-10-19T20:53:55+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "f73c2b1bf9b762ee928a0bf304d847105c89750b39746cceb725e7d90d297f58",
   "intent": {
     "epic": "seaweedfs-migration",
     "depends_on": [
@@ -47,5 +66,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T20:53:49+00:00"
+  "at": "2026-10-19T20:53:55+00:00"
 }
