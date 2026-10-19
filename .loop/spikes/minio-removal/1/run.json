@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "minio-removal",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-removal-1/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-removal-1/spike.sh",
+      "copy": "files/spike.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "76182e9b29caabb00f13d3a50ba7d2da196bebee",
+  "fingerprint": "cf9df7ebc1f7c401787eb940b74afc0ff87cc140953fb9c764c07ef2b8e69fe9",
+  "started_at": "2026-10-19T18:00:46+00:00",
+  "finished_at": "2026-10-19T18:01:06+00:00",
+  "duration_seconds": 20.659,
+  "timeout_seconds": 400.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

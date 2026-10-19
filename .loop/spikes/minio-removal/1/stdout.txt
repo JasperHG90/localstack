@@ -1,0 +1,50 @@
+=== phase 1: init + apply with provider
+
+Apply complete! Resources: 9 added, 0 changed, 0 destroyed.
+state before:
+minio_accesskey.users["tester"]
+minio_iam_policy.wi
+minio_iam_user.users["tester"]
+module.buckets["alpha"].minio_iam_policy.policy_read_write
+module.buckets["alpha"].minio_iam_user_policy_attachment.bucket_writer["tester"]
+module.buckets["alpha"].minio_s3_bucket.bucket
+module.buckets["beta"].minio_iam_policy.policy_read_write
+module.buckets["beta"].minio_iam_user_policy_attachment.bucket_writer["tester"]
+module.buckets["beta"].minio_s3_bucket.bucket
+=== phase 2: removed blocks, no provider block, no required_providers, MinIO stopped
+MinIO unreachable: ok
+Initializing provider plugins...
+- Reusing previous version of aminueza/minio from the dependency lock file
+- Using previously-installed aminueza/minio v3.8.3
+
+Terraform has been successfully initialized!
+
+Planning failed. Terraform encountered an error while generating this plan.
+
+
+Error: Missing required argument
+
+The argument "minio_server" is required, but was not set.
+
+Error: Invalid provider configuration
+
+Provider "registry.terraform.io/aminueza/minio" requires explicit
+configuration. Add a provider block to the root module and configure the
+provider's required arguments as described in the provider documentation.
+
+PLAN FAILED
+resources left in state: 9
+providers in state after:
+.
+
+Providers required by state:
+
+    provider[registry.terraform.io/aminueza/minio]
+
+=== phase 3: MinIO back up, data intact
+[2026-10-19 20:00:56 CEST]     0B alpha/
+[2026-10-19 20:00:56 CEST]     0B beta/
+object alpha/obj.txt present
+user tester present
+alpha_rw beta_rw wi 
+exit 1
