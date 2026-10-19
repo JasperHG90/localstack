@@ -6,7 +6,7 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T20:57:46+00:00'
+  at: '2026-10-19T20:57:51+00:00'
 slug: seaweedfs-cutover-openviking
 n: 1
 outcome_written: true
@@ -24,7 +24,7 @@ The command exited 0:
 
 ## Outcome
 
-OpenViking's own storage path worked against SeaweedFS 4.48: the AGFS Rust `s3fs` backend from `ghcr.io/jasperhg90/openviking:v0.4.17.1-9`, mounted through `create_agfs_client` with the prod `ov.conf.json` S3 settings (path style, `region` us-east-1, no SSL), passed all 27 checks using a static IAM key whose inline policy grants `s3:*` on `openviking` only.
+OpenViking's own storage path worked against SeaweedFS 4.48: the AGFS Rust `s3fs` backend from `ghcr.io/jasperhg90/openviking:v0.4.17.1-9`, mounted through `create_agfs_client` with the prod `ov.conf.json` S3 settings (path style, `region` us-east-1, no SSL), passed all 28 checks using a static IAM key whose inline policy grants `s3:*` on `openviking` only.
 The checks covered mkdir, ensure_parent_dirs, write (including a 12 MB object and a key with `space+@#%`), full and ranged read, stat, ls, touch, create, copy_within_mount (server-side CopyObject), tree, glob, grep, rm, recursive rm, and the directory move that VikingFS.mv does (stat, recursive cp, recursive rm). The mount itself succeeded.
 This rules out a virtual-host, region or checksum-header incompatibility. Settles risk 1.
 Limits: the spike drove the storage binding directly, without the full server (no Postgres, embedder or HTTP API), and ran on one local container. The binding's raw `mv` on a directory failed with NoSuchKey on the `dir/` marker CopyObject. OpenViking never calls it (VikingFS.mv is cp+rm), and the spike did not check whether MinIO behaves the same.
