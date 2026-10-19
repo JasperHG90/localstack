@@ -40,16 +40,29 @@ orangepi4a, on the podman driver. It gets:
   the `s3` tag yet: the CLI resolves the `s3` route to the one service that
   carries that tag (`cli/src/localstack_cli/api/services.py`), and MinIO keeps
   it until the cutover.
-- Ports opened from 192.168.0.0/16 by a firewall rule beside MinIO's in
-  `deployments/infrastructure/services.tf`, and a Prometheus scrape job in
+- Only two ports leave the host: S3 (with the embedded IAM API) and metrics.
+  Master, volume and filer, and their gRPC ports, are neither mapped to Nomad
+  ports nor bound off loopback. The worker base rule in
+  `bootstrap/playbooks/configure_network.yml` already opens 20000:32000 to
+  the LAN, and podman's published ports skip ufw, so a firewall rule alone
+  cannot hide them, and the filer's IAM gRPC has no auth. The two ports get a
+  firewall rule beside MinIO's in `deployments/infrastructure/services.tf`,
+  and metrics get a scrape job in
   `deployments/infrastructure/services/prometheus.hcl`.
+- Volume limits set for the store's real size. The defaults
+  (`-volume.max` 8, `-master.volumeSizeLimitMB` 30720) cap it near 240 GiB
+  however large the host volume is, and S3 puts each bucket in its own
+  collection that grows several volumes at once, so eight slots can run out
+  with six buckets.
 
 Write `new:.okf/components/seaweedfs.md`, and a decision record for SeaweedFS
 over MinIO with the alternatives (Garage, keeping MinIO built from source).
 
 Outcome: after an apply, `nomad job status seaweedfs` shows the allocation
 running and its Consul check passing. With the admin key, `aws s3 mb`,
-`aws s3 cp`, `aws s3 ls` and `aws s3 rb` against the S3 port all succeed.
+`aws s3 cp`, `aws s3 ls` and `aws s3 rb` against the S3 port all succeed,
+and six buckets made in a row each take a write. From another LAN host, only
+the S3 and metrics ports answer on orangepi4a among SeaweedFS's ports.
 Prometheus shows `up{job="seaweedfs"} == 1`. MinIO is unchanged. `just
 pre_commit` and `uv run --directory cli pytest` pass.
 
@@ -75,3 +88,18 @@ pre_commit` and `uv run --directory cli pytest` pass.
   file's admin. The filer's IAM gRPC has no auth unless
   `jwt.filer_signing.key` is set, so the firewall rule opens only the S3 and
   metrics ports, never the master, volume or filer ports.
+- Volume slots. If six buckets cannot each take a write under limits that
+  also leave room for MinIO's data (registry alone is 5.34 GB), the
+  single-node `weed server` layout needs another shape (separate volume
+  servers, or a larger slot count with smaller volumes) before buckets can be
+  made on it.
+  Settled by `spike:seaweedfs-service/3`: under defaults only 4 of 6 buckets
+  took a first write, because the master grows 7 volumes per collection
+  (`copy_1 = 7`). With `-volume.max=0 -master.volumeSizeLimitMB=1024
+  -master.volumePreallocate=false` and a `master.toml` holding
+  `[master.volume_growth] copy_1 = 2`, all six wrote and 300 MiB fit, with 2
+  slots per bucket. Binding works with `-ip=127.0.0.1 -ip.bind=127.0.0.1
+  -s3.ip.bind=0.0.0.0 -metricsIp=0.0.0.0`: master, volume and filer listen on
+  loopback only. The S3 gRPC port (S3 port + 10000) follows `-s3.ip.bind` and
+  cannot be turned off, so the firewall rule must leave it closed, and the
+  job maps no Nomad port to it.
