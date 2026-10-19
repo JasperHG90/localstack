@@ -8,3 +8,4 @@
 {"at": "2026-10-19T17:47:51+00:00", "judgement": "j-20261019T151831+0000-8dc900b8", "kind": "judgement-link", "schema_version": "1.0", "ticket": "docs-explanation"}
 {"at": "2026-10-19T17:50:22+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "backup-durable-buckets"}
 {"at": "2026-10-19T17:50:25+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-service"}
+{"at": "2026-10-19T17:50:27+00:00", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-link", "schema_version": "1.0", "ticket": "seaweedfs-buckets"}
