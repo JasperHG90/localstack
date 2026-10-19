@@ -70,8 +70,9 @@ RUN curl -fsSL https://raw.githubusercontent.com/JasperHG90/clx/main/install.sh 
 # Install openviking
 RUN uv tool install openviking
 
-# Install loop engineering harness control CLI
-#RUN uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.git
+# Install loop engineering harness control CLI. Pinned, because its git hooks
+# gate every commit and .loop/config.toml follows its schema.
+RUN uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.git@d8431969645545f1ca55c9cd11f53d0452636d16
 
 # Install ovx
 RUN uv tool install ovx --from "git+https://github.com/JasperHG90/openviking_extensions@ovx-v0.4.0#subdirectory=packages/ovx"

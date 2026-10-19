@@ -25,7 +25,8 @@ alias j='just'
 cd "${workspace}"
 
 # The git hook in .git/hooks may still be pre-commit's, which this image no
-# longer has. `just setup` overwrites it with prek's.
+# longer has. `just setup` replaces it with loopctl's commit gate, which runs
+# prek's hook after it.
 just setup
 
 # The HashiCorp CLIs at the versions this cluster runs, plus the PATH shims

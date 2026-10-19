@@ -46,10 +46,16 @@ and adds:
   the hooks in `.pre-commit-config.yaml`, and `just setup` installs its git
   hook with `--overwrite` so a hook left by pre-commit does not survive as
   `pre-commit.legacy` and fail every commit.
+- `loopctl`, pinned to a commit of loop-engineering-harness. `just setup`
+  moves prek's hook to `pre-commit.local` and runs `loopctl init`, so
+  loopctl's commit gate owns `pre-commit` and runs prek's hook after it. The
+  gate refuses every commit when loopctl is not on PATH, and `bootstrap.sh`
+  runs `just setup` under `set -e`, so a broken loopctl install stops
+  container creation.
 - `migrate` and `mc` as arm64 binaries. `mc` comes from GitHub releases,
   because `dl.min.io` answers 410. `cli/src/localstack_cli/platforms.py`
   states the container is `linux_arm64`.
-- A set of agent tools (Claude Code, openviking, aim, ovx and others) that
+- A set of agent tools (Claude Code, openviking, ovx and others) that
   nothing in the repo's gates depends on.
 
 HashiCorp rotated its apt signing key, and the base image ships the old one,

@@ -11,7 +11,13 @@ How-to guides are for a task you are doing now. Reference describes what
 exists: commands, routes, roles, services. Explanation says why the cluster is
 shaped the way it is.
 
-## [How-to guides](how-to/README.md)
+Each folder also has an index of its own pages:
+
+- [How-to guides](how-to/README.md)
+- [Reference](reference/README.md)
+- [Explanation](explanation/README.md)
+
+## How-to guides
 
 **Logging in and access**
 
@@ -94,7 +100,7 @@ shaped the way it is.
 - [Move the Orange Pi OS to an NVMe drive](how-to/move-orange-pi-os-to-nvme.md)
 - [Delete a Nomad dynamic host volume](how-to/delete-a-nomad-dynamic-host-volume.md)
 
-## [Reference](reference/README.md)
+## Reference
 
 **The `localstack` CLI**
 
@@ -137,7 +143,7 @@ shaped the way it is.
   ([draw.io source](reference/architecture/architecture.drawio.png))
 - [OpenViking OIDC](reference/architecture/openviking_oidc.drawio.png)
 
-## [Explanation](explanation/README.md)
+## Explanation
 
 - [Nomad Workload Identity and the Vault JWT trust chain](explanation/workload-identity.md)
 - [Why the cluster roles are shaped the way they are](explanation/cluster-roles.md)

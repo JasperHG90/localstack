@@ -21,8 +21,14 @@ format:
 
 # Set up the git hooks. --overwrite drops a hook pre-commit left behind;
 # without it prek keeps that hook as .legacy and still runs it.
+# loopctl's commit gate owns pre-commit and runs pre-commit.local after itself.
+# On a rerun, loopctl init refuses to move prek's fresh hook onto an existing
+# pre-commit.local, so move it there first. A hook type prek installs besides
+# pre-commit needs the same move, or it replaces loopctl's hook of that type.
 setup:
     prek install --overwrite
+    mv -f "$(git rev-parse --git-path hooks)/pre-commit" "$(git rev-parse --git-path hooks)/pre-commit.local"
+    loopctl init --yes
 
 # Run pre-commit checks on all files
 pre_commit:

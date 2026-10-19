@@ -20,3 +20,5 @@
 - Added `summary` with `kmctl init`.
 - Added `manifesto` with `kmctl init`.
 - Added `decisions/0014-keep-project-knowledge-in-an-okf-bundle` with `kmctl init`.
+- Added `decisions/0015-loopctl-owns-the-pre-commit-hook-and-chains-prek-behind-it` with `kmctl new decision`.
+- **loopctl owns the commit hook** (`components/devcontainer`, `decisions/0015-loopctl-owns-the-pre-commit-hook-and-chains-prek-behind-it`): Recorded that the image installs a pinned loopctl and that `just setup` chains prek's hook behind loopctl's commit gate as `pre-commit.local`, so the gate survives a container rebuild. Dropped aim from the agent tools, because the Dockerfile no longer installs it.
