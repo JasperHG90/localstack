@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan does not say where the hashicorp/aws provider gets SeaweedFS's address. The obvious copy of the minio provider, a `data \"consul_service\" \"seaweedfs\"` lookup, fails on plan. The applications root runs with the brokered `consul/creds/deploy` token, and its `deploy` ACL policy grants `service` read only on `minio` and `postgres-db`. Consul runs with `default_policy = \"deny\"` and filters catalog results the token cannot read, so the lookup returns an empty list and `service[0]` errors. Fixing that means adding `service \"seaweedfs\" { policy = \"read\" }` in an Ansible playbook and re-running it, a step outside Terraform that neither this plan nor seaweedfs-service lists. The other option is a fixed address, the way `backup_minio` uses `192.168.2.29`. The plan must pick one and, if it picks Consul, include the playbook change and its run in scope.",
+      "anchor": "bootstrap/playbooks/enable_consul_secrets.yml:43",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "The backup key cannot be minted where the plan puts it. The IAM users and keys come from the hashicorp/aws provider in the applications root, but the plan writes the backup job's key to Vault in `deployments/infrastructure/secrets.tf`. The infrastructure root applies first and cannot reference a resource in the applications root. The plan needs one of these: (a) the applications root creates the `backup` user and writes `default/backup-minio/seaweedfs`. Its Vault policy covers `secret/data/default/*`, but the infrastructure-owned backup job would then read a path that a later root writes. (b) The infrastructure root gets its own aws provider against SeaweedFS. That provider depends on a job and an admin secret created in the same root, so a from-scratch apply breaks. (c) The backup job keeps the admin key, the way it holds MinIO's root key today, which drops the read-only requirement. Each choice changes the scope or the contract (\"read-only on the four durable buckets\"), so the plan must decide.",
+      "anchor": "deployments/infrastructure/secrets.tf:360",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "625700e2493efc31aa114409c230da11ce61a98f6de299264bf40079a395a4ed"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-19T18:00:29+00:00"
+}
