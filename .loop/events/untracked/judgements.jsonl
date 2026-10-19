@@ -5,3 +5,4 @@
 {"at": "2026-10-19T17:31:18+00:00", "evidence": "the operator said so", "judgement": "j-20261019T173118+0000-f2537ae7", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "relayed"}
 {"at": "2026-10-19T17:47:45+00:00", "judgement": "j-20261019T151831+0000-8dc900b8", "kind": "judgement-link", "schema_version": "1.0", "ticket": "docs-howto"}
 {"at": "2026-10-19T17:47:48+00:00", "judgement": "j-20261019T151831+0000-8dc900b8", "kind": "judgement-link", "schema_version": "1.0", "ticket": "docs-reference"}
+{"at": "2026-10-19T17:47:51+00:00", "judgement": "j-20261019T151831+0000-8dc900b8", "kind": "judgement-link", "schema_version": "1.0", "ticket": "docs-explanation"}
