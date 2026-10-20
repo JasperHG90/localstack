@@ -20,10 +20,43 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/planner",
+    "hash": "deadbf5e2722260c3b7e38e03b61da7fc1d2a8e94a9a50aac9cf0342df7d399c",
+    "at": "2026-10-20T04:37:32+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "The backup job syncs the four durable buckets from a seaweedfs remote (provider SeaweedFS) to the same gcs minio/<bucket>/ prefixes with the marker flags, using the key at default/backup-minio/seaweedfs.",
+      "fails_when": "a durable bucket is missing, the source is still MinIO, the GCS prefix changes, a marker flag is dropped, or the key is read from another path",
+      "command": "uv run --directory cli pytest tests/test_backup_coverage.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "The s3 Consul tag is on the seaweedfs service and not on minio, the CLI's s3 route resolves to seaweedfs, haproxy's s3.lab route points at SeaweedFS's S3 port while minio.lab stays on MinIO, the dash tile and devcontainer mc alias point at SeaweedFS, and no jobspec outside minio.hcl and prometheus.hcl hardcodes 192.168.2.29:9000.",
+      "fails_when": "any of those still points at MinIO, or a hardcoded MinIO endpoint remains outside those two files",
+      "command": "uv run --directory cli pytest tests/test_s3_cutover.py tests/test_seaweedfs_jobspec.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "Before the apply, a one-way rclone check from each durable bucket's GCS prefix to SeaweedFS is recorded, with --missing-on-dst and --differ lists, and each listed object is named with the app that rewrote or deleted it and a SeaweedFS modtime after that bucket's restore.",
+      "fails_when": "a bucket's check is missing, or any listed object is unexplained",
+      "command": null,
+      "judgment": true
+    },
+    {
+      "id": "r4",
+      "behavior": "The backup job's next run exits 0 against SeaweedFS and rclone check seaweedfs:<b> against its GCS prefix then exits 0 for each durable bucket, s3.lab serves SeaweedFS, MinIO's S3 request rate is zero for an hour after the last applications-root run, the docs under docs/ point readers at SeaweedFS, and .devcontainer/.env.example names the mc alias's key.",
+      "fails_when": "any of those fails, or the evidence is not recorded in the review",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -72,5 +105,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-19T21:02:18+00:00"
+  "at": "2026-10-20T04:37:32+00:00"
 }

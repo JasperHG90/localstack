@@ -1,17 +1,27 @@
 ---
 type: eval
 title: 'Eval: seaweedfs-cutover'
-description: 'Definition of done for seaweedfs-cutover: 0 row(s).'
+description: 'Definition of done for seaweedfs-cutover: 4 row(s).'
 tags:
 - eval
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-19T17:50:32+00:00'
+  at: '2026-10-20T04:37:32+00:00'
 slug: seaweedfs-cutover
-signoff: null
+signoff:
+  signer: delegated:jasperginn@gmail.com/planner
+  hash: deadbf5e2722260c3b7e38e03b61da7fc1d2a8e94a9a50aac9cf0342df7d399c
+  at: '2026-10-20T04:37:32+00:00'
 verified: null
 ---
 
 Rows: rows.json; the fields each row takes: loopctl schema eval-rows.
 
-No rows yet.
+- r1: The backup job syncs the four durable buckets from a seaweedfs remote (provider SeaweedFS) to the same gcs minio/<bucket>/ prefixes with the marker flags, using the key at default/backup-minio/seaweedfs.
+  Fails when: a durable bucket is missing, the source is still MinIO, the GCS prefix changes, a marker flag is dropped, or the key is read from another path
+- r2: The s3 Consul tag is on the seaweedfs service and not on minio, the CLI's s3 route resolves to seaweedfs, haproxy's s3.lab route points at SeaweedFS's S3 port while minio.lab stays on MinIO, the dash tile and devcontainer mc alias point at SeaweedFS, and no jobspec outside minio.hcl and prometheus.hcl hardcodes 192.168.2.29:9000.
+  Fails when: any of those still points at MinIO, or a hardcoded MinIO endpoint remains outside those two files
+- r3 (judgment): Before the apply, a one-way rclone check from each durable bucket's GCS prefix to SeaweedFS is recorded, with --missing-on-dst and --differ lists, and each listed object is named with the app that rewrote or deleted it and a SeaweedFS modtime after that bucket's restore.
+  Fails when: a bucket's check is missing, or any listed object is unexplained
+- r4 (judgment): The backup job's next run exits 0 against SeaweedFS and rclone check seaweedfs:<b> against its GCS prefix then exits 0 for each durable bucket, s3.lab serves SeaweedFS, MinIO's S3 request rate is zero for an hour after the last applications-root run, the docs under docs/ point readers at SeaweedFS, and .devcontainer/.env.example names the mc alias's key.
+  Fails when: any of those fails, or the evidence is not recorded in the review
