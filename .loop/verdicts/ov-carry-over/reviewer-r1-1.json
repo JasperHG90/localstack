@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "Main's ov-save-skill (ADR 0023) writes viking://user/jasper/resources/.map.md on Hermes's first save. fs/ls with show_all_hidden lists it, so after the merge the script's 'nothing else' check fails with 'unexpected top-level entry .map.md' unless the operator guesses --allow .map.md. The how-to only says to pass --allow for 'a name you created on purpose', which an operator who never made .map.md by hand will not read as covering it. Either accept .map.md by default in compare() (it is a known writer now, and the test already treats it as allowed) or name it in step 4 of the how-to.",
+      "anchor": "scripts/ov_carry_over.py:225",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "c6f675d0d32310f0135e8a52fedcc82c6a7835fe620d557a69a61bbf8a86b59d",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T17:01:03+00:00"
+}
