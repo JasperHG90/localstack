@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T08:52:17+00:00'
+  at: '2026-10-20T08:53:29+00:00'
 slug: minio-removal
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike minio-removal/3
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note minio-removal 3`.
+Void run: `set -e` with pipefail stopped the script at the first expected 404 from `nomad job status minio`, and the infrastructure plan was filtered in a way that hid its summary. Superseded by `spike:minio-removal/4`.
 
 ## Files
 
