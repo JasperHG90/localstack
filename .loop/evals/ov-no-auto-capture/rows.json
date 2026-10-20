@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "The openviking_tools provider sends nothing to OpenViking on its own: prefetch returns empty, and sync_turn, on_session_end, on_session_switch and on_memory_write reach no client.",
+      "fails_when": "prefetch returns any text, or any of those hooks makes a request through the client.",
+      "command": "uv run --directory cli pytest tests/test_hermes_openviking_tools.py::test_automatic_hooks_send_nothing -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "Startup recovers and commits no leftover session.",
+      "fails_when": "initialize, with a stale pending-session marker present, makes a commit or any session request.",
+      "command": "uv run --directory cli pytest tests/test_hermes_openviking_tools.py::test_startup_commits_no_pending_session -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "The six viking_* tools keep upstream's schemas and their calls reach OpenViking.",
+      "fails_when": "the tool schemas differ from upstream's, or a viking_search call does not reach the client.",
+      "command": "uv run --directory cli pytest tests/test_hermes_openviking_tools.py::test_tools_pass_through -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "Hermes's config selects memory.provider openviking_tools with no recall block, the image copies the wrapper beside the upstream plugin, and hermes_version is 0.22.2-2.",
+      "fails_when": "the config names another provider or still carries memory.openviking recall settings, the Dockerfile does not copy the wrapper to /opt/hermes/plugins/memory/openviking_tools, or the version pin differs.",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q"
+    },
+    {
+      "id": "r5",
+      "behavior": "SOUL.md no longer tells Hermes to search OpenViking at conversation start or to save memories after replies.",
+      "fails_when": "SOUL.md still has a Session Bootstrap section or an Auto-Capture Protocol section.",
+      "command": "uv run --directory cli pytest tests/test_hermes_openviking_tools.py::test_soul_has_no_automatic_openviking_habits -q"
+    },
+    {
+      "id": "r6",
+      "behavior": "The Claude Code how-to removes the auto-capture memory plugin and points to explicit CLI use, in the how-to skeleton.",
+      "fails_when": "the page still tells readers to install the memory plugin, lacks the uninstall and check steps, or breaks the how-to skeleton.",
+      "command": "uv run --directory cli pytest tests/test_how_to_skeleton.py -q"
+    },
+    {
+      "id": "r7",
+      "behavior": "Live after deploy: a plain Hermes chat turn and /new send no search, session or commit request to OpenViking, while an explicit viking_search still answers.",
+      "fails_when": "the recorded proxy or OpenViking request evidence after deploy shows a search/sessions/commit request from a plain turn or /new, or the explicit search fails.",
+      "judgment": true
+    }
+  ]
+}
