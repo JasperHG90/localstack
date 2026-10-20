@@ -75,6 +75,10 @@
 - Evidence wording (every concept named above with an Evidence line for a loop ticket): an old ticket's plan and any verdicts are under `.loop/` at commit `48f52e2`, not always under `.loop/archive/`. `components/minio`: R12 was dropped, not left a stub.
 - Evidence wording (the same concepts): dropped the claim that `48f52e2` is the last commit before the reset, since three stamp commits follow it.
 
+## 2026-10-20 (hermes-update)
+
+- **Hermes runs hermes-agent v0.22.2** (`components/hermes`, `decisions/0019-hermes-openviking-plugin-built-into-the-image`): the OpenViking memory provider left the base image, so the image now copies the catalog plugin in at build time, pinned by commit, rather than fetching it at first start. `sessions.auto_prune: false` keeps ended sessions as 0.21 did. The staged (commented-out) memex job now names `ollama/deepseek-v4.1-flash`, since Bifrost 2.3.1 refuses the retired `deepseek-v4-flash:0731`; it takes effect only when memex is uncommented and applied.
+
 ## 2026-10-20 (minio-volume-destroy)
 
 - **MinIO's data is deleted** (`components/minio`, `components/host-volumes`, `components/seaweedfs`, `components/container-registry`, `components/memex`, `nodes/orangepi4a`, `nodes/placement`, `summary`): with the operator's approval, `nomad_dynamic_host_volume.minio_data` was removed from `deployments/infrastructure/services.tf` and applied, deleting volume `cb07eebf` and MinIO's last data on orangepi4a. Everything durable was already in SeaweedFS and backed up in GCS. Loki's and Tempo's 30 days from before the cutover, which the operator chose not to migrate, and the frozen copies of the other buckets went with it. Every old MinIO key in Vault (`default/minio/*` and `default/<job>/minio`) was purged with all its versions. Nothing of MinIO remains on the cluster, and only the GCS prefix `minio/` keeps the name. ADR 0018 stays as written. The user doc `reference/monitoring` says the old logs and traces are gone.

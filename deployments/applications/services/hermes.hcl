@@ -3,6 +3,15 @@ job "hermes" {
   type        = "service"
 
   group "hermes" {
+    # A new image takes about 1.5 minutes to pull on radxa, then the `config`
+    # prestart task runs for over a minute before `hermes` starts, so Nomad's
+    # default 5-minute healthy deadline failed the 0.21 and 0.22 deployments
+    # while every task ran fine.
+    update {
+      healthy_deadline  = "10m"
+      progress_deadline = "15m"
+    }
+
     constraint {
       attribute = "$${attr.unique.hostname}"
       value     = "${hermes_hostname}"
@@ -254,6 +263,10 @@ memory:
   memory_char_limit: 2200
   user_char_limit: 1375
   provider: "openviking"
+
+# v0.22 prunes ended sessions idle for 90 days by default; keep them, as 0.21 did.
+sessions:
+  auto_prune: false
 
 terminal:
   backend: "local"

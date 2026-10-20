@@ -161,6 +161,12 @@ expects. Provider `AirHelp-OSP/bifrost` stays at 0.1.1: keys made on 2.0.0
 plan clean after the migration (`spike:bifrost-update/1`, `/4`), and
 bare-string rerank still reaches embark unchanged (`spike:bifrost-update/3`).
 
+2.3.1 also checks a key's `allowed_models = ["*"]` against the provider's
+model catalog. 2.0.0 passed an unlisted name through to Ollama, which still
+served the retired `deepseek-v4-flash:0731`; 2.3.1 refuses it with a 403
+("not allowed for virtual key") for every key. A model name must appear in
+`GET /v1/models` before a client may use it.
+
 ## Invariants and what enforces them
 
 | Must stay true | Enforced by |
