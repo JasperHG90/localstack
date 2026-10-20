@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "slug": "backup-durable-buckets",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/gcs-size/verify.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/gcs-size/verify.sh",
+      "copy": "files/verify.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/gcs-size/compare.py",
+      "copy": "files/compare.py"
+    }
+  ],
+  "where": "here",
+  "head": "6618e03bc48cb490fee935962b7346e40952575b",
+  "fingerprint": "d1abcc95545281d0d1e91e6a7616eab45c192b4572b41b109378c121e91e0217",
+  "started_at": "2026-10-20T04:41:01+00:00",
+  "finished_at": "2026-10-20T04:41:15+00:00",
+  "duration_seconds": 14.143,
+  "timeout_seconds": 600.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

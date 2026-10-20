@@ -1,0 +1,4 @@
+openviking  minio  37137 files   836331631 B,  8583 dir keys | gcs  37137 files   836331631 B,   93 markers | missing 0 differ 0 dirs lost 0
+registry    minio    399 files  5340847012 B,     0 dir keys | gcs    399 files  5340847012 B,  725 markers | missing 0 differ 0 dirs lost 0
+models      minio      0 files           0 B,     0 dir keys | gcs      0 files           0 B,    0 markers | missing 0 differ 0 dirs lost 0
+datalake    minio      0 files           0 B,     0 dir keys | gcs      0 files           0 B,    0 markers | missing 0 differ 0 dirs lost 0
