@@ -1,0 +1,9 @@
+## nomad host volumes named minio_data
+0
+## host directory on orangepi4a
+gone
+## vault: every path under secret/default/ (two levels) naming minio
+minio paths found: 0
+## infrastructure plan
+     15 null_resource.firewall[...] must be replaced
+      1 Plan: 15 to add, 0 to change, 15 to destroy.
