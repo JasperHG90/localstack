@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-workload-identity",
+  "n": 7,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/wi-clean/verify.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/wi-clean/verify.sh",
+      "copy": "files/verify.sh"
+    }
+  ],
+  "where": "here",
+  "head": "71d8f61b0f4f7549200aaeecd6c1b38759f51911",
+  "fingerprint": "1e4cd7551b960a7bc216b205f111cd2ddcf227a075b29537ea63704106e5adc3",
+  "started_at": "2026-10-20T06:29:38+00:00",
+  "finished_at": "2026-10-20T06:29:39+00:00",
+  "duration_seconds": 0.891,
+  "timeout_seconds": 300.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
