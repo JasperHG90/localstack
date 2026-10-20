@@ -27,3 +27,5 @@
 {"at": "2026-10-20T06:14:22+00:00", "dispatched_at": "2026-10-20T06:12:33+00:00", "kind": "round-close", "n": 3, "outcome": "fail", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-10-20T06:14:09+00:00"}}
 {"at": "2026-10-20T06:15:34+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "fixing"}
 {"at": "2026-10-20T06:15:35+00:00", "code": "review-cap", "from": "fixing", "kind": "block", "message": "the review round cap (3) is reached with 1 finding(s) to review again", "notified": false, "schema_version": "1.0"}
+{"at": "2026-10-20T06:15:41+00:00", "by": "delegated:jasperginn@gmail.com/implementer", "edge": "blocked->ready", "grant": "g1", "kind": "override", "reason": "the last open finding is a non-blocking docs line reference, fixed in one line; one round to confirm it", "schema_version": "1.0", "step": "ticket-override"}
+{"at": "2026-10-20T06:15:41+00:00", "kind": "unblock", "schema_version": "1.0"}
