@@ -32,32 +32,24 @@ def test_openviking_plugin_is_copied_in_pinned() -> None:
     assert "version: 2.1.1" in text
 
 
+def test_openviking_tools_wrapper_is_copied_beside_the_plugin() -> None:
+    assert (DOCKERFILE.parent / "openviking_tools" / "__init__.py").is_file()
+    assert re.findall(r"^COPY (.+)$", DOCKERFILE.read_text(), re.M) == [
+        "openviking_tools /opt/hermes/plugins/memory/openviking_tools"
+    ]
+
+
 def test_hermes_version_matches_the_base() -> None:
     pins = re.findall(r'hermes_version\s*=\s*"([^"]+)"', (APPS / "services.tf").read_text())
-    assert pins == ["0.22.2-1"]
+    assert pins == ["0.22.2-2"]
 
 
-def test_config_keeps_openviking_and_sessions() -> None:
+def test_config_selects_openviking_tools_and_keeps_sessions() -> None:
     hcl = (APPS / "services" / "hermes.hcl").read_text()
     memory = re.search(r"^memory:\n((?:  .*\n)+)", hcl, re.M)
-    assert memory and 'provider: "openviking"' in memory.group(1)
+    assert memory
+    assert re.findall(r"^  provider: (.+)$", memory.group(1), re.M) == ['"openviking_tools"']
+    # Recall settings would only mislead: the wrapper never recalls.
+    assert not re.search(r"^  openviking:|recall_", memory.group(1), re.M)
     sessions = re.search(r"^sessions:\n((?:  .*\n)+)", hcl, re.M)
     assert sessions and "auto_prune: false" in sessions.group(1)
-
-
-def test_recall_fits_inside_hermes_prefetch_limit() -> None:
-    # Plugin 2.1.1 gives recall 3s per request and 4s in all; our memory
-    # search takes 3.5-7s, so at the defaults recall always timed out. Hermes
-    # drops a recall still running at 8s (_EXTERNAL_PREFETCH_TIMEOUT_S in
-    # agent/memory_manager.py, not configurable), so a budget at or past 8s
-    # waits for an answer it then throws away.
-    hcl = (APPS / "services" / "hermes.hcl").read_text()
-    block = re.search(r"^  openviking:\n((?:    .*\n)+)", hcl, re.M)
-    assert block, "memory.openviking is missing from the Hermes config"
-    settings = dict(re.findall(r"^    (\w+): (\S+)$", block.group(1), re.M))
-    total = float(settings["recall_timeout_seconds"])
-    request = float(settings["recall_request_timeout_seconds"])
-    assert 7 <= total < 8
-    assert request <= total
-    # Full-content reads after the search would push the total past 8s.
-    assert settings["recall_prefer_abstract"] == "true"

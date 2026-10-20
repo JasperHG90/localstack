@@ -1,0 +1,7 @@
+name: openviking_tools
+version: 0.1.0
+description: "OpenViking tools only: no automatic recall or capture."
+pip_dependencies:
+  - httpx
+requires_env: []
+hooks: []

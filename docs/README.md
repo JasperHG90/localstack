@@ -89,7 +89,7 @@ Each folder also has an index of its own pages:
 **Services**
 
 - [Call OpenViking from the CLI](how-to/call-openviking-from-the-cli.md)
-- [Connect Claude Code to OpenViking](how-to/connect-claude-code-to-openviking.md)
+- [Connect Claude Code to OpenViking on request](how-to/connect-claude-code-to-openviking.md)
 - [Verify an OpenViking deployment](how-to/verify-an-openviking-deployment.md)
 - [Add, remove, or reorder a dash tile](how-to/change-a-dash-tile.md)
 - [Rebuild and deploy the dash images](how-to/rebuild-the-dash-images.md)

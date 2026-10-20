@@ -61,4 +61,4 @@ Measured by writing a config both ways and grepping the result.
 
 - [OpenViking](../reference/openviking.md)
 - [OpenViking identity](../explanation/openviking-identity.md)
-- [How to connect Claude Code to OpenViking](connect-claude-code-to-openviking.md)
+- [How to connect Claude Code to OpenViking on request](connect-claude-code-to-openviking.md)

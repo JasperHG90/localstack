@@ -117,3 +117,16 @@ def test_skeleton_errors_catch_each_departure(page: str, expected_fragment: str)
 
 def test_skeleton_errors_accept_a_conformant_page() -> None:
     assert skeleton_errors(GOOD) == []
+
+
+def test_claude_code_page_removes_the_memory_plugin() -> None:
+    """The plugin recalls and captures on its own; the page now takes it out."""
+    text = (HOW_TO_DIR / "connect-claude-code-to-openviking.md").read_text()
+    steps = [t for level, t in headings(text) if level == 3]
+
+    assert "install.sh" not in text
+    assert "claude plugin install" not in text
+    assert "claude plugin uninstall openviking-memory@openviking" in text
+    assert "claude plugin marketplace remove openviking" in text
+    assert any("Check" in step for step in steps), steps
+    assert "](call-openviking-from-the-cli.md)" in text
