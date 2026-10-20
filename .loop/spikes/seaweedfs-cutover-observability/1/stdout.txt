@@ -1,0 +1,29 @@
+## loki
+Status      = successful
+## tempo
+Status      = successful
+## reading 1
+07:10:05
+loki        seaweedfs       7  minio   13581
+tempo       seaweedfs      86  minio    6502
+## reading 2
+07:12:10
+loki        seaweedfs       7  minio   13581
+tempo       seaweedfs      98  minio    6502
+## loki: log lines in the last 10 minutes, through Grafana
+success
+1866
+## tempo: traces in the last 10 minutes, through Grafana
+5
+## dashboard
+SeaweedFS
+12
+## alert rules
+alert-scrape-job-missing ScrapeJobMissing
+alert-postgres-scrape-down PostgresScrapeDown
+alert-seaweedfs-down SeaweedFSDown
+alert-seaweedfs-disk-error SeaweedFSDiskError
+## prometheus: seaweedfs alert states
+ScrapeJobMissing inactive health=ok
+SeaweedFSDown inactive health=ok
+SeaweedFSDiskError inactive health=ok
