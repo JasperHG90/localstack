@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "bucket readers had s3:ListBucket, which MinIO readers lack",
+      "anchor": "deployments/applications/storage.tf:200",
+      "category": "contract",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the split test checked local names, not the action sets they hold",
+      "anchor": "cli/tests/test_seaweedfs_buckets.py:106",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "terraform-roots.md and deployment-layers.md predated the seaweedfs grant and the aws provider",
+      "anchor": ".okf/architecture/deployment-layers.md:160",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f4",
+      "disposition": "open",
+      "claim": "two more line cites in deployment-layers.md went stale when services.tf grew 10 lines",
+      "anchor": ".okf/architecture/deployment-layers.md:198",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "52d0a0c681b57cb2fe8ac16eed4ea5734d260965a3adc0d6373e965921789ebd",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T06:11:01+00:00"
+}
