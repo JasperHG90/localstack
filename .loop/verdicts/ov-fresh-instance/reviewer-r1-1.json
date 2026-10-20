@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The README cutover produces r7's evidence (repeat step 2 and compare) but has no step that produces r6's or r8's. Nothing tells the operator to check /ready, list openviking-v2, run scripts/ov_identity_probe.py on the CLI token and on Hermes's token, run a lab/jasper search before leo-consumer or reflection writes, call Hermes's viking_search, or force a backup-s3 run and check both GCS prefixes.",
+      "anchor": "deployments/applications/services/openviking/README.md:174",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": ".okf/log.md cites decisions/0020-openviking-starts-over-on-a-v2-store in two entries. That id never exists after the rename, and on main 0020 is a different ADR. The branch also adds three date headings at the end of the log. Both log.md and decisions/index.md append at the same lines as main's ov-no-auto-capture entries, so the patch does not apply cleanly to main.",
+      "anchor": ".okf/log.md:327",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "Two comments are false after this change. oidc.tf says hermes's memory lives in lab with 2920 objects, which is now only true of the old bucket. openviking-database.md says the openviking schema is the one ov.conf.json names, but ov.conf.json now names openviking_v2.",
+      "anchor": "deployments/infrastructure/oidc.tf:140",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "6bcf7c8c12c642cb8250c87ba39fe4134a2ab5a8a2465f395e4ff287ec72936f",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T15:08:22+00:00"
+}
