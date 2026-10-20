@@ -6,6 +6,28 @@ resource "vault_mount" "kvv2" {
   description = "KV Version 2 secret engine mount"
 }
 
+### SeaweedFS admin credentials
+resource "random_password" "seaweedfs_admin_secret_key" {
+  length  = 40
+  special = false
+}
+
+resource "vault_kv_secret_v2" "seaweedfs_admin" {
+  mount = vault_mount.kvv2.path
+  name  = "default/seaweedfs/admin"
+  data_json = jsonencode({
+    access_key = "admin"
+    secret_key = random_password.seaweedfs_admin_secret_key.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Minio credentials
 resource "random_password" "minio_secret_key" {
   length  = 32

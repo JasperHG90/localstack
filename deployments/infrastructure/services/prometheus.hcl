@@ -116,6 +116,10 @@ job "prometheus" {
             static_configs:
               - targets: ["192.168.2.29:9000"]
 
+          - job_name: seaweedfs
+            static_configs:
+              - targets: ["192.168.2.29:9327"]
+
           - job_name: tempo
             static_configs:
               - targets: ["192.168.2.47:3200"]

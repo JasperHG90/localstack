@@ -52,7 +52,8 @@ small enough to fit beside it. The cross-node picture is
 | Job | Ports | Why here |
 |---|---|---|
 | `minio` (5000 MHz, 2560 MB) | 9000 API, 9001 console | Literal `value = "orangepi4a"` in `minio.hcl`, held by the `minio_data` volume. No comment records the first reason. See [MinIO](/components/minio.md). |
-| `ov-dash` (200 MHz, 512 MB, one alloc) | 4182 | `ov_dash_hostname = "orangepi4a"` in `deployments/applications/services.tf`. It would otherwise run next to OpenViking, but radxa had 598 MB free and its stateful neighbors there are pinned by volumes. ov-dash holds nothing on disk, so it moved, at the cost of a LAN hop to 1933 (`ov-dash.hcl` header, commit `30292e2`). See [ov-dash](/components/ov-dash.md). |
+| `seaweedfs` (1000 MHz, 512 MB) | 8333 S3, 9327 metrics | Literal `value = "orangepi4a"` in `seaweedfs.hcl`, held by the `seaweedfs_data` volume beside `minio_data`. Replaces MinIO. See [SeaweedFS](/components/seaweedfs.md). |
+| `ov-dash` (200 MHz, 512 MB, one alloc), **stopped 2026-10-20 until `minio-removal`** | 4182 | `ov_dash_hostname = "orangepi4a"` in `deployments/applications/services.tf`. It would otherwise run next to OpenViking, but radxa had 598 MB free and its stateful neighbors there are pinned by volumes. ov-dash holds nothing on disk, so it moved, at the cost of a LAN hop to 1933 (`ov-dash.hcl` header, commit `30292e2`). See [ov-dash](/components/ov-dash.md). |
 
 The system jobs `node-exporter` and `alloy` run here too.
 
@@ -90,6 +91,13 @@ out by hand, so a move does not follow the lookup:
 
 ## Quirks and traps
 
+- **ov-dash is stopped during the SeaweedFS migration.** SeaweedFS needed
+  its 512 MB, since MinIO keeps 2560 MB until `minio-removal`, which starts
+  ov-dash again (`spike:seaweedfs-service/4`).
+- **The SSH host key changed.** On 2026-10-20, `ssh orangepi@192.168.2.29`
+  failed host key verification. Terraform's firewall provisioner does not
+  check host keys, so it still connects. Confirm the new key before
+  trusting it.
 - **Memory is the limit.** It had 72 MB free before phoenix left
   (`deployments/applications/services.tf`, the comment on `nomad_job.ov_dash`).
   Alloy's 256 MB reservation once could not place here, so this node shipped
