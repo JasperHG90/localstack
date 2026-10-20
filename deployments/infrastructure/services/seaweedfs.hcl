@@ -53,6 +53,16 @@ job "seaweedfs" {
         destination = "local/master.toml"
       }
 
+      ### Workload identity: the OIDC provider, one role and policy per keyless
+      ### job, and `defaultEffect: Deny`, from `local.seaweedfs_iam` in
+      ### services.tf. Only the STS signing key comes from Vault.
+      template {
+        data        = <<-EOH
+        {{ with secret "${sts_secret}" }}{"sts":{"tokenDuration":"1h","maxSessionLength":"12h","issuer":"seaweedfs-sts","signingKey":"{{ .Data.data.signing_key }}"},${iam_members}}{{ end }}
+        EOH
+        destination = "secrets/iam.json"
+      }
+
       service {
         name = "seaweedfs"
         port = "s3"
@@ -77,6 +87,7 @@ job "seaweedfs" {
           "-s3",
           "-s3.port=8333",
           "-s3.config=/secrets/s3.json",
+          "-s3.iam.config=/secrets/iam.json",
           ### Terraform manages users through the embedded IAM API, which
           ### refuses every write while this is true (the default).
           "-s3.iam.readOnly=false",

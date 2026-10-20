@@ -31,7 +31,7 @@ sources:
 MinIO is end of life and its published image no longer downloads, so the
 cluster moves its object storage to SeaweedFS
 ([ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md)). This page covers
-the server and its buckets. Keyless access and the cutover come in later
+the server, its buckets and keyless access. The cutover comes in later
 tickets of the `seaweedfs-migration` epic. Until the cutover MinIO keeps serving every
 consumer and keeps the `s3` Consul tag ([MinIO](/components/minio.md)).
 
@@ -67,6 +67,19 @@ MinIO key, and the backup key to `default/backup-minio/seaweedfs`.
 `cli/tests/test_seaweedfs_buckets.py` pins the bucket set, the derivation and
 the action sets against MinIO's. The live isolation checks are in
 `spike:seaweedfs-buckets/3` and `spike:seaweedfs-buckets/4`.
+
+## Keyless access
+
+The job renders a second config file, `secrets/iam.json`, passed with
+`-s3.iam.config`: Nomad's issuer as an OIDC provider with audience
+`seaweedfs`, one role and policy per entry in `local.seaweedfs_keyless_jobs`
+(`deployments/infrastructure/services.tf`), `defaultEffect: Deny`, and the STS
+signing key from `default/seaweedfs/sts`. Each role is bound to its job by
+`nomad_job_id` and `sub`
+([ADR 0017](/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md)).
+`cli/tests/test_seaweedfs_iam_config.py` renders the file through Terraform
+and checks it. Adding a job means a restart, because the server reads the file
+once at start.
 
 ## Traps
 

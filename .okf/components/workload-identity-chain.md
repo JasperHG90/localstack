@@ -22,6 +22,8 @@ sources:
     resource: deployments/infrastructure/oidc.tf
   - id: minio-jobspec
     resource: deployments/infrastructure/services/minio.hcl
+  - id: seaweedfs-jobspec
+    resource: deployments/infrastructure/services/seaweedfs.hcl
   - id: workload-identity-explanation
     resource: docs/explanation/workload-identity.md
 ---
@@ -137,7 +139,20 @@ discovery document with `aud = minio` (`MINIO_IDENTITY_OPENID_*_NOMAD` in
 `deployments/infrastructure/services/minio.hcl`, claim `nomad_job_id`). loki,
 tempo and registry each carry a `minio` identity block and trade it with
 `AssumeRoleWithWebIdentity` for short-lived keys. memex still reads a static
-MinIO key from KV. Neither verifier touches `jwt-nomad`. The audience
+MinIO key from KV. Neither verifier touches `jwt-nomad`.
+
+SeaweedFS, which replaces MinIO, trusts the same issuer with `aud =
+seaweedfs`, a separate audience so a job's MinIO and SeaweedFS identities
+stay apart during the cutover. It does not use claim mode. Each keyless job
+has its own role, whose trust policy requires that job's `nomad_job_id` and
+`sub`, and the client names the role ARN and a session name in its
+`AssumeRoleWithWebIdentity` call
+([ADR 0017](/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md)). The
+roles come from `local.seaweedfs_keyless_jobs` in
+`deployments/infrastructure/services.tf`, rendered into the `seaweedfs` job's
+IAM config with the STS signing key from `default/seaweedfs/sts`. SeaweedFS
+parses RSA and EC keys only: if Nomad ever signs with an EdDSA key, every
+exchange fails. The audience
 registry is in the explanation page.
 
 ## History

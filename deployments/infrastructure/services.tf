@@ -533,10 +533,69 @@ resource "nomad_job" "minio" {
 }
 
 ### SeaweedFS
+###
+### Keyless jobs log in with their Nomad workload identity (audience
+### `seaweedfs`) through SeaweedFS's STS, one role per job. Each role's trust
+### policy pins the job by `nomad_job_id` and `sub`, so a job cannot assume
+### another's role (spike:seaweedfs-workload-identity/2). Not MinIO's claim
+### mode: SeaweedFS's `policyClaim` splits the claim on commas, and a job named
+### `evil,tempo` got tempo's policy. Key: job id. Value: its one bucket.
+locals {
+  seaweedfs_keyless_jobs = {
+    tempo    = "tempo"
+    loki     = "loki"
+    registry = "registry"
+  }
+
+  seaweedfs_iam = {
+    policy = { defaultEffect = "Deny" }
+    providers = [{
+      name    = "nomad"
+      type    = "oidc"
+      enabled = true
+      config  = { issuer = "https://nomad.lab.orangecluster.nl", clientId = "seaweedfs" }
+    }]
+    policies = [for job, bucket in local.seaweedfs_keyless_jobs : {
+      name = job
+      document = {
+        Version = "2012-10-17"
+        Statement = [{
+          Effect   = "Allow"
+          Action   = ["s3:*"]
+          Resource = ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
+        }]
+      }
+    }]
+    roles = [for job, bucket in local.seaweedfs_keyless_jobs : {
+      roleName = job
+      roleArn  = "arn:aws:iam::role/${job}"
+      trustPolicy = {
+        Version = "2012-10-17"
+        Statement = [{
+          Effect    = "Allow"
+          Principal = { Federated = "nomad" }
+          Action    = "sts:AssumeRoleWithWebIdentity"
+          Condition = {
+            StringEquals = { "oidc:nomad_job_id" = job }
+            StringLike   = { "oidc:sub" = "global:default:${job}:*" }
+          }
+        }]
+      }
+      attachedPolicies = [job]
+    }]
+  }
+}
+
 resource "nomad_job" "seaweedfs" {
   jobspec = templatefile(
     "${path.module}/services/seaweedfs.hcl",
-    { seaweedfs_secret = vault_kv_secret_v2.seaweedfs_admin.path }
+    {
+      seaweedfs_secret = vault_kv_secret_v2.seaweedfs_admin.path
+      sts_secret       = vault_kv_secret_v2.seaweedfs_sts.path
+      # The JSON object's members without its braces: the job wraps them
+      # around the `sts` block it renders from Vault.
+      iam_members = trimsuffix(trimprefix(jsonencode(local.seaweedfs_iam), "{"), "}")
+    }
   )
 }
 

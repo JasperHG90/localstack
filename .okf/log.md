@@ -75,6 +75,10 @@
 - Evidence wording (every concept named above with an Evidence line for a loop ticket): an old ticket's plan and any verdicts are under `.loop/` at commit `48f52e2`, not always under `.loop/archive/`. `components/minio`: R12 was dropped, not left a stub.
 - Evidence wording (the same concepts): dropped the claim that `48f52e2` is the last commit before the reset, since three stamp commits follow it.
 
+## 2026-10-20 (seaweedfs-workload-identity)
+
+- **SeaweedFS takes workload identities** (`components/seaweedfs`, `components/workload-identity-chain`, `decisions/0017-seaweedfs-keyless-roles-bound-per-job`): tempo, loki and registry each get a SeaweedFS role bound to their own job id and sub, with audience `seaweedfs`. Claim mode is ruled out because SeaweedFS splits the claim on commas. Proven live with throwaway probe jobs, which were then purged.
+
 ## 2026-10-19 (seaweedfs-service)
 
 - **SeaweedFS stands beside MinIO** (`components/seaweedfs`, `decisions/0016-seaweedfs-replaces-minio`): MinIO's pinned image no longer downloads, so the cluster's S3 store moves to SeaweedFS. This change runs the server only, with the flags its spikes proved, and records why SeaweedFS was chosen over Garage and over building MinIO from source.
