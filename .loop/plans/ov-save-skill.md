@@ -109,7 +109,14 @@ its schema to `get_tool_schemas()` and routes it in `handle_tool_call`.
 The upstream six stay as they are. It sends through the plugin's own
 client, so the call takes the same path and token as the other tools (the
 loopback `ov-auth-proxy`). The skill uses it with `create` for the seed
-and `append` for a new root. The static block the wrapper returns from
+and `append` for a new root.
+
+The wrapper also adds `create_parent: true` to every `viking_add_resource`
+call that passes `parent`. OpenViking 0.4.17.1 refuses a save whose parent
+folder does not exist ("Parent URI does not exist", returned as a bare 404)
+unless the request sets that flag, and plugin 2.1.1 never sends it, so
+without this the first save into any new folder fails
+(spike:ov-save-skill/11). The static block the wrapper returns from
 `system_prompt_block` lists seven tools.
 
 The wrapper ships in the image, so `hermes_version` in
@@ -135,8 +142,10 @@ the skill and lists `viking_write`. The wrapper's test file from
 cases for `viking_write`: it is in `get_tool_schemas()` with the three
 modes; a call sends `POST /api/v1/content/write` with `uri`, `content` and
 `mode` to a stand-in client and returns its result; an unknown mode or a
-missing `uri` returns a tool error and sends nothing; the upstream six
-still pass through. All run under `uv run --directory cli pytest`.
+missing `uri` returns a tool error and sends nothing; a
+`viking_add_resource` call with `parent` reaches the client with
+`create_parent: true`, and one without `parent` does not; the upstream six
+still pass through otherwise. All run under `uv run --directory cli pytest`.
 
 **Docs and knowledge.**
 `new:docs/how-to/save-something-to-openviking-through-hermes.md` on the
@@ -225,3 +234,9 @@ config keys. ADR 0019's image section gains a note.
   After saving, those runs checked the result with curl through `terminal`,
   so the skill says to trust the URI `viking_add_resource` returns and not
   to verify it by hand.
+- Saving into a folder that does not exist yet (plan-review round 1,
+  finding p1). Settled by spike:ov-save-skill/11: on v0.4.17.1-9 with a
+  lab/jasper USER token, a save with `parent=` a missing nested folder
+  failed (HTTP 404) without `create_parent`, and with `create_parent: true`
+  returned 200, created both folder levels and the file was findable; the
+  flag is harmless when the folder exists. The wrapper sends it.
