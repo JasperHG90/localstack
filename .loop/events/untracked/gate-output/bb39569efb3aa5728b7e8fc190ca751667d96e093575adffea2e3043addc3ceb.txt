@@ -1,0 +1,42 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Failed
+- hook id: end-of-file-fixer
+- exit code: 1
+- files were modified by this hook
+
+  Fixing .agents/skills/audit/evals/sample-findings.json
+  Fixing opencode.json
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Failed
+- hook id: terraform-validate
+- exit code: 1
+
+  ==> terraform validate deployments/infrastructure
+
+  Warning: Deprecated Resource
+
+    with data.vault_kv_secret_v2.bifrost_admin,
+    on secrets.tf line 156, in data "vault_kv_secret_v2" "bifrost_admin":
+   156: data "vault_kv_secret_v2" "bifrost_admin" {
+
+  Deprecated. Please use new Ephemeral KVV2 Secret resource
+  `vault_kv_secret_v2` instead
+  Success! The configuration is valid, but there were some validation warnings
+  as shown above.
+
+  ==> terraform validate deployments/applications
+
+  Error: registry.terraform.io/hashicorp/aws: there is no package for registry.terraform.io/hashicorp/aws 6.69.1 cached in .terraform/providers
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: Recipe `pre_commit` failed on line 36 with exit code 1

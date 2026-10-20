@@ -1,0 +1,270 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.9, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/jasperginn/Documents/code_projects/localstack/cli
+configfile: pyproject.toml
+testpaths: tests
+plugins: syrupy-5.5.3, asyncio-1.4.0, anyio-4.14.2, textual-snapshot-1.0.0, respx-0.23.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 743 items / 21 deselected / 722 selected
+
+tests/api/test_grants.py ............                                    [  1%]
+tests/api/test_haproxy.py ............                                   [  3%]
+tests/api/test_secrets.py ........                                       [  4%]
+tests/api/test_services.py ........................                      [  7%]
+tests/api/test_status.py .....                                           [  8%]
+tests/api/test_vault_reads.py .........                                  [  9%]
+tests/auth/test_broker.py ...................                            [ 12%]
+tests/auth/test_session.py ..........................                    [ 15%]
+tests/auth/test_vault.py ..............................                  [ 20%]
+tests/auth/test_vault_token_file.py ...............                      [ 22%]
+tests/commands/test_auth_commands.py ................................... [ 27%]
+........                                                                 [ 28%]
+tests/commands/test_breakglass.py .....................                  [ 31%]
+tests/commands/test_breakglass_probes.py ..........                      [ 32%]
+tests/commands/test_breakglass_runbook_facts.py ............             [ 34%]
+tests/commands/test_deps.py ..............                               [ 36%]
+tests/commands/test_monitor_command.py .....                             [ 36%]
+tests/commands/test_read_commands.py ................................... [ 41%]
+.                                                                        [ 41%]
+tests/commands/test_token_command.py ........                            [ 42%]
+tests/test_api_consul.py ..........                                      [ 44%]
+tests/test_api_nomad.py ..............                                   [ 46%]
+tests/test_api_vault.py .....                                            [ 46%]
+tests/test_backup_coverage.py ..........                                 [ 48%]
+tests/test_bifrost_version.py ...                                        [ 48%]
+tests/test_branding.py ...........                                       [ 50%]
+tests/test_config.py ......                                              [ 50%]
+tests/test_devcontainer_path.py ...                                      [ 51%]
+tests/test_devcontainer_volumes.py .....                                 [ 52%]
+tests/test_docs_index.py ..                                              [ 52%]
+tests/test_health_rules.py .........................                     [ 55%]
+tests/test_hermes_openviking_tools.py ............................       [ 59%]
+tests/test_hermes_save_skill.py ............                             [ 61%]
+tests/test_hermes_version.py .......                                     [ 62%]
+tests/test_how_to_skeleton.py .......................................... [ 68%]
+....................                                                     [ 70%]
+tests/test_install.py ...........                                        [ 72%]
+tests/test_lazy.py .......                                               [ 73%]
+tests/test_main.py ......                                                [ 74%]
+tests/test_monitor_guardrails.py .........                               [ 75%]
+tests/test_monitor_tui.py ....................                           [ 78%]
+tests/test_no_minio.py ..                                                [ 78%]
+tests/test_observability_s3_clients.py ........                          [ 79%]
+tests/test_ov_carry_over.py FFFFFFF........                              [ 81%]
+tests/test_ov_fresh_instance.py .....                                    [ 82%]
+tests/test_platforms.py ..........                                       [ 83%]
+tests/test_read_guardrails.py ........                                   [ 84%]
+tests/test_registry_s3.py ...                                            [ 85%]
+tests/test_restore_s3.py .........                                       [ 86%]
+tests/test_s3_cutover.py .....                                           [ 87%]
+tests/test_seaweedfs_buckets.py ..........                               [ 88%]
+tests/test_seaweedfs_iam_config.py ...........                           [ 90%]
+tests/test_seaweedfs_jobspec.py .............                            [ 91%]
+tests/test_seed_worktree.py ......                                       [ 92%]
+tests/test_shims.py ....................                                 [ 95%]
+tests/test_status.py ..............                                      [ 97%]
+tests/test_versions.py ..................                                [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_job_copies_only_the_four_trees ______________________
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_copies_only_the_four_0')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_copies_only_the_four_0/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+
+    def test_job_copies_only_the_four_trees(tmp_path: Path, s3: Path, job_script: str) -> None:
+        assert 'trees="blogs clips leo blog-scraper"' in job_script, (
+            "blogs must copy before blog-scraper"
+        )
+        writes = [
+            line for line in job_script.splitlines() if re.match(r'\s*rclone copy .* "\$new', line)
+        ]
+        assert len(writes) == 2
+        for line in writes:
+            assert "--ignore-existing" in line, f"a copy into the new bucket overwrites: {line}"
+        first = [line for line in writes if '"$old/$t/"' in line]
+        assert first and "--create-empty-src-dirs --s3-directory-markers" in first[0]
+    
+        widened = job_script.replace(
+            'trees="blogs clips leo blog-scraper"', 'trees="blogs clips leo blog-scraper projects"'
+        )
+        refused = run_job(tmp_path, s3, widened)
+        assert refused.returncode == 5, refused.stdout + refused.stderr
+        assert not new(s3).exists(), "the job copied before refusing a tree"
+    
+        done = run_job(tmp_path, s3, job_script)
+>       assert done.returncode == 0, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 0
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...the_four_0/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:209: AssertionError
+________________ test_blog_scraper_sidecars_are_rewritten_once _________________
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_blog_scraper_sidecars_are0')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_blog_scraper_sidecars_are0/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+
+    def test_blog_scraper_sidecars_are_rewritten_once(
+        tmp_path: Path, s3: Path, job_script: str
+    ) -> None:
+        regenerated = new(s3) / "blogs" / "uber" / ".overview.md"
+        regenerated.parent.mkdir(parents=True)
+        regenerated.write_text("regenerated by the new instance\n")
+    
+        done = run_job(tmp_path, s3, job_script)
+>       assert done.returncode == 0, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 0
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...ecars_are0/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:231: AssertionError
+________ test_job_checks_fail_on_each_defect[sidecars were regenerated] ________
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d0')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d0/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+defect = 'sidecars were regenerated'
+
+    @pytest.mark.parametrize("defect", DEFECTS)
+    def test_job_checks_fail_on_each_defect(
+        tmp_path: Path, s3: Path, job_script: str, defect: str
+    ) -> None:
+        failures = [code for code, _, _ in DEFECTS.values() if code]
+        assert len(set(failures)) == len(failures), "two defects share an exit code"
+        code, env, seeded = DEFECTS[defect]
+        for key, body in seeded:
+            path = new(s3) / key
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+        done = run_job(tmp_path, s3, job_script, **env)
+>       assert done.returncode == code, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 0
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...on_each_d0/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:282: AssertionError
+_____ test_job_checks_fail_on_each_defect[a file differs from the old one] _____
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d1')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d1/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+defect = 'a file differs from the old one'
+
+    @pytest.mark.parametrize("defect", DEFECTS)
+    def test_job_checks_fail_on_each_defect(
+        tmp_path: Path, s3: Path, job_script: str, defect: str
+    ) -> None:
+        failures = [code for code, _, _ in DEFECTS.values() if code]
+        assert len(set(failures)) == len(failures), "two defects share an exit code"
+        code, env, seeded = DEFECTS[defect]
+        for key, body in seeded:
+            path = new(s3) / key
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+        done = run_job(tmp_path, s3, job_script, **env)
+>       assert done.returncode == code, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 2
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...on_each_d1/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:282: AssertionError
+__________ test_job_checks_fail_on_each_defect[a sidecar is missing] ___________
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d2')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d2/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+defect = 'a sidecar is missing'
+
+    @pytest.mark.parametrize("defect", DEFECTS)
+    def test_job_checks_fail_on_each_defect(
+        tmp_path: Path, s3: Path, job_script: str, defect: str
+    ) -> None:
+        failures = [code for code, _, _ in DEFECTS.values() if code]
+        assert len(set(failures)) == len(failures), "two defects share an exit code"
+        code, env, seeded = DEFECTS[defect]
+        for key, body in seeded:
+            path = new(s3) / key
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+        done = run_job(tmp_path, s3, job_script, **env)
+>       assert done.returncode == code, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 6
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...on_each_d2/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:282: AssertionError
+_______ test_job_checks_fail_on_each_defect[blogs/ names blog-scraper/] ________
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d3')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d3/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+defect = 'blogs/ names blog-scraper/'
+
+    @pytest.mark.parametrize("defect", DEFECTS)
+    def test_job_checks_fail_on_each_defect(
+        tmp_path: Path, s3: Path, job_script: str, defect: str
+    ) -> None:
+        failures = [code for code, _, _ in DEFECTS.values() if code]
+        assert len(set(failures)) == len(failures), "two defects share an exit code"
+        code, env, seeded = DEFECTS[defect]
+        for key, body in seeded:
+            path = new(s3) / key
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+        done = run_job(tmp_path, s3, job_script, **env)
+>       assert done.returncode == code, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 7
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...on_each_d3/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:282: AssertionError
+______ test_job_checks_fail_on_each_defect[an empty directory is missing] ______
+
+tmp_path = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d4')
+s3 = PosixPath('/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/test_job_checks_fail_on_each_d4/s3')
+job_script = 'set -u\nconf="--config /secrets/rclone.conf"\nold="seaweedfs:openviking/lab/user/jasper/resources"\nnew="seaweedfs:op...n    echo "directories from $t missing under $to:"\n    echo "$missing"\n    exit 3\n  fi\ndone\necho "carried $trees"'
+defect = 'an empty directory is missing'
+
+    @pytest.mark.parametrize("defect", DEFECTS)
+    def test_job_checks_fail_on_each_defect(
+        tmp_path: Path, s3: Path, job_script: str, defect: str
+    ) -> None:
+        failures = [code for code, _, _ in DEFECTS.values() if code]
+        assert len(set(failures)) == len(failures), "two defects share an exit code"
+        code, env, seeded = DEFECTS[defect]
+        for key, body in seeded:
+            path = new(s3) / key
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+        done = run_job(tmp_path, s3, job_script, **env)
+>       assert done.returncode == code, done.stdout + done.stderr
+E       AssertionError: sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f
+E         
+E       assert 8 == 3
+E        +  where 8 = CompletedProcess(args=['sh', '/private/var/folders/_v/xdxnjmyn48707h2l3mswcwm00000gp/T/pytest-of-jasperginn/pytest-0/t...on_each_d4/job.sh'], returncode=8, stdout='', stderr='sed: 1: "/var/folders/_v/xdxnjmy ...": invalid command code f\n').returncode
+
+tests/test_ov_carry_over.py:282: AssertionError
+=============================== warnings summary ===============================
+tests/commands/test_auth_commands.py: 15 warnings
+  /Users/jasperginn/.local/share/uv/python/cpython-3.12-macos-aarch64-none/lib/python3.12/getpass.py:62: GetPassWarning: Can not control echo on the terminal.
+    passwd = fallback_getpass(prompt, stream)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+7 snapshots passed.
+=========================== short test summary info ============================
+FAILED tests/test_ov_carry_over.py::test_job_copies_only_the_four_trees - Ass...
+FAILED tests/test_ov_carry_over.py::test_blog_scraper_sidecars_are_rewritten_once
+FAILED tests/test_ov_carry_over.py::test_job_checks_fail_on_each_defect[sidecars were regenerated]
+FAILED tests/test_ov_carry_over.py::test_job_checks_fail_on_each_defect[a file differs from the old one]
+FAILED tests/test_ov_carry_over.py::test_job_checks_fail_on_each_defect[a sidecar is missing]
+FAILED tests/test_ov_carry_over.py::test_job_checks_fail_on_each_defect[blogs/ names blog-scraper/]
+FAILED tests/test_ov_carry_over.py::test_job_checks_fail_on_each_defect[an empty directory is missing]
+==== 7 failed, 715 passed, 21 deselected, 15 warnings in 116.00s (0:01:55) =====
