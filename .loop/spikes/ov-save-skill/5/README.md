@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:50:07+00:00'
+  at: '2026-10-20T14:50:53+00:00'
 slug: ov-save-skill
 n: 5
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-save-skill/5
@@ -24,7 +24,8 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-save-skill 5`.
+Harness was wrong again, so this run does not answer risk 3. The stub's `/health` had no `version` and it had no `/api/v1/system/status`. The plugin's health check rejected it, so every `viking_*` call returned "OpenViking server not connected". The model then spent its 12-iteration cap debugging the plugin.
+What it did show (pointer line in SOUL.md, live anthropic.com article URL): in 8 of 8 fresh sessions the first tool call was `skill_view("save-to-openviking")`, and the second was `viking_read` of `.map.md`. Superseded by the next run.
 
 ## Files
 
