@@ -5,3 +5,4 @@
 {"at": "2026-10-20T14:50:07+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-skillpick/spike_skillpick.sh", "exit": 1, "kind": "spike", "n": 5, "schema_version": "1.0"}
 {"at": "2026-10-20T14:54:52+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-skillpick/spike_skillpick.sh", "exit": 1, "kind": "spike", "n": 6, "schema_version": "1.0"}
 {"at": "2026-10-20T14:58:15+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-voice/spike3.sh", "exit": 11, "kind": "spike", "n": 7, "schema_version": "1.0"}
+{"at": "2026-10-20T15:04:13+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-voice2/spike.sh", "exit": 1, "kind": "spike", "n": 8, "schema_version": "1.0"}
