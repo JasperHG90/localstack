@@ -1,0 +1,87 @@
+== instance A: bucket ovc-a, schema ovc_a
+== ov up (ovc-a/ovc_a)
+GET /health null -> HTTP 200 {"status":"ok","healthy":true,"version":"v0.4.17.1","auth_mode":"oidc","account_id":"lab","user_id":"jasper","role":"user"}
+health: 200
+POST /api/v1/content/write {"uri": "viking://user/jasper/resources/carry/astronomy/comet-tails.md", "content": "# Why comet tails point away from the sun\n\nSolar wind and radiation press -> HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/carry/astronomy/comet-tails.md","root_uri":"viking://user/jasper/resources/carry/astronomy","context_type":"resource","mode":"create","written_bytes":105,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+POST /api/v1/content/write {"uri": "viking://user/jasper/resources/carry/astronomy/red-dwarfs.md", "content": "# Red dwarf stars live for trillions of years\n\nSlow fusion in small convec -> HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/carry/astronomy/red-dwarfs.md","root_uri":"viking://user/jasper/resources/carry/astronomy","context_type":"resource","mode":"create","written_bytes":108,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+POST /api/v1/content/write {"uri": "viking://user/jasper/resources/carry/cooking/sourdough-starter.md", "content": "# Keeping a sourdough starter alive\n\nFeed flour and water daily; lact -> HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/carry/cooking/sourdough-starter.md","root_uri":"viking://user/jasper/resources/carry/cooking","context_type":"resource","mode":"create","written_bytes":102,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+POST /api/v1/content/write {"uri": "viking://user/jasper/resources/carry/cooking/notes/knife-sharpening.md", "content": "# Sharpening a chef knife on whetstones\n\nHold a fifteen degree a -> HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/carry/cooking/notes/knife-sharpening.md","root_uri":"viking://user/jasper/resources/carry/cooking/notes","context_type":"resource","mode":"create","written_bytes":101,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+POST /api/v1/content/write {"uri": "viking://user/jasper/resources/carry/gardening-tomato-blight.md", "content": "# Tomato blight prevention in wet summers\n\nMulch, prune lower leaves an -> HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/carry/gardening-tomato-blight.md","root_uri":"viking://user/jasper/resources/carry","context_type":"resource","mode":"create","written_bytes":98,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+GET /api/v1/fs/ls {"uri": "viking://user/jasper/resources/carry", "recursive": true, "show_all_hidden": true} -> HTTP 200 {"status":"ok","result":[{"uri":"viking://user/jasper/resources/carry/astronomy","size":0,"isDir":true,"modTime":"2026-10-20T14:32:15.000Z","rel_path":"astronomy","abstract":"Summary of the content."},{"uri":"viking://user/jasper/resources/carry/astronomy/.abstract.md","size":263,"isDir":false,"modTime":"2026-10-20T14:31:54.000Z","rel_path":"astronomy/.abstract.md","abstract":""},{"uri":"viking://user/jasper/resources/carry/astronomy/.overview.md","size":498,"isDir":false,"modTime":"2026-10-20T14:31:54.000Z","rel_path":"astronomy/.overview.md","abstract":""},{"uri":"viking://user/jasper/resources/carry/astronomy/comet-tails.md","size":105,"isDir":false,"modTime":"2026-10-20T14:31:54.000Z","rel_path":"astronomy/comet-tails.md","abstract":""},{"uri":"viking://user/jasper/resources/carry/astronomy/red-dwarfs.md","size":108,"isDir":false,"modTime":"2026-10-20T14:31:54.000Z","rel_path":"astronomy/red-dwarfs.md","abstract":""},{"uri":"viking://user/jasper/resources/carry/cooking","size":0,"isDir":true,"modTime":"2026-10-20T14:32:15.000Z","rel_path":"cooking","abstract":"Summary of the content."},{"uri":"viking://user/jasper/resources/carry/cooking/notes","size":0,"isDir":true,"modTime":"2026-10-20T14:32:15.000Z","rel_path":"cooking/notes","abstract":"Summary of the content."},{"uri":"viking://user/jasper/resources/carry/cooking/notes/.abstract.md","size":267,"isDir":false,"modTime":"2026-10-20T14:31:55.000Z","rel_path":"cooking/notes/.abstract.md","abstract":""},{"uri":"viking://us
+PASS A wrote the tree
+-- A vector rows for the tree: 13
+/user/jasper/resources/carry|0
+/user/jasper/resources/carry|1
+/user/jasper/resources/carry/astronomy|0
+/user/jasper/resources/carry/astronomy|1
+/user/jasper/resources/carry/astronomy/comet-tails.md|2
+/user/jasper/resources/carry/astronomy/red-dwarfs.md|2
+/user/jasper/resources/carry/cooking|0
+/user/jasper/resources/carry/cooking|1
+/user/jasper/resources/carry/cooking/notes|0
+/user/jasper/resources/carry/cooking/notes|1
+/user/jasper/resources/carry/cooking/notes/knife-sharpening.md|2
+/user/jasper/resources/carry/cooking/sourdough-starter.md|2
+/user/jasper/resources/carry/gardening-tomato-blight.md|2
+-- A chat calls so far: {"chat gemini/gemini-3.5-flash-lite": 17, "embeddings embark/embedding": 39}
+== instance B: fresh bucket ovc-b, empty schema ovc_b, fresh volume
+== ov up (ovc-b/ovc_b)
+-- B rows for the tree before copy: 0
+-- B keys under lab/ before copy:
+0 directories, 0 files
+== copy lab/user/jasper/resources/carry/ key for key from ovc-a to ovc-b (B running)
+COPIED lab/user/jasper/resources/carry/ 0
+COPIED lab/user/jasper/resources/carry/.abstract.md 253
+COPIED lab/user/jasper/resources/carry/.overview.md 488
+COPIED lab/user/jasper/resources/carry/astronomy/ 0
+COPIED lab/user/jasper/resources/carry/astronomy/.abstract.md 263
+COPIED lab/user/jasper/resources/carry/astronomy/.overview.md 498
+COPIED lab/user/jasper/resources/carry/astronomy/comet-tails.md 105
+COPIED lab/user/jasper/resources/carry/astronomy/red-dwarfs.md 108
+COPIED lab/user/jasper/resources/carry/cooking/ 0
+COPIED lab/user/jasper/resources/carry/cooking/.abstract.md 262
+COPIED lab/user/jasper/resources/carry/cooking/.overview.md 497
+COPIED lab/user/jasper/resources/carry/cooking/notes/ 0
+COPIED lab/user/jasper/resources/carry/cooking/notes/.abstract.md 267
+COPIED lab/user/jasper/resources/carry/cooking/notes/.overview.md 502
+COPIED lab/user/jasper/resources/carry/cooking/notes/knife-sharpening.md 101
+COPIED lab/user/jasper/resources/carry/cooking/sourdough-starter.md 102
+COPIED lab/user/jasper/resources/carry/gardening-tomato-blight.md 98
+src 17 keys (4 dir markers, 4 .abstract.md, 4 .overview.md); dst has 17
+PASS copy exact, with .overview.md sidecars
+-- stub counts before reindex: {"chat gemini/gemini-3.5-flash-lite": 17, "embeddings embark/embedding": 53}
+POST /api/v1/content/reindex {"uri": "viking://user/jasper/resources/carry", "mode": "vectors_only", "wait": true} -> HTTP 200 {"status":"ok","result":{"status":"completed","uri":"viking://user/jasper/resources/carry","object_type":"resource","mode":"vectors_only","scanned_records":9,"rebuilt_records":13,"deleted_records":0,"would_delete_records":0,"unsupported_records":0,"failed_records":0,"duration_ms":416,"warnings":[]},"error":null,"telemetry":null,"profile":null}
+RESULT {"status": "completed", "uri": "viking://user/jasper/resources/carry", "object_type": "resource", "mode": "vectors_only", "scanned_records": 9, "rebuilt_records": 13, "deleted_records": 0, "would_delete_records": 0, "unsupported_records": 0, "failed_records": 0, "duration_ms": 416, "warnings": []}
+-- stub counts after reindex:  {"chat gemini/gemini-3.5-flash-lite": 17, "embeddings embark/embedding": 66}
+PASS reindex HTTP 200 with zero failed records
+PASS zero chat (VLM/LLM) calls during reindex (saw 0)
+-- B vector rows for the tree: 13
+/user/jasper/resources/carry|0
+/user/jasper/resources/carry|1
+/user/jasper/resources/carry/astronomy|0
+/user/jasper/resources/carry/astronomy|1
+/user/jasper/resources/carry/astronomy/comet-tails.md|2
+/user/jasper/resources/carry/astronomy/red-dwarfs.md|2
+/user/jasper/resources/carry/cooking|0
+/user/jasper/resources/carry/cooking|1
+/user/jasper/resources/carry/cooking/notes|0
+/user/jasper/resources/carry/cooking/notes|1
+/user/jasper/resources/carry/cooking/notes/knife-sharpening.md|2
+/user/jasper/resources/carry/cooking/sourdough-starter.md|2
+/user/jasper/resources/carry/gardening-tomato-blight.md|2
+-- rows diff A vs B (< only in A, > only in B):
+PASS B indexed every URI/level A had (13 of 13)
+POST /api/v1/search/find {"query": "Why comet tails point away from the sun", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/carry/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/astronomy/comet-tails.md","level":2,"score":0.5,"abstract":"# Why comet tails point away from the sun\n\nSolar wind and radiation pressure push dust and ions outward.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/gardening-tomato-blight.md","level":2,"score":0.5,"abstract":"# Tomato blight prevention in wet summers\n\nMulch, prune lower leaves and water at the base early.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/astronomy/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]}],"skills":[],"total":5}}
+PASS find Why comet tails point away from the sun -> viking://user/jasper/resources/carry/astronomy/comet-tails.md
+POST /api/v1/search/find {"query": "Red dwarf stars live for trillions of years", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/carry/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/astronomy/red-dwarfs.md","level":2,"score":0.5,"abstract":"# Red dwarf stars live for trillions of years\n\nSlow fusion in small convective stars burns hydrogen evenly.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/gardening-tomato-blight.md","level":2,"score":0.5,"abstract":"# Tomato blight prevention in wet summers\n\nMulch, prune lower leaves and water at the base early.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/astronomy/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]}],"skills":[],"total":5}}
+PASS find Red dwarf stars live for trillions of years -> viking://user/jasper/resources/carry/astronomy/red-dwarfs.md
+POST /api/v1/search/find {"query": "Keeping a sourdough starter alive", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/sourdough-starter.md","level":2,"score":0.5,"abstract":"# Keeping a sourdough starter alive\n\nFeed flour and water daily; lactobacilli and wild yeast ferment.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/notes/knife-sharpening.md","level":2,"score":0.5,"abstract":"# Sharpening a chef knife on whetstones\n\nHold a fifteen degree angle and raise a burr before honing.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/.overview.md","level":1,"score":0.5,"abstract":"Summary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Markdown link entry using placeholder display title viking input sample file summaries subdirectory summaries provided","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/.overview.md","level":1,"score":0.5,"abstract":"Summary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Markdown link entry using placeholder display title viking input sample file summaries subdirectory summaries provided","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/gardening-tomato-blight.md","level":2,"score":0.5,"abstract":"# Tomato blight p
+PASS find Keeping a sourdough starter alive -> viking://user/jasper/resources/carry/cooking/sourdough-starter.md
+POST /api/v1/search/find {"query": "Sharpening a chef knife on whetstones", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/sourdough-starter.md","level":2,"score":0.5,"abstract":"# Keeping a sourdough starter alive\n\nFeed flour and water daily; lactobacilli and wild yeast ferment.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/notes/knife-sharpening.md","level":2,"score":0.5,"abstract":"# Sharpening a chef knife on whetstones\n\nHold a fifteen degree angle and raise a burr before honing.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/.overview.md","level":1,"score":0.5,"abstract":"Summary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Markdown link entry using placeholder display title viking input sample file summaries subdirectory summaries provided","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/.overview.md","level":1,"score":0.5,"abstract":"Summary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Markdown link entry using placeholder display title viking input sample file summaries subdirectory summaries provided","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/gardening-tomato-blight.md","level":2,"score":0.5,"abstract":"# Tomato blight p
+PASS find Sharpening a chef knife on whetstones -> viking://user/jasper/resources/carry/cooking/notes/knife-sharpening.md
+POST /api/v1/search/find {"query": "Tomato blight prevention in wet summers", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/carry/gardening-tomato-blight.md","level":2,"score":0.5,"abstract":"# Tomato blight prevention in wet summers\n\nMulch, prune lower leaves and water at the base early.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/astronomy/red-dwarfs.md","level":2,"score":0.5,"abstract":"# Red dwarf stars live for trillions of years\n\nSlow fusion in small convective stars burns hydrogen evenly.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/astronomy/comet-tails.md","level":2,"score":0.5,"abstract":"# Why comet tails point away from the sun\n\nSolar wind and radiation pressure push dust and ions outward.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/carry/cooking/.abstract.md","level":0,"score":0.5,"abstract":"Summary of the content.","tags":[]}],"skills":[],"total":5}}
+PASS find Tomato blight prevention in wet summers -> viking://user/jasper/resources/carry/gardening-tomato-blight.md
+PASS find on each file's title returns that file on B
+-- stub counts after find: {"chat gemini/gemini-3.5-flash-lite": 17, "embeddings embark/embedding": 71, "rerank embark/reranker": 30}
+== B log warnings/errors
+2026-10-20 14:32:21,702 - openviking.server.auth.plugins.ldap - WARNING - LDAP library not available. LDAP authentication will not work. Install with: uv pip install python-ldap
