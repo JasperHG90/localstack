@@ -1,14 +1,50 @@
 {
   "schema_version": "1.0",
   "slug": "ov-fresh-instance",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "69c908fc472692ef29ccde9bd6c72b31e319a174560850422d25026a30cc410f",
+    "tree": "40ddd383e34afdc03c58f527289f0e4afae01e19",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          "deployments/applications/services/openviking/README.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/log.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261020T151612+0000-70d4426f",
+        "paths": [
+          ".okf/components/openviking-database.md",
+          ".okf/log.md",
+          "deployments/infrastructure/oidc.tf"
+        ]
+      }
+    ],
+    "at": "2026-10-20T15:16:12+00:00"
+  },
   "ask": null,
   "split": "j-20261020T142901+0000-64ba0140",
   "split_plan_hash": "cafe335053faae41cc9e8da7b5ad7059dd338690416daefb4b62079d3412967b",
@@ -151,8 +187,14 @@
       "to": "fixing",
       "at": "2026-10-20T15:08:43+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T15:16:12+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T15:15:51+00:00"
+  "at": "2026-10-20T15:16:12+00:00"
 }
