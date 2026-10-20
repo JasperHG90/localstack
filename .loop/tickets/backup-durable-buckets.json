@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "backup-durable-buckets",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 2,
+    "fingerprint": "d4f64e100f3db71941578b8d9085dcf9e1e9f14a7f13b978ecce04117b4dfbb2",
+    "tree": "dcb8ae32b45d9eeb35f67f44064cfb23ba9d2065",
+    "decisions": [
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/minio.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T04:51:53+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T175333+0000-8ce8611b",
   "split_plan_hash": "d0e55f44e8bf7cc533a96b85f6d58ded071d61ad6c8a7e99d7268d517ef510c9",
@@ -135,8 +151,14 @@
       "to": "fixing",
       "at": "2026-10-20T04:50:40+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T04:51:53+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T04:51:52+00:00"
+  "at": "2026-10-20T04:51:53+00:00"
 }
