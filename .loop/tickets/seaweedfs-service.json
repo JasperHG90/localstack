@@ -1,19 +1,13 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-service",
-  "stage": "blocked",
+  "stage": "ready",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 3,
   "extra_plan_rounds": 0,
-  "extra_review_rounds": 0,
-  "blocker": {
-    "code": "review-cap",
-    "message": "the review round cap (3) is reached",
-    "plan_hash": "dbe0c347e818d4477be935b6d99aa1a975cf39dbb7477264fc5be5b280c95ced",
-    "at": "2026-10-20T05:49:14+00:00",
-    "resign_eval": false
-  },
+  "extra_review_rounds": 1,
+  "blocker": null,
   "fix": {
     "round": 2,
     "fingerprint": "1b9c6ca89fa6a0d8a4f070ba967a60af4541696a701fcabca0fedf2ef75c1f47",
@@ -92,7 +86,14 @@
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
-  "overrides": [],
+  "overrides": [
+    {
+      "edge": "blocked->ready",
+      "reason": "round 3 passed; the only change since is ruff wrapping two long lines in a test, which the commit hook required and the stamp did not catch",
+      "by": "delegated:jasperginn@gmail.com/implementer",
+      "at": "2026-10-20T05:49:26+00:00"
+    }
+  ],
   "round": {
     "kind": "review",
     "n": 3,
@@ -173,8 +174,14 @@
       "to": "blocked",
       "at": "2026-10-20T05:49:14+00:00",
       "by": "review start"
+    },
+    {
+      "from": "blocked",
+      "to": "ready",
+      "at": "2026-10-20T05:49:26+00:00",
+      "by": "unblock"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T05:49:14+00:00"
+  "at": "2026-10-20T05:49:26+00:00"
 }
