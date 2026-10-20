@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the r1 test checked its own hard-coded Vault path and iam_members, not the Terraform wiring",
+      "anchor": "cli/tests/test_seaweedfs_iam_config.py:30",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the audience registry in the explanation doc lacked a seaweedfs row",
+      "anchor": "docs/explanation/workload-identity.md:235",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "the seaweedfs row was appended after minio-poc2, so \"The last two rows share a verifier\" now names minio-poc2 and seaweedfs, which do not share one",
+      "anchor": "docs/explanation/workload-identity.md:237",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "ea06296c375c08873e978fc234c8ced569a369353ddaa2c7355f286adb3af0db",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T06:37:31+00:00"
+}
