@@ -106,7 +106,7 @@ job "minio" {
         name = "minio"
         port = "http_api"
 
-        tags = ["http", "s3"]
+        tags = ["http"]
 
         check {
           name     = "minio health check"

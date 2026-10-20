@@ -1,7 +1,7 @@
 ---
 type: node
 title: orangepi4a, the storage node
-description: "The Orange Pi 4A (192.168.2.29) holds MinIO and its 1 to 3.5 TiB volume, plus ov-dash in the room the retired phoenix job left. Memory is its limit, several jobs hardcode its address even where a Consul lookup exists, and losing it takes every bucket, so Loki and Tempo cannot flush and the registry cannot serve a blob."
+description: "The Orange Pi 4A (192.168.2.29) holds SeaweedFS and, until minio-removal, the idle MinIO, each with a 1 to 3.5 TiB volume, plus ov-dash in the room the retired phoenix job left. Memory is its limit, several jobs hardcode its address even where a Consul lookup exists, and losing it takes every bucket, so Loki and Tempo cannot flush and the registry cannot serve a blob."
 tags: [node, orangepi4a, orange-pi, arm64, minio, ov-dash, storage, nvme]
 status: stable
 generated:
@@ -16,6 +16,10 @@ sources:
     resource: deployments/applications/services.tf
   - id: minio-jobspec
     resource: deployments/infrastructure/services/minio.hcl
+  - id: seaweedfs-jobspec
+    resource: deployments/infrastructure/services/seaweedfs.hcl
+  - id: haproxy-jobspec
+    resource: deployments/infrastructure/services/haproxy.hcl
   - id: ov-dash-jobspec
     resource: deployments/applications/services/ov-dash.hcl
   - id: alloy-jobspec
@@ -32,8 +36,8 @@ sources:
 
 # orangepi4a, the storage node
 
-orangepi4a runs the cluster's only object store and the one job that was
-small enough to fit beside it. The cross-node picture is
+orangepi4a runs the cluster's object store, SeaweedFS since the 2026-10-20
+cutover, beside the idle MinIO that `minio-removal` will remove. The cross-node picture is
 [node placement](/nodes/placement.md).
 
 | Fact | Value | Source |
@@ -51,8 +55,8 @@ small enough to fit beside it. The cross-node picture is
 
 | Job | Ports | Why here |
 |---|---|---|
-| `minio` (5000 MHz, 2560 MB) | 9000 API, 9001 console | Literal `value = "orangepi4a"` in `minio.hcl`, held by the `minio_data` volume. No comment records the first reason. See [MinIO](/components/minio.md). |
-| `seaweedfs` (1000 MHz, 512 MB) | 8333 S3, 9327 metrics | Literal `value = "orangepi4a"` in `seaweedfs.hcl`, held by the `seaweedfs_data` volume beside `minio_data`. Replaces MinIO. See [SeaweedFS](/components/seaweedfs.md). |
+| `minio` (5000 MHz, 2560 MB) | 9000 API, 9001 console | Literal `value = "orangepi4a"` in `minio.hcl`, held by the `minio_data` volume. No comment records the first reason. Nothing reads or writes it since 2026-10-20. See [MinIO](/components/minio.md). |
+| `seaweedfs` (1000 MHz, 512 MB) | 8333 S3, 9327 metrics | Literal `value = "orangepi4a"` in `seaweedfs.hcl`, held by the `seaweedfs_data` volume beside `minio_data`. Replaced MinIO on 2026-10-20. See [SeaweedFS](/components/seaweedfs.md). |
 | `ov-dash` (200 MHz, 512 MB, one alloc), **stopped 2026-10-20 until `minio-removal`** | 4182 | `ov_dash_hostname = "orangepi4a"` in `deployments/applications/services.tf`. It would otherwise run next to OpenViking, but radxa had 598 MB free and its stateful neighbors there are pinned by volumes. ov-dash holds nothing on disk, so it moved, at the cost of a LAN hop to 1933 (`ov-dash.hcl` header, commit `30292e2`). See [ov-dash](/components/ov-dash.md). |
 
 The system jobs `node-exporter` and `alloy` run here too.
@@ -85,10 +89,10 @@ out by hand, so a move does not follow the lookup:
   2026-10-20 all three take `s3_host` from `data.consul_service.seaweedfs`
   for the STS exchange and the S3 endpoint on 8333, and name no address by
   hand.
-- `backup-minio`'s `minio_host`, `restore-s3`'s `seaweedfs_host`, and the
-  `minio` firewall entry in `deployments/infrastructure/services.tf`.
-- HAProxy's `minio`, `s3` and `ovdash` backends, and Prometheus's scrape
-  targets.
+- `backup-minio`'s and `restore-s3`'s `seaweedfs_host`, and the `minio`
+  firewall entry in `deployments/infrastructure/services.tf`.
+- HAProxy's `minio` (console, 9001), `s3` (SeaweedFS, 8333 since
+  2026-10-20) and `ovdash` backends, and Prometheus's scrape targets.
 
 OpenViking also takes its S3 address from `data.consul_service.seaweedfs`
 and names no literal.
@@ -134,12 +138,11 @@ and names no literal.
 - Every bucket is gone: Loki and Tempo cannot flush to object storage,
   the registry cannot serve a blob, so embark cannot pull a model on its next
   start, OpenViking loses its blob store, and `backup-minio` fails.
-- `minio.lab`, `s3.lab` and `openviking.lab` (ov-dash) stop answering.
-- `minio_data` is on this node only. The nightly backup copies the four durable
-  buckets to GCS ([GCS backups](/components/gcs-backups.md)). `loki`, `tempo`,
-  `memex` and `mlflow-artifacts` have no copy. OpenViking's blobs and the
-  registry's have been in `seaweedfs_data` since 2026-10-20, and the backup
-  still reads MinIO, so nothing either wrote after that date has a copy.
+- `minio.lab` (MinIO console), `s3.lab` (SeaweedFS) and `openviking.lab` (ov-dash) stop answering.
+- `seaweedfs_data` and `minio_data` are on this node only. The nightly backup
+  copies the four durable buckets from SeaweedFS to GCS
+  ([GCS backups](/components/gcs-backups.md)), so a restore loses at most a
+  day. `loki`, `tempo`, `memex` and `mlflow-artifacts` have no copy.
 
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),

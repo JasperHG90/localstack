@@ -1,7 +1,7 @@
 ---
 type: component
 title: SeaweedFS
-description: "The single-node SeaweedFS on orangepi4a that replaces MinIO: one weed server with its S3 gateway, run by the infrastructure root beside MinIO until the cutover, with six buckets and per-user keys from the applications root. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
+description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root beside the idle MinIO until minio-removal, with six buckets and per-user keys from the applications root. It carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
 tags: [seaweedfs, s3, object-storage, terraform, component]
 status: stable
 generated:
@@ -32,6 +32,10 @@ sources:
     resource: deployments/applications/services/registry.hcl
   - id: alert-rules
     resource: deployments/infrastructure/services/grafana/alert-rules.yaml
+  - id: cutover-test
+    resource: cli/tests/test_s3_cutover.py
+  - id: haproxy-jobspec
+    resource: deployments/infrastructure/services/haproxy.hcl
 ---
 
 # SeaweedFS
@@ -39,17 +43,20 @@ sources:
 MinIO is end of life and its published image no longer downloads, so the
 cluster moves its object storage to SeaweedFS
 ([ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md)). This page covers
-the server, its buckets, keyless access and who has moved. The cutover runs
+the server, its buckets, keyless access and who has moved. The cutover ran
 one consumer at a time in the tickets of the `seaweedfs-migration` epic.
 
 OpenViking was first: since 2026-10-20 its blobs are in the `openviking`
 bucket here, and it finds the S3 port through Consul service `seaweedfs`
 ([the OpenViking service](/components/openviking-service.md)). The `models`
 and `datalake` buckets were restored from GCS at the same time, both empty.
-Loki, Tempo and the OCI registry moved the same day, so no workload uses
-MinIO any more. Only `backup-minio` still reads it, and MinIO keeps the `s3`
-Consul tag and edge route, until `seaweedfs-cutover`
-([MinIO](/components/minio.md)).
+Loki, Tempo and the OCI registry moved the same day. Then `seaweedfs-cutover`
+moved the rest: `backup-minio` reads the four durable buckets from here
+([GCS backups](/components/gcs-backups.md)), the `seaweedfs` service carries
+the `s3` Consul tag, so the CLI's `s3` route resolves here, HAProxy's
+`s3.lab.orangecluster.nl` backend points at `192.168.2.29:8333`, and the dash
+tile is `seaweedfs`. MinIO still runs with its data, unused, until
+`minio-removal` ([MinIO](/components/minio.md)).
 
 ## What runs
 
@@ -130,6 +137,12 @@ Its bucket was restored from GCS, not started empty, and the 725 zero-byte
 `dir/` markers the restore wrote were deleted afterwards. Its static key at
 `default/registry/seaweedfs` is a rollback path the job does not read.
 
+The devcontainer's `mc` alias is `s3`, set from `AWS_ENDPOINT_URL_S3`,
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in `.devcontainer/.env`, which
+the operator fills with the admin key from
+`vault kv get secret/default/seaweedfs/admin`
+([the devcontainer](/components/devcontainer.md)).
+
 ## Monitoring
 
 Grafana has a SeaweedFS dashboard (`services/grafana/seaweedfs.json` in the
@@ -166,4 +179,6 @@ infrastructure root). Two alerts in
 
 `cli/tests/test_seaweedfs_jobspec.py` pins the image floor (4.40 fixes
 CVE-2026-77298), every flag above, the growth setting, the two mapped ports,
-and the absence of the `s3` tag.
+and that `seaweedfs` carries the `s3` tag and `minio` does not.
+`cli/tests/test_s3_cutover.py` pins the `s3` edge backend, the dash tile and
+the devcontainer alias to SeaweedFS.

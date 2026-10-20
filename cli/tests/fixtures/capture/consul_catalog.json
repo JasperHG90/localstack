@@ -31,7 +31,6 @@
     "memex"
   ],
   "minio": [
-    "s3",
     "http"
   ],
   "minio-console": [
@@ -95,5 +94,9 @@
   "vault": [
     "active",
     "initialized"
+  ],
+  "seaweedfs": [
+    "http",
+    "s3"
   ]
 }

@@ -14,8 +14,8 @@ sudo chown -R vscode:vscode \
   /home/vscode/.cache/prek \
   "${workspace}/cli/.venv"
 
-if ! mc alias set minio "${AWS_ENDPOINT_URL_S3}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"; then
-  echo "warning: could not set the minio alias. Check the AWS_* keys in .devcontainer/.env." >&2
+if ! mc alias set s3 "${AWS_ENDPOINT_URL_S3}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"; then
+  echo "warning: could not set the s3 alias. Check the AWS_* keys in .devcontainer/.env." >&2
 fi
 
 alias ansible='uv tool run --from=ansible-core ansible'

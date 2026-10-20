@@ -1,7 +1,7 @@
 ---
 type: component
 title: MinIO
-description: "The single-node MinIO on orangepi4a: the infrastructure root runs it and owns the root key, the applications root owns every bucket, user and policy. Every workload has moved to SeaweedFS, the registry last, so no job logs in keylessly any more. Only the backup job still reads it, with a copy of the root key, and the claim-mode policies and static keys remain with nothing using them."
+description: "The single-node MinIO on orangepi4a: the infrastructure root runs it and owns the root key, the applications root owns every bucket, user and policy. Every workload, the nightly backup and the s3 route have moved to SeaweedFS, so nothing reads or writes MinIO any more. It still runs with its data, and the claim-mode policies and static keys remain with nothing using them."
 tags: [minio, s3, object-storage, workload-identity, terraform, component]
 status: stable
 generated:
@@ -26,7 +26,10 @@ sources:
 
 # MinIO
 
-One MinIO server holds every on-cluster bucket. How a job trades its Nomad
+One MinIO server held every on-cluster bucket until the 2026-10-20 cutover to
+[SeaweedFS](/components/seaweedfs.md). It still runs with its data, but no job,
+backup or edge route reads or writes it, and `minio-removal` removes it. How a
+job traded its Nomad
 JWT for MinIO credentials is `docs/explanation/workload-identity.md` ("Keyless
 MinIO access"), and the procedure is
 `docs/how-to/give-a-job-keyless-minio-access.md`. This page is how the parts
@@ -39,7 +42,7 @@ are laid out across the repository and what bites when you change them.
 | Job `minio`, pinned to orangepi4a, `RELEASE.2025-09-07T16-13-09Z` | `deployments/infrastructure/services/minio.hcl` |
 | Host volume `minio_data` (1 to 3.5 TiB) | `deployments/infrastructure/services.tf` |
 | Firewall: 9000 (S3) and 9001 (console) from `192.168.0.0/16` | `local.firewall_rules`, same file |
-| Edge: `backend s3` and `backend minio` | `deployments/infrastructure/services/haproxy.hcl` |
+| Edge: `backend minio` (console). `backend s3` points at SeaweedFS since the cutover | `deployments/infrastructure/services/haproxy.hcl` |
 | Root key: access key `minio`, secret `random_password.minio_secret_key` | KV `default/minio/localstack`, `deployments/infrastructure/secrets.tf` |
 | OIDC targets `NOMAD` (claim mode) and `POC2` | env template in `minio.hcl` |
 | Buckets, users, access keys | `local.buckets` in `deployments/applications/storage.tf` |
@@ -107,8 +110,9 @@ were still stubs, and R12 was dropped, in the loop ledger when `5b2ed1b` reset
 the loop.
 
 Still keyed: memex (its job is commented out, and its fix needs changes in
-the memex repo, see R12 above), and `backup-minio`, which reads a copy of the
-ROOT key. Keys that nothing consumes are still minted for `ducklake_writer`,
+the memex repo, see R12 above). `backup-minio` read a copy of the ROOT key
+until 2026-10-20, when it moved to SeaweedFS. That copy,
+`default/backup-minio/minio`, is still written. Keys that nothing consumes are still minted for `ducklake_writer`,
 `ducklake_reader`, `models_writer`, `models_reader`, `mlflow`, and
 `openviking`, whose job left MinIO for SeaweedFS on 2026-10-20 and keeps a
 static key there (ADR 0007). Removing the rollback keys is what actually
@@ -138,14 +142,11 @@ shrinks this list, and no ticket owns it yet.
 - **Metrics are public.** `MINIO_PROMETHEUS_AUTH_TYPE="public"` is why the
   Prometheus `minio` job needs no token, and why 9000 serves metrics to the
   whole LAN.
-- **Not every bucket is backed up.** `backup-minio` syncs `openviking`,
-  `registry`, `models` and `datalake`. `loki`, `tempo`, `memex` and
-  `mlflow-artifacts` have no off-site copy. See
-  [GCS backups](/components/gcs-backups.md). Since 2026-10-20 the MinIO
-  `openviking` bucket gets no writes, because OpenViking writes to
-  SeaweedFS, so its nightly copy is the frozen pre-cutover state until the
-  backup job reads SeaweedFS (`seaweedfs-cutover`). The same holds for the
-  `registry` bucket, since the registry also moved on 2026-10-20.
+- **Nothing here is backed up any more.** Since 2026-10-20 `backup-minio`
+  reads the four durable buckets from SeaweedFS, into the same `minio/`
+  prefixes in GCS. MinIO's own copies of them are frozen at the cutover, and
+  `loki`, `tempo`, `memex` and `mlflow-artifacts` never had an off-site copy.
+  See [GCS backups](/components/gcs-backups.md).
 - **`mlflow-artifacts` outlived its service** on purpose. Emptying it and
   deleting the entry is a separate decision.
 - **Human console tiers are not built.** M2 was blocked when `5b2ed1b` reset the loop and
@@ -161,7 +162,10 @@ of the MinIO job, provider, resources, routes and monitoring once nothing
 uses it. The nightly [GCS backup](/components/gcs-backups.md) copies every
 durable bucket, so the migration restores from off-site with the
 `restore-s3` job. `openviking`, `models`, `datalake` and `registry` moved
-that way on 2026-10-20. The `minio_data` volume and its data stay until the operator
+that way on 2026-10-20, and the same day the backup job, the `s3` Consul tag,
+the `s3.lab.orangecluster.nl` route and the dash tile followed
+(`seaweedfs-cutover`). `minio.lab.orangecluster.nl` still serves the MinIO
+console until `minio-removal`. The `minio_data` volume and its data stay until the operator
 promotes the stub `minio-volume-destroy`. When `minio-removal` lands, this
 page is marked superseded.
 

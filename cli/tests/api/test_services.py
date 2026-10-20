@@ -30,7 +30,7 @@ def check(service: str, status: str = "passing") -> Check:
     return Check(name=f"{service}-check", status=status, node="firebat", service=service)
 
 
-ROUTES = [route("memex"), route("vault"), route("s3", 9000)]
+ROUTES = [route("memex"), route("vault"), route("s3", 8333)]
 JOBS = [job("memex"), job("hermes")]
 CHECKS = [check("memex"), check("vault")]
 NAMES = {"memex": ["memex"]}
@@ -75,7 +75,7 @@ def test_a_route_resolving_to_neither_still_renders() -> None:
     assert row.job_source is JobSource.UNRESOLVED
     assert row.job == NOT_FOUND
     assert row.health == NOT_FOUND
-    assert row.backend == "10.0.0.1:9000"
+    assert row.backend == "10.0.0.1:8333"
     assert row.url == "https://s3.lab.example"
 
 
@@ -177,7 +177,7 @@ def test_a_route_in_neither_the_catalog_nor_the_jobs_stays_unresolved() -> None:
     assert rows["s3"].job_source is JobSource.UNRESOLVED
     assert rows["s3"].job == NOT_FOUND
     assert rows["s3"].health == NOT_FOUND
-    assert rows["s3"].backend == "10.0.0.1:9000"
+    assert rows["s3"].backend == "10.0.0.1:8333"
 
 
 def test_the_join_never_derives_names_from_checks() -> None:
@@ -214,18 +214,18 @@ def test_the_catalog_argument_is_required() -> None:
 
 
 def test_a_route_named_after_a_unique_tag_resolves_to_that_service() -> None:
-    """Row 1. `s3` is MinIO's S3 API port under its own hostname.
+    """Row 1. `s3` is SeaweedFS's S3 API port under its own hostname.
 
     The job declares the tag itself, so this is reading what the job said
     rather than guessing from an address.
     """
-    catalog = {**CATALOG, "minio": ["s3", "http"]}
-    checks = [*CHECKS, check("minio")]
+    catalog = {**CATALOG, "seaweedfs": ["http", "s3"]}
+    checks = [*CHECKS, check("seaweedfs")]
 
     rows = {r.name: r for r in join(ROUTES, JOBS, checks, NAMES, catalog=catalog)}
 
     assert rows["s3"].job_source is JobSource.CONSUL_TAG
-    assert rows["s3"].job == "minio"
+    assert rows["s3"].job == "seaweedfs"
     assert rows["s3"].health == "passing"
 
 
@@ -237,7 +237,7 @@ def test_a_tag_carried_by_two_services_resolves_nothing() -> None:
     rows = {r.name: r for r in join(ROUTES, JOBS, CHECKS, NAMES, catalog=catalog)}
 
     assert rows["s3"].job_source is JobSource.UNRESOLVED
-    assert rows["s3"].backend == "10.0.0.1:9000"
+    assert rows["s3"].backend == "10.0.0.1:8333"
 
 
 def test_a_job_id_match_beats_a_tag_match() -> None:

@@ -11,6 +11,7 @@ sources:
   - resource: cli/src/localstack_cli/api/haproxy.py
   - resource: cli/src/localstack_cli/api/secrets.py
   - resource: cli/src/localstack_cli/api/grants.py
+  - resource: deployments/infrastructure/services/seaweedfs.hcl
 ---
 
 # Reading the cluster
@@ -55,7 +56,7 @@ a column. The disagreements are the output, so nothing is dropped:
 | --- | --- |
 | `job-id` | A route whose name matches a Nomad job. The common case. |
 | `consul-name` | No such job, but Consul's catalog lists a service by that name. `vault`, `nomad` and `consul` resolve this way: they are agent endpoints. |
-| `consul-tag` | No service by that name, but exactly one Consul service carries a tag of that name. `s3` resolves this way: MinIO declares the tag on the port the route points at. |
+| `consul-tag` | No service by that name, but exactly one Consul service carries a tag of that name. `s3` resolves this way: SeaweedFS declares the tag on the port the route points at. |
 | `unresolved` | A routed hostname matching no job, no catalog service and no unique tag. The row still renders, with its backend. |
 | `no-route` | A job the edge does not serve. |
 
@@ -70,9 +71,9 @@ checks reports `consul` as unresolved.
 
 The `consul-tag` rung is last and resolves only on a unique carrier. Two
 services carrying the same tag leave the row unresolved, because picking one
-would be a guess. `s3` is the live case: `minio` declares the tag `s3` on the
-port label behind that route, so the match reads what the job said about
-itself.
+would be a guess. `s3` is the live case: since 2026-10-20 the `seaweedfs`
+service declares the tag `s3` on the port behind that route, so the match
+reads what the job said about itself. MinIO no longer carries the tag.
 
 The `backend` column shows the `ip:port` the edge sends a hostname to. It is
 blank for a `no-route` row, which has no backend to show. On an `unresolved`

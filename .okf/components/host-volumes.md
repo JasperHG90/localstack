@@ -93,7 +93,7 @@ losing it matters. Read it before resizing or moving one.
   Remove the block instead. The by-hand procedure, for volumes Terraform does
   not own, is `docs/how-to/delete-a-nomad-dynamic-host-volume.md`.
 - **Not everything is backed up.** The nightly jobs cover Postgres and the
-  four durable MinIO buckets. Every other volume has only its node's disk. See
+  four durable SeaweedFS buckets (MinIO's until 2026-10-20). Every other volume has only its node's disk. See
   [GCS backups](/components/gcs-backups.md).
 
 ## Where the data really is

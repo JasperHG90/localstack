@@ -96,7 +96,7 @@ def test_the_catalog_returns_names_with_their_tags() -> None:
 
     assert "consul" in services
     # Set comparison: the catalog's tag order is not a contract.
-    assert set(services["minio"]) == {"s3", "http"}
+    assert set(services["seaweedfs"]) == {"s3", "http"}
 
 
 @respx.mock

@@ -22,15 +22,13 @@ Storage: `backup-postgres` at 02:00 and `backup-minio` at 03:00, Europe/Amsterda
 
 Without them, both datasets are on one disk each. PostgreSQL is on a host
 volume pinned to `firebat` (`deployments/infrastructure/services.tf:13`) and
-the MinIO `openviking`, `registry`, `models` and `datalake` buckets on `orangepi4a`
-(`deployments/infrastructure/services.tf:33`), so a single node failure would
-take one of them with it.
+the SeaweedFS `openviking`, `registry`, `models` and `datalake` buckets on
+`orangepi4a` (`deployments/infrastructure/services.tf:53`), so a single node
+failure would take one of them with it.
 
-`backup-minio` still reads MinIO. Since 2026-10-20 OpenViking and the OCI
-registry keep their blobs in SeaweedFS, so the MinIO `openviking` and
-`registry` buckets get no writes and their GCS copies hold nothing newer than
-the cutover. Blobs either writes now have no off-site copy until the backup
-job reads SeaweedFS.
+Since 2026-10-20 `backup-minio` reads SeaweedFS, not MinIO. It kept its name
+and still writes to the `minio/<bucket>/` prefixes in GCS, so the backup
+history carries on. Its first run from SeaweedFS exited 0.
 
 A third job, `restore-s3`, runs only when dispatched. It copies one bucket's
 GCS copy into SeaweedFS.
@@ -72,7 +70,7 @@ per job):
 - `backup_postgres_gcs_credentials` writes `default/backup-postgres/gcs` (GCS
   service account JSON)
 - `backup_minio_s3_credentials` writes `default/backup-minio/minio` (copies root
-  MinIO creds)
+  MinIO creds). Nothing reads it since the job moved to SeaweedFS.
 - `backup_minio_gcs_credentials` writes `default/backup-minio/gcs` (GCS service
   account JSON)
 - `restore_s3_gcs_credentials` writes `default/restore-s3/gcs` (GCS service
@@ -87,12 +85,17 @@ resources templating the job specs below.
 
 ### `deployments/applications/`
 
-The restore job's SeaweedFS key comes from this root, where the SeaweedFS IAM
-provider is:
-- `storage.tf`: SeaweedFS user `restore`, with `s3:*` on the `openviking`,
-  `registry`, `models` and `datalake` buckets
-- `secrets.tf`: `restore_seaweedfs_credentials` writes
-  `default/restore-s3/seaweedfs` (that user's key)
+The SeaweedFS keys of `backup-minio` and `restore-s3` come from this root,
+where the SeaweedFS IAM provider is. The infrastructure root applies first, so
+each job names its key's Vault path as a string, and on a rebuild from scratch
+both fail until this root has applied:
+- `storage.tf`: SeaweedFS user `backup`, with `s3:GetBucketLocation`,
+  `s3:GetObject` and `s3:ListBucket` on the `openviking`, `registry`,
+  `models` and `datalake` buckets, and user `restore`, with `s3:*` on the
+  same four
+- `secrets.tf`: `backup_seaweedfs_credentials` writes
+  `default/backup-minio/seaweedfs` and `restore_seaweedfs_credentials` writes
+  `default/restore-s3/seaweedfs` (each user's key)
 
 ### `deployments/infrastructure/services/backup-postgres.hcl`
 
@@ -114,13 +117,13 @@ Periodic batch job, cron `0 2 * * *` (2:00 AM Europe/Amsterdam):
 
 Periodic batch job, cron `0 3 * * *` (3:00 AM Europe/Amsterdam, staggered an
 hour after the postgres job):
-- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync minio:<name> gcs:<bucket>/minio/<name>/` once for each of `openviking`, `registry`, `models` and `datalake`. Each sync runs even if an earlier one failed, and the task exits nonzero if any of them failed. Each sync passes `--create-empty-src-dirs --gcs-directory-markers`, because OpenViking stores a directory as a zero-byte key ending in `/` and rclone otherwise drops those keys without `rclone check` noticing. `loki` and `tempo` are not backed up: they keep 30 days and are rebuilt from new data.
+- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync seaweedfs:<name> gcs:<bucket>/minio/<name>/` once for each of `openviking`, `registry`, `models` and `datalake`. Each sync runs even if an earlier one failed, and the task exits nonzero if any of them failed. Each sync passes `--create-empty-src-dirs --gcs-directory-markers`, because OpenViking stores a directory as a zero-byte key ending in `/` and rclone otherwise drops those keys without `rclone check` noticing. `loki` and `tempo` are not backed up: they keep 30 days and are rebuilt from new data.
 - Two Vault templates:
-  1. `secrets/rclone.conf`: rclone config with a `[minio]` remote (S3/Minio provider, creds from Vault) and a `[gcs]` remote (`service_account_file` pointing to the key file)
+  1. `secrets/rclone.conf`: rclone config with a `[seaweedfs]` remote (S3/SeaweedFS provider, `http://192.168.2.29:8333`, read-only key from `default/backup-minio/seaweedfs`) and a `[gcs]` remote (`service_account_file` pointing to the key file)
   2. `secrets/gcs-key.json`: GCS service account JSON from Vault
 - Pinned to `radxa-dragon-q6a` by a node constraint, like
   `deployments/infrastructure/services/backup-postgres.hcl`
-- `network_mode = "host"` for MinIO access
+- `network_mode = "host"` for SeaweedFS access
 - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]`
 - Resources: 1000 MHz CPU, 512 MB memory
 
@@ -201,7 +204,7 @@ gs://<bucket>/
 ```
 
 - Postgres: dated dumps accumulate, and the bucket lifecycle rule deletes them after 180 days.
-- MinIO: `rclone sync` maintains a live mirror (no accumulation: GCS matches the current bucket state). The 180-day rule deletes by age, so an object unchanged for 180 days, such as an old image layer, is deleted from GCS and uploaded again by the next nightly sync. For up to a day it has no off-site copy.
+- Buckets: the prefix is still `minio/` though the source is now SeaweedFS. `rclone sync` maintains a live mirror (no accumulation: GCS matches the current bucket state). The 180-day rule deletes by age, so an object unchanged for 180 days, such as an old image layer, is deleted from GCS and uploaded again by the next nightly sync. For up to a day it has no off-site copy.
 
 ## See also
 

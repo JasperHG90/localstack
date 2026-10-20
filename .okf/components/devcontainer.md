@@ -20,6 +20,8 @@ sources:
     resource: cli/tests/test_devcontainer_path.py
   - id: devcontainer-volumes-test
     resource: cli/tests/test_devcontainer_volumes.py
+  - id: s3-cutover-test
+    resource: cli/tests/test_s3_cutover.py
   - id: vault-token-file
     resource: cli/src/localstack_cli/auth/vault_token_file.py
   - id: apps-justfile
@@ -99,7 +101,8 @@ every variable in that gitignored file is in every process in the container.
 - Day-0 bootstrap secrets (`TAILSCALE_AUTH_KEY`, `GITHUB_USER`,
   `GITHUB_PAT`), which the Ansible playbooks read with `lookup('env', ...)`
   ([Ansible bootstrap](/components/bootstrap.md)).
-- MinIO, Postgres and registry credentials for the operator's own tools.
+- SeaweedFS (`AWS_*`), Postgres and registry credentials for the operator's
+  own tools.
 
 The tokens are the trap. When `VAULT_TOKEN` is set, the stock `vault` ignores
 `~/.vault-token`. The shim covers a bare `vault`, but anything that bypasses
@@ -111,10 +114,13 @@ local `.env` no longer sets the tokens, so on this machine the session is what
 runs. The tracked example, the CLI's warnings and the `shims.py` docstring
 still describe the injected-root case as the normal one.
 
-`bootstrap.sh` also sets an `mc` alias named `minio` from
-`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, which
-`.env.example` does not list. It prints a warning and carries on when
-they are missing.
+`bootstrap.sh` also sets an `mc` alias named `s3` from
+`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Since
+`seaweedfs-cutover` (2026-10-20) `.env.example` lists all three, pointing at
+`https://s3.lab.orangecluster.nl` (SeaweedFS) with the admin key from
+`vault kv get secret/default/seaweedfs/admin`. The alias was `minio` before.
+`bootstrap.sh` prints a warning and carries on when the variables are
+missing. `cli/tests/test_s3_cutover.py` pins the alias and the example.
 
 `deployments/applications/justfile` also loads the same file with
 `set dotenv-filename := "../../.devcontainer/.env"`. Its `rebuild_*` recipes

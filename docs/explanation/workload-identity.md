@@ -263,8 +263,9 @@ still uses its key. No job runs keyless against MinIO today: tempo, loki and
 the OCI registry did until 2026-10-20. They now store in SeaweedFS and log in
 there the same way, with `aud = ["seaweedfs"]` and a role per job (the
 `seaweedfs` row in the audience registry above). Other holders
-exist outside this set: the `backup-minio` job runs on the root credential,
-and `deployments/applications/storage.tf` still mints keys no job uses, the
+exist outside this set: the `backup-minio` job ran on the MinIO root
+credential until 2026-10-20 and now reads SeaweedFS with a read-only static
+key, and `deployments/applications/storage.tf` still mints keys no job uses, the
 MinIO `openviking` key among them. Since 2026-10-20 OpenViking keeps its
 blobs in SeaweedFS and reads a static SeaweedFS key from
 `default/openviking/seaweedfs`. It holds a static key deliberately, because
