@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T04:40:41+00:00'
+  at: '2026-10-20T04:41:33+00:00'
 slug: backup-durable-buckets
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike backup-durable-buckets/2
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note backup-durable-buckets 2`.
+Void run: the spike's environment got 403 from `nomad job status`, though the same token worked in the operator shell a minute later, so `set -e` stopped the script before any comparison. Superseded by `spike:backup-durable-buckets/3`, which drops the Nomad calls. The run's status was read in the operator shell instead: allocation 8e84a792 of `backup-minio` (forced 2026-10-20 04:36:17 UTC, after the targeted apply of `nomad_job.backup_minio`) ended `complete`, Exit Code 0, at 04:38:21 UTC.
 
 ## Files
 
