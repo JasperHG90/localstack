@@ -1,0 +1,90 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 2
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpXtrVqt: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpWUSb9D: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpBRxMH6: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmp1fVblt: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  Using CPython 3.12.15
+  Creating virtual environment at: cli/.venv
+     Building localstack-cli @ file:///tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli
+        Built localstack-cli @ file:///tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/mypyc/transform/spill.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/mypyc/transform/spill.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/mypyc/transform/.tmpAjBuAp: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpx7iUtH: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpBG2g0B: No space left on device (os error 28)
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 2
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpQbkjdj: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmph2WyVV: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpmz92AJ: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpeZVQch: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpa7oRKF: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmppMQ9zY: No space left on device (os error 28)
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmppRceEi: No space left on device (os error 28)
+Mypy (strict, cli/)......................................................Failed
+- hook id: mypy
+- exit code: 2
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  error: Failed to install: mypy-2.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (mypy==2.3.0)
+    cause: Failed to copy to `/tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so`
+    cause: failed to copy file from /home/vscode/.cache/uv/archive-v0/VAf_s7PVSEqIu44j/08ae81f72d5a2b5fa9e0__mypyc.cpython-312-aarch64-linux-gnu.so to /tmp/loopctl-land-ov-carry-over-m9fcy9zb/tree/cli/.venv/lib/python3.12/site-packages/.tmpw03637: No space left on device (os error 28)
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
