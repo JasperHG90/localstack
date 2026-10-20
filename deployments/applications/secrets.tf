@@ -466,3 +466,28 @@ resource "vault_kv_secret_v2" "ov_dash_config" {
     session_secret = random_password.ov_dash_session_secret.result
   })
 }
+
+### SeaweedFS keys, beside each job's MinIO key until its cutover. A job with
+### a bare `vault {}` reads only `default/<job id>/*`, so each key sits under
+### its job's own prefix.
+resource "vault_kv_secret_v2" "seaweedfs_credentials" {
+  for_each = toset(["loki", "tempo", "registry", "openviking"])
+  mount    = var.secret_mount
+  name     = "default/${each.key}/seaweedfs"
+  data_json = jsonencode({
+    access_key = aws_iam_access_key.seaweedfs[each.key].id
+    secret_key = aws_iam_access_key.seaweedfs[each.key].secret
+  })
+}
+
+### Read by `backup-minio` in the infrastructure root, which applies first and
+### cannot reference this root, so the job reads it through Vault at run time.
+### On a rebuild from scratch the backup fails until this root has applied.
+resource "vault_kv_secret_v2" "backup_seaweedfs_credentials" {
+  mount = var.secret_mount
+  name  = "default/backup-minio/seaweedfs"
+  data_json = jsonencode({
+    access_key = aws_iam_access_key.seaweedfs_backup.id
+    secret_key = aws_iam_access_key.seaweedfs_backup.secret
+  })
+}

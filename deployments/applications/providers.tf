@@ -12,6 +12,10 @@ terraform {
       source  = "aminueza/minio"
       version = "~>3.8.0"
     }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
     consul = {
       source  = "hashicorp/consul"
       version = "~>2.22.0"
@@ -45,6 +49,26 @@ provider "minio" {
   minio_server   = "${data.consul_service.minio.service[0].node_address}:9000"
   minio_user     = ephemeral.vault_kv_secret_v2.minio_admin.data.access_key
   minio_password = ephemeral.vault_kv_secret_v2.minio_admin.data.secret_key
+}
+
+### The aws provider talks to SeaweedFS, not AWS: its S3 and IAM endpoints
+### are SeaweedFS's S3 port, which also serves the embedded IAM API. The
+### minio provider's IAM resources fail against SeaweedFS
+### (spike:seaweedfs-buckets/2).
+provider "aws" {
+  region                      = "us-east-1"
+  access_key                  = ephemeral.vault_kv_secret_v2.seaweedfs_admin.data.access_key
+  secret_key                  = ephemeral.vault_kv_secret_v2.seaweedfs_admin.data.secret_key
+  skip_credentials_validation = true
+  skip_requesting_account_id  = true
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3  = "http://${data.consul_service.seaweedfs.service[0].node_address}:8333"
+    iam = "http://${data.consul_service.seaweedfs.service[0].node_address}:8333"
+  }
 }
 
 provider "postgresql" {

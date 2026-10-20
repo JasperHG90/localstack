@@ -157,16 +157,17 @@ the history: the commit that split the roots (`f76edbe`, 2025-10-31) put
 Postgres in infrastructure, and `1855ed9` added MinIO there a day later,
 together with a registry that an applications job later replaced.
 
-The applications root configures three providers from services that must
-already be running: `minio` and `postgresql` from the Consul catalog and an
-admin credential in KV, and `bifrost` from its own job
-(`deployments/applications/providers.tf:44-69`). The `minio` and `postgresql`
-providers are fed by data-source and ephemeral reads that run at plan time
-with no dependency edge (`deployments/applications/services.tf:1-19`), so
-their services must already be running when the plan starts. So:
+The applications root configures four providers from services that must
+already be running: `minio`, `aws` (pointed at SeaweedFS) and `postgresql`
+from the Consul catalog and an admin credential in KV, and `bifrost` from its
+own job (`deployments/applications/providers.tf:48-94`). The `minio`, `aws`
+and `postgresql` providers are fed by data-source and ephemeral reads that
+run at plan time with no dependency edge
+(`deployments/applications/services.tf:1-29`), so their services must
+already be running when the plan starts. So:
 
 - a service that applications' providers log into belongs in infrastructure
-  (postgres, minio), and so does a service an infrastructure Vault engine
+  (postgres, minio, seaweedfs), and so does a service an infrastructure Vault engine
   connects to during apply (redis, `deployments/infrastructure/database.tf`)
 - anything written through those providers belongs in applications: buckets,
   IAM, Postgres roles and databases, Bifrost keys
@@ -192,9 +193,9 @@ Ansible's output. Every handoff is a name.
 | Nomad `developer` ACL policy | Ansible, infrastructure | referenced by name in `nomad_acl_binding_rule.developer` (`deployments/infrastructure/oidc.tf:423-435`) |
 | Consul `deploy` ACL policy | Ansible, infrastructure | `consul_policies = ["deploy"]` in `machine_roles.tf` |
 | `nomad-workloads` role and policy | Ansible, both roots' jobs | every per-job JWT role repeats both policy names and the claim mappings |
-| MinIO and Postgres addresses | infrastructure jobs, applications | `data "consul_service"` for `minio` and `postgres-db`, which the Consul `deploy` policy allows by name (`bootstrap/playbooks/enable_consul_secrets.yml:49-57`) |
-| MinIO and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack` and `default/postgres/localstack` |
-| OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:34-46`) |
+| MinIO, SeaweedFS and Postgres addresses | infrastructure jobs, applications | `data "consul_service"` for `minio`, `seaweedfs` and `postgres-db`, which the Consul `deploy` policy allows by name (`bootstrap/playbooks/enable_consul_secrets.yml:49-57`) |
+| MinIO, SeaweedFS and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack`, `default/seaweedfs/admin` and `default/postgres/localstack` |
+| OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:44-56`) |
 | Host volumes and JWT roles | infrastructure, applications jobs | the name in the jobspec |
 | MinIO access by workload identity (loki, tempo, registry) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
 | Loki, Tempo, dash, registry-ui, every edge backend | applications, infrastructure jobs | literal addresses in infrastructure jobspecs |
@@ -291,7 +292,7 @@ credentials](/components/deployer-credentials.md).
   `localstack env` exports. The detail is in [Terraform deployer
   credentials](/components/deployer-credentials.md#what-a-run-authenticates-with).
 - **`README.md:24` puts the registry in infrastructure.** It is an application
-  job (`nomad_job.registry`, `deployments/applications/services.tf:383`).
+  job (`nomad_job.registry`, `deployments/applications/services.tf:393`).
 - **`README.md:51-59` runs `just init` in applications**, which is one of the
   recipes above.
 - **`developer` names no path under `jwt-lab`.** The infrastructure root

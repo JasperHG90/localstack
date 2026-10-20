@@ -187,3 +187,84 @@ module "buckets" {
 
   depends_on = [minio_iam_user.users]
 }
+
+### SeaweedFS, beside MinIO until the cutover.
+###
+### Every bucket and user comes from `local.buckets` above, and the action
+### sets are MinIO's from modules/bucket, so each user keeps exactly its MinIO
+### grant. memex and mlflow-artifacts are not recreated (operator, 2026-10-19).
+### Only the backup user adds s3:ListBucket, because rclone lists to sync.
+locals {
+  seaweedfs_dropped_buckets = ["memex", "mlflow-artifacts"]
+  seaweedfs_durable_buckets = ["openviking", "registry", "models", "datalake"]
+  seaweedfs_read_actions    = ["s3:GetBucketLocation", "s3:GetObject"]
+  seaweedfs_write_actions   = ["s3:*"]
+  seaweedfs_backup_actions  = concat(local.seaweedfs_read_actions, ["s3:ListBucket"])
+
+  seaweedfs_buckets = {
+    for name, bucket in local.buckets : name => bucket
+    if !contains(local.seaweedfs_dropped_buckets, name)
+  }
+
+  seaweedfs_users = merge([
+    for name, bucket in local.seaweedfs_buckets : merge(
+      { for w in bucket.writers : w.name => { bucket = name, actions = local.seaweedfs_write_actions } },
+      { for r in bucket.readers : r.name => { bucket = name, actions = local.seaweedfs_read_actions } },
+    )
+  ]...)
+}
+
+resource "aws_s3_bucket" "seaweedfs" {
+  for_each = local.seaweedfs_buckets
+  bucket   = each.key
+}
+
+resource "aws_iam_user" "seaweedfs" {
+  for_each = local.seaweedfs_users
+  name     = each.key
+}
+
+resource "aws_iam_access_key" "seaweedfs" {
+  for_each = local.seaweedfs_users
+  user     = aws_iam_user.seaweedfs[each.key].name
+}
+
+resource "aws_iam_user_policy" "seaweedfs" {
+  for_each = local.seaweedfs_users
+  name     = "${each.key}-${each.value.bucket}"
+  user     = aws_iam_user.seaweedfs[each.key].name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = each.value.actions
+      Resource = [aws_s3_bucket.seaweedfs[each.value.bucket].arn, "${aws_s3_bucket.seaweedfs[each.value.bucket].arn}/*"]
+    }]
+  })
+}
+
+### The backup job reads SeaweedFS from the cutover on. Read-only, on the
+### durable buckets only.
+resource "aws_iam_user" "seaweedfs_backup" {
+  name = "backup"
+}
+
+resource "aws_iam_access_key" "seaweedfs_backup" {
+  user = aws_iam_user.seaweedfs_backup.name
+}
+
+resource "aws_iam_user_policy" "seaweedfs_backup" {
+  name = "backup-durable-read"
+  user = aws_iam_user.seaweedfs_backup.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = local.seaweedfs_backup_actions
+      Resource = flatten([
+        for b in local.seaweedfs_durable_buckets :
+        [aws_s3_bucket.seaweedfs[b].arn, "${aws_s3_bucket.seaweedfs[b].arn}/*"]
+      ])
+    }]
+  })
+}

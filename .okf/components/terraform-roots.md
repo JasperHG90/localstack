@@ -96,8 +96,8 @@ The brokered tokens are narrow, and that shapes what a root can add:
 - The Consul `deploy` policy is written by Ansible, not Terraform
   (`bootstrap/playbooks/enable_consul_secrets.yml`). It grants write on
   `terraform/` and sessions, which is all the state backend needs. It also
-  grants read on exactly two services, `minio` and `postgres-db`, plus
-  `node_prefix` read. A new `data "consul_service"` in applications will be
+  grants read on exactly three services, `minio`, `seaweedfs` and
+  `postgres-db`, plus `node_prefix` read. A new `data "consul_service"` in applications will be
   denied until that playbook grows a line and is re-run.
 - The Nomad `deploy` policy (`nomad_acl_policy.deploy`, `machine_roles.tf`)
   allows `submit-job`, `read-job`, the `host-volume-*` capabilities and
