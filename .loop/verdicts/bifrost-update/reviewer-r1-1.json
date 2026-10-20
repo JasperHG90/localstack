@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The rollback note in the component page does not name the dump object, and the only way back to 2.0.0 is an object anyone can overwrite or lose. backup-postgres writes pgdumpall-$(date +%Y-%m-%d).sql.gz and rclone copy overwrites it, so any other run of the job on UTC date 2026-10-20 replaces the 2.0.0 dump with a 2.3.1 one (the bucket has no versioning). The bucket's 180-day lifecycle rule deletes it after that. The path is recorded only in .loop/spikes/bifrost-update/5. Name gs://localstack-cluster-backups/postgres/pgdumpall-2026-10-20.sql.gz in the page and say it is a pg_dumpall of the whole cluster, kept 180 days, and overwritten by another backup-postgres run on that UTC date. Or copy it to a name no job writes and give that name.",
+      "anchor": ".okf/components/bifrost.md:149",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "d91b88a19e274343c002a903f5fd82eec88faf441b5fac8edb739bacd038fc56",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T10:31:56+00:00"
+}
