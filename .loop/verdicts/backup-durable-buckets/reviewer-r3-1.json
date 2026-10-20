@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "manifesto and summary named the wrong enforcer and called the backup planned",
+      "anchor": ".okf/manifesto.md",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the Planned, not built section of minio.md still called the nightly GCS copy of every durable bucket planned",
+      "anchor": ".okf/components/minio.md:160",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "the coverage test missed rclone transfers in other shapes",
+      "anchor": "cli/tests/test_backup_coverage.py",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "d4f64e100f3db71941578b8d9085dcf9e1e9f14a7f13b978ecce04117b4dfbb2",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T04:53:38+00:00"
+}
