@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "Saves with parent= into a missing folder failed because plugin 2.1.1 never sends create_parent. The plan now has the openviking_tools wrapper add create_parent: true to every viking_add_resource call that passes parent, with a stand-in client test for both cases. spike:ov-save-skill/11 shows the 404 without the flag, a 200 that creates both folder levels with it, and no harm when the folder exists.",
+      "anchor": ".loop/plans/ov-save-skill.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T15:21:53+00:00"
+}
