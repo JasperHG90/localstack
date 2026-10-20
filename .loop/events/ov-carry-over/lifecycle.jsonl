@@ -23,3 +23,4 @@
 {"at": "2026-10-20T17:03:03+00:00", "by": "review fixed", "from": "fixing", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
 {"at": "2026-10-20T17:03:04+00:00", "binds": "aea5e215033d07065869ca84622289c71323b5db93a03910d7ceb6f1661d78cb", "kind": "round-start", "n": 2, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "4243a23b4440e7374fa1ede85725e76f7dd7cb3d"}
 {"at": "2026-10-20T17:05:06+00:00", "dispatched_at": "2026-10-20T17:03:04+00:00", "kind": "round-close", "n": 2, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-10-20T17:04:47+00:00"}}
+{"at": "2026-10-20T17:05:18+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "f75ba3cc145cefac90149d01bc046ab7ac972b41"}
