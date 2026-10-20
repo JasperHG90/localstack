@@ -12,7 +12,7 @@
   "ask": null,
   "split": "j-20261020T135528+0000-5ba66693",
   "split_plan_hash": "5e3ceb5418b3473f5d3d5899c90e54dac2be6093db56b1a24f175aca8a2b0e7a",
-  "split_hold": true,
+  "split_hold": false,
   "commit_sha": null,
   "closed_outside": false,
   "dropped": false,
@@ -44,5 +44,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T13:55:28+00:00"
+  "at": "2026-10-20T13:55:38+00:00"
 }
