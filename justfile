@@ -215,4 +215,4 @@ kmctl-check:
 # Move to another kmctl release, such as v0.5.0: rewrite the pinned files, then reinstall at it.
 kmctl-upgrade ref:
     uvx copier update --defaults --data kmctl_ref={{ref}}
-    just kmctl install
+    just kmctl-install install
