@@ -1,0 +1,1 @@
+{"at": "2026-10-20T15:10:28+00:00", "command": "uv run --directory cli pytest", "exit": 1, "fingerprint": "4f285989f274a67fd82857c97ee8f763b32f21fa7b1b34d0ef24059669103f71", "kind": "red", "name": "cli_tests", "note": null, "output": ".loop/events/ov-fresh-instance/gate-output/f52d9cac848c24d16609fefa3bef0453c3c038f99816ca77f0ec3c80d5ab1f32.txt", "schema_version": "1.0"}
