@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "memex.hcl moves memex's default and reflection models off the retired deepseek-v4-flash:0731, but nothing records it. It is outside the plan, it is not deployed, and live memex keeps getting Bifrost 403s on those two stages until someone applies the applications root. No log entry or memex page says so, so the next unrelated apply will re-register memex without warning.",
+      "anchor": "deployments/applications/services/memex.hcl:171",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "test_openviking_plugin_is_copied_in_pinned checks that the ARG line holds the SHA, and separately that the destination path and examples/hermes-plugin appear somewhere. It still passes if the curl URL fetches a branch such as main instead of the ARG, which is the \"plugin is unpinned\" case in r1's fails_when.",
+      "anchor": "cli/tests/test_hermes_version.py:24",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "545e49a99fbef1eeb6215bd906126e395a68e0b2ccd522d7eba90dd17b99f27a",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T11:15:21+00:00"
+}
