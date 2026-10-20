@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "slug": "ov-carry-over",
+  "n": 4,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/spike.sh",
+      "copy": "files/spike.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/fake.py",
+      "copy": "files/fake.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/drive.py",
+      "copy": "files/drive.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/mkconf.py",
+      "copy": "files/mkconf.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/s3tool.py",
+      "copy": "files/s3tool.py"
+    }
+  ],
+  "where": "worktree",
+  "head": "e59084b4fb586451032da42a648cac7c7da2a0a3",
+  "fingerprint": "eb75f3165fa3c82a4c2121ee882402b09b5abe130af5d7795fbe9203028a5dfd",
+  "started_at": "2026-10-20T15:11:10+00:00",
+  "finished_at": "2026-10-20T15:13:00+00:00",
+  "duration_seconds": 110.665,
+  "timeout_seconds": 1200.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
