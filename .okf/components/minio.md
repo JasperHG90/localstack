@@ -1,7 +1,7 @@
 ---
 type: component
 title: MinIO
-description: "The single-node MinIO on orangepi4a: the infrastructure root runs it and owns the root key, the applications root owns every bucket, user and policy. The registry reaches its bucket keylessly through a claim-mode policy named after the job (Loki and Tempo moved to SeaweedFS), and every other consumer, plus the backup job, still holds a static key."
+description: "The single-node MinIO on orangepi4a: the infrastructure root runs it and owns the root key, the applications root owns every bucket, user and policy. Every workload has moved to SeaweedFS, the registry last, so no job logs in keylessly any more. Only the backup job still reads it, with a copy of the root key, and the claim-mode policies and static keys remain with nothing using them."
 tags: [minio, s3, object-storage, workload-identity, terraform, component]
 status: stable
 generated:
@@ -81,21 +81,15 @@ equals the JWT's `nomad_job_id`, so `minio_iam_policy.tempo_wi` is named
   name inside each policy is a plain string because `module.buckets` exports
   nothing.
 
-The keyless job's `nomad_job` in `deployments/applications/services.tf`
-carries `depends_on` on its policy. Without the policy, the registry's helper
-exits non-zero.
+No `nomad_job` depends on these policies any more. The registry's
+`depends_on` went when it moved to SeaweedFS.
 
 ## Who holds a key
 
-Keyless: registry (R13, an AWS `credential_process` helper, because it vendors
-aws-sdk-go v1). Its static key, user and KV entry stay provisioned as the
-rollback path and are simply not rendered into the job. Tempo (R9) and loki
-(R13) were keyless here too until they moved.
-
-Loki and Tempo left MinIO on 2026-10-20 for
-[SeaweedFS](/components/seaweedfs.md), so the registry is the only keyless
-job left here and the only one whose `nomad_job` keeps its `depends_on`,
-while `minio_iam_policy.tempo_wi`, `minio_iam_policy.loki_wi` and both jobs'
+Keyless: none since 2026-10-20. Tempo (R9), loki (R13) and the registry (R13,
+an AWS `credential_process` helper, because it vendors aws-sdk-go v1) were
+keyless here until they moved to [SeaweedFS](/components/seaweedfs.md), the
+registry last. The three `minio_iam_policy.*_wi` policies and the jobs'
 static MinIO keys remain with nothing using them.
 
 R13 replaced two stubs that were never built. R10 (loki) had found a
@@ -150,12 +144,10 @@ shrinks this list, and no ticket owns it yet.
   [GCS backups](/components/gcs-backups.md). Since 2026-10-20 the MinIO
   `openviking` bucket gets no writes, because OpenViking writes to
   SeaweedFS, so its nightly copy is the frozen pre-cutover state until the
-  backup job reads SeaweedFS (`seaweedfs-cutover`).
+  backup job reads SeaweedFS (`seaweedfs-cutover`). The same holds for the
+  `registry` bucket, since the registry also moved on 2026-10-20.
 - **`mlflow-artifacts` outlived its service** on purpose. Emptying it and
   deleting the entry is a separate decision.
-- **The registry names MinIO twice.** Its STS helper uses the Consul address,
-  its storage config a literal `192.168.2.29`. Moving MinIO means changing
-  both.
 - **Human console tiers are not built.** M2 was blocked when `5b2ed1b` reset the loop and
   is not in the current loop. Whoever builds it
   replaces `POC2` rather than adding a third target.
@@ -168,8 +160,8 @@ orangepi4a with its own buckets, users and keys
 of the MinIO job, provider, resources, routes and monitoring once nothing
 uses it. The nightly [GCS backup](/components/gcs-backups.md) copies every
 durable bucket, so the migration restores from off-site with the
-`restore-s3` job. `openviking`, `models` and `datalake` moved that way on
-2026-10-20. The `minio_data` volume and its data stay until the operator
+`restore-s3` job. `openviking`, `models`, `datalake` and `registry` moved
+that way on 2026-10-20. The `minio_data` volume and its data stay until the operator
 promotes the stub `minio-volume-destroy`. When `minio-removal` lands, this
 page is marked superseded.
 

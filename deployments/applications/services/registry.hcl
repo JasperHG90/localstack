@@ -5,10 +5,10 @@ job "registry" {
 
   group "registry" {
     # The registry holds no local state -- every blob lives in the `registry`
-    # MinIO bucket and there is no host volume -- so placement is purely a
+    # SeaweedFS bucket and there is no host volume -- so placement is purely a
     # capacity question. firebat, the obvious choice for being HAProxy's own
     # node, is committed to ~3100 MHz by Postgres and HAProxy and the
-    # scheduler refused to place there. Colocating with MinIO buys nothing
+    # scheduler refused to place there. Colocating with SeaweedFS buys nothing
     # either: every blob byte crosses the wire once regardless of which of
     # the two ends the registry sits on.
     constraint {
@@ -32,23 +32,23 @@ job "registry" {
       driver = "podman"
 
       ### KEEPS `vault {}`, unlike loki: the htpasswd below is a second Vault
-      ### use that outlives the MinIO key.
+      ### use that outlives the S3 key.
       vault {}
 
-      ### Keyless MinIO access. Field-by-field rationale is in
+      ### Keyless SeaweedFS access. Field-by-field rationale is in
       ### docs/workload-identity.md; only what is specific to registry is here.
       ### The task sets no `user`, so Nomad leaves the JWT readable.
       identity {
-        name        = "minio"
-        aud         = ["minio"]
+        name        = "seaweedfs"
+        aud         = ["seaweedfs"]
         file        = true
-        filepath    = "secrets/nomad_minio.jwt"
+        filepath    = "secrets/nomad_seaweedfs.jwt"
         ttl         = "1h"
         change_mode = "noop"
       }
 
       ### Same shape as loki: aws-sdk-go v1 cannot be pointed at a non-AWS
-      ### STS, so the SDK runs local/minio-creds.sh and re-runs it on expiry.
+      ### STS, so the SDK runs local/s3-creds.sh and re-runs it on expiry.
       ###
       ### AWS_CONFIG_FILE is NOT optional. Without it the SDK reads
       ### $HOME/.aws/config, which does not exist here, and every request
@@ -90,16 +90,16 @@ job "registry" {
       ### as ProcessProviderExecutionError. So it prints the JSON and nothing
       ### else, and fails loudly rather than emitting a half-document.
       ###
-      ### No RoleArn in the request: MinIO resolves the policy from the
-      ### token's nomad_job_id claim, which is what makes the `registry` policy
-      ### apply to registry alone.
+      ### SeaweedFS refuses the exchange without RoleArn and RoleSessionName.
+      ### The `registry` role's trust policy requires this token's nomad_job_id
+      ### and sub, which is what keeps it to registry alone (ADR 0017).
       template {
         data        = <<-EOF
         #!/bin/sh
         set -eu
-        jwt=$(cat /secrets/nomad_minio.jwt)
+        jwt=$(cat /secrets/nomad_seaweedfs.jwt)
         body=$(wget -q -O - --post-data='' \
-          "http://${minio_host}:9000/?Action=AssumeRoleWithWebIdentity&Version=2011-06-15&WebIdentityToken=$${jwt}")
+          "http://${s3_host}:8333/?Action=AssumeRoleWithWebIdentity&Version=2011-06-15&RoleArn=arn:aws:iam::role/registry&RoleSessionName=registry&WebIdentityToken=$${jwt}")
         field() {
           printf '%s' "$${body}" | sed -n "s:.*<$1>\([^<]*\)</$1>.*:\1:p"
         }
@@ -108,13 +108,13 @@ job "registry" {
         st=$(field SessionToken)
         ex=$(field Expiration)
         if [ -z "$${ak}" ] || [ -z "$${sk}" ] || [ -z "$${st}" ] || [ -z "$${ex}" ]; then
-          echo "minio-creds: STS response missing a credential field" >&2
+          echo "s3-creds: STS response missing a credential field" >&2
           exit 1
         fi
         printf '{"Version":1,"AccessKeyId":"%s","SecretAccessKey":"%s","SessionToken":"%s","Expiration":"%s"}\n' \
           "$${ak}" "$${sk}" "$${st}" "$${ex}"
         EOF
-        destination = "local/minio-creds.sh"
+        destination = "local/s3-creds.sh"
         perms       = "0755"
       }
 
@@ -123,12 +123,12 @@ job "registry" {
       template {
         data        = <<-EOF
         [default]
-        credential_process = /local/minio-creds.sh
+        credential_process = /local/s3-creds.sh
         EOF
         destination = "local/aws-config"
       }
 
-      # This file no longer carries a secret. The MinIO keys are gone, because
+      # This file no longer carries a secret. The S3 keys are gone, because
       # omitting accesskey/secretkey is what sends the S3 driver down the AWS
       # credential chain to the helper above, and the htpasswd line below is a
       # literal path, not a rendered value: the Vault render is the separate
@@ -142,15 +142,15 @@ job "registry" {
 
         storage:
           s3:
-            regionendpoint: http://192.168.2.29:9000
+            regionendpoint: http://${s3_host}:8333
             # Required on v3 whenever regionendpoint is set.
             forcepathstyle: true
-            # MinIO here is plain HTTP.
+            # SeaweedFS here is plain HTTP.
             secure: false
-            # Required field; MinIO ignores the value.
+            # Required field; SeaweedFS ignores the value.
             region: us-east-1
             bucket: registry
-          # Needed for `registry garbage-collect` to reclaim MinIO space;
+          # Needed for `registry garbage-collect` to reclaim S3 space;
           # deleting a tag alone never frees blobs.
           delete:
             enabled: true
@@ -193,7 +193,7 @@ job "registry" {
       }
 
       # Deliberately small. The registry is I/O-bound -- it streams blobs to
-      # MinIO rather than computing -- and ubuntu already carries the whole
+      # SeaweedFS rather than computing -- and ubuntu already carries the whole
       # observability stack (~3050 MHz and ~2.7 GB committed). A CPU
       # reservation is a scheduling commitment and a relative cgroup weight,
       # not a ceiling, so a low number still lets it use idle cycles.

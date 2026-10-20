@@ -359,7 +359,7 @@ resource "nomad_job" "tempo" {
 }
 
 ### OCI registry — container images and, via KitOps ModelKits, model
-### weights. Blobs live in the `registry` MinIO bucket, so this belongs in
+### weights. Blobs live in the `registry` SeaweedFS bucket, so this belongs in
 ### this root alongside Loki and Tempo.
 ###
 ### Runs on ubuntu. It holds no local state, so placement is a capacity
@@ -372,22 +372,19 @@ resource "nomad_job" "tempo" {
 ### HAProxy is what makes clients trust it at all. The stale LAN-wide rule
 ### for 5000/5001 that predated this job is removed in the infrastructure
 ### root, replaced by the single-caller rule in local.firewall_rules above.
-### Keeps registry_auth_secret but not registry_minio_secret: the htpasswd
-### still comes from Vault, while MinIO credentials now come from the
-### credential_process helper. The Vault entry
-### (vault_kv_secret_v2.registry_minio_credentials) and the static key behind
-### it stay provisioned as the rollback path.
+### Keeps registry_auth_secret but takes no S3 key: the htpasswd still comes
+### from Vault, while SeaweedFS credentials come from the credential_process
+### helper through the `registry` role (infrastructure root,
+### local.seaweedfs_iam). The static key at default/registry/seaweedfs stays
+### provisioned as a rollback path that is not rendered into the job.
 resource "nomad_job" "registry" {
   jobspec = templatefile(
     "${path.module}/services/registry.hcl",
     {
       registry_auth_secret = vault_kv_secret_v2.registry_auth.path
-      minio_host           = data.consul_service.minio.service[0].node_address
+      s3_host              = data.consul_service.seaweedfs.service[0].node_address
     }
   )
-
-  # Claim mode resolves `nomad_job_id` to this policy.
-  depends_on = [minio_iam_policy.registry_wi]
 }
 
 ### embark — OpenAI-compatible embedding and reranker serving.

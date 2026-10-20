@@ -1,7 +1,7 @@
 ---
 type: component
 title: GCS backups
-description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and the four durable MinIO buckets (openviking, registry, models, datalake) to a GCS bucket, each reading copies of the root credential and the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
+description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and the four durable MinIO buckets (openviking, registry, models, datalake) to a GCS bucket, each reading copies of the root credential and the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking and registry. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
 tags: [backup, gcs, postgres, minio, nomad, vault, component]
 status: stable
 generated:
@@ -103,10 +103,11 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
   (`spike:backup-durable-buckets/3`). Logs and traces
   (`loki`, `tempo`, 30 days each) and `memex` and `mlflow-artifacts`, which
   the migration drops, have no off-site copy.
-- The sync still reads MinIO. Since 2026-10-20 OpenViking writes to
-  SeaweedFS, so the MinIO `openviking` bucket is frozen and its nightly copy
-  holds nothing written after the cutover. New OpenViking blobs have no
-  off-site copy until the backup job reads SeaweedFS (`seaweedfs-cutover`).
+- The sync still reads MinIO. Since 2026-10-20 OpenViking and the registry
+  write to SeaweedFS, so the MinIO `openviking` and `registry` buckets are
+  frozen and their nightly copies hold nothing written after the cutover. New
+  blobs from either have no off-site copy until the backup job reads
+  SeaweedFS (`seaweedfs-cutover`).
 - No other host volume is copied: NATS JetStream, OpenViking's workspace,
   hermes, embark, Prometheus, Grafana and the acme state included. Nor is
   Vault's Consul storage. See [Host volumes](/components/host-volumes.md).
@@ -134,8 +135,11 @@ job neither retries nor reschedules.
 It moved `openviking`, `models` and `datalake` on 2026-10-20 (the last two
 empty): stop OpenViking, force `backup-minio`, dispatch per bucket.
 OpenViking's tree and file hashes read back identical before and after
-(`spike:seaweedfs-cutover-openviking/3`). The `seaweedfs-cutover-registry`
-plan reuses it for `registry`.
+(`spike:seaweedfs-cutover-openviking/3`). It moved `registry` on the same
+day: stop the registry, force the backup, dispatch, then delete the
+725 `dir/` markers the restore wrote (see the trap below) before starting the
+registry again. All 33 tags read back unchanged
+(`spike:seaweedfs-cutover-registry/2`).
 
 ## The enforcer, and its reach
 
@@ -190,12 +194,16 @@ bucket, the host literals, or that a backup can be read back.
   a first flagged copy writes one per directory: `registry` has 725 markers
   in GCS and no directory keys in MinIO. A restore with
   `--s3-directory-markers` creates all 725 as zero-byte `dir/` keys
-  (`spike:backup-durable-buckets/3`).
+  (`spike:backup-durable-buckets/3`). The registry never had them, so after
+  its restore they were deleted to leave the bucket as MinIO held it. A
+  future `registry` restore needs the same cleanup. `openviking` keeps its
+  markers, because OpenViking stores directories that way.
 - **Names with LF or CR.** rclone's GCS encoding stores them as U+240A and
   U+240D, so a listing compared by hand shows them as mismatches. rclone
   decodes them back on restore.
 - **Only the bucket restore is proven.** `restore-s3` brought `openviking`
-  back with identical tree and file hashes. No Postgres dump has been read
+  back with identical tree and file hashes, and `registry` back with every
+  tag unchanged. No Postgres dump has been read
   back, and no job restores one.
 - **The restore copies, it does not sync.** `rclone copy` leaves any object
   already in the SeaweedFS bucket that GCS lacks, and `rclone check` then
@@ -208,6 +216,7 @@ Built or recorded from these, which a `sources` entry cannot point at:
 - commit `4b0af46`
 - loop ticket `backup-durable-buckets` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `seaweedfs-cutover-openviking` (its plan, spikes and verdicts are under `.loop/`)
+- loop ticket `seaweedfs-cutover-registry` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `backup-swap-memex-for-openviking` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `gcs-backups-doc-to-runbook` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `R8-rollout-postgres-root-consumers` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

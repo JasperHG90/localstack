@@ -68,13 +68,13 @@ flowchart LR
   A -->|"engine mounts, ACL policies by name"| I
   A -->|"nomad-workloads role, Consul deploy policy"| P
   I -->|"Consul catalog, KV paths, OIDC client names,<br/>JWT roles, host volumes"| P
-  P -.->|"literal addresses in infrastructure jobspecs,<br/>MinIO policy named after the job id"| I
+  P -.->|"literal addresses in infrastructure jobspecs,<br/>SeaweedFS roles bound to application job ids"| I
 ```
 
 Solid arrows run in apply order: the later layer reads a name the earlier one
 wrote. Dotted arrows run the other way: the infrastructure root's jobs name an
-application by address, or MinIO, an infrastructure job, applies a policy the
-applications root wrote. Nothing checks either kind.
+application by address, or SeaweedFS, an infrastructure job, binds a role to
+an application's job id. Nothing checks either kind.
 
 This page is the map of the boundaries. The inside of each layer is in
 [the Ansible bootstrap](/components/bootstrap.md) and [the two Terraform
@@ -197,8 +197,8 @@ Ansible's output. Every handoff is a name.
 | MinIO, SeaweedFS and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack`, `default/seaweedfs/admin` and `default/postgres/localstack` |
 | OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:44-56`) |
 | Host volumes and JWT roles | infrastructure, applications jobs | the name in the jobspec |
-| MinIO access by workload identity (registry) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
-| SeaweedFS access by workload identity (loki, tempo) | infrastructure `local.seaweedfs_iam` in `services.tf`, applications jobs | each job asks for the role `arn:aws:iam::role/<job id>`, whose trust policy requires that job's `nomad_job_id` and `sub`. The job's `identity` block must carry `aud = ["seaweedfs"]`, the provider `clientId` in `local.seaweedfs_iam` |
+| MinIO access by workload identity (no job since 2026-10-20) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
+| SeaweedFS access by workload identity (loki, tempo, registry) | infrastructure `local.seaweedfs_iam` in `services.tf`, applications jobs | each job asks for the role `arn:aws:iam::role/<job id>`, whose trust policy requires that job's `nomad_job_id` and `sub`. The job's `identity` block must carry `aud = ["seaweedfs"]`, the provider `clientId` in `local.seaweedfs_iam` |
 | Loki, Tempo, dash, registry-ui, every edge backend | applications, infrastructure jobs | literal addresses in infrastructure jobspecs |
 
 The literals kept equal by hand, each guarded only by a comment beside it, are

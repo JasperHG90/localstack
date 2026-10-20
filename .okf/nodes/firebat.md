@@ -185,12 +185,12 @@ any part of it:
 - No Nomad server, so nothing schedules. Allocations already running on
   workers keep running, as the 2026-07-31 outage showed.
 - No edge: every `*.lab.orangecluster.nl` name stops answering, and off-site
-  access through the tailnet ends with it. MinIO reads Nomad's OIDC
-  discovery at `https://nomad.lab.orangecluster.nl`, through this edge to the
-  Nomad server here, and SeaweedFS trusts the same issuer, so the registry on
-  MinIO and loki and tempo on SeaweedFS cannot trade their workload identity
-  for fresh S3 credentials either (`nomad_oidc_config_url` and
-  `local.seaweedfs_iam` in `deployments/infrastructure/services.tf`).
+  access through the tailnet ends with it. SeaweedFS trusts Nomad's issuer
+  at `https://nomad.lab.orangecluster.nl`, through this edge to the Nomad
+  server here, so loki, tempo and the registry cannot trade their workload
+  identity for fresh S3 credentials either (`local.seaweedfs_iam` in
+  `deployments/infrastructure/services.tf`). MinIO reads the same discovery
+  document (`nomad_oidc_config_url`), but no job logs in there any more.
 - No Postgres: OpenViking, Bifrost's config store and every other database
   consumer fails.
 

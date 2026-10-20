@@ -56,7 +56,7 @@ Every job below is pinned by a literal `value = "ubuntu"` in its jobspec.
 | `grafana` (500 MHz, 256 MB) | 3000 | Same stack. Its datasources dial `192.168.2.47` on this node. |
 | `loki` (500 MHz, 512 MB) | 3100, gRPC 9095 | Same stack. |
 | `tempo` (500 MHz, 768 MB) | 3200, gRPC 9096, OTLP 4317 and 4318 | "Colocated with the rest of the observability stack" (commit `9a84f24`). |
-| `registry` (100 MHz, 256 MB) | 5000, debug 5001 | Stateless, so placement was a capacity question. firebat refused it, and next to MinIO it would save nothing (`registry.hcl`, commit `f1091dc`). See [container registry](/components/container-registry.md). |
+| `registry` (100 MHz, 256 MB) | 5000, debug 5001 | Stateless, so placement was a capacity question. firebat refused it, and next to SeaweedFS it would save nothing (`registry.hcl`, commit `f1091dc`). See [container registry](/components/container-registry.md). |
 | `acme` (periodic, 04:00 daily) | none | Pinned with its `acme_lego_state` volume. See [the ACME job](/components/acme-certificate-job.md). |
 
 The system jobs `node-exporter` and `alloy` run here too. `registry.hcl`

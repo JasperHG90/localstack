@@ -28,6 +28,8 @@ sources:
     resource: deployments/applications/services/loki.hcl
   - id: tempo-jobspec
     resource: deployments/applications/services/tempo.hcl
+  - id: registry-jobspec
+    resource: deployments/applications/services/registry.hcl
   - id: alert-rules
     resource: deployments/infrastructure/services/grafana/alert-rules.yaml
 ---
@@ -44,8 +46,9 @@ OpenViking was first: since 2026-10-20 its blobs are in the `openviking`
 bucket here, and it finds the S3 port through Consul service `seaweedfs`
 ([the OpenViking service](/components/openviking-service.md)). The `models`
 and `datalake` buckets were restored from GCS at the same time, both empty.
-Loki and Tempo moved the same day. Every other consumer stays on MinIO until
-its own cutover, and MinIO keeps the `s3` Consul tag
+Loki, Tempo and the OCI registry moved the same day, so no workload uses
+MinIO any more. Only `backup-minio` still reads it, and MinIO keeps the `s3`
+Consul tag and edge route, until `seaweedfs-cutover`
 ([MinIO](/components/minio.md)).
 
 ## What runs
@@ -113,9 +116,19 @@ falls back to anonymous S3 with no error. Loki's `credential_process` helper,
 `default/loki/seaweedfs` and `default/tempo/seaweedfs` are the rollback path
 and are not rendered into the jobs.
 
-The buckets started empty. Logs and traces written before the cutover stay
-in MinIO's `loki` and `tempo` buckets, unread, until MinIO is removed. The
-operator chose not to migrate them.
+The `loki` and `tempo` buckets started empty. Logs and traces written before
+the cutover stay in MinIO's `loki` and `tempo` buckets, unread, until MinIO
+is removed. The operator chose not to migrate them.
+
+The OCI registry stores in the `registry` bucket here since 2026-10-20
+([container registry](/components/container-registry.md)). It logs in the
+same way as loki: a `seaweedfs` identity, the JWT at
+`secrets/nomad_seaweedfs.jwt`, and a `local/s3-creds.sh` helper that POSTs
+`RoleArn=arn:aws:iam::role/registry` and `RoleSessionName=registry`. Its
+`regionendpoint` is `http://<s3_host>:8333`, from the same Consul lookup.
+Its bucket was restored from GCS, not started empty, and the 725 zero-byte
+`dir/` markers the restore wrote were deleted afterwards. Its static key at
+`default/registry/seaweedfs` is a rollback path the job does not read.
 
 ## Monitoring
 

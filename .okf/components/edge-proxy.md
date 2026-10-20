@@ -96,7 +96,7 @@ exists. So a fresh cluster brings the edge up only after the first acme run.
   `hermesgw` sets `X-Forwarded-For` rather than appending it, so a client
   cannot choose the address Hermes rate-limits by. `registry` also raises
   `timeout server` to 1800s for the silence while a large upload finishes
-  into MinIO.
+  into SeaweedFS.
 - The stats frontend on 8404 has no auth and is open to the LAN and the
   tailnet. Prometheus scrapes `/metrics` there.
 
