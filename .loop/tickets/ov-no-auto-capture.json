@@ -3,7 +3,7 @@
   "slug": "ov-no-auto-capture",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "2180612e1531ad138f7bcd7766b1a60ad5a04c9d7f86652aeb7e8470f764e6ed",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "fb0cd1a6c4eb714af488538dbc9489264b68a1b721475ee9d7bf212bd5b47280",
+    "started_at": "2026-10-20T14:25:40+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "fb0cd1a6c4eb714af488538dbc9489264b68a1b721475ee9d7bf212bd5b47280",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T14:24:51+00:00"
+  "at": "2026-10-20T14:25:40+00:00"
 }
