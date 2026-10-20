@@ -1,0 +1,5 @@
+wi-probe bucket holds: ['from-wi-probe'] b'written by wi-probe'
+admin lists: ['datalake', 'loki', 'models', 'openviking', 'registry', 'tempo', 'wi-probe']
+static loki key: own bucket put/get True | tempo: AccessDenied
+## applications root plan with the IAM config loaded
+No changes. Your infrastructure matches the configuration.
