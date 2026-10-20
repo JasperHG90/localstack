@@ -44,7 +44,14 @@ locals {
       ],
       readers = []
     }
+    # The store OpenViking ran on until it started over on openviking-v2.
+    # Kept as a read-only backup: no user writes it, and only the backup and
+    # restore users reach it, through the durable list below.
     openviking = {
+      writers = []
+      readers = []
+    }
+    "openviking-v2" = {
       writers = [
         { "name" = "openviking", generate_access_key = true }
       ]
@@ -60,7 +67,7 @@ locals {
 ### cannot list, the grants carried over from the previous store. Only the
 ### backup user adds s3:ListBucket, because rclone lists to sync.
 locals {
-  seaweedfs_durable_buckets = ["openviking", "registry", "models", "datalake"]
+  seaweedfs_durable_buckets = ["openviking", "openviking-v2", "registry", "models", "datalake"]
   seaweedfs_read_actions    = ["s3:GetBucketLocation", "s3:GetObject"]
   seaweedfs_write_actions   = ["s3:*"]
   seaweedfs_backup_actions  = concat(local.seaweedfs_read_actions, ["s3:ListBucket"])

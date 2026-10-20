@@ -40,7 +40,7 @@ metadata keys on every entity it puts in either.
 ## One account, one user each
 
 Everyone shares the `lab` account and is told apart by the user inside it.
-`viking://user/jasper` and `viking://user/veerle` cannot read each other,
+`viking://user/jasper` and any other user's tree cannot read each other,
 because OpenViking isolates user scopes absolutely: measured, an ADMIN
 gets 403 on another user's scope and no role grants a cross-user read.
 `viking://resources` belongs to the account, so it is common to both.

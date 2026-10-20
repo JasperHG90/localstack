@@ -95,12 +95,7 @@ variable "vault_openviking_consumers" {
     user    = string
     email   = optional(string)
   }))
-  default = {
-    veerle = {
-      account = "lab"
-      user    = "veerle"
-    }
-  }
+  default = {}
 }
 
 variable "oidc_smoke_redirect_uris" {

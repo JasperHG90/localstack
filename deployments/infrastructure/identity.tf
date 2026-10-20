@@ -111,10 +111,10 @@ resource "vault_identity_mfa_totp" "lab" {
 ### on the union, not the intersection.
 ###
 ### Enroll everyone in `vault_openviking_consumers` BEFORE applying this.
-### Mount-wide means veerle now meets the challenge on the only service she
-### reaches, and an unenrolled account cannot complete the login at all:
-### `just mfa_enroll veerle`. docs/how-to/roll-out-vault-login-mfa.md carries
-### the order.
+### Mount-wide means a consumer meets the challenge on the only service they
+### reach, and an unenrolled account cannot complete the login at all:
+### `just mfa_enroll <username>`. docs/how-to/roll-out-vault-login-mfa.md
+### carries the order.
 resource "vault_identity_mfa_login_enforcement" "userpass" {
   name                  = "userpass-totp"
   mfa_method_ids        = [vault_identity_mfa_totp.lab.method_id]

@@ -87,3 +87,117 @@ nothing.
 
 Revisit once bodies have accumulated. Flipping it is one deleted line and the
 re-key, in that order.
+
+Both costs above are about the old `openviking` schema. Schema `openviking_v2`
+starts empty with `store_content` on, so its rows carry bodies from the first
+write, and its index is built from whatever `keyword_fields` says at first
+boot. Adding `content` before the cutover would cost no re-key. The five
+fields stay because that is a separate choice from starting over.
+
+## Cutover to the v2 store
+
+OpenViking started over on bucket `openviking-v2`, schema `openviking_v2` and
+host volume `openviking_data_v2`. The old bucket `openviking`, schema
+`openviking` and volume `openviking_data` stay as they are, as a read-only
+backup. The `openviking` storage key loses all access to the old bucket, and
+only the backup and restore keys still reach it. Why is in
+`.okf/decisions/0021-openviking-starts-over-on-a-v2-store.md`.
+
+Run these in one sitting. The nightly `backup-s3` fails between the two
+applies, because it syncs a bucket that does not exist yet.
+
+1. Stop the job, so the hourly reflection sweep, Hermes and leo-consumer stop
+   writing to the old store:
+
+   ```console
+   $ nomad job stop openviking
+   ```
+
+2. Record a baseline of the old store, so you can show afterwards that nothing
+   touched it. Use the backup key, `default/backup-s3/seaweedfs`, which keeps
+   read access to `openviking`, with an rclone remote `seaweedfs` pointed at
+   `http://192.168.2.29:8333`:
+
+   ```console
+   $ rclone lsf -R --format pst seaweedfs:openviking > openviking.lsf
+   $ rclone md5sum seaweedfs:openviking > openviking.md5
+   ```
+
+   For the schema, as the `openviking` role (`default/openviking/db`) on
+   `192.168.2.30`, save the per-table row counts, the tuple counters, and a
+   hash of the dump:
+
+   ```console
+   $ psql -h 192.168.2.30 -U openviking -d openviking -c \
+       "SELECT relname, n_live_tup, n_tup_ins + n_tup_upd + n_tup_del AS writes
+          FROM pg_stat_user_tables WHERE schemaname = 'openviking' ORDER BY relname" \
+       > openviking.stats
+   $ pg_dump -h 192.168.2.30 -U openviking -d openviking --schema=openviking \
+       | grep -v -E '^\\(un)?restrict ' | sha256sum > openviking.dump.sha256
+   ```
+
+   pg_dump 17.6 and later writes a random `\restrict` key on every run. The
+   `grep` drops it, so unchanged data hashes the same twice.
+
+   `n_live_tup` is an estimate, so also run `SELECT count(*)` on each table if
+   you need exact counts. The devcontainer has no `psql`; run it from
+   `docker run --rm -it postgres:18.0`, and use that same tag for the
+   comparison afterwards. pg_dump writes its version into the dump, so a
+   newer client changes the hash with no change to the data.
+
+3. Apply `deployments/infrastructure`. It creates the `openviking_data_v2`
+   volume, adds the `openviking-v2` sync line to `backup-s3` and the restore
+   allowlist entry, and removes the `veerle` consumer.
+
+4. Create the schema as the `openviking` role, before OpenViking first boots
+   on it. ov-ext opens its delta store before the adapter creates the schema,
+   so without this step change capture stays off until a restart:
+
+   ```console
+   $ psql -h 192.168.2.30 -U openviking -d openviking -c \
+       "CREATE SCHEMA IF NOT EXISTS openviking_v2"
+   ```
+
+   This is a manual step, not a Terraform provisioner. A provisioner keyed on
+   the jobspec re-runs on every config change, and the `NO ACCOUNT PROVISIONER
+   HERE` comment in `deployments/applications/services.tf` records how the
+   last one failed an apply.
+
+5. Apply `deployments/applications`. It creates the `openviking-v2` bucket,
+   moves the `openviking` key's policy onto it, and starts the job on the v2
+   config. The job waits for `/ready`.
+
+6. Restart Hermes, so it opens a new session instead of committing to one the
+   new instance has never seen:
+
+   ```console
+   $ nomad job restart hermes
+   ```
+
+7. Check the new instance before anything writes to it. `/ready` answers 200,
+   the bucket holds only `backend_meta.json` and the preset `default/` tree,
+   both tokens resolve to `lab`/`jasper`, a search finds nothing, and Hermes's
+   own search tool answers:
+
+   ```console
+   $ curl -s -o /dev/null -w '%{http_code}\n' https://openviking-api.lab.orangecluster.nl/ready
+   $ rclone lsf -R seaweedfs:openviking-v2
+   $ python3 scripts/ov_identity_probe.py --account lab --user jasper
+   ```
+
+   Run the probe as in `docs/how-to/verify-an-openviking-deployment.md`,
+   once with your CLI token and once with Hermes's token, then ask Hermes on
+   Telegram to search OpenViking for anything: it should answer with zero
+   results.
+
+8. Compare the old store with the baseline: repeat step 2's commands and
+   `diff` against the saved files. Any difference means something wrote to
+   the old store.
+
+9. Force a backup and check that both buckets have their own GCS folder,
+   `openviking-v2/` and `openviking/`, with the listing step in
+   `docs/how-to/run-a-backup-job-on-demand.md`:
+
+   ```console
+   $ nomad job periodic force backup-s3
+   ```

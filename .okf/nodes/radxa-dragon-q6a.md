@@ -69,7 +69,8 @@ Pinned by `value = "radxa-dragon-q6a"`, either literal in the jobspec or a
 
 The system jobs `node-exporter` and `alloy` run here too.
 
-Host volumes: `hermes_data` (1 to 5 GiB), `openviking_data` (1 to 10 GiB),
+Host volumes: `hermes_data` (1 to 5 GiB), `openviking_data_v2` and the unused
+`openviking_data` (1 to 10 GiB each),
 `driftwatch_data` and `registry_ui_data` (100 MiB to 1 GiB each), `nats_data`
 (2 to 20 GiB).
 
@@ -106,7 +107,7 @@ embark's `redis_host`. The NATS exporter. Vault's Redis connection. ov-dash's
   `127.0.0.1`. The two proxies are in the infrastructure root and their
   upstreams are literals there, so moving either half breaks the pair with no
   plan error.
-- **Volumes hold the node full.** `openviking_data` and `driftwatch_data` are
+- **Volumes hold the node full.** `openviking_data_v2` and `driftwatch_data` are
   single-node-writer, so their jobs cannot move to make room. ov-dash went to
   [orangepi4a](/nodes/orangepi4a.md) for that reason.
 - **The memory sum is read off jobspecs.** `redis.hcl` puts reservations at

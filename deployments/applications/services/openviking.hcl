@@ -33,7 +33,7 @@ job "openviking" {
     ### than the store itself.
     volume "openviking_data" {
       type      = "host"
-      source    = "openviking_data"
+      source    = "openviking_data_v2"
       read_only = false
     }
 
@@ -272,7 +272,7 @@ job "openviking" {
         OV_RETRIEVAL_RERANK_FINAL         = "true"
         # These settings enable reflection
         OV_REFLECT_MODEL            = "ollama/deepseek-v4.1-flash"
-        OV_REFLECT_DELTAS_SCHEMA    = "openviking"
+        OV_REFLECT_DELTAS_SCHEMA    = "openviking_v2"
         OV_REFLECT_ENABLED          = "true"
         OV_REFLECT_USER_ID          = "jasper"
         OV_REFLECT_ACCOUNT_ID       = "lab"

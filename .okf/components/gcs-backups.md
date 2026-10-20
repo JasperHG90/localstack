@@ -1,7 +1,7 @@
 ---
 type: component
 title: GCS backups
-description: "Two periodic jobs on radxa copy Postgres (pg_dumpall, as the root user) and the four durable SeaweedFS buckets (openviking, registry, models, datalake, with a read-only key) to a GCS bucket, both reading the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking and registry. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
+description: "Two periodic jobs on radxa copy Postgres (pg_dumpall, as the root user) and the five durable SeaweedFS buckets (openviking, openviking-v2, registry, models, datalake, with a read-only key) to a GCS bucket, both reading the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking and registry. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
 tags: [backup, gcs, postgres, minio, seaweedfs, nomad, vault, component]
 status: stable
 generated:
@@ -62,8 +62,8 @@ per subsystem:
 
 The SeaweedFS keys come from the applications root, where the IAM provider
 is. `storage.tf` creates the user `backup`, with `s3:GetBucketLocation`,
-`s3:GetObject` and `s3:ListBucket` on the four durable buckets, and the user
-`restore`, with `s3:*` on the same four. `secrets.tf` writes their keys to
+`s3:GetObject` and `s3:ListBucket` on the five durable buckets, and the user
+`restore`, with `s3:*` on the same five. `secrets.tf` writes their keys to
 `default/backup-s3/seaweedfs` and `default/restore-s3/seaweedfs`. The
 infrastructure root applies first, so each job names its path as a string
 rather than a resource. On a rebuild from scratch the backup and any dispatch
@@ -83,7 +83,7 @@ since the server keeps its first password (see
 
 The object storage job was `backup-minio` and held the MinIO root key until
 the cutover. It reads SeaweedFS with the `backup` user's key, which can list
-and read the four durable buckets and nothing else. `minio-removal` renamed
+and read the durable buckets and nothing else. `minio-removal` renamed
 it `backup-s3` and moved its keys to `default/backup-s3/`, because a job with
 a bare `vault {}` reads only its own path, and deleted the old job and the
 MinIO root key copy.
@@ -99,8 +99,8 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
 
 - `pg_dumpall` copies every database on the server, so a new database is
   covered with no edit. That is how `openviking` got covered.
-- `rclone sync` copies four buckets: `openviking`, `registry`, `models` and
-  `datalake` (backup-durable-buckets, the first step of the SeaweedFS
+- `rclone sync` copies five buckets: `openviking`, `openviking-v2`,
+  `registry`, `models` and `datalake` (backup-durable-buckets, the first step of the SeaweedFS
   migration, which restores from this copy). Each sync runs even if an
   earlier one failed, and any failure fails the task. Before this change the
   sync ran with no flags, which drops OpenViking's zero-byte directory keys,
@@ -115,6 +115,13 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
   carries on (`seaweedfs-cutover`). Its first run from SeaweedFS exited 0,
   and so did its first run as `backup-s3`. The prefix is the one MinIO name
   left in the jobspec on purpose.
+- `openviking-v2` has its own line and its own prefix,
+  `minio/openviking-v2/`, since `ov-fresh-instance` (2026-10-20). It must
+  never sync into `minio/openviking/`: `rclone sync` deletes at the
+  destination, so the new bucket would erase the old one's copy.
+  `cli/tests/test_ov_fresh_instance.py` checks that no other bucket writes
+  that prefix. The old `openviking` bucket has no writer now and is kept as a
+  backup ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)).
 - No other host volume is copied: NATS JetStream, OpenViking's workspace,
   hermes, embark, Prometheus, Grafana and the acme state included. Nor is
   Vault's Consul storage. See [Host volumes](/components/host-volumes.md).
@@ -134,7 +141,7 @@ and exits 0.
 
 The operator token cannot read alloc logs, so the exit code says what failed:
 1 the copy, 2 the check, 3 a directory missing on SeaweedFS or its listing, 4
-the GCS listing, 5 a bucket other than the four durable ones, checked first so
+the GCS listing, 5 a bucket other than the durable ones, checked first so
 a typo cannot pass as "nothing to restore". No listing is piped into another
 command, so a failed listing cannot hide behind the next command's status. The
 job neither retries nor reschedules.
@@ -151,7 +158,7 @@ registry again. All 33 tags read back unchanged
 ## The enforcer, and its reach
 
 `cli/tests/test_backup_coverage.py` pins the set of SeaweedFS buckets in
-`backup-s3.hcl` to the four durable ones, each to a key of
+`backup-s3.hcl` to the durable ones, each to a key of
 `local.buckets` in `deployments/applications/storage.tf`, pins each GCS
 prefix to the same name, and checks that every sync records its failure,
 because `rclone sync` against a missing bucket does not fail loudly.

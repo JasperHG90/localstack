@@ -3,7 +3,7 @@
 ###
 ### Exit codes say what failed, because the operator token cannot read alloc
 ### logs: 1 copy, 2 check, 3 a directory missing on SeaweedFS (or its
-### listing failed), 4 a GCS listing, 5 not one of the four durable buckets.
+### listing failed), 4 a GCS listing, 5 not one of the durable buckets.
 ### No listing pipes into another command: without pipefail the pipe's exit
 ### status would be the last command's, and a failed listing would pass. A bucket with no prefix under minio/ was empty when backed up, so
 ### there is nothing to restore and the run exits 0.
@@ -50,7 +50,7 @@ job "restore-s3" {
           set -u
           b="$NOMAD_META_bucket"
           case "$b" in
-            openviking|registry|models|datalake) ;;
+            openviking|openviking-v2|registry|models|datalake) ;;
             *) echo "$b is not a durable bucket"; exit 5 ;;
           esac
           src="gcs:${gcs_bucket}/minio/$b/"

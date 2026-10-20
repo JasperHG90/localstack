@@ -15,8 +15,16 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STORAGE = REPO_ROOT / "deployments" / "applications" / "storage.tf"
 
-SEAWEEDFS_BUCKETS = {"datalake", "models", "registry", "openviking", "loki", "tempo"}
-DURABLE_BUCKETS = {"openviking", "registry", "models", "datalake"}
+SEAWEEDFS_BUCKETS = {
+    "datalake",
+    "models",
+    "registry",
+    "openviking",
+    "openviking-v2",
+    "loki",
+    "tempo",
+}
+DURABLE_BUCKETS = {"openviking", "openviking-v2", "registry", "models", "datalake"}
 WRITE_ACTION = re.compile(r"s3:(\*|Put|Delete|Create|Abort|Restore|Replicate)")
 
 
@@ -56,7 +64,7 @@ def _resource(storage: str, kind: str, name: str) -> str:
     return match.group(1)
 
 
-def test_seaweedfs_gets_exactly_the_six_buckets(storage: str) -> None:
+def test_seaweedfs_gets_exactly_the_seven_buckets(storage: str) -> None:
     assert _catalog_buckets(storage) == SEAWEEDFS_BUCKETS
     assert "seaweedfs_buckets = local.buckets" in storage
 

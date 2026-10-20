@@ -8,6 +8,7 @@ sources:
   - resource: deployments/infrastructure/oidc.tf
   - resource: deployments/infrastructure/identity.tf
   - resource: scripts/check_openviking_config.py
+  - resource: deployments/infrastructure/variables.tf
 ---
 
 # OpenViking
@@ -23,8 +24,10 @@ authenticate to the API with a Vault identity token.
 |---|---|
 | Job | `openviking` on radxa-dragon-q6a, port 1933, open to the edge, Prometheus, ov-dash and the node itself |
 | CLI and agents | `https://openviking-api.lab.orangecluster.nl` |
-| Vectors | Postgres `openviking` database, `openviking` schema, pgvector |
-| Blobs | SeaweedFS `openviking` bucket, S3 on `192.168.2.29:8333` (Consul service `seaweedfs`), with a static key from Vault `default/openviking/seaweedfs` |
+| Vectors | Postgres `openviking` database, `openviking_v2` schema, pgvector |
+| Blobs | SeaweedFS `openviking-v2` bucket, S3 on `192.168.2.29:8333` (Consul service `seaweedfs`), with a static key from Vault `default/openviking/seaweedfs` |
+| Workspace | host volume `openviking_data_v2`, mounted at `/app/.openviking` |
+| Old store, read-only backup | bucket `openviking`, schema `openviking`, volume `openviking_data`, unused since 2026-10-20. The `openviking` key has no access to the bucket |
 | Models | Bifrost, as `embark/embedding` and `embark/reranker` |
 | Image summaries | Bifrost, as `gemini/gemini-3.5-flash-lite` |
 | Query planning | Bifrost, as `ollama/gemma4:31b` |
@@ -95,13 +98,13 @@ what happens to an entity without them, is in
 | Vault entity | Groups | `ov_account` | `ov_user` | Reaches |
 |---|---|---|---|---|
 | `operator` | `developer`, `admin`, app tiers | `lab` | `jasper` | the whole cluster |
-| `veerle` | `openviking-user` | `lab` | `veerle` | one Vault path, and OpenViking |
 
-Everyone shares the `lab` account and is told apart by the user inside it.
-That is what buys isolation without giving up the shared half: OpenViking
-isolates user scopes absolutely, so `viking://user/jasper` and
-`viking://user/veerle` cannot read each other, while `viking://resources`
-belongs to the account and is common to both.
+The operator, Hermes, leo-consumer and ov-ext reflection all write as
+`lab`/`jasper`. `var.vault_openviking_consumers` is empty: a person added there
+gets an entity in group `openviking-user` with their own user inside `lab`.
+OpenViking isolates user scopes absolutely, so two users cannot read each
+other's `viking://user/<name>` tree, while `viking://resources` belongs to the
+account and is common to both.
 
 `openviking-user` grants one thing: reading `identity/oidc/token/openviking`.
 Vault issues that token for the calling entity only, so the grant cannot be

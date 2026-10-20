@@ -41,7 +41,8 @@ mounts them.
 | `loki_data`, `tempo_data` | ubuntu | loki, tempo | applications |
 | `embark_data` | jetson-orin-nano | embark | applications |
 | `memex_data` | jetson-orin-nano | memex (job commented out) | applications |
-| `hermes_data`, `openviking_data`, `driftwatch_data`, `registry_ui_data` | radxa-dragon-q6a | hermes, openviking, driftwatch, registry-ui | applications |
+| `hermes_data`, `openviking_data_v2`, `driftwatch_data`, `registry_ui_data` | radxa-dragon-q6a | hermes, openviking, driftwatch, registry-ui | applications |
+| `openviking_data` | radxa-dragon-q6a | none since 2026-10-20, kept as the old store's backup | none |
 
 The `###` comment above each newer volume says what it holds and whether
 losing it matters. Read it before resizing or moving one.
@@ -93,14 +94,14 @@ losing it matters. Read it before resizing or moving one.
   Remove the block instead. The by-hand procedure, for volumes Terraform does
   not own, is `docs/how-to/delete-a-nomad-dynamic-host-volume.md`.
 - **Not everything is backed up.** The nightly jobs cover Postgres and the
-  four durable SeaweedFS buckets (MinIO's until 2026-10-20). Every other volume has only its node's disk. See
+  durable SeaweedFS buckets (MinIO's until 2026-10-20). Every other volume has only its node's disk. See
   [GCS backups](/components/gcs-backups.md).
 
 ## Where the data really is
 
 Several volumes hold working state rather than the store itself, and their
 comments say so: `loki_data` and `tempo_data` hold what has not yet been
-flushed to SeaweedFS, `openviking_data` holds scratch while vectors are in
+flushed to SeaweedFS, `openviking_data_v2` holds scratch while vectors are in
 Postgres and blobs in SeaweedFS, and `registry_ui_data` holds a digest-keyed cache.
 `embark_data` holds ModelKits that can be pulled again, at the cost of a slow
 start. `acme_lego_state` is the one whose loss has an outside cost: without it

@@ -22,7 +22,8 @@ Storage: `backup-postgres` at 02:00 and `backup-s3` at 03:00, Europe/Amsterdam.
 
 Without them, both datasets are on one disk each. PostgreSQL is on a host
 volume pinned to `firebat` (`deployments/infrastructure/services.tf:13`) and
-the SeaweedFS `openviking`, `registry`, `models` and `datalake` buckets on
+the SeaweedFS `openviking`, `openviking-v2`, `registry`, `models` and
+`datalake` buckets on
 `orangepi4a` (`deployments/infrastructure/services.tf:53`), so a single node
 failure would take one of them with it.
 
@@ -89,9 +90,9 @@ where the SeaweedFS IAM provider is. The infrastructure root applies first, so
 each job names its key's Vault path as a string, and on a rebuild from scratch
 both fail until this root has applied:
 - `storage.tf`: SeaweedFS user `backup`, with `s3:GetBucketLocation`,
-  `s3:GetObject` and `s3:ListBucket` on the `openviking`, `registry`,
-  `models` and `datalake` buckets, and user `restore`, with `s3:*` on the
-  same four
+  `s3:GetObject` and `s3:ListBucket` on the `openviking`, `openviking-v2`,
+  `registry`, `models` and `datalake` buckets, and user `restore`, with
+  `s3:*` on the same five
 - `secrets.tf`: `backup_s3_seaweedfs_credentials` writes
   `default/backup-s3/seaweedfs` and `restore_seaweedfs_credentials` writes
   `default/restore-s3/seaweedfs` (each user's key)
@@ -116,7 +117,7 @@ Periodic batch job, cron `0 2 * * *` (2:00 AM Europe/Amsterdam):
 
 Periodic batch job, cron `0 3 * * *` (3:00 AM Europe/Amsterdam, staggered an
 hour after the postgres job):
-- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync seaweedfs:<name> gcs:<bucket>/minio/<name>/` once for each of `openviking`, `registry`, `models` and `datalake`. Each sync runs even if an earlier one failed, and the task exits nonzero if any of them failed. Each sync passes `--create-empty-src-dirs --gcs-directory-markers`, because OpenViking stores a directory as a zero-byte key ending in `/` and rclone otherwise drops those keys without `rclone check` noticing. `loki` and `tempo` are not backed up: they keep 30 days and are rebuilt from new data.
+- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync seaweedfs:<name> gcs:<bucket>/minio/<name>/` once for each of `openviking`, `openviking-v2`, `registry`, `models` and `datalake`. Each bucket has its own prefix: `openviking-v2` never syncs into `minio/openviking/`, because `rclone sync` deletes at the destination. Each sync runs even if an earlier one failed, and the task exits nonzero if any of them failed. Each sync passes `--create-empty-src-dirs --gcs-directory-markers`, because OpenViking stores a directory as a zero-byte key ending in `/` and rclone otherwise drops those keys without `rclone check` noticing. `loki` and `tempo` are not backed up: they keep 30 days and are rebuilt from new data.
 - Two Vault templates:
   1. `secrets/rclone.conf`: rclone config with a `[seaweedfs]` remote (S3/SeaweedFS provider, `http://192.168.2.29:8333`, read-only key from `default/backup-s3/seaweedfs`) and a `[gcs]` remote (`service_account_file` pointing to the key file)
   2. `secrets/gcs-key.json`: GCS service account JSON from
@@ -153,7 +154,7 @@ nomad job dispatch -meta bucket=<name> restore-s3
   | 2 | `rclone check` |
   | 3 | a GCS directory missing on SeaweedFS, or the SeaweedFS listing |
   | 4 | a GCS listing |
-  | 5 | the bucket is not one of the four durable buckets (checked first) |
+  | 5 | the bucket is not one of the five durable buckets (checked first) |
 
 - Two Vault templates:
   1. `secrets/rclone.conf`: a `[seaweedfs]` remote (S3/SeaweedFS provider,
@@ -198,6 +199,8 @@ gs://<bucket>/
   minio/
     openviking/
       <mirror of openviking bucket>
+    openviking-v2/
+      <mirror of openviking-v2 bucket>
     registry/
     models/
     datalake/

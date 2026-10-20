@@ -75,6 +75,9 @@ invariants have a passing test. Several gaps remain open:
   every registry tag read back intact, and MinIO was removed the same day
   ([ADR 0018](/decisions/0018-remove-minio.md)). Its `minio_data` volume and
   data were deleted that day too.
+- OpenViking started over on a new bucket, schema and volume as
+  `lab`/`jasper`, keeping the old store as a read-only backup
+  ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)).
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.
