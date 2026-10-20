@@ -1,0 +1,8 @@
+openviking  gcs  37286 seaweedfs  47725 | missing-on-dst 0 (0 zero-byte dir markers) | differ 5 (5 rewritten after restore)
+  missing files (not markers): 0
+models      gcs      0 seaweedfs      0 | missing-on-dst 0 (0 zero-byte dir markers) | differ 0 (0 rewritten after restore)
+  missing files (not markers): 0
+datalake    gcs      0 seaweedfs      0 | missing-on-dst 0 (0 zero-byte dir markers) | differ 0 (0 rewritten after restore)
+  missing files (not markers): 0
+registry    gcs   1124 seaweedfs    404 | missing-on-dst 725 (725 zero-byte dir markers) | differ 0 (0 rewritten after restore)
+  missing files (not markers): 0
