@@ -331,44 +331,31 @@ resource "nomad_job" "hermes" {
   depends_on = [vault_kv_secret_v2.bifrost_hermes_key]
 }
 
-### Loki — central log aggregator on ubuntu (rpi4b), MinIO-backed
+### Loki — central log aggregator on ubuntu (rpi4b), SeaweedFS-backed
 ### Takes no secret path: loki exchanges its Workload Identity JWT through
-### the credential_process helper instead of being handed a key. The Vault
-### entry (vault_kv_secret_v2.loki_minio_credentials) and the static key
-### behind it stay provisioned as the rollback path, and are simply not
-### rendered into the job. Restoring loki to its key means restoring the
-### template, the two YAML keys AND the `vault {}` block this removed.
+### the credential_process helper instead of being handed a key. Its role is
+### in SeaweedFS's IAM config (infrastructure root, local.seaweedfs_iam), and
+### the static key at default/loki/seaweedfs stays provisioned as a rollback
+### path that is not rendered into the job.
 resource "nomad_job" "loki" {
   jobspec = templatefile(
     "${path.module}/services/loki.hcl",
-    { minio_host = data.consul_service.minio.service[0].node_address }
+    { s3_host = data.consul_service.seaweedfs.service[0].node_address }
   )
-
-  # Claim mode resolves `nomad_job_id` to this policy. Without it the STS
-  # exchange returns no credential and the helper exits non-zero, which the
-  # SDK reports as a credential-process failure.
-  depends_on = [minio_iam_policy.loki_wi]
 }
 
-### Tempo — trace store on ubuntu (rpi4b), MinIO-backed. It belongs in this
-### root because minio_iam_policy.tempo_wi, in storage.tf, is provisioned
-### here.
+### Tempo — trace store on ubuntu (rpi4b), SeaweedFS-backed.
 ###
 ### Takes no secret path: tempo exchanges its Workload Identity JWT for
-### MinIO credentials rather than being handed a key. The Vault entry
-### (vault_kv_secret_v2.tempo_minio_credentials) and the static key behind
-### it stay provisioned as the rollback path, and are simply not rendered
-### into the job.
+### SeaweedFS credentials through its `tempo` role (infrastructure root,
+### local.seaweedfs_iam) rather than being handed a key. The static key at
+### default/tempo/seaweedfs stays provisioned as a rollback path that is not
+### rendered into the job.
 resource "nomad_job" "tempo" {
   jobspec = templatefile(
     "${path.module}/services/tempo.hcl",
-    {}
+    { s3_host = data.consul_service.seaweedfs.service[0].node_address }
   )
-
-  # Claim mode resolves `nomad_job_id` to this policy. Without it the STS
-  # exchange fails and tempo falls back to anonymous, which surfaces as an
-  # ordinary permission error rather than as a missing policy.
-  depends_on = [minio_iam_policy.tempo_wi]
 }
 
 ### OCI registry — container images and, via KitOps ModelKits, model

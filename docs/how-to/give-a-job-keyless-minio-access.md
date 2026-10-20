@@ -15,9 +15,11 @@ Workload Identity JWT for short-lived MinIO credentials.
 
 **To give a new job keyless access**, two things must line up: a named
 identity and a policy named after the job. A job whose client library does
-the exchange needs two more. Tempo is that case, and is the worked example
-here: it never calls `curl`, and minio-go does the exchange for it. The
-pattern works for any minio-go-based service.
+the exchange needs two more. Tempo was that case, and its MinIO setup is the
+worked example here: it never called `curl`, and minio-go did the exchange
+for it. The pattern works for any minio-go-based service. Tempo moved to
+SeaweedFS on 2026-10-20, so `tempo.hcl` now shows the SeaweedFS form, which
+differs in audience, endpoint and `AWS_ROLE_ARN`.
 
 A service built on aws-sdk-go v1 takes a different route:
 [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md).
@@ -56,11 +58,11 @@ request fails before any credential is minted, with `None of the given
 policies (...) are defined`.
 
 **Through a client library the symptom depends on which route the service
-takes.** On the minio-go route (tempo),
+takes.** On the minio-go route (tempo, before its move),
 minio-go's credential chain DISCARDS the provider error and falls back to
 anonymous, so the service logs a plain `Access Denied` and its requests go
 out unsigned: a quiet, misleading failure. On the `credential_process`
-route (loki, registry), aws-sdk-go installs a chain that ERRORS rather
+route (registry), aws-sdk-go installs a chain that ERRORS rather
 than an anonymous signer, so the failure is loud and names itself:
 `ProcessProviderExecutionError` when the helper exits non-zero, or
 `NoCredentialProviders` when the SDK never found the helper at all.
@@ -68,22 +70,21 @@ than an anonymous signer, so the failure is loud and names itself:
 Either way, a service that suddenly cannot read its own bucket is more
 often a missing policy than a revoked permission.
 
-Tempo's is `minio_iam_policy.tempo_wi`, whose `name` is `tempo`, in
-`deployments/applications/storage.tf`.
+Tempo's was `minio_iam_policy.tempo_wi`, whose `name` is `tempo`, in
+`deployments/applications/storage.tf`. It still exists, but no job uses it.
 
 ### Step 3: Point the client library at MinIO's STS
 
-Two environment variables on the task
-(for tempo, `deployments/applications/services/tempo.hcl`):
+Two environment variables on the task, as tempo had them on MinIO:
 
 ```
 AWS_WEB_IDENTITY_TOKEN_FILE = "/secrets/nomad_minio.jwt"
 TEST_IAM_ENDPOINT           = "http://192.168.2.29:9000"
 ```
 
-The endpoint variable is tempo's knob for minio-go's STS endpoint. **Its
+The endpoint variable is minio-go's knob for its STS endpoint. **Its
 scheme is load-bearing**, and deliberately unlike the schemeless
-`endpoint:` the same file gives the S3 client. Omit `http://` and
+`endpoint:` the job's storage config gives the S3 client. Omit `http://` and
 minio-go makes no STS call at all: no error, no log line, just silent
 anonymous access.
 

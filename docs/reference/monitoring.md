@@ -134,9 +134,10 @@ on its log lines:
   minutes either side.
 
 Retention is 30 days, matching Loki, so a trace and the logs that reference it
-expire together. Completed blocks are in the `tempo` MinIO bucket. The
+expire together. Completed blocks are in the `tempo` SeaweedFS bucket. The
 `tempo_data` host volume holds only the write-ahead log and blocks not yet
-flushed.
+flushed. Traces and logs written before 2026-10-20 stayed in MinIO and are
+not searchable from Grafana.
 
 Tempo's own gRPC server runs on 9096 rather than its default 9095, which Loki
 already holds on that node.

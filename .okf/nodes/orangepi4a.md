@@ -81,9 +81,11 @@ The applications root looks MinIO up in the Consul catalog
 (`data.consul_service.minio`), but several jobs also write `192.168.2.29`
 out by hand, so a move does not follow the lookup:
 
-- `loki.hcl` and `registry.hcl` get `minio_host` from Consul for the STS
-  exchange, then name `192.168.2.29:9000` literally as the S3 endpoint.
-- `tempo.hcl` names `192.168.2.29:9000` twice and takes no lookup at all.
+- `registry.hcl` gets `minio_host` from Consul for the STS exchange, then
+  names `192.168.2.29:9000` literally as the S3 endpoint.
+- `loki.hcl` and `tempo.hcl` follow the lookup: since 2026-10-20 both take
+  `s3_host` from `data.consul_service.seaweedfs` for the STS exchange and
+  the S3 endpoint on 8333, and name no address by hand.
 - `backup-minio`'s `minio_host` and the `minio` firewall entry in
   `deployments/infrastructure/services.tf`.
 - HAProxy's `minio`, `s3` and `ovdash` backends, and Prometheus's scrape

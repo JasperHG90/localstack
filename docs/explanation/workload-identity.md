@@ -257,9 +257,12 @@ itself and needs no Vault role. Per-job authorization is a `grant_rule` on
 
 A Nomad job can read its bucket with no static S3 key: it trades its
 Workload Identity JWT for short-lived MinIO credentials. The static keys in
-`deployments/applications/storage.tf` still exist and still work. Tempo, loki
-and registry run keyless, and each keeps its key provisioned as a rollback
-path. memex is the only one of those four still using one. Other holders
+`deployments/applications/storage.tf` still exist and still work. The
+registry runs keyless and keeps its key provisioned as a rollback path, and
+memex still uses its key. Tempo and loki ran keyless against MinIO until
+2026-10-20. They now store in SeaweedFS and log in there the same way, with
+`aud = ["seaweedfs"]` and a role per job (the `seaweedfs` row in the audience
+registry above). Other holders
 exist outside this set: the `backup-minio` job runs on the root credential,
 and `deployments/applications/storage.tf` still mints keys for buckets no job
 consumes. `openviking` is no longer one of those: its

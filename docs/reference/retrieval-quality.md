@@ -117,7 +117,7 @@ Those panels are pinned to a 2-hour window and ignore the dashboard time
 picker. Tempo rejects a TraceQL metrics query spanning more than 3 hours
 (`metrics query time range exceeds the maximum allowed duration of 3h0m0s`),
 and raising that cap would invite queries that scan days of blocks out of
-MinIO. Traces cover the last few hours, and Prometheus keeps the 30-day trend.
+SeaweedFS. Traces cover the last few hours, and Prometheus keeps the 30-day trend.
 
 ## See also
 

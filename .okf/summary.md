@@ -68,7 +68,8 @@ invariants have a passing test. Several gaps remain open:
 - [SeaweedFS](/components/seaweedfs.md) runs beside
   [MinIO](/components/minio.md) and is replacing it, restoring from the GCS
   copies of the four durable buckets that the [backup
-  jobs](/components/gcs-backups.md) now make. ov-dash is stopped for lack of
+  jobs](/components/gcs-backups.md) now make. Loki and Tempo moved on
+  2026-10-20, on empty buckets. ov-dash is stopped for lack of
   memory on orangepi4a until MinIO is removed.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a

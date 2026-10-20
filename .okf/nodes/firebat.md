@@ -187,9 +187,10 @@ any part of it:
 - No edge: every `*.lab.orangecluster.nl` name stops answering, and off-site
   access through the tailnet ends with it. MinIO reads Nomad's OIDC
   discovery at `https://nomad.lab.orangecluster.nl`, through this edge to the
-  Nomad server here, so loki, tempo and the registry cannot trade their
-  workload identity for fresh S3 credentials either
-  (`nomad_oidc_config_url` in `deployments/infrastructure/services.tf`).
+  Nomad server here, and SeaweedFS trusts the same issuer, so the registry on
+  MinIO and loki and tempo on SeaweedFS cannot trade their workload identity
+  for fresh S3 credentials either (`nomad_oidc_config_url` and
+  `local.seaweedfs_iam` in `deployments/infrastructure/services.tf`).
 - No Postgres: OpenViking, Bifrost's config store and every other database
   consumer fails.
 

@@ -278,6 +278,16 @@ job "grafana" {
         left_delimiter  = "<<<<"
         right_delimiter = ">>>>"
         data            = <<-EOF
+        ${seaweedfs_dashboard}
+        EOF
+
+        destination = "local/dashboards/seaweedfs.json"
+      }
+
+      template {
+        left_delimiter  = "<<<<"
+        right_delimiter = ">>>>"
+        data            = <<-EOF
         ${ingress_dashboard}
         EOF
 

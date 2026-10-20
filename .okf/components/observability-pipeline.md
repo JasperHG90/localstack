@@ -1,7 +1,7 @@
 ---
 type: component
 title: The observability pipeline
-description: "How metrics, logs, traces and alerts move through the cluster today: which Terraform root owns each of Prometheus, Grafana, Loki, Tempo, Alloy and node-exporter, why they split across both roots, and the traps that shaped Tempo's memory, the keyless MinIO access and the alert rules."
+description: "How metrics, logs, traces and alerts move through the cluster today: which Terraform root owns each of Prometheus, Grafana, Loki, Tempo, Alloy and node-exporter, why they split across both roots, and the traps that shaped Tempo's memory, the keyless SeaweedFS access and the alert rules."
 tags: [monitoring, prometheus, grafana, loki, tempo, alloy, alerting, observability]
 status: stable
 generated:
@@ -46,8 +46,8 @@ original build plan, kept as history, is
 | `alloy` | infrastructure | system job, every node | 12345, OTLP 4319/4320 on loopback | positions in the alloc dir |
 | `prometheus` | infrastructure | `ubuntu` (192.168.2.47) | 9090 | `prometheus_data` host volume, 30d TSDB |
 | `grafana` | infrastructure | `ubuntu` | 3000 | `grafana_data` host volume |
-| `loki` | applications | `ubuntu` | 3100, gRPC 9095 | `loki` MinIO bucket, WAL on `loki_data` |
-| `tempo` | applications | `ubuntu` | 3200, gRPC 9096, OTLP 4317/4318 | `tempo` MinIO bucket, WAL on `tempo_data` |
+| `loki` | applications | `ubuntu` | 3100, gRPC 9095 | `loki` SeaweedFS bucket, WAL on `loki_data` |
+| `tempo` | applications | `ubuntu` | 3200, gRPC 9096, OTLP 4317/4318 | `tempo` SeaweedFS bucket, WAL on `tempo_data` |
 
 The jobspecs are under `deployments/infrastructure/services/` and
 `deployments/applications/services/`. All four host volumes are
@@ -57,9 +57,10 @@ mount.
 
 ## Why the stack spans two roots
 
-Loki and Tempo are in the applications root because their MinIO bucket and
-their `minio_iam_policy` are there (`deployments/applications/storage.tf`).
-Their host volumes are in the infrastructure root. So the apply order is
+Loki and Tempo are in the applications root because their buckets are there
+(`deployments/applications/storage.tf`). Their host volumes, and the SeaweedFS
+roles they log in through (`local.seaweedfs_iam`), are in the infrastructure
+root. So the apply order is
 infrastructure first, then applications. Applying applications first registers
 a job whose volume does not exist yet, and the alloc waits.
 
@@ -78,7 +79,7 @@ the host volumes' node constraint.
 (`deployments/infrastructure/services/prometheus.hcl`):
 
 - Static targets for Nomad (all five agents), Consul, HAProxy, the Postgres
-  exporter, MinIO, Tempo and node-exporter. The `node` and `nomad` jobs
+  exporter, MinIO, SeaweedFS, Tempo and node-exporter. The `node` and `nomad` jobs
   relabel `instance` to the hostname.
 - Dedicated jobs for Bifrost and OpenViking. Bifrost's `/metrics` needs basic
   auth since B1, and the shared discovery job cannot carry a per-target
@@ -136,17 +137,23 @@ than live.
   exceeding it drops traces, which is what `TempoTracesDropped` watches.
   `max_live_traces_bytes` cannot take effect on this path, and the jobspec
   traces why through Tempo's source.
-- **Keyless MinIO access differs per client library.** Both jobs mount a
-  Workload Identity JWT at `secrets/nomad_minio.jwt` and MinIO resolves the
-  policy by the `nomad_job_id` claim, so each `minio_iam_policy` name must equal
-  its job id exactly. Tempo uses minio-go's web-identity provider (R9): the
-  scheme on `TEST_IAM_ENDPOINT` is load-bearing, and dropping it gives silent
-  anonymous S3. `AWS_ROLE_ARN` must stay unset or the exchange switches to
-  role-policy mode. Loki vendors aws-sdk-go v1, which cannot target a non-AWS
-  STS, so R13 gave it a `credential_process` helper at `local/minio-creds.sh`.
-  `AWS_CONFIG_FILE` must be set and `AWS_WEB_IDENTITY_TOKEN_FILE` must not be.
-  The static keys at `default/loki/minio` and `default/tempo/minio` stay in
-  Vault as the rollback path. Neither job has a `vault {}` block.
+- **Keyless SeaweedFS access differs per client library.** Both jobs mount a
+  Workload Identity JWT with audience `seaweedfs` at
+  `secrets/nomad_seaweedfs.jwt` and trade it at SeaweedFS's STS on port 8333
+  for a role named after the job. Each role lives in `local.seaweedfs_iam` in
+  `deployments/infrastructure/services.tf` and trusts only its own job's
+  `nomad_job_id` and `sub` ([ADR 0017](/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md)).
+  Tempo uses minio-go's web-identity provider (R9): the scheme on
+  `TEST_IAM_ENDPOINT` is load-bearing, and dropping it gives silent anonymous
+  S3. `AWS_ROLE_ARN = "arn:aws:iam::role/tempo"` is required for the same
+  reason: without it minio-go sends no role and falls back to anonymous S3
+  with no error. Loki vendors aws-sdk-go v1, which cannot target a non-AWS
+  STS, so R13 gave it a `credential_process` helper, now at
+  `local/s3-creds.sh`, which sends `RoleArn=arn:aws:iam::role/loki` and
+  `RoleSessionName=loki`. `AWS_CONFIG_FILE` must be set and
+  `AWS_WEB_IDENTITY_TOKEN_FILE` must not be. The static keys at
+  `default/loki/seaweedfs` and `default/tempo/seaweedfs` stay in Vault as the
+  rollback path. Neither job has a `vault {}` block.
 - **Grafana's login has four settings that look optional.** Grafana 11.5.2's
   generic OAuth client does no OIDC discovery, so the three URLs are written
   out. `SCOPES` must contain `openid`. `ROLE_ATTRIBUTE_PATH` is a quoted
@@ -156,7 +163,7 @@ than live.
 
 ## Grafana is provisioned from the jobspec
 
-Datasources, 13 dashboards, the contact point, the notification policy, the
+Datasources, 14 dashboards, the contact point, the notification policy, the
 message template and the alert rules are all Nomad templates. Terraform reads
 each dashboard JSON and `alert-rules.yaml` with `file()` and passes it through
 `templatefile`, so they are part of `nomad_job.grafana.jobspec`. Any edit to
@@ -177,7 +184,8 @@ user-facing side is under "Where alerts go" in `docs/reference/monitoring.md`.
 with fixed thresholds. See [driftwatch](/components/driftwatch.md).
 Two rules couple the file to other jobs:
 
-- `ScrapeJobMissing` asserts that ten named scrape jobs exist. For static
+- `ScrapeJobMissing` asserts that eleven named scrape jobs exist, `seaweedfs`
+  among them. For static
   targets such as `bifrost` and `openviking`, the series exists as soon as
   Prometheus has the job. For a Consul-discovered job such as `driftwatch`, it
   fires if the service is still unregistered 10 minutes after an
@@ -210,7 +218,7 @@ Why none of these services is behind the edge is
 
 | Must stay true | Enforced by |
 |---|---|
-| `minio_iam_policy` names equal the job ids `loki` and `tempo` | nothing, and a mismatch fails the STS exchange at runtime |
+| The `loki` and `tempo` roles in `local.seaweedfs_iam` trust their job's `nomad_job_id` and `sub`, and each job asks for its own role ARN | nothing, and a mismatch fails the STS exchange at runtime |
 | Grafana root URL equals the registered redirect URI | nothing, and a mismatch fails at login |
 | Every node address stays on the Loki push and Tempo OTLP rules | nothing, and a missing node's data stops silently |
 | Named scrape jobs exist | `ScrapeJobMissing` |
@@ -226,6 +234,7 @@ blackbox exporter first.
 
 - [The host firewall](/components/host-firewall.md)
 - [Host volumes](/components/host-volumes.md)
+- [SeaweedFS](/components/seaweedfs.md)
 - [MinIO](/components/minio.md)
 - [The workload identity chain, as
   built](/components/workload-identity-chain.md)

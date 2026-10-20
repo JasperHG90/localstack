@@ -87,7 +87,7 @@ split is `.claude/rules/terraform-file-layout.md`.
 |---|---|---|
 | Ansible | packages and HashiStack versions (`bootstrap/inventory/group_vars/all.yml`), every Consul, Vault and Nomad config file, Consul ACL bootstrap, Vault init and unseal, Nomad ACL bootstrap, the Consul ACL policies and tokens Vault and Nomad use to reach Consul, the Nomad `developer` ACL policy, the `jwt-nomad` auth mount with its default role and the shared `nomad-workloads` policy, the `nomad/` and `consul/` engine mounts and their `config/access`, the Consul `deploy` ACL policy, the `bootstrap/` KV mount and its two secrets, Podman, the NVIDIA runtime, Tailscale, and ufw's default policy plus the HashiStack ports | any Nomad job, any Vault policy other than `nomad-workloads` |
 | Infrastructure root | the `secret` KV mount, human auth (`userpass`, `jwt-lab`), identity, groups and human policies (`identity.tf`), the OIDC provider, every client and the Nomad OIDC auth method (`oidc.tf`), the Nomad and Consul engine roles, the Nomad `deploy` and `dash_read` ACL policies, the per-job JWT roles and their policies (`machine_roles.tf`), the `redis/` database engine (`database.tf`), all fourteen host volumes, the shared jobs (postgres, minio, haproxy, acme, prometheus, grafana, alloy, node-exporter, the two oauth2-proxy jobs, nats, redis, two backup jobs), their KV secrets and firewall rules, and the GCS backup bucket | MinIO buckets, Postgres roles and databases, application jobs |
-| Applications root | the application jobs (hermes, loki, tempo, registry, embark, openviking, ov-dash, driftwatch, dash, registry-ui, bifrost), their MinIO buckets, IAM and access keys (`storage.tf`), Postgres roles, databases and grants (`database.tf`), their KV secrets (`secrets.tf`), the Bifrost virtual keys, and their firewall rules | any Vault mount, auth method, policy or role, any host volume |
+| Applications root | the application jobs (hermes, loki, tempo, registry, embark, openviking, ov-dash, driftwatch, dash, registry-ui, bifrost), their MinIO and SeaweedFS buckets, IAM and access keys (`storage.tf`), Postgres roles, databases and grants (`database.tf`), their KV secrets (`secrets.tf`), the Bifrost virtual keys, and their firewall rules | any Vault mount, auth method, policy or role, any host volume |
 
 Four placements surprise a first reader:
 
@@ -97,7 +97,7 @@ Four placements surprise a first reader:
   table and the node-pinning trap.
 - **Observability is split across the two roots.** Prometheus, Grafana, Alloy
   and node-exporter are infrastructure jobs. Loki and Tempo are application
-  jobs, because their MinIO buckets are applications' (the comment above
+  jobs, because their buckets are applications' (the comment above
   `nomad_job.alloy`, `deployments/infrastructure/services.tf:573-576`).
   Grafana and Alloy then reach Loki and Tempo by literal address
   (`deployments/infrastructure/services/grafana.hcl:139,171`,
@@ -197,7 +197,8 @@ Ansible's output. Every handoff is a name.
 | MinIO, SeaweedFS and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack`, `default/seaweedfs/admin` and `default/postgres/localstack` |
 | OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:44-56`) |
 | Host volumes and JWT roles | infrastructure, applications jobs | the name in the jobspec |
-| MinIO access by workload identity (loki, tempo, registry) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
+| MinIO access by workload identity (registry) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
+| SeaweedFS access by workload identity (loki, tempo) | infrastructure `local.seaweedfs_iam` in `services.tf`, applications jobs | each job asks for the role `arn:aws:iam::role/<job id>`, whose trust policy requires that job's `nomad_job_id` and `sub`. The job's `identity` block must carry `aud = ["seaweedfs"]`, the provider `clientId` in `local.seaweedfs_iam` |
 | Loki, Tempo, dash, registry-ui, every edge backend | applications, infrastructure jobs | literal addresses in infrastructure jobspecs |
 
 The literals kept equal by hand, each guarded only by a comment beside it, are

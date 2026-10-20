@@ -644,6 +644,7 @@ resource "nomad_job" "grafana" {
       nomad_dashboard             = file("${path.module}/services/grafana/nomad.json")
       postgres_dashboard          = file("${path.module}/services/grafana/postgres.json")
       minio_dashboard             = file("${path.module}/services/grafana/minio.json")
+      seaweedfs_dashboard         = file("${path.module}/services/grafana/seaweedfs.json")
       ingress_dashboard           = file("${path.module}/services/grafana/ingress.json")
       nats_dashboard              = file("${path.module}/services/grafana/nats.json")
       bifrost_dashboard           = file("${path.module}/services/grafana/bifrost.json")
