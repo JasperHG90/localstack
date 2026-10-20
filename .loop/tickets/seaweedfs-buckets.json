@@ -1,14 +1,36 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-buckets",
-  "stage": "fixing",
+  "stage": "blocked",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 3,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
-  "blocker": null,
-  "fix": null,
+  "blocker": {
+    "code": "review-cap",
+    "message": "the review round cap (3) is reached with 1 finding(s) to review again",
+    "plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
+    "at": "2026-10-20T06:15:35+00:00",
+    "resign_eval": false
+  },
+  "fix": {
+    "round": 3,
+    "fingerprint": "8de76aa4adcf8c48477558e48a77967792fe972291ecd2b84514593cc193244c",
+    "tree": "7c3a6c8e8c50463ada4c8534344b56dff5817ea3",
+    "decisions": [
+      {
+        "finding": "reviewer:f4",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/architecture/deployment-layers.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T06:15:35+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T180813+0000-34ce1826",
   "split_plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
@@ -142,8 +164,14 @@
       "to": "fixing",
       "at": "2026-10-20T06:14:22+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "blocked",
+      "at": "2026-10-20T06:15:35+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T06:15:34+00:00"
+  "at": "2026-10-20T06:15:35+00:00"
 }
