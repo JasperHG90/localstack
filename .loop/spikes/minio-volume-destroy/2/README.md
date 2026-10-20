@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T09:45:09+00:00'
+  at: '2026-10-20T09:45:16+00:00'
 slug: minio-volume-destroy
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike minio-volume-destroy/2
@@ -24,7 +24,7 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note minio-volume-destroy 2`.
+Yes. Review round 1 found `default/openfang/minio`, a key soft-deleted in April by the retired openfang job, which spike 1 missed because it checked only six named jobs. That key was purged with `vault kv metadata delete`, and the check now lists every path under secret/default/ two levels deep. stdout.txt shows no path naming minio is left, Nomad lists no `minio_data`, its host directory on orangepi4a is gone, and the infrastructure plan lists only the 15 always-run firewall replacements. 18 MinIO key paths were purged in all.
 
 ## Files
 
