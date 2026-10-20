@@ -62,12 +62,12 @@ measured.
 
 ## Where it stands
 
-The cluster runs, and Login MFA is built. Ten of the manifesto's eleven
+The cluster runs, and Login MFA is built. All eleven of the manifesto's
 invariants have a passing test. Several gaps remain open:
 
 - SeaweedFS is planned to replace [MinIO](/components/minio.md), restoring
-  from GCS copies of every durable bucket, a widening the [backup
-  jobs](/components/gcs-backups.md) do not have yet.
+  from the GCS copies of the four durable buckets that the [backup
+  jobs](/components/gcs-backups.md) now make.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.

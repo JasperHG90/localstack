@@ -1,9 +1,9 @@
-"""Drift tests: the bucket the nightly MinIO backup names is a real bucket.
+"""Drift tests: the buckets the nightly MinIO backup names are real buckets.
 
 `rclone sync` against a bucket that does not exist does not loudly fail a
 periodic batch job, so a typo in the jobspec buys a silently empty backup that
-nobody notices until a restore. These tests pin the name in the jobspec to the
-bucket set `deployments/applications/storage.tf` declares, and pin the GCS
+nobody notices until a restore. These tests pin the names in the jobspec to the
+bucket set `deployments/applications/storage.tf` declares, and pin each GCS
 destination prefix to the same name so the two cannot drift apart.
 
 Each parser carries a self-check, so a parser that finds nothing fails rather
@@ -20,7 +20,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 JOBSPEC = REPO_ROOT / "deployments" / "infrastructure" / "services" / "backup-minio.hcl"
 APP_STORAGE = REPO_ROOT / "deployments" / "applications" / "storage.tf"
 
-EXPECTED_BUCKET = "openviking"
+# The durable buckets. loki and tempo keep 30 days and are left out on purpose.
+EXPECTED_BUCKETS = {"openviking", "registry", "models", "datalake"}
+
+SYNC_LINE = re.compile(
+    r"^\s*rclone sync minio:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M
+)
 
 
 def _require(value: str | None, what: str) -> str:
@@ -30,16 +35,12 @@ def _require(value: str | None, what: str) -> str:
     return value
 
 
-def _sync_source_bucket() -> str:
-    """The bucket in `rclone sync minio:<bucket> ...`."""
-    match = re.search(r"rclone sync minio:(\S+)", JOBSPEC.read_text())
-    return _require(match.group(1) if match else None, "rclone sync source in backup-minio.hcl")
-
-
-def _sync_destination_bucket() -> str:
-    """The bucket segment of the `gcs:<gcs_bucket>/minio/<bucket>/` destination."""
-    match = re.search(r"gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/", JOBSPEC.read_text())
-    return _require(match.group(1) if match else None, "GCS destination prefix in backup-minio.hcl")
+def _sync_lines() -> list[re.Match[str]]:
+    """Every `rclone sync minio:<bucket> gcs:${gcs_bucket}/minio/<bucket>/` line."""
+    lines = list(SYNC_LINE.finditer(JOBSPEC.read_text()))
+    if not lines:
+        pytest.fail("parser found no rclone sync line in backup-minio.hcl — it cannot be checked")
+    return lines
 
 
 def _declared_buckets() -> set[str]:
@@ -68,27 +69,63 @@ def _declared_buckets() -> set[str]:
     return names
 
 
-def test_minio_backup_syncs_a_declared_bucket() -> None:
-    bucket = _sync_source_bucket()
+def test_minio_backup_syncs_declared_buckets() -> None:
     declared = _declared_buckets()
-    assert bucket in declared, (
-        f"backup-minio.hcl syncs `minio:{bucket}`, which is not a bucket declared in "
-        f"deployments/applications/storage.tf (declared: {sorted(declared)}). "
-        "rclone sync against a nonexistent bucket backs up nothing, quietly."
+    for line in _sync_lines():
+        bucket = line.group(1)
+        assert bucket in declared, (
+            f"backup-minio.hcl syncs `minio:{bucket}`, which is not a bucket declared in "
+            f"deployments/applications/storage.tf (declared: {sorted(declared)}). "
+            "rclone sync against a nonexistent bucket backs up nothing, quietly."
+        )
+
+
+def test_every_rclone_transfer_is_a_checked_sync_line() -> None:
+    """A transfer written in another shape would escape every check in this file."""
+    transfers = re.findall(r"\brclone (?:sync|copy|move)\b", JOBSPEC.read_text())
+    assert len(transfers) == len(_sync_lines()), (
+        f"backup-minio.hcl runs {len(transfers)} rclone transfers but only "
+        f"{len(_sync_lines())} match the shape the coverage checks read"
     )
 
 
-def test_minio_backup_syncs_the_openviking_bucket() -> None:
-    source = _sync_source_bucket()
-    destination = _sync_destination_bucket()
-    assert source == EXPECTED_BUCKET, (
-        f"backup-minio.hcl syncs `{source}`, expected `{EXPECTED_BUCKET}`."
+def test_minio_backup_syncs_the_durable_buckets() -> None:
+    sources = [line.group(1) for line in _sync_lines()]
+    assert sorted(sources) == sorted(EXPECTED_BUCKETS), (
+        f"backup-minio.hcl syncs {sorted(sources)}, expected {sorted(EXPECTED_BUCKETS)}, each once."
     )
-    assert destination == source, (
-        f"backup-minio.hcl reads bucket `{source}` but writes to the "
-        f"`minio/{destination}/` prefix in GCS. Source and destination must name "
-        "the same bucket, or the backup lands under the wrong path."
-    )
+    for line in _sync_lines():
+        source, destination = line.group(1), line.group(2)
+        assert destination == source, (
+            f"backup-minio.hcl reads bucket `{source}` but writes to the "
+            f"`minio/{destination}/` prefix in GCS. Source and destination must name "
+            "the same bucket, or the backup lands under the wrong path."
+        )
+
+
+def test_minio_backup_keeps_directory_markers() -> None:
+    """OpenViking's empty directories are zero-byte `/` keys that rclone skips by default.
+
+    Losing them does not fail `rclone check`, so only the flags guard them.
+    """
+    for line in _sync_lines():
+        for flag in ("--create-empty-src-dirs", "--gcs-directory-markers"):
+            assert flag in line.group(0), f"`{line.group(0).strip()}` lacks {flag}"
+
+
+def test_minio_backup_fails_when_any_sync_fails() -> None:
+    """Every sync runs, and any one failing makes the task exit nonzero.
+
+    `&&` would skip the later buckets after one failure, and `;` alone would
+    exit 0 on a failed sync, so a periodic job would report a green run.
+    """
+    text = JOBSPEC.read_text()
+    for line in _sync_lines():
+        assert line.group(0).rstrip().endswith("|| rc=1"), (
+            f"`{line.group(0).strip()}` does not record its failure with `|| rc=1`."
+        )
+    assert re.search(r"^\s*rc=0\s*$", text, re.M), "the script never sets rc=0 before the syncs"
+    assert re.search(r"^\s*exit \$rc\s*$", text, re.M), "the script never ends with `exit $rc`"
 
 
 # -- Doc drift: docs/reference/gcs-backups.md against the jobspecs -------------

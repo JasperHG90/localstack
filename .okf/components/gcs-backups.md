@@ -1,7 +1,7 @@
 ---
 type: component
 title: GCS backups
-description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and one MinIO bucket (openviking) to a GCS bucket, each reading copies of the root credential and the same GCS key. A drift test pins the bucket name and the reference page's facts and runs in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and no restore has been tried."
+description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and the four durable MinIO buckets (openviking, registry, models, datalake) to a GCS bucket, each reading copies of the root credential and the same GCS key. A drift test pins the bucket set and the reference page's facts and runs in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and no restore has been tried."
 tags: [backup, gcs, postgres, minio, nomad, vault, component]
 status: stable
 generated:
@@ -69,20 +69,28 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
 
 - `pg_dumpall` copies every database on the server, so a new database is
   covered with no edit. That is how `openviking` got covered.
-- `rclone sync` copies ONE bucket, `openviking`. It was `memex` until
-  backup-swap-memex-for-openviking swapped it. Images, ModelKits, logs, traces
-  and the `datalake`, `models` and `mlflow-artifacts` buckets have no off-site
-  copy.
+- `rclone sync` copies four buckets: `openviking`, `registry`, `models` and
+  `datalake` (backup-durable-buckets, the first step of the SeaweedFS
+  migration, which restores from this copy). Each sync runs even if an
+  earlier one failed, and any failure fails the task. Before this change the
+  sync ran with no flags, which drops OpenViking's zero-byte directory keys,
+  so copies made before 2026-10-20 have no empty directories. The first
+  run with the marker flags (2026-10-20) restored them, and a per-key
+  comparison found every MinIO file and directory in GCS
+  (`spike:backup-durable-buckets/3`). Logs and traces
+  (`loki`, `tempo`, 30 days each) and `memex` and `mlflow-artifacts`, which
+  the migration drops, have no off-site copy.
 - No other host volume is copied: NATS JetStream, OpenViking's workspace,
   hermes, embark, Prometheus, Grafana and the acme state included. Nor is
   Vault's Consul storage. See [Host volumes](/components/host-volumes.md).
 
 ## The enforcer, and its reach
 
-`cli/tests/test_backup_coverage.py` pins the MinIO bucket in
-`backup-minio.hcl` to a key of `local.buckets` in
-`deployments/applications/storage.tf`, and pins the GCS prefix to the same
-name, because `rclone sync` against a missing bucket does not fail loudly.
+`cli/tests/test_backup_coverage.py` pins the set of MinIO buckets in
+`backup-minio.hcl` to the four durable ones, each to a key of
+`local.buckets` in `deployments/applications/storage.tf`, pins each GCS
+prefix to the same name, and checks that every sync records its failure,
+because `rclone sync` against a missing bucket does not fail loudly.
 It also pins the reference page's provider version, node constraints, per-task
 CPU and memory, crons and images to the sources. Each parser fails if it
 finds nothing, and the doc checks bind figures to their task: a reviewer
@@ -111,30 +119,30 @@ bucket, the host literals, or that a backup can be read back.
   task's exit code is gzip's. A dump that dies halfway leaves a truncated
   `.sql.gz`, the prestart task succeeds, and `upload` copies it.
 - **The 180-day rule and the mirror.** The lifecycle rule deletes objects by
-  age, and `minio/openviking/` is a mirror, not a series. An object older than
+  age, and each `minio/<bucket>/` prefix is a mirror, not a series. An object older than
   180 days in GCS is deleted there and re-uploaded by the next sync, so it has
-  no off-site copy for up to a day. The reference page calls the rule "a
-  safety net for orphaned objects", but `rclone sync` already removes those.
+  no off-site copy for up to a day.
 - **Floating image.** Both jobs run `rclone/rclone:latest`.
 - **Staging is on radxa.** The dump is written to the allocation directory on
   radxa before upload, so a very large database needs that much free disk
   there.
+- **Directory markers differ by bucket.** A flagged sync onto an existing
+  copy writes markers only for empty directories (93 for `openviking`), while
+  a first flagged copy writes one per directory: `registry` has 725 markers
+  in GCS and no directory keys in MinIO. A restore with
+  `--s3-directory-markers` creates all 725 as zero-byte `dir/` keys
+  (`spike:backup-durable-buckets/3`).
+- **Names with LF or CR.** rclone's GCS encoding stores them as U+240A and
+  U+240D, so a listing compared by hand shows them as mismatches. rclone
+  decodes them back on restore.
 - **Restore is unproven.** No read-back has been recorded.
-
-## Planned, not built
-
-Ticket `backup-durable-buckets` widens `backup-minio` to the four durable
-buckets, `openviking`, `registry`, `models` and `datalake`, each under
-`minio/<bucket>/`, and the test to match. It is the first step of the move
-from MinIO to SeaweedFS, which restores from these GCS copies rather than
-copying between the two stores. `loki`, `tempo`, `memex` and
-`mlflow-artifacts` stay out.
 
 ## Evidence
 
 Built or recorded from these, which a `sources` entry cannot point at:
 
 - commit `4b0af46`
+- loop ticket `backup-durable-buckets` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `backup-swap-memex-for-openviking` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `gcs-backups-doc-to-runbook` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `R8-rollout-postgres-root-consumers` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
