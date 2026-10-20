@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "SeaweedFS readers get s3:ListBucket, which their MinIO counterparts do not have (MinIO's read-only policy is GetBucketLocation and GetObject only), so ducklake_reader and models_reader gain a grant; eval row r1 names \"a user's grant differs from its MinIO counterpart's\" as a failure, and the plan says each user keeps today's split",
+      "anchor": "deployments/applications/storage.tf:199",
+      "category": "contract",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "the r1 test never compares the action sets with MinIO's; setting seaweedfs_write_actions to [\"s3:GetObject\"] in a scratch copy of storage.tf leaves all 8 tests green, and the reader-set difference in f1 also passes",
+      "anchor": "cli/tests/test_seaweedfs_buckets.py:81",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "two knowledge pages are now false. terraform-roots.md says the Consul deploy policy reads \"exactly two services, minio and postgres-db\", and deployment-layers.md says the applications root configures three providers from running services (lines 160-166) and lists only minio and postgres-db as allowed by name, citing enable_consul_secrets.yml:49-57 (line 195)",
+      "anchor": ".okf/components/terraform-roots.md:99",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "0b81e29cf780547709588d7d98c0e1d3de8ac4390fe363c6b385e0b982d2ee2b",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T06:05:36+00:00"
+}
