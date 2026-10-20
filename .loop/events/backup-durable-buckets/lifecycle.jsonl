@@ -9,3 +9,4 @@
 {"at": "2026-10-20T04:41:33+00:00", "kind": "spike-note", "n": 2, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-10-20T04:41:34+00:00", "kind": "spike-note", "n": 3, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-10-20T04:42:49+00:00", "by": "advance", "from": "building", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
+{"at": "2026-10-20T04:42:50+00:00", "binds": "d1abcc95545281d0d1e91e6a7616eab45c192b4572b41b109378c121e91e0217", "kind": "round-start", "n": 1, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "4a46a0c942aae5bdc7940d2609c63dfc2c3069fe"}
