@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "minio-volume-destroy",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
   "plan_rounds": 1,
   "review_rounds": 0,
@@ -88,8 +88,14 @@
       "to": "planning",
       "at": "2026-10-20T09:35:39+00:00",
       "by": "promote"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-10-20T09:37:41+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T09:37:40+00:00"
+  "at": "2026-10-20T09:37:41+00:00"
 }
