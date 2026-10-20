@@ -1,0 +1,15 @@
+## nomad host volumes named minio_data
+0
+## host directory on orangepi4a
+gone
+## vault: MinIO key paths
+default/minio: No value found at secret/metadata/default/minio
+default/loki/minio: gone
+default/tempo/minio: gone
+default/registry/minio: gone
+default/openviking/minio: gone
+default/memex/minio: gone
+default/mlflow/minio: gone
+## infrastructure plan
+     15 null_resource.firewall[...] must be replaced
+      1 Plan: 15 to add, 0 to change, 15 to destroy.

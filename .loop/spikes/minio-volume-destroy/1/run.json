@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "minio-volume-destroy",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/vol-verify/verify.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/vol-verify/verify.sh",
+      "copy": "files/verify.sh"
+    }
+  ],
+  "where": "here",
+  "head": "4476c3bea7bd3183d6aef76b9b563b0830e44e0f",
+  "fingerprint": "20f3e97dcecbcc70212f4e7a1ad51894e7cfa5f79772871bc6a560f72d577ebf",
+  "started_at": "2026-10-20T09:39:00+00:00",
+  "finished_at": "2026-10-20T09:39:04+00:00",
+  "duration_seconds": 4.42,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
