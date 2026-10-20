@@ -33,3 +33,4 @@
 {"at": "2026-10-20T07:38:19+00:00", "by": "delegated:jasperginn@gmail.com/implementer", "edge": "blocked->ready", "grant": "g1", "kind": "override", "reason": "the last open finding is non-blocking docs (a paragraph moved below a list and three words); one round to confirm it", "schema_version": "1.0", "step": "ticket-override"}
 {"at": "2026-10-20T07:38:19+00:00", "kind": "unblock", "schema_version": "1.0"}
 {"at": "2026-10-20T07:38:20+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-20T07:39:30+00:00", "by": "advance", "from": "building", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
