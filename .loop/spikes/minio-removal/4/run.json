@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "minio-removal",
+  "n": 4,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/rm-verify/verify.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/rm-verify/verify.sh",
+      "copy": "files/verify.sh"
+    }
+  ],
+  "where": "here",
+  "head": "9fe1ebeaed31e2c8f4e55600f8b60ad4058ee3f9",
+  "fingerprint": "fd2a1ded3ff619bb8db761c3baabf980fd9e81060bb34b3c420c4083704b4def",
+  "started_at": "2026-10-20T08:52:31+00:00",
+  "finished_at": "2026-10-20T08:52:49+00:00",
+  "duration_seconds": 17.525,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

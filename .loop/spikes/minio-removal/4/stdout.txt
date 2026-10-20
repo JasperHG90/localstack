@@ -1,0 +1,19 @@
+## applications state: minio_ or module.buckets addresses
+0
+## applications plan: every resource it would touch, then the summary
+      1 No changes. Your infrastructure matches the configuration.
+## infrastructure plan: every resource it would touch, then the summary
+     15 null_resource.firewall[...] must be replaced
+      1 Plan: 15 to add, 0 to change, 15 to destroy.
+## nomad
+minio: Error querying job: Unexpected response code: 404 (job not found)
+backup-minio: Error querying job: Unexpected response code: 404 (job not found)
+backup-s3 forced run (periodic-1792486100, alloc 91b5d9d2): 2026-10-20T10:49:08+02:00 Terminated Exit Code: 0
+ov-dash: Status      = successful
+ov-dash route: 200
+## vault: old MinIO key paths
+default/minio/localstack: present
+default/backup-minio/minio: present
+default/backup-minio/gcs: present
+default/backup-minio/seaweedfs: present
+default/loki/minio: present
