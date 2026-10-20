@@ -1,0 +1,56 @@
+run_agent INFO Loaded environment variables from /opt/data/.env
+hermes_cli.plugins INFO Plugin 'browser-browser-use' registered browser provider: browser-use
+hermes_cli.plugins INFO Plugin 'browser-browserbase' registered browser provider: browserbase
+hermes_cli.plugins INFO Plugin 'browser-firecrawl' registered browser provider: firecrawl
+hermes_cli.plugins INFO Plugin 'deepinfra' registered image_gen provider: deepinfra
+hermes_cli.plugins INFO Plugin 'fal' registered image_gen provider: fal
+hermes_cli.plugins INFO Plugin 'krea' registered image_gen provider: krea
+hermes_cli.plugins INFO Plugin 'meta-ai-image-gen' registered image_gen provider: meta-ai
+hermes_cli.plugins INFO Plugin 'openai' registered image_gen provider: openai
+hermes_cli.plugins INFO Plugin 'openai-codex' registered image_gen provider: openai-codex
+hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: openrouter
+hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: nous
+hermes_cli.plugins INFO Plugin 'xai' registered image_gen provider: xai
+hermes_cli.plugins INFO Plugin 'deepinfra' registered video_gen provider: deepinfra
+hermes_cli.plugins INFO Plugin 'fal' registered video_gen provider: fal
+hermes_cli.plugins INFO Plugin 'openrouter' registered video_gen provider: openrouter
+hermes_cli.plugins INFO Plugin 'xai' registered video_gen provider: xai
+hermes_cli.plugins INFO Plugin 'web-brave-free' registered web provider: brave-free
+hermes_cli.plugins INFO Plugin 'web-ddgs' registered web provider: ddgs
+hermes_cli.plugins INFO Plugin 'web-exa' registered web provider: exa
+hermes_cli.plugins INFO Plugin 'web-firecrawl' registered web provider: firecrawl
+hermes_cli.plugins INFO Plugin 'web-keenable' registered web provider: keenable
+hermes_cli.plugins INFO Plugin 'web-openai-native' registered web provider: openai-native
+hermes_cli.plugins INFO Plugin 'web-parallel' registered web provider: parallel
+hermes_cli.plugins INFO Plugin 'web-perplexity' registered web provider: perplexity
+hermes_cli.plugins INFO Plugin 'web-searxng' registered web provider: searxng
+hermes_cli.plugins INFO Plugin 'web-tavily' registered web provider: tavily
+hermes_cli.plugins INFO Plugin 'web-xai' registered web provider: xai
+hermes_cli.plugins INFO Plugin discovery complete: 56 found, 52 enabled
+run_agent INFO OpenAI client created (agent_init, shared=True) thread=MainThread:281473590030368 provider=custom base_url=http://127.0.0.1:8080/v1 model=ollama/deepseek-v4.1-flash
+tools.registry INFO check_fn check_browser_back_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn _browser_cdp_check returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_click_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn _browser_dialog_check returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_navigate_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_press_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_scroll_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_snapshot_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_type_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_browser_vision_requirements returned False; dependent tools will be unavailable this turn
+tools.registry INFO check_fn check_cronjob_requirements returned False; dependent tools will be unavailable this turn
+tools.tool_search INFO tool_search activated (tier 1): 8 core/visible tools kept, 2 deferred (~748 tokens), listing full (budget ~4000 tokens)
+agent.memory_manager INFO Memory provider 'openviking' registered (6 tools)
+run_agent INFO Memory provider 'openviking_tools' activated
+agent.context_pin WARNING model.context_length pins ollama/deepseek-v4.1-flash at 128,000 tokens but the provider advertises 1,000,000; the pin wins. Remove model.context_length from config.yaml to use the advertised window.
+plugins.memory.openviking INFO OpenViking session stale-spike committed during startup recovery (0 turns)
+agent.turn_context INFO conversation turn: session=spike-s1 model=ollama/deepseek-v4.1-flash provider=custom platform=telegram history=0 msg='Hello there, what is the weather like on Mars today?'
+run_agent INFO OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (<lambda>):281473265758560 provider=custom base_url=http://127.0.0.1:8080/v1 model=ollama/deepseek-v4.1-flash
+agent.conversation_loop INFO API call #1: model=ollama/deepseek-v4.1-flash provider=custom in=10 out=5 total=15 latency=0.2s id=chatcmpl-spike
+agent.conversation_loop INFO Turn ended: reason=text_response(finish_reason=stop) model=ollama/deepseek-v4.1-flash api_calls=1/9223372036854775807 budget=1/9223372036854775807 tool_turns=0 last_msg_role=assistant response_len=231 session=spike-s1
+agent.turn_context INFO conversation turn: session=spike-s2 model=ollama/deepseek-v4.1-flash provider=custom platform=telegram history=0 msg='Please SEARCH-OV for the spike probe.'
+agent.conversation_loop INFO API call #2: model=ollama/deepseek-v4.1-flash provider=custom in=10 out=5 total=15 latency=0.0s id=chatcmpl-spike
+agent.tool_executor INFO tool viking_search completed (0.10s, 188 chars)
+agent.conversation_loop INFO API call #3: model=ollama/deepseek-v4.1-flash provider=custom in=10 out=5 total=15 latency=0.0s id=chatcmpl-spike
+agent.conversation_loop INFO Turn ended: reason=text_response(finish_reason=stop) model=ollama/deepseek-v4.1-flash api_calls=2/9223372036854775807 budget=2/9223372036854775807 tool_turns=1 last_msg_role=assistant response_len=10 session=spike-s2

@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "ov-no-auto-capture",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovtools/spike_literal.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovtools/spike_literal.sh",
+      "copy": "files/spike_literal.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "0274bc7db7581a310808449484d53456ff548f7f",
+  "fingerprint": "bc18ddb84de6fe7349ddc46cb4c405a3e77b32e7d4ebb74ecb7480fc2db413ea",
+  "started_at": "2026-10-20T14:01:09+00:00",
+  "finished_at": "2026-10-20T14:01:28+00:00",
+  "duration_seconds": 19.35,
+  "timeout_seconds": 400.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
