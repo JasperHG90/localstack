@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "7866ba40b3cc904e31ccb65450250af5f62d3f5d80de6712657d28f3dd3d5133",
+    "tree": "b197b7108010035f88ef97c58978dd9c53930b2c",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/bifrost.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T10:33:37+00:00"
+  },
   "ask": "j-20261020T080818+0000-60c64d00",
   "split": "j-20261020T085401+0000-0372e781",
   "split_plan_hash": "29e5926e39c5336be89f69b4a6e6577e536e95889cbd7e6fda8d5640307a5481",
@@ -120,8 +136,14 @@
       "to": "fixing",
       "at": "2026-10-20T10:32:15+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T10:33:37+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T10:33:36+00:00"
+  "at": "2026-10-20T10:33:37+00:00"
 }
