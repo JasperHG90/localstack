@@ -1,0 +1,19 @@
+## first backup from SeaweedFS: backup-minio/periodic-1792483971, alloc d12af9d8
+2026-10-20T10:13:53+02:00  Terminated  Exit Code: 0
+## SeaweedFS against GCS after that run
+openviking  seaweedfs  37207 files | gcs  37207 files | missing in gcs 0 differ 0 extra in gcs 0
+registry    seaweedfs    404 files | gcs    404 files | missing in gcs 0 differ 0 extra in gcs 0
+models      seaweedfs      0 files | gcs      0 files | missing in gcs 0 differ 0 extra in gcs 0
+datalake    seaweedfs      0 files | gcs      0 files | missing in gcs 0 differ 0 extra in gcs 0
+## the CLI's s3 route
+│ s3                    │ https://s3.lab.orangec │ seaweedfs             │ consul-tag  │ passing   │ 192.168.2.29:8333 │
+## s3.lab
+server: SeaweedFS 30GB 4.48
+## MinIO counts: reading 1 at 08:12:58 UTC was openviking 45765, registry 399, loki 13581, tempo 6502, models 0, datalake 0
+08:24:46
+openviking  seaweedfs   47725  minio   45765
+registry    seaweedfs     404  minio     399
+loki        seaweedfs      37  minio   13581
+tempo       seaweedfs     446  minio    6502
+models      seaweedfs       0  minio       0
+datalake    seaweedfs       0  minio       0
