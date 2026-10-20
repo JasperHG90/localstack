@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ov-save-skill",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
@@ -53,7 +53,7 @@
   "split": "j-20261020T150715+0000-9d2a4cce",
   "split_plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "f19d5ef606d52209fe4d29a14097b252d7b3b1dc",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -180,8 +180,14 @@
       "to": "verifying",
       "at": "2026-10-20T16:38:33+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T16:40:39+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T16:40:24+00:00"
+  "at": "2026-10-20T16:40:39+00:00"
 }
