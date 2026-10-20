@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "registry.hcl requests a workload identity with audience seaweedfs, its credential_process helper sends RoleArn for the registry role and RoleSessionName=registry, and regionendpoint comes from a template variable.",
+      "fails_when": "the audience is still minio, the helper lacks RoleArn or RoleSessionName, or 192.168.2.29:9000 is hardcoded",
+      "command": "uv run --directory cli pytest tests/test_registry_s3.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "After the stop, backup, restore and start: rclone check exits 0 for registry, an image pushed before the switch pulls by tag and by digest, a new push succeeds with its blobs in SeaweedFS's registry bucket, and MinIO's registry count stays fixed.",
+      "fails_when": "any of those fails, MinIO's count rises, or the evidence is not recorded in the review",
+      "judgment": true
+    }
+  ]
+}
