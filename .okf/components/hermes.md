@@ -137,14 +137,18 @@ catalog plugin 2.1.1, pinned by commit, into
 `/opt/hermes/plugins/memory/openviking`, so no start fetches it from GitHub
 ([ADR 0019](/decisions/0019-hermes-openviking-plugin-built-into-the-image.md)).
 
-**Recall waits longer than the plugin default.** Plugin 2.1.1 gives its
-pre-turn recall 3s per request and 4s in all. Our `search/find` takes 5.5 to
-10s, so recall timed out on 8 of the first 11 turns after the upgrade, and
+**Recall gets a budget that fits Hermes's own limit.** Plugin 2.1.1 gives its
+pre-turn recall 3s per request and 4s in all. Our memory search takes 3.5 to
+7s, so recall timed out on 8 of the first 11 turns after the upgrade, and
 Hermes made up for it with its own `viking_search` and `viking_browse` calls,
-each a model round longer. `config.yaml` sets
-`memory.openviking.recall_request_timeout_seconds: 10` and
-`recall_timeout_seconds: 12`; `cli/tests/test_hermes_version.py` holds them
-there.
+each a model round longer. Hermes itself drops a recall still running at 8s
+(`_EXTERNAL_PREFETCH_TIMEOUT_S` in `agent/memory_manager.py`, not
+configurable), so a longer plugin budget only adds waiting. `config.yaml`
+sets `memory.openviking.recall_timeout_seconds` and
+`recall_request_timeout_seconds` to 7.5 and `recall_prefer_abstract: true`,
+which skips the full-content reads that would follow the search;
+`cli/tests/test_hermes_version.py` holds them there. Recall stays a near
+thing until OpenViking search gets faster.
 
 **Sessions are kept.** v0.22 prunes ended sessions idle for 90 days at
 startup by default. `config.yaml` sets `sessions.auto_prune: false` to keep

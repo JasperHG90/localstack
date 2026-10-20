@@ -45,15 +45,19 @@ def test_config_keeps_openviking_and_sessions() -> None:
     assert sessions and "auto_prune: false" in sessions.group(1)
 
 
-def test_recall_outwaits_openviking_search() -> None:
-    # Plugin 2.1.1 gives recall 3s per request and 4s in all; our OpenViking
-    # search/find takes 5.5-10s, so at the defaults recall always timed out
-    # and Hermes ran the searches itself as tool calls instead.
+def test_recall_fits_inside_hermes_prefetch_limit() -> None:
+    # Plugin 2.1.1 gives recall 3s per request and 4s in all; our memory
+    # search takes 3.5-7s, so at the defaults recall always timed out. Hermes
+    # drops a recall still running at 8s (_EXTERNAL_PREFETCH_TIMEOUT_S in
+    # agent/memory_manager.py, not configurable), so a budget at or past 8s
+    # waits for an answer it then throws away.
     hcl = (APPS / "services" / "hermes.hcl").read_text()
     block = re.search(r"^  openviking:\n((?:    .*\n)+)", hcl, re.M)
     assert block, "memory.openviking is missing from the Hermes config"
-    settings = dict(re.findall(r"^    (\w+): ([\d.]+)$", block.group(1), re.M))
-    request = float(settings["recall_request_timeout_seconds"])
+    settings = dict(re.findall(r"^    (\w+): (\S+)$", block.group(1), re.M))
     total = float(settings["recall_timeout_seconds"])
-    assert request >= 10
-    assert total >= request
+    request = float(settings["recall_request_timeout_seconds"])
+    assert 7 <= total < 8
+    assert request <= total
+    # Full-content reads after the search would push the total past 8s.
+    assert settings["recall_prefer_abstract"] == "true"

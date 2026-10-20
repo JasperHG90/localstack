@@ -263,11 +263,14 @@ memory:
   memory_char_limit: 2200
   user_char_limit: 1375
   provider: "openviking"
-  # Plugin defaults (4s total, 3s per request) are shorter than our
-  # search/find (5.5-10s), so recall timed out on nearly every turn.
+  # Plugin defaults (4s total, 3s per request) are shorter than our memory
+  # search (3.5-7s), so recall timed out on nearly every turn. Hermes drops a
+  # recall still running at 8s (agent/memory_manager.py), so the budget stays
+  # under that and skips the full-content reads that would follow the search.
   openviking:
-    recall_timeout_seconds: 12
-    recall_request_timeout_seconds: 10
+    recall_timeout_seconds: 7.5
+    recall_request_timeout_seconds: 7.5
+    recall_prefer_abstract: true
 
 # v0.22 prunes ended sessions idle for 90 days by default; keep them, as 0.21 did.
 sessions:
