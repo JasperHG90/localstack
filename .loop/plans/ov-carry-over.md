@@ -50,27 +50,31 @@ old instance, so it is the fallback, not the plan.
    `deployments/applications/services.tf`) runs on the rclone 1.75.2 image
    `deployments/infrastructure/services/restore-s3.hcl` uses. For each of
    the four source trees, and only those (the job refuses any other prefix),
-   it runs `rclone copy --create-empty-src-dirs --s3-directory-markers` from
+   it runs `rclone copy --ignore-existing --create-empty-src-dirs
+   --s3-directory-markers` from
    `openviking/lab/user/jasper/resources/<tree>/` to the same prefix in the
    new bucket, except blog-scraper, which copies to `.../resources/blogs/`.
    The two blog trees share 26 relative keys: the root and per-source
    (addyosmani, anthropic, deepmind, mistral, ollama, openai, spotify, uber)
    `.abstract.md`/`.overview.md` sidecars and directory markers, and one
-   article (`deepmind/gemini-4-argon.md/`). blogs copies first and
-   blog-scraper copies with `--ignore-existing`, so a shared key keeps the
-   blogs version. Every `.abstract.md` and `.overview.md` copied from
-   blog-scraper has the text `viking://user/jasper/resources/blog-scraper/`
+   article (`deepmind/gemini-4-argon.md/`). Every copy skips a
+   target key that already exists, so a re-run never puts an old sidecar
+   back over one the new instance has since regenerated (step 3, or a later
+   save under the same folder). blogs copies first, so a shared key keeps
+   the blogs version. blog-scraper's `.abstract.md` and `.overview.md` are
+   excluded from its `rclone copy` and go only through the rewrite step,
+   which would otherwise skip them as already present. Each has the text `viking://user/jasper/resources/blog-scraper/`
    rewritten to `viking://user/jasper/resources/blogs/` on the way
    (`rclone cat | sed | rclone rcat`), so directories that exist only in
    blog-scraper need no new summary: their copied sidecars would otherwise
    still point at `blog-scraper/` URIs (spike:ov-carry-over/3). The rewrite
    skips a target key that already exists, like the copy, so a re-run only
-   adds missing keys. Rewritten sidecars change hash by design, so the hash
-   check excludes them (with the 26 shared keys) and a separate check
-   requires each one present at its `blogs/` key with no `blog-scraper/`
-   text left anywhere under `blogs/`; `rclone check` for blog-scraper skips those 26 keys by an
-   explicit list, then `rclone check --one-way` (every old file present with
-   the same hash), then the one-way directory check from restore-s3, because
+   adds missing keys. The checks follow what
+   the target keeps unchanged: `rclone check --one-way` compares by hash
+   only the non-sidecar files (every `.abstract.md`/`.overview.md` and the
+   26 shared keys excluded), every old sidecar must be present at its new
+   key, no `blog-scraper/` text may remain anywhere under `blogs/`, and the
+   one-way directory check from restore-s3 runs last, because
    `rclone check` passes with every marker missing
    (`spike:seaweedfs-cutover-openviking/2`). It exits with a distinct code
    per failure, as restore-s3 does. The `.abstract.md` and `.overview.md`
@@ -108,7 +112,9 @@ old instance, so it is the fallback, not the plan.
    the old instance either. After the re-index, the script copies those
    rows from `openviking.ov_context` into `openviking_v2.ov_context` with
    `INSERT ... SELECT` as the `openviking` role (the old schema is only
-   read), rewriting `blog-scraper/` to `blogs/` in the URI. Both schemas
+   read), rewriting `blog-scraper/` to `blogs/` in the URI and computing each
+   rewritten row's `id` as `md5('lab:' || new_uri)`, the key OpenViking
+   derives, so a later re-ingest updates the row instead of adding one. Both schemas
    use the same embedder and dimension (`embark/embedding`, 384), so the
    vectors carry over as they are. A row copy costs no VLM call and
    survives a later `vectors_only` re-index (spike:ov-carry-over/4).
@@ -126,7 +132,10 @@ hermes job), not from OpenViking
 so the reset does not touch it. The skill's save path moves from
 `blog-scraper/<source>/` to `blogs/<source>/` in
 `deployments/applications/services/hermes/skills/productivity/blog-scraper/SKILL.md`. ov-clip keeps no state of its own in
-OpenViking.
+OpenViking. The `daily-blog-scrape` cron is paused (`hermes cron pause`)
+from `ov-fresh-instance`'s cutover until this ticket's skill change is
+deployed, so it never writes `blog-scraper/` into the new instance; the
+outcome check names any key under `blog-scraper/` there.
 
 Outcome: the job exits 0, so every old file in the four trees is in the
 new bucket at its key, with the same hash except for the rewritten
