@@ -19,26 +19,6 @@ resource "nomad_dynamic_host_volume" "postgres" {
   }
 }
 
-resource "nomad_dynamic_host_volume" "minio_data" {
-  name      = "minio_data"
-  namespace = "default"
-  plugin_id = "mkdir"
-  node_pool = "default"
-
-  capacity_max = "3.5 TiB"
-  capacity_min = "1.0 TiB"
-
-  constraint {
-    attribute = "$${attr.unique.hostname}"
-    value     = "orangepi4a"
-  }
-
-  capability {
-    access_mode     = "single-node-writer"
-    attachment_mode = "file-system"
-  }
-}
-
 resource "nomad_dynamic_host_volume" "seaweedfs_data" {
   name      = "seaweedfs_data"
   namespace = "default"

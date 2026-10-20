@@ -70,7 +70,7 @@ invariants have a passing test. Several gaps remain open:
   the [GCS backups](/components/gcs-backups.md), with OpenViking's tree and
   every registry tag read back intact, and MinIO was removed the same day
   ([ADR 0018](/decisions/0018-remove-minio.md)). Its `minio_data` volume and
-  data stay until the operator destroys them.
+  data were deleted that day too.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.

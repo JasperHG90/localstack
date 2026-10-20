@@ -1,7 +1,7 @@
 ---
 type: node
 title: orangepi4a, the storage node
-description: "The Orange Pi 4A (192.168.2.29) holds SeaweedFS on a 1 to 3.5 TiB volume, keeps the removed MinIO's minio_data volume until minio-volume-destroy, and runs ov-dash in the room the retired phoenix job left. Memory is its limit, several jobs hardcode its address even where a Consul lookup exists, and losing it takes every bucket, so Loki and Tempo cannot flush and the registry cannot serve a blob."
+description: "The Orange Pi 4A (192.168.2.29) holds SeaweedFS on a 1 to 3.5 TiB volume and runs ov-dash in the room the retired phoenix job left. Memory is its limit, several jobs hardcode its address even where a Consul lookup exists, and losing it takes every bucket, so Loki and Tempo cannot flush and the registry cannot serve a blob."
 tags: [node, orangepi4a, orange-pi, arm64, minio, ov-dash, storage, nvme]
 status: stable
 generated:
@@ -46,7 +46,7 @@ cutover. MinIO ran here until `minio-removal` removed it the same day
 | Board | Orange Pi 4A (from the inventory name) | same |
 | OS and arch | Ubuntu jammy, arm64 | U4 plan |
 | RAM, CPU | not recorded | |
-| Storage | `seaweedfs_data` and `minio_data` each declare 1.0 to 3.5 TiB. A procedure for moving an Orange Pi's OS to NVMe exists, but whether it ran on this node is not recorded | `deployments/infrastructure/services.tf`, `docs/how-to/move-orange-pi-os-to-nvme.md` |
+| Storage | `seaweedfs_data` declares 1.0 to 3.5 TiB. A procedure for moving an Orange Pi's OS to NVMe exists, but whether it ran on this node is not recorded | `deployments/infrastructure/services.tf`, `docs/how-to/move-orange-pi-os-to-nvme.md` |
 | Nomad | client, pool `default`, no node class, worker reservation (500 MHz, 512 MB, 10 GB) | [placement](/nodes/placement.md) |
 | Tailnet | not on it, `tailscaled` stopped | `bootstrap/playbooks/configure_tailscale.yml` |
 
@@ -59,12 +59,11 @@ cutover. MinIO ran here until `minio-removal` removed it the same day
 
 The system jobs `node-exporter` and `alloy` run here too.
 
-Host volumes: `seaweedfs_data` and `minio_data`, 1.0 to 3.5 TiB each, the
-largest in the cluster. Nothing mounts `minio_data` since MinIO was removed.
-It keeps MinIO's data until the operator promotes `minio-volume-destroy`.
+Host volume: `seaweedfs_data`, 1.0 to 3.5 TiB, the largest in the cluster.
 
 History: MinIO (5000 MHz, 2560 MB) ran here until `minio-removal` on
-2026-10-20.
+2026-10-20. Its `minio_data` volume and the data on it were deleted the same
+day in `minio-volume-destroy`.
 
 History: the `phoenix` tracing job ran here until `74fc590` retired it on
 2026-09-09. ov-dash took its place the same day.
@@ -142,11 +141,10 @@ and names no literal.
   the registry cannot serve a blob, so embark cannot pull a model on its next
   start, OpenViking loses its blob store, and `backup-s3` fails.
 - `s3.lab` (SeaweedFS) and `openviking.lab` (ov-dash) stop answering.
-- `seaweedfs_data` and `minio_data` are on this node only. The nightly backup
-  copies the four durable buckets from SeaweedFS to GCS
+- `seaweedfs_data` is on this node only. The nightly backup copies the four
+  durable buckets from SeaweedFS to GCS
   ([GCS backups](/components/gcs-backups.md)), so a restore loses at most a
-  day. `loki` and `tempo` have no copy, and neither has MinIO's old data on
-  `minio_data`.
+  day. `loki` and `tempo` have no copy.
 
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),

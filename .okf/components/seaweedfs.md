@@ -55,9 +55,9 @@ moved the rest: the nightly backup reads the four durable buckets from here
 ([GCS backups](/components/gcs-backups.md)), the `seaweedfs` service carries
 the `s3` Consul tag, so the CLI's `s3` route resolves here, HAProxy's
 `s3.lab.orangecluster.nl` backend points at `192.168.2.29:8333`, and the dash
-tile is `seaweedfs`. `minio-removal` then removed MinIO the same day, leaving
-only its `minio_data` volume ([MinIO](/components/minio.md),
-[ADR 0018](/decisions/0018-remove-minio.md)).
+tile is `seaweedfs`. `minio-removal` then removed MinIO the same day
+([ADR 0018](/decisions/0018-remove-minio.md)), and `minio-volume-destroy`
+deleted its `minio_data` volume ([MinIO](/components/minio.md)).
 
 ## What runs
 
@@ -126,9 +126,8 @@ falls back to anonymous S3 with no error. Loki's `credential_process` helper,
 and are not rendered into the jobs.
 
 The `loki` and `tempo` buckets started empty. Logs and traces written before
-the cutover stay in MinIO's `loki` and `tempo` buckets on the `minio_data`
-volume, unread, until the operator promotes `minio-volume-destroy`. The
-operator chose not to migrate them.
+the cutover were not migrated, by operator choice, and were deleted with
+MinIO's `minio_data` volume in `minio-volume-destroy`.
 
 The OCI registry stores in the `registry` bucket here since 2026-10-20
 ([container registry](/components/container-registry.md)). It logs in the

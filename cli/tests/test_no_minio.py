@@ -3,8 +3,6 @@
 Each allowed name has a reason that is not "MinIO still runs":
 - `minio/` is the GCS prefix the backup has always written, kept so the
   history carries on; the restore job reads the same prefix.
-- `minio_data` is the old store's host volume. Its data stays until the
-  operator promotes the `minio-volume-destroy` ticket.
 - `minio-go` is the Go S3 client library Tempo is built on.
 - `minio/mc` is the S3 client the devcontainer installs, which works against
   SeaweedFS.
@@ -26,7 +24,6 @@ SCANNED = [
 SKIPPED_PARTS = {".terraform", "__pycache__", ".venv", "node_modules"}
 ALLOWED = [
     (re.compile(r"\bminio/"), {"backup-s3.hcl", "restore-s3.hcl"}),
-    (re.compile(r"minio_data"), {"services.tf"}),
     (re.compile(r"minio-go"), {"tempo.hcl"}),
     (re.compile(r"uid: alert-minio-degraded"), {"alert-rules.yaml"}),
     (re.compile(r"github\.com/minio/mc/|MinIO retired that host"), {"Dockerfile"}),
