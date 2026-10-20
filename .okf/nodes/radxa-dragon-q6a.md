@@ -65,6 +65,7 @@ Pinned by `value = "radxa-dragon-q6a"`, either literal in the jobspec or a
 | `redis` (500 MHz, 512 MB) | 6379 | No reason recorded. See [Redis](/components/redis.md). |
 | `nats` with its exporter | 4222, 8222, 7777 | Built here instead of on the planned RISC-V board ([proposal](/proposals/riscv-worker-node.md)). See [NATS](/components/nats.md). |
 | `backup-postgres` (02:00), `backup-minio` (03:00) | none | Moved off CPU-full firebat on 2026-07-07, because radxa had spare CPU and memory and hosts neither service (commit `4b0af46`). See [GCS backups](/components/gcs-backups.md). |
+| `restore-s3` (1000 MHz, 512 MB), only when dispatched | none | Pinned beside the backup jobs it undoes (`restore-s3.hcl`, added 2026-10-20). See [GCS backups](/components/gcs-backups.md). |
 
 The system jobs `node-exporter` and `alloy` run here too.
 

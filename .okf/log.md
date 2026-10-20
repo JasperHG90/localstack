@@ -75,6 +75,11 @@
 - Evidence wording (every concept named above with an Evidence line for a loop ticket): an old ticket's plan and any verdicts are under `.loop/` at commit `48f52e2`, not always under `.loop/archive/`. `components/minio`: R12 was dropped, not left a stub.
 - Evidence wording (the same concepts): dropped the claim that `48f52e2` is the last commit before the reset, since three stamp commits follow it.
 
+## 2026-10-20 (seaweedfs-cutover-openviking)
+
+- **OpenViking moved to SeaweedFS** (`components/openviking-service`, `components/seaweedfs`, `components/minio`, `components/host-volumes`, `nodes/orangepi4a`): OpenViking's blobs are now in SeaweedFS's `openviking` bucket, reached through Consul service `seaweedfs` with a static key from `default/openviking/seaweedfs`, because its AGFS `s3fs` client carries no session token. Its MinIO key is still minted and no longer used.
+- **Bucket restore is built and proven** (`components/gcs-backups`, `components/terraform-roots`, `nodes/radxa-dragon-q6a`, `nodes/placement`, `summary`): Recorded the parameterized `restore-s3` job, its keys in both roots, its exit codes, the `dispatch-job` capability the Nomad `deploy` policy gained for it, and that it restored `openviking` with identical tree and file hashes. Replaced the "restore is unproven" trap, which now holds only for the Postgres dump, and recorded that the nightly backup still reads MinIO, so OpenViking's new blobs have no off-site copy until `seaweedfs-cutover`.
+
 ## 2026-10-20 (seaweedfs-cutover-observability)
 
 - **Loki and Tempo store in SeaweedFS** (`components/seaweedfs`, `components/observability-pipeline`, `components/workload-identity-chain`, `components/minio`, `components/host-volumes`, `architecture/deployment-layers`, `nodes/orangepi4a`, `nodes/firebat`, `summary`): both jobs now write to empty `loki` and `tempo` buckets on SeaweedFS and log in with a `seaweedfs` identity, tempo through `AWS_ROLE_ARN` and loki through `local/s3-creds.sh`. Old logs and traces stay in MinIO, unmigrated by operator decision. Grafana gained a SeaweedFS dashboard, the `SeaweedFSDown` and `SeaweedFSDiskError` alerts, and `seaweedfs` in `ScrapeJobMissing`. The registry still uses MinIO.

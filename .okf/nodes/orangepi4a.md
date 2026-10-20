@@ -86,10 +86,13 @@ out by hand, so a move does not follow the lookup:
 - `loki.hcl` and `tempo.hcl` follow the lookup: since 2026-10-20 both take
   `s3_host` from `data.consul_service.seaweedfs` for the STS exchange and
   the S3 endpoint on 8333, and name no address by hand.
-- `backup-minio`'s `minio_host` and the `minio` firewall entry in
-  `deployments/infrastructure/services.tf`.
+- `backup-minio`'s `minio_host`, `restore-s3`'s `seaweedfs_host`, and the
+  `minio` firewall entry in `deployments/infrastructure/services.tf`.
 - HAProxy's `minio`, `s3` and `ovdash` backends, and Prometheus's scrape
   targets.
+
+OpenViking also takes its S3 address from `data.consul_service.seaweedfs`
+and names no literal.
 
 ## Quirks and traps
 
@@ -135,7 +138,9 @@ out by hand, so a move does not follow the lookup:
 - `minio.lab`, `s3.lab` and `openviking.lab` (ov-dash) stop answering.
 - `minio_data` is on this node only. The nightly backup copies the four durable
   buckets to GCS ([GCS backups](/components/gcs-backups.md)). `loki`, `tempo`,
-  `memex` and `mlflow-artifacts` have no copy.
+  `memex` and `mlflow-artifacts` have no copy. OpenViking's blobs have been in
+  `seaweedfs_data` since 2026-10-20, and the backup still reads MinIO, so
+  nothing OpenViking wrote after that date has a copy.
 
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),

@@ -808,6 +808,21 @@ resource "nomad_job" "backup_postgres" {
   )
 }
 
+### Restores one bucket from GCS into SeaweedFS on dispatch. The SeaweedFS key
+### is written by the applications root (secrets.tf there), which applies
+### after this one, so the job names its path instead of a resource.
+resource "nomad_job" "restore_s3" {
+  jobspec = templatefile(
+    "${path.module}/services/restore-s3.hcl",
+    {
+      seaweedfs_secret = "${vault_mount.kvv2.path}/data/default/restore-s3/seaweedfs"
+      gcs_secret       = vault_kv_secret_v2.restore_s3_gcs_credentials.path
+      seaweedfs_host   = "192.168.2.29"
+      gcs_bucket       = var.gcs_backup_bucket
+    }
+  )
+}
+
 resource "nomad_job" "backup_minio" {
   jobspec = templatefile(
     "${path.module}/services/backup-minio.hcl",

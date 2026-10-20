@@ -72,10 +72,10 @@ run everywhere.
 | Node | Jobs | Host volumes |
 |---|---|---|
 | [`firebat`](/nodes/firebat.md) | haproxy, postgres | `postgres` |
-| [`orangepi4a`](/nodes/orangepi4a.md) | minio, ov-dash | `minio_data` |
+| [`orangepi4a`](/nodes/orangepi4a.md) | minio, seaweedfs, ov-dash (stopped) | `minio_data`, `seaweedfs_data` |
 | [`jetson-orin-nano`](/nodes/jetson-orin-nano.md) | embark | `embark_data`, `memex_data` |
 | [`ubuntu`](/nodes/ubuntu.md) | prometheus, grafana, loki, tempo, registry, acme | `prometheus_data`, `grafana_data`, `loki_data`, `tempo_data`, `acme_lego_state` |
-| [`radxa-dragon-q6a`](/nodes/radxa-dragon-q6a.md) | hermes, bifrost, openviking, dash, registry-ui, driftwatch, redis, nats, both oauth2-proxy jobs, backup-postgres, backup-minio | `hermes_data`, `openviking_data`, `driftwatch_data`, `registry_ui_data`, `nats_data` |
+| [`radxa-dragon-q6a`](/nodes/radxa-dragon-q6a.md) | hermes, bifrost, openviking, dash, registry-ui, driftwatch, redis, nats, both oauth2-proxy jobs, backup-postgres, backup-minio, restore-s3 (when dispatched) | `hermes_data`, `openviking_data`, `driftwatch_data`, `registry_ui_data`, `nats_data` |
 
 Why each node holds what it does, and what stops when it goes down, is on
 that node's page.

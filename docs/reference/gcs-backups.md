@@ -4,6 +4,10 @@ stale_after: 2027-01-19
 sources:
   - resource: deployments/infrastructure/services/backup-postgres.hcl
   - resource: deployments/infrastructure/services/backup-minio.hcl
+  - resource: deployments/infrastructure/services/restore-s3.hcl
+  - resource: deployments/infrastructure/machine_roles.tf
+  - resource: deployments/applications/storage.tf
+  - resource: deployments/applications/secrets.tf
   - resource: deployments/infrastructure/storage.tf
   - resource: deployments/infrastructure/secrets.tf
   - resource: deployments/infrastructure/services.tf
@@ -22,18 +26,27 @@ the MinIO `openviking`, `registry`, `models` and `datalake` buckets on `orangepi
 (`deployments/infrastructure/services.tf:33`), so a single node failure would
 take one of them with it.
 
+`backup-minio` still reads MinIO. Since 2026-10-20 OpenViking keeps its blobs
+in SeaweedFS, so the MinIO `openviking` bucket gets no writes and its GCS copy
+holds nothing newer than the cutover. Blobs OpenViking writes now have no
+off-site copy until the backup job reads SeaweedFS.
+
+A third job, `restore-s3`, runs only when dispatched. It copies one bucket's
+GCS copy into SeaweedFS.
+
 All GCS infrastructure (bucket, service account, IAM, key) is managed by
 Terraform in `deployments/infrastructure/storage.tf`. There is no manual
 `gcloud` setup.
 
 ## What this page does not cover
 
-This page covers the write path: how backups are configured and run. It
-is not a recovery runbook.
+This page covers how backups are configured and run, and the job that
+restores a bucket. It is not a recovery runbook.
 
-- **Restore is not documented here.** Nothing in this repository describes
-  how to read a backup back, and no verified read-back is recorded. Treat the
-  backups as unproven until someone restores one.
+- **Postgres restore is not documented.** Nothing in this repository reads a
+  dump back, and no verified read-back is recorded. Bucket restores are
+  proven: `restore-s3` brought `openviking` back into SeaweedFS on
+  2026-10-20 with its tree and file hashes unchanged.
 - **Run outcomes are not visible.** `nomad job status` shows both jobs
   registered and periodic, but the ACL denies the query that lists their
   child runs (`403 Permission denied`), so this page says what the jobs
@@ -43,7 +56,7 @@ is not a recovery runbook.
 
 ### `deployments/infrastructure/`
 
-The backup lifecycle spans three files, one per subsystem.
+The backup lifecycle spans four files, one per subsystem.
 
 **Google Cloud resources** (`deployments/infrastructure/storage.tf`):
 - `google_storage_bucket.backups`: bucket with a 180-day lifecycle delete rule
@@ -61,9 +74,24 @@ per job):
   MinIO creds)
 - `backup_minio_gcs_credentials` writes `default/backup-minio/gcs` (GCS service
   account JSON)
+- `restore_s3_gcs_credentials` writes `default/restore-s3/gcs` (GCS service
+  account JSON)
 
-**Nomad jobs** (`deployments/infrastructure/services.tf`): two `nomad_job`
+**Nomad jobs** (`deployments/infrastructure/services.tf`): three `nomad_job`
 resources templating the job specs below.
+
+**Nomad deploy policy** (`deployments/infrastructure/machine_roles.tf`): the
+`deploy` policy carries `dispatch-job`, so its token can dispatch
+`restore-s3`.
+
+### `deployments/applications/`
+
+The restore job's SeaweedFS key comes from this root, where the SeaweedFS IAM
+provider is:
+- `storage.tf`: SeaweedFS user `restore`, with `s3:*` on the `openviking`,
+  `registry`, `models` and `datalake` buckets
+- `secrets.tf`: `restore_seaweedfs_credentials` writes
+  `default/restore-s3/seaweedfs` (that user's key)
 
 ### `deployments/infrastructure/services/backup-postgres.hcl`
 
@@ -93,6 +121,47 @@ hour after the postgres job):
   `deployments/infrastructure/services/backup-postgres.hcl`
 - `network_mode = "host"` for MinIO access
 - Overrides entrypoint: `entrypoint = ["/bin/sh", "-c"]`
+- Resources: 1000 MHz CPU, 512 MB memory
+
+### `deployments/infrastructure/services/restore-s3.hcl`
+
+Parameterized batch job, no schedule. Dispatch one run per bucket:
+
+```
+nomad job dispatch -meta bucket=<name> restore-s3
+```
+
+- **Single task** (`restore`): uses `docker.io/rclone/rclone:1.75.2`, then:
+  1. Lists `gcs:<bucket>/minio/`. If `<name>/` is not there, the bucket was
+     empty when backed up: it prints "nothing to restore" and exits 0.
+  2. `rclone copy gcs:<bucket>/minio/<name>/ seaweedfs:<name>
+     --create-empty-src-dirs --gcs-directory-markers --s3-directory-markers`
+  3. `rclone check` between the two.
+  4. Lists every directory under the GCS prefix and on SeaweedFS, and fails if
+     any GCS directory is missing on SeaweedFS. `rclone check` alone passes
+     with every directory marker missing.
+- Exit codes, because the operator token cannot read alloc logs:
+
+  | Code | Failed step |
+  |---|---|
+  | 0 | none, or nothing to restore |
+  | 1 | the copy |
+  | 2 | `rclone check` |
+  | 3 | a GCS directory missing on SeaweedFS, or the SeaweedFS listing |
+  | 4 | a GCS listing |
+  | 5 | the bucket is not one of the four durable buckets (checked first) |
+
+- Two Vault templates:
+  1. `secrets/rclone.conf`: a `[seaweedfs]` remote (S3/SeaweedFS provider,
+     `http://192.168.2.29:8333`, key from `default/restore-s3/seaweedfs`) and
+     a `[gcs]` remote
+  2. `secrets/gcs-key.json`: GCS service account JSON from
+     `default/restore-s3/gcs`
+- Pinned to `radxa-dragon-q6a`, `network_mode = "host"`
+- No restarts and no rescheduling: a failed run stays failed
+- Copies, does not sync: an object already in the SeaweedFS bucket that GCS
+  lacks stays, and `rclone check` then fails the run. Restore into an empty
+  bucket.
 - Resources: 1000 MHz CPU, 512 MB memory
 
 ## Configuration

@@ -39,8 +39,13 @@ cluster moves its object storage to SeaweedFS
 ([ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md)). This page covers
 the server, its buckets, keyless access and who has moved. The cutover runs
 one consumer at a time in the tickets of the `seaweedfs-migration` epic.
-Loki and Tempo moved on 2026-10-20. Every other consumer stays on MinIO
-until its own cutover, and MinIO keeps the `s3` Consul tag
+
+OpenViking was first: since 2026-10-20 its blobs are in the `openviking`
+bucket here, and it finds the S3 port through Consul service `seaweedfs`
+([the OpenViking service](/components/openviking-service.md)). The `models`
+and `datalake` buckets were restored from GCS at the same time, both empty.
+Loki and Tempo moved the same day. Every other consumer stays on MinIO until
+its own cutover, and MinIO keeps the `s3` Consul tag
 ([MinIO](/components/minio.md)).
 
 ## What runs
@@ -69,9 +74,12 @@ with the same writer or reader split and MinIO's exact action sets from
 `modules/bucket`, and a `backup` user that reads and lists the four durable
 buckets. Readers get `s3:GetBucketLocation` and `s3:GetObject` but cannot
 list, as on MinIO. Only the backup user adds `s3:ListBucket`, because rclone
-lists to sync.
+lists to sync. A `restore` user has `s3:*` on the same four buckets, for the
+`restore-s3` job ([GCS backups](/components/gcs-backups.md)), and goes with
+MinIO in `minio-removal`.
 `secrets.tf` writes each job's key to `default/<job>/seaweedfs` beside its
-MinIO key, and the backup key to `default/backup-minio/seaweedfs`.
+MinIO key, the backup key to `default/backup-minio/seaweedfs`, and the
+restore key to `default/restore-s3/seaweedfs`.
 `cli/tests/test_seaweedfs_buckets.py` pins the bucket set, the derivation and
 the action sets against MinIO's. The live isolation checks are in
 `spike:seaweedfs-buckets/3` and `spike:seaweedfs-buckets/4`.

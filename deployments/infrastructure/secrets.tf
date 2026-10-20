@@ -418,6 +418,23 @@ resource "vault_kv_secret_v2" "backup_minio_s3_credentials" {
   }
 }
 
+### restore-s3 reads only `default/restore-s3/*` (a dispatched job keeps its
+### parent's id), so it gets its own copy of the backup key.
+resource "vault_kv_secret_v2" "restore_s3_gcs_credentials" {
+  mount = vault_mount.kvv2.path
+  name  = "default/restore-s3/gcs"
+  data_json = jsonencode({
+    service_account_json = base64decode(google_service_account_key.backup.private_key)
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 resource "vault_kv_secret_v2" "backup_minio_gcs_credentials" {
   mount = vault_mount.kvv2.path
   name  = "default/backup-minio/gcs"

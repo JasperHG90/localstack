@@ -1,13 +1,12 @@
 ### OpenViking: context store for agents, on radxa beside Bifrost.
 ###
-### MinIO is reached with a STATIC key, not workload identity, and that is
+### SeaweedFS is reached with a STATIC key, not workload identity, and that is
 ### forced rather than chosen. `S3Config.validate_config` makes `access_key`
 ### and `secret_key` mandatory whenever `backend` is `s3`, and the Rust client
 ### behind AGFS builds `Credentials::new(ak, sk, None, ...)` with no session
 ### token, so STS credentials cannot be represented even if the validator were
-### bypassed. There is deliberately NO `minio_iam_policy` named `openviking`:
-### claim mode resolves a policy by the job id, so one would read as live while
-### granting nothing. See the ticket's Q1.
+### bypassed. So `openviking` has no SeaweedFS role, only the static key at
+### default/openviking/seaweedfs.
 ###
 ### Rerank goes through Bifrost, which requires Bifrost >= 2.0.0: OpenViking's
 ### OpenAI-compatible rerank clients send `documents` as bare strings and
@@ -30,7 +29,7 @@ job "openviking" {
     }
 
     ### Holds ov.conf's workspace and RAGFS's local scratch. The vectors live
-    ### in Postgres and the blobs in MinIO, so this is working state rather
+    ### in Postgres and the blobs in SeaweedFS, so this is working state rather
     ### than the store itself.
     volume "openviking_data" {
       type      = "host"
@@ -122,7 +121,7 @@ job "openviking" {
         }
 
         ### Readiness, and deliberately NO check_restart. /ready dials three
-        ### other machines on every pass: MinIO for the AGFS ls, Postgres for
+        ### other machines on every pass: SeaweedFS for the AGFS ls, Postgres for
         ### the vector store, and Bifrost on to embark for a live one-token
         ### embedding. Any one of them down answers 503.
         ###
@@ -183,7 +182,7 @@ job "openviking" {
         ### block is deleted, not when the target it names is down.
         ###
         ### 60s, not 30s. Each pass costs a live one-token embedding through
-        ### Bifrost, an S3 ls against MinIO, and a Postgres query, on the one
+        ### Bifrost, an S3 ls against SeaweedFS, and a Postgres query, on the one
         ### CPU that is already the bottleneck. Halving the rate halves that
         ### self-inflicted load and delays nothing: no restart hangs off this
         ### check, and OpenVikingNotReady waits 10m before it fires.
@@ -344,7 +343,7 @@ job "openviking" {
       ### parsed, not read.
       template {
         data        = <<-EOF
-        {{- $minio := secret "${openviking_minio_secret}" -}}
+        {{- $s3 := secret "${openviking_s3_secret}" -}}
         {{- $db := secret "${openviking_db_secret}" -}}
         {{- $bifrost := secret "${openviking_bifrost_secret}" -}}
         {{- $root := secret "${openviking_root_key_secret}" -}}
