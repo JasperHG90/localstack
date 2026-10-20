@@ -1,0 +1,20 @@
+{
+  "storage": {
+    "workspace": "/app/.openviking/workspace",
+    "agfs": {"backend": "s3", "s3": {"bucket": "__BUCKET__", "endpoint": "http://ovsch-s3:8333",
+      "region": "us-east-1", "access_key": "SPIKEADMINKEY0000001",
+      "secret_key": "spikeAdminSecret0000000000000000000000001", "use_ssl": false, "use_path_style": true}},
+    "vectordb": {"backend": "ov_postgres.adapter.PgVectorCollectionAdapter", "name": "context",
+      "index_name": "default", "distance_metric": "cosine",
+      "custom_params": {"dsn": "__DSN__", "schema": "__SCHEMA__", "index_method": "flat",
+        "store_content": true, "keep_deltas": true,
+        "keyword_fields": ["name", "description", "abstract", "tags", "search_tags"]}}
+  },
+  "embedding": {"dense": {"provider": "openai", "model": "stub", "dimension": 384,
+    "api_base": "http://ovsch-stub:8080/v1", "api_key": "x"}},
+  "rerank": {"provider": "openai", "model": "stub", "api_base": "http://ovsch-stub:8080/v1/rerank",
+    "api_key": "x", "timeout": 30, "max_input_tokens": 512, "threshold": 0.1},
+  "vlm": {"provider": "openai", "model": "stub", "api_base": "http://ovsch-stub:8080/v1", "api_key": "x",
+    "timeout": 30, "max_concurrent": 4},
+  "server": {"host": "127.0.0.1", "port": 1933, "auth_mode": "dev"}
+}

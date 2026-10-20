@@ -1,0 +1,50 @@
+== start postgres (pgvector pg17), seaweedfs 4.48, stub model server
+== phase 1: old instance on schema openviking, bucket openviking
+[p1] /health up after 7s
+write viking://resources/spike/p1.md: 200 {'status': 'ok', 'result': {'uri': 'viking://resources/spike/p1.md', 'root_uri': 'viking://resources/spike', 'context_type': 'resource', 'mode': 'create', 'written_bytes': 78, 'content_updated': True,
+write viking://user/jasper/memories/entities/spike-p1-a.md: 200 {'status': 'ok', 'result': {'uri': 'viking://user/jasper/memories/entities/spike-p1-a.md', 'root_uri': 'viking://user/jasper/memories/entities', 'context_type': 'memory', 'mode': 'create', 'written_by
+write viking://user/jasper/memories/entities/spike-p1-b.md: 200 {'status': 'ok', 'result': {'uri': 'viking://user/jasper/memories/entities/spike-p1-b.md', 'root_uri': 'viking://user/jasper/memories/entities', 'context_type': 'memory', 'mode': 'create', 'written_by
+find: 200 {"memories": [{"context_type": "memory", "uri": "viking://user/jasper/memories/entities/spike-p1-b.md", "level": 2, "score": 0.9, "abstract": "# p1\nSpike note p1 for viking://user/jasper/memories/entities/spike-p1-b.md, about postgres schemas.", "tags": []}, {"context_type": "memory", "uri": "viking://user/jasper/memories/entities/spike-p1-a.md", "level": 2, "score": 0.9, "abstract": "# p1\nSpike note p1 for viking://user/jasper/memories/entities/spike-p1-a.md, about postgres schemas.", "tags": []}], "resources": [{"context_type": "resource", "uri": "viking://resources/spike/.overview.md", "l
+2026-10-20 14:01:42,583 - openviking_cli.utils.config.vectordb_config - INFO - Using custom VectorDB backend: ov_postgres.adapter.PgVectorCollectionAdapter
+deltas recorded; pending: 2
+[p1] sweep log: ov-ext reflect: could not open the delta store; falling back to reading whole memories|ov-ext reflect: batches=0 proposed=0  runner.py:132|
+-- schema openviking after phase 1:
+ov_collections|1|0|0|1|5
+ov_context|22|1|0|23|71
+ov_indexes|1|0|0|1|2
+ov_memory_deltas|2|0|0|3|1
+baseline dump hash: df174f549298e3d4
+public/schema objects before: 129
+== phase 2: new instance on schema openviking_v2, bucket openviking-v2, fresh volume
+[p2a] /health up after 7s
+[p2a] delta store log: ov-ext reflect: could not open the delta store; falling back to reading whole memories|
+write viking://resources/spike/p2.md: 200 {'status': 'ok', 'result': {'uri': 'viking://resources/spike/p2.md', 'root_uri': 'viking://resources/spike', 'context_type': 'resource', 'mode': 'create', 'written_bytes': 78, 'content_updated': True,
+write viking://user/jasper/memories/entities/spike-p2-a.md: 200 {'status': 'ok', 'result': {'uri': 'viking://user/jasper/memories/entities/spike-p2-a.md', 'root_uri': 'viking://user/jasper/memories/entities', 'context_type': 'memory', 'mode': 'create', 'written_by
+write viking://user/jasper/memories/entities/spike-p2-b.md: 200 {'status': 'ok', 'result': {'uri': 'viking://user/jasper/memories/entities/spike-p2-b.md', 'root_uri': 'viking://user/jasper/memories/entities', 'context_type': 'memory', 'mode': 'create', 'written_by
+find: 200 {"memories": [{"context_type": "memory", "uri": "viking://user/jasper/memories/entities/spike-p2-b.md", "level": 2, "score": 0.9, "abstract": "# p2\nSpike note p2 for viking://user/jasper/memories/entities/spike-p2-b.md, about postgres schemas.", "tags": []}, {"context_type": "memory", "uri": "viking://user/jasper/memories/entities/spike-p2-a.md", "level": 2, "score": 0.9, "abstract": "# p2\nSpike note p2 for viking://user/jasper/memories/entities/spike-p2-a.md, about postgres schemas.", "tags": []}, {"context_type": "memory", "uri": "viking://user/jasper/memories/entities/.overview.md", "leve
+2026-10-20 14:02:00,273 - openviking_cli.utils.config.vectordb_config - INFO - Using custom VectorDB backend: ov_postgres.adapter.PgVectorCollectionAdapter
+deltas recorded; pending: 2
+[p2a] sweep log: ov-ext reflect: could not open the delta store; falling back to reading whole memories|ov-ext reflect: batches=0 proposed=0  runner.py:132|
+== phase 2 restart (second boot, sweep reads the recorded deltas)
+[p2b] /health up after 6s
+[p2b] sweep log: ov-ext reflect: batches=1 proposed=0  runner.py:132|
+-- schema openviking_v2 tables:
+ov_collections|1|0|0
+ov_context|22|1|0
+ov_indexes|1|0|0
+ov_memory_deltas|2|2|0
+-- openviking_v2.ov_memory_deltas rows: 2 (reflected 2)
+-- openviking.memory_deltas rows: 2 uris like p2: 0
+-- schema openviking stats diff (B baseline vs C after), empty means equal:
+-- public/schema objects diff, empty means equal:
+120a121
+> schema:openviking_v2
+after dump hash: df174f549298e3d4 (dump lines: 632)
+PASS schema openviking_v2 created with tables (4)
+PASS schema openviking tuple and scan counters unchanged
+PASS schema openviking pg_dump hash unchanged
+PASS nothing new in public or new schemas besides openviking_v2
+FINDING ov-ext delta store did NOT open on openviking_v2 at first boot (schema not yet created); opened after restart: 0
+== log errors mentioning schema/relation (all phases)
+      1 errors.InvalidSchemaName: schema "openviking" does not exist
+      1 errors.InvalidSchemaName: schema "openviking_v2" does not exist
