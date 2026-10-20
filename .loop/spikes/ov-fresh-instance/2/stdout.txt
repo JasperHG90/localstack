@@ -1,0 +1,136 @@
+== bucket before first boot
+== bucket openviking-v2, every entry
+openviking-v2
+1 directories, 0 files
+== ov up (oidc)
+== bucket after oidc boot, before any call
+== bucket openviking-v2, every entry
+openviking-v2
+├──backend_meta.json
+└──default
+    ├──resources
+    │   ├──.abstract.md
+    │   └──.overview.md
+    └──user
+        └──default
+            ├──.abstract.md
+            ├──.overview.md
+            ├──memories
+            │   ├──.abstract.md
+            │   └──.overview.md
+            ├──peers
+            │   ├──.abstract.md
+            │   └──.overview.md
+            ├──privacy
+            │   ├──.abstract.md
+            │   └──.overview.md
+            ├──resources
+            │   ├──.abstract.md
+            │   └──.overview.md
+            ├──sessions
+            │   ├──.abstract.md
+            │   └──.overview.md
+            └──skills
+                ├──.abstract.md
+                └──.overview.md
+11 directories, 17 files
+== phase A: OIDC as lab/jasper on empty store
+PASS health with token: HTTP 200 {"status":"ok","healthy":true,"version":"v0.4.17.1","auth_mode":"oidc","account_id":"lab","user_id":"jasper","role":"user"}
+PASS ls viking://: HTTP 200 {"status":"ok","result":[],"error":null,"telemetry":null,"profile":null}
+PASS ls viking://resources: HTTP 200 {"status":"ok","result":[],"error":null,"telemetry":null,"profile":null}
+PASS mkdir viking://resources/spike: HTTP 200 {"status":"ok","result":{"uri":"viking://resources/spike"},"error":null,"telemetry":null,"profile":null}
+PASS write viking://resources/spike/note.md: HTTP 200 {"status":"ok","result":{"uri":"viking://resources/spike/note.md","root_uri":"viking://resources/spike","context_type":"resource","mode":"create","written_bytes":37,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+PASS read it back: HTTP 200 {"status":"ok","result":"# Spike\nfresh bucket bootstrap probe\n","error":null,"telemetry":null,"profile":null}
+PASS find: HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://resources/spike/.overview.md","level":1,"score":0.5,"abstract":"{}","tags":[]},{"context_type":"resource","uri":"viking://resources/spike/note.md","level":2,"score":0.5,"abstract":"{}","tags":[]}],"skills":[],"total":2}}
+PASS search: HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://resources/spike/.overview.md","level":1,"score":0.5,"abstract":"{}","tags":[]},{"context_type":"resource","uri":"viking://resources/spike/note.md","level":2,"score":0.5,"abstract":"{}","tags":[]}],"skills":[],"total":2}}
+INFO ls viking://user/jasper/memories (not counted): HTTP 200 {"status":"ok","result":[],"error":null,"telemetry":null,"profile":null}
+PASS ls viking:// after: HTTP 200 {"status":"ok","result":[{"uri":"viking://resources","size":0,"isDir":true,"modTime":"2026-10-20T14:07:02.000Z","rel_path":"resources","abstract":"# viking://resources [Directory abstract is not ready]"},{"uri":"viking://resources/spike","size":0,"isDir":true,"modTime":"2026-10-20T14:07:02.000Z","rel_path":"resources/spike","abstract":"{}"},{"uri":"viking://resources/spike/note.md","size":37,"isDir":false,"modTime":"2026-10-20T14:07:02.000Z","rel_path":"resources/spike/note.md","abstract":""}],"error":null,"telemetry":null,"profile":null}
+== bucket openviking-v2, every entry
+openviking-v2
+├──backend_meta.json
+├──default
+│   ├──resources
+│   │   ├──.abstract.md
+│   │   └──.overview.md
+│   └──user
+│       └──default
+│           ├──.abstract.md
+│           ├──.overview.md
+│           ├──memories
+│           │   ├──.abstract.md
+│           │   └──.overview.md
+│           ├──peers
+│           │   ├──.abstract.md
+│           │   └──.overview.md
+│           ├──privacy
+│           │   ├──.abstract.md
+│           │   └──.overview.md
+│           ├──resources
+│           │   ├──.abstract.md
+│           │   └──.overview.md
+│           ├──sessions
+│           │   ├──.abstract.md
+│           │   └──.overview.md
+│           └──skills
+│               ├──.abstract.md
+│               └──.overview.md
+└──lab
+    └──resources
+        ├──.abstract.md
+        ├──.overview.md
+        └──spike
+            ├──.abstract.md
+            ├──.overview.md
+            └──note.md
+14 directories, 22 files
+== _system files
+KEY backend_meta.json 0
+KEY default/resources/ 0
+KEY default/resources/.abstract.md 216
+KEY default/resources/.overview.md 255
+KEY default/user/default/ 0
+KEY default/user/default/.abstract.md 189
+KEY default/user/default/.overview.md 211
+KEY default/user/default/memories/ 0
+KEY default/user/default/memories/.abstract.md 250
+KEY default/user/default/memories/.overview.md 305
+KEY default/user/default/peers/ 0
+KEY default/user/default/peers/.abstract.md 222
+KEY default/user/default/peers/.overview.md 332
+KEY default/user/default/privacy/ 0
+KEY default/user/default/privacy/.abstract.md 233
+KEY default/user/default/privacy/.overview.md 313
+KEY default/user/default/resources/ 0
+KEY default/user/default/resources/.abstract.md 235
+KEY default/user/default/resources/.overview.md 262
+KEY default/user/default/sessions/ 0
+KEY default/user/default/sessions/.abstract.md 253
+KEY default/user/default/sessions/.overview.md 258
+KEY default/user/default/skills/ 0
+KEY default/user/default/skills/.abstract.md 252
+KEY default/user/default/skills/.overview.md 363
+KEY lab/resources/.abstract.md 215
+KEY lab/resources/.overview.md 215
+KEY lab/resources/spike/ 0
+KEY lab/resources/spike/.abstract.md 220
+KEY lab/resources/spike/.overview.md 220
+KEY lab/resources/spike/note.md 37
+== postgres schemas and tables
+openviking_v2.ov_collections
+openviking_v2.ov_context
+openviking_v2.ov_indexes
+openviking_v2.ov_memory_deltas
+== ov log warnings/errors (phase A)
+2026-10-20 14:06:58,647 - openviking.server.auth.plugins.ldap - WARNING - LDAP library not available. LDAP authentication will not work. Install with: uv pip install python-ldap
+== top-level prefixes: backend_meta.json default lab 
+== keys naming another account/user:
+default/resources/
+default/resources/.abstract.md
+default/resources/.overview.md
+default/user/default/
+default/user/default/.abstract.md
+default/user/default/.overview.md
+default/user/default/memories/
+default/user/default/memories/.abstract.md
+default/user/default/memories/.overview.md
+default/user/default/peers/
