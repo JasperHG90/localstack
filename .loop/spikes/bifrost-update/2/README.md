@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T08:31:20+00:00'
+  at: '2026-10-20T08:32:09+00:00'
 slug: bifrost-update
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike bifrost-update/2
@@ -24,7 +24,7 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note bifrost-update 2`.
+Same run and result as spike 3 (exit 0: bare-string rerank 200, embeddings routed to embark on 2.0.0 and 2.3.1, identical object-form bodies at embark). Superseded by spike 3 only because this run's evidence kept `run.sh` alone, without the `stub.py`, `client.py` and `config.json` it reads. Cite spike 3.
 
 ## Files
 

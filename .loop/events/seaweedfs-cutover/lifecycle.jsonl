@@ -21,3 +21,4 @@
 {"at": "2026-10-20T08:25:29+00:00", "binds": "92314f7a232a53e9953f806b9bff59441217b852592b557a7a61d5f934fe1131", "kind": "round-start", "n": 1, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "f76b0c6e643fb4d3754cd56add02a14701f11270"}
 {"at": "2026-10-20T08:31:00+00:00", "dispatched_at": "2026-10-20T08:25:29+00:00", "kind": "round-close", "n": 1, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-10-20T08:30:43+00:00"}}
 {"at": "2026-10-20T08:31:24+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "3c2a7be6ab62f1ecbf46412ed8cf305391b5750a"}
+{"at": "2026-10-20T08:33:04+00:00", "branch": "loop/seaweedfs-cutover", "kind": "land", "schema_version": "1.0", "sha": "4e9ad3d787229a0d9defe7f05661f0a97fc5a10a"}

@@ -1,0 +1,14 @@
+image: sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919 arm64
+wrote /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-hermes-2/tmp.ccA9Fpsyek/plugins/model-providers/bifrost/__init__.py 787
+wrote /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-hermes-2/tmp.ccA9Fpsyek/plugins/model-providers/bifrost/plugin.yaml 147
+Python 3.14.7
+profile: bifrost http://127.0.0.1:8080/v1 ('BIFROST_API_KEY',) source: user
+auth registry has bifrost: True resolve: bifrost
+runtime: {'provider': 'bifrost', 'base_url': 'http://127.0.0.1:8080/v1', 'api_mode': 'chat_completions'} key set: True
+CHECK OK
+hermes -z output: STUB-BIFROST-REPLY
+STUB STUB{"method": "POST", "path": "/v1/chat/completions", "auth": "Bearer sk-test", "model": "ollama/deepseek-v4.1-flash", "stream": true}
+ {"method": "POST", "path": "/v1/chat/completions", "auth": "Bearer sk-test", "model": "ollama/deepseek-v4.1-flash", "stream": null}
+STUB {"method": "GET", "path": "/v1/models", "auth": null, "model": null, "stream": null}
+STUB {"method": "GET", "path": "/v1/models", "auth": "Bearer sk-test", "model": null, "stream": null}
+PASS: bifrost plugin loads and a model call reached the stub
