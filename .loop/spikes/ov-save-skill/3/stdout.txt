@@ -1,0 +1,132 @@
+== make voice.ogg (espeak-ng -> ffmpeg libopus, as Telegram sends)
+-rw-r--r-- 1 root root 20901 Oct 20 16:44 /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-voice/run.TFFB/voice.ogg
+== run 0: deployed config (no stt section), fresh /opt/data
+model:
+  provider: bifrost
+LOG agent.credential_pool INFO credential pool: no available entries (all exhausted or empty)
+stt config: {'enabled': True, 'echo_transcripts': True, 'language': 'en', 'streaming': False, 'cloud_trim_silence': True, 'cloud_trim_threshold_db': -40, 'cloud_trim_keep_ms': 300, 'local': {'model': 'base', 'language': '', 'initial_prompt': '', 'vad': True, 'vad_min_silence_ms': 500, 'no_speech_prob_threshold': 0.6, 'logprob_threshold': -1.0, 'unload_after_idle_seconds': 0}, 'groq': {'model': 'whisper-large-v3-turbo', 'language': ''}, 'openai': {'model': 'whisper-1', 'streaming_model': 'gpt-live-transcribe', 'language': '', 'timeout': 60, 'max_retries': 1}, 'mistral': {'model': 'voxtral-mini-latest', 'language': ''}, 'xai': {'model': '', 'language': ''}, 'elevenlabs': {'model_id': 'scribe_v2', 'language_code': '', 'tag_audio_events': False, 'diarize': False}, 'deepinfra': {'model': ''}} -> provider: none
+LOG agent.credential_pool INFO credential pool: no available entries (all exhausted or empty)
+LOG hermes_cli.plugins INFO Plugin 'browser-browser-use' registered browser provider: browser-use
+LOG hermes_cli.plugins INFO Plugin 'browser-browserbase' registered browser provider: browserbase
+LOG hermes_cli.plugins INFO Plugin 'browser-firecrawl' registered browser provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered image_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered image_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'krea' registered image_gen provider: krea
+LOG hermes_cli.plugins INFO Plugin 'meta-ai-image-gen' registered image_gen provider: meta-ai
+LOG hermes_cli.plugins INFO Plugin 'openai' registered image_gen provider: openai
+LOG hermes_cli.plugins INFO Plugin 'openai-codex' registered image_gen provider: openai-codex
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: nous
+LOG hermes_cli.plugins INFO Plugin 'xai' registered image_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered video_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered video_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered video_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'xai' registered video_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'web-brave-free' registered web provider: brave-free
+LOG hermes_cli.plugins INFO Plugin 'web-ddgs' registered web provider: ddgs
+LOG hermes_cli.plugins INFO Plugin 'web-exa' registered web provider: exa
+LOG hermes_cli.plugins INFO Plugin 'web-firecrawl' registered web provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'web-keenable' registered web provider: keenable
+LOG hermes_cli.plugins INFO Plugin 'web-openai-native' registered web provider: openai-native
+LOG hermes_cli.plugins INFO Plugin 'web-parallel' registered web provider: parallel
+LOG hermes_cli.plugins INFO Plugin 'web-perplexity' registered web provider: perplexity
+LOG hermes_cli.plugins INFO Plugin 'web-searxng' registered web provider: searxng
+LOG hermes_cli.plugins INFO Plugin 'web-tavily' registered web provider: tavily
+LOG hermes_cli.plugins INFO Plugin 'web-xai' registered web provider: xai
+LOG hermes_cli.plugins INFO Plugin discovery complete: 55 found, 51 enabled
+LOG gateway.run INFO Voice transcription failed for /w/voice.ogg: No STT provider available. Install faster-whisper for free local transcription, configure HERMES_LOCAL_STT_COMMAND or install a local whisper CLI, set GROQ_API_KEY for free Groq Whisper, set MISTRAL_API_KEY for Mistral Voxtral Transcribe, configure xAI OAuth or set XAI_API_KEY for xAI Grok STT, set ELEVENLABS_API_KEY for ElevenLabs Scribe, or set VOICE_TOOLS_OPENAI_KEY or OPENAI_API_KEY for the OpenAI Whisper API.
+{"faster_whisper_before": false, "seconds": 1.7, "process_peak_rss_mb": 110, "cgroup_peak_mb": 127, "cgroup_max": "2147483648", "enriched_text": "[voice message could not be transcribed automatically; the audio is available at: /w/voice.ogg]", "transcripts": []}
+drive exit 3
+-- dirs with files newer than start (outside /proc,/sys,/tmp):
+      1 /opt/data/cache/scratch
+      1 /opt/data/SOUL.md/
+24K	/opt/data
+456M	/opt/hermes/.venv
+container z exit 3, OOMKilled=false
+== run A: stt.provider local, first voice message on a fresh /opt/data
+model:
+  provider: bifrost
+stt:
+  provider: local
+LOG tools.transcription_tools WARNING STT provider 'local' configured but unavailable (install faster-whisper or set HERMES_LOCAL_STT_COMMAND)
+stt config: {'enabled': True, 'echo_transcripts': True, 'language': 'en', 'streaming': False, 'cloud_trim_silence': True, 'cloud_trim_threshold_db': -40, 'cloud_trim_keep_ms': 300, 'local': {'model': 'base', 'language': '', 'initial_prompt': '', 'vad': True, 'vad_min_silence_ms': 500, 'no_speech_prob_threshold': 0.6, 'logprob_threshold': -1.0, 'unload_after_idle_seconds': 0}, 'groq': {'model': 'whisper-large-v3-turbo', 'language': ''}, 'openai': {'model': 'whisper-1', 'streaming_model': 'gpt-live-transcribe', 'language': '', 'timeout': 60, 'max_retries': 1}, 'mistral': {'model': 'voxtral-mini-latest', 'language': ''}, 'xai': {'model': '', 'language': ''}, 'elevenlabs': {'model_id': 'scribe_v2', 'language_code': '', 'tag_audio_events': False, 'diarize': False}, 'deepinfra': {'model': ''}, 'provider': 'local'} -> provider: none
+LOG tools.transcription_tools WARNING STT provider 'local' configured but unavailable (install faster-whisper or set HERMES_LOCAL_STT_COMMAND)
+LOG hermes_cli.plugins INFO Plugin 'browser-browser-use' registered browser provider: browser-use
+LOG hermes_cli.plugins INFO Plugin 'browser-browserbase' registered browser provider: browserbase
+LOG hermes_cli.plugins INFO Plugin 'browser-firecrawl' registered browser provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered image_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered image_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'krea' registered image_gen provider: krea
+LOG hermes_cli.plugins INFO Plugin 'meta-ai-image-gen' registered image_gen provider: meta-ai
+LOG hermes_cli.plugins INFO Plugin 'openai' registered image_gen provider: openai
+LOG hermes_cli.plugins INFO Plugin 'openai-codex' registered image_gen provider: openai-codex
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: nous
+LOG hermes_cli.plugins INFO Plugin 'xai' registered image_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered video_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered video_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered video_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'xai' registered video_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'web-brave-free' registered web provider: brave-free
+LOG hermes_cli.plugins INFO Plugin 'web-ddgs' registered web provider: ddgs
+LOG hermes_cli.plugins INFO Plugin 'web-exa' registered web provider: exa
+LOG hermes_cli.plugins INFO Plugin 'web-firecrawl' registered web provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'web-keenable' registered web provider: keenable
+LOG hermes_cli.plugins INFO Plugin 'web-openai-native' registered web provider: openai-native
+LOG hermes_cli.plugins INFO Plugin 'web-parallel' registered web provider: parallel
+LOG hermes_cli.plugins INFO Plugin 'web-perplexity' registered web provider: perplexity
+LOG hermes_cli.plugins INFO Plugin 'web-searxng' registered web provider: searxng
+LOG hermes_cli.plugins INFO Plugin 'web-tavily' registered web provider: tavily
+LOG hermes_cli.plugins INFO Plugin 'web-xai' registered web provider: xai
+LOG hermes_cli.plugins INFO Plugin discovery complete: 55 found, 51 enabled
+LOG gateway.run INFO Voice transcription failed for /w/voice.ogg: No STT provider available. Install faster-whisper for free local transcription, configure HERMES_LOCAL_STT_COMMAND or install a local whisper CLI, set GROQ_API_KEY for free Groq Whisper, set MISTRAL_API_KEY for Mistral Voxtral Transcribe, configure xAI OAuth or set XAI_API_KEY for xAI Grok STT, set ELEVENLABS_API_KEY for ElevenLabs Scribe, or set VOICE_TOOLS_OPENAI_KEY or OPENAI_API_KEY for the OpenAI Whisper API.
+{"faster_whisper_before": false, "seconds": 1.1, "process_peak_rss_mb": 109, "cgroup_peak_mb": 95, "cgroup_max": "2147483648", "enriched_text": "[voice message could not be transcribed automatically; the audio is available at: /w/voice.ogg]", "transcripts": []}
+drive exit 3
+-- dirs with files newer than start (outside /proc,/sys,/tmp):
+28K	/opt/data
+456M	/opt/hermes/.venv
+container a exit 3, OOMKilled=false
+== run B: fresh container (restart), same /opt/data volume
+model:
+  provider: bifrost
+stt:
+  provider: local
+LOG tools.transcription_tools WARNING STT provider 'local' configured but unavailable (install faster-whisper or set HERMES_LOCAL_STT_COMMAND)
+stt config: {'enabled': True, 'echo_transcripts': True, 'language': 'en', 'streaming': False, 'cloud_trim_silence': True, 'cloud_trim_threshold_db': -40, 'cloud_trim_keep_ms': 300, 'local': {'model': 'base', 'language': '', 'initial_prompt': '', 'vad': True, 'vad_min_silence_ms': 500, 'no_speech_prob_threshold': 0.6, 'logprob_threshold': -1.0, 'unload_after_idle_seconds': 0}, 'groq': {'model': 'whisper-large-v3-turbo', 'language': ''}, 'openai': {'model': 'whisper-1', 'streaming_model': 'gpt-live-transcribe', 'language': '', 'timeout': 60, 'max_retries': 1}, 'mistral': {'model': 'voxtral-mini-latest', 'language': ''}, 'xai': {'model': '', 'language': ''}, 'elevenlabs': {'model_id': 'scribe_v2', 'language_code': '', 'tag_audio_events': False, 'diarize': False}, 'deepinfra': {'model': ''}, 'provider': 'local'} -> provider: none
+LOG tools.transcription_tools WARNING STT provider 'local' configured but unavailable (install faster-whisper or set HERMES_LOCAL_STT_COMMAND)
+LOG hermes_cli.plugins INFO Plugin 'browser-browser-use' registered browser provider: browser-use
+LOG hermes_cli.plugins INFO Plugin 'browser-browserbase' registered browser provider: browserbase
+LOG hermes_cli.plugins INFO Plugin 'browser-firecrawl' registered browser provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered image_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered image_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'krea' registered image_gen provider: krea
+LOG hermes_cli.plugins INFO Plugin 'meta-ai-image-gen' registered image_gen provider: meta-ai
+LOG hermes_cli.plugins INFO Plugin 'openai' registered image_gen provider: openai
+LOG hermes_cli.plugins INFO Plugin 'openai-codex' registered image_gen provider: openai-codex
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: nous
+LOG hermes_cli.plugins INFO Plugin 'xai' registered image_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered video_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered video_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered video_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'xai' registered video_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'web-brave-free' registered web provider: brave-free
+LOG hermes_cli.plugins INFO Plugin 'web-ddgs' registered web provider: ddgs
+LOG hermes_cli.plugins INFO Plugin 'web-exa' registered web provider: exa
+LOG hermes_cli.plugins INFO Plugin 'web-firecrawl' registered web provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'web-keenable' registered web provider: keenable
+LOG hermes_cli.plugins INFO Plugin 'web-openai-native' registered web provider: openai-native
+LOG hermes_cli.plugins INFO Plugin 'web-parallel' registered web provider: parallel
+LOG hermes_cli.plugins INFO Plugin 'web-perplexity' registered web provider: perplexity
+LOG hermes_cli.plugins INFO Plugin 'web-searxng' registered web provider: searxng
+LOG hermes_cli.plugins INFO Plugin 'web-tavily' registered web provider: tavily
+LOG hermes_cli.plugins INFO Plugin 'web-xai' registered web provider: xai
+LOG hermes_cli.plugins INFO Plugin discovery complete: 55 found, 51 enabled
+LOG gateway.run INFO Voice transcription failed for /w/voice.ogg: No STT provider available. Install faster-whisper for free local transcription, configure HERMES_LOCAL_STT_COMMAND or install a local whisper CLI, set GROQ_API_KEY for free Groq Whisper, set MISTRAL_API_KEY for Mistral Voxtral Transcribe, configure xAI OAuth or set XAI_API_KEY for xAI Grok STT, set ELEVENLABS_API_KEY for ElevenLabs Scribe, or set VOICE_TOOLS_OPENAI_KEY or OPENAI_API_KEY for the OpenAI Whisper API.
+{"faster_whisper_before": false, "seconds": 0.9, "process_peak_rss_mb": 108, "cgroup_peak_mb": 113, "cgroup_max": "2147483648", "enriched_text": "[voice message could not be transcribed automatically; the audio is available at: /w/voice.ogg]", "transcripts": []}
+drive exit 3
+-- dirs with files newer than start (outside /proc,/sys,/tmp):
+28K	/opt/data
+456M	/opt/hermes/.venv
+container b exit 3, OOMKilled=false
+A=3 B=3
