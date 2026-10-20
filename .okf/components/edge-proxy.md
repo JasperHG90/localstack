@@ -118,7 +118,8 @@ The file holds no `http-request auth` any more. Each backend is one of these:
 - **An oauth2-proxy gate**: dash, registry-ui.
 - **Native OIDC against Vault**: grafana, hermes-gateway, openviking (ov-dash).
 - **The service's own credential**: bifrost, openviking-api, memex, the
-  MinIO console and S3 API, registry (htpasswd, because podman and docker
+  MinIO console (`minio.lab`, until `minio-removal`), the S3 API (`s3.lab`,
+  SeaweedFS on `192.168.2.29:8333` since 2026-10-20), registry (htpasswd, because podman and docker
   cannot answer an HAProxy challenge), and Vault, Nomad and Consul.
 
 [ADR 0009](/decisions/0009-openviking-has-no-browser-surface.md) records

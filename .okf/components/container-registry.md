@@ -127,10 +127,10 @@ No jobspec pulls a container image from this registry. Task images come from
 - **The helper must name the role.** SeaweedFS refuses an exchange without
   `RoleArn` and `RoleSessionName`. Both the helper and `regionendpoint` take
   `s3_host` from Consul, so the job names no address by hand.
-- **No off-site copy of new pushes yet.** `backup-minio` still syncs MinIO's
-  `registry` bucket, which gets no writes since 2026-10-20, so anything pushed
-  after the cutover has no GCS copy until the backup reads SeaweedFS
-  (`seaweedfs-cutover`).
+- **Off-site copies are nightly.** Since `seaweedfs-cutover` (2026-10-20)
+  `backup-minio` syncs the SeaweedFS `registry` bucket to GCS at 03:00, so a
+  push has no off-site copy until the next night's run
+  ([GCS backups](/components/gcs-backups.md)).
 
 ## The move to SeaweedFS (2026-10-20)
 

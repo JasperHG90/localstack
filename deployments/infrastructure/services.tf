@@ -827,10 +827,12 @@ resource "nomad_job" "backup_minio" {
   jobspec = templatefile(
     "${path.module}/services/backup-minio.hcl",
     {
-      minio_secret = vault_kv_secret_v2.backup_minio_s3_credentials.path
-      gcs_secret   = vault_kv_secret_v2.backup_minio_gcs_credentials.path
-      minio_host   = "192.168.2.29"
-      gcs_bucket   = var.gcs_backup_bucket
+      # Written by the applications root (secrets.tf there), which applies
+      # after this one, so the job names the path, not a resource.
+      seaweedfs_secret = "${vault_mount.kvv2.path}/data/default/backup-minio/seaweedfs"
+      gcs_secret       = vault_kv_secret_v2.backup_minio_gcs_credentials.path
+      seaweedfs_host   = "192.168.2.29"
+      gcs_bucket       = var.gcs_backup_bucket
     }
   )
 }

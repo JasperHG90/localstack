@@ -21,8 +21,8 @@ to the HTTPS URL.
 
 | Hostname | Backend | Port |
 |---|---|---|
-| `minio.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 9001 (console) |
-| `s3.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 9000 (API) |
+| `minio.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 9001 (MinIO console, until `minio-removal`) |
+| `s3.lab.orangecluster.nl` | orangepi4a (192.168.2.29) | 8333 (SeaweedFS S3 API) |
 | `vault.lab.orangecluster.nl` | firebat (192.168.2.30) | 8200 |
 | `nomad.lab.orangecluster.nl` | firebat (192.168.2.30) | 4646 |
 | `consul.lab.orangecluster.nl` | firebat (192.168.2.30) | 8500 |

@@ -133,7 +133,7 @@ backend minio
     server minio1 192.168.2.29:9001 check
 
 backend s3
-    server s3_1 192.168.2.29:9000 check
+    server s3_1 192.168.2.29:8333 check
 
 backend vault
     server vault1 192.168.2.30:8200 check

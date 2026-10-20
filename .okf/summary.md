@@ -65,11 +65,12 @@ measured.
 The cluster runs, and Login MFA is built. All eleven of the manifesto's
 invariants have a passing test. Several gaps remain open:
 
-- [SeaweedFS](/components/seaweedfs.md) is replacing
-  [MinIO](/components/minio.md). Every workload moved on 2026-10-20 through
+- [SeaweedFS](/components/seaweedfs.md) replaced
+  [MinIO](/components/minio.md) on 2026-10-20. Every workload moved through
   the [GCS backups](/components/gcs-backups.md), with OpenViking's tree and
-  every registry tag read back intact. Only the backup job still reads MinIO.
-  ov-dash is stopped for lack of memory on orangepi4a until MinIO is removed.
+  every registry tag read back intact, and the backup job, the `s3` route and
+  the dash tile followed. MinIO still runs with its data, unused, until it is
+  removed. ov-dash is stopped for lack of memory on orangepi4a until then.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.

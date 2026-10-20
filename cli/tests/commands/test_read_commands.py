@@ -687,8 +687,8 @@ def test_the_table_says_where_an_unresolved_row_points() -> None:
 
 
 @respx.mock
-def test_s3_resolves_to_minio_by_tag() -> None:
-    """Row 5. `s3` is MinIO's S3 API port; the job declares the tag."""
+def test_s3_resolves_to_seaweedfs_by_tag() -> None:
+    """Row 5. `s3` is SeaweedFS's S3 API port; the job declares the tag."""
     mock_cluster()
     mock_edge_job()
     respx.get(url__regex=rf"{NOMAD}/v1/job/(?!haproxy)").mock(
@@ -699,8 +699,10 @@ def test_s3_resolves_to_minio_by_tag() -> None:
 
     rows = {row["name"]: row for row in json.loads(result.stdout)}
     assert rows["s3"]["job_source"] == "consul-tag"
-    assert rows["s3"]["job"] == "minio"
-    # The `minio` route is untouched, and the job is neither suppressed nor
-    # duplicated by the tag match.
+    assert rows["s3"]["job"] == "seaweedfs"
+    # The `minio` route is untouched, and the tag match neither suppresses
+    # nor duplicates a job: seaweedfs has no Nomad job in this capture, so it
+    # appears once, through the tag.
     assert rows["minio"]["job_source"] == "job-id"
-    assert len([r for r in json.loads(result.stdout) if r["job"] == "minio"]) == 2
+    assert len([r for r in json.loads(result.stdout) if r["job"] == "minio"]) == 1
+    assert len([r for r in json.loads(result.stdout) if r["job"] == "seaweedfs"]) == 1

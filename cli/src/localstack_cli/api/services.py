@@ -152,7 +152,7 @@ def join(
                 )
             )
         elif (tagged := _sole_tag_carrier(route.name, catalog)) is not None:
-            # The job named the tag itself. `minio` carries `s3` on the port
+            # The job named the tag itself. `seaweedfs` carries `s3` on the port
             # label the `s3` route points at, so this reads a declaration
             # rather than inferring from an address.
             #

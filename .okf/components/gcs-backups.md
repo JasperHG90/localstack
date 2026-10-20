@@ -1,8 +1,8 @@
 ---
 type: component
 title: GCS backups
-description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and the four durable MinIO buckets (openviking, registry, models, datalake) to a GCS bucket, each reading copies of the root credential and the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking and registry. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
-tags: [backup, gcs, postgres, minio, nomad, vault, component]
+description: "Two periodic jobs on radxa copy Postgres (pg_dumpall, as the root user) and the four durable SeaweedFS buckets (openviking, registry, models, datalake, with a read-only key) to a GCS bucket, both reading the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking and registry. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
+tags: [backup, gcs, postgres, minio, seaweedfs, nomad, vault, component]
 status: stable
 generated:
   by: claude-opus/5.5
@@ -41,49 +41,56 @@ how the parts connect and what the design does not protect against.
 
 ## The pieces
 
-Everything but the restore job's SeaweedFS key is in the infrastructure root,
-one file per subsystem:
+Everything but the two SeaweedFS keys is in the infrastructure root, one file
+per subsystem:
 
 - `storage.tf`: the GCS bucket (`var.gcs_backup_bucket`, 180-day delete
   rule), service account `localstack-backup`, `roles/storage.objectAdmin` on
   the bucket, and `google_service_account_key.backup`.
 - `secrets.tf`: five KV entries under the jobs' own prefixes.
   `default/backup-postgres/postgres` copies `random_password.postgres_root`,
-  `default/backup-minio/minio` copies `random_password.minio_secret_key`, and
-  the three `.../gcs` entries (`backup-postgres`, `backup-minio`,
-  `restore-s3`) hold the same decoded key JSON.
+  `default/backup-minio/minio` copies `random_password.minio_secret_key`
+  (unread since the cutover), and the three `.../gcs` entries
+  (`backup-postgres`, `backup-minio`, `restore-s3`) hold the same decoded key
+  JSON.
 - `services.tf`: `nomad_job.backup_postgres`, `nomad_job.backup_minio` and
-  `nomad_job.restore_s3`, with the Postgres, MinIO and SeaweedFS node
-  addresses passed in as literals.
+  `nomad_job.restore_s3`, with the Postgres and SeaweedFS node addresses
+  passed in as literals.
 - `machine_roles.tf`: the Nomad `deploy` policy carries `dispatch-job`, so
   a token holding that policy can dispatch `restore-s3`.
 - `deployments/infrastructure/services/backup-postgres.hcl`,
   `deployments/infrastructure/services/backup-minio.hcl` and
   `deployments/infrastructure/services/restore-s3.hcl`.
 
-The restore job's SeaweedFS key comes from the applications root, where the
-IAM provider is: `storage.tf` creates the SeaweedFS user `restore` with
-`s3:*` on the four durable buckets, and `secrets.tf` writes its key to
-`default/restore-s3/seaweedfs`. The infrastructure root applies first, so the
-job names that path as a string rather than a resource. On a rebuild from
-scratch a dispatch fails until the applications root has applied.
+The SeaweedFS keys come from the applications root, where the IAM provider
+is. `storage.tf` creates the user `backup`, with `s3:GetBucketLocation`,
+`s3:GetObject` and `s3:ListBucket` on the four durable buckets, and the user
+`restore`, with `s3:*` on the same four. `secrets.tf` writes their keys to
+`default/backup-minio/seaweedfs` and `default/restore-s3/seaweedfs`. The
+infrastructure root applies first, so each job names its path as a string
+rather than a resource. On a rebuild from scratch the backup and any dispatch
+fail until the applications root has applied.
 
 The Google provider authenticates with the operator's ADC, so an apply needs a
 `gcloud` login on top of the usual Vault session.
 
-## Credentials are copies of root
+## The Postgres credential is a copy of root
 
 The copies exist because `nomad-workloads` lets a job read only its own
 prefix. They scope the PATH, not the privilege: `backup-postgres` logs in as
-the Postgres superuser `localstack`, and `backup-minio` holds the MinIO root
-key. Both copies follow their source in the same apply, because they reference
-the same `random_password`. For Postgres that is not enough, since the server
-keeps its first password (see [Postgres](/components/postgres.md)).
+the Postgres superuser `localstack`. The copy follows its source in the same
+apply, because it references the same `random_password`. That is not enough,
+since the server keeps its first password (see
+[Postgres](/components/postgres.md)).
+
+`backup-minio` held the MinIO root key until the cutover. It now reads
+SeaweedFS with the `backup` user's key, which can list and read the four
+durable buckets and nothing else. Its old copy of the MinIO root key is still
+written and nothing reads it.
 
 R8 planned moving `backup-postgres` off root, and was still a stub when
 `5b2ed1b` reset the loop. Its open question is whether `pg_dumpall` works at
-all without superuser, since it dumps roles and their passwords. `backup-minio` could use a claim-mode policy named `backup-minio`
-([MinIO](/components/minio.md)). No ticket covers that.
+all without superuser, since it dumps roles and their passwords.
 
 The GCS key is a long-lived JSON key held in Terraform state and in three KV
 entries. Rotating it means replacing `google_service_account_key.backup`.
@@ -103,11 +110,9 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
   (`spike:backup-durable-buckets/3`). Logs and traces
   (`loki`, `tempo`, 30 days each) and `memex` and `mlflow-artifacts`, which
   the migration drops, have no off-site copy.
-- The sync still reads MinIO. Since 2026-10-20 OpenViking and the registry
-  write to SeaweedFS, so the MinIO `openviking` and `registry` buckets are
-  frozen and their nightly copies hold nothing written after the cutover. New
-  blobs from either have no off-site copy until the backup job reads
-  SeaweedFS (`seaweedfs-cutover`).
+- Since 2026-10-20 the sync reads SeaweedFS, where OpenViking and the
+  registry write, and keeps the `minio/<bucket>/` prefixes so the history
+  carries on (`seaweedfs-cutover`). Its first run from SeaweedFS exited 0.
 - No other host volume is copied: NATS JetStream, OpenViking's workspace,
   hermes, embark, Prometheus, Grafana and the acme state included. Nor is
   Vault's Consul storage. See [Host volumes](/components/host-volumes.md).
@@ -143,7 +148,7 @@ registry again. All 33 tags read back unchanged
 
 ## The enforcer, and its reach
 
-`cli/tests/test_backup_coverage.py` pins the set of MinIO buckets in
+`cli/tests/test_backup_coverage.py` pins the set of SeaweedFS buckets in
 `backup-minio.hcl` to the four durable ones, each to a key of
 `local.buckets` in `deployments/applications/storage.tf`, pins each GCS
 prefix to the same name, and checks that every sync records its failure,
@@ -217,6 +222,7 @@ Built or recorded from these, which a `sources` entry cannot point at:
 - loop ticket `backup-durable-buckets` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `seaweedfs-cutover-openviking` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `seaweedfs-cutover-registry` (its plan, spikes and verdicts are under `.loop/`)
+- loop ticket `seaweedfs-cutover` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `backup-swap-memex-for-openviking` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `gcs-backups-doc-to-runbook` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `R8-rollout-postgres-root-consumers` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

@@ -24,7 +24,7 @@ APP_STORAGE = REPO_ROOT / "deployments" / "applications" / "storage.tf"
 EXPECTED_BUCKETS = {"openviking", "registry", "models", "datalake"}
 
 SYNC_LINE = re.compile(
-    r"^\s*rclone sync minio:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M
+    r"^\s*rclone sync seaweedfs:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M
 )
 
 
@@ -36,7 +36,7 @@ def _require(value: str | None, what: str) -> str:
 
 
 def _sync_lines() -> list[re.Match[str]]:
-    """Every `rclone sync minio:<bucket> gcs:${gcs_bucket}/minio/<bucket>/` line."""
+    """Every `rclone sync seaweedfs:<bucket> gcs:${gcs_bucket}/minio/<bucket>/` line."""
     lines = list(SYNC_LINE.finditer(JOBSPEC.read_text()))
     if not lines:
         pytest.fail("parser found no rclone sync line in backup-minio.hcl — it cannot be checked")
@@ -74,7 +74,7 @@ def test_minio_backup_syncs_declared_buckets() -> None:
     for line in _sync_lines():
         bucket = line.group(1)
         assert bucket in declared, (
-            f"backup-minio.hcl syncs `minio:{bucket}`, which is not a bucket declared in "
+            f"backup-minio.hcl syncs `seaweedfs:{bucket}`, which is not a bucket declared in "
             f"deployments/applications/storage.tf (declared: {sorted(declared)}). "
             "rclone sync against a nonexistent bucket backs up nothing, quietly."
         )
@@ -283,3 +283,15 @@ def test_backup_doc_matches_jobspec_schedules_and_images() -> None:
                 f"{name} task `{task}` runs `{image}`, which the bullet for that "
                 "task in docs/reference/gcs-backups.md does not name."
             )
+
+
+def test_backup_reads_seaweedfs_with_its_read_only_key() -> None:
+    """Since the cutover the source is SeaweedFS, through the backup user's key."""
+    jobspec = JOBSPEC.read_text()
+    assert "[seaweedfs]\ntype = s3\nprovider = SeaweedFS\n" in jobspec
+    assert "endpoint = http://${seaweedfs_host}:8333" in jobspec
+    assert "[minio]" not in jobspec and "minio:" not in jobspec.replace("/minio/", "")
+    services = (REPO_ROOT / "deployments" / "infrastructure" / "services.tf").read_text()
+    job = re.search(r'resource "nomad_job" "backup_minio" \{(.*?)\n\}', services, re.S)
+    assert job, 'services.tf has no resource "nomad_job" "backup_minio"'
+    assert '"${vault_mount.kvv2.path}/data/default/backup-minio/seaweedfs"' in job.group(1)

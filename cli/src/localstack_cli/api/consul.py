@@ -71,7 +71,7 @@ def list_services(address: str, timeout: float = TIMEOUT_SECONDS) -> dict[str, l
     node-level `serfHealth` with an empty `ServiceName`, so a name set built
     from checks silently omits `consul`.
 
-    The tags come back rather than being dropped. `minio` carries `s3`,
+    The tags come back rather than being dropped. `seaweedfs` carries `s3`,
     declared by the job on the port label the `s3` route points at, so a
     later rung could resolve that route from data rather than a guess. A
     `list[str]` return would foreclose it.

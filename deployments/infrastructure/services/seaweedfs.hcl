@@ -66,7 +66,7 @@ job "seaweedfs" {
       service {
         name = "seaweedfs"
         port = "s3"
-        tags = ["http"]
+        tags = ["http", "s3"]
 
         check {
           name     = "seaweedfs health check"

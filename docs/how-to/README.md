@@ -39,7 +39,7 @@
 - [How to revoke memex human tokens](revoke-memex-human-tokens.md): Cut off every outstanding memex human token at once by dropping the memex client from the Vault OIDC provider.
 - [How to roll out Vault login MFA](roll-out-vault-login-mfa.md): Turn on TOTP login MFA for Vault userpass logins in the order that locks nobody out, including the ov-dash sign-in chain.
 - [How to rotate the Vault operator password](rotate-the-vault-operator-password.md): Replace the operator's generated Vault userpass password with one targeted Terraform apply, and read the new one.
-- [How to run a backup job on demand](run-a-backup-job-on-demand.md): Force the nightly Postgres or MinIO backup job to run now, and check its logs and what landed in GCS.
+- [How to run a backup job on demand](run-a-backup-job-on-demand.md): Force the nightly Postgres or object storage backup job to run now, and check its logs and what landed in GCS.
 - [How to send Python traces to Tempo](send-python-traces-to-tempo.md): Send a Python service's OpenTelemetry traces to Tempo through the node-local Alloy receiver.
 - [How to set up the nats CLI](set-up-the-nats-cli.md): Install the nats CLI, point a context at the cluster's broker, and check the connection.
 - [How to ship Python logs to Loki](ship-python-logs-to-loki.md): Get a Python service's logs into Loki as JSON by writing them to stdout for Alloy to ship.

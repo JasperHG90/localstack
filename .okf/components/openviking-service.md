@@ -221,7 +221,8 @@ SeaweedFS's `openviking` bucket on `orangepi4a`, restored from the GCS backup
 by the `restore-s3` job (see [GCS backups](/components/gcs-backups.md)). The
 tree and file hashes read back identical. The key is still static, now read
 from `default/openviking/seaweedfs`, because the AGFS `s3fs` client builds its
-credentials with no session token.
+credentials with no session token. Since `seaweedfs-cutover` the nightly
+`backup-minio` copies that bucket from SeaweedFS to GCS.
 [ADR 0007](/decisions/0007-openviking-static-key-has-no-claim-policy.md) covers
 why the key is static (written for MinIO, and the reason still holds), and
 [ADR 0008](/decisions/0008-openviking-rerank-goes-through-bifrost.md) the rerank

@@ -1,7 +1,7 @@
 <!-- kmctl writes this index from the pages in this folder: run kmctl check --fix to update it, do not edit it by hand. -->
 # Explanation
 
-- [Why each backup job has its own credentials](backup-job-credentials.md): Why each backup job reads its own copy of the PostgreSQL, MinIO and GCS credentials under its own job path.
+- [Why each backup job has its own credentials](backup-job-credentials.md): Why each backup job reads its own copy of the PostgreSQL, SeaweedFS and GCS credentials under its own job path.
 - [Why the cluster roles are shaped the way they are](cluster-roles.md): What the developer, admin and app-user roles buy, what they do not, and why removing someone does not end their session.
 - [How dash reaches two tasks through one route](dash-routing.md): How oauth2-proxy sends dash's one hostname to its frontend and backend tasks.
 - [OpenViking identity](openviking-identity.md): Why OpenViking takes account and user from Vault entity metadata, what that costs, and why an agent shares its person's identity.

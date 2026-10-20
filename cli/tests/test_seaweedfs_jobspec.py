@@ -75,7 +75,12 @@ def test_only_s3_and_metrics_ports_are_mapped(jobspec: str) -> None:
     )
 
 
-def test_service_does_not_carry_the_s3_tag(jobspec: str) -> None:
-    """The CLI's `s3` route resolves to the one service with that tag: MinIO, until the cutover."""
-    for tags in re.findall(r"tags\s*=\s*\[([^\]]*)\]", jobspec):
-        assert '"s3"' not in tags, "the seaweedfs service carries the s3 tag before the cutover"
+def test_service_carries_the_s3_tag(jobspec: str) -> None:
+    """The CLI's `s3` route resolves to the one service with that tag, SeaweedFS."""
+    tags = re.findall(r"tags\s*=\s*\[([^\]]*)\]", jobspec)
+    assert any('"s3"' in t for t in tags), "the seaweedfs service lost the s3 tag"
+    minio = (JOBSPEC.parent / "minio.hcl").read_text()
+    for minio_tags in re.findall(r"tags\s*=\s*\[([^\]]*)\]", minio):
+        assert '"s3"' not in minio_tags, (
+            "minio still carries the s3 tag, so the route has two carriers"
+        )

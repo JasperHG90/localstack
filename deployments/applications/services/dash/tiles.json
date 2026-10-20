@@ -98,25 +98,25 @@
         }
       },
       {
-        "key": "minio",
-        "name": "minio",
+        "key": "seaweedfs",
+        "name": "seaweedfs",
         "desc": "object storage (s3)",
         "color": "#d8324b",
         "icon": "<svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\"><path d=\"M5 6 H17 L15.3 17 H6.7 Z\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M7.4 6 V3.6 H14.6 V6\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><path d=\"M6.3 10.5 H15.7\" stroke=\"currentColor\" stroke-width=\"1.4\"/></svg>",
         "jobs": [
           {
-            "name": "minio",
+            "name": "seaweedfs",
             "node": "orangepi4a"
           }
         ],
         "fe": {
-          "url": "https://minio.lab.orangecluster.nl",
-          "label": "open console"
+          "url": "https://grafana.lab.orangecluster.nl/d/localstack-seaweedfs",
+          "label": "open dashboard"
         },
         "connect": {
           "protocol": "S3 API over HTTPS",
-          "address": "https://s3.lab.orangecluster.nl (console on https://minio.lab.orangecluster.nl)",
-          "auth": "Short-lived credentials from Vault, or a service account issued per workload. No static root key in a jobspec.",
+          "address": "https://s3.lab.orangecluster.nl",
+          "auth": "Keyless jobs trade their Nomad workload identity for a per-job role; other jobs read their own key from Vault at default/<job>/seaweedfs. No static root key in a jobspec.",
           "example": "aws --endpoint-url https://s3.lab.orangecluster.nl s3 ls"
         }
       }
@@ -336,7 +336,7 @@
           "label": "open registry-ui"
         },
         "connect": {
-          "protocol": "OCI Distribution API over HTTPS. Blobs are stored in the `registry` MinIO bucket, not on local disk.",
+          "protocol": "OCI Distribution API over HTTPS. Blobs are stored in the `registry` SeaweedFS bucket, not on local disk.",
           "address": "https://registry.lab.orangecluster.nl",
           "auth": "Basic auth (htpasswd). Username `push`; password in Vault at default/registry/auth. There is no OIDC \u2014 the OCI spec offers only htpasswd or a Docker-specific token server, and podman cannot follow an oauth2-proxy redirect.",
           "example": "podman login registry.lab.orangecluster.nl -u push\npodman push registry.lab.orangecluster.nl/<image>:<tag>\n\nkit login registry.lab.orangecluster.nl -u push\nkit push registry.lab.orangecluster.nl/<modelkit>:<tag>"

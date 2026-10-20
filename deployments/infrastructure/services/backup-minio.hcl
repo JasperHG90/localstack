@@ -23,6 +23,8 @@ job "backup-minio" {
         network_mode = "host"
         entrypoint   = ["/bin/sh", "-c"]
         ### Every bucket is attempted, and one failed sync still fails the run.
+        ### The source is SeaweedFS since the cutover; the GCS prefix stays
+        ### minio/ so the backup history carries on.
         ### loki and tempo keep 30 days and are not backed up.
         ### OpenViking stores each directory as a zero-byte key ending in `/`.
         ### Without the two marker flags rclone drops them, empty directories
@@ -30,10 +32,10 @@ job "backup-minio" {
         ### (spike:seaweedfs-cutover-openviking/2).
         args = [<<-EOT
           rc=0
-          rclone sync minio:openviking gcs:${gcs_bucket}/minio/openviking/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
-          rclone sync minio:registry gcs:${gcs_bucket}/minio/registry/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
-          rclone sync minio:models gcs:${gcs_bucket}/minio/models/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
-          rclone sync minio:datalake gcs:${gcs_bucket}/minio/datalake/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync seaweedfs:openviking gcs:${gcs_bucket}/minio/openviking/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync seaweedfs:registry gcs:${gcs_bucket}/minio/registry/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync seaweedfs:models gcs:${gcs_bucket}/minio/models/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync seaweedfs:datalake gcs:${gcs_bucket}/minio/datalake/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
           exit $rc
           EOT
         ]
@@ -43,12 +45,12 @@ job "backup-minio" {
 
       template {
         data = <<EOF
-[minio]
+[seaweedfs]
 type = s3
-provider = Minio
-access_key_id = {{ with secret "${minio_secret}" }}{{ .Data.data.access_key }}{{ end }}
-secret_access_key = {{ with secret "${minio_secret}" }}{{ .Data.data.secret_key }}{{ end }}
-endpoint = http://${minio_host}:9000
+provider = SeaweedFS
+access_key_id = {{ with secret "${seaweedfs_secret}" }}{{ .Data.data.access_key }}{{ end }}
+secret_access_key = {{ with secret "${seaweedfs_secret}" }}{{ .Data.data.secret_key }}{{ end }}
+endpoint = http://${seaweedfs_host}:8333
 
 [gcs]
 type = google cloud storage
