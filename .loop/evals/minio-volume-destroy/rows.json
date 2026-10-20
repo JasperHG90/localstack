@@ -1,4 +1,23 @@
 {
   "schema_version": "1.0",
-  "rows": []
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "No file under deployments/, bootstrap/, cli/src or .devcontainer/Dockerfile names MinIO except the GCS prefix minio/ in the backup-s3 and restore-s3 jobspecs, the minio-go library in tempo.hcl, the mc client in the Dockerfile and the alert uid listed under Grafana deleteRules; minio_data is no longer allowed.",
+      "fails_when": "minio_data or any other MinIO name remains in those paths",
+      "command": "uv run --directory cli pytest tests/test_no_minio.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "After the apply, nomad volume status lists no minio_data, its host directory on orangepi4a is gone, no default/*/minio or default/minio/* path is left in Vault, and a second infrastructure terraform plan changes nothing but the always-run firewall rules.",
+      "fails_when": "any of those fails, or the evidence is not recorded in the review",
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": "The pages that said the volume is kept (.okf/components/minio.md, host-volumes.md, nodes/orangepi4a.md, summary.md) say it was deleted on the operator's approval, and .okf/log.md records it.",
+      "fails_when": "a page still says minio_data or its data remains",
+      "judgment": true
+    }
+  ]
 }
