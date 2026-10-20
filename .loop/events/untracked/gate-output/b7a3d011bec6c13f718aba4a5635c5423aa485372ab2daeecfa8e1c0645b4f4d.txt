@@ -1,0 +1,107 @@
+warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/loopctl-land-minio-removal-xjhh39e1/tree/cli
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.14.2, asyncio-1.4.0, respx-0.23.1, syrupy-5.5.3, textual-snapshot-1.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 670 items / 21 deselected / 649 selected
+
+tests/api/test_grants.py ............                                    [  1%]
+tests/api/test_haproxy.py ............                                   [  3%]
+tests/api/test_secrets.py ........                                       [  4%]
+tests/api/test_services.py ........................                      [  8%]
+tests/api/test_status.py .....                                           [  9%]
+tests/api/test_vault_reads.py .........                                  [ 10%]
+tests/auth/test_broker.py ...................                            [ 13%]
+tests/auth/test_session.py ..........................                    [ 17%]
+tests/auth/test_vault.py ..............................                  [ 22%]
+tests/auth/test_vault_token_file.py ...............                      [ 24%]
+tests/commands/test_auth_commands.py ................................... [ 30%]
+........                                                                 [ 31%]
+tests/commands/test_breakglass.py .....................                  [ 34%]
+tests/commands/test_breakglass_probes.py ..........                      [ 36%]
+tests/commands/test_breakglass_runbook_facts.py ............             [ 37%]
+tests/commands/test_deps.py ..............                               [ 40%]
+tests/commands/test_monitor_command.py .....                             [ 40%]
+tests/commands/test_read_commands.py ................................... [ 46%]
+.                                                                        [ 46%]
+tests/commands/test_token_command.py ........                            [ 47%]
+tests/test_api_consul.py ..........                                      [ 49%]
+tests/test_api_nomad.py ..............                                   [ 51%]
+tests/test_api_vault.py .....                                            [ 52%]
+tests/test_backup_coverage.py ..........                                 [ 53%]
+tests/test_branding.py ...........                                       [ 55%]
+tests/test_config.py ......                                              [ 56%]
+tests/test_devcontainer_path.py ...                                      [ 56%]
+tests/test_devcontainer_volumes.py FF...                                 [ 57%]
+tests/test_docs_index.py ..                                              [ 57%]
+tests/test_health_rules.py .........................                     [ 61%]
+tests/test_how_to_skeleton.py .......................................... [ 68%]
+.................                                                        [ 70%]
+tests/test_install.py ...........                                        [ 72%]
+tests/test_lazy.py .......                                               [ 73%]
+tests/test_main.py ......                                                [ 74%]
+tests/test_monitor_guardrails.py .........                               [ 75%]
+tests/test_monitor_tui.py ....................                           [ 78%]
+tests/test_no_minio.py ..                                                [ 79%]
+tests/test_observability_s3_clients.py ........                          [ 80%]
+tests/test_platforms.py ..........                                       [ 81%]
+tests/test_read_guardrails.py ........                                   [ 83%]
+tests/test_registry_s3.py ...                                            [ 83%]
+tests/test_restore_s3.py .........                                       [ 85%]
+tests/test_s3_cutover.py .....                                           [ 85%]
+tests/test_seaweedfs_buckets.py ..........                               [ 87%]
+tests/test_seaweedfs_iam_config.py ...........                           [ 89%]
+tests/test_seaweedfs_jobspec.py .............                            [ 91%]
+tests/test_seed_worktree.py ......                                       [ 91%]
+tests/test_shims.py ....................                                 [ 95%]
+tests/test_status.py ..............                                      [ 97%]
+tests/test_versions.py ..................                                [100%]
+
+=================================== FAILURES ===================================
+_ test_the_cache_is_the_loop_harness_volume[UV_CACHE_DIR-source=loop-harness-uv-cache,target=/home/vscode/.cache/uv,type=volume] _
+
+variable = 'UV_CACHE_DIR'
+mount = 'source=loop-harness-uv-cache,target=/home/vscode/.cache/uv,type=volume'
+
+    @pytest.mark.parametrize(("variable", "mount"), SHARED.items())
+    def test_the_cache_is_the_loop_harness_volume(variable: str, mount: str) -> None:
+        assert mount in mounts()
+    
+        target = re.search(r"target=([^,]+)", mount)
+        assert target is not None
+        dockerfile = (devcontainer() / "Dockerfile").read_text()
+>       assert f"ENV {variable}={target.group(1)}\n" in dockerfile
+E       assert 'ENV UV_CACHE_DIR=/home/vscode/.cache/uv\n' in 'FROM  jhginn/devcontainer:ubuntu2404-pyuv312-latest-gcloud\n\nENV RUFF_CACHE_DIR=$HOME/workspace/.cache/ruff\nENV ANS...d nothing writes the file it names.\nENV PATH="$HOME/.localstack/shims:$HOME/.localstack/bin:$HOME/.local/bin:$PATH"\n'
+
+tests/test_devcontainer_volumes.py:37: AssertionError
+_ test_the_cache_is_the_loop_harness_volume[PREK_HOME-source=loop-harness-prek-cache,target=/home/vscode/.cache/prek,type=volume] _
+
+variable = 'PREK_HOME'
+mount = 'source=loop-harness-prek-cache,target=/home/vscode/.cache/prek,type=volume'
+
+    @pytest.mark.parametrize(("variable", "mount"), SHARED.items())
+    def test_the_cache_is_the_loop_harness_volume(variable: str, mount: str) -> None:
+        assert mount in mounts()
+    
+        target = re.search(r"target=([^,]+)", mount)
+        assert target is not None
+        dockerfile = (devcontainer() / "Dockerfile").read_text()
+>       assert f"ENV {variable}={target.group(1)}\n" in dockerfile
+E       assert 'ENV PREK_HOME=/home/vscode/.cache/prek\n' in 'FROM  jhginn/devcontainer:ubuntu2404-pyuv312-latest-gcloud\n\nENV RUFF_CACHE_DIR=$HOME/workspace/.cache/ruff\nENV ANS...d nothing writes the file it names.\nENV PATH="$HOME/.localstack/shims:$HOME/.localstack/bin:$HOME/.local/bin:$PATH"\n'
+
+tests/test_devcontainer_volumes.py:37: AssertionError
+=============================== warnings summary ===============================
+tests/commands/test_auth_commands.py: 15 warnings
+  /home/vscode/.local/share/uv/python/cpython-3.12.15-linux-aarch64-gnu/lib/python3.12/getpass.py:62: GetPassWarning: Can not control echo on the terminal.
+    passwd = fallback_getpass(prompt, stream)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+7 snapshots passed.
+=========================== short test summary info ============================
+FAILED tests/test_devcontainer_volumes.py::test_the_cache_is_the_loop_harness_volume[UV_CACHE_DIR-source=loop-harness-uv-cache,target=/home/vscode/.cache/uv,type=volume]
+FAILED tests/test_devcontainer_volumes.py::test_the_cache_is_the_loop_harness_volume[PREK_HOME-source=loop-harness-prek-cache,target=/home/vscode/.cache/prek,type=volume]
+===== 2 failed, 647 passed, 21 deselected, 15 warnings in 60.24s (0:01:00) =====
