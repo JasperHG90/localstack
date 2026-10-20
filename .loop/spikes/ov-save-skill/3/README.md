@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:44:55+00:00'
+  at: '2026-10-20T14:58:33+00:00'
 slug: ov-save-skill
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-save-skill/3
@@ -24,7 +24,10 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-save-skill 3`.
+The deployed config has no `stt` section, and with it `_get_provider` resolves to `none`. Hermes logs "No STT provider available. Install faster-whisper ..." and the agent gets only the audio path. Adding `stt.provider: local` to config.yaml also resolves to `none`, with the warning "STT provider 'local' configured but unavailable".
+In v0.22.2, `_detect_local_backend` and `_resolve_explicit_local` only detect a backend and never install one. `_try_lazy_install_stt` runs only inside `_transcribe_local`, which the gateway never reaches without faster-whisper. So no config setting turns voice on, and risk 1 is real.
+Fixing it needs faster-whisper importable in the image, or a cloud STT key.
+Limit: run A reused run 0's volume, because the `volume rm` failed while the container still existed. This does not change the result.
 
 ## Files
 
