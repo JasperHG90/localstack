@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-cutover-registry",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
@@ -13,7 +13,7 @@
   "split": "j-20261019T210419+0000-1596ab44",
   "split_plan_hash": "1511d0fb8e91a7a93014c47863f2eb5ca36ef55ed6b3bb5d3d0066046398f623",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "710c3a197aee0c5344255f6e2a534f074b5cb264",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -102,8 +102,14 @@
       "to": "verifying",
       "at": "2026-10-20T08:01:26+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T08:04:33+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T08:04:21+00:00"
+  "at": "2026-10-20T08:04:33+00:00"
 }
