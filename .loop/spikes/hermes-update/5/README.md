@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T11:10:04+00:00'
+  at: '2026-10-20T11:11:00+00:00'
 slug: hermes-update
 n: 5
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike hermes-update/5
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note hermes-update 5`.
+Void runs: the in-container checks printed nothing (spike 4: `podman exec` without `-i` ignored the piped script) or broke on Python quoting (spike 5), and the memory pattern missed. Superseded by `spike:hermes-update/6`.
 
 ## Files
 
