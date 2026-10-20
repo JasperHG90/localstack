@@ -6,6 +6,10 @@ generated:
   by: claude-opus/5.5
   at: 2026-10-20
 tags: [summary]
+checked:
+  at: 2026-10-20T10:39:22Z
+  against:
+    - decisions/0019-hermes-openviking-plugin-built-into-the-image
 ---
 
 # Summary

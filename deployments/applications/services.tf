@@ -273,7 +273,7 @@ resource "nomad_job" "hermes" {
     {
       hermes_hostname = "radxa-dragon-q6a"
       hermes_host     = "192.168.2.50"
-      hermes_version  = "0.21.0-1"
+      hermes_version  = "0.22.2-1"
 
       # Must equal the infrastructure root's `hermes_dashboard_redirect_url`
       # (oidc.tf) minus /auth/callback. Nothing links the two roots but this.

@@ -49,8 +49,9 @@ radxa itself.
 
 **The image** is `ghcr.io/jasperhg90/hermes:<hermes_version>`, built from
 `deployments/applications/services/hermes/Dockerfile`: the
-`nousresearch/hermes-agent:v2026.8.31` base plus `jq` and `chromium`. The tag
-(`0.21.0-1`) is set once, in `nomad_job.hermes` in
+`nousresearch/hermes-agent:v0.22.2` base plus `jq`, `chromium` and the
+OpenViking memory-provider plugin. The tag
+(`0.22.2-1`) is set once, in `nomad_job.hermes` in
 `deployments/applications/services.tf`, and `just rebuild_hermes` in
 `deployments/applications/justfile` reads it from there. Build and push
 before applying a tag change. `force_pull = true` re-pulls on every alloc.
@@ -130,8 +131,23 @@ check which one the consuming code reads.
 
 **Config lines that look load-bearing and are not.** `plugins.enabled` does
 not select the memory provider, because the plugin scanner skips
-`plugins/memory`; `memory.provider: "openviking"` does. The provider ships in
-the base image, so the Dockerfile installs nothing for it (`fe10862`).
+`plugins/memory`; `memory.provider: "openviking"` does. Since v0.22.0 the
+provider is no longer in the base image. The Dockerfile copies Volcengine's
+catalog plugin 2.1.1, pinned by commit, into
+`/opt/hermes/plugins/memory/openviking`, so no start fetches it from GitHub
+([ADR 0019](/decisions/0019-hermes-openviking-plugin-built-into-the-image.md)).
+
+**Sessions are kept.** v0.22 prunes ended sessions idle for 90 days at
+startup by default. `config.yaml` sets `sessions.auto_prune: false` to keep
+the 0.21 behaviour.
+
+**Cron jobs follow the main model.** Under 0.21 every job pinned the main
+model of the day it was created (`ollama/deepseek-v4-flash:0731`). When
+Bifrost 2.3.1 began rejecting names its Ollama catalog no longer lists, every
+pinned job failed with a 403 at its next run. On 2026-10-20 all twelve were
+released with `hermes cron edit <id> --unpin`, so they follow
+`model.default` in `config.yaml` at fire time and a model change needs no job
+edits. A job pinned again with `--model` or `--pin` brings the trap back.
 
 **Bundled skills shadow ours.** The base entrypoint's `skills_sync.py` copies
 bundled skills into `/opt/data/skills/`. Some share names with the IaC
@@ -189,7 +205,8 @@ then moved its memory to OpenViking (`8d6d115`), first with a copied API key
 and then with its own Vault identity token (`0007e46`, `88b089f`). U5 bumped
 the base image to `v2026.7.30` and Bifrost to 1.6.7. `fe10862` moved to
 `v2026.8.31` (hermes-agent 0.21.0). `fd5134d` added the dashboard and its
-OIDC client.
+OIDC client. `hermes-update` moved to hermes-agent v0.22.2 on 2026-10-20,
+with the OpenViking plugin built into the image.
 
 ## Related concepts
 
