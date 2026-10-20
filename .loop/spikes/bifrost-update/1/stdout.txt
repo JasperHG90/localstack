@@ -1,0 +1,254 @@
+provider=0.1.1 image=v2.3.1 work=/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-bifrost-1/run.E9YV
+{"components":{"db_pings":"ok"},"status":"ok"}
+
+unauthenticated GET virtual-keys: 401
+Terraform v1.16.5
+on linux_arm64
++ provider registry.terraform.io/airhelp-osp/bifrost v0.1.1
+== apply (create)
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # bifrost_virtual_key.hermes will be created
+  + resource "bifrost_virtual_key" "hermes" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "hermes"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "embark"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "gemini"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+  # bifrost_virtual_key.memex will be created
+  + resource "bifrost_virtual_key" "memex" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "memex"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "embark"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "gemini"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+  # bifrost_virtual_key.openviking will be created
+  + resource "bifrost_virtual_key" "openviking" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "openviking"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "embark"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "gemini"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + hermes_value_set = (known after apply)
+bifrost_virtual_key.memex: Creating...
+bifrost_virtual_key.hermes: Creating...
+bifrost_virtual_key.openviking: Creating...
+bifrost_virtual_key.memex: Creation complete after 0s [id=8fbeaec8-66d6-4725-ad59-635599ac5040]
+bifrost_virtual_key.openviking: Creation complete after 0s [id=b541f146-671c-48fb-8ac7-ddfbd0d18ded]
+bifrost_virtual_key.hermes: Creation complete after 0s [id=32607599-b41b-44f4-802a-2b3166b7fb34]
+
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+hermes_value_set = true
+== state of hermes
+# bifrost_virtual_key.hermes:
+resource "bifrost_virtual_key" "hermes" {
+    description      = ""
+    id               = "32607599-b41b-44f4-802a-2b3166b7fb34"
+    is_active        = true
+    name             = "hermes"
+    provider_configs = [
+        {
+            allowed_models = [
+                "*",
+            ]
+            key_ids        = [
+                "*",
+            ]
+            provider       = "embark"
+            weight         = 1
+        },
+        {
+            allowed_models = [
+                "*",
+            ]
+            key_ids        = [
+                "*",
+            ]
+            provider       = "gemini"
+            weight         = 1
+        },
+        {
+            allowed_models = [
+                "*",
+            ]
+            key_ids        = [
+                "*",
+            ]
+            provider       = "ollama"
+            weight         = 1
+        },
+    ]
+}
+== API view of virtual keys
+{"count":3,"limit":3,"offset":0,"total_count":3,"virtual_keys":[{"id":"32607599-b41b-44f4-802a-2b3166b7fb34","name":"hermes","is_active":true,"provider_configs":[{"id":2,"virtual_key_id":"32607599-b41b-44f4-802a-2b3166b7fb34","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":3,"virtual_key_id":"32607599-b41b-44f4-802a-2b3166b7fb34","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":4,"virtual_key_id":"32607599-b41b-44f4-802a-2b3166b7fb34","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-10-20T08:30:03.775386Z","updated_at":"2026-10-20T08:30:03.775386Z","value":"sk-bf-130ea1d7-db9f-4f97-953e-8c8016a7ea32"},{"id":"8fbeaec8-66d6-4725-ad59-635599ac5040","name":"memex","is_active":true,"provider_configs":[{"id":1,"virtual_key_id":"8fbeaec8-66d6-4725-ad59-635599ac5040","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":5,"virtual_key_id":"8fbeaec8-66d6-4725-ad59-635599ac5040","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":6,"virtual_key_id":"8fbeaec8-66d6-4725-ad59-635599ac5040","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-10-20T08:30:03.775503Z","updated_at":"2026-10-20T08:30:03.775503Z","value":"sk-bf-086b5869-5d1b-4ead-a0a8-70cd1b875c20"},{"id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","name":"openviking","is_active":true,"provider_configs":[{"id":7,"virtual_key_id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":8,"virtual_key_id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":9,"virtual_key_id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-10-20T08:30:03.778648Z","updated_at":"2026-10-20T08:30:03.778648Z","value":"sk-bf-f33babdd-4fb9-4fbf-a6c8-c8b76c72e26b"}]}
+
+== plan 2 (after create)
+bifrost_virtual_key.openviking: Refreshing state... [id=b541f146-671c-48fb-8ac7-ddfbd0d18ded]
+bifrost_virtual_key.hermes: Refreshing state... [id=32607599-b41b-44f4-802a-2b3166b7fb34]
+bifrost_virtual_key.memex: Refreshing state... [id=8fbeaec8-66d6-4725-ad59-635599ac5040]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+plan-after-create exit=0
+== apply (in-place update: hermes gemini weight 1 -> 2)
+bifrost_virtual_key.hermes: Refreshing state... [id=32607599-b41b-44f4-802a-2b3166b7fb34]
+bifrost_virtual_key.memex: Refreshing state... [id=8fbeaec8-66d6-4725-ad59-635599ac5040]
+bifrost_virtual_key.openviking: Refreshing state... [id=b541f146-671c-48fb-8ac7-ddfbd0d18ded]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # bifrost_virtual_key.hermes will be updated in-place
+  ~ resource "bifrost_virtual_key" "hermes" {
+        id               = "32607599-b41b-44f4-802a-2b3166b7fb34"
+        name             = "hermes"
+      ~ provider_configs = [
+          ~ {
+              ~ weight         = 1 -> 2
+                # (3 unchanged attributes hidden)
+            },
+            # (2 unchanged elements hidden)
+        ]
+        # (3 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+bifrost_virtual_key.hermes: Modifying... [id=32607599-b41b-44f4-802a-2b3166b7fb34]
+bifrost_virtual_key.hermes: Modifications complete after 0s [id=32607599-b41b-44f4-802a-2b3166b7fb34]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+hermes_value_set = true
+bifrost_virtual_key.hermes: Refreshing state... [id=32607599-b41b-44f4-802a-2b3166b7fb34]
+bifrost_virtual_key.memex: Refreshing state... [id=8fbeaec8-66d6-4725-ad59-635599ac5040]
+bifrost_virtual_key.openviking: Refreshing state... [id=b541f146-671c-48fb-8ac7-ddfbd0d18ded]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+update-apply exit=0 plan-after-update exit=0
+== API view of hermes after update
+{"count":3,"limit":3,"offset":0,"total_count":3,"virtual_keys":[{"id":"32607599-b41b-44f4-802a-2b3166b7fb34","name":"hermes","is_active":true,"provider_configs":[{"id":10,"virtual_key_id":"32607599-b41b-44f4-802a-2b3166b7fb34","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":11,"virtual_key_id":"32607599-b41b-44f4-802a-2b3166b7fb34","provider":"gemini","weight":2,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":12,"virtual_key_id":"32607599-b41b-44f4-802a-2b3166b7fb34","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-10-20T08:30:03.775386Z","updated_at":"2026-10-20T08:30:04.62874Z","value":"sk-bf-130ea1d7-db9f-4f97-953e-8c8016a7ea32"},{"id":"8fbeaec8-66d6-4725-ad59-635599ac5040","name":"memex","is_active":true,"provider_configs":[{"id":1,"virtual_key_id":"8fbeaec8-66d6-4725-ad59-635599ac5040","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":5,"virtual_key_id":"8fbeaec8-66d6-4725-ad59-635599ac5040","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":6,"virtual_key_id":"8fbeaec8-66d6-4725-ad59-635599ac5040","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-10-20T08:30:03.775503Z","updated_at":"2026-10-20T08:30:03.775503Z","value":"sk-bf-086b5869-5d1b-4ead-a0a8-70cd1b875c20"},{"id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","name":"openviking","is_active":true,"provider_configs":[{"id":7,"virtual_key_id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":8,"virtual_key_id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":9,"virtual_key_id":"b541f146-671c-48fb-8ac7-ddfbd0d18ded","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-10-20T08:30:03.778648Z","updated_at":"2026-10-20T08:30:03.778648Z","value":"sk-bf-f33babdd-4fb9-4fbf-a6c8-c8b76c72e26b"}]}
+
+RESULT: clean
