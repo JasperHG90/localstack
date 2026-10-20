@@ -62,7 +62,7 @@ takes.** On the minio-go route (tempo, before its move),
 minio-go's credential chain DISCARDS the provider error and falls back to
 anonymous, so the service logs a plain `Access Denied` and its requests go
 out unsigned: a quiet, misleading failure. On the `credential_process`
-route (registry), aws-sdk-go installs a chain that ERRORS rather
+route (registry, before its move), aws-sdk-go installs a chain that ERRORS rather
 than an anonymous signer, so the failure is loud and names itself:
 `ProcessProviderExecutionError` when the helper exits non-zero, or
 `NoCredentialProviders` when the SDK never found the helper at all.

@@ -26,10 +26,11 @@ the MinIO `openviking`, `registry`, `models` and `datalake` buckets on `orangepi
 (`deployments/infrastructure/services.tf:33`), so a single node failure would
 take one of them with it.
 
-`backup-minio` still reads MinIO. Since 2026-10-20 OpenViking keeps its blobs
-in SeaweedFS, so the MinIO `openviking` bucket gets no writes and its GCS copy
-holds nothing newer than the cutover. Blobs OpenViking writes now have no
-off-site copy until the backup job reads SeaweedFS.
+`backup-minio` still reads MinIO. Since 2026-10-20 OpenViking and the OCI
+registry keep their blobs in SeaweedFS, so the MinIO `openviking` and
+`registry` buckets get no writes and their GCS copies hold nothing newer than
+the cutover. Blobs either writes now have no off-site copy until the backup
+job reads SeaweedFS.
 
 A third job, `restore-s3`, runs only when dispatched. It copies one bucket's
 GCS copy into SeaweedFS.

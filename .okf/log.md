@@ -75,6 +75,10 @@
 - Evidence wording (every concept named above with an Evidence line for a loop ticket): an old ticket's plan and any verdicts are under `.loop/` at commit `48f52e2`, not always under `.loop/archive/`. `components/minio`: R12 was dropped, not left a stub.
 - Evidence wording (the same concepts): dropped the claim that `48f52e2` is the last commit before the reset, since three stamp commits follow it.
 
+## 2026-10-20 (seaweedfs-cutover-registry)
+
+- **The registry stores in SeaweedFS** (`components/container-registry`, `components/seaweedfs`, `components/minio`, `components/workload-identity-chain`, `components/gcs-backups`, `components/edge-proxy`, `architecture/deployment-layers`, `nodes/orangepi4a`, `nodes/ubuntu`, `nodes/firebat`, `summary`): the OCI registry now keeps its blobs in SeaweedFS's `registry` bucket and logs in with a `seaweedfs` identity through `local/s3-creds.sh`, which names the `registry` role. Both the helper and `regionendpoint` take the address from Consul, so the literal `192.168.2.29:9000` is gone. No workload uses MinIO now: only `backup-minio` reads it, until `seaweedfs-cutover`. The bucket came back through `restore-s3`, and the 725 zero-byte `dir/` markers the restore wrote were deleted, since the registry never had them. All 33 tags read back unchanged and a new push worked.
+
 ## 2026-10-20 (seaweedfs-cutover-openviking)
 
 - **OpenViking moved to SeaweedFS** (`components/openviking-service`, `components/seaweedfs`, `components/minio`, `components/host-volumes`, `nodes/orangepi4a`): OpenViking's blobs are now in SeaweedFS's `openviking` bucket, reached through Consul service `seaweedfs` with a static key from `default/openviking/seaweedfs`, because its AGFS `s3fs` client carries no session token. Its MinIO key is still minted and no longer used.

@@ -136,16 +136,16 @@ memex (R5) verifies a raw workload JWT itself, against Nomad's JWKS, with
 `aud = memex` and a grant rule on `nomad_job_id`
 (`deployments/applications/services/memex/auth_oidc.json`). MinIO trusts the
 discovery document with `aud = minio` (`MINIO_IDENTITY_OPENID_*_NOMAD` in
-`deployments/infrastructure/services/minio.hcl`, claim `nomad_job_id`). The
-registry carries a `minio` identity block and trades it with
-`AssumeRoleWithWebIdentity` for short-lived keys. memex still reads a static
-MinIO key from KV. Neither verifier touches `jwt-nomad`.
+`deployments/infrastructure/services/minio.hcl`, claim `nomad_job_id`), but
+since 2026-10-20 no job carries a `minio` identity block, so nothing trades a
+JWT there. memex still reads a static MinIO key from KV. Neither verifier
+touches `jwt-nomad`.
 
 SeaweedFS, which replaces MinIO, trusts the same issuer with `aud =
 seaweedfs`, a separate audience so a job's MinIO and SeaweedFS identities
-stay apart during the cutover. loki and tempo now carry a `seaweedfs`
-identity block, with its JWT at `secrets/nomad_seaweedfs.jwt`, and trade it
-there instead of at MinIO. SeaweedFS does not use claim mode. Each keyless job
+stayed apart during the cutover. loki, tempo and the registry carry a
+`seaweedfs` identity block, with its JWT at `secrets/nomad_seaweedfs.jwt`,
+and trade it there instead of at MinIO. SeaweedFS does not use claim mode. Each keyless job
 has its own role, whose trust policy requires that job's `nomad_job_id` and
 `sub`, and the client names the role ARN and a session name in its
 `AssumeRoleWithWebIdentity` call

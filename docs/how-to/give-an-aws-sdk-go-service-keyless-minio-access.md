@@ -1,5 +1,5 @@
 ---
-description: Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry do.
+description: Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry did before they moved to SeaweedFS.
 stale_after: 2027-01-19
 sources:
   - resource: deployments/applications/services/loki.hcl
@@ -13,11 +13,12 @@ sources:
 
 [Tempo's route](give-a-job-keyless-minio-access.md) needs a client library that can be pointed at MinIO's STS.
 aws-sdk-go v1 cannot: it has no environment variable for a non-AWS STS
-endpoint, so a service built on it would send the exchange to Amazon. The
-registry is in that position and takes a second route instead: a small
-helper does the exchange itself, and the SDK runs it. loki took the same
-route on MinIO and keeps it on SeaweedFS, where its helper is
-`local/s3-creds.sh` and also sends a `RoleArn` and `RoleSessionName`.
+endpoint, so a service built on it would send the exchange to Amazon. loki
+and the registry are in that position and took a second route instead: a
+small helper does the exchange itself, and the SDK runs it. Both kept the
+route when they moved to SeaweedFS on 2026-10-20, where the helper is
+`local/s3-creds.sh` and also sends a `RoleArn` and `RoleSessionName`, so no
+job uses the MinIO version below today.
 
 The SDK invokes `credential_process`, the helper POSTs to MinIO's STS with
 the JWT and no `RoleArn`, prints credentials as JSON, and the SDK re-runs it

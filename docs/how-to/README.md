@@ -19,7 +19,7 @@
 - [How to expose Python metrics to Prometheus](expose-python-metrics-to-prometheus.md): Expose a Python service's metrics and register them in Consul so Prometheus scrapes them with no config change.
 - [How to get the operator password](get-the-operator-password.md): Read the Vault operator password out of band once, so localstack login can prompt for it.
 - [How to give a job keyless MinIO access](give-a-job-keyless-minio-access.md): Give a minio-go-based Nomad job keyless MinIO access by trading its workload identity JWT for short-lived credentials, with tempo as the example.
-- [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md): Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry do.
+- [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md): Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry did before they moved to SeaweedFS.
 - [How to join and leave the admin group](join-and-leave-the-admin-group.md): Join the Vault admin group for an incident and leave it afterward, without wiping the group's other members.
 - [How to log in to memex from a laptop](log-in-to-memex-from-a-laptop.md): Log in to memex from a laptop as yourself through the Vault lab OIDC provider, so the memex CLI carries your own 30-day token.
 - [How to log in to Vault](log-in-to-vault.md): Log in to Vault as yourself with userpass and a TOTP passcode, so your token carries the identity that group membership and OIDC assignments need.

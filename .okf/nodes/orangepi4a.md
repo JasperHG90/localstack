@@ -81,11 +81,10 @@ The applications root looks MinIO up in the Consul catalog
 (`data.consul_service.minio`), but several jobs also write `192.168.2.29`
 out by hand, so a move does not follow the lookup:
 
-- `registry.hcl` gets `minio_host` from Consul for the STS exchange, then
-  names `192.168.2.29:9000` literally as the S3 endpoint.
-- `loki.hcl` and `tempo.hcl` follow the lookup: since 2026-10-20 both take
-  `s3_host` from `data.consul_service.seaweedfs` for the STS exchange and
-  the S3 endpoint on 8333, and name no address by hand.
+- `loki.hcl`, `tempo.hcl` and `registry.hcl` follow the lookup: since
+  2026-10-20 all three take `s3_host` from `data.consul_service.seaweedfs`
+  for the STS exchange and the S3 endpoint on 8333, and name no address by
+  hand.
 - `backup-minio`'s `minio_host`, `restore-s3`'s `seaweedfs_host`, and the
   `minio` firewall entry in `deployments/infrastructure/services.tf`.
 - HAProxy's `minio`, `s3` and `ovdash` backends, and Prometheus's scrape
@@ -138,9 +137,9 @@ and names no literal.
 - `minio.lab`, `s3.lab` and `openviking.lab` (ov-dash) stop answering.
 - `minio_data` is on this node only. The nightly backup copies the four durable
   buckets to GCS ([GCS backups](/components/gcs-backups.md)). `loki`, `tempo`,
-  `memex` and `mlflow-artifacts` have no copy. OpenViking's blobs have been in
-  `seaweedfs_data` since 2026-10-20, and the backup still reads MinIO, so
-  nothing OpenViking wrote after that date has a copy.
+  `memex` and `mlflow-artifacts` have no copy. OpenViking's blobs and the
+  registry's have been in `seaweedfs_data` since 2026-10-20, and the backup
+  still reads MinIO, so nothing either wrote after that date has a copy.
 
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),
