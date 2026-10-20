@@ -1,17 +1,35 @@
 ---
 type: eval
 title: 'Eval: ov-fresh-instance'
-description: 'Definition of done for ov-fresh-instance: 0 row(s).'
+description: 'Definition of done for ov-fresh-instance: 8 row(s).'
 tags:
 - eval
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T13:54:01+00:00'
+  at: '2026-10-20T14:38:29+00:00'
 slug: ov-fresh-instance
-signoff: null
+signoff:
+  signer: delegated:jasperginn@gmail.com/claude-opus/5.5
+  hash: ed61f34ee2004cb3b61ef7a6d5eefcc3ecea3e9cf879d76b7a44cb90adeb0e67
+  at: '2026-10-20T14:38:29+00:00'
 verified: null
 ---
 
 Rows: rows.json; the fields each row takes: loopctl schema eval-rows.
 
-No rows yet.
+- r1: OpenViking's config points at bucket openviking-v2, Postgres schema openviking_v2 (adapter and reflection deltas) and host volume openviking_data_v2.
+  Fails when: any of the bucket, the ov-postgres schema, OV_REFLECT_DELTAS_SCHEMA or the workspace volume still names the old store.
+- r2: The openviking storage user's policy grants only openviking-v2; no policy grants it the old openviking bucket, while the backup user reads both.
+  Fails when: the openviking user keeps any action on bucket openviking, lacks openviking-v2, or the backup user cannot read both buckets.
+- r3: openviking-v2 is a durable bucket: backup-s3 syncs it to its own GCS prefix minio/openviking-v2/ and restore-s3 accepts it, without touching the old bucket's prefix.
+  Fails when: openviking-v2 is missing from the durable sets, backup-s3 has no sync line for it, or any sync line writes openviking-v2 into another bucket's GCS prefix.
+- r4: Veerle no longer has an OpenViking identity: var.vault_openviking_consumers holds no veerle entry.
+  Fails when: a veerle entry remains in vault_openviking_consumers.
+- r5: The cutover steps (stop job, baseline, apply infrastructure, create schema openviking_v2, apply applications, restart Hermes) are written down beside the image.
+  Fails when: deployments/applications/services/openviking/README.md lacks the CREATE SCHEMA step or puts the baseline before stopping the job.
+- r6 (judgment): Live after cutover: OpenViking on openviking-v2/openviking_v2 answers /ready 200; the bucket holds only backend_meta.json, the preset default tree and lab/ content, with no _system/ accounts or users files; a lab/jasper search returns zero results; the operator's CLI token and Hermes's token both resolve to lab/jasper and Hermes's viking_search answers.
+  Fails when: the recorded post-cutover evidence shows any of these failing.
+- r7 (judgment): Live: the old openviking bucket's listing and checksums and the old schema's dump hash and tuple counters match the baseline taken after the job stopped.
+  Fails when: any recorded post-cutover comparison differs from the baseline.
+- r8 (judgment): Live: the next backup-s3 run copies both buckets to their own GCS prefixes and exits 0.
+  Fails when: the run fails, or minio/openviking-v2/ is missing or minio/openviking/ lost objects.

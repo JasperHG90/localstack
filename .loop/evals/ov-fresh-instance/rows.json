@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "OpenViking's config points at bucket openviking-v2, Postgres schema openviking_v2 (adapter and reflection deltas) and host volume openviking_data_v2.",
+      "fails_when": "any of the bucket, the ov-postgres schema, OV_REFLECT_DELTAS_SCHEMA or the workspace volume still names the old store.",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_openviking_uses_the_v2_store -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "The openviking storage user's policy grants only openviking-v2; no policy grants it the old openviking bucket, while the backup user reads both.",
+      "fails_when": "the openviking user keeps any action on bucket openviking, lacks openviking-v2, or the backup user cannot read both buckets.",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_old_bucket_is_read_only_for_openviking -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "openviking-v2 is a durable bucket: backup-s3 syncs it to its own GCS prefix minio/openviking-v2/ and restore-s3 accepts it, without touching the old bucket's prefix.",
+      "fails_when": "openviking-v2 is missing from the durable sets, backup-s3 has no sync line for it, or any sync line writes openviking-v2 into another bucket's GCS prefix.",
+      "command": "uv run --directory cli pytest tests/test_seaweedfs_buckets.py tests/test_backup_coverage.py tests/test_restore_s3.py tests/test_ov_fresh_instance.py::test_v2_bucket_has_its_own_backup_prefix -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "Veerle no longer has an OpenViking identity: var.vault_openviking_consumers holds no veerle entry.",
+      "fails_when": "a veerle entry remains in vault_openviking_consumers.",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_only_jasper_consumes_openviking -q"
+    },
+    {
+      "id": "r5",
+      "behavior": "The cutover steps (stop job, baseline, apply infrastructure, create schema openviking_v2, apply applications, restart Hermes) are written down beside the image.",
+      "fails_when": "deployments/applications/services/openviking/README.md lacks the CREATE SCHEMA step or puts the baseline before stopping the job.",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_cutover_steps_are_documented -q"
+    },
+    {
+      "id": "r6",
+      "behavior": "Live after cutover: OpenViking on openviking-v2/openviking_v2 answers /ready 200; the bucket holds only backend_meta.json, the preset default tree and lab/ content, with no _system/ accounts or users files; a lab/jasper search returns zero results; the operator's CLI token and Hermes's token both resolve to lab/jasper and Hermes's viking_search answers.",
+      "fails_when": "the recorded post-cutover evidence shows any of these failing.",
+      "judgment": true
+    },
+    {
+      "id": "r7",
+      "behavior": "Live: the old openviking bucket's listing and checksums and the old schema's dump hash and tuple counters match the baseline taken after the job stopped.",
+      "fails_when": "any recorded post-cutover comparison differs from the baseline.",
+      "judgment": true
+    },
+    {
+      "id": "r8",
+      "behavior": "Live: the next backup-s3 run copies both buckets to their own GCS prefixes and exits 0.",
+      "fails_when": "the run fails, or minio/openviking-v2/ is missing or minio/openviking/ lost objects.",
+      "judgment": true
+    }
+  ]
+}
