@@ -1,0 +1,23 @@
+## applications state: minio_ or module.buckets addresses
+0
+## applications plan
+No changes. Your infrastructure matches the configuration.
+## infrastructure plan
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+            # (1 unchanged element hidden)
+Plan: 15 to add, 0 to change, 15 to destroy.
+## nomad
+minio: Error querying job: Unexpected response code: 404 (job not found)

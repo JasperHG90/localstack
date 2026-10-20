@@ -8,6 +8,8 @@ Each allowed name has a reason that is not "MinIO still runs":
 - `minio-go` is the Go S3 client library Tempo is built on.
 - `minio/mc` is the S3 client the devcontainer installs, which works against
   SeaweedFS.
+- `alert-minio-degraded` is listed under Grafana's `deleteRules`, which is how
+  a provisioned rule that left the file gets deleted.
 """
 
 import re
@@ -26,6 +28,7 @@ ALLOWED = [
     (re.compile(r"\bminio/"), {"backup-s3.hcl", "restore-s3.hcl"}),
     (re.compile(r"minio_data"), {"services.tf"}),
     (re.compile(r"minio-go"), {"tempo.hcl"}),
+    (re.compile(r"uid: alert-minio-degraded"), {"alert-rules.yaml"}),
     (re.compile(r"github\.com/minio/mc/|MinIO retired that host"), {"Dockerfile"}),
 ]
 

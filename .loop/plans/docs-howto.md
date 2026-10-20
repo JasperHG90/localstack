@@ -25,7 +25,8 @@ every page to kmctl's docs conventions. This is an audit and repair, not a
 rewrite: a page that is right keeps its text. It is one of three tickets that
 split `docs-reconcile` by folder (operator, 2026-10-19), with `docs-reference`, `docs-explanation`.
 `okf-reconcile` owns `.okf/`. This ticket touches only `docs/how-to/`, its
-section of `docs/README.md`, `docs/note-sync.toml` and the tests that guard docs.
+section of `docs/README.md`, `docs/note-sync.toml`, the `.okf` sources that name
+its pages, and the tests that guard docs.
 
 Scope: 51 how-to pages. No page has front matter yet.
 
@@ -36,6 +37,9 @@ The work, page by page:
    and the commits since the page last changed. Fix drift, and add what a
    reader needs that the code now does and the page omits. A page about
    something that no longer exists is deleted, with every link to it updated.
+   When a page is renamed or deleted, repoint every `.okf` concept whose
+   `sources` names it, and append a `.okf/log.md` line naming each concept
+   touched. That is the only `.okf` edit this ticket makes.
 2. Give the page front matter holding only `description` (one sentence, the
    index entry), `stale_after` (three months out, kmctl's default) and
    `sources` (the files it describes), per `.claude/rules/docs-layout.md`.
@@ -53,7 +57,8 @@ The work, page by page:
 6. A page whose audience is people working on the repo (a plan, audit,
    handoff or decision record) does not stay in `docs/`. Hand it to
    `okf-reconcile` as a relayed finding rather than writing under `.okf/`.
-7. Delete `docs/note-sync.toml` and the empty, untracked `docs/notes/`: the
+7. Delete `docs/note-sync.toml`, `docs/.gitignore` (it ignores only the sync
+   state file `.memex-sync.db`) and the empty, untracked `docs/notes/`: the
    operator chose to drop note sync (2026-10-19).
 8. When the page and the code disagree and the code is the thing that is
    wrong, leave the page describing actual behavior, and raise the bug as a
@@ -63,8 +68,8 @@ Outcome that shows it worked, all five true at once:
 
 - every page under `docs/how-to/` other than its `README.md` has front matter
   with a `description`, a `stale_after` and a non-empty `sources`, and
-  `kmctl review due --json` lists no `source not resolved` notice for any of
-  them;
+  `kmctl review due --json` lists no notice at all, so neither a page here nor
+  an `.okf` concept pointing at one names a missing source;
 - `uvx --from git+https://github.com/JasperHG90/kmctl@v0.10.0 kmctl check`
   reports no error and no warning that names a `docs/how-to/` path;
 - `just pre_commit` and `uv run --directory cli pytest` pass, including
@@ -74,7 +79,8 @@ Outcome that shows it worked, all five true at once:
   using the classes `spike:docs-reconcile/2` found: no shorthand path is left,
   and a bare name that exists in both Terraform roots (`secrets.tf`,
   `variables.tf`) names its root. Runtime paths, gitignored local files and
-  files in other codebases are not repo paths and stay as they are.
+  files in other codebases are not repo paths and stay as they are, and so do names the eval's allow-list holds
+  (`embark.json`, embark's own config in a ModelKit).
 - `docs/note-sync.toml` and `docs/notes/` no longer exist.
 
 ## Could invalidate this plan

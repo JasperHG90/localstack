@@ -1,0 +1,75 @@
+== render the config task output from hermes.hcl
+render: wrote .env, config.yaml, plugins/model-providers/bifrost/__init__.py, plugins/model-providers/bifrost/plugin.yaml
+== run 1: first start, network open, plugin not installed
+gateway hspk892119-h1 answered /health with 200
+PASS: plugin absent before the first agent turn
+reply: {"id": "chatcmpl-6a893672f20d49edbb91d5de2c222", "object": "chat.completion", "created": 1792485648, "model": "hermes-agent", "choices": [{"index": 0, "message": {"role": "assistant", "content": "SPIKE-DONE"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}}
+PASS: run 1 reply came back after a viking_search result
+PASS: plugin installed under the data volume
+2 search request(s) with the placeholder key
+PASS: run 1 searched the stub with the placeholder key
+accounts named in headers: ['(none)']
+PASS: run 1 sent no account header other than lab (none at all is the 0.21 provider behaviour with a key set)
+PASS: run 1 started no openviking-server
+-- run 1 stub requests
+1934 GET /health x-api-key=- account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2F x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/system/status x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/content/read?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fpro x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fpreference x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fentities&o x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 POST /api/v1/search/search x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+8080 GET /v1/models x-api-key=- account=- user=-
+8080 GET /v1/models x-api-key=- account=- user=-
+1934 POST /api/v1/search/find x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+1934 POST /api/v1/sessions/api-b486383960a28eb1/messages/batch x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/sessions/api-b486383960a28eb1 x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+-- run 1 viking_search body
+{"port": 1934, "method": "POST", "path": "/api/v1/search/find", "headers": {"host": "127.0.0.1:1934", "accept": "*/*", "accept-encoding": "gzip, deflate, br", "connection": "keep-alive", "content-type": "application/json", "user-agent": "openviking-memory-hermes/0.22.2", "x-api-key": "unused-the-sidecar-supplies-the-token", "authorization": "Bearer unused-the-sidecar-supplies-the-token", "content-length": "23"}, "body": "{\"query\":\"spike probe\"}"}
+-- run 1 gateway log lines about the provider
+2026-10-20 08:42:06,081 WARNING hermes_cli.memory_provider_migration:   ✓ Memory provider 'openviking' moved out of core — installed its plugin from the catalog (memory.provider and your stored memories are unchanged; check its settings with `hermes memory status`).
+2026-10-20 08:42:06,081 WARNING hermes_cli.memory_provider_migration:   ✓ Memory provider 'openviking' moved out of core — installed its plugin from the catalog (memory.provider and your stored memories are unchanged; check its settings with `hermes memory status`).
+2026-10-20 08:42:06,159 INFO agent.memory_manager: Memory provider 'openviking' registered (6 tools)
+2026-10-20 08:42:06,227 INFO run_agent: Memory provider 'openviking' activated
+2026-10-20 08:42:06,081 WARNING hermes_cli.memory_provider_migration:   ✓ Memory provider 'openviking' moved out of core — installed its plugin from the catalog (memory.provider and your stored memories are unchanged; check its settings with `hermes memory status`).
+-- run 1 container-layer writes (outside the volume) naming openviking or site-packages
+A /run/s6/container_environment/OPENVIKING_ENDPOINT
+A /run/s6/container_environment/OPENVIKING_API_KEY
+A /run/s6/container_environment/OPENVIKING_ACCOUNT
+A /run/s6/container_environment/OPENVIKING_USER
+total 12
+drwxr-xr-x 1 hermes hermes  148 Oct 20 08:42 .
+drwx------ 1 hermes hermes 1636 Oct 20 08:42 ..
+-rw------- 1 hermes hermes  436 Oct 20 08:42 .install-metadata.json
+-rw-r--r-- 1 hermes hermes    0 Oct 20 08:42 .install-metadata.json.lock
+drwxr-xr-x 1 hermes hermes   14 Oct 20 08:40 model-providers
+drwxr-xr-x 1 hermes hermes  382 Oct 20 08:40 openviking
+== run 2: new container on the same volume, no route off the host
+gateway hspk892119-h2 answered /health with 200
+reply: {"id": "chatcmpl-f593b5f4728048b9b8e9162170707", "object": "chat.completion", "created": 1792485756, "model": "hermes-agent", "choices": [{"index": 0, "message": {"role": "assistant", "content": "SPIKE-DONE"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}}
+PASS: run 2 reply came back after a viking_search result
+2 search request(s) with the placeholder key
+PASS: run 2 searched the stub with the placeholder key
+accounts named in headers: ['(none)']
+PASS: run 2 sent no account header other than lab (none at all is the 0.21 provider behaviour with a key set)
+PASS: run 2 started no openviking-server
+PASS: run 2 attempted no reinstall
+-- run 2 stub requests
+1934 GET /health x-api-key=- account=- user=-
+1934 POST /api/v1/sessions/api-b486383960a28eb1/commit x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2F x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/system/status x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/content/read?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fpro x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fpreference x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fentities&o x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 POST /api/v1/search/search x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+8080 GET /v1/models x-api-key=- account=- user=-
+1934 POST /api/v1/search/find x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+1934 POST /api/v1/sessions/api-b486383960a28eb1/messages/batch x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/sessions/api-b486383960a28eb1 x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+== result: FAIL=0

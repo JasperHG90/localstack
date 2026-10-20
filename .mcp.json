@@ -19,7 +19,7 @@
       "headers": {},
       "type": "stdio"
     },
-    "okf-bundle": {
+    "bundle": {
       "type": "stdio",
       "command": "sh",
       "args": [

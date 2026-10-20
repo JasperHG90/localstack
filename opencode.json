@@ -1,6 +1,6 @@
 {
   "mcp": {
-    "okf-bundle": {
+    "bundle": {
       "type": "local",
       "enabled": true,
       "command": [

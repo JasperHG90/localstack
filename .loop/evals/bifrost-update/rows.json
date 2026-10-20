@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "Bifrost is pinned to exactly v2.3.1 in deployments/applications/services.tf, the AirHelp-OSP/bifrost provider stays at ~>0.1.0, and scripts/bifrost_smoke.py treats the 2.1.0+ error `access_not_found` (not `virtual_key_not_found`) as the unknown-key refusal.",
+      "fails_when": "the pin is any other version or a floating tag, the provider constraint moves, or the smoke script still expects `virtual_key_not_found`",
+      "command": "uv run --directory cli pytest tests/test_bifrost_version.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "Before the apply, a pg_dump of the bifrost database is taken and its location recorded, since the 2.1.0-2.3.1 store migrations cannot be undone.",
+      "fails_when": "no dump is taken before the apply, or its location is not recorded in the review",
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": "After the apply, job bifrost runs healthy on v2.3.1, scripts/bifrost_smoke.py passes against it (inference auth, metrics auth, the four named virtual keys, an embedding routed to embark), a bare-string rerank through the OpenViking virtual key returns 200, the Grafana Bifrost dashboard shows requests after the switch, and a second terraform plan of deployments/applications changes no bifrost_virtual_key.",
+      "fails_when": "any of those fails, or the evidence is not recorded in the review",
+      "judgment": true
+    },
+    {
+      "id": "r4",
+      "behavior": ".okf/components/bifrost.md and any docs naming the Bifrost version say 2.3.1 and note the irreversible store migration.",
+      "fails_when": "a page still names 2.0.0 as current, or the migration is not mentioned",
+      "judgment": true
+    }
+  ]
+}

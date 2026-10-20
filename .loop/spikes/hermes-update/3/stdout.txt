@@ -1,0 +1,43 @@
+== A: uv pip install the catalog plugin (2.1.1 at 9f150ece247ad683494ab172d738023bd6dc6170) into the Hermes venv
+#5 14.59   × Failed to build `hermes-plugin-openviking @
+#5 14.59   ├─▶ The build backend returned an error
+#5 14.59       error: Multiple top-level modules discovered in a flat-layout:
+#5 14.59 hint: Build failures usually indicate a problem with the package or the build environment
+#5 ERROR: process "/bin/sh -c /opt/hermes/tools/uv-0.12.3-linux-arm64/uv pip install --python /opt/hermes/.venv/bin/python 'hermes-plugin-openviking @ git+https://github.com/volcengine/OpenViking@9f150ece247ad683494ab172
+14.59 hint: Build failures usually indicate a problem with the package or the build environment
+ERROR: failed to build: failed to solve: process "/bin/sh -c /opt/hermes/tools/uv-0.12.3-linux-arm64/uv pip install --python /opt/hermes/.venv/bin/python 'hermes-plugin-openviking @ git+https://github.com/volcengine/Open
+A: build failed (exit 1)
+== B: copy the catalog plugin (2.1.1 at 9f150ece247ad683494ab172d738023bd6dc6170) into the image's bundled memory-provider dir
+#6 exporting manifest list sha256:beee753c00ba6d4aaea8934b9c3a7e0843ed8b390c1ec97a69dbb6e7dc0571ae 0.0s done
+#6 naming to docker.io/library/hspkalt906921-bundled:latest done
+#6 unpacking to docker.io/library/hspkalt906921-bundled:latest 0.0s done
+#6 DONE 0.2s
+PASS: B: image builds
+find_provider_dir: /opt/hermes/plugins/memory/openviking
+render: wrote .env, config.yaml, plugins/model-providers/bifrost/__init__.py, plugins/model-providers/bifrost/plugin.yaml
+== B run: fresh data volume, no route off the host
+gateway hspkalt906921-h2 answered /health with 200
+reply: {"id": "chatcmpl-81fd3be3ec8944c8b13cc69562bc0", "object": "chat.completion", "created": 1792486115, "model": "hermes-agent", "choices": [{"index": 0, "message": {"role": "assistant", "content": "SPIKE-DONE"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}}
+PASS: B: reply came back after a viking_search result
+2 search request(s) with the placeholder key
+PASS: B: searched the stub with the placeholder key
+PASS: B: started no openviking-server
+PASS: B: no runtime install attempted
+PASS: B: nothing installed under the data volume
+-- B stub requests
+1934 GET /health x-api-key=- account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2F x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/system/status x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/content/read?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fpro x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fpreference x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/fs/ls?uri=viking%3A%2F%2Fuser%2Fjasper%2Fmemories%2Fentities&o x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 POST /api/v1/search/search x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+8080 GET /v1/models x-api-key=- account=- user=-
+8080 GET /v1/models x-api-key=- account=- user=-
+1934 POST /api/v1/search/find x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+8080 POST /v1/chat/completions x-api-key=- account=- user=-
+1934 POST /api/v1/sessions/api-b486383960a28eb1/messages/batch x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+1934 GET /api/v1/sessions/api-b486383960a28eb1 x-api-key=unused-the-sidecar-supplies-the-token account=- user=-
+== result: FAIL=0

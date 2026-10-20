@@ -33,8 +33,13 @@ def test_the_cache_is_the_loop_harness_volume(variable: str, mount: str) -> None
 
     target = re.search(r"target=([^,]+)", mount)
     assert target is not None
+    # Set in the Dockerfile or in devcontainer.json's containerEnv; either way
+    # the tool must point at the mounted volume, or it fills its own cache.
     dockerfile = (devcontainer() / "Dockerfile").read_text()
-    assert f"ENV {variable}={target.group(1)}\n" in dockerfile
+    env = json.loads((devcontainer() / "devcontainer.json").read_text()).get("containerEnv", {})
+    assert f"ENV {variable}={target.group(1)}\n" in dockerfile or env.get(variable) == target.group(
+        1
+    ), f"{variable} does not point at {target.group(1)}"
 
 
 def test_claude_state_is_not_shared() -> None:

@@ -9,3 +9,12 @@
 {"at": "2026-10-19T20:51:59+00:00", "dispatched_at": "2026-10-19T20:50:49+00:00", "kind": "round-close", "n": 3, "outcome": "pass", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-10-19T20:51:47+00:00"}}
 {"at": "2026-10-19T20:51:59+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-10-19T20:54:57+00:00", "grant": "g1", "hash": "63fadf6adeabfeaf6fcbf5677a5c605726dec4e638cec583051c163b7a22f402", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/planner", "step": "eval-sign"}
+{"at": "2026-10-20T08:33:22+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-20T08:51:18+00:00", "diff": {"added": [], "changed": {"r1": ["behavior", "fails_when"]}, "removed": []}, "grant": "g1", "hash": "af8b467c75d04aad1d9ec7ede799afd76f5fcfe91546b644a3d6d31d3d8f5a79", "kind": "signoff", "reason": "r1 named only the backup prefix, but the plan keeps the minio_data volume until minio-volume-destroy, restore-s3 reads the same prefix, minio-go is a client library and mc stays as the devcontainer S3 client (plan step 4 amended)", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/planner", "step": "eval-sign"}
+{"at": "2026-10-20T08:53:29+00:00", "kind": "spike-note", "n": 3, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T08:53:30+00:00", "kind": "spike-note", "n": 4, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T09:07:14+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
+{"at": "2026-10-20T09:07:21+00:00", "by": "advance", "from": "building", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
+{"at": "2026-10-20T09:07:22+00:00", "binds": "64c1255701e334a4582c54eb2b4fb9d13b3c1b50264c8d1b76affd2617499c71", "kind": "round-start", "n": 1, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "82f4ceeade13b4d873a9e5cd532bf47bd36c8136"}
+{"at": "2026-10-20T09:11:29+00:00", "dispatched_at": "2026-10-20T09:07:22+00:00", "kind": "round-close", "n": 1, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-10-20T09:11:12+00:00"}}
+{"at": "2026-10-20T09:11:49+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "83c348454d941374803198e7fe7f6cc00e839266"}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "The Hermes Dockerfile builds from hermes-agent v0.22.2 and copies the OpenViking catalog plugin pinned at commit 9f150ece (examples/hermes-plugin) into /opt/hermes/plugins/memory/openviking; hermes_version is 0.22.2-1; config.yaml in the jobspec sets sessions.auto_prune false and memory.provider openviking.",
+      "fails_when": "the base is another version or floating, the plugin is unpinned, fetched at runtime or copied elsewhere, hermes_version differs, or either config setting is missing",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "After the image is pushed and applied, the hermes job's new deployment is healthy on ghcr.io/jasperhg90/hermes:0.22.2-1, hermes memory status names openviking, a viking_search through 127.0.0.1:1934 returns account lab memories, /cron list shows the four jobs from register-cron.sh, a forced or scheduled daily-blog-scrape and insight-linker-daily run completes, and the hermes task stays under 2048 MiB.",
+      "fails_when": "any of those fails, or the evidence is not recorded in the review",
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": ".okf/components/hermes.md and the Dockerfile comments say the OpenViking provider is copied in at build time from the pinned catalog plugin, and a decision record covers that choice over a lazy install.",
+      "fails_when": "a page still says the provider ships in the base image, or the decision record is missing",
+      "judgment": true
+    }
+  ]
+}

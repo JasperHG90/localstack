@@ -6,7 +6,7 @@ alias p := pre_commit
 alias u := unseal_vault
 alias w := worktree_setup
 apm := "uvx --from apm-cli==0.33.0 apm"
-kmctl_ref := "v0.10.0"
+kmctl_ref := "v0.12.1"
 kmctl_src := "git+https://github.com/JasperHG90/kmctl@" + kmctl_ref
 # kmctl at the pinned release, without touching the kmctl on your PATH.
 kmctl := "uvx --from " + kmctl_src + " kmctl"
@@ -182,6 +182,18 @@ kmctl-install-frozen:
     {{apm}} install --frozen
     {{kmctl}} plugin patch
 
+# Fail when a frozen install changes a committed file, such as a hand edit to an installed skill.
+# Run it on a clean checkout, as in CI: the install overwrites an uncommitted edit without a word.
+check-install: kmctl-install-frozen
+    #!/usr/bin/env bash
+    set -euo pipefail
+    changed=$(git status --porcelain)
+    if [ -n "$changed" ]; then
+        printf '%s\n' "$changed"
+        echo "the committed files above differ from what apm.lock.yaml installs; make the change in the package they come from, and commit what just install-frozen writes" >&2
+        exit 1
+    fi
+
 # Resolve the dependencies again and rewrite apm.lock.yaml without installing.
 apm-lock:
     {{apm}} lock
@@ -203,4 +215,4 @@ kmctl-check:
 # Move to another kmctl release, such as v0.5.0: rewrite the pinned files, then reinstall at it.
 kmctl-upgrade ref:
     uvx copier update --defaults --data kmctl_ref={{ref}}
-    just kmctl install
+    just kmctl-install

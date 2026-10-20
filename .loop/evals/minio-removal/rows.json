@@ -3,8 +3,8 @@
   "rows": [
     {
       "id": "r1",
-      "behavior": "No file under deployments/, bootstrap/, cli/src or .devcontainer/Dockerfile names MinIO, except the GCS prefix minio/ and its one comment in the backup-s3 jobspec.",
-      "fails_when": "any other case-insensitive match for minio exists in those paths",
+      "behavior": "No file under deployments/, bootstrap/, cli/src or .devcontainer/Dockerfile names MinIO, except: the GCS prefix minio/ in the backup-s3 and restore-s3 jobspecs, the minio_data host volume (kept until minio-volume-destroy), the minio-go client library named in tempo.hcl, and the mc S3 client's download URL and source comment in the Dockerfile.",
+      "fails_when": "any other file or line in those paths names MinIO",
       "command": "uv run --directory cli pytest tests/test_no_minio.py -q"
     },
     {

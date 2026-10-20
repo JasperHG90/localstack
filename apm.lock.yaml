@@ -5,9 +5,9 @@ dependencies:
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl
   host: github.com
-  resolved_commit: 7b5950454b3a641d6bce9ce909e111335705cd2f
-  resolved_ref: v0.10.0
-  version: 0.10.0
+  resolved_commit: f67245be60714998468cfa72f3ab7f9314573386
+  resolved_ref: v0.12.1
+  version: 0.12.1
   virtual_path: apm
   is_virtual: true
   package_type: apm_package
@@ -79,7 +79,7 @@ dependencies:
     .agents/skills/continue/SKILL.md: sha256:4288732e935a4f896f111e1c6c5095d2a7e25fc9bbbea1f1260c592c8fcaee28
     .agents/skills/continue/evals/evals.json: sha256:da44ddfbdea5ae8f46da34d0e5b93be51d88f153ccebba91aac7a52b8c2645a7
     .agents/skills/continue/evals/results.md: sha256:bc65cd91a41d9d45df17def1ef0cb60805f333ad4ff7fe132d249a4725cd996f
-    .agents/skills/decision-log-review/SKILL.md: sha256:13b9016021826b3ff51661c685e8f85fbf45ec9af542d13db9efe3591505d137
+    .agents/skills/decision-log-review/SKILL.md: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
     .agents/skills/handoff/SKILL.md: sha256:eda5c0c866a3c64573a53fc09bf0085497fa7821fc7290554f124365d3c79355
     .agents/skills/handoff/evals/evals.json: sha256:6605a45113967a0405cbe702174382b361a4037362d17298b263be3faecc7992
     .agents/skills/handoff/evals/results.md: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
@@ -101,7 +101,7 @@ dependencies:
     .claude/skills/continue/SKILL.md: sha256:4288732e935a4f896f111e1c6c5095d2a7e25fc9bbbea1f1260c592c8fcaee28
     .claude/skills/continue/evals/evals.json: sha256:da44ddfbdea5ae8f46da34d0e5b93be51d88f153ccebba91aac7a52b8c2645a7
     .claude/skills/continue/evals/results.md: sha256:bc65cd91a41d9d45df17def1ef0cb60805f333ad4ff7fe132d249a4725cd996f
-    .claude/skills/decision-log-review/SKILL.md: sha256:13b9016021826b3ff51661c685e8f85fbf45ec9af542d13db9efe3591505d137
+    .claude/skills/decision-log-review/SKILL.md: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
     .claude/skills/handoff/SKILL.md: sha256:eda5c0c866a3c64573a53fc09bf0085497fa7821fc7290554f124365d3c79355
     .claude/skills/handoff/evals/evals.json: sha256:6605a45113967a0405cbe702174382b361a4037362d17298b263be3faecc7992
     .claude/skills/handoff/evals/results.md: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
@@ -115,27 +115,27 @@ dependencies:
     .claude/skills/write-docs/references/reference.md: sha256:f58b9d594333d5782b081ac3e236a062b7b6239ab197c486806e0a5b65e1596f
     .claude/skills/write-docs/references/tutorial.md: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
     .opencode/agents/kmctl-auditor.md: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
-  content_hash: sha256:e24b0198ccfc8d2a506f44cb3fc7e1961b3f13fbd5d15d0a6a6043b03616d32b
+  content_hash: sha256:c3b0c85c3a085ff93dcd8ed21cbfcfb2a82d2de2db68a48b3d25e8848e2d6331
 - repo_url: jasperhg90/kmctl
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl-antigravity
   host: github.com
-  resolved_commit: 7b5950454b3a641d6bce9ce909e111335705cd2f
-  resolved_ref: v0.10.0
-  version: 0.10.0
+  resolved_commit: f67245be60714998468cfa72f3ab7f9314573386
+  resolved_ref: v0.12.1
+  version: 0.12.1
   virtual_path: apm/antigravity
   is_virtual: true
   depth: 2
   resolved_by: JasperHG90/kmctl
   package_type: apm_package
-  content_hash: sha256:107556da81ecafa0a194e97af4f913f087aa521be2d97fe74671468bd3c2c29a
+  content_hash: sha256:4b6e641210ae195b06a1bdd270f8774c8d5eeff3136990e4feabf7da3240c5f8
 - repo_url: jasperhg90/kmctl
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl-claude
   host: github.com
-  resolved_commit: 7b5950454b3a641d6bce9ce909e111335705cd2f
-  resolved_ref: v0.10.0
-  version: 0.10.0
+  resolved_commit: f67245be60714998468cfa72f3ab7f9314573386
+  resolved_ref: v0.12.1
+  version: 0.12.1
   virtual_path: apm/claude
   is_virtual: true
   depth: 2
@@ -147,11 +147,11 @@ dependencies:
   - .claude/rules/manifesto-invariants.md
   - .claude/rules/okf-bundle.md
   deployed_file_hashes:
-    .claude/rules/diagrams-stay-current.md: sha256:828b1a262a40be85f84d8dffde36656817d1658a0e2d11d1965bfab37e6e9eb0
-    .claude/rules/docs-layout.md: sha256:a015e990b7808ccc07227b3279959a816dffea0eddedc75d768145d466bd1d69
+    .claude/rules/diagrams-stay-current.md: sha256:dbb76cd547e7d80115296ba4fd780a38aa3ff001d2c7220e204e24da07ab5073
+    .claude/rules/docs-layout.md: sha256:f85e07b4529cfd2fed47adee3b5404ca8b72d7734de002d0d02e27fd5114ce9f
     .claude/rules/manifesto-invariants.md: sha256:65e1937175cea3039037906e5eb70e81c030f4f8c2394394c572ad474b2ac69b
-    .claude/rules/okf-bundle.md: sha256:0a83d25d9df91b2e7427247e66d73250236d65fdfdbb9c2623893052c3927ca7
-  content_hash: sha256:40b7359d579a90a3523cb89fd828b04afab74f28a07a4356a77578656a507296
+    .claude/rules/okf-bundle.md: sha256:1c0bd241e2d334ab0467148898f185d1120ba45f249e5236c9a8f8257c54b7ec
+  content_hash: sha256:abb821e8a1d7cab3e84d52a045b842586ff6b182757e4ecce530d1267faf8e73
 - repo_url: scaccogatto/okf-skills
   name: okf
   host: github.com
@@ -284,7 +284,7 @@ deployments:
   owners:
   - jasperhg90/kmctl/apm/claude
   active_owner: jasperhg90/kmctl/apm/claude
-  content_hash: sha256:828b1a262a40be85f84d8dffde36656817d1658a0e2d11d1965bfab37e6e9eb0
+  content_hash: sha256:dbb76cd547e7d80115296ba4fd780a38aa3ff001d2c7220e204e24da07ab5073
 - kind: project-relative
   target: claude
   value: .claude/rules/docs-layout.md
@@ -293,7 +293,7 @@ deployments:
   owners:
   - jasperhg90/kmctl/apm/claude
   active_owner: jasperhg90/kmctl/apm/claude
-  content_hash: sha256:a015e990b7808ccc07227b3279959a816dffea0eddedc75d768145d466bd1d69
+  content_hash: sha256:f85e07b4529cfd2fed47adee3b5404ca8b72d7734de002d0d02e27fd5114ce9f
 - kind: project-relative
   target: claude
   value: .claude/rules/manifesto-invariants.md
@@ -311,7 +311,7 @@ deployments:
   owners:
   - jasperhg90/kmctl/apm/claude
   active_owner: jasperhg90/kmctl/apm/claude
-  content_hash: sha256:0a83d25d9df91b2e7427247e66d73250236d65fdfdbb9c2623893052c3927ca7
+  content_hash: sha256:1c0bd241e2d334ab0467148898f185d1120ba45f249e5236c9a8f8257c54b7ec
 - kind: project-relative
   target: claude
   value: .claude/skills/architecture-review
@@ -455,7 +455,7 @@ deployments:
   owners:
   - jasperhg90/kmctl/apm
   active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:13b9016021826b3ff51661c685e8f85fbf45ec9af542d13db9efe3591505d137
+  content_hash: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
 - kind: project-relative
   target: claude
   value: .claude/skills/handoff
@@ -728,7 +728,7 @@ deployments:
   content_hash: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
 - kind: uri
   target: mcp
-  value: okf-bundle
+  value: bundle
   runtime: claude
   scope: project
   owners:
@@ -737,7 +737,7 @@ deployments:
   content_hash: null
 - kind: uri
   target: mcp
-  value: okf-bundle
+  value: bundle
   runtime: opencode
   scope: project
   owners:
@@ -887,7 +887,7 @@ deployments:
   owners:
   - jasperhg90/kmctl/apm
   active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:13b9016021826b3ff51661c685e8f85fbf45ec9af542d13db9efe3591505d137
+  content_hash: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
 - kind: project-relative
   target: opencode
   value: .agents/skills/handoff
@@ -1186,10 +1186,10 @@ deployments:
   active_owner: jasperhg90/kmctl/apm
   content_hash: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
 mcp_servers:
-- okf-bundle
+- bundle
 mcp_configs:
-  okf-bundle:
-    name: okf-bundle
+  bundle:
+    name: bundle
     transport: stdio
     args:
     - -c
@@ -1202,8 +1202,8 @@ mcp_configs:
     command: sh
 mcp_target_servers:
   claude:
-  - okf-bundle
+  - bundle
   opencode:
-  - okf-bundle
+  - bundle
 mcp_config_provenance:
-  okf-bundle: kmctl
+  bundle: kmctl

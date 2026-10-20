@@ -1,17 +1,17 @@
 {
   "schema_version": "1.0",
   "slug": "hermes-update",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
   "fix": null,
   "ask": "j-20261020T080818+0000-60c64d00",
-  "split": "j-20261020T081201+0000-8e924e07",
-  "split_plan_hash": "e6078d65a3c0cd217400aaa262459612255c9536061a96ef2210197815843dca",
+  "split": "j-20261020T085405+0000-79dca09d",
+  "split_plan_hash": "d7b4419f30c009da2ed7e8bc113d92c32beabc0c4b3b2f57b12124c30d8b6398",
   "split_hold": false,
   "commit_sha": null,
   "closed_outside": false,
@@ -20,16 +20,61 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/planner",
+    "hash": "ffd9b0c1ff9cfdeb370eccd5939b569021af58b35d510879b3e751d58ec47704",
+    "at": "2026-10-20T09:07:54+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "The Hermes Dockerfile builds from hermes-agent v0.22.2 and copies the OpenViking catalog plugin pinned at commit 9f150ece (examples/hermes-plugin) into /opt/hermes/plugins/memory/openviking; hermes_version is 0.22.2-1; config.yaml in the jobspec sets sessions.auto_prune false and memory.provider openviking.",
+      "fails_when": "the base is another version or floating, the plugin is unpinned, fetched at runtime or copied elsewhere, hermes_version differs, or either config setting is missing",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "After the image is pushed and applied, the hermes job's new deployment is healthy on ghcr.io/jasperhg90/hermes:0.22.2-1, hermes memory status names openviking, a viking_search through 127.0.0.1:1934 returns account lab memories, /cron list shows the four jobs from register-cron.sh, a forced or scheduled daily-blog-scrape and insight-linker-daily run completes, and the hermes task stays under 2048 MiB.",
+      "fails_when": "any of those fails, or the evidence is not recorded in the review",
+      "command": null,
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": ".okf/components/hermes.md and the Dockerfile comments say the OpenViking provider is copied in at build time from the pinned catalog plugin, and a decision record covers that choice over a lazy install.",
+      "fails_when": "a page still says the provider ships in the base image, or the decision record is missing",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "0db4cfd30ff534d42c48489caa0d8e3e37070adda6066f81ea05d3ff8168668c",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "d7b4419f30c009da2ed7e8bc113d92c32beabc0c4b3b2f57b12124c30d8b6398",
+    "started_at": "2026-10-20T08:54:12+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": true,
+    "outcome": "pass"
+  },
+  "plan_hash": "d7b4419f30c009da2ed7e8bc113d92c32beabc0c4b3b2f57b12124c30d8b6398",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -41,8 +86,14 @@
       "to": "planning",
       "at": "2026-10-20T08:09:45+00:00",
       "by": "register"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-10-20T08:55:15+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T08:12:01+00:00"
+  "at": "2026-10-20T09:07:54+00:00"
 }

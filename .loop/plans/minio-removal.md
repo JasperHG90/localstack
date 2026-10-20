@@ -52,11 +52,22 @@ later steps delete, so the order is fixed:
    dashboard, alerts and scrape job, and the `minio.lab` edge route. Apply.
 3. Playbook: drop the Consul `deploy` policy's `service "minio"` grant in
    `bootstrap/playbooks/enable_consul_secrets.yml`, and run it.
-4. Devcontainer: drop `mc` from `.devcontainer/Dockerfile` and its alias in
-   `.devcontainer/bootstrap.sh`, and the stale MinIO entries in
-   `bootstrap/.env.example` and `bootstrap/README.md`.
+4. Devcontainer and bootstrap: drop the stale MinIO entries in
+   `bootstrap/.env.example` and `bootstrap/README.md`. Keep `mc` in
+   `.devcontainer/Dockerfile` and its `s3` alias in `.devcontainer/bootstrap.sh`:
+   `seaweedfs-cutover` pointed that alias at SeaweedFS, and `mc` is an S3
+   client, not a MinIO server. The Dockerfile carries the operator's own
+   uncommitted change, so this ticket does not touch it.
 5. Applications root: delete the old backup key path (see the backup job
    below). Apply.
+6. Start ov-dash again. `seaweedfs-service` stopped it on 2026-10-20 to give
+   SeaweedFS its 512 MB on orangepi4a (`spike:seaweedfs-service/4`). Once
+   step 2 has stopped MinIO, run `nomad job start ov-dash` and wait for a
+   healthy alloc. An applications-root apply does not start it: Terraform
+   shows a stopped job as no change (`spike:seaweedfs-buckets/3`), and
+   `nomad job eval` does not start a stopped job either.
+   Drop the "stopped" notes from `.okf/components/ov-dash.md`,
+   `.okf/nodes/orangepi4a.md` and the SeaweedFS component page.
 
 The backup job. The cutover leaves it reading SeaweedFS under its old name.
 Rename it here: `nomad_job.backup_minio` and
@@ -92,14 +103,16 @@ the removal.
 
 Outcome, all true at once:
 
-- `grep -rni minio deployments/ bootstrap/ cli/src .devcontainer/Dockerfile`
-  matches only the GCS prefix `minio/` in the backup jobspec and its comment.
+- `grep -rni minio deployments/ bootstrap/ cli/src` matches only the GCS
+  prefix `minio/` in the backup jobspec and its comment, and `mc`'s download
+  URL in `.devcontainer/Dockerfile` is the one MinIO name left there.
   In `docs/`, every match is in a sentence about the move from MinIO.
 - After the three applies, `terraform plan` in both roots reports no changes,
   and `terraform state list` in the applications root lists no `minio_*`
   address and nothing under `module.buckets`.
 - `nomad job status minio` and `nomad job status backup-minio` report no such
   job, and `backup-s3`'s next run exits 0.
+- ov-dash has a running, healthy allocation and answers on its route.
 - `just pre_commit` and `uv run --directory cli pytest` pass.
 
 ## Could invalidate this plan

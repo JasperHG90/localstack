@@ -1,4 +1,10 @@
 apiVersion: 1
+# Grafana keeps a provisioned rule that leaves this file until it is listed
+# here. The object store's old degraded-cluster rule fired on absent metrics
+# after its removal (2026-10-20).
+deleteRules:
+  - orgId: 1
+    uid: alert-minio-degraded
 groups:
   - orgId: 1
     name: cluster-health
