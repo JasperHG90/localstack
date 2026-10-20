@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "an rclone listing piped into sort hid its failure",
+      "anchor": "deployments/infrastructure/services/restore-s3.hcl",
+      "category": "bug",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the bucket name was not checked against the four durable buckets",
+      "anchor": "deployments/infrastructure/services/restore-s3.hcl",
+      "category": "hardening",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "exit code 5 (bucket not on the allowlist) is missing from the exit-code table in docs/reference/gcs-backups.md and from the exit-code sentence in .okf/components/gcs-backups.md, and neither lists the allowlist check as a step",
+      "anchor": "docs/reference/gcs-backups.md:143",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f4",
+      "disposition": "open",
+      "claim": "the staged tree does not contain main's seaweedfs-cutover-observability merge (62b07a6), so the brief's claim that observability was merged is false; merging current main still conflicts in host-volumes.md, seaweedfs.md, log.md, orangepi4a.md and summary.md under .okf/",
+      "anchor": ".okf/components/seaweedfs.md",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "141a16ef1e7eb5a3eda8046f3154484cf3731a73e581b95dcdde3bbb4747af62",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T07:30:40+00:00"
+}
