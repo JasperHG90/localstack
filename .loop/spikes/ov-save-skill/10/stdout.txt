@@ -1,0 +1,109 @@
+== make voice.ogg (espeak-ng -> ffmpeg libopus, as Telegram sends)
+-rw-r--r-- 1 root root 20901 Oct 20 17:06 /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-voice2/run.psEi/voice.ogg
+== build with --no-cache
+FROM ghcr.io/jasperhg90/hermes:0.22.2-2
+USER root
+RUN cd /opt/hermes && /opt/hermes/tools/uv-0.12.3-linux-arm64/uv export --frozen --no-hashes --extra stt-whisper --no-emit-project -q -o /tmp/stt.txt && /opt/hermes/tools/uv-0.12.3-linux-arm64/uv pip install --no-cache --python /opt/hermes/.venv/bin/python -c /tmp/stt.txt faster-whisper==1.2.1 && rm /tmp/stt.txt
+sha256:62999529b27ce13b59e709351d87b0032d8b910961d8792985fbd7ef6850e127
+-- cache-proof check: import as uid 10000 in the new image
+faster_whisper 1.2.1 ctranslate2 4.8.1 av 18.1.0
+ovsave-fw2-1339718:spike 5.63GB
+ghcr.io/jasperhg90/hermes:0.22.2-2 5.22GB
+image grew by 397 MB
+== run A: first voice message, fresh /opt/data, network on
+stt config: {'enabled': True, 'echo_transcripts': True, 'language': 'en', 'streaming': False, 'cloud_trim_silence': True, 'cloud_trim_threshold_db': -40, 'cloud_trim_keep_ms': 300, 'local': {'model': 'base', 'language': '', 'initial_prompt': '', 'vad': True, 'vad_min_silence_ms': 500, 'no_speech_prob_threshold': 0.6, 'logprob_threshold': -1.0, 'unload_after_idle_seconds': 0}, 'groq': {'model': 'whisper-large-v3-turbo', 'language': ''}, 'openai': {'model': 'whisper-1', 'streaming_model': 'gpt-live-transcribe', 'language': '', 'timeout': 60, 'max_retries': 1}, 'mistral': {'model': 'voxtral-mini-latest', 'language': ''}, 'xai': {'model': '', 'language': ''}, 'elevenlabs': {'model_id': 'scribe_v2', 'language_code': '', 'tag_audio_events': False, 'diarize': False}, 'deepinfra': {'model': ''}} -> provider: local
+LOG hermes_cli.plugins INFO Plugin 'browser-browser-use' registered browser provider: browser-use
+LOG hermes_cli.plugins INFO Plugin 'browser-browserbase' registered browser provider: browserbase
+LOG hermes_cli.plugins INFO Plugin 'browser-firecrawl' registered browser provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered image_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered image_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'krea' registered image_gen provider: krea
+LOG hermes_cli.plugins INFO Plugin 'meta-ai-image-gen' registered image_gen provider: meta-ai
+LOG hermes_cli.plugins INFO Plugin 'openai' registered image_gen provider: openai
+LOG hermes_cli.plugins INFO Plugin 'openai-codex' registered image_gen provider: openai-codex
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: nous
+LOG hermes_cli.plugins INFO Plugin 'xai' registered image_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered video_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered video_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered video_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'xai' registered video_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'web-brave-free' registered web provider: brave-free
+LOG hermes_cli.plugins INFO Plugin 'web-ddgs' registered web provider: ddgs
+LOG hermes_cli.plugins INFO Plugin 'web-exa' registered web provider: exa
+LOG hermes_cli.plugins INFO Plugin 'web-firecrawl' registered web provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'web-keenable' registered web provider: keenable
+LOG hermes_cli.plugins INFO Plugin 'web-openai-native' registered web provider: openai-native
+LOG hermes_cli.plugins INFO Plugin 'web-parallel' registered web provider: parallel
+LOG hermes_cli.plugins INFO Plugin 'web-perplexity' registered web provider: perplexity
+LOG hermes_cli.plugins INFO Plugin 'web-searxng' registered web provider: searxng
+LOG hermes_cli.plugins INFO Plugin 'web-tavily' registered web provider: tavily
+LOG hermes_cli.plugins INFO Plugin 'web-xai' registered web provider: xai
+LOG hermes_cli.plugins INFO Plugin discovery complete: 55 found, 51 enabled
+LOG tools.transcription_tools INFO Loading faster-whisper model 'base' (first load downloads the model)...
+LOG tools.transcription_tools INFO faster-whisper model 'base' is not cached; downloading it from the Hugging Face Hub
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/tree/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66?recursive=true&expand=false "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/Systran/faster-whisper-base/resolve/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json "HTTP/1.1 307 Temporary Redirect"
+LOG huggingface_hub.utils._http WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/Systran/faster-whisper-base/resolve/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json "HTTP/1.1 307 Temporary Redirect"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/Systran/faster-whisper-base/resolve/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt "HTTP/1.1 307 Temporary Redirect"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt "HTTP/1.1 200 OK"
+LOG faster_whisper INFO Processing audio with duration 00:05.356
+LOG faster_whisper INFO VAD filter removed 00:00.000 of audio
+LOG tools.transcription_tools INFO Transcribed voice.ogg via local whisper (base, lang=en, 5.4s audio)
+{"faster_whisper": true, "seconds": 6.5, "cgroup_mb_before": 57, "cgroup_peak_mb": 593, "cgroup_anon_mb_after": 375, "cgroup_max": "2147483648", "transcripts": ["The quick brown fox dumps over the lazy dog. Please save this link."]}
+drive exit 0
+-- model cache on /opt/data:
+4.0K	/opt/data/.cache/huggingface/hub/CACHEDIR.TAG
+142M	/opt/data/.cache/huggingface/hub/models--Systran--faster-whisper-base
+142M	/opt/data
+container a exit 0, OOMKilled=false
+== run B: new container on the same /opt/data, --network none
+stt config: {'enabled': True, 'echo_transcripts': True, 'language': 'en', 'streaming': False, 'cloud_trim_silence': True, 'cloud_trim_threshold_db': -40, 'cloud_trim_keep_ms': 300, 'local': {'model': 'base', 'language': '', 'initial_prompt': '', 'vad': True, 'vad_min_silence_ms': 500, 'no_speech_prob_threshold': 0.6, 'logprob_threshold': -1.0, 'unload_after_idle_seconds': 0}, 'groq': {'model': 'whisper-large-v3-turbo', 'language': ''}, 'openai': {'model': 'whisper-1', 'streaming_model': 'gpt-live-transcribe', 'language': '', 'timeout': 60, 'max_retries': 1}, 'mistral': {'model': 'voxtral-mini-latest', 'language': ''}, 'xai': {'model': '', 'language': ''}, 'elevenlabs': {'model_id': 'scribe_v2', 'language_code': '', 'tag_audio_events': False, 'diarize': False}, 'deepinfra': {'model': ''}} -> provider: local
+LOG hermes_cli.plugins INFO Plugin 'browser-browser-use' registered browser provider: browser-use
+LOG hermes_cli.plugins INFO Plugin 'browser-browserbase' registered browser provider: browserbase
+LOG hermes_cli.plugins INFO Plugin 'browser-firecrawl' registered browser provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered image_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered image_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'krea' registered image_gen provider: krea
+LOG hermes_cli.plugins INFO Plugin 'meta-ai-image-gen' registered image_gen provider: meta-ai
+LOG hermes_cli.plugins INFO Plugin 'openai' registered image_gen provider: openai
+LOG hermes_cli.plugins INFO Plugin 'openai-codex' registered image_gen provider: openai-codex
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered image_gen provider: nous
+LOG hermes_cli.plugins INFO Plugin 'xai' registered image_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'deepinfra' registered video_gen provider: deepinfra
+LOG hermes_cli.plugins INFO Plugin 'fal' registered video_gen provider: fal
+LOG hermes_cli.plugins INFO Plugin 'openrouter' registered video_gen provider: openrouter
+LOG hermes_cli.plugins INFO Plugin 'xai' registered video_gen provider: xai
+LOG hermes_cli.plugins INFO Plugin 'web-brave-free' registered web provider: brave-free
+LOG hermes_cli.plugins INFO Plugin 'web-ddgs' registered web provider: ddgs
+LOG hermes_cli.plugins INFO Plugin 'web-exa' registered web provider: exa
+LOG hermes_cli.plugins INFO Plugin 'web-firecrawl' registered web provider: firecrawl
+LOG hermes_cli.plugins INFO Plugin 'web-keenable' registered web provider: keenable
+LOG hermes_cli.plugins INFO Plugin 'web-openai-native' registered web provider: openai-native
+LOG hermes_cli.plugins INFO Plugin 'web-parallel' registered web provider: parallel
+LOG hermes_cli.plugins INFO Plugin 'web-perplexity' registered web provider: perplexity
+LOG hermes_cli.plugins INFO Plugin 'web-searxng' registered web provider: searxng
+LOG hermes_cli.plugins INFO Plugin 'web-tavily' registered web provider: tavily
+LOG hermes_cli.plugins INFO Plugin 'web-xai' registered web provider: xai
+LOG hermes_cli.plugins INFO Plugin discovery complete: 55 found, 51 enabled
+LOG tools.transcription_tools INFO Loading faster-whisper model 'base' (first load downloads the model)...
+LOG faster_whisper INFO Processing audio with duration 00:05.356
+LOG faster_whisper INFO VAD filter removed 00:00.000 of audio
+LOG tools.transcription_tools INFO Transcribed voice.ogg via local whisper (base, lang=en, 5.4s audio)
+{"faster_whisper": true, "seconds": 1.9, "cgroup_mb_before": 50, "cgroup_peak_mb": 384, "cgroup_anon_mb_after": 331, "cgroup_max": "2147483648", "transcripts": ["The quick brown fox dumps over the lazy dog. Please save this link."]}
+drive exit 0
+-- model cache on /opt/data:
+4.0K	/opt/data/.cache/huggingface/hub/CACHEDIR.TAG
+142M	/opt/data/.cache/huggingface/hub/models--Systran--faster-whisper-base
+142M	/opt/data
+container b exit 0, OOMKilled=false
+A=0 B=0
