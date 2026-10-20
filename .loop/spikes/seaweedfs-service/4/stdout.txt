@@ -1,0 +1,32 @@
+## seaweedfs deployment (healthy means its Consul check passed)
+Latest Deployment
+ID          = d2334fd0
+Status      = successful
+Description = Deployment completed successfully
+
+Deployed
+Task Group  Desired  Placed  Healthy  Unhealthy  Progress Deadline
+seaweedfs   1        1       1        0          2026-10-20T05:43:50Z
+
+Allocations
+ID        Node ID   Task Group  Version  Desired  Status   Created    Modified
+a8cb9254  8bc24183  seaweedfs   0        run      running  2m36s ago  1m55s ago
+## minio job (unchanged: version and running alloc)
+Allocations
+ID        Node ID   Task Group  Version  Desired  Status   Created     Modified
+4cf10997  8bc24183  minio       13       run      running  15d11h ago  15d11h ago
+## s3 and ports
+mb/cp/ls/rb: ['hello.txt']
+six buckets written: 6
+left over buckets: []
+port 8333: open (want open)
+port 9327: open (want open)
+port 9333: closed (want closed)
+port 19333: closed (want closed)
+port 8080: closed (want closed)
+port 18080: closed (want closed)
+port 8888: closed (want closed)
+port 18888: closed (want closed)
+port 18333: closed (want closed)
+port 23646: closed (want closed)
+## prometheus, through grafana's datasource proxy
