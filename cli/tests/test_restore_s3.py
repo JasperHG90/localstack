@@ -17,7 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 INFRA = REPO_ROOT / "deployments" / "infrastructure"
 APPS = REPO_ROOT / "deployments" / "applications"
 RESTORE = INFRA / "services" / "restore-s3.hcl"
-DURABLE_BUCKETS = {"openviking", "registry", "models", "datalake"}
+DURABLE_BUCKETS = {"openviking", "openviking-v2", "registry", "models", "datalake"}
 
 
 @pytest.fixture(scope="module")
@@ -114,6 +114,6 @@ def test_no_rclone_output_is_piped(restore: str) -> None:
 
 def test_only_durable_buckets_are_restored(restore: str) -> None:
     """A typo must not exit 0 as 'nothing to restore'."""
-    case = re.search(r'case "\$b" in\s*\n\s*([a-z|]+)\) ;;\s*\n\s*\*\).*?exit 5', restore)
+    case = re.search(r'case "\$b" in\s*\n\s*([a-z0-9|-]+)\) ;;\s*\n\s*\*\).*?exit 5', restore)
     assert case, "restore-s3.hcl does not refuse a bucket outside the allowlist with exit 5"
     assert set(case.group(1).split("|")) == DURABLE_BUCKETS

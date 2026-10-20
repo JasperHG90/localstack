@@ -9,7 +9,7 @@
     "agfs": {
       "backend": "s3",
       "s3": {
-        "bucket": "openviking",
+        "bucket": "openviking-v2",
         "endpoint": "${s3_endpoint}",
         "region": "us-east-1",
         "access_key": "{{ $s3.Data.data.access_key }}",
@@ -25,7 +25,7 @@
       "distance_metric": "cosine",
       "custom_params": {
         "dsn": "postgresql://{{ $db.Data.data.username }}:{{ $db.Data.data.password }}@${postgres_host}:5432/openviking",
-        "schema": "openviking",
+        "schema": "openviking_v2",
         "index_method": "flat",
         "store_content": true,
         "keep_deltas": true,

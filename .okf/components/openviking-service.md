@@ -53,7 +53,7 @@ page says where that commit changed what came before.
 | `nomad_job.openviking`, `local.openviking_ov_conf` | `deployments/applications/services.tf` | applications |
 | Secrets it reads: `default/openviking/{db,seaweedfs,bifrost,root}` | `deployments/applications/secrets.tf` | applications |
 | Bifrost virtual key | `bifrost_virtual_key.openviking`, see [Bifrost](/components/bifrost.md) | applications |
-| `openviking_data` host volume | `deployments/infrastructure/services.tf` | infrastructure |
+| `openviking_data_v2` host volume (`openviking_data` kept, unmounted) | `deployments/infrastructure/services.tf` | infrastructure |
 | Identity-token roles, the `openviking-user` group | `deployments/infrastructure/oidc.tf`, `identity.tf`, `machine_roles.tf` | infrastructure |
 | Edge route `openviking-api.lab` | backend `ovapi` in `deployments/infrastructure/services/haproxy.hcl` | infrastructure |
 | Alerts and dashboard | `alert-rules.yaml`, `grafana/openviking.json` | infrastructure |
@@ -228,6 +228,16 @@ from SeaweedFS to GCS.
 why the key is static (written for MinIO, and the reason still holds), and
 [ADR 0008](/decisions/0008-openviking-rerank-goes-through-bifrost.md) the rerank
 route.
+
+On 2026-10-20 (`ov-fresh-instance`) OpenViking started over on bucket
+`openviking-v2`, schema `openviking_v2` and volume `openviking_data_v2`, with
+one account `lab` and one user `jasper`. The `openviking` storage user's policy
+moved to the new bucket, so the same key cannot read or write the old one.
+The old bucket, schema and volume stay as a read-only backup, and veerle's
+consumer entry is gone. No account is created first, and schema
+`openviking_v2` is created by hand before the first boot. The cutover order
+is in `services/openviking/README.md`, and the why in
+[ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md).
 
 ## Related
 

@@ -137,11 +137,10 @@ resource "vault_identity_oidc_role" "openviking" {
 ### (machine_roles.tf), so no other caller can mint a token claiming this
 ### account. Adding a workload adds an entry here and a policy there.
 ###
-### `hermes` maps to `lab`, the account OV2 left behind when it gave each person
-### their own. That is where hermes's memory actually lives: OV2 created the
-### per-person accounts and migrated nothing, so `lab` holds 2920 objects and
-### `jasper` holds a few dozen. Pointing hermes at `jasper` gave it an empty
-### memory, which is what OV2's own commit warned would happen.
+### `hermes` maps to `lab`, the one account the v2 store holds (ADR 0021).
+### On the old store OV2 had left hermes's memory in `lab` and created
+### per-person accounts with nothing migrated, so pointing hermes at `jasper`
+### gave it an empty memory.
 ###
 ### ttl matches the human role's month, and the jobspec renders it with
 ### `change_mode = "noop"`. Every read of this path mints a NEW token, so a

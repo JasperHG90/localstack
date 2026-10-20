@@ -191,6 +191,8 @@ ALLOWED_CUSTOM_PARAMS = frozenset(
 # to confirm it. To close that, against the openviking database:
 #     SELECT indexdef FROM pg_indexes WHERE schemaname = 'openviking';
 # If it carries six, this constant is not the drift and a re-key is owed.
+# That question is about the old `openviking` schema. `openviking_v2` builds
+# its index from this list at first boot.
 EXPECTED_KEYWORD_FIELDS = [
     "name",
     "description",

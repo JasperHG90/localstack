@@ -21,7 +21,7 @@ JOBSPEC = REPO_ROOT / "deployments" / "infrastructure" / "services" / "backup-s3
 APP_STORAGE = REPO_ROOT / "deployments" / "applications" / "storage.tf"
 
 # The durable buckets. loki and tempo keep 30 days and are left out on purpose.
-EXPECTED_BUCKETS = {"openviking", "registry", "models", "datalake"}
+EXPECTED_BUCKETS = {"openviking", "openviking-v2", "registry", "models", "datalake"}
 
 SYNC_LINE = re.compile(
     r"^\s*rclone sync seaweedfs:(\S+) gcs:\$\{gcs_bucket\}/minio/([^/\s]+)/ .*$", re.M

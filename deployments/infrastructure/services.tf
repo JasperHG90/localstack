@@ -217,8 +217,33 @@ resource "nomad_dynamic_host_volume" "registry_ui_data" {
 ### OpenViking's workspace and RAGFS's local scratch.
 ### The vectors live in Postgres and the blobs in SeaweedFS, so this is working
 ### state rather than the store itself.
+### No job mounts it since the move to openviking_data_v2 below. It is kept,
+### with the old bucket and schema, as the backup of the old store.
 resource "nomad_dynamic_host_volume" "openviking_data" {
   name      = "openviking_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "10 GiB"
+  capacity_min = "1 GiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "radxa-dragon-q6a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
+### The workspace OpenViking runs on since it started over on openviking-v2.
+### A new volume rather than the old one emptied: the old queue holds jobs
+### that name the old store's URIs and would replay them into the new bucket.
+resource "nomad_dynamic_host_volume" "openviking_data_v2" {
+  name      = "openviking_data_v2"
   namespace = "default"
   plugin_id = "mkdir"
   node_pool = "default"

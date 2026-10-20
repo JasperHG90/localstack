@@ -522,10 +522,15 @@ resource "nomad_job" "openviking" {
 
   # The database must exist before the adapter creates its tables, and the
   # Bifrost key before the config template renders. No role dependency: this
-  # job authenticates to SeaweedFS with a static key (see secrets.tf).
+  # job authenticates to SeaweedFS with a static key (see secrets.tf). The
+  # bucket and the key's policy must exist before the first boot writes to
+  # the bucket. Moving the policy to a new bucket replaces it, and the key's
+  # secret does not change, so nothing else orders the job after it.
   depends_on = [
     postgresql_database.database,
     vault_kv_secret_v2.bifrost_openviking_key,
+    aws_s3_bucket.seaweedfs,
+    aws_iam_user_policy.seaweedfs,
   ]
 }
 
@@ -689,12 +694,10 @@ resource "nomad_job" "driftwatch" {
 ### the auth mode re-ran it, and its guarded curl exits 1 on anything but
 ### 200/201/409.
 ###
-### What that leaves unmeasured: whether an OpenViking read or write succeeds
-### for an account whose directory tree was never initialized. The OIDC plugin
-### creates nothing, and account creation used to be what initialized both
-### trees. jasper and veerle already have accounts from before the flip, so
-### this is only a question for the next person added.
-### `scripts/ov_identity_probe.py` is what answers it.
+### No account needs creating first. The OIDC plugin creates nothing, and on
+### an empty bucket a token for lab/jasper listed, wrote, read and searched on
+### the first try (spike:ov-fresh-instance/3), which is how openviking-v2
+### started. `scripts/ov_identity_probe.py` checks who a token resolves to.
 
 ### Dash — the cluster landing page (L3), split into a frontend and a
 ### backend task in the same job (L4). The tile list lives in

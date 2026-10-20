@@ -33,6 +33,7 @@ job "backup-s3" {
         args = [<<-EOT
           rc=0
           rclone sync seaweedfs:openviking gcs:${gcs_bucket}/minio/openviking/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync seaweedfs:openviking-v2 gcs:${gcs_bucket}/minio/openviking-v2/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
           rclone sync seaweedfs:registry gcs:${gcs_bucket}/minio/registry/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
           rclone sync seaweedfs:models gcs:${gcs_bucket}/minio/models/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
           rclone sync seaweedfs:datalake gcs:${gcs_bucket}/minio/datalake/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1

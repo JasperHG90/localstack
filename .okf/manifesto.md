@@ -87,8 +87,8 @@ whole set with `uv run --directory cli pytest`.
   one that `deployments/applications/storage.tf` declares, so a typo cannot
   buy a silently empty backup. Pinned by
   `cli/tests/test_backup_coverage.py::test_s3_backup_syncs_declared_buckets`.
-- **I11** (enforced): every durable bucket (`openviking`, `registry`, `models`
-  and `datalake`) is synced to GCS nightly. Pinned by
+- **I11** (enforced): every durable bucket (`openviking`, `openviking-v2`,
+  `registry`, `models` and `datalake`) is synced to GCS nightly. Pinned by
   `cli/tests/test_backup_coverage.py::test_s3_backup_syncs_the_durable_buckets`.
 
 ## Values

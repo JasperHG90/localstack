@@ -52,8 +52,10 @@ is mount-wide, so an unenrolled account cannot complete a login at all.
 ```sh
 cd ../..
 just mfa_enroll operator
-just mfa_enroll veerle
 ```
+
+Then run `just mfa_enroll <username>` for each entry in
+`var.vault_openviking_consumers`. The default is empty.
 
 ### Step 3: Apply the ov-dash chain in one apply
 

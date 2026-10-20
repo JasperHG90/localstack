@@ -1,7 +1,7 @@
 ---
 type: component
 title: SeaweedFS
-description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root, with six buckets and per-user keys from the applications root. It is the cluster's only S3 store and carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
+description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root, with seven buckets and per-user keys from the applications root. It is the cluster's only S3 store and carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
 tags: [seaweedfs, s3, object-storage, terraform, component]
 status: stable
 generated:
@@ -51,7 +51,7 @@ bucket here, and it finds the S3 port through Consul service `seaweedfs`
 ([the OpenViking service](/components/openviking-service.md)). The `models`
 and `datalake` buckets were restored from GCS at the same time, both empty.
 Loki, Tempo and the OCI registry moved the same day. Then `seaweedfs-cutover`
-moved the rest: the nightly backup reads the four durable buckets from here
+moved the rest: the nightly backup reads the durable buckets from here
 ([GCS backups](/components/gcs-backups.md)), the `seaweedfs` service carries
 the `s3` Consul tag, so the CLI's `s3` route resolves here, HAProxy's
 `s3.lab.orangecluster.nl` backend points at `192.168.2.29:8333`, and the dash
@@ -79,13 +79,16 @@ brokered `deploy` Consul token may read because
 `bootstrap/playbooks/enable_consul_secrets.yml` grants it, and logs in with
 the admin key.
 
-`storage.tf` derives everything from one catalog, `local.buckets`: six
+`storage.tf` derives everything from one catalog, `local.buckets`: seven
 buckets, one IAM user per writer or reader listed there, and a `backup` user
-that reads and lists the four durable buckets. The catalog and the action
+that reads and lists the five durable buckets. The seventh, `openviking-v2`,
+came with `ov-fresh-instance`: OpenViking's key writes it, and the old
+`openviking` bucket has no writer and is kept as a backup
+([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)). The catalog and the action
 sets came over from MinIO, without memex and mlflow-artifacts. Readers get
 `s3:GetBucketLocation` and `s3:GetObject` but cannot list. Only the backup
 user adds `s3:ListBucket`, because rclone lists to sync. A `restore` user has
-`s3:*` on the same four buckets, for the `restore-s3` job
+`s3:*` on the same five buckets, for the `restore-s3` job
 ([GCS backups](/components/gcs-backups.md)), and stays as the restore path.
 `secrets.tf` writes each job's key to `default/<job>/seaweedfs`, the backup
 key to `default/backup-s3/seaweedfs`, and the restore key to
