@@ -1,14 +1,54 @@
 {
   "schema_version": "1.0",
   "slug": "ov-save-skill",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "5721254b9777815d38e282d02a6474f41875fdd9d0837cebf7b96924d87d7e69",
+    "tree": "817a31978a0419db201ec8f003849af3b2063b73",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261020T163833+0000-940ed764",
+        "paths": [
+          "deployments/applications/services/hermes/skills/productivity/save-to-openviking/SKILL.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/hermes.md",
+          ".okf/decisions/0022-hermes-saves-from-a-skill-owned-map-of-roots.md",
+          ".okf/decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots.md",
+          ".okf/decisions/index.md",
+          ".okf/log.md",
+          ".okf/summary.md",
+          "docs/how-to/save-something-to-openviking-through-hermes.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          "docs/how-to/save-something-to-openviking-through-hermes.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T16:38:33+00:00"
+  },
   "ask": null,
   "split": "j-20261020T150715+0000-9d2a4cce",
   "split_plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
@@ -134,8 +174,14 @@
       "to": "fixing",
       "at": "2026-10-20T16:36:51+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T16:38:33+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T16:38:15+00:00"
+  "at": "2026-10-20T16:38:33+00:00"
 }
