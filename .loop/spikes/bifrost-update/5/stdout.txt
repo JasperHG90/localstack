@@ -1,0 +1,18 @@
+## deployment
+Status      = successful
+bifrost:v2.3.1
+## smoke
+gateway "v2.3.1" at http://192.168.2.50:8080
+ok   inference auth enforced
+ok   /metrics behind basic auth
+ok   no unauthenticated admin path
+ok   virtual keys survive
+ok   embeddings reach embark
+smoke exit 0
+## bare-string rerank through the OpenViking key
+http 200
+results: [(0, 0.999), (1, 0.004)]
+## request rate after the switch (Prometheus via Grafana)
+requests in last 10m: 21.052631578947366
+## second plan
+No changes. Your infrastructure matches the configuration.
