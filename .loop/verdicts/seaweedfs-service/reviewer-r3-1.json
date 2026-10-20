@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "ov-dash stop was undocumented",
+      "anchor": ".okf/components/ov-dash.md",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "master.toml mount was not asserted",
+      "anchor": "cli/tests/test_seaweedfs_jobspec.py:58",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "summary misdescribed SeaweedFS status",
+      "anchor": ".okf/summary.md",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f4",
+      "disposition": "resolved",
+      "claim": "minio-removal step 6 offered nomad job eval, which does not start a stopped job",
+      "anchor": ".loop/plans/minio-removal.md:60",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "1b9c6ca89fa6a0d8a4f070ba967a60af4541696a701fcabca0fedf2ef75c1f47",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T05:47:37+00:00"
+}
