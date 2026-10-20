@@ -97,6 +97,9 @@ resource "nomad_acl_policy" "deploy" {
       capabilities = [
         "submit-job",
         "read-job",
+        # restore-s3 is a parameterized job, run per bucket with
+        # `nomad job dispatch`.
+        "dispatch-job",
         "host-volume-create",
         "host-volume-register",
         "host-volume-read",

@@ -243,6 +243,32 @@ resource "aws_iam_user_policy" "seaweedfs" {
   })
 }
 
+### restore-s3 (infrastructure root) writes the GCS backups back into the
+### durable buckets during the cutover. Removed with MinIO.
+resource "aws_iam_user" "seaweedfs_restore" {
+  name = "restore"
+}
+
+resource "aws_iam_access_key" "seaweedfs_restore" {
+  user = aws_iam_user.seaweedfs_restore.name
+}
+
+resource "aws_iam_user_policy" "seaweedfs_restore" {
+  name = "restore-durable-write"
+  user = aws_iam_user.seaweedfs_restore.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = local.seaweedfs_write_actions
+      Resource = flatten([
+        for b in local.seaweedfs_durable_buckets :
+        [aws_s3_bucket.seaweedfs[b].arn, "${aws_s3_bucket.seaweedfs[b].arn}/*"]
+      ])
+    }]
+  })
+}
+
 ### The backup job reads SeaweedFS from the cutover on. Read-only, on the
 ### durable buckets only.
 resource "aws_iam_user" "seaweedfs_backup" {

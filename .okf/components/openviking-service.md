@@ -51,7 +51,7 @@ page says where that commit changed what came before.
 | Config document | `deployments/applications/services/openviking/ov.conf.json` | applications |
 | Image build | `Dockerfile.openviking`, `justfile`, `README.md` beside it | none, an operator step |
 | `nomad_job.openviking`, `local.openviking_ov_conf` | `deployments/applications/services.tf` | applications |
-| Secrets it reads: `default/openviking/{db,minio,bifrost,root}` | `deployments/applications/secrets.tf` | applications |
+| Secrets it reads: `default/openviking/{db,seaweedfs,bifrost,root}` | `deployments/applications/secrets.tf` | applications |
 | Bifrost virtual key | `bifrost_virtual_key.openviking`, see [Bifrost](/components/bifrost.md) | applications |
 | `openviking_data` host volume | `deployments/infrastructure/services.tf` | infrastructure |
 | Identity-token roles, the `openviking-user` group | `deployments/infrastructure/oidc.tf`, `identity.tf`, `machine_roles.tf` | infrastructure |
@@ -102,8 +102,9 @@ interpreter.
 
 `ov.conf.json` holds two kinds of placeholder. `${...}` tokens are filled by
 Terraform's `templatefile` with the two addresses it discovers from Consul
-(MinIO and Postgres). `templatefile` errors on an unknown token, so a typo
-cannot reach the service. `{{ $minio... }}` style tokens pass through untouched
+(`${s3_endpoint}` for SeaweedFS's S3 port 8333, and Postgres). `templatefile`
+errors on an unknown token, so a typo cannot reach the service.
+`{{ $s3... }}` style tokens pass through untouched
 and are filled by Nomad's template engine. `local.openviking_ov_conf` wraps the
 result in `jsonencode(jsondecode(...))`, so a syntax error fails the plan.
 Static addresses stay literal in the JSON so the guard can assert them.
@@ -133,7 +134,8 @@ Before `a055dcf` there was one check, on `/ready`, with `check_restart` and a
   sweep runs its LLM pass before the server binds. The old 60s grace killed at
   about 180s and turned one restart into a permanent loop.
 - **`openviking ready`** probes `/ready` every 60s with a 15s timeout and has
-  no `check_restart`. `/ready` dials MinIO, Postgres, and Bifrost on to embark.
+  no `check_restart`. `/ready` dials SeaweedFS, Postgres, and Bifrost on to
+  embark.
   A restart hanging off it killed healthy servers, and measurement put the
   stall inside OpenViking's own event loop, not the CPU quota (zero throttled
   periods) or the backends. Cycling the task repairs none of that.
@@ -214,8 +216,14 @@ entity rename the plan proposed. `d25daa7` removed the oauth2-proxy and Web
 Studio. The account provisioner is gone because no admin route is reachable
 under `oidc`, as the block after `nomad_job.driftwatch` in `services.tf`
 explains.
+On 2026-10-20 (`seaweedfs-cutover-openviking`) the blobs moved from MinIO to
+SeaweedFS's `openviking` bucket on `orangepi4a`, restored from the GCS backup
+by the `restore-s3` job (see [GCS backups](/components/gcs-backups.md)). The
+tree and file hashes read back identical. The key is still static, now read
+from `default/openviking/seaweedfs`, because the AGFS `s3fs` client builds its
+credentials with no session token.
 [ADR 0007](/decisions/0007-openviking-static-key-has-no-claim-policy.md) covers
-the static MinIO key, and
+why the key is static (written for MinIO, and the reason still holds), and
 [ADR 0008](/decisions/0008-openviking-rerank-goes-through-bifrost.md) the rerank
 route.
 

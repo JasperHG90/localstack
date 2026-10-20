@@ -13,7 +13,7 @@ sources:
 # OpenViking
 
 A context store for agents, on radxa beside Bifrost. Vectors go to Postgres,
-blobs to MinIO, embeddings and rerank through Bifrost to embark, image
+blobs to SeaweedFS, embeddings and rerank through Bifrost to embark, image
 summaries through Bifrost to Gemini. There is no browser surface: callers
 authenticate to the API with a Vault identity token.
 
@@ -24,7 +24,7 @@ authenticate to the API with a Vault identity token.
 | Job | `openviking` on radxa-dragon-q6a, port 1933, open to the edge, Prometheus, ov-dash and the node itself |
 | CLI and agents | `https://openviking-api.lab.orangecluster.nl` |
 | Vectors | Postgres `openviking` database, `openviking` schema, pgvector |
-| Blobs | MinIO `openviking` bucket |
+| Blobs | SeaweedFS `openviking` bucket, S3 on `192.168.2.29:8333` (Consul service `seaweedfs`), with a static key from Vault `default/openviking/seaweedfs` |
 | Models | Bifrost, as `embark/embedding` and `embark/reranker` |
 | Image summaries | Bifrost, as `gemini/gemini-3.5-flash-lite` |
 | Query planning | Bifrost, as `ollama/gemma4:31b` |

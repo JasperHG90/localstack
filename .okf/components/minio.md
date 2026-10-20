@@ -112,12 +112,13 @@ and credential refresh in the memex repo, not a jobspec change. R10 and R11
 were still stubs, and R12 was dropped, in the loop ledger when `5b2ed1b` reset
 the loop.
 
-Still keyed: openviking (by design, ADR 0007), memex (its job is commented
-out, and its fix needs changes in the memex repo, see R12 above), and `backup-minio`, which
-reads a copy of the ROOT key. Keys that nothing consumes are still minted for
-`ducklake_writer`, `ducklake_reader`, `models_writer`, `models_reader` and
-`mlflow`. Removing the rollback keys is what actually shrinks this list, and
-no ticket owns it yet.
+Still keyed: memex (its job is commented out, and its fix needs changes in
+the memex repo, see R12 above), and `backup-minio`, which reads a copy of the
+ROOT key. Keys that nothing consumes are still minted for `ducklake_writer`,
+`ducklake_reader`, `models_writer`, `models_reader`, `mlflow`, and
+`openviking`, whose job left MinIO for SeaweedFS on 2026-10-20 and keeps a
+static key there (ADR 0007). Removing the rollback keys is what actually
+shrinks this list, and no ticket owns it yet.
 
 ## Invariants and what enforces them
 
@@ -146,7 +147,10 @@ no ticket owns it yet.
 - **Not every bucket is backed up.** `backup-minio` syncs `openviking`,
   `registry`, `models` and `datalake`. `loki`, `tempo`, `memex` and
   `mlflow-artifacts` have no off-site copy. See
-  [GCS backups](/components/gcs-backups.md).
+  [GCS backups](/components/gcs-backups.md). Since 2026-10-20 the MinIO
+  `openviking` bucket gets no writes, because OpenViking writes to
+  SeaweedFS, so its nightly copy is the frozen pre-cutover state until the
+  backup job reads SeaweedFS (`seaweedfs-cutover`).
 - **`mlflow-artifacts` outlived its service** on purpose. Emptying it and
   deleting the entry is a separate decision.
 - **The registry names MinIO twice.** Its STS helper uses the Consul address,
@@ -160,10 +164,12 @@ no ticket owns it yet.
 
 MinIO is due to be replaced by SeaweedFS, which already runs beside it on
 orangepi4a with its own buckets, users and keys
-([SeaweedFS](/components/seaweedfs.md)). `minio-removal` plans the removal of the MinIO job, provider, resources, routes
-and monitoring once nothing uses it. The nightly
-[GCS backup](/components/gcs-backups.md) copies every durable bucket, so the
-migration can restore from off-site. The `minio_data` volume and its data stay until the operator
+([SeaweedFS](/components/seaweedfs.md)). `minio-removal` plans the removal
+of the MinIO job, provider, resources, routes and monitoring once nothing
+uses it. The nightly [GCS backup](/components/gcs-backups.md) copies every
+durable bucket, so the migration restores from off-site with the
+`restore-s3` job. `openviking`, `models` and `datalake` moved that way on
+2026-10-20. The `minio_data` volume and its data stay until the operator
 promotes the stub `minio-volume-destroy`. When `minio-removal` lands, this
 page is marked superseded.
 

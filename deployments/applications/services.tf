@@ -482,8 +482,8 @@ locals {
   openviking_ov_conf = jsonencode(jsondecode(templatefile(
     "${path.module}/services/openviking/ov.conf.json",
     {
-      minio_endpoint = "http://${data.consul_service.minio.service[0].node_address}:9000"
-      postgres_host  = data.consul_service.postgres.service[0].node_address
+      s3_endpoint   = "http://${data.consul_service.seaweedfs.service[0].node_address}:8333"
+      postgres_host = data.consul_service.postgres.service[0].node_address
     }
   )))
 }
@@ -524,7 +524,7 @@ resource "nomad_job" "openviking" {
       postgres_host = data.consul_service.postgres.service[0].node_address
 
       openviking_db_secret      = vault_kv_secret_v2.openviking_db_credentials.path
-      openviking_minio_secret   = vault_kv_secret_v2.openviking_minio_credentials.path
+      openviking_s3_secret      = vault_kv_secret_v2.seaweedfs_credentials["openviking"].path
       openviking_bifrost_secret = vault_kv_secret_v2.bifrost_openviking_key.path
 
       # The root key. It authenticates ROOT for account and user management;

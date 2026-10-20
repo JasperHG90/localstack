@@ -10,6 +10,7 @@ sources:
   - resource: deployments/infrastructure/services/minio.hcl
   - resource: deployments/applications/storage.tf
   - resource: deployments/applications/services/memex/auth_oidc.json
+  - resource: deployments/applications/services/openviking.hcl
   - resource: deployments/infrastructure/services.tf
 ---
 
@@ -264,11 +265,13 @@ memex still uses its key. Tempo and loki ran keyless against MinIO until
 `aud = ["seaweedfs"]` and a role per job (the `seaweedfs` row in the audience
 registry above). Other holders
 exist outside this set: the `backup-minio` job runs on the root credential,
-and `deployments/applications/storage.tf` still mints keys for buckets no job
-consumes. `openviking` is no longer one of those: its
-job reads that key deliberately, because OpenViking's config layer makes
-`access_key` and `secret_key` mandatory for an s3 backend and its S3 client
-drops the session token STS credentials require. See `.okf/decisions/0007-openviking-static-key-has-no-claim-policy.md`.
+and `deployments/applications/storage.tf` still mints keys no job uses, the
+MinIO `openviking` key among them. Since 2026-10-20 OpenViking keeps its
+blobs in SeaweedFS and reads a static SeaweedFS key from
+`default/openviking/seaweedfs`. It holds a static key deliberately, because
+OpenViking's config layer makes `access_key` and `secret_key` mandatory for
+an s3 backend and its S3 client drops the session token STS credentials
+require. See `.okf/decisions/0007-openviking-static-key-has-no-claim-policy.md`.
 
 **What MinIO trusts.** Three env vars on the MinIO job
 (`deployments/infrastructure/services/minio.hcl`, with the URL filled from

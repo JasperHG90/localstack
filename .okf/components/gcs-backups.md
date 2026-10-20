@@ -1,7 +1,7 @@
 ---
 type: component
 title: GCS backups
-description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and the four durable MinIO buckets (openviking, registry, models, datalake) to a GCS bucket, each reading copies of the root credential and the same GCS key. A drift test pins the bucket set and the reference page's facts and runs in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and no restore has been tried."
+description: "Two periodic jobs on radxa copy Postgres (pg_dumpall) and the four durable MinIO buckets (openviking, registry, models, datalake) to a GCS bucket, each reading copies of the root credential and the same GCS key. A dispatched restore-s3 job writes one bucket back into SeaweedFS, proven on openviking. Drift tests pin the bucket set, the restore's checks and the reference page's facts and run in the loop's pytest gate, not in pre-commit. No alert watches the jobs, and the Postgres dump has never been restored."
 tags: [backup, gcs, postgres, minio, nomad, vault, component]
 status: stable
 generated:
@@ -20,6 +20,16 @@ sources:
     resource: deployments/infrastructure/services.tf
   - id: backup-coverage-test
     resource: cli/tests/test_backup_coverage.py
+  - id: restore-s3-jobspec
+    resource: deployments/infrastructure/services/restore-s3.hcl
+  - id: restore-s3-test
+    resource: cli/tests/test_restore_s3.py
+  - id: app-storage
+    resource: deployments/applications/storage.tf
+  - id: app-secrets
+    resource: deployments/applications/secrets.tf
+  - id: deploy-policy
+    resource: deployments/infrastructure/machine_roles.tf
 ---
 
 # GCS backups
@@ -31,19 +41,32 @@ how the parts connect and what the design does not protect against.
 
 ## The pieces
 
-Everything is in the infrastructure root, one file per subsystem:
+Everything but the restore job's SeaweedFS key is in the infrastructure root,
+one file per subsystem:
 
 - `storage.tf`: the GCS bucket (`var.gcs_backup_bucket`, 180-day delete
   rule), service account `localstack-backup`, `roles/storage.objectAdmin` on
   the bucket, and `google_service_account_key.backup`.
-- `secrets.tf`: four KV entries under the jobs' own prefixes.
+- `secrets.tf`: five KV entries under the jobs' own prefixes.
   `default/backup-postgres/postgres` copies `random_password.postgres_root`,
   `default/backup-minio/minio` copies `random_password.minio_secret_key`, and
-  both `.../gcs` entries hold the same decoded key JSON.
-- `services.tf`: `nomad_job.backup_postgres` and `nomad_job.backup_minio`,
-  with the Postgres and MinIO node addresses passed in as literals.
-- `deployments/infrastructure/services/backup-postgres.hcl` and
-  `deployments/infrastructure/services/backup-minio.hcl`.
+  the three `.../gcs` entries (`backup-postgres`, `backup-minio`,
+  `restore-s3`) hold the same decoded key JSON.
+- `services.tf`: `nomad_job.backup_postgres`, `nomad_job.backup_minio` and
+  `nomad_job.restore_s3`, with the Postgres, MinIO and SeaweedFS node
+  addresses passed in as literals.
+- `machine_roles.tf`: the Nomad `deploy` policy carries `dispatch-job`, so
+  a token holding that policy can dispatch `restore-s3`.
+- `deployments/infrastructure/services/backup-postgres.hcl`,
+  `deployments/infrastructure/services/backup-minio.hcl` and
+  `deployments/infrastructure/services/restore-s3.hcl`.
+
+The restore job's SeaweedFS key comes from the applications root, where the
+IAM provider is: `storage.tf` creates the SeaweedFS user `restore` with
+`s3:*` on the four durable buckets, and `secrets.tf` writes its key to
+`default/restore-s3/seaweedfs`. The infrastructure root applies first, so the
+job names that path as a string rather than a resource. On a rebuild from
+scratch a dispatch fails until the applications root has applied.
 
 The Google provider authenticates with the operator's ADC, so an apply needs a
 `gcloud` login on top of the usual Vault session.
@@ -62,7 +85,7 @@ R8 planned moving `backup-postgres` off root, and was still a stub when
 all without superuser, since it dumps roles and their passwords. `backup-minio` could use a claim-mode policy named `backup-minio`
 ([MinIO](/components/minio.md)). No ticket covers that.
 
-The GCS key is a long-lived JSON key held in Terraform state and in two KV
+The GCS key is a long-lived JSON key held in Terraform state and in three KV
 entries. Rotating it means replacing `google_service_account_key.backup`.
 
 ## What is and is not covered
@@ -80,9 +103,39 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
   (`spike:backup-durable-buckets/3`). Logs and traces
   (`loki`, `tempo`, 30 days each) and `memex` and `mlflow-artifacts`, which
   the migration drops, have no off-site copy.
+- The sync still reads MinIO. Since 2026-10-20 OpenViking writes to
+  SeaweedFS, so the MinIO `openviking` bucket is frozen and its nightly copy
+  holds nothing written after the cutover. New OpenViking blobs have no
+  off-site copy until the backup job reads SeaweedFS (`seaweedfs-cutover`).
 - No other host volume is copied: NATS JetStream, OpenViking's workspace,
   hermes, embark, Prometheus, Grafana and the acme state included. Nor is
   Vault's Consul storage. See [Host volumes](/components/host-volumes.md).
+
+## Restoring a bucket
+
+`restore-s3` is a parameterized batch job on radxa, run once per bucket with
+`nomad job dispatch -meta bucket=<name> restore-s3`. It copies
+`gcs:<backup bucket>/minio/<name>/` into SeaweedFS bucket `<name>` with
+`--create-empty-src-dirs --gcs-directory-markers --s3-directory-markers`,
+runs `rclone check`, then lists every directory under the GCS prefix and
+fails if any is missing on SeaweedFS. That last step exists because
+`rclone check` passes with every directory marker missing
+(`spike:seaweedfs-cutover-openviking/2`). A bucket with no prefix under
+`minio/` was empty when backed up, so the run prints "nothing to restore"
+and exits 0.
+
+The operator token cannot read alloc logs, so the exit code says what failed:
+1 the copy, 2 the check, 3 a directory missing on SeaweedFS or its listing, 4
+the GCS listing, 5 a bucket other than the four durable ones, checked first so
+a typo cannot pass as "nothing to restore". No listing is piped into another
+command, so a failed listing cannot hide behind the next command's status. The
+job neither retries nor reschedules.
+
+It moved `openviking`, `models` and `datalake` on 2026-10-20 (the last two
+empty): stop OpenViking, force `backup-minio`, dispatch per bucket.
+OpenViking's tree and file hashes read back identical before and after
+(`spike:seaweedfs-cutover-openviking/3`). The `seaweedfs-cutover-registry`
+plan reuses it for `registry`.
 
 ## The enforcer, and its reach
 
@@ -96,6 +149,12 @@ CPU and memory, crons and images to the sources. Each parser fails if it
 finds nothing, and the doc checks bind figures to their task: a reviewer
 swapped the `pgdump` and `upload` figures and a section-wide check stayed
 green, and that pair is the one that had drifted before.
+
+`cli/tests/test_restore_s3.py` pins the restore job's parts that make a
+restore complete: the `bucket` parameter, the marker flags on the copy, the
+exits on a failed check and on a missing directory, its two Vault paths, and
+the `restore` user's write grant on the durable buckets only. It also pins
+OpenViking's config to the SeaweedFS endpoint and key.
 
 `just pre_commit` runs ruff and mypy over `cli/` but not pytest, so a plain
 commit does not run this test. The loop runs it: since `5b2ed1b` its gates in
@@ -135,7 +194,12 @@ bucket, the host literals, or that a backup can be read back.
 - **Names with LF or CR.** rclone's GCS encoding stores them as U+240A and
   U+240D, so a listing compared by hand shows them as mismatches. rclone
   decodes them back on restore.
-- **Restore is unproven.** No read-back has been recorded.
+- **Only the bucket restore is proven.** `restore-s3` brought `openviking`
+  back with identical tree and file hashes. No Postgres dump has been read
+  back, and no job restores one.
+- **The restore copies, it does not sync.** `rclone copy` leaves any object
+  already in the SeaweedFS bucket that GCS lacks, and `rclone check` then
+  fails the run with exit 2. Restore into an empty bucket.
 
 ## Evidence
 
@@ -143,6 +207,7 @@ Built or recorded from these, which a `sources` entry cannot point at:
 
 - commit `4b0af46`
 - loop ticket `backup-durable-buckets` (its plan, spikes and verdicts are under `.loop/`)
+- loop ticket `seaweedfs-cutover-openviking` (its plan, spikes and verdicts are under `.loop/`)
 - loop ticket `backup-swap-memex-for-openviking` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `gcs-backups-doc-to-runbook` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)
 - loop ticket `R8-rollout-postgres-root-consumers` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

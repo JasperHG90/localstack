@@ -491,3 +491,13 @@ resource "vault_kv_secret_v2" "backup_seaweedfs_credentials" {
     secret_key = aws_iam_access_key.seaweedfs_backup.secret
   })
 }
+
+### Read by `restore-s3` in the infrastructure root, by path, at dispatch.
+resource "vault_kv_secret_v2" "restore_seaweedfs_credentials" {
+  mount = var.secret_mount
+  name  = "default/restore-s3/seaweedfs"
+  data_json = jsonencode({
+    access_key = aws_iam_access_key.seaweedfs_restore.id
+    secret_key = aws_iam_access_key.seaweedfs_restore.secret
+  })
+}

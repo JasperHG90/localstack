@@ -92,8 +92,8 @@ losing it matters. Read it before resizing or moving one.
 - **Deleting by hand does not stick.** The next apply recreates it, empty.
   Remove the block instead. The by-hand procedure, for volumes Terraform does
   not own, is `docs/how-to/delete-a-nomad-dynamic-host-volume.md`.
-- **Not everything is backed up.** The nightly jobs cover Postgres and one
-  MinIO bucket. Every other volume has only its node's disk. See
+- **Not everything is backed up.** The nightly jobs cover Postgres and the
+  four durable MinIO buckets. Every other volume has only its node's disk. See
   [GCS backups](/components/gcs-backups.md).
 
 ## Where the data really is
@@ -101,7 +101,7 @@ losing it matters. Read it before resizing or moving one.
 Several volumes hold working state rather than the store itself, and their
 comments say so: `loki_data` and `tempo_data` hold what has not yet been
 flushed to SeaweedFS, `openviking_data` holds scratch while vectors are in
-Postgres and blobs in MinIO, and `registry_ui_data` holds a digest-keyed cache.
+Postgres and blobs in SeaweedFS, and `registry_ui_data` holds a digest-keyed cache.
 `embark_data` holds ModelKits that can be pulled again, at the cost of a slow
 start. `acme_lego_state` is the one whose loss has an outside cost: without it
 lego re-registers and re-issues on every run and hits Let's Encrypt's weekly

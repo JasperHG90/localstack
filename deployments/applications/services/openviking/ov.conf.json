@@ -10,10 +10,10 @@
       "backend": "s3",
       "s3": {
         "bucket": "openviking",
-        "endpoint": "${minio_endpoint}",
+        "endpoint": "${s3_endpoint}",
         "region": "us-east-1",
-        "access_key": "{{ $minio.Data.data.access_key }}",
-        "secret_key": "{{ $minio.Data.data.secret_key }}",
+        "access_key": "{{ $s3.Data.data.access_key }}",
+        "secret_key": "{{ $s3.Data.data.secret_key }}",
         "use_ssl": false,
         "use_path_style": true
       }
