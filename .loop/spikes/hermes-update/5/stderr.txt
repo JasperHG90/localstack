@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import json; d=json.load(open("/opt/data/cron/jobs.json")); [print(f"{j[\"name\"]:30} {j.get(\"state\") or (\"paused\" if j.get(\"paused\") else \"active\"):8} pinned={j.get(\"model\") or \"-\":8} last={j.get(\"last_run_at\")} {j.get(\"last_status\")}") for j in d["jobs"]]
+                                                                             ^
+SyntaxError: unexpected character after line continuation character

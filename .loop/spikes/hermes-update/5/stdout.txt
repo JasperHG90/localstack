@@ -1,0 +1,15 @@
+## deployment
+Status      = successful
+Description = Deployment completed successfully
+image: ghcr.io/jasperhg90/hermes:0.22.2-1
+## memory provider
+  Provider:  openviking
+  Plugin:    installed ✓
+  Status:    available ✓
+version: 2.1.1
+## search through the 1934 sidecar
+status ok hits 3
+  viking://user/jasper/resources/blog-scraper/spotify-inside-the-archive-2025-wrapped.md/.overview.md
+  viking://user/jasper/resources/engineering/Engineering_-_Anthropic/.overview.md
+  viking://user/jasper/resources/engineering/.abstract.md
+## cron jobs
