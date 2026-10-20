@@ -138,9 +138,9 @@ no ticket owns it yet.
 - **Metrics are public.** `MINIO_PROMETHEUS_AUTH_TYPE="public"` is why the
   Prometheus `minio` job needs no token, and why 9000 serves metrics to the
   whole LAN.
-- **Only one bucket is backed up.** `backup-minio` syncs `openviking` and
-  nothing else. The registry's images and ModelKits, `models`, `loki`, `tempo`,
-  `datalake` and `mlflow-artifacts` have no off-site copy. See
+- **Not every bucket is backed up.** `backup-minio` syncs `openviking`,
+  `registry`, `models` and `datalake`. `loki`, `tempo`, `memex` and
+  `mlflow-artifacts` have no off-site copy. See
   [GCS backups](/components/gcs-backups.md).
 - **`mlflow-artifacts` outlived its service** on purpose. Emptying it and
   deleting the entry is a separate decision.
@@ -157,9 +157,9 @@ MinIO is due to be replaced by SeaweedFS. Ticket `seaweedfs-service` plans a
 SeaweedFS job with an S3 gateway beside MinIO on orangepi4a,
 `seaweedfs-buckets` its buckets, users and keys from the applications root,
 and `minio-removal` the removal of the MinIO job, provider, resources, routes
-and monitoring once nothing uses it. `backup-durable-buckets` plans a nightly
-GCS copy of every durable bucket first, so the migration can restore from
-off-site. The `minio_data` volume and its data stay until the operator
+and monitoring once nothing uses it. The nightly
+[GCS backup](/components/gcs-backups.md) copies every durable bucket, so the
+migration can restore from off-site. The `minio_data` volume and its data stay until the operator
 promotes the stub `minio-volume-destroy`. When `minio-removal` lands, this
 page is marked superseded.
 

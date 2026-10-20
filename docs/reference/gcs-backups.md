@@ -18,7 +18,7 @@ Storage: `backup-postgres` at 02:00 and `backup-minio` at 03:00, Europe/Amsterda
 
 Without them, both datasets are on one disk each. PostgreSQL is on a host
 volume pinned to `firebat` (`deployments/infrastructure/services.tf:13`) and
-the MinIO `openviking` bucket on `orangepi4a`
+the MinIO `openviking`, `registry`, `models` and `datalake` buckets on `orangepi4a`
 (`deployments/infrastructure/services.tf:33`), so a single node failure would
 take one of them with it.
 
@@ -85,7 +85,7 @@ Periodic batch job, cron `0 2 * * *` (2:00 AM Europe/Amsterdam):
 
 Periodic batch job, cron `0 3 * * *` (3:00 AM Europe/Amsterdam, staggered an
 hour after the postgres job):
-- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync minio:openviking gcs:<bucket>/minio/openviking/`
+- **Single task** (`sync`): uses `docker.io/rclone/rclone:latest`, runs `rclone sync minio:<name> gcs:<bucket>/minio/<name>/` once for each of `openviking`, `registry`, `models` and `datalake`. Each sync runs even if an earlier one failed, and the task exits nonzero if any of them failed. Each sync passes `--create-empty-src-dirs --gcs-directory-markers`, because OpenViking stores a directory as a zero-byte key ending in `/` and rclone otherwise drops those keys without `rclone check` noticing. `loki` and `tempo` are not backed up: they keep 30 days and are rebuilt from new data.
 - Two Vault templates:
   1. `secrets/rclone.conf`: rclone config with a `[minio]` remote (S3/Minio provider, creds from Vault) and a `[gcs]` remote (`service_account_file` pointing to the key file)
   2. `secrets/gcs-key.json`: GCS service account JSON from Vault
@@ -125,10 +125,13 @@ gs://<bucket>/
   minio/
     openviking/
       <mirror of openviking bucket>
+    registry/
+    models/
+    datalake/
 ```
 
 - Postgres: dated dumps accumulate, and the bucket lifecycle rule deletes them after 180 days.
-- MinIO: `rclone sync` maintains a live mirror (no accumulation: GCS matches the current bucket state). The lifecycle rule is a safety net for orphaned objects.
+- MinIO: `rclone sync` maintains a live mirror (no accumulation: GCS matches the current bucket state). The 180-day rule deletes by age, so an object unchanged for 180 days, such as an old image layer, is deleted from GCS and uploaded again by the next nightly sync. For up to a day it has no off-site copy.
 
 ## See also
 

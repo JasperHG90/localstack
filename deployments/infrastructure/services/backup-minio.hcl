@@ -22,7 +22,21 @@ job "backup-minio" {
         image        = "docker.io/rclone/rclone:latest"
         network_mode = "host"
         entrypoint   = ["/bin/sh", "-c"]
-        args         = ["rclone sync minio:openviking gcs:${gcs_bucket}/minio/openviking/ --config /secrets/rclone.conf"]
+        ### Every bucket is attempted, and one failed sync still fails the run.
+        ### loki and tempo keep 30 days and are not backed up.
+        ### OpenViking stores each directory as a zero-byte key ending in `/`.
+        ### Without the two marker flags rclone drops them, empty directories
+        ### vanish on restore, and `rclone check` still passes
+        ### (spike:seaweedfs-cutover-openviking/2).
+        args = [<<-EOT
+          rc=0
+          rclone sync minio:openviking gcs:${gcs_bucket}/minio/openviking/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync minio:registry gcs:${gcs_bucket}/minio/registry/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync minio:models gcs:${gcs_bucket}/minio/models/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          rclone sync minio:datalake gcs:${gcs_bucket}/minio/datalake/ --create-empty-src-dirs --gcs-directory-markers --config /secrets/rclone.conf || rc=1
+          exit $rc
+          EOT
+        ]
       }
 
       vault {}

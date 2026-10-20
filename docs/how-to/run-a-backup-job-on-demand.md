@@ -57,13 +57,13 @@ through Nomad at all.
 ```bash
 # What actually landed in GCS
 gsutil ls gs://<bucket>/postgres/
-gsutil ls gs://<bucket>/minio/openviking/
+gsutil ls gs://<bucket>/minio/   # openviking/ registry/ models/ datalake/
 ```
 
 They show what is in the bucket, not which run put it there: `nomad job
 periodic force` writes a dump under today's date exactly as the 02:00 run
-does, and `backup-minio` syncs the `openviking` bucket the same way the
-03:00 run does.
+does, and `backup-minio` syncs the four buckets the same way the 03:00 run
+does.
 
 ## Additional resources
 

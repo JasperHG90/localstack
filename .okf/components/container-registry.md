@@ -111,8 +111,8 @@ No jobspec pulls a container image from this registry. Task images come from
   leave every other `$` alone. A `$$1` reached the shell as PID-then-1 in R13.
 - **Two MinIO addresses.** The helper uses `minio_host` from Consul, the
   storage block a literal `192.168.2.29`.
-- **Not backed up.** `backup-minio` syncs only `openviking`, so every image and
-  ModelKit exists only on orangepi4a.
+- **Backed up nightly.** `backup-minio` syncs the `registry` bucket to GCS,
+  so images and ModelKits have an off-site copy up to a day old.
 
 ## Image references in jobspecs (T4)
 

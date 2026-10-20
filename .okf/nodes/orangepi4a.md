@@ -123,9 +123,9 @@ out by hand, so a move does not follow the lookup:
   the registry cannot serve a blob, so embark cannot pull a model on its next
   start, OpenViking loses its blob store, and `backup-minio` fails.
 - `minio.lab`, `s3.lab` and `openviking.lab` (ov-dash) stop answering.
-- `minio_data` is on this node only. The nightly backup copies one bucket,
-  `openviking`, to GCS ([GCS backups](/components/gcs-backups.md)). The other
-  buckets have no copy.
+- `minio_data` is on this node only. The nightly backup copies the four durable
+  buckets to GCS ([GCS backups](/components/gcs-backups.md)). `loki`, `tempo`,
+  `memex` and `mlflow-artifacts` have no copy.
 
 Related: [host volumes](/components/host-volumes.md),
 [the host firewall](/components/host-firewall.md),
