@@ -428,6 +428,15 @@ resource "vault_kv_secret_v2" "backup_s3_seaweedfs_credentials" {
   })
 }
 
+resource "vault_kv_secret_v2" "ov_carry_over_seaweedfs_credentials" {
+  mount = var.secret_mount
+  name  = "default/ov-carry-over/seaweedfs"
+  data_json = jsonencode({
+    access_key = aws_iam_access_key.seaweedfs_carry_over.id
+    secret_key = aws_iam_access_key.seaweedfs_carry_over.secret
+  })
+}
+
 ### Read by `restore-s3` in the infrastructure root, by path, at dispatch.
 resource "vault_kv_secret_v2" "restore_seaweedfs_credentials" {
   mount = var.secret_mount

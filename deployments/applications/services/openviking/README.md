@@ -100,7 +100,8 @@ OpenViking started over on bucket `openviking-v2`, schema `openviking_v2` and
 host volume `openviking_data_v2`. The old bucket `openviking`, schema
 `openviking` and volume `openviking_data` stay as they are, as a read-only
 backup. The `openviking` storage key loses all access to the old bucket, and
-only the backup and restore keys still reach it. Why is in
+only the backup and restore keys still reach it, plus the read-only
+`ov-carry-over` key that copies the kept trees across. Why is in
 `.okf/decisions/0021-openviking-starts-over-on-a-v2-store.md`.
 
 Run these in one sitting. The nightly `backup-s3` fails between the two

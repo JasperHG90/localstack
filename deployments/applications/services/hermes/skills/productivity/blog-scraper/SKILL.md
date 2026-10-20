@@ -1,7 +1,7 @@
 ---
 name: blog-scraper
 description: Daily engineering blog scraper — visits top AI/eng blogs, extracts new articles verbatim, stores in OpenViking
-version: 1.1.0
+version: 1.2.0
 metadata:
   hermes:
     tags: [productivity, scraping, engineering, blogs, openviking]
@@ -72,7 +72,8 @@ If failed: skip article, report to subagent with `/post-mortem` skill.
 For successfully captured articles:
 1. Parse for meaningful images (diagrams, charts, code screenshots)
 2. Download via terminal: `curl -sL -A "Mozilla/5.0" -o /tmp/{uuid}.png {image_url}`
-3. Add each image with its own `viking_add_resource(url=<image_url>)`
+3. Add each image with its own
+   `viking_add_resource(url=<image_url>, parent="viking://user/jasper/resources/blogs/{source}/")`
 
 If image download fails, continue — save article text anyway.
 
@@ -83,9 +84,14 @@ For each new article:
 ```
 viking_add_resource(
   url="{the article URL}",
+  parent="viking://user/jasper/resources/blogs/{source}/",
   reason="blog-scraper capture from {source}: {actual article title from page}"
 )
 ```
+
+Source folders: `anthropic`, `openai`, `spotify`, `deepmind`, `uber`,
+`mistral`, `ollama`, `addyosmani`. Each blog's posts go in its own folder
+under `blogs/`, next to the posts the operator shares from that blog.
 
 `viking_add_resource` fetches and parses the page itself, which is what keeps
 the text verbatim. There is no upsert and no note key: idempotency comes from

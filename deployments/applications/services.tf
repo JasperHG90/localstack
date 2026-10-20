@@ -534,6 +534,21 @@ resource "nomad_job" "openviking" {
   ]
 }
 
+### Copies the trees the operator kept from the old OpenViking bucket into
+### openviking-v2, on dispatch. Remove it, with its key in storage.tf and
+### secrets.tf, once the operator signs off on the carry-over.
+resource "nomad_job" "ov_carry_over" {
+  jobspec = templatefile(
+    "${path.module}/services/ov-carry-over.hcl",
+    {
+      seaweedfs_secret = vault_kv_secret_v2.ov_carry_over_seaweedfs_credentials.path
+      seaweedfs_host   = data.consul_service.seaweedfs.service[0].node_address
+    }
+  )
+
+  depends_on = [aws_iam_user_policy.seaweedfs_carry_over]
+}
+
 ### ov-dash — the browser face of OpenViking, on the node phoenix vacated.
 ###
 ### `openviking.lab.orangecluster.nl`, not a new name. That hostname used to
