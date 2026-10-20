@@ -3,7 +3,7 @@
   "slug": "ov-carry-over",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "d0198abae7dbf71244bc33e3445e2bb9fdc4975efab2af0b3bbf0bb7babc94ed",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "a37a73795a7c9b0c9616673c311dd3e4ee1e1bcf26338d5cbd102facbda58a13",
+    "started_at": "2026-10-20T14:45:50+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "a37a73795a7c9b0c9616673c311dd3e4ee1e1bcf26338d5cbd102facbda58a13",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T14:45:46+00:00"
+  "at": "2026-10-20T14:45:50+00:00"
 }
