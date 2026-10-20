@@ -87,12 +87,16 @@ came with `ov-fresh-instance`: OpenViking's key writes it, and the old
 ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)). The catalog and the action
 sets came over from MinIO, without memex and mlflow-artifacts. Readers get
 `s3:GetBucketLocation` and `s3:GetObject` but cannot list. Only the backup
-user adds `s3:ListBucket`, because rclone lists to sync. A `restore` user has
+user adds `s3:ListBucket`, because rclone lists to sync, and so does the
+`ov-carry-over` user, which reads and lists `openviking` and writes
+`openviking-v2` for the one-off carry-over of the trees the operator kept
+([ADR 0022](/decisions/0022-openviking-carry-over-copies-storage-and-re-indexes.md)). A `restore` user has
 `s3:*` on the same five buckets, for the `restore-s3` job
 ([GCS backups](/components/gcs-backups.md)), and stays as the restore path.
 `secrets.tf` writes each job's key to `default/<job>/seaweedfs`, the backup
-key to `default/backup-s3/seaweedfs`, and the restore key to
-`default/restore-s3/seaweedfs`. A new bucket, memex's included, is a new
+key to `default/backup-s3/seaweedfs`, the restore key to
+`default/restore-s3/seaweedfs`, and the carry-over key to
+`default/ov-carry-over/seaweedfs`. A new bucket, memex's included, is a new
 entry in `local.buckets`.
 `cli/tests/test_seaweedfs_buckets.py` pins the bucket set, the derivation and
 the action sets. The live isolation checks are in

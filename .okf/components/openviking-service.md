@@ -28,6 +28,10 @@ sources:
     resource: deployments/infrastructure/services/grafana/alert-rules.yaml
   - id: pre-commit-config
     resource: .pre-commit-config.yaml
+  - id: carry-over-job
+    resource: deployments/applications/services/ov-carry-over.hcl
+  - id: carry-over-script
+    resource: scripts/ov_carry_over.py
 ---
 
 # The OpenViking service
@@ -63,6 +67,21 @@ Apply infrastructure first. The job needs the host volume and the identity
 roles, and within the applications root it `depends_on` the Postgres database
 and the Bifrost key. `nomad_job.openviking` sets `detach = false`, so the apply
 waits for the deployment rather than returning at registration.
+
+## Carry-over from the old store
+
+The new instance started empty
+([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)). The
+operator kept four trees from the old one, and they come across without it
+running ([ADR 0022](/decisions/0022-openviking-carry-over-copies-storage-and-re-indexes.md)).
+The dispatched job `ov-carry-over` copies them key for key in SeaweedFS,
+blog-scraper into `blogs/` with its sidecar URIs rewritten.
+`scripts/ov_carry_over.py` then regenerates the eight blog directories that hold files from both trees,
+runs `vectors_only` on clips, blogs and leo, copies the old image rows, and
+checks the result. The job's checks run against a fake rclone in
+`cli/tests/test_ov_carry_over.py`. The how-to is
+`docs/how-to/carry-the-kept-trees-over-to-the-new-openviking.md`. The job,
+its `ov-carry-over` storage user and key go once the operator signs off.
 
 ## The image
 

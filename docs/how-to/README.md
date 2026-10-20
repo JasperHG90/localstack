@@ -6,6 +6,7 @@
 - [How to add an app-user tier](add-an-app-user-tier.md): Give a service its own access tier as a Vault group its OIDC client can admit, and put people in it.
 - [How to apply a backup infrastructure change](apply-a-backup-infrastructure-change.md): Apply a Terraform change to the GCS backup bucket, its service account, IAM or key.
 - [How to call OpenViking from the CLI](call-openviking-from-the-cli.md): Make an authenticated call to the OpenViking API from a shell with a Vault identity token.
+- [How to carry the kept trees over to the new OpenViking](carry-the-kept-trees-over-to-the-new-openviking.md): Copy clips, blogs, blog-scraper and leo from the old OpenViking store into the new one, re-index them and check the result.
 - [How to add, remove, or reorder a dash tile](change-a-dash-tile.md): Add, remove or reorder the tiles and headings https://dash.lab.orangecluster.nl shows.
 - [How to check JetStream disk usage](check-jetstream-disk-usage.md): See how much disk each JetStream stream uses and how much room is left on radxa-dragon-q6a.
 - [How to check that lab names resolve](check-lab-dns.md): Confirm that lab.orangecluster.nl names resolve to the edge and the apex still points at the public site.

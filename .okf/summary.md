@@ -72,13 +72,14 @@ invariants have a passing test. Several gaps remain open:
 
 - [SeaweedFS](/components/seaweedfs.md) replaced
   [MinIO](/components/minio.md) on 2026-10-20. Every workload moved through
-  the [GCS backups](/components/gcs-backups.md), with OpenViking's tree and
-  every registry tag read back intact, and MinIO was removed the same day
-  ([ADR 0018](/decisions/0018-remove-minio.md)). Its `minio_data` volume and
-  data were deleted that day too.
+  the [GCS backups](/components/gcs-backups.md), read back intact, and MinIO
+  was removed the same day
+  ([ADR 0018](/decisions/0018-remove-minio.md)).
 - OpenViking started over on a new bucket, schema and volume as
   `lab`/`jasper`, keeping the old store as a read-only backup
   ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)).
+  A copy and re-index, not yet run, carry the kept trees over
+  ([ADR 0022](/decisions/0022-openviking-carry-over-copies-storage-and-re-indexes.md)).
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.

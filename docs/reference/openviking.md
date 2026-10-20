@@ -9,6 +9,8 @@ sources:
   - resource: deployments/infrastructure/identity.tf
   - resource: scripts/check_openviking_config.py
   - resource: deployments/infrastructure/variables.tf
+  - resource: deployments/applications/services/ov-carry-over.hcl
+  - resource: scripts/ov_carry_over.py
 ---
 
 # OpenViking
@@ -27,13 +29,50 @@ authenticate to the API with a Vault identity token.
 | Vectors | Postgres `openviking` database, `openviking_v2` schema, pgvector |
 | Blobs | SeaweedFS `openviking-v2` bucket, S3 on `192.168.2.29:8333` (Consul service `seaweedfs`), with a static key from Vault `default/openviking/seaweedfs` |
 | Workspace | host volume `openviking_data_v2`, mounted at `/app/.openviking` |
-| Old store, read-only backup | bucket `openviking`, schema `openviking`, volume `openviking_data`, unused since 2026-10-20. The `openviking` key has no access to the bucket |
+| Old store, read-only backup | bucket `openviking`, schema `openviking`, volume `openviking_data`, unused since 2026-10-20. The `openviking` key has no access to the bucket. The `ov-carry-over` key reads it |
 | Models | Bifrost, as `embark/embedding` and `embark/reranker` |
 | Image summaries | Bifrost, as `gemini/gemini-3.5-flash-lite` |
 | Query planning | Bifrost, as `ollama/gemma4:31b` |
 
 The image is derived, and building it is an operator step. See
 `deployments/applications/services/openviking/README.md`.
+
+## Carry-over from the old store
+
+Four trees under `viking://user/jasper/resources/` came across from the old
+store: `clips/`, `blogs/` and `leo/` at the same keys, and `blog-scraper/`
+merged into `blogs/`. Nothing else did. How to run it is
+[How to carry the kept trees over to the new OpenViking](../how-to/carry-the-kept-trees-over-to-the-new-openviking.md).
+
+| Piece | Where |
+|---|---|
+| Copy job | `ov-carry-over`, parameterized batch job on radxa-dragon-q6a, rclone 1.75.2 |
+| Its storage key | Vault `default/ov-carry-over/seaweedfs`, user `ov-carry-over`: read and list on `openviking`, every action on `openviking-v2` |
+| Re-index and checks | `scripts/ov_carry_over.py`, run by hand with `OV_URL` and `OV_TOKEN` |
+
+The job's exit codes:
+
+| Code | Meaning |
+|---|---|
+| 0 | every tree copied and checked |
+| 1 | an `rclone mkdir` or `rclone copy` failed |
+| 2 | a file other than a sidecar differs from the old one |
+| 3 | a directory of the old tree is missing on the new side |
+| 4 | a listing or `rclone cat` failed |
+| 5 | the tree list names a tree outside the four |
+| 6 | an old `.abstract.md` or `.overview.md` is missing at its new key |
+| 7 | a key under `blogs/` still names `viking://user/jasper/resources/blog-scraper` |
+| 8 | the copy, rewrite or upload of blog-scraper's sidecars failed |
+
+The script's options:
+
+| Option | Meaning |
+|---|---|
+| `--old-listing PATH` | `rclone lsf -R` of the old bucket, plain or `--format pst` |
+| `--psql COMMAND` | the command that runs `psql` against database `openviking` as role `openviking`, password in `PGPASSWORD` |
+| `--url URL` | the API, default `$OV_URL` |
+| `--allow NAME` | a name under `resources/` that the check accepts beside `clips`, `blogs` and `leo` |
+| `--check-only` | skip the re-index and the image rows, run only the checks |
 
 ## Retrieval: the job does not run `openviking-server`
 

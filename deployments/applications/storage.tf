@@ -45,8 +45,9 @@ locals {
       readers = []
     }
     # The store OpenViking ran on until it started over on openviking-v2.
-    # Kept as a read-only backup: no user writes it, and only the backup and
-    # restore users reach it, through the durable list below.
+    # Kept as a read-only backup: no user writes it, the backup and restore
+    # users reach it through the durable list below, and ov-carry-over reads
+    # it (its own policy, further down).
     openviking = {
       writers = []
       readers = []
@@ -65,7 +66,8 @@ locals {
 ### Every bucket and user comes from `local.buckets` above. Writers get every
 ### action on their bucket; readers get GetBucketLocation and GetObject but
 ### cannot list, the grants carried over from the previous store. Only the
-### backup user adds s3:ListBucket, because rclone lists to sync.
+### backup and ov-carry-over users add s3:ListBucket, because rclone lists to
+### sync or copy.
 locals {
   seaweedfs_durable_buckets = ["openviking", "openviking-v2", "registry", "models", "datalake"]
   seaweedfs_read_actions    = ["s3:GetBucketLocation", "s3:GetObject"]
@@ -134,6 +136,36 @@ resource "aws_iam_user_policy" "seaweedfs_restore" {
         [aws_s3_bucket.seaweedfs[b].arn, "${aws_s3_bucket.seaweedfs[b].arn}/*"]
       ])
     }]
+  })
+}
+
+### ov-carry-over reads the old OpenViking bucket and writes the new one. It
+### gets no write action on `openviking`, so the job cannot change the backup.
+resource "aws_iam_user" "seaweedfs_carry_over" {
+  name = "ov-carry-over"
+}
+
+resource "aws_iam_access_key" "seaweedfs_carry_over" {
+  user = aws_iam_user.seaweedfs_carry_over.name
+}
+
+resource "aws_iam_user_policy" "seaweedfs_carry_over" {
+  name = "ov-carry-over-copy"
+  user = aws_iam_user.seaweedfs_carry_over.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketLocation", "s3:GetObject", "s3:ListBucket"]
+        Resource = [aws_s3_bucket.seaweedfs["openviking"].arn, "${aws_s3_bucket.seaweedfs["openviking"].arn}/*"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = local.seaweedfs_write_actions
+        Resource = [aws_s3_bucket.seaweedfs["openviking-v2"].arn, "${aws_s3_bucket.seaweedfs["openviking-v2"].arn}/*"]
+      },
+    ]
   })
 }
 
