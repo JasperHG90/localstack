@@ -39,6 +39,26 @@ resource "nomad_dynamic_host_volume" "minio_data" {
   }
 }
 
+resource "nomad_dynamic_host_volume" "seaweedfs_data" {
+  name      = "seaweedfs_data"
+  namespace = "default"
+  plugin_id = "mkdir"
+  node_pool = "default"
+
+  capacity_max = "3.5 TiB"
+  capacity_min = "1.0 TiB"
+
+  constraint {
+    attribute = "$${attr.unique.hostname}"
+    value     = "orangepi4a"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
 resource "nomad_dynamic_host_volume" "memex_data" {
   name      = "memex_data"
   namespace = "default"
@@ -331,6 +351,16 @@ locals {
         "allow from 192.168.0.0/16 to any port 9001 proto tcp",
       ]
     }
+    # SeaweedFS on orange_pi_4a: S3 and metrics only. Never its S3 gRPC
+    # port, 18333, which listens off-host and cannot be turned off.
+    seaweedfs = {
+      host     = "192.168.2.29"
+      ssh_user = "orangepi"
+      rules = [
+        "allow from 192.168.0.0/16 to any port 8333 proto tcp",
+        "allow from 192.168.0.0/16 to any port 9327 proto tcp",
+      ]
+    }
     # HAProxy on firebat (LAN + Tailscale)
     haproxy = {
       host     = "192.168.2.30"
@@ -499,6 +529,14 @@ resource "nomad_job" "minio" {
       # Let's Encrypt wildcard, so MinIO needs no extra trust bundle.
       nomad_oidc_config_url = "https://nomad.lab.orangecluster.nl/.well-known/openid-configuration"
     }
+  )
+}
+
+### SeaweedFS
+resource "nomad_job" "seaweedfs" {
+  jobspec = templatefile(
+    "${path.module}/services/seaweedfs.hcl",
+    { seaweedfs_secret = vault_kv_secret_v2.seaweedfs_admin.path }
   )
 }
 

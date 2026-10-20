@@ -65,9 +65,11 @@ measured.
 The cluster runs, and Login MFA is built. All eleven of the manifesto's
 invariants have a passing test. Several gaps remain open:
 
-- SeaweedFS is planned to replace [MinIO](/components/minio.md), restoring
-  from the GCS copies of the four durable buckets that the [backup
-  jobs](/components/gcs-backups.md) now make.
+- [SeaweedFS](/components/seaweedfs.md) runs beside
+  [MinIO](/components/minio.md) and is replacing it, restoring from the GCS
+  copies of the four durable buckets that the [backup
+  jobs](/components/gcs-backups.md) now make. ov-dash is stopped for lack of
+  memory on orangepi4a until MinIO is removed.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.
