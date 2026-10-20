@@ -1,0 +1,146 @@
+M viking://user/jasper/resources/blogs/src: 4 file-summary calls + 1 overview calls (direct files 4, cap 4+1)
+PASS sem viking://user/jasper/resources/blogs/src ok and VLM calls <= 5
+POST /api/v1/content/reindex {"uri": "viking://user/jasper/resources/blogs/notes", "mode": "semantic_and_vectors", "wait": true, "recursive": false} -> HTTP 200 {"status":"ok","result":{"status":"completed","uri":"viking://user/jasper/resources/blogs/notes","object_type":"resource","mode":"semantic_and_vectors","scanned_records":1,"rebuilt_records":2,"deleted_records":0,"would_delete_records":0,"unsupported_records":0,"failed_records":0,"duration_ms":378,"warnings":[]},"error":null,"telemetry":null,"profile":null}
+RESULT {"status": "completed", "uri": "viking://user/jasper/resources/blogs/notes", "object_type": "resource", "mode": "semantic_and_vectors", "scanned_records": 1, "rebuilt_records": 2, "deleted_records": 0, "would_delete_records": 0, "unsupported_records": 0, "failed_records": 0, "duration_ms": 378, "warnings": []}
+VLM viking://user/jasper/resources/blogs/notes: 32 file-summary calls + 1 overview calls (direct files 41, cap 32+1)
+PASS sem viking://user/jasper/resources/blogs/notes ok and VLM calls <= 33
+POST /api/v1/content/reindex {"uri": "viking://user/jasper/resources/blogs", "mode": "semantic_and_vectors", "wait": true, "recursive": false} -> HTTP 200 {"status":"ok","result":{"status":"completed","uri":"viking://user/jasper/resources/blogs","object_type":"resource","mode":"semantic_and_vectors","scanned_records":1,"rebuilt_records":2,"deleted_records":0,"would_delete_records":0,"unsupported_records":0,"failed_records":0,"duration_ms":169,"warnings":[]},"error":null,"telemetry":null,"profile":null}
+RESULT {"status": "completed", "uri": "viking://user/jasper/resources/blogs", "object_type": "resource", "mode": "semantic_and_vectors", "scanned_records": 1, "rebuilt_records": 2, "deleted_records": 0, "would_delete_records": 0, "unsupported_records": 0, "failed_records": 0, "duration_ms": 169, "warnings": []}
+VLM viking://user/jasper/resources/blogs: 0 file-summary calls + 1 overview calls (direct files 0, cap 0+1)
+PASS sem viking://user/jasper/resources/blogs ok and VLM calls <= 1
+----- blogs/src/.overview.md
+---
+directory: viking://user/jasper/resources/blogs/src/
+generated_by:
+  component: SemanticProcessor
+  trigger: reindex
+freshness:
+  total_entries: 4
+  sampled_entries: 4
+  unsampled_entries: 0
+  pending_child_changes: 0
+---
+
+# dir
+
+Covers: alpha-post.md, beta-post.md, delta-post.md, gamma-post.md.
+
+## Entries
+- [alpha-post.md](viking://user/jasper/resources/blogs/src/alpha-post.md): Summary of the content. information takeaways Intended audience case context apparent from file content nSpecial considerations Markdown files attention heading hierarchy documentation highlight funct
+- [beta-post.md](viking://user/jasper/resources/blogs/src/beta-post.md): Summary of the content. information takeaways Intended audience case context apparent from file content nSpecial considerations Markdown files attention heading hierarchy documentation highlight funct
+- [delta-post.md](viking://user/jasper/resources/blogs/src/delta-post.md): Summary of the content. information takeaways Intended audience case context apparent from file content nSpecial considerations Markdown files attention heading hierarchy documentation highlight funct
+- [gamma-post.md](viking://user/jasper/resources/blogs/src/gamma-post.md): Summary of the content. information takeaways Intended audience case context apparent from file content nSpecial considerations Markdown files attention heading hierarchy documentation highlight funct
+
+----- blogs/src/.abstract.md
+---
+directory: viking://user/jasper/resources/blogs/src/
+generated_by:
+  component: SemanticProcessor
+  trigger: reindex
+freshness:
+  total_entries: 4
+  sampled_entries: 4
+  unsampled_entries: 0
+  pending_child_changes: 0
+---
+
+Covers: alpha-post.md, beta-post.md, delta-post.md, gamma-post.md.
+
+----- blogs/.overview.md
+---
+directory: viking://user/jasper/resources/blogs/
+generated_by:
+  component: SemanticProcessor
+  trigger: reindex
+freshness:
+  total_entries: 3
+  sampled_entries: 3
+  unsampled_entries: 0
+  pending_child_changes: 0
+---
+
+# dir
+
+Covers: extra/, notes/, src/.
+
+## Entries
+- [extra/](viking://user/jasper/resources/blogs/extra): Covers: epsilon-post.md.
+- [notes/](viking://user/jasper/resources/blogs/notes): Covers: blogs-note.md, bulk-00.md, bulk-01.md, bulk-02.md, bulk-04.md, bulk-05.md, bulk-06.md, bulk-08.md, bulk-09.md, bulk-10.md, bulk-11.md, bulk-13.md, bulk-14.md, bulk-15.md, bulk-17.md, bulk-18.m
+- [src/](viking://user/jasper/resources/blogs/src): Covers: alpha-post.md, beta-post.md, delta-post.md, gamma-post.md.
+
+----- blogs/notes/.abstract.md
+---
+directory: viking://user/jasper/resources/blogs/notes/
+generated_by:
+  component: SemanticProcessor
+  trigger: reindex
+freshness:
+  total_entries: 41
+  sampled_entries: 32
+  unsampled_entries: 9
+  pending_child_changes: 0
+---
+
+Covers: blogs-note.md, bulk-00.md, bulk-01.md, bulk-02.md, bulk-04.md, bulk-05.md, bulk-06.md, bulk-08.md, bulk-09.md, bulk-10.md, bulk-11.md, bulk-13.md, bulk-14.md, bulk-15.md, bulk-17.md, bulk-18.md, bulk-19.md, bulk-20.md, bulk-22.md, bulk-23.md, bulk-24.md, bulk-26.md, bulk-27.md, bulk-28.md, bulk-29.md, bulk-31.md, bulk-32.md, bulk-33.md, bulk-35.md, bulk-36.md, bulk-37.md, bulk-39.md.
+
+PASS blogs/src and blogs overviews both name alpha-post
+PASS blogs/src and blogs overviews both name beta-post
+PASS blogs/src and blogs overviews both name gamma-post
+PASS blogs/src and blogs overviews both name delta-post
+-- sidecars mentioning blog-scraper after regenerating shared dirs:
+HIT lab/user/jasper/resources/blogs/extra/.abstract.md
+HIT lab/user/jasper/resources/blogs/extra/.overview.md
+2 keys under blogs/ contain 'blog-scraper'
+-- regenerating blogs/extra too, because its sidecars name blog-scraper
+POST /api/v1/content/reindex {"uri": "viking://user/jasper/resources/blogs/extra", "mode": "semantic_and_vectors", "wait": true, "recursive": false} -> HTTP 200 {"status":"ok","result":{"status":"completed","uri":"viking://user/jasper/resources/blogs/extra","object_type":"resource","mode":"semantic_and_vectors","scanned_records":1,"rebuilt_records":2,"deleted_records":0,"would_delete_records":0,"unsupported_records":0,"failed_records":0,"duration_ms":215,"warnings":[]},"error":null,"telemetry":null,"profile":null}
+RESULT {"status": "completed", "uri": "viking://user/jasper/resources/blogs/extra", "object_type": "resource", "mode": "semantic_and_vectors", "scanned_records": 1, "rebuilt_records": 2, "deleted_records": 0, "would_delete_records": 0, "unsupported_records": 0, "failed_records": 0, "duration_ms": 215, "warnings": []}
+VLM viking://user/jasper/resources/blogs/extra: 1 file-summary calls + 1 overview calls (direct files 1, cap 1+1)
+PASS sem viking://user/jasper/resources/blogs/extra ok and VLM calls <= 2
+VLM TOTAL for directory regeneration: 41
+0 keys under blogs/ contain 'blog-scraper'
+PASS no sidecar under blogs/ names blog-scraper
+== phase 2: vectors_only on blogs
+POST /api/v1/content/reindex {"uri": "viking://user/jasper/resources/blogs", "mode": "vectors_only", "wait": true} -> HTTP 200 {"status":"ok","result":{"status":"completed","uri":"viking://user/jasper/resources/blogs","object_type":"resource","mode":"vectors_only","scanned_records":50,"rebuilt_records":54,"deleted_records":0,"would_delete_records":0,"unsupported_records":0,"failed_records":0,"duration_ms":1375,"warnings":[]},"error":null,"telemetry":null,"profile":null}
+RESULT {"status": "completed", "uri": "viking://user/jasper/resources/blogs", "object_type": "resource", "mode": "vectors_only", "scanned_records": 50, "rebuilt_records": 54, "deleted_records": 0, "would_delete_records": 0, "unsupported_records": 0, "failed_records": 0, "duration_ms": 1375, "warnings": []}
+PASS vectors_only failed 0 (VLM calls 0)
+-- B rows: 54, expected 54; diff (< expected only, > B only):
+1c1,2
+< /user/jasper/resources/blogs/extra/epsilon-post.md|2
+---
+> /user/jasper/resources/blogs|0
+> /user/jasper/resources/blogs|1
+3a5,7
+> /user/jasper/resources/blogs/extra/epsilon-post.md|2
+> /user/jasper/resources/blogs/notes|0
+> /user/jasper/resources/blogs/notes|1
+45,46c49,50
+< /user/jasper/resources/blogs/notes|0
+< /user/jasper/resources/blogs/notes|1
+---
+> /user/jasper/resources/blogs/src|0
+> /user/jasper/resources/blogs/src|1
+51,54d54
+< /user/jasper/resources/blogs/src|0
+< /user/jasper/resources/blogs/src|1
+< /user/jasper/resources/blogs|0
+< /user/jasper/resources/blogs|1
+FAIL B rows are exactly the expected blogs/ uri|level set
+PASS no vector row text mentions blog-scraper (0)
+POST /api/v1/search/find {"query": "Alpha post on rust borrow checker lifetimes", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/extra/epsilon-post.md","level":2,"score":0.5,"abstract":"# Epsilon post on espresso grind size\n\nEpsilon post on espresso grind size, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-06.md","level":2,"score":0.5,"abstract":"# Bulk note 06 on sailing number 06\n\nBulk note 06 on sailing number 06, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-22.md","level":2,"score":0.5,"abstract":"# Bulk note 22 on sailing number 22\n\nBulk note 22 on sailing number 22, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-01.md","level":2,"score":0.5,"abstract":"# Bulk note 01 on volcanoes number 01\n\nBulk note 01 on volcanoes number 01, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-35.md","level":2,"score":0.5,"abstract":"# Bulk note 35 on lighthouses number 35\n\nBulk note
+FAIL find Alpha post on rust borrow checker lifetimes -> viking://user/jasper/resources/blogs/src/alpha-post.md
+POST /api/v1/search/find {"query": "Beta post on postgres vacuum tuning", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/extra/epsilon-post.md","level":2,"score":0.5,"abstract":"# Epsilon post on espresso grind size\n\nEpsilon post on espresso grind size, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-06.md","level":2,"score":0.5,"abstract":"# Bulk note 06 on sailing number 06\n\nBulk note 06 on sailing number 06, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-22.md","level":2,"score":0.5,"abstract":"# Bulk note 22 on sailing number 22\n\nBulk note 22 on sailing number 22, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-01.md","level":2,"score":0.5,"abstract":"# Bulk note 01 on volcanoes number 01\n\nBulk note 01 on volcanoes number 01, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-35.md","level":2,"score":0.5,"abstract":"# Bulk note 35 on lighthouses number 35\n\nBulk note
+FAIL find Beta post on postgres vacuum tuning -> viking://user/jasper/resources/blogs/src/beta-post.md
+POST /api/v1/search/find {"query": "Blogs note on bicycle wheel truing", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/blogs-note.md","level":2,"score":0.5,"abstract":"# Blogs note on bicycle wheel truing\n\nBlogs note on bicycle wheel truing, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-06.md","level":2,"score":0.5,"abstract":"# Bulk note 06 on sailing number 06\n\nBulk note 06 on sailing number 06, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-22.md","level":2,"score":0.5,"abstract":"# Bulk note 22 on sailing number 22\n\nBulk note 22 on sailing number 22, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-01.md","level":2,"score":0.5,"abstract":"# Bulk note 01 on volcanoes number 01\n\nBulk note 01 on volcanoes number 01, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-35.md","level":2,"score":0.5,"abstract":"# Bulk note 35 on lighthouses number 35\n\nBulk note 35 
+PASS find Blogs note on bicycle wheel truing -> viking://user/jasper/resources/blogs/notes/blogs-note.md
+POST /api/v1/search/find {"query": "Gamma post on kubernetes pod eviction", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/extra/epsilon-post.md","level":2,"score":0.5,"abstract":"# Epsilon post on espresso grind size\n\nEpsilon post on espresso grind size, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-06.md","level":2,"score":0.5,"abstract":"# Bulk note 06 on sailing number 06\n\nBulk note 06 on sailing number 06, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-22.md","level":2,"score":0.5,"abstract":"# Bulk note 22 on sailing number 22\n\nBulk note 22 on sailing number 22, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-01.md","level":2,"score":0.5,"abstract":"# Bulk note 01 on volcanoes number 01\n\nBulk note 01 on volcanoes number 01, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-35.md","level":2,"score":0.5,"abstract":"# Bulk note 35 on lighthouses number 35\n\nBulk note
+FAIL find Gamma post on kubernetes pod eviction -> viking://user/jasper/resources/blogs/src/gamma-post.md
+POST /api/v1/search/find {"query": "Delta post on terraform state locking", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/extra/epsilon-post.md","level":2,"score":0.5,"abstract":"# Epsilon post on espresso grind size\n\nEpsilon post on espresso grind size, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-06.md","level":2,"score":0.5,"abstract":"# Bulk note 06 on sailing number 06\n\nBulk note 06 on sailing number 06, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-08.md","level":2,"score":0.5,"abstract":"# Bulk note 08 on glaciers number 08\n\nBulk note 08 on glaciers number 08, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-22.md","level":2,"score":0.5,"abstract":"# Bulk note 22 on sailing number 22\n\nBulk note 22 on sailing number 22, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-24.md","level":2,"score":0.5,"abstract":"# Bulk note 24 on glaciers number 24\n\nBulk note 24 o
+FAIL find Delta post on terraform state locking -> viking://user/jasper/resources/blogs/src/delta-post.md
+POST /api/v1/search/find {"query": "Epsilon post on espresso grind size", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/extra/epsilon-post.md","level":2,"score":0.5,"abstract":"# Epsilon post on espresso grind size\n\nEpsilon post on espresso grind size, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-06.md","level":2,"score":0.5,"abstract":"# Bulk note 06 on sailing number 06\n\nBulk note 06 on sailing number 06, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-22.md","level":2,"score":0.5,"abstract":"# Bulk note 22 on sailing number 22\n\nBulk note 22 on sailing number 22, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-01.md","level":2,"score":0.5,"abstract":"# Bulk note 01 on volcanoes number 01\n\nBulk note 01 on volcanoes number 01, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-35.md","level":2,"score":0.5,"abstract":"# Bulk note 35 on lighthouses number 35\n\nBulk note
+PASS find Epsilon post on espresso grind size -> viking://user/jasper/resources/blogs/extra/epsilon-post.md
+POST /api/v1/search/find {"query": "Bulk note 00 on glaciers number 00", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-00.md","level":2,"score":0.5,"abstract":"# Bulk note 00 on glaciers number 00\n\nBulk note 00 on glaciers number 00, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-08.md","level":2,"score":0.5,"abstract":"# Bulk note 08 on glaciers number 08\n\nBulk note 08 on glaciers number 08, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-24.md","level":2,"score":0.5,"abstract":"# Bulk note 24 on glaciers number 24\n\nBulk note 24 on glaciers number 24, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-32.md","level":2,"score":0.5,"abstract":"# Bulk note 32 on glaciers number 32\n\nBulk note 32 on glaciers number 32, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-16.md","level":2,"score":0.5,"abstract":"# Bulk note 16 on glaciers number 16\n\nBulk note 16 on g
+PASS find Bulk note 00 on glaciers number 00 -> viking://user/jasper/resources/blogs/notes/bulk-00.md
+POST /api/v1/search/find {"query": "Bulk note 39 on falconry number 39", "limit": 5} -> HTTP 200 {"status":"ok","result":{"memories":[],"resources":[{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-39.md","level":2,"score":0.5,"abstract":"# Bulk note 39 on falconry number 39\n\nBulk note 39 on falconry number 39, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-23.md","level":2,"score":0.5,"abstract":"# Bulk note 23 on falconry number 23\n\nBulk note 23 on falconry number 23, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-31.md","level":2,"score":0.5,"abstract":"# Bulk note 31 on falconry number 31\n\nBulk note 31 on falconry number 31, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-15.md","level":2,"score":0.5,"abstract":"# Bulk note 15 on falconry number 15\n\nBulk note 15 on falconry number 15, written for the merge spike.\n","tags":[]},{"context_type":"resource","uri":"viking://user/jasper/resources/blogs/notes/bulk-07.md","level":2,"score":0.5,"abstract":"# Bulk note 07 on falconry number 07\n\nBulk note 07 on f
+PASS find Bulk note 39 on falconry number 39 -> viking://user/jasper/resources/blogs/notes/bulk-39.md
+FAIL find on each title returns its blogs/ file
+== B log warnings/errors
