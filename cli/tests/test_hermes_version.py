@@ -2,7 +2,9 @@
 
 v0.22 moved the OpenViking memory provider out of the base image, and turned
 on pruning of ended sessions; either change slips by silently if the image or
-config falls behind (spike:hermes-update/2, /3).
+config falls behind (spike:hermes-update/2, /3). Voice notes need a speech
+engine the base image lacks, pinned to the base's own lock file
+(spike:ov-save-skill/8, /10).
 """
 
 import re
@@ -13,6 +15,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 APPS = REPO_ROOT / "deployments" / "applications"
 DOCKERFILE = APPS / "services" / "hermes" / "Dockerfile"
 PLUGIN_SHA = "9f150ece247ad683494ab172d738023bd6dc6170"
+UV = "/opt/hermes/tools/uv-0.12.3-linux-arm64/uv"
+WHISPER_RUN = (
+    f"RUN cd /opt/hermes && {UV} export --frozen --no-hashes --extra stt-whisper"
+    " --no-emit-project -q -o /tmp/stt.txt"
+    f" && {UV} pip install --no-cache --python /opt/hermes/.venv/bin/python"
+    " -c /tmp/stt.txt faster-whisper==1.2.1 && rm /tmp/stt.txt"
+)
 
 
 def test_base_is_v0_22_2() -> None:
@@ -41,7 +50,7 @@ def test_openviking_tools_wrapper_is_copied_beside_the_plugin() -> None:
 
 def test_hermes_version_matches_the_base() -> None:
     pins = re.findall(r'hermes_version\s*=\s*"([^"]+)"', (APPS / "services.tf").read_text())
-    assert pins == ["0.22.2-2"]
+    assert pins == ["0.22.2-3"]
 
 
 def test_config_selects_openviking_tools_and_keeps_sessions() -> None:
@@ -53,3 +62,19 @@ def test_config_selects_openviking_tools_and_keeps_sessions() -> None:
     assert not re.search(r"^  openviking:|recall_", memory.group(1), re.M)
     sessions = re.search(r"^sessions:\n((?:  .*\n)+)", hcl, re.M)
     assert sessions and "auto_prune: false" in sessions.group(1)
+
+
+def test_faster_whisper_is_baked_in_pinned_to_the_base_lock() -> None:
+    runs = re.findall(r"^RUN .+$", DOCKERFILE.read_text(), re.M)
+    # An unpinned install pulls PyAV 19.0.1, which breaks every transcription.
+    assert WHISPER_RUN in runs
+
+
+def test_config_transcribes_locally_with_the_base_model() -> None:
+    hcl = (APPS / "services" / "hermes.hcl").read_text()
+    stt = re.search(r"^stt:\n((?:  .*\n)+)", hcl, re.M)
+    assert stt
+    assert re.findall(r"^  provider: (.+)$", stt.group(1), re.M) == ['"local"']
+    local = re.search(r"^  local:\n((?:    .*\n)+)", stt.group(1), re.M)
+    assert local
+    assert re.findall(r"^    model: (.+)$", local.group(1), re.M) == ['"base"']

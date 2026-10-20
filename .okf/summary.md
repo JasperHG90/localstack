@@ -7,9 +7,10 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-10-20T14:32:36Z
+  at: 2026-10-20T16:20:53Z
   against:
-    - decisions/0020-agents-use-openviking-through-tools-only
+    - decisions/0019-hermes-openviking-plugin-built-into-the-image
+    - decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots
 ---
 
 # Summary

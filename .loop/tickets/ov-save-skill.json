@@ -1,25 +1,68 @@
 {
   "schema_version": "1.0",
   "slug": "ov-save-skill",
-  "stage": "ready",
-  "attempts": 0,
+  "stage": "done",
+  "attempts": 1,
   "plan_rounds": 2,
-  "review_rounds": 0,
+  "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "5721254b9777815d38e282d02a6474f41875fdd9d0837cebf7b96924d87d7e69",
+    "tree": "817a31978a0419db201ec8f003849af3b2063b73",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261020T163833+0000-940ed764",
+        "paths": [
+          "deployments/applications/services/hermes/skills/productivity/save-to-openviking/SKILL.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/hermes.md",
+          ".okf/decisions/0022-hermes-saves-from-a-skill-owned-map-of-roots.md",
+          ".okf/decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots.md",
+          ".okf/decisions/index.md",
+          ".okf/log.md",
+          ".okf/summary.md",
+          "docs/how-to/save-something-to-openviking-through-hermes.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          "docs/how-to/save-something-to-openviking-through-hermes.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T16:38:33+00:00"
+  },
   "ask": null,
   "split": "j-20261020T150715+0000-9d2a4cce",
   "split_plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "f19d5ef606d52209fe4d29a14097b252d7b3b1dc",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
-  "worktree": null,
-  "branch": null,
-  "stamps": [],
+  "worktree": "/home/vscode/workspace.worktrees/ov-save-skill",
+  "branch": "loop/ov-save-skill",
+  "stamps": [
+    "b9398eff477577f5ce47a53202e90542c362bca85c9b59cde0e6493773245b7a",
+    "5721254b9777815d38e282d02a6474f41875fdd9d0837cebf7b96924d87d7e69"
+  ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus/5.5",
     "hash": "0781278fe9850de90d398d7a95568f8ebdf061b5ab0b946f28c329f31282ef6b",
@@ -76,16 +119,16 @@
   "waivers": [],
   "overrides": [],
   "round": {
-    "kind": "plan",
+    "kind": "review",
     "n": 2,
-    "binds": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
-    "started_at": "2026-10-20T15:21:04+00:00",
+    "binds": "5721254b9777815d38e282d02a6474f41875fdd9d0837cebf7b96924d87d7e69",
+    "started_at": "2026-10-20T16:38:37+00:00",
     "passes": [
-      "plan-reviewer"
+      "reviewer"
     ],
-    "tree": null,
-    "plan_hash": null,
-    "eval_hash": null,
+    "tree": "817a31978a0419db201ec8f003849af3b2063b73",
+    "plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
+    "eval_hash": "0781278fe9850de90d398d7a95568f8ebdf061b5ab0b946f28c329f31282ef6b",
     "scope": "full",
     "sent_back": [],
     "since": null,
@@ -113,8 +156,38 @@
       "to": "ready",
       "at": "2026-10-20T16:09:43+00:00",
       "by": "advance"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-10-20T16:14:16+00:00",
+      "by": "advance"
+    },
+    {
+      "from": "building",
+      "to": "verifying",
+      "at": "2026-10-20T16:32:12+00:00",
+      "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-10-20T16:36:51+00:00",
+      "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T16:38:33+00:00",
+      "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T16:40:39+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T16:10:15+00:00"
+  "at": "2026-10-20T16:40:39+00:00"
 }

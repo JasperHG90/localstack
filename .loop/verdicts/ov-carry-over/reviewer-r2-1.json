@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the outcome check rejects the save skill's top-level .map.md (ADR 0023) by default",
+      "anchor": "scripts/ov_carry_over.py:228",
+      "category": "bug",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "aea5e215033d07065869ca84622289c71323b5db93a03910d7ceb6f1661d78cb",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T17:04:47+00:00"
+}

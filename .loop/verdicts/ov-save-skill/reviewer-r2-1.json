@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the map append could glue a new root onto the last seed line",
+      "anchor": "deployments/applications/services/hermes/skills/productivity/save-to-openviking/SKILL.md:47",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "ADR number 0022 clashed with ov-carry-over",
+      "anchor": ".okf/decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots.md:3",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "how-to step 2 saved the same link as step 1",
+      "anchor": "docs/how-to/save-something-to-openviking-through-hermes.md:44",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "5721254b9777815d38e282d02a6474f41875fdd9d0837cebf7b96924d87d7e69",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T16:40:14+00:00"
+}
