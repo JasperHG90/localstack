@@ -1,0 +1,19 @@
+== make voice.ogg (espeak-ng -> ffmpeg libopus, as Telegram sends)
+-rw-r--r-- 1 root root 20901 Oct 20 16:43 /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-voice/run.sfEq/voice.ogg
+== run A: first voice message on a fresh /opt/data
+{"faster_whisper_before": false, "seconds": 1.1, "process_peak_rss_mb": 110, "cgroup_peak_mb": 105, "cgroup_max": "2147483648", "enriched_text": "[voice message could not be transcribed automatically; the audio is available at: /w/voice.ogg]", "transcripts": []}
+drive exit 3
+-- dirs with files newer than start (outside /proc,/sys,/tmp):
+      1 /opt/data/cache/scratch
+      1 /opt/data/SOUL.md/
+24K	/opt/data
+456M	/opt/hermes/.venv
+container a exit 3, OOMKilled=false
+== run B: fresh container (restart), same /opt/data volume
+{"faster_whisper_before": false, "seconds": 1.0, "process_peak_rss_mb": 109, "cgroup_peak_mb": 96, "cgroup_max": "2147483648", "enriched_text": "[voice message could not be transcribed automatically; the audio is available at: /w/voice.ogg]", "transcripts": []}
+drive exit 3
+-- dirs with files newer than start (outside /proc,/sys,/tmp):
+24K	/opt/data
+456M	/opt/hermes/.venv
+container b exit 3, OOMKilled=false
+A=3 B=3
