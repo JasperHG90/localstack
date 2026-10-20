@@ -29,7 +29,7 @@ sources:
 Bifrost is the one OpenAI-compatible endpoint the cluster's agents call for
 chat, embeddings and rerank. It runs as job `bifrost` on `radxa-dragon-q6a`
 (192.168.2.50), port 8080, host networking, image
-`docker.io/maximhq/bifrost:v2.0.0`. It routes to Ollama Cloud, Gemini and
+`docker.io/maximhq/bifrost:v2.3.1`. It routes to Ollama Cloud, Gemini and
 [embark](/components/embark.md). Hermes and OpenViking run on the same node
 and call it at the node address or over loopback. Port 8080 is open to the
 whole LAN, and Prometheus dials it directly. The edge serves it as
@@ -145,6 +145,21 @@ survival of four named virtual keys (`Leo`, `hermes`, `jasper-laptop-cc`,
 rather than by vector length. Its auth probe sends rerank documents as objects,
 because at 1.6.7 the payload is parsed before the key is checked, so a
 bare-string probe returns 400 and never reaches auth.
+
+`bifrost-update` moved the pin to 2.3.1 on 2026-10-20. The 2.1.0 to 2.3.1
+config-store migrations cannot be undone (2.3.1 drops columns, 2.3.0 adds a
+unique index on `governance_virtual_keys.value_hash`), so the way back to
+2.0.0 is restoring the `bifrost` database from the `pg_dumpall` taken just
+before the apply. `backup-postgres` names its dumps by date and overwrites
+them, so that dump was copied to
+`gs://localstack-cluster-backups/postgres-pre-upgrade/bifrost-2.0.0-pgdumpall-2026-10-20.sql.gz`,
+a name no job writes. It is a whole-cluster dump, so restore only the
+`bifrost` database from it, and the bucket's 180-day rule deletes it on
+2027-04-18. 2.1.0 renamed the unknown-key refusal from
+`virtual_key_not_found` to `access_not_found`, which the smoke script now
+expects. Provider `AirHelp-OSP/bifrost` stays at 0.1.1: keys made on 2.0.0
+plan clean after the migration (`spike:bifrost-update/1`, `/4`), and
+bare-string rerank still reaches embark unchanged (`spike:bifrost-update/3`).
 
 ## Invariants and what enforces them
 
