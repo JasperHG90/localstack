@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-cutover-observability",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
@@ -73,8 +73,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "e7c32fde963eeb5c826381aa9473483b90e5f3e30c362a103a6883fa24187516",
   "intent": {
@@ -108,8 +108,14 @@
       "to": "verifying",
       "at": "2026-10-20T07:13:41+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-10-20T07:17:08+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T07:13:42+00:00"
+  "at": "2026-10-20T07:17:08+00:00"
 }
