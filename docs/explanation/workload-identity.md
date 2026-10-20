@@ -230,6 +230,7 @@ Audience registry:
 |-------|----------|------------|
 | `vault.io` | Vault, via the `jwt-nomad` mount | `bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json` |
 | `memex` | the memex server, against Nomad's JWKS | `deployments/applications/services/memex/auth_oidc.json` |
+| `seaweedfs` | SeaweedFS STS, one role per job bound to `nomad_job_id` and `sub` | `deployments/infrastructure/services.tf` (`local.seaweedfs_iam`) |
 | `minio` | MinIO STS, `NOMAD` target | `deployments/infrastructure/services/minio.hcl` |
 | `minio-poc2` | MinIO STS, `POC2` target | `deployments/infrastructure/services/minio.hcl` |
 

@@ -28,6 +28,29 @@ resource "vault_kv_secret_v2" "seaweedfs_admin" {
   }
 }
 
+### Signs the session tokens SeaweedFS's STS hands out for workload
+### identities. Rendered into its IAM config by the job, base64 as SeaweedFS
+### expects.
+resource "random_password" "seaweedfs_sts_signing_key" {
+  length  = 32
+  special = false
+}
+
+resource "vault_kv_secret_v2" "seaweedfs_sts" {
+  mount = vault_mount.kvv2.path
+  name  = "default/seaweedfs/sts"
+  data_json = jsonencode({
+    signing_key = base64encode(random_password.seaweedfs_sts_signing_key.result)
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Minio credentials
 resource "random_password" "minio_secret_key" {
   length  = 32
