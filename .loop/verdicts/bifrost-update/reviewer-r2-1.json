@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the bifrost.md rollback paragraph pointed at the pre-apply dump without naming it, and that object can be overwritten or expire",
+      "anchor": ".okf/components/bifrost.md:149",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "7866ba40b3cc904e31ccb65450250af5f62d3f5d80de6712657d28f3dd3d5133",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T10:35:49+00:00"
+}
