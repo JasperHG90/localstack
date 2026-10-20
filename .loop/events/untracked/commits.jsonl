@@ -10,3 +10,4 @@
 {"at": "2026-10-20T08:47:09+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "3628ca63ace62569d06b8e13f22a3389a87304df", "subject": "chore: update kmctl"}
 {"ask": "j-20261020T124911+0000-ea5eff48", "at": "2026-10-20T12:55:17+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "b2ec2c4dda9f1861e40e870fa473ab3784f5d643", "subject": "hermes: raise OpenViking recall timeouts above search time"}
 {"ask": "j-20261020T124911+0000-ea5eff48", "at": "2026-10-20T13:12:48+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "816afa3be791b089181cd84cd1d383f8c50031a7", "subject": "hermes: keep the recall budget inside Hermes's 8s prefetch limit"}
+{"at": "2026-10-20T16:12:34+00:00", "branch": "loop/ov-fresh-instance", "kind": "commit", "schema_version": "1.0", "sha": "3d2992f062e45130401fccbbca8f4e2d40818524", "subject": "Merge branch 'main' into loop/ov-fresh-instance"}
