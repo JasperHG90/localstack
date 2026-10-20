@@ -100,7 +100,7 @@ losing it matters. Read it before resizing or moving one.
 
 Several volumes hold working state rather than the store itself, and their
 comments say so: `loki_data` and `tempo_data` hold what has not yet been
-flushed to MinIO, `openviking_data` holds scratch while vectors are in
+flushed to SeaweedFS, `openviking_data` holds scratch while vectors are in
 Postgres and blobs in MinIO, and `registry_ui_data` holds a digest-keyed cache.
 `embark_data` holds ModelKits that can be pulled again, at the cost of a slow
 start. `acme_lego_state` is the one whose loss has an outside cost: without it

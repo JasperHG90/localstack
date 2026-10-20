@@ -29,24 +29,24 @@ job "loki" {
       driver = "podman"
       user   = "root"
 
-      ### Keyless MinIO access. Field-by-field rationale is in
+      ### Keyless SeaweedFS access. Field-by-field rationale is in
       ### docs/workload-identity.md; only what is specific to loki is here.
       ###
-      ### No `vault {}`: the MinIO key was loki's only Vault use, so it needs
+      ### No `vault {}`: the S3 key was loki's only Vault use, so it needs
       ### no Vault access at all. `user = "root"` above is what lets the task
       ### read its own JWT.
       identity {
-        name        = "minio"
-        aud         = ["minio"]
+        name        = "seaweedfs"
+        aud         = ["seaweedfs"]
         file        = true
-        filepath    = "secrets/nomad_minio.jwt"
+        filepath    = "secrets/nomad_seaweedfs.jwt"
         ttl         = "1h"
         change_mode = "noop"
       }
 
-      ### Loki reaches MinIO through aws-sdk-go v1, which has no way to be
+      ### Loki reaches SeaweedFS through aws-sdk-go v1, which has no way to be
       ### pointed at a non-AWS STS, so it cannot use tempo's provider. Instead
-      ### the SDK runs local/minio-creds.sh, which performs the exchange and
+      ### the SDK runs local/s3-creds.sh, which performs the exchange and
       ### prints credentials; the SDK re-runs it when they expire.
       ###
       ### AWS_CONFIG_FILE is NOT optional and is the easiest thing to omit.
@@ -101,16 +101,16 @@ job "loki" {
       ### as ProcessProviderExecutionError. So it prints the JSON and nothing
       ### else, and fails loudly rather than emitting a half-document.
       ###
-      ### No RoleArn in the request: MinIO resolves the policy from the
-      ### token's nomad_job_id claim, which is what makes the `loki` policy
-      ### apply to loki alone.
+      ### SeaweedFS refuses the exchange without RoleArn and RoleSessionName.
+      ### The `loki` role's trust policy requires this token's nomad_job_id
+      ### and sub, which is what keeps it to loki alone (ADR 0017).
       template {
         data        = <<-EOF
         #!/bin/sh
         set -eu
-        jwt=$(cat /secrets/nomad_minio.jwt)
+        jwt=$(cat /secrets/nomad_seaweedfs.jwt)
         body=$(wget -q -O - --post-data='' \
-          "http://${minio_host}:9000/?Action=AssumeRoleWithWebIdentity&Version=2011-06-15&WebIdentityToken=$${jwt}")
+          "http://${s3_host}:8333/?Action=AssumeRoleWithWebIdentity&Version=2011-06-15&RoleArn=arn:aws:iam::role/loki&RoleSessionName=loki&WebIdentityToken=$${jwt}")
         field() {
           printf '%s' "$${body}" | sed -n "s:.*<$1>\([^<]*\)</$1>.*:\1:p"
         }
@@ -119,13 +119,13 @@ job "loki" {
         st=$(field SessionToken)
         ex=$(field Expiration)
         if [ -z "$${ak}" ] || [ -z "$${sk}" ] || [ -z "$${st}" ] || [ -z "$${ex}" ]; then
-          echo "minio-creds: STS response missing a credential field" >&2
+          echo "s3-creds: STS response missing a credential field" >&2
           exit 1
         fi
         printf '{"Version":1,"AccessKeyId":"%s","SecretAccessKey":"%s","SessionToken":"%s","Expiration":"%s"}\n' \
           "$${ak}" "$${sk}" "$${st}" "$${ex}"
         EOF
-        destination = "local/minio-creds.sh"
+        destination = "local/s3-creds.sh"
         perms       = "0755"
       }
 
@@ -134,7 +134,7 @@ job "loki" {
       template {
         data        = <<-EOF
         [default]
-        credential_process = /local/minio-creds.sh
+        credential_process = /local/s3-creds.sh
         EOF
         destination = "local/aws-config"
       }
@@ -180,7 +180,7 @@ job "loki" {
             active_index_directory: /loki/index
             cache_location: /loki/index_cache
           aws:
-            endpoint: 192.168.2.29:9000
+            endpoint: ${s3_host}:8333
             bucketnames: loki
             s3forcepathstyle: true
             insecure: true

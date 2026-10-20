@@ -38,19 +38,19 @@ job "tempo" {
       driver = "podman"
       user   = "root"
 
-      ### Keyless MinIO access. The field-by-field rationale lives in
+      ### Keyless SeaweedFS access. The field-by-field rationale lives in
       ### docs/workload-identity.md, under "The `identity`-stanza and
       ### audience convention". Only what is specific to tempo is here.
       ###
-      ### There is no `vault {}` block because the MinIO key was this job's
+      ### There is no `vault {}` block because the S3 key was this job's
       ### only Vault use, so tempo needs no Vault access at all. `user =
       ### "root"` above is safe: the documented hazard is a NON-root user,
       ### where Nomad's chown puts the JWT out of the task's reach.
       identity {
-        name        = "minio"
-        aud         = ["minio"]
+        name        = "seaweedfs"
+        aud         = ["seaweedfs"]
         file        = true
-        filepath    = "secrets/nomad_minio.jwt"
+        filepath    = "secrets/nomad_seaweedfs.jwt"
         ttl         = "1h"
         change_mode = "noop"
       }
@@ -72,15 +72,16 @@ job "tempo" {
       ### makes no STS call at all: no error, no log line, just silent
       ### anonymous S3. Verified by probing the pinned image in plan review.
       ###
-      ### AWS_ROLE_ARN is deliberately ABSENT. Setting it would send a
-      ### RoleArn and select role-policy mode, pinning every workload on the
-      ### target to one shared policy. Omitting it sends none, which is
-      ### claim mode, which is what makes the `tempo` policy apply to tempo
-      ### alone.
+      ### AWS_ROLE_ARN is REQUIRED. SeaweedFS refuses an exchange without a
+      ### RoleArn, and minio-go sends a RoleSessionName only when it is set.
+      ### Without it minio-go falls back to anonymous S3 with no error
+      ### (spike:seaweedfs-workload-identity/3). The `tempo` role's trust
+      ### policy requires this job's nomad_job_id and sub (ADR 0017).
       env {
         GOMEMLIMIT                  = "600MiB"
-        AWS_WEB_IDENTITY_TOKEN_FILE = "/secrets/nomad_minio.jwt"
-        TEST_IAM_ENDPOINT           = "http://192.168.2.29:9000"
+        AWS_WEB_IDENTITY_TOKEN_FILE = "/secrets/nomad_seaweedfs.jwt"
+        AWS_ROLE_ARN                = "arn:aws:iam::role/tempo"
+        TEST_IAM_ENDPOINT           = "http://${s3_host}:8333"
       }
 
       service {
@@ -102,7 +103,7 @@ job "tempo" {
       config {
         image = "docker.io/grafana/tempo:2.10.8"
         # No -config.expand-env: nothing in the config template interpolates
-        # a variable any more, now that the MinIO keys are gone.
+        # a variable any more, now that the S3 keys are gone.
         args         = ["-config.file=/local/tempo-config.yaml"]
         ports        = ["http", "grpc", "otlp_grpc", "otlp_http"]
         network_mode = "host"
@@ -155,7 +156,7 @@ job "tempo" {
             backend: s3
             s3:
               bucket: tempo
-              endpoint: 192.168.2.29:9000
+              endpoint: ${s3_host}:8333
               forcepathstyle: true
               insecure: true
             wal:

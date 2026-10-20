@@ -236,6 +236,72 @@ groups:
           summary: "MinIO degraded on orangepi4a"
           description: "Offline nodes reported or metrics absent. Check MinIO alloc + minio_data host volume."
 
+      - uid: alert-seaweedfs-down
+        title: SeaweedFSDown
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job="seaweedfs"} == bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: seaweedfs }
+        annotations:
+          summary: "SeaweedFS is unreachable on orangepi4a"
+          description: "Prometheus cannot scrape SeaweedFS metrics on 192.168.2.29:9327 for 5m. Every bucket is then down: Loki and Tempo cannot flush, OpenViking loses its blob store and the registry cannot serve a blob. Check the seaweedfs alloc and the seaweedfs_data host volume."
+
+      - uid: alert-seaweedfs-disk-error
+        title: SeaweedFSDiskError
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'max(SeaweedFS_volumeServer_disk_error_status) > bool 0'
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              refId: C
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, component: seaweedfs }
+        annotations:
+          summary: "SeaweedFS reports a disk error"
+          description: "The volume server marks a disk in error, so writes to its volumes fail. Check the seaweedfs alloc and the seaweedfs_data volume on orangepi4a."
+
       - uid: alert-haproxy-down
         title: HAProxyDown
         condition: C
@@ -690,7 +756,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"}) or absent(up{job="openviking"}) or absent(up{job="driftwatch"})'
+              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="seaweedfs"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"}) or absent(up{job="openviking"}) or absent(up{job="driftwatch"})'
               instant: true
               refId: A
           - refId: C

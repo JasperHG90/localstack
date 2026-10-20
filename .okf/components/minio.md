@@ -1,7 +1,7 @@
 ---
 type: component
 title: MinIO
-description: "The single-node MinIO on orangepi4a: the infrastructure root runs it and owns the root key, the applications root owns every bucket, user and policy. Three jobs reach their bucket keylessly through a claim-mode policy named after the job, and every other consumer, plus the backup job, still holds a static key."
+description: "The single-node MinIO on orangepi4a: the infrastructure root runs it and owns the root key, the applications root owns every bucket, user and policy. The registry reaches its bucket keylessly through a claim-mode policy named after the job (Loki and Tempo moved to SeaweedFS), and every other consumer, plus the backup job, still holds a static key."
 tags: [minio, s3, object-storage, workload-identity, terraform, component]
 status: stable
 generated:
@@ -81,17 +81,22 @@ equals the JWT's `nomad_job_id`, so `minio_iam_policy.tempo_wi` is named
   name inside each policy is a plain string because `module.buckets` exports
   nothing.
 
-Each keyless job's `nomad_job` in `deployments/applications/services.tf`
-carries `depends_on` on its policy. Without the policy, tempo falls back to
-anonymous and reports a plain permission error, and loki's and registry's
-helper exits non-zero.
+The keyless job's `nomad_job` in `deployments/applications/services.tf`
+carries `depends_on` on its policy. Without the policy, the registry's helper
+exits non-zero.
 
 ## Who holds a key
 
-Keyless: tempo (R9, minio-go's web-identity provider), loki and registry (R13,
-an AWS `credential_process` helper, because both vendor aws-sdk-go v1). Their
-static keys, users and KV entries stay provisioned as the rollback path and
-are simply not rendered into the jobs.
+Keyless: registry (R13, an AWS `credential_process` helper, because it vendors
+aws-sdk-go v1). Its static key, user and KV entry stay provisioned as the
+rollback path and are simply not rendered into the job. Tempo (R9) and loki
+(R13) were keyless here too until they moved.
+
+Loki and Tempo left MinIO on 2026-10-20 for
+[SeaweedFS](/components/seaweedfs.md), so the registry is the only keyless
+job left here and the only one whose `nomad_job` keeps its `depends_on`,
+while `minio_iam_policy.tempo_wi`, `minio_iam_policy.loki_wi` and both jobs'
+static MinIO keys remain with nothing using them.
 
 R13 replaced two stubs that were never built. R10 (loki) had found a
 config-only route: loki 3.4.2's `use_thanos_objstore` reaches thanos-io's S3

@@ -13,9 +13,11 @@ sources:
 
 [Tempo's route](give-a-job-keyless-minio-access.md) needs a client library that can be pointed at MinIO's STS.
 aws-sdk-go v1 cannot: it has no environment variable for a non-AWS STS
-endpoint, so a service built on it would send the exchange to Amazon. loki
-and registry are both in that position, and both take a second route
-instead: a small helper does the exchange itself, and the SDK runs it.
+endpoint, so a service built on it would send the exchange to Amazon. The
+registry is in that position and takes a second route instead: a small
+helper does the exchange itself, and the SDK runs it. loki took the same
+route on MinIO and keeps it on SeaweedFS, where its helper is
+`local/s3-creds.sh` and also sends a `RoleArn` and `RoleSessionName`.
 
 The SDK invokes `credential_process`, the helper POSTs to MinIO's STS with
 the JWT and no `RoleArn`, prints credentials as JSON, and the SDK re-runs it

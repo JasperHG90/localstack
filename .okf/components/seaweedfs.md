@@ -24,6 +24,12 @@ sources:
     resource: deployments/applications/secrets.tf
   - id: buckets-test
     resource: cli/tests/test_seaweedfs_buckets.py
+  - id: loki-jobspec
+    resource: deployments/applications/services/loki.hcl
+  - id: tempo-jobspec
+    resource: deployments/applications/services/tempo.hcl
+  - id: alert-rules
+    resource: deployments/infrastructure/services/grafana/alert-rules.yaml
 ---
 
 # SeaweedFS
@@ -31,9 +37,11 @@ sources:
 MinIO is end of life and its published image no longer downloads, so the
 cluster moves its object storage to SeaweedFS
 ([ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md)). This page covers
-the server, its buckets and keyless access. The cutover comes in later
-tickets of the `seaweedfs-migration` epic. Until the cutover MinIO keeps serving every
-consumer and keeps the `s3` Consul tag ([MinIO](/components/minio.md)).
+the server, its buckets, keyless access and who has moved. The cutover runs
+one consumer at a time in the tickets of the `seaweedfs-migration` epic.
+Loki and Tempo moved on 2026-10-20. Every other consumer stays on MinIO
+until its own cutover, and MinIO keeps the `s3` Consul tag
+([MinIO](/components/minio.md)).
 
 ## What runs
 
@@ -80,6 +88,35 @@ signing key from `default/seaweedfs/sts`. Each role is bound to its job by
 `cli/tests/test_seaweedfs_iam_config.py` renders the file through Terraform
 and checks it. Adding a job means a restart, because the server reads the file
 once at start.
+
+## Who uses it
+
+Loki and Tempo store in their `loki` and `tempo` buckets here since
+2026-10-20 ([the observability pipeline](/components/observability-pipeline.md)).
+Both log in keylessly with a `seaweedfs` identity whose JWT is at
+`secrets/nomad_seaweedfs.jwt`, and both find the server through
+`data.consul_service.seaweedfs`, passed to the jobspec as `s3_host`. Tempo
+sets `AWS_ROLE_ARN = "arn:aws:iam::role/tempo"` and points minio-go's
+`TEST_IAM_ENDPOINT` at `http://<s3_host>:8333`. Without the role ARN
+minio-go sends no `RoleArn`, SeaweedFS has nothing to resolve, and minio-go
+falls back to anonymous S3 with no error. Loki's `credential_process` helper,
+`local/s3-creds.sh`, POSTs `RoleArn=arn:aws:iam::role/loki` and
+`RoleSessionName=loki` to the same STS. Their static keys at
+`default/loki/seaweedfs` and `default/tempo/seaweedfs` are the rollback path
+and are not rendered into the jobs.
+
+The buckets started empty. Logs and traces written before the cutover stay
+in MinIO's `loki` and `tempo` buckets, unread, until MinIO is removed. The
+operator chose not to migrate them.
+
+## Monitoring
+
+Grafana has a SeaweedFS dashboard (`services/grafana/seaweedfs.json` in the
+infrastructure root). Two alerts in
+`deployments/infrastructure/services/grafana/alert-rules.yaml` watch it:
+`SeaweedFSDown` fires when Prometheus cannot scrape 9327 for 5 minutes, and
+`SeaweedFSDiskError` fires when the volume server marks a disk in error.
+`ScrapeJobMissing` also fires if the `seaweedfs` scrape job disappears.
 
 ## Traps
 
