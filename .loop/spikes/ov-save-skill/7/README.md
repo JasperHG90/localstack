@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:58:15+00:00'
+  at: '2026-10-20T14:58:34+00:00'
 slug: ov-save-skill
 n: 7
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-save-skill/7
@@ -24,7 +24,8 @@ The command exited 11:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-save-skill 7`.
+This run is a script bug, not a finding. It exited 11 because buildkit served the bake step from cache, so the grep for uv's "Installed" lines matched nothing. No transcription was attempted.
+It does not measure the cost of baking faster-whisper into the image. That is still open: three runs on risk 1 were used up.
 
 ## Files
 
