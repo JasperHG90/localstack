@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "aim-to-apm",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-apm4/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-apm4/spike.sh",
+      "copy": "files/spike.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "5ec457588ec2d28f61868bfd5d190c16c137923e",
+  "fingerprint": "52b48135d6a1574076c026086e2db2f62b8f82b8a3523e09435670bbebad4afe",
+  "started_at": "2026-10-20T21:01:13+00:00",
+  "finished_at": "2026-10-20T21:01:15+00:00",
+  "duration_seconds": 2.037,
+  "timeout_seconds": 400.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

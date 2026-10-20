@@ -1,0 +1,106 @@
+=== apm.yml
+name: spike
+version: 0.0.1
+targets: [claude, opencode]
+dependencies:
+  apm:
+    - jasperhg90/skills/rules/plain-language.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/adversarial-reviews.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/docs-layout.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/agents/feature-planner.agent.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/agents/adversarial-reviewer.agent.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/skills/tools/generate-art#516c105a9d8260c80a9d1fd8cb4004fe22a74225
+=== install exit=0
+[i] Targets: claude, opencode  (source: apm.yml)
+  |-- 2 agents integrated -> .claude/agents/, .opencode/agents/
+  |-- 2 agents integrated -> .claude/agents/, .opencode/agents/
+  |-- 1 rule(s) integrated -> .claude/rules/
+  |-- 1 rule(s) integrated -> .claude/rules/
+  |-- 1 rule(s) integrated -> .claude/rules/
+  |-- Skill integrated -> .agents/skills/, .claude/skills/
+[i] Instructions installed for opencode. Run 'apm compile' to update AGENTS.md.
+  [!] [skills-adversarial-reviewer] OpenCode agent 
+  [!] [skills-adversarial-reviewer] OpenCode agent 
+OpenCode requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 
+  [!] [skills-feature-planner] OpenCode agent 
+  [!] [skills-feature-planner] OpenCode agent 
+requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 'info', 
+[*] Installed 6 APM dependencies in 0.2s.
+=== deployed files
+./.agents/skills/generate-art/README.md
+./.agents/skills/generate-art/scripts/generate_art.py
+./.agents/skills/generate-art/SKILL.md
+./apm.lock.yaml
+./apm.yml
+./.claude/agents/adversarial-reviewer.md
+./.claude/agents/feature-planner.md
+./.claude/rules/adversarial-reviews.md
+./.claude/rules/docs-layout.md
+./.claude/rules/plain-language.md
+./.claude/skills/generate-art/README.md
+./.claude/skills/generate-art/scripts/generate_art.py
+./.claude/skills/generate-art/SKILL.md
+./.gitignore
+./.opencode/agents/adversarial-reviewer.md
+./.opencode/agents/feature-planner.md
+=== rules (claude): body must equal upstream body; front matter shown
+--- plain-language upstream front matter:
+---
+name: plain-language
+description: Speak and write plainly, in chat replies, code, comments, commits, PRs, and docs; name a technical concept only with a one-sentence explanation tied to the context.
+---
+--- plain-language deployed front matter:
+(end)
+body identical: .claude/rules/plain-language.md
+--- adversarial-reviews upstream front matter:
+---
+title: adversarial-reviews
+description: Requires an adversarial sub-agent review after completing a ticket or feature.
+---
+--- adversarial-reviews deployed front matter:
+(end)
+body identical: .claude/rules/adversarial-reviews.md
+--- docs-layout upstream front matter:
+---
+name: docs-layout
+description: What belongs in docs/ (for people using the project) versus .okf/ (for agents and people working on it). Read before writing or moving prose under docs/, .okf/, or the README.
+applyTo: "docs/**,.okf/**,README.md"
+---
+--- docs-layout deployed front matter:
+---
+paths:
+  - "docs/**"
+  - ".okf/**"
+  - "README.md"
+---
+(end)
+body identical: .claude/rules/docs-layout.md
+=== agents: claude copy must be byte-identical and carry name/description/tools
+byte-identical: .claude/agents/feature-planner.md
+byte-identical: .opencode/agents/feature-planner.md
+  name: name: feature-planner
+  description: description: >
+  tools: tools: Read, Grep, Glob, Bash, Write
+  model: model: opus
+  color: color: blue
+byte-identical: .claude/agents/adversarial-reviewer.md
+byte-identical: .opencode/agents/adversarial-reviewer.md
+  name: name: adversarial-reviewer
+  description: description: >
+  tools: tools: Read, Grep, Glob, Bash
+  model: model: opus
+  color: color: red
+=== opencode rules (informational)
+agents
+no AGENTS.md written (apm says run 'apm compile')
+=== lockfile pins
+  plain-language -> 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  adversarial-reviews -> 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  docs-layout -> 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  feature-planner -> 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  adversarial-reviewer -> 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  generate-art -> 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+=== frozen: delete deployed files, apm install --frozen, compare sha256
+frozen exit=0
+frozen restored 13 files byte for byte
+RESULT FAIL=0
