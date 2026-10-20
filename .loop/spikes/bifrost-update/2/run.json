@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "bifrost-update",
+  "n": 2,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-bifrost-2/run.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-bifrost-2/run.sh",
+      "copy": "files/run.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "a9d793e0920c9d4bb711eef14ccf575df23b0c0d",
+  "fingerprint": "1c87abb26dc2ce7a9a055c900defd37f590cf261bd63854cd749431f08012a71",
+  "started_at": "2026-10-20T08:30:58+00:00",
+  "finished_at": "2026-10-20T08:31:20+00:00",
+  "duration_seconds": 22.404,
+  "timeout_seconds": 300.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
