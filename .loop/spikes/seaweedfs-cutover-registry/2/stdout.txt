@@ -1,0 +1,14 @@
+## before switch (07:40 UTC, on MinIO)
+33 tags
+## after switch: every tag by tag and by digest, layers by HEAD through the presigned redirect
+33 tags, 192 layers, 9112879104 layer bytes
+digest mismatches: []
+identical to before: True | tags before/after: 33 33
+## counts before push
+registry    seaweedfs     399  minio     399
+## push a new image, read it back, delete it
+manifest put: 201
+pull by tag: 200 | by digest: 200 | layer: 200 True
+delete manifest: 202
+## counts after push
+registry    seaweedfs     404  minio     399

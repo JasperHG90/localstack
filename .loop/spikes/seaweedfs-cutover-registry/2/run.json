@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-cutover-registry",
+  "n": 2,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/reg/verify.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/reg/verify.sh",
+      "copy": "files/verify.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/reg/snapshot.py",
+      "copy": "files/snapshot.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/reg/push_check.py",
+      "copy": "files/push_check.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/reg/drop_markers.py",
+      "copy": "files/drop_markers.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/reg/before.json",
+      "copy": "files/before.json"
+    }
+  ],
+  "where": "here",
+  "head": "b022a4a0bfd33fc843937731f5459f78ef1629c1",
+  "fingerprint": "7bd8653805e50262b09d311d67bf09a6c249d5edc332cae54b37eba8f08affcd",
+  "started_at": "2026-10-20T07:52:32+00:00",
+  "finished_at": "2026-10-20T07:54:04+00:00",
+  "duration_seconds": 92.343,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
