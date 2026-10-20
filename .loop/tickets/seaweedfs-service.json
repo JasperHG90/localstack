@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-service",
-  "stage": "ready",
-  "attempts": 1,
+  "stage": "building",
+  "attempts": 2,
   "plan_rounds": 2,
   "review_rounds": 3,
   "extra_plan_rounds": 0,
@@ -180,8 +180,14 @@
       "to": "ready",
       "at": "2026-10-20T05:49:26+00:00",
       "by": "unblock"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-10-20T05:49:30+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T05:49:26+00:00"
+  "at": "2026-10-20T05:49:30+00:00"
 }
