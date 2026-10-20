@@ -3,7 +3,7 @@
   "slug": "ov-save-skill",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "7640991b5bb4edc6695b9d6493922d51fb55d4c32c27ab652fcd740148c8ff96",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "5794b4834a155791e4d94f9b473306b285af0c85f292d02c337750e66d5c2ad9",
+    "started_at": "2026-10-20T15:07:30+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "5794b4834a155791e4d94f9b473306b285af0c85f292d02c337750e66d5c2ad9",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T15:07:27+00:00"
+  "at": "2026-10-20T15:07:30+00:00"
 }
