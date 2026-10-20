@@ -1,54 +1,14 @@
 {
   "schema_version": "1.0",
   "slug": "backup-durable-buckets",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": {
-    "round": 1,
-    "fingerprint": "8ede4c0b542a5148fa94a1475c65233f82c2e6a0a96e0aada422e9ed77b8f251",
-    "tree": "b912196d33be0dffb72ec05f1b5a260a9758a62b",
-    "decisions": [
-      {
-        "finding": "reviewer:f1",
-        "outcome": "sent-back",
-        "by": "fallback",
-        "judgement": null,
-        "paths": [
-          ".okf/manifesto.md",
-          ".okf/summary.md"
-        ]
-      },
-      {
-        "finding": "reviewer:f2",
-        "outcome": "sent-back",
-        "by": "fallback",
-        "judgement": null,
-        "paths": [
-          ".okf/components/container-registry.md",
-          ".okf/components/gcs-backups.md",
-          ".okf/components/index.md",
-          ".okf/components/minio.md",
-          ".okf/nodes/orangepi4a.md",
-          "docs/how-to/run-a-backup-job-on-demand.md"
-        ]
-      },
-      {
-        "finding": "reviewer:f3",
-        "outcome": "cleared-unreviewed",
-        "by": "fallback",
-        "judgement": "j-20261020T044819+0000-b4519392",
-        "paths": [
-          "cli/tests/test_backup_coverage.py"
-        ]
-      }
-    ],
-    "at": "2026-10-20T04:48:19+00:00"
-  },
+  "fix": null,
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T175333+0000-8ce8611b",
   "split_plan_hash": "d0e55f44e8bf7cc533a96b85f6d58ded071d61ad6c8a7e99d7268d517ef510c9",
@@ -123,8 +83,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "d0e55f44e8bf7cc533a96b85f6d58ded071d61ad6c8a7e99d7268d517ef510c9",
   "intent": {
@@ -168,8 +128,14 @@
       "to": "verifying",
       "at": "2026-10-20T04:48:19+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-10-20T04:50:40+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T04:48:23+00:00"
+  "at": "2026-10-20T04:50:40+00:00"
 }
