@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The out-of-band `nomad job stop ov-dash` is recorded only in .okf/nodes/orangepi4a.md (Quirks) and .okf/components/seaweedfs.md. Both say minio-removal starts ov-dash again, but .loop/plans/minio-removal.md has no such step and never names ov-dash. .okf/components/ov-dash.md does not say the job is stopped, and the orangepi4a jobs table still lists ov-dash as running there. The applications-root tickets in this epic (seaweedfs-buckets, seaweedfs-workload-identity, the cutovers) will see nomad_job.ov_dash as drift in `terraform plan`, and an apply re-registers it to queue for memory beside SeaweedFS, with nothing telling them why. As it stands, ov-dash can stay down for good once MinIO is gone.",
+      "anchor": ".okf/nodes/orangepi4a.md:94",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "test_master_grows_two_volumes_per_collection checks only that the text `[master.volume_growth] copy_1 = 2` appears in the jobspec. It does not check that the file is mounted at /etc/seaweedfs/master.toml, so if the `volumes` mount is dropped or the path changes, the test still passes while the growth setting is gone, which r1's fails_when covers. The live six-bucket check cannot catch this either, because `-volume.max=0` on a TiB volume gives plenty of slots under the default copy_1 = 7.",
+      "anchor": "cli/tests/test_seaweedfs_jobspec.py:50",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "The .okf/summary.md 'Where it stands' section still says SeaweedFS 'is planned to replace' MinIO. It now runs beside MinIO on orangepi4a and has cost the cluster ov-dash. Update the line, or run `kmctl summary ack` if the operator judges it still right, per CLAUDE.md duty 5.",
+      "anchor": ".okf/summary.md:68",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "11e5335f92f3b38810f5a6682f8f53a5254e3c61c177e8b1b72b9dedd5574f15",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T05:41:31+00:00"
+}
