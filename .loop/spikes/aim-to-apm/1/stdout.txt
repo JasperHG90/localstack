@@ -1,0 +1,188 @@
+  |       "hooks": {
+  |         "SessionStart": [
+  |           {
+  |             "hooks": [
+  |               {
+  |                 "command": "node 
+\"${CLAUDE_PROJECT_DIR}/.claude/hooks/caveman/src/hooks/caveman-activate.js\"",
+  |                 "statusMessage": "Loading caveman mode...",
+  |                 "timeout": 5,
+  |                 "type": "command"
+  |               }
+  |             ],
+  |             "matcher": "*"
+  |           }
+  |         ],
+  |         "UserPromptSubmit": [
+  |           {
+  |             "hooks": [
+  |               {
+  |                 "command": "node 
+\"${CLAUDE_PROJECT_DIR}/.claude/hooks/caveman/src/hooks/caveman-mode-tracker.js\
+"",
+  |                 "statusMessage": "Tracking caveman mode...",
+  |                 "timeout": 5,
+  |                 "type": "command"
+  |               }
+  |             ],
+  |             "matcher": "*"
+  |           }
+  |         ]
+  |       }
+  |     }
+  |-- Skill integrated -> .claude/skills/
+  |-- 7 skill(s) integrated -> .claude/skills/
+Phase: integrate -> 0.087s
+[i] Added apm_modules/ to .gitignore
+Phase: cleanup -> 0.000s
+Generated apm.lock.yaml with 1 dependencies
+Wrote 1 cache pin marker(s) for drift replay
+Phase: post_deps_local -> 0.000s
+Phase: audit -> 0.000s
+Phase: copilot_plugins -> 0.000s
+[#] Perf: 3 walks, 0 file matches, 615 files visited, 0.021s total walk time
+[#] Perf:   apm_modules/juliusbrussee/caveman: 3 walk(s) (21ms, 615 files 
+visited, 0 matched)
+[#] Perf: discovery: 4 call(s) (1 unique base(s), 3 cache hit(s), 75%)
+Integrated 5 command(s)
+Integrated 1 hook(s)
+Phase: finalize -> 0.001s
+No MCP dependencies found in apm.yml
+No LSP dependencies found in apm.yml
+  [i] Skipped inactive experimental resolver for target 'copilot-cowork' during 
+lockfile reconciliation.
+    +- To include it, enable 'copilot-cowork' and select target 'copilot-cowork'
+for this install.
+  [i] Skipped inactive experimental resolver for target 'copilot-app' during 
+lockfile reconciliation.
+    +- To include it, enable 'copilot-app' and select target 'copilot-app' for 
+this install.
+[*] Installed 1 APM dependency in 2.6s.
+== apm exit: 0
+== files written (excluding apm_modules, .git, home):
+./apm.lock.yaml
+./apm.yml
+./.claude/agents/cavecrew-builder.md
+./.claude/agents/cavecrew-investigator.md
+./.claude/agents/cavecrew-reviewer.md
+./.claude/apm-hooks.json
+./.claude/commands/caveman-commit.md
+./.claude/commands/caveman-init.md
+./.claude/commands/caveman.md
+./.claude/commands/caveman-review.md
+./.claude/commands/caveman-stats.md
+./.claude/hooks/caveman/src/hooks/cavecrew-model-overrides.js
+./.claude/hooks/caveman/src/hooks/caveman-activate.js
+./.claude/hooks/caveman/src/hooks/caveman-config.js
+./.claude/hooks/caveman/src/hooks/caveman-mode-tracker.js
+./.claude/hooks/caveman/src/hooks/caveman-stats.js
+./.claude/hooks/caveman/src/hooks/caveman-statusline.ps1
+./.claude/hooks/caveman/src/hooks/caveman-statusline.sh
+./.claude/hooks/caveman/src/hooks/checksums.sha256
+./.claude/hooks/caveman/src/hooks/install.ps1
+./.claude/hooks/caveman/src/hooks/install.sh
+./.claude/hooks/caveman/src/hooks/package.json
+./.claude/hooks/caveman/src/hooks/README.md
+./.claude/hooks/caveman/src/hooks/uninstall.ps1
+./.claude/hooks/caveman/src/hooks/uninstall.sh
+./.claude/settings.json
+./.claude/skills/cavecrew/README.md
+./.claude/skills/cavecrew/SKILL.md
+./.claude/skills/caveman-commit/README.md
+./.claude/skills/caveman-commit/SKILL.md
+./.claude/skills/caveman-compress/README.md
+./.claude/skills/caveman-compress/scripts/benchmark.py
+./.claude/skills/caveman-compress/scripts/cli.py
+./.claude/skills/caveman-compress/scripts/compress.py
+./.claude/skills/caveman-compress/scripts/detect.py
+./.claude/skills/caveman-compress/scripts/__init__.py
+./.claude/skills/caveman-compress/scripts/__main__.py
+./.claude/skills/caveman-compress/scripts/validate.py
+./.claude/skills/caveman-compress/SECURITY.md
+./.claude/skills/caveman-compress/SKILL.md
+./.claude/skills/caveman-help/README.md
+./.claude/skills/caveman-help/SKILL.md
+./.claude/skills/caveman/README.md
+./.claude/skills/caveman-review/README.md
+./.claude/skills/caveman-review/SKILL.md
+./.claude/skills/caveman/SKILL.md
+./.claude/skills/caveman-stats/README.md
+./.claude/skills/caveman-stats/SKILL.md
+./.gitignore
+== .claude/settings.json:
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Loading caveman mode...",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/caveman/src/hooks/caveman-activate.js\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Tracking caveman mode...",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/caveman/src/hooks/caveman-mode-tracker.js\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+== apm.lock.yaml:
+lockfile_version: '1'
+apm_version: 0.33.0
+dependencies:
+- repo_url: juliusbrussee/caveman
+  name: caveman
+  host: github.com
+  resolved_commit: e2c09c9a7e66d6bb30cadb5f955bd8a36b0e8d9a
+  resolved_ref: e2c09c9a7e66d6bb30cadb5f955bd8a36b0e8d9a
+  version: e2c09c9
+  package_type: skill_bundle
+  deployed_files:
+  - .claude/agents/cavecrew-builder.md
+  - .claude/agents/cavecrew-investigator.md
+  - .claude/agents/cavecrew-reviewer.md
+  - .claude/commands/caveman-commit.md
+  - .claude/commands/caveman-init.md
+  - .claude/commands/caveman-review.md
+  - .claude/commands/caveman-stats.md
+  - .claude/commands/caveman.md
+  - .claude/hooks/caveman/src/hooks/README.md
+  - .claude/hooks/caveman/src/hooks/cavecrew-model-overrides.js
+  - .claude/hooks/caveman/src/hooks/caveman-activate.js
+  - .claude/hooks/caveman/src/hooks/caveman-config.js
+  - .claude/hooks/caveman/src/hooks/caveman-mode-tracker.js
+  - .claude/hooks/caveman/src/hooks/caveman-stats.js
+  - .claude/hooks/caveman/src/hooks/caveman-statusline.ps1
+  - .claude/hooks/caveman/src/hooks/caveman-statusline.sh
+  - .claude/hooks/caveman/src/hooks/checksums.sha256
+  - .claude/hooks/caveman/src/hooks/install.ps1
+  - .claude/hooks/caveman/src/hooks/install.sh
+  - .claude/hooks/caveman/src/hooks/package.json
+  - .claude/hooks/caveman/src/hooks/uninstall.ps1
+  - .claude/hooks/caveman/src/hooks/uninstall.sh
+  - .claude/skills/cavecrew
+  - .claude/skills/cavecrew/README.md
+  - .claude/skills/cavecrew/SKILL.md
+  - .claude/skills/caveman
+  - .claude/skills/caveman-commit
+  - .claude/skills/caveman-commit/README.md
+  - .claude/skills/caveman-commit/SKILL.md
+== caveman source plugin layout (apm_modules):
+apm_modules/juliusbrussee/caveman/.claude-plugin/marketplace.json
+apm_modules/juliusbrussee/caveman/.claude-plugin/plugin.json
+apm_modules/juliusbrussee/caveman/.codex/hooks.json
+== enabledPlugins caveman: {} marketplaces: []
