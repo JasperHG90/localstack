@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-buckets",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 2,
+    "fingerprint": "ebff7802c1be15c0e8fb0d6c155a7e5e7c8e3ebd2d27896ccc2cf1ebc00b32a1",
+    "tree": "fb26900f7b25413e94e547a813af78b76a134469",
+    "decisions": [
+      {
+        "finding": "reviewer:f4",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/architecture/deployment-layers.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T06:12:29+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T180813+0000-34ce1826",
   "split_plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
@@ -129,8 +145,14 @@
       "to": "fixing",
       "at": "2026-10-20T06:11:15+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T06:12:29+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T06:12:28+00:00"
+  "at": "2026-10-20T06:12:29+00:00"
 }
