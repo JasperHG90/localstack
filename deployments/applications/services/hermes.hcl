@@ -266,6 +266,13 @@ memory:
   # viking_* tools reach OpenViking (hermes/openviking_tools in this repo).
   provider: "openviking_tools"
 
+# Voice notes: faster-whisper is baked into the image. The `base` model
+# downloads on first use to /opt/data/.cache, so it survives restarts.
+stt:
+  provider: "local"
+  local:
+    model: "base"
+
 # v0.22 prunes ended sessions idle for 90 days by default; keep them, as 0.21 did.
 sessions:
   auto_prune: false

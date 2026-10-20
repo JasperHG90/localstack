@@ -18,6 +18,8 @@ sources:
     resource: deployments/applications/services/hermes/openviking_tools/__init__.py
   - id: hermes-soul
     resource: deployments/applications/services/hermes/SOUL.md
+  - id: save-to-openviking-skill
+    resource: deployments/applications/services/hermes/skills/productivity/save-to-openviking/SKILL.md
   - id: app-services
     resource: deployments/applications/services.tf
   - id: app-secrets
@@ -53,9 +55,9 @@ radxa itself.
 
 **The image** is `ghcr.io/jasperhg90/hermes:<hermes_version>`, built from
 `deployments/applications/services/hermes/Dockerfile`: the
-`nousresearch/hermes-agent:v0.22.2` base plus `jq`, `chromium`, the
-OpenViking memory-provider plugin and the `openviking_tools` wrapper around it.
-The tag (`0.22.2-2`) is set once, in `nomad_job.hermes` in
+`nousresearch/hermes-agent:v0.22.2` base plus `jq`, `chromium`, faster-whisper
+for voice notes, the OpenViking memory-provider plugin and the
+`openviking_tools` wrapper around it. The tag (`0.22.2-3`) is set once, in `nomad_job.hermes` in
 `deployments/applications/services.tf`, and `just rebuild_hermes` in
 `deployments/applications/justfile` reads it from there. Build and push
 before applying a tag change. `force_pull = true` re-pulls on every alloc.
@@ -146,7 +148,8 @@ catalog plugin 2.1.1, pinned by commit, into
 `deployments/applications/services/hermes/openviking_tools/`, which the
 Dockerfile copies to `/opt/hermes/plugins/memory/openviking_tools` beside the
 upstream plugin. It subclasses the upstream provider, imported as
-`plugins.memory.openviking`, and keeps its six `viking_*` tools. It starts
+`plugins.memory.openviking`, keeps its six `viking_*` tools and adds a
+seventh, `viking_write` (below). It starts
 upstream's `initialize` in the writes-off mode upstream uses for cron, subagent
 and flush contexts, which stops turn uploads, session commits and memory
 mirroring. It also skips the startup recovery of leftover sessions, which
@@ -157,6 +160,35 @@ no longer tells the model to search at conversation start or save after each
 reply. `cli/tests/test_hermes_openviking_tools.py` holds the wrapper's
 behavior against a stand-in for upstream
 ([ADR 0020](/decisions/0020-agents-use-openviking-through-tools-only.md)).
+
+**Saves go through a skill and a map.** The `save-to-openviking` skill
+(`skills/productivity/save-to-openviking/SKILL.md`) files a link, file, note
+or voice transcript under `viking://user/jasper/resources/`. It picks the
+folder from `viking://user/jasper/resources/.map.md`, a map of top-level
+folders that the skill seeds on its first save and appends to when the
+operator picks a new one, and asks when the operator named no place. One line
+in `SOUL.md` sends any save to the skill. With it, 8 of 8 test sessions loaded
+the skill before doing anything else (spike:ov-save-skill/9). The map is written with `viking_write`,
+which posts `content/write` through the plugin's client, because no upstream
+tool writes an exact file
+([ADR 0023](/decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots.md)).
+After a save the model tends to check the result with curl, so the skill says
+to trust the returned `root_uri` (spike:ov-save-skill/9).
+
+**A save into a new folder needs `create_parent`.** OpenViking 0.4.17.1
+refuses a resource save whose `parent` folder does not exist, with a bare
+404, unless the request sets `create_parent: true`. Plugin 2.1.1 builds the
+payload from a fixed key list and never sends it, so the wrapper adds the
+flag on the client for every save that names a parent
+(spike:ov-save-skill/11).
+
+**Voice notes are transcribed in the image.** The Dockerfile installs
+faster-whisper 1.2.1 against the base's `uv.lock`, and `config.yaml` sets
+`stt.provider: local` with the `base` model, which downloads to
+`/opt/data/.cache` on the first voice note. The first transcription peaked at
+593 MB, so with the gateway's ~800 MB the worst case is about 1.34 GB of the
+2048 MB cap (spike:ov-save-skill/10). An unpinned install pulls PyAV 19.0.1
+and breaks every transcription (spike:ov-save-skill/8).
 
 **Sessions are kept.** v0.22 prunes ended sessions idle for 90 days at
 startup by default. `config.yaml` sets `sessions.auto_prune: false` to keep
@@ -229,6 +261,8 @@ the base image to `v2026.7.30` and Bifrost to 1.6.7. `fe10862` moved to
 OIDC client. `hermes-update` moved to hermes-agent v0.22.2 on 2026-10-20,
 with the OpenViking plugin built into the image. `ov-no-auto-capture` (also
 2026-10-20) turned off automatic recall and capture, leaving the tools.
+`ov-save-skill` (also 2026-10-20) added the save skill, `viking_write` and
+local voice transcription in `0.22.2-3`.
 
 ## Related concepts
 

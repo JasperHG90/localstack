@@ -31,6 +31,13 @@ RUN mkdir -p /opt/hermes/plugins/memory/openviking \
     && rm -rf /opt/hermes/plugins/memory/openviking/tests \
     && grep -q 'version: 2.1.1' /opt/hermes/plugins/memory/openviking/plugin.yaml
 
+# Local speech-to-text for Telegram voice notes. The base image has no engine
+# and the gateway never installs one (spike:ov-save-skill/1, /3). The lock
+# export pins faster-whisper's audio libraries to the base's own versions: an
+# unpinned install pulls PyAV 19.0.1, which breaks every transcription
+# (spike:ov-save-skill/8). The model downloads on first use to the data volume.
+RUN cd /opt/hermes && /opt/hermes/tools/uv-0.12.3-linux-arm64/uv export --frozen --no-hashes --extra stt-whisper --no-emit-project -q -o /tmp/stt.txt && /opt/hermes/tools/uv-0.12.3-linux-arm64/uv pip install --no-cache --python /opt/hermes/.venv/bin/python -c /tmp/stt.txt faster-whisper==1.2.1 && rm /tmp/stt.txt
+
 # `memory.provider: openviking_tools` selects this wrapper around the plugin
 # above: its viking_* tools, with recall and capture off.
 COPY openviking_tools /opt/hermes/plugins/memory/openviking_tools

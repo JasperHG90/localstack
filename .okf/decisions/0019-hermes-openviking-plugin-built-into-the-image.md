@@ -44,3 +44,15 @@ not build (flat layout, and it declares no memory-provider entry point).
   destination.
 - Decided as the operator's default while they were away (2026-10-20), and
   confirmed when they said to go ahead with the Hermes upgrade.
+
+## Correction, 2026-10-20
+
+The image now also carries faster-whisper 1.2.1, for local transcription of
+Telegram voice notes, for the same reason the plugin is built in: no voice note
+depends on an install at run time. The base image ships no speech engine and
+the gateway never installs one (spike:ov-save-skill/1, /3). The install is
+constrained by the base's own `uv.lock` export, because an unpinned install
+pulls PyAV 19.0.1 and breaks every transcription (spike:ov-save-skill/8). The
+`base` model downloads on first use to the data volume. `config.yaml` pins
+`stt.provider: local` and `stt.local.model: base`, and
+`cli/tests/test_hermes_version.py` pins the line and the keys.

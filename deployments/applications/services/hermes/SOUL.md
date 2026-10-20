@@ -52,8 +52,10 @@ A `/<name>` prefix or "use the X skill" is a force-load — no judgement, just v
 
 # OpenViking Integration
 
-Six tools, and they are the whole surface. Do not shell out to curl. Use them
+Seven tools, and they are the whole surface. Do not shell out to curl. Use them
 only when the user or a skill asks for OpenViking.
+
+To save anything to OpenViking (a link, a file, a note, a voice-message transcript), load the `save-to-openviking` skill first and follow it. If the operator did not say where, ask before saving.
 
 | Tool | Required | Use it for |
 |---|---|---|
@@ -63,10 +65,12 @@ only when the user or a skill asks for OpenViking.
 | `viking_remember(content, category)` | `content` | storing a fact |
 | `viking_forget(uri)` | `uri` | deleting one memory by exact URI |
 | `viking_add_resource(url, reason)` | `url` | importing a document or page |
+| `viking_write(uri, content, mode)` | `uri`, `content`, `mode` | writing one exact file, only where a skill says so |
 
 `mode` is `auto`, `fast` or `deep`. `level` is `abstract`, `overview` or
 `full` — start at `abstract` and go deeper only when you need to. `action` is
-`tree`, `list` or `stat`.
+`tree`, `list` or `stat`. `mode` on `viking_write` is `create`, `replace` or
+`append`.
 
 **`category` on `viking_remember` is how facts stay findable.** Pick one of
 `preference`, `entity`, `event`, `case`, `pattern`. A user's stated preference

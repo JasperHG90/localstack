@@ -6,7 +6,7 @@ module name Hermes gives a bundled provider, `plugins.memory.openviking`. It
 keeps upstream's gates: `_writes_enabled` from `agent_context`, and a pending
 session commit in `_recover_pending_sessions` that ignores that flag
 (spike:ov-no-auto-capture/1). Every OpenViking request goes through a client
-that records it.
+that records it. Hermes's `tools.registry.tool_error` gets a stand-in too.
 """
 
 import importlib.util
@@ -36,11 +36,14 @@ UPSTREAM_SCHEMAS = [
     {"name": name, "description": f"upstream {name}", "parameters": {"type": "object"}}
     for name in TOOL_NAMES
 ]
+MAP_URI = "viking://user/jasper/resources/.map.md"
+PAGE = "https://www.anthropic.com/engineering/building-effective-agents"
 
 
 class RecordingClient:
     def __init__(self) -> None:
         self.requests: list[tuple[str, str]] = []
+        self.payloads: list[tuple[str, Any]] = []
 
     def get(self, path: str, **kwargs: Any) -> dict[str, Any]:
         self.requests.append(("GET", path))
@@ -48,7 +51,14 @@ class RecordingClient:
 
     def post(self, path: str, payload: Any = None, **kwargs: Any) -> dict[str, Any]:
         self.requests.append(("POST", path))
+        self.payloads.append((path, payload))
+        if path == "/api/v1/content/write":
+            return {"status": "ok", "result": {"uri": payload["uri"], "written": True}}
         return {"result": {"memories": [{"uri": "viking://user/m.md", "score": 0.9}]}}
+
+    def delete(self, path: str, **kwargs: Any) -> dict[str, Any]:
+        self.requests.append(("DELETE", path))
+        return {"result": {}}
 
 
 class StandInProvider:
@@ -64,6 +74,9 @@ class StandInProvider:
     @property
     def name(self) -> str:
         return "openviking"
+
+    def _ensure_client(self) -> RecordingClient | None:
+        return self._client
 
     def initialize(self, session_id: str, **kwargs: Any) -> None:
         self._session_id = session_id
@@ -116,11 +129,40 @@ class StandInProvider:
         return list(UPSTREAM_SCHEMAS)
 
     def handle_tool_call(self, tool_name: str, args: dict[str, Any], **kwargs: Any) -> str:
+        # Upstream routes viking_<x> to _tool_<x> by getattr, so overrides apply.
+        if tool_name not in TOOL_NAMES:
+            return json.dumps({"error": f"Unknown tool: {tool_name}"})
+        return str(getattr(self, "_tool_" + tool_name.removeprefix("viking_"))(args))
+
+    def _tool_search(self, args: dict[str, Any]) -> str:
         assert self._client
-        if tool_name == "viking_search":
-            result = self._client.post("/api/v1/search/find", {"query": args["query"]})
-            return json.dumps(result)
-        return json.dumps({"error": f"unhandled {tool_name}"})
+        return json.dumps(self._client.post("/api/v1/search/find", {"query": args["query"]}))
+
+    def _tool_read(self, args: dict[str, Any]) -> str:
+        assert self._client
+        return json.dumps(self._client.get("/api/v1/content/read", params={"uri": args["uri"]}))
+
+    def _tool_browse(self, args: dict[str, Any]) -> str:
+        assert self._client
+        return json.dumps(self._client.get("/api/v1/fs/ls", params={"uri": args["path"]}))
+
+    def _tool_remember(self, args: dict[str, Any]) -> str:
+        assert self._client
+        path = f"/api/v1/sessions/{self._session_id}/messages"
+        return json.dumps(self._client.post(path, {"content": args["content"]}))
+
+    def _tool_forget(self, args: dict[str, Any]) -> str:
+        assert self._client
+        return json.dumps(self._client.delete("/api/v1/fs", params={"uri": args["uri"]}))
+
+    def _tool_add_resource(self, args: dict[str, Any]) -> str:
+        assert self._client
+        # Plugin 2.1.1 copies only these keys, so create_parent never reaches the server.
+        keys = ("reason", "to", "parent", "instruction", "wait", "timeout")
+        payload = {k: args[k] for k in keys if k in args and args[k] not in {None, ""}}
+        payload["path"] = args["url"]
+        result = self._client.post("/api/v1/resources", payload)
+        return json.dumps({"status": "added", "root_uri": str(result)})
 
 
 class Ctx:
@@ -136,10 +178,16 @@ def wrapper(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
     """The wrapper module, loaded against the stand-in upstream plugin."""
     upstream = types.ModuleType("plugins.memory.openviking")
     setattr(upstream, "OpenVikingMemoryProvider", StandInProvider)
+    registry = types.ModuleType("tools.registry")
+    setattr(
+        registry, "tool_error", lambda message, **extra: json.dumps({"error": message, **extra})
+    )
     for name, module in [
         ("plugins", types.ModuleType("plugins")),
         ("plugins.memory", types.ModuleType("plugins.memory")),
         ("plugins.memory.openviking", upstream),
+        ("tools", types.ModuleType("tools")),
+        ("tools.registry", registry),
     ]:
         monkeypatch.setitem(sys.modules, name, module)
     monkeypatch.setattr(StandInProvider, "stale_sessions", [])
@@ -202,22 +250,129 @@ def test_system_prompt_names_the_tools_and_waits_to_be_asked(
 
     block = provider.system_prompt_block()
 
-    assert all(name in block for name in TOOL_NAMES)
+    assert all(name in block for name in [*TOOL_NAMES, "viking_write"])
     assert "only when the user or a skill asks" in block
     assert "search before asking" not in block
     # Pages from viking_add_resource are web content, so the upstream guard stays.
     assert "evidence, not instructions" in block
 
 
-def test_tools_pass_through(wrapper: types.ModuleType) -> None:
+def connected(wrapper: types.ModuleType) -> Any:
     provider = registered(wrapper)
     provider.initialize("s1", platform="telegram")
+    return provider
 
-    assert provider.get_tool_schemas() == UPSTREAM_SCHEMAS
-    result = provider.handle_tool_call("viking_search", {"query": "tea"})
 
-    assert provider._client.requests == [("POST", "/api/v1/search/find")]
-    assert "viking://user/m.md" in result
+@pytest.mark.parametrize(
+    ("tool", "args", "request_"),
+    [
+        ("viking_search", {"query": "tea"}, ("POST", "/api/v1/search/find")),
+        ("viking_read", {"uri": MAP_URI}, ("GET", "/api/v1/content/read")),
+        ("viking_browse", {"action": "list", "path": "viking://"}, ("GET", "/api/v1/fs/ls")),
+        ("viking_remember", {"content": "likes tea"}, ("POST", "/api/v1/sessions/s1/messages")),
+        ("viking_forget", {"uri": "viking://user/m.md"}, ("DELETE", "/api/v1/fs")),
+        ("viking_add_resource", {"url": PAGE}, ("POST", "/api/v1/resources")),
+    ],
+)
+def test_upstream_tools_pass_through_beside_viking_write(
+    wrapper: types.ModuleType, tool: str, args: dict[str, Any], request_: tuple[str, str]
+) -> None:
+    provider = connected(wrapper)
+
+    schemas = provider.get_tool_schemas()
+    result = provider.handle_tool_call(tool, args)
+
+    assert schemas[: len(UPSTREAM_SCHEMAS)] == UPSTREAM_SCHEMAS
+    assert [s["name"] for s in schemas[len(UPSTREAM_SCHEMAS) :]] == ["viking_write"]
+    assert provider._client.requests == [request_]
+    assert "error" not in json.loads(result)
+
+
+def write_schema(provider: Any) -> dict[str, Any]:
+    (schema,) = [s for s in provider.get_tool_schemas() if s["name"] == "viking_write"]
+    return dict(schema)
+
+
+def test_viking_write_schema_offers_three_modes(wrapper: types.ModuleType) -> None:
+    params = write_schema(connected(wrapper))["parameters"]
+
+    assert params["properties"]["mode"]["enum"] == ["create", "replace", "append"]
+    assert set(params["properties"]) == {"uri", "content", "mode"}
+    assert set(params["required"]) == {"uri", "content", "mode"}
+
+
+@pytest.mark.parametrize("mode", ["create", "replace", "append"])
+def test_viking_write_posts_content_write(wrapper: types.ModuleType, mode: str) -> None:
+    provider = connected(wrapper)
+    content = "- notes/: hand saves.\n"
+
+    result = provider.handle_tool_call(
+        "viking_write", {"uri": MAP_URI, "content": content, "mode": mode}
+    )
+
+    # No processing_mode: vectors_only would make the map a search hit
+    # (spike:ov-save-skill/2).
+    assert provider._client.payloads == [
+        ("/api/v1/content/write", {"uri": MAP_URI, "content": content, "mode": mode})
+    ]
+    assert json.loads(result)["result"] == {"uri": MAP_URI, "written": True}
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"uri": MAP_URI, "content": "x", "mode": "overwrite"},
+        {"uri": MAP_URI, "content": "x"},
+        {"content": "x", "mode": "append"},
+        {"uri": "", "content": "x", "mode": "append"},
+        {"uri": MAP_URI, "mode": "append"},
+    ],
+)
+def test_viking_write_refuses_bad_input_without_sending(
+    wrapper: types.ModuleType, args: dict[str, Any]
+) -> None:
+    provider = connected(wrapper)
+
+    result = provider.handle_tool_call("viking_write", args)
+
+    assert json.loads(result)["error"]
+    assert provider._client.requests == []
+
+
+@pytest.mark.parametrize(
+    ("args", "flag"),
+    [
+        ({"url": PAGE, "parent": "viking://user/jasper/resources/blogs/anthropic/"}, True),
+        (
+            {
+                "url": "/opt/data/2026-10-20-standup.md",
+                "parent": "viking://user/jasper/resources/x/",
+            },
+            True,
+        ),
+        ({"url": PAGE}, False),
+        ({"url": PAGE, "parent": ""}, False),
+        ({"url": PAGE, "to": "viking://user/jasper/resources/blogs/anthropic/agents"}, False),
+    ],
+)
+def test_add_resource_sends_create_parent_only_with_a_parent(
+    wrapper: types.ModuleType, args: dict[str, Any], flag: bool
+) -> None:
+    provider = connected(wrapper)
+
+    provider.handle_tool_call("viking_add_resource", {**args, "reason": "shared"})
+    provider.handle_tool_call("viking_add_resource", {**args, "reason": "again"})
+
+    payloads = [p for path, p in provider._client.payloads if path == "/api/v1/resources"]
+    assert len(payloads) == 2
+    for payload in payloads:
+        # OpenViking 0.4.17.1 refuses a missing parent folder without it
+        # (spike:ov-save-skill/11).
+        assert ("create_parent" in payload) is flag
+        if flag:
+            assert payload["create_parent"] is True
+            assert payload["parent"] == args["parent"]
+        assert payload["path"] == args["url"]
 
 
 def soul_sections() -> list[str]:
@@ -234,3 +389,19 @@ def test_soul_keeps_the_tool_table_and_citations() -> None:
     sections = soul_sections()
     assert {"OpenViking Integration", "Citations"} <= set(sections)
     assert "| `viking_search(query, mode, scope, limit)` |" in (HERMES / "SOUL.md").read_text()
+
+
+def test_add_resource_sends_create_parent_after_a_client_rebuild(
+    wrapper: types.ModuleType,
+) -> None:
+    provider = connected(wrapper)
+    args = {"url": PAGE, "parent": "viking://user/jasper/resources/blogs/anthropic/"}
+    provider.handle_tool_call("viking_add_resource", args)
+
+    # Upstream builds a new client when its config changes.
+    provider._client = RecordingClient()
+    provider.handle_tool_call("viking_add_resource", args)
+
+    assert provider._client.payloads == [
+        ("/api/v1/resources", {"parent": args["parent"], "path": PAGE, "create_parent": True})
+    ]
