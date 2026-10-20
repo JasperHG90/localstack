@@ -2,3 +2,4 @@
 {"at": "2026-10-19T20:53:53+00:00", "binds": "e7c32fde963eeb5c826381aa9473483b90e5f3e30c362a103a6883fa24187516", "kind": "round-start", "n": 1, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
 {"at": "2026-10-19T20:56:18+00:00", "dispatched_at": "2026-10-19T20:53:53+00:00", "kind": "round-close", "n": 1, "outcome": "pass", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-10-19T20:56:02+00:00"}}
 {"at": "2026-10-19T20:56:19+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
+{"at": "2026-10-20T04:37:29+00:00", "grant": "g1", "hash": "cf707507a63bb6aa02e26bddcbb4874623caf445cd8fdbeda2323bc7b3772f77", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/planner", "step": "eval-sign"}
