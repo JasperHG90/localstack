@@ -1,0 +1,52 @@
+== build: the 0.22.2-1 image plus openviking_tools in the bundled memory dir
+sha256:6137ab9169dedc671dd2fa51315f29e0d69fdd6859f9162aed166cb590b45c99
+== render /opt/data from hermes.hcl, provider switched to openviking_tools
+render: wrote .env, config.yaml, plugins/model-providers/bifrost/__init__.py, plugins/model-providers/bifrost/plugin.yaml
+36:  provider: "openviking_tools"
+== hermes memory status
+
+Memory status
+────────────────────────────────────────
+  Built-in (MEMORY.md / USER.md):
+    Memory injection:   enabled ✓
+    User profile:       enabled ✓
+    Memory tool:        enabled ✓
+  Provider:  openviking_tools
+
+  Plugin:    installed ✓
+  Status:    available ✓
+
+  Installed plugins:
+    • byterover  (API key / local)
+    • openviking  (API key / local)
+    • openviking_tools  (API key / local) ← active
+    • retaindb  (API key / local)
+
+== driver
+memory.provider in config: openviking_tools
+PASS: provider loaded and activated (plugins.memory.openviking_tools.OpenVikingToolsProvider, name='openviking')
+PASS: provider is the wrapper module
+PASS: writes are off after initialize
+PASS: all six viking_* tools on the agent's tool surface (viking_add_resource,viking_browse,viking_forget,viking_read,viking_remember,viking_search)
+PASS: system prompt carries the static block
+-- 1934 requests during init: 1
+   GET /health
+PASS: no commit of the seeded stale session at init
+PASS: no memory traffic at init
+plain turn reply: PLAIN-REPLY tools=browser_exec,memory,skill_manage,skill_view,skills_list,terminal,web_extract,web_search,tool_search,to
+PASS: plain turn got a reply without a tool call
+-- 1934 requests during plain turn: 0
+PASS: no search/session/commit during the plain turn
+-- 1934 requests during /new and memory write: 0
+PASS: no search/session/commit at /new or on a built-in memory write
+PASS: provider rotated to the new session id (spike-s2)
+search turn reply: SPIKE-DONE
+-- 1934 requests during explicit search turn: 1
+   POST /api/v1/search/find
+PASS: explicit viking_search reached the stub (1 search request(s))
+PASS: model got the tool result back
+PASS: no session upload or commit during the search turn
+-- 1934 requests during shutdown: 0
+PASS: no search/session/commit at shutdown
+== driver result: FAIL=0
+== result: driver exit 0
