@@ -10,8 +10,8 @@ generated:
 sources:
   - id: backup-postgres-jobspec
     resource: deployments/infrastructure/services/backup-postgres.hcl
-  - id: backup-minio-jobspec
-    resource: deployments/infrastructure/services/backup-minio.hcl
+  - id: backup-s3-jobspec
+    resource: deployments/infrastructure/services/backup-s3.hcl
   - id: infra-storage
     resource: deployments/infrastructure/storage.tf
   - id: infra-secrets
@@ -47,26 +47,24 @@ per subsystem:
 - `storage.tf`: the GCS bucket (`var.gcs_backup_bucket`, 180-day delete
   rule), service account `localstack-backup`, `roles/storage.objectAdmin` on
   the bucket, and `google_service_account_key.backup`.
-- `secrets.tf`: five KV entries under the jobs' own prefixes.
+- `secrets.tf`: four KV entries under the jobs' own prefixes.
   `default/backup-postgres/postgres` copies `random_password.postgres_root`,
-  `default/backup-minio/minio` copies `random_password.minio_secret_key`
-  (unread since the cutover), and the three `.../gcs` entries
-  (`backup-postgres`, `backup-minio`, `restore-s3`) hold the same decoded key
-  JSON.
-- `services.tf`: `nomad_job.backup_postgres`, `nomad_job.backup_minio` and
+  and the three `.../gcs` entries (`backup-postgres`, `backup-s3`,
+  `restore-s3`) hold the same decoded key JSON.
+- `services.tf`: `nomad_job.backup_postgres`, `nomad_job.backup_s3` and
   `nomad_job.restore_s3`, with the Postgres and SeaweedFS node addresses
   passed in as literals.
 - `machine_roles.tf`: the Nomad `deploy` policy carries `dispatch-job`, so
   a token holding that policy can dispatch `restore-s3`.
 - `deployments/infrastructure/services/backup-postgres.hcl`,
-  `deployments/infrastructure/services/backup-minio.hcl` and
+  `deployments/infrastructure/services/backup-s3.hcl` and
   `deployments/infrastructure/services/restore-s3.hcl`.
 
 The SeaweedFS keys come from the applications root, where the IAM provider
 is. `storage.tf` creates the user `backup`, with `s3:GetBucketLocation`,
 `s3:GetObject` and `s3:ListBucket` on the four durable buckets, and the user
 `restore`, with `s3:*` on the same four. `secrets.tf` writes their keys to
-`default/backup-minio/seaweedfs` and `default/restore-s3/seaweedfs`. The
+`default/backup-s3/seaweedfs` and `default/restore-s3/seaweedfs`. The
 infrastructure root applies first, so each job names its path as a string
 rather than a resource. On a rebuild from scratch the backup and any dispatch
 fail until the applications root has applied.
@@ -83,10 +81,12 @@ apply, because it references the same `random_password`. That is not enough,
 since the server keeps its first password (see
 [Postgres](/components/postgres.md)).
 
-`backup-minio` held the MinIO root key until the cutover. It now reads
-SeaweedFS with the `backup` user's key, which can list and read the four
-durable buckets and nothing else. Its old copy of the MinIO root key is still
-written and nothing reads it.
+The object storage job was `backup-minio` and held the MinIO root key until
+the cutover. It reads SeaweedFS with the `backup` user's key, which can list
+and read the four durable buckets and nothing else. `minio-removal` renamed
+it `backup-s3` and moved its keys to `default/backup-s3/`, because a job with
+a bare `vault {}` reads only its own path, and deleted the old job and the
+MinIO root key copy.
 
 R8 planned moving `backup-postgres` off root, and was still a stub when
 `5b2ed1b` reset the loop. Its open question is whether `pg_dumpall` works at
@@ -112,7 +112,9 @@ entries. Rotating it means replacing `google_service_account_key.backup`.
   the migration drops, have no off-site copy.
 - Since 2026-10-20 the sync reads SeaweedFS, where OpenViking and the
   registry write, and keeps the `minio/<bucket>/` prefixes so the history
-  carries on (`seaweedfs-cutover`). Its first run from SeaweedFS exited 0.
+  carries on (`seaweedfs-cutover`). Its first run from SeaweedFS exited 0,
+  and so did its first run as `backup-s3`. The prefix is the one MinIO name
+  left in the jobspec on purpose.
 - No other host volume is copied: NATS JetStream, OpenViking's workspace,
   hermes, embark, Prometheus, Grafana and the acme state included. Nor is
   Vault's Consul storage. See [Host volumes](/components/host-volumes.md).
@@ -149,7 +151,7 @@ registry again. All 33 tags read back unchanged
 ## The enforcer, and its reach
 
 `cli/tests/test_backup_coverage.py` pins the set of SeaweedFS buckets in
-`backup-minio.hcl` to the four durable ones, each to a key of
+`backup-s3.hcl` to the four durable ones, each to a key of
 `local.buckets` in `deployments/applications/storage.tf`, pins each GCS
 prefix to the same name, and checks that every sync records its failure,
 because `rclone sync` against a missing bucket does not fail loudly.

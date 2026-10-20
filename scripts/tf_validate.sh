@@ -8,7 +8,6 @@ set -euo pipefail
 roots=(
   deployments/infrastructure
   deployments/applications
-  deployments/applications/modules/bucket
 )
 
 for d in "${roots[@]}"; do

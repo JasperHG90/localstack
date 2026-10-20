@@ -203,7 +203,7 @@ EXPECTED_GROUPS = ["platform", "storage", "telemetry", "events", "agentic", "art
 
 EXPECTED_TILES = {
     "platform": ["nomad", "consul", "vault"],
-    "storage": ["postgres", "redis", "minio"],
+    "storage": ["postgres", "redis", "seaweedfs"],
     "telemetry": ["grafana", "tempo", "prometheus", "alerting"],
     "events": ["nats"],
     "agentic": ["bifrost", "hermes", "openviking", "ov-dash"],

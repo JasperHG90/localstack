@@ -12,8 +12,6 @@ sources:
     resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
   - id: hashistack-server-playbook
     resource: bootstrap/playbooks/configure_hashistack_server.yml
-  - id: minio-jobspec
-    resource: deployments/infrastructure/services/minio.hcl
   - id: infra-services
     resource: deployments/infrastructure/services.tf
 ---
@@ -48,7 +46,10 @@ wait. Enabling discovery meant setting `server { oidc_issuer = ... }` in the
 Nomad server config and restarting the single Nomad server. That was
 `F10-foundation-nomad-oidc-issuer`, and it is done. The issuer is
 `nomad_oidc_issuer` in `bootstrap/playbooks/configure_hashistack_server.yml`,
-rendered by `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`. MinIO reads
-the discovery URL as `MINIO_IDENTITY_OPENID_CONFIG_URL_NOMAD` in `minio.hcl`,
-from `nomad_oidc_config_url` in `deployments/infrastructure/services.tf`. A verifier that needs
-discovery (memex in R5, MinIO in M1) can now point at the issuer directly.
+rendered by `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`. MinIO read
+the discovery URL as `MINIO_IDENTITY_OPENID_CONFIG_URL_NOMAD` in `minio.hcl`
+until it was removed on 2026-10-20
+([ADR 0018](/decisions/0018-remove-minio.md)). A verifier that needs
+discovery (memex in R5, MinIO in M1) can point at the issuer directly.
+SeaweedFS, MinIO's successor, names the issuer in its IAM config from
+`local.seaweedfs_iam` in `deployments/infrastructure/services.tf`.

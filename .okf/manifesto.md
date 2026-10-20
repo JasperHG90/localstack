@@ -86,10 +86,10 @@ whole set with `uv run --directory cli pytest`.
 - **I10** (enforced): every bucket the nightly object storage backup syncs is
   one that `deployments/applications/storage.tf` declares, so a typo cannot
   buy a silently empty backup. Pinned by
-  `cli/tests/test_backup_coverage.py::test_minio_backup_syncs_declared_buckets`.
+  `cli/tests/test_backup_coverage.py::test_s3_backup_syncs_declared_buckets`.
 - **I11** (enforced): every durable bucket (`openviking`, `registry`, `models`
   and `datalake`) is synced to GCS nightly. Pinned by
-  `cli/tests/test_backup_coverage.py::test_minio_backup_syncs_the_durable_buckets`.
+  `cli/tests/test_backup_coverage.py::test_s3_backup_syncs_the_durable_buckets`.
 
 ## Values
 

@@ -30,10 +30,9 @@ lands before the dashboard that depends on it.
 
 ### Step 1: Apply the TOTP method on its own
 
-Every apply below is targeted. Both roots carry unrelated pending work, and an
-untargeted apply on the infrastructure root restarts MinIO while one on the
-applications root re-registers OpenViking. Check `git status` first and know
-what else is in the tree.
+Every apply below is targeted. Both roots can carry unrelated pending work,
+and an untargeted apply on the applications root re-registers OpenViking.
+Check `git status` first and know what else is in the tree.
 
 ```sh
 cd deployments/infrastructure

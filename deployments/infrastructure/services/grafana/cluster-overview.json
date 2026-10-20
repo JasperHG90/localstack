@@ -14,7 +14,7 @@
     {"title": "Node detail", "url": "/d/localstack-node/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
     {"title": "Nomad", "url": "/d/localstack-nomad/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
     {"title": "PostgreSQL", "url": "/d/localstack-postgres/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
-    {"title": "MinIO", "url": "/d/localstack-minio/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
+    {"title": "SeaweedFS", "url": "/d/localstack-seaweedfs/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
     {"title": "Ingress (HAProxy + Consul)", "url": "/d/localstack-ingress/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
     {"title": "NATS / JetStream", "url": "/d/localstack-nats/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
     {"title": "Application services", "url": "/d/localstack-services/?${__url_time_range}", "type": "link", "icon": "external link", "targetBlank": false},
@@ -203,7 +203,7 @@
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 12},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
-        {"expr": "up{job=~\"nomad|consul|haproxy|postgres|minio|prometheus|nats\"}", "refId": "A", "instant": true, "format": "table"},
+        {"expr": "up{job=~\"nomad|consul|haproxy|postgres|seaweedfs|prometheus|nats\"}", "refId": "A", "instant": true, "format": "table"},
         {"expr": "max by (exported_job) (nomad_client_allocs_running{exported_job=~\"vault|registry|hermes|memex|loki|grafana|alloy|tempo|redis\"})", "refId": "B", "instant": true, "format": "table"}
       ],
       "transformations": [

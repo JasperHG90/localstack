@@ -35,14 +35,14 @@ is not in this repository. The image is built and released from
 `nomad_job.ov_dash` (`deployments/applications/services.tf`), today
 `ghcr.io/jasperhg90/ov-dash:0.5.0`.
 
-## Stopped during the SeaweedFS migration
+## Stopped once, for memory
 
 On 2026-10-20 `nomad job stop ov-dash` (no purge) gave its 512 MB on
-orangepi4a to SeaweedFS, which could not place while MinIO still holds
-2560 MB there (`spike:seaweedfs-service/4`). ov-dash holds no state, so
-nothing is lost. `minio-removal` starts it again with `nomad job start
-ov-dash` once MinIO's job is gone. An applications-root apply does not:
-Terraform shows the stopped job as no change (`spike:seaweedfs-buckets/3`).
+orangepi4a to SeaweedFS, which could not place while MinIO held 2560 MB there
+(`spike:seaweedfs-service/4`). ov-dash holds no state, so nothing was lost.
+`minio-removal` started it again the same day with `nomad job start ov-dash`
+once MinIO's job was gone. An applications-root apply would not have:
+Terraform shows a stopped job as no change (`spike:seaweedfs-buckets/3`).
 
 ## Sign-in is three hops
 

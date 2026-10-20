@@ -92,7 +92,6 @@ frontend http_in
 frontend https_in
     bind *:443 ssl crt /secrets/haproxy.pem
 
-    acl is_minio      hdr(host) -i minio.lab.orangecluster.nl
     acl is_s3         hdr(host) -i s3.lab.orangecluster.nl
     acl is_vault      hdr(host) -i vault.lab.orangecluster.nl
     acl is_nomad      hdr(host) -i nomad.lab.orangecluster.nl
@@ -107,7 +106,6 @@ frontend https_in
     acl is_ovdash     hdr(host) -i openviking.lab.orangecluster.nl
     acl is_hermesgw   hdr(host) -i hermes-gateway.lab.orangecluster.nl
 
-    use_backend minio      if is_minio
     use_backend s3         if is_s3
     use_backend vault      if is_vault
     use_backend nomad      if is_nomad
@@ -129,9 +127,6 @@ frontend stats
     stats uri /
     stats refresh 10s
 
-backend minio
-    server minio1 192.168.2.29:9001 check
-
 backend s3
     server s3_1 192.168.2.29:8333 check
 
@@ -151,14 +146,14 @@ backend grafana
     server grafana1 192.168.2.47:3000 check
 
 # The registry runs on ubuntu, not here: it is stateless (blobs live in
-# MinIO) and firebat had no CPU headroom left. It carries its own auth
+# SeaweedFS) and firebat had no CPU headroom left. It carries its own auth
 # (htpasswd), so no `http-request auth` here: podman and docker cannot
 # answer HAProxy's challenge, and the registry's own 401 is what drives
 # `docker login`.
 #
 # The default 300s `timeout server` is an INACTIVITY timer, so a streaming
 # push resets it and is safe. What is not safe is the silence while the
-# registry finalizes a multi-GB multipart upload into MinIO, which is one
+# registry finalizes a multi-GB multipart upload into SeaweedFS, which is one
 # long server-side pause. 1800s covers a model-sized layer.
 backend registry
     timeout server 1800s

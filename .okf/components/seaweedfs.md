@@ -1,7 +1,7 @@
 ---
 type: component
 title: SeaweedFS
-description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root beside the idle MinIO until minio-removal, with six buckets and per-user keys from the applications root. It carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
+description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root, with six buckets and per-user keys from the applications root. It is the cluster's only S3 store and carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
 tags: [seaweedfs, s3, object-storage, terraform, component]
 status: stable
 generated:
@@ -41,9 +41,9 @@ sources:
 # SeaweedFS
 
 MinIO is end of life and its published image no longer downloads, so the
-cluster moves its object storage to SeaweedFS
+cluster moved its object storage to SeaweedFS
 ([ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md)). This page covers
-the server, its buckets, keyless access and who has moved. The cutover ran
+the server, its buckets, keyless access and who uses it. The cutover ran
 one consumer at a time in the tickets of the `seaweedfs-migration` epic.
 
 OpenViking was first: since 2026-10-20 its blobs are in the `openviking`
@@ -51,12 +51,13 @@ bucket here, and it finds the S3 port through Consul service `seaweedfs`
 ([the OpenViking service](/components/openviking-service.md)). The `models`
 and `datalake` buckets were restored from GCS at the same time, both empty.
 Loki, Tempo and the OCI registry moved the same day. Then `seaweedfs-cutover`
-moved the rest: `backup-minio` reads the four durable buckets from here
+moved the rest: the nightly backup reads the four durable buckets from here
 ([GCS backups](/components/gcs-backups.md)), the `seaweedfs` service carries
 the `s3` Consul tag, so the CLI's `s3` route resolves here, HAProxy's
 `s3.lab.orangecluster.nl` backend points at `192.168.2.29:8333`, and the dash
-tile is `seaweedfs`. MinIO still runs with its data, unused, until
-`minio-removal` ([MinIO](/components/minio.md)).
+tile is `seaweedfs`. `minio-removal` then removed MinIO the same day, leaving
+only its `minio_data` volume ([MinIO](/components/minio.md),
+[ADR 0018](/decisions/0018-remove-minio.md)).
 
 ## What runs
 
@@ -78,20 +79,20 @@ brokered `deploy` Consul token may read because
 `bootstrap/playbooks/enable_consul_secrets.yml` grants it, and logs in with
 the admin key.
 
-`storage.tf` derives everything from MinIO's `local.buckets`: six buckets
-(memex and mlflow-artifacts are not recreated), one IAM user per MinIO user
-with the same writer or reader split and MinIO's exact action sets from
-`modules/bucket`, and a `backup` user that reads and lists the four durable
-buckets. Readers get `s3:GetBucketLocation` and `s3:GetObject` but cannot
-list, as on MinIO. Only the backup user adds `s3:ListBucket`, because rclone
-lists to sync. A `restore` user has `s3:*` on the same four buckets, for the
-`restore-s3` job ([GCS backups](/components/gcs-backups.md)), and goes with
-MinIO in `minio-removal`.
-`secrets.tf` writes each job's key to `default/<job>/seaweedfs` beside its
-MinIO key, the backup key to `default/backup-minio/seaweedfs`, and the
-restore key to `default/restore-s3/seaweedfs`.
+`storage.tf` derives everything from one catalog, `local.buckets`: six
+buckets, one IAM user per writer or reader listed there, and a `backup` user
+that reads and lists the four durable buckets. The catalog and the action
+sets came over from MinIO, without memex and mlflow-artifacts. Readers get
+`s3:GetBucketLocation` and `s3:GetObject` but cannot list. Only the backup
+user adds `s3:ListBucket`, because rclone lists to sync. A `restore` user has
+`s3:*` on the same four buckets, for the `restore-s3` job
+([GCS backups](/components/gcs-backups.md)), and stays as the restore path.
+`secrets.tf` writes each job's key to `default/<job>/seaweedfs`, the backup
+key to `default/backup-s3/seaweedfs`, and the restore key to
+`default/restore-s3/seaweedfs`. A new bucket, memex's included, is a new
+entry in `local.buckets`.
 `cli/tests/test_seaweedfs_buckets.py` pins the bucket set, the derivation and
-the action sets against MinIO's. The live isolation checks are in
+the action sets. The live isolation checks are in
 `spike:seaweedfs-buckets/3` and `spike:seaweedfs-buckets/4`.
 
 ## Keyless access
@@ -105,7 +106,8 @@ signing key from `default/seaweedfs/sts`. Each role is bound to its job by
 ([ADR 0017](/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md)).
 `cli/tests/test_seaweedfs_iam_config.py` renders the file through Terraform
 and checks it. Adding a job means a restart, because the server reads the file
-once at start.
+once at start. The procedure is
+`docs/how-to/give-a-job-keyless-seaweedfs-access.md`.
 
 ## Who uses it
 
@@ -124,8 +126,9 @@ falls back to anonymous S3 with no error. Loki's `credential_process` helper,
 and are not rendered into the jobs.
 
 The `loki` and `tempo` buckets started empty. Logs and traces written before
-the cutover stay in MinIO's `loki` and `tempo` buckets, unread, until MinIO
-is removed. The operator chose not to migrate them.
+the cutover stay in MinIO's `loki` and `tempo` buckets on the `minio_data`
+volume, unread, until the operator promotes `minio-volume-destroy`. The
+operator chose not to migrate them.
 
 The OCI registry stores in the `registry` bucket here since 2026-10-20
 ([container registry](/components/container-registry.md)). It logs in the
@@ -167,18 +170,18 @@ infrastructure root). Two alerts in
   `-volume.max=0`, so the slot count follows free disk.
 - **The IAM API is read-only by default.** Without `-s3.iam.readOnly=false`
   every IAM write fails with 403, including Terraform's.
-- **No memory to spare on orangepi4a.** With MinIO (2560 MB), ov-dash
+- **Little memory to spare on orangepi4a.** With MinIO (2560 MB), ov-dash
   (512 MB), alloy and the worker reservation, the node had under 128 MB
-  unreserved, and the job could not place. `ov-dash` is stopped until
-  `minio-removal` frees MinIO's share and starts it again
-  (`spike:seaweedfs-service/4`) with `nomad job start ov-dash`. An
-  applications-root apply leaves the stopped job alone.
+  unreserved, and the job could not place (`spike:seaweedfs-service/4`).
+  ov-dash was stopped to make room until `minio-removal` freed MinIO's share,
+  and was started again with `nomad job start ov-dash` on 2026-10-20. An
+  applications-root apply does not start a stopped job.
 - **Ed25519 keys.** SeaweedFS parses RSA and EC JWKS keys only. Nomad signs
   workload identities with RS256 today. If it ever adds an EdDSA key,
   SeaweedFS rejects the tokens it signs.
 
 `cli/tests/test_seaweedfs_jobspec.py` pins the image floor (4.40 fixes
 CVE-2026-77298), every flag above, the growth setting, the two mapped ports,
-and that `seaweedfs` carries the `s3` tag and `minio` does not.
+and that `seaweedfs` is the only jobspec carrying the `s3` tag.
 `cli/tests/test_s3_cutover.py` pins the `s3` edge backend, the dash tile and
 the devcontainer alias to SeaweedFS.

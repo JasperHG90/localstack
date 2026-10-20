@@ -7,7 +7,6 @@ sources:
   - resource: deployments/infrastructure/identity.tf
   - resource: deployments/infrastructure/oidc.tf
   - resource: deployments/infrastructure/services/grafana.hcl
-  - resource: deployments/infrastructure/services/minio.hcl
 ---
 
 # Vault login MFA
@@ -40,20 +39,18 @@ Grafana's Vault sign-in button, the Hermes dashboard and ov-dash. The factor is
 asked once per VAULT session, not once per app, so every SSO redirect after
 that passes on the browser's existing Vault session.
 
-Three surfaces never touch that login path, so no enforcement here reaches
+Two surfaces never touch that login path, so no enforcement here reaches
 them:
 
 | Surface | Credential | Why it is missed |
 | --- | --- | --- |
 | Grafana | `GF_SECURITY_ADMIN_USER = "admin"` plus a KV password | The local login form is not disabled. `GF_AUTH_DISABLE_LOGIN_FORM` appears nowhere in `deployments/infrastructure/services/grafana.hcl` |
-| MinIO console | `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` | Its six `IDENTITY_OPENID_*` settings point at Nomad's provider for workload identity. There is no human OIDC on MinIO at all |
 | Vault | the root token | Token auth, not userpass |
 
-Neither password is reachable without an MFA-protected Vault login today,
-because both are in KV. They are still standing shared credentials, so one
-leak is a permanent bypass that a second factor cannot take back. Closing them
-is separate work: disable Grafana's login form, and give MinIO a human OIDC
-client on the `lab` provider.
+Grafana's password is not reachable without an MFA-protected Vault login
+today, because it is in KV. It is still a standing shared credential, so one
+leak is a permanent bypass that a second factor cannot take back. Closing it
+is separate work: disable Grafana's login form.
 
 ### ov-dash is covered, and not by answering a challenge
 

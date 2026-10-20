@@ -35,7 +35,7 @@ def test_identity_is_for_seaweedfs(jobspec: Path) -> None:
 
 
 @pytest.mark.parametrize("jobspec", [LOKI, TEMPO], ids=["loki", "tempo"])
-def test_no_hardcoded_minio_endpoint(jobspec: Path) -> None:
+def test_no_hardcoded_old_store_endpoint(jobspec: Path) -> None:
     text = jobspec.read_text()
     assert "192.168.2.29:9000" not in text
     assert "${s3_host}:8333" in text
@@ -62,13 +62,12 @@ def test_scrape_job_missing_watches_seaweedfs() -> None:
     expr = re.search(r"expr: '(absent\(up\{job=\"node\"\}\).*?)'", rules)
     assert expr, "alert-rules.yaml has no ScrapeJobMissing expression"
     assert 'absent(up{job="seaweedfs"})' in expr.group(1)
-    assert 'absent(up{job="minio"})' in expr.group(1)
 
 
-def test_seaweedfs_dashboard_and_alerts_sit_beside_minio() -> None:
+def test_seaweedfs_dashboard_and_alerts_are_provisioned() -> None:
     rules = (GRAFANA / "alert-rules.yaml").read_text()
-    for uid in ("alert-seaweedfs-down", "alert-seaweedfs-disk-error", "alert-minio-degraded"):
+    for uid in ("alert-seaweedfs-down", "alert-seaweedfs-disk-error"):
         assert f"uid: {uid}" in rules
-    assert (GRAFANA / "seaweedfs.json").exists() and (GRAFANA / "minio.json").exists()
+    assert (GRAFANA / "seaweedfs.json").exists()
     grafana = (GRAFANA.parent / "grafana.hcl").read_text()
     assert 'destination = "local/dashboards/seaweedfs.json"' in grafana

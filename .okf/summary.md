@@ -4,7 +4,7 @@ title: "Summary"
 description: "The whole project in at most 500 words: what the knowledge says, citing the concepts; start here."
 generated:
   by: claude-opus/5.5
-  at: 2026-10-19
+  at: 2026-10-20
 tags: [summary]
 ---
 
@@ -68,9 +68,9 @@ invariants have a passing test. Several gaps remain open:
 - [SeaweedFS](/components/seaweedfs.md) replaced
   [MinIO](/components/minio.md) on 2026-10-20. Every workload moved through
   the [GCS backups](/components/gcs-backups.md), with OpenViking's tree and
-  every registry tag read back intact, and the backup job, the `s3` route and
-  the dash tile followed. MinIO still runs with its data, unused, until it is
-  removed. ov-dash is stopped for lack of memory on orangepi4a until then.
+  every registry tag read back intact, and MinIO was removed the same day
+  ([ADR 0018](/decisions/0018-remove-minio.md)). Its `minio_data` volume and
+  data stay until the operator destroys them.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
   spike but never rolled out.

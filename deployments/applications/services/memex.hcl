@@ -119,9 +119,9 @@ MEMEX_SERVER__CACHE_DIR=/cache/memex
 MEMEX_SERVER__FILE_STORE__TYPE=s3
 MEMEX_SERVER__FILE_STORE__BUCKET=memex
 MEMEX_SERVER__FILE_STORE__ROOT=
-MEMEX_SERVER__FILE_STORE__ENDPOINT_URL=http://${minio_host}:9000
+MEMEX_SERVER__FILE_STORE__ENDPOINT_URL=http://${s3_host}:8333
 MEMEX_SERVER__FILE_STORE__REGION=us-east-1
-{{ with secret "${memex_minio_secret}" }}
+{{ with secret "${memex_s3_secret}" }}
 MEMEX_SERVER__FILE_STORE__ACCESS_KEY_ID={{ .Data.data.access_key }}
 MEMEX_SERVER__FILE_STORE__SECRET_ACCESS_KEY={{ .Data.data.secret_key }}
 {{ end }}

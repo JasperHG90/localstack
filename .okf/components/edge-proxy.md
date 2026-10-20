@@ -118,9 +118,10 @@ The file holds no `http-request auth` any more. Each backend is one of these:
 - **An oauth2-proxy gate**: dash, registry-ui.
 - **Native OIDC against Vault**: grafana, hermes-gateway, openviking (ov-dash).
 - **The service's own credential**: bifrost, openviking-api, memex, the
-  MinIO console (`minio.lab`, until `minio-removal`), the S3 API (`s3.lab`,
-  SeaweedFS on `192.168.2.29:8333` since 2026-10-20), registry (htpasswd, because podman and docker
-  cannot answer an HAProxy challenge), and Vault, Nomad and Consul.
+  S3 API (`s3.lab`, SeaweedFS on `192.168.2.29:8333` since 2026-10-20),
+  registry (htpasswd, because podman and docker
+  cannot answer an HAProxy challenge), and Vault, Nomad and Consul. The MinIO
+  console's `minio.lab` route went in `minio-removal`.
 
 [ADR 0009](/decisions/0009-openviking-has-no-browser-surface.md) records
 why OpenViking lost its proxy, and port 4182 now belongs to ov-dash.
@@ -163,8 +164,8 @@ why OpenViking lost its proxy, and port 4182 now belongs to ov-dash.
 ## The edge is on the auth path
 
 Vault's OIDC issuer is `https://vault.lab.orangecluster.nl`
-(`var.vault_issuer_host`), and MinIO reads Nomad's discovery document through
-`https://nomad.lab.orangecluster.nl`. An edge outage therefore breaks token
+(`var.vault_issuer_host`), and SeaweedFS verifies workload tokens against
+Nomad's issuer, `https://nomad.lab.orangecluster.nl`. An edge outage therefore breaks token
 verification as well as browsers. The ACME job writes to Vault on the direct
 listener for the same reason: renewal must not depend on the certificate it
 renews. `localstack breakglass` lists the direct addresses for when the edge

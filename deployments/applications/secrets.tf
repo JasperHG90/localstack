@@ -32,37 +32,6 @@ resource "vault_kv_secret_v2" "memex_db_credentials" {
   })
 }
 
-resource "vault_kv_secret_v2" "memex_minio_credentials" {
-  mount = var.secret_mount
-  name  = "default/memex/minio"
-  data_json = jsonencode({
-    access_key = minio_accesskey.users["memex"].access_key
-    secret_key = minio_accesskey.users["memex"].secret_key
-  })
-}
-
-### Loki
-
-resource "vault_kv_secret_v2" "loki_minio_credentials" {
-  mount = var.secret_mount
-  name  = "default/loki/minio"
-  data_json = jsonencode({
-    access_key = minio_accesskey.users["loki"].access_key
-    secret_key = minio_accesskey.users["loki"].secret_key
-  })
-}
-
-### Tempo
-
-resource "vault_kv_secret_v2" "tempo_minio_credentials" {
-  mount = var.secret_mount
-  name  = "default/tempo/minio"
-  data_json = jsonencode({
-    access_key = minio_accesskey.users["tempo"].access_key
-    secret_key = minio_accesskey.users["tempo"].secret_key
-  })
-}
-
 ### embark
 ###
 ### embark ships auth ON and refuses to start when it is enabled with no keys,
@@ -147,15 +116,6 @@ resource "vault_kv_secret_v2" "driftwatch_embark_key" {
 }
 
 ### Registry
-
-resource "vault_kv_secret_v2" "registry_minio_credentials" {
-  mount = var.secret_mount
-  name  = "default/registry/minio"
-  data_json = jsonencode({
-    access_key = minio_accesskey.users["registry"].access_key
-    secret_key = minio_accesskey.users["registry"].secret_key
-  })
-}
 
 ### The registry's push/pull credential. `bcrypt_hash` is a computed
 ### attribute the random provider generates ONCE and keeps in state, unlike
@@ -411,20 +371,6 @@ resource "vault_kv_secret_v2" "openviking_db_credentials" {
   })
 }
 
-### The static MinIO key. OpenViking cannot use workload identity: its config
-### layer makes access_key and secret_key mandatory for an s3 backend, and the
-### Rust client behind AGFS drops the session token STS credentials require.
-### Deliberately no minio_iam_policy named `openviking` in storage.tf, which
-### would read as live while granting nothing.
-resource "vault_kv_secret_v2" "openviking_minio_credentials" {
-  mount = var.secret_mount
-  name  = "default/openviking/minio"
-  data_json = jsonencode({
-    access_key = minio_accesskey.users["openviking"].access_key
-    secret_key = minio_accesskey.users["openviking"].secret_key
-  })
-}
-
 ### The Bifrost virtual key OpenViking calls for embeddings and rerank.
 resource "vault_kv_secret_v2" "bifrost_openviking_key" {
   mount = var.secret_mount
@@ -433,16 +379,6 @@ resource "vault_kv_secret_v2" "bifrost_openviking_key" {
     API_KEY = bifrost_virtual_key.openviking.value
   })
   depends_on = [bifrost_virtual_key.openviking]
-}
-
-resource "vault_kv_secret_v2" "minio_credentials" {
-  for_each = minio_accesskey.users
-  mount    = var.secret_mount
-  name     = "default/minio/${each.key}"
-  data_json = jsonencode({
-    access_key = each.value.access_key
-    secret_key = each.value.secret_key
-  })
 }
 
 ### ov-dash
@@ -467,7 +403,7 @@ resource "vault_kv_secret_v2" "ov_dash_config" {
   })
 }
 
-### SeaweedFS keys, beside each job's MinIO key until its cutover. A job with
+### SeaweedFS keys, one per job that holds one. A job with
 ### a bare `vault {}` reads only `default/<job id>/*`, so each key sits under
 ### its job's own prefix.
 resource "vault_kv_secret_v2" "seaweedfs_credentials" {
@@ -480,12 +416,12 @@ resource "vault_kv_secret_v2" "seaweedfs_credentials" {
   })
 }
 
-### Read by `backup-minio` in the infrastructure root, which applies first and
+### Read by `backup-s3` in the infrastructure root, which applies first and
 ### cannot reference this root, so the job reads it through Vault at run time.
 ### On a rebuild from scratch the backup fails until this root has applied.
-resource "vault_kv_secret_v2" "backup_seaweedfs_credentials" {
+resource "vault_kv_secret_v2" "backup_s3_seaweedfs_credentials" {
   mount = var.secret_mount
-  name  = "default/backup-minio/seaweedfs"
+  name  = "default/backup-s3/seaweedfs"
   data_json = jsonencode({
     access_key = aws_iam_access_key.seaweedfs_backup.id
     secret_key = aws_iam_access_key.seaweedfs_backup.secret

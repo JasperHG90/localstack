@@ -64,7 +64,7 @@ a shebang and is not affected.
 
 The other credentials each root needs come from Vault inside the run:
 
-- **Applications root.** `minio`, `postgresql` and `bifrost` take admin
+- **Applications root.** `aws` (for SeaweedFS), `postgresql` and `bifrost` take admin
   credentials from `ephemeral "vault_kv_secret_v2"` reads, so they never
   enter state. The `consul` provider hardcodes its address because it does
   not read one from the environment. `bifrost` reads its endpoint off

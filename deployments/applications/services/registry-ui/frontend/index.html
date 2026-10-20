@@ -781,7 +781,7 @@
       renderKits();
       renderImages();
       paintSummary();
-      note.textContent = data.error ? ('registry unreachable: ' + data.error) : 'blobs in minio/registry';
+      note.textContent = data.error ? ('registry unreachable: ' + data.error) : 'blobs in seaweedfs/registry';
     } catch (err) {
       note.textContent = 'registry unreachable: ' + err.message;
     }

@@ -110,7 +110,7 @@ resource "nomad_acl_policy" "deploy" {
 
     # Mounting a volume in a job is a separate grant from managing the volume
     # resource above. Every job this deployer submits that mounts a host
-    # volume (memex, hermes, loki, prometheus, minio, grafana, nats, acme,
+    # volume (memex, hermes, loki, prometheus, seaweedfs, grafana, nats, acme,
     # postgres) needs this, and the paired host-volume-* capabilities above
     # are already unscoped across the whole default namespace, so scoping
     # this one by name would only buy a false sense of isolation while

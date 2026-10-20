@@ -20,8 +20,6 @@ sources:
     resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
   - id: oidc-tf
     resource: deployments/infrastructure/oidc.tf
-  - id: minio-jobspec
-    resource: deployments/infrastructure/services/minio.hcl
   - id: seaweedfs-jobspec
     resource: deployments/infrastructure/services/seaweedfs.hcl
   - id: workload-identity-explanation
@@ -64,8 +62,8 @@ in.
 `jwt_supported_algs = RS256,EdDSA` and `default_role = nomad-workloads`. It
 sets no `bound_issuer` and no discovery URL. Vault checks the signature
 against Nomad's keys over loopback and never the `iss` claim, so setting
-`oidc_issuer` in F10 changed nothing for Vault. It only gave MinIO and memex
-a discovery document to point at.
+`oidc_issuer` in F10 changed nothing for Vault. It gave MinIO (since
+removed), memex and later SeaweedFS an issuer to point at.
 
 The shared policy is templated on
 `identity.entity.aliases.<accessor>.metadata.nomad_namespace` and
@@ -134,18 +132,13 @@ explanation page. Two traps from that ticket:
 
 memex (R5) verifies a raw workload JWT itself, against Nomad's JWKS, with
 `aud = memex` and a grant rule on `nomad_job_id`
-(`deployments/applications/services/memex/auth_oidc.json`). MinIO trusts the
-discovery document with `aud = minio` (`MINIO_IDENTITY_OPENID_*_NOMAD` in
-`deployments/infrastructure/services/minio.hcl`, claim `nomad_job_id`), but
-since 2026-10-20 no job carries a `minio` identity block, so nothing trades a
-JWT there. memex still reads a static MinIO key from KV. Neither verifier
-touches `jwt-nomad`.
+(`deployments/applications/services/memex/auth_oidc.json`). It does not
+touch `jwt-nomad`.
 
-SeaweedFS, which replaces MinIO, trusts the same issuer with `aud =
-seaweedfs`, a separate audience so a job's MinIO and SeaweedFS identities
-stayed apart during the cutover. loki, tempo and the registry carry a
-`seaweedfs` identity block, with its JWT at `secrets/nomad_seaweedfs.jwt`,
-and trade it there instead of at MinIO. SeaweedFS does not use claim mode. Each keyless job
+SeaweedFS trusts the same issuer with `aud = seaweedfs`. loki, tempo and the
+registry carry a `seaweedfs` identity block, with its JWT at
+`secrets/nomad_seaweedfs.jwt`, and trade it at SeaweedFS's STS. SeaweedFS
+does not use claim mode. Each keyless job
 has its own role, whose trust policy requires that job's `nomad_job_id` and
 `sub`, and the client names the role ARN and a session name in its
 `AssumeRoleWithWebIdentity` call
@@ -156,6 +149,10 @@ IAM config with the STS signing key from `default/seaweedfs/sts`. SeaweedFS
 parses RSA and EC keys only: if Nomad ever signs with an EdDSA key, every
 exchange fails. The audience
 registry is in the explanation page.
+
+MinIO was the S3 verifier before SeaweedFS, with `aud = minio` in claim mode
+on `nomad_job_id`. It was removed on 2026-10-20 with its audience
+([MinIO](/components/minio.md)).
 
 ## History
 

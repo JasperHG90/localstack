@@ -1,6 +1,6 @@
 ### Off-cluster object storage. Today that is one GCS bucket: the destination
-### the backup jobs in services.tf write to. On-cluster MinIO buckets are the
-### applications root's (deployments/applications/storage.tf).
+### the backup jobs in services.tf write to. On-cluster SeaweedFS buckets are
+### the applications root's (deployments/applications/storage.tf).
 
 ### GCS backup bucket
 resource "google_storage_bucket" "backups" {

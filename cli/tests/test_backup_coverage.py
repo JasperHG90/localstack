@@ -1,4 +1,4 @@
-"""Drift tests: the buckets the nightly MinIO backup names are real buckets.
+"""Drift tests: the buckets the nightly object storage backup names are real buckets.
 
 `rclone sync` against a bucket that does not exist does not loudly fail a
 periodic batch job, so a typo in the jobspec buys a silently empty backup that
@@ -17,7 +17,7 @@ import pytest
 
 # cli/tests/<this file> -> repo root is two up.
 REPO_ROOT = Path(__file__).resolve().parents[2]
-JOBSPEC = REPO_ROOT / "deployments" / "infrastructure" / "services" / "backup-minio.hcl"
+JOBSPEC = REPO_ROOT / "deployments" / "infrastructure" / "services" / "backup-s3.hcl"
 APP_STORAGE = REPO_ROOT / "deployments" / "applications" / "storage.tf"
 
 # The durable buckets. loki and tempo keep 30 days and are left out on purpose.
@@ -39,7 +39,7 @@ def _sync_lines() -> list[re.Match[str]]:
     """Every `rclone sync seaweedfs:<bucket> gcs:${gcs_bucket}/minio/<bucket>/` line."""
     lines = list(SYNC_LINE.finditer(JOBSPEC.read_text()))
     if not lines:
-        pytest.fail("parser found no rclone sync line in backup-minio.hcl — it cannot be checked")
+        pytest.fail("parser found no rclone sync line in backup-s3.hcl — it cannot be checked")
     return lines
 
 
@@ -69,12 +69,12 @@ def _declared_buckets() -> set[str]:
     return names
 
 
-def test_minio_backup_syncs_declared_buckets() -> None:
+def test_s3_backup_syncs_declared_buckets() -> None:
     declared = _declared_buckets()
     for line in _sync_lines():
         bucket = line.group(1)
         assert bucket in declared, (
-            f"backup-minio.hcl syncs `seaweedfs:{bucket}`, which is not a bucket declared in "
+            f"backup-s3.hcl syncs `seaweedfs:{bucket}`, which is not a bucket declared in "
             f"deployments/applications/storage.tf (declared: {sorted(declared)}). "
             "rclone sync against a nonexistent bucket backs up nothing, quietly."
         )
@@ -84,26 +84,26 @@ def test_every_rclone_transfer_is_a_checked_sync_line() -> None:
     """A transfer written in another shape would escape every check in this file."""
     transfers = re.findall(r"\brclone (?:sync|copy|move)\b", JOBSPEC.read_text())
     assert len(transfers) == len(_sync_lines()), (
-        f"backup-minio.hcl runs {len(transfers)} rclone transfers but only "
+        f"backup-s3.hcl runs {len(transfers)} rclone transfers but only "
         f"{len(_sync_lines())} match the shape the coverage checks read"
     )
 
 
-def test_minio_backup_syncs_the_durable_buckets() -> None:
+def test_s3_backup_syncs_the_durable_buckets() -> None:
     sources = [line.group(1) for line in _sync_lines()]
     assert sorted(sources) == sorted(EXPECTED_BUCKETS), (
-        f"backup-minio.hcl syncs {sorted(sources)}, expected {sorted(EXPECTED_BUCKETS)}, each once."
+        f"backup-s3.hcl syncs {sorted(sources)}, expected {sorted(EXPECTED_BUCKETS)}, each once."
     )
     for line in _sync_lines():
         source, destination = line.group(1), line.group(2)
         assert destination == source, (
-            f"backup-minio.hcl reads bucket `{source}` but writes to the "
+            f"backup-s3.hcl reads bucket `{source}` but writes to the "
             f"`minio/{destination}/` prefix in GCS. Source and destination must name "
             "the same bucket, or the backup lands under the wrong path."
         )
 
 
-def test_minio_backup_keeps_directory_markers() -> None:
+def test_s3_backup_keeps_directory_markers() -> None:
     """OpenViking's empty directories are zero-byte `/` keys that rclone skips by default.
 
     Losing them does not fail `rclone check`, so only the flags guard them.
@@ -113,7 +113,7 @@ def test_minio_backup_keeps_directory_markers() -> None:
             assert flag in line.group(0), f"`{line.group(0).strip()}` lacks {flag}"
 
 
-def test_minio_backup_fails_when_any_sync_fails() -> None:
+def test_s3_backup_fails_when_any_sync_fails() -> None:
     """Every sync runs, and any one failing makes the task exit nonzero.
 
     `&&` would skip the later buckets after one failure, and `;` alone would
@@ -139,14 +139,14 @@ DOC = REPO_ROOT / "docs" / "reference" / "gcs-backups.md"
 PROVIDERS = REPO_ROOT / "deployments" / "infrastructure" / "providers.tf"
 PG_JOBSPEC = REPO_ROOT / "deployments" / "infrastructure" / "services" / "backup-postgres.hcl"
 
-JOBSPECS = {"backup-postgres.hcl": PG_JOBSPEC, "backup-minio.hcl": JOBSPEC}
+JOBSPECS = {"backup-postgres.hcl": PG_JOBSPEC, "backup-s3.hcl": JOBSPEC}
 
 
 def _doc_section(jobspec_name: str) -> str:
     """The doc block describing one jobspec, heading to the next heading.
 
     Stops at `###` as well as `##`. Stopping only at `##` would run the
-    postgres section on through the minio one, and each job would then be
+    postgres section on through the backup-s3 one, and each job would then be
     checked against the other's node, images and figures.
     """
     text = DOC.read_text()
@@ -292,6 +292,6 @@ def test_backup_reads_seaweedfs_with_its_read_only_key() -> None:
     assert "endpoint = http://${seaweedfs_host}:8333" in jobspec
     assert "[minio]" not in jobspec and "minio:" not in jobspec.replace("/minio/", "")
     services = (REPO_ROOT / "deployments" / "infrastructure" / "services.tf").read_text()
-    job = re.search(r'resource "nomad_job" "backup_minio" \{(.*?)\n\}', services, re.S)
-    assert job, 'services.tf has no resource "nomad_job" "backup_minio"'
-    assert '"${vault_mount.kvv2.path}/data/default/backup-minio/seaweedfs"' in job.group(1)
+    job = re.search(r'resource "nomad_job" "backup_s3" \{(.*?)\n\}', services, re.S)
+    assert job, 'services.tf has no resource "nomad_job" "backup_s3"'
+    assert '"${vault_mount.kvv2.path}/data/default/backup-s3/seaweedfs"' in job.group(1)

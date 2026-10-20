@@ -1,6 +1,6 @@
 ### Vault-brokered Redis credentials for cache callers.
 ###
-### Every other datastore here (postgres, minio) hands a workload a STATIC
+### Every other datastore here (postgres, seaweedfs) hands a workload a STATIC
 ### password, read once from Vault KV and scoped by job id but never
 ### expiring. Redis is deliberately different: Vault's database secrets
 ### engine mints a fresh, short-lived ACL user per request and revokes it on
@@ -10,7 +10,7 @@
 ### This is the closest real analogue to memex's own workload-identity
 ### trust (R5, docs/explanation/workload-identity.md): memex verifies a caller's raw
 ### Nomad WI JWT itself, against Nomad's own JWKS. Redis cannot do that — it
-### has no JWT support, unlike memex or MinIO's `identity_openid` — so the
+### has no JWT support, unlike memex or SeaweedFS's OIDC STS — so the
 ### JWT is verified one hop earlier instead, by Vault's `jwt-nomad` mount,
 ### exactly as it already is for every job's KV reads. The caller still
 ### authenticates with nothing but its own Nomad workload identity; Vault is

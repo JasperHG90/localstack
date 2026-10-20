@@ -70,10 +70,11 @@ literal, so moving the job off ubuntu means editing the other root too.
   the role's trust policy admits only this job
   ([ADR 0017](/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md)).
   Helper contract:
-  `docs/how-to/give-an-aws-sdk-go-service-keyless-minio-access.md`. The job
-  keeps `vault {}` because the htpasswd still comes from Vault. Static
-  keys at `default/registry/seaweedfs` and the older `default/registry/minio`
-  stay provisioned as rollback paths, and no job reads them. The registry was
+  `docs/how-to/give-an-aws-sdk-go-service-keyless-seaweedfs-access.md`. The
+  job keeps `vault {}` because the htpasswd still comes from Vault. A static
+  key at `default/registry/seaweedfs` stays provisioned as a rollback path,
+  and the job does not read it. The older MinIO key went with MinIO in
+  `minio-removal`. The registry was
   keyless on MinIO from R13 until 2026-10-20, through the same helper under
   the name `minio-creds.sh`.
 
@@ -112,7 +113,6 @@ No jobspec pulls a container image from this registry. Task images come from
 - **Finalizing is silent.** HAProxy's `timeout server 1800s` covers the pause
   while the registry finalizes a multi-GB multipart upload into SeaweedFS.
   The 300s default is an inactivity timer, which a streaming push resets.
-  The comment beside it in `haproxy.hcl` still says MinIO.
 - **Pulls go to SeaweedFS directly.** A blob GET answers with a redirect to a
   presigned SeaweedFS URL on port 8333, signed with the STS session
   credentials, so a puller must reach orangepi4a on 8333 as well as the edge.
@@ -128,7 +128,8 @@ No jobspec pulls a container image from this registry. Task images come from
   `RoleArn` and `RoleSessionName`. Both the helper and `regionendpoint` take
   `s3_host` from Consul, so the job names no address by hand.
 - **Off-site copies are nightly.** Since `seaweedfs-cutover` (2026-10-20)
-  `backup-minio` syncs the SeaweedFS `registry` bucket to GCS at 03:00, so a
+  the nightly S3 backup (`backup-s3` since `minio-removal`) syncs the
+  SeaweedFS `registry` bucket to GCS at 03:00, so a
   push has no off-site copy until the next night's run
   ([GCS backups](/components/gcs-backups.md)).
 
@@ -142,7 +143,8 @@ started again, so the bucket holds what MinIO held. All 33 tags read back
 unchanged and a new push worked (`spike:seaweedfs-cutover-registry/2`). An
 earlier spike pushed, served and garbage-collected on SeaweedFS with only the
 role's credentials (`spike:seaweedfs-cutover-registry/1`). MinIO's `registry`
-bucket is left as it was.
+bucket stays on the `minio_data` volume, unread, until the operator destroys
+the volume in `minio-volume-destroy`.
 
 ## Image references in jobspecs (T4)
 

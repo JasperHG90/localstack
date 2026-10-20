@@ -111,11 +111,6 @@ job "prometheus" {
             static_configs:
               - targets: ["192.168.2.30:9187"]
 
-          - job_name: minio
-            metrics_path: /minio/v2/metrics/cluster
-            static_configs:
-              - targets: ["192.168.2.29:9000"]
-
           - job_name: seaweedfs
             static_configs:
               - targets: ["192.168.2.29:9327"]

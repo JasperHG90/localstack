@@ -5,7 +5,7 @@ Shaped like `consul_client.py`, but async and owning its own client:
 
 Traps this file exists to absorb:
 
-- A blob GET answers `307` to MinIO, so redirects must be followed. `307`
+- A blob GET answers `307` to the S3 store, so redirects must be followed. `307`
   is below 400, so a status check alone would miss it and the failure
   would surface as a JSON parse error rather than a status code.
 - A layer blob is a plain tar, not JSON and not gzip. Only the OCI config

@@ -73,7 +73,7 @@ The `consul-tag` rung is last and resolves only on a unique carrier. Two
 services carrying the same tag leave the row unresolved, because picking one
 would be a guess. `s3` is the live case: since 2026-10-20 the `seaweedfs`
 service declares the tag `s3` on the port behind that route, so the match
-reads what the job said about itself. MinIO no longer carries the tag.
+reads what the job said about itself.
 
 The `backend` column shows the `ip:port` the edge sends a hostname to. It is
 blank for a `no-route` row, which has no backend to show. On an `unresolved`

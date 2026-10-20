@@ -203,39 +203,6 @@ groups:
           summary: "Postgres exporter scrape is failing"
           description: "Prometheus cannot scrape postgres-exporter on firebat:9187 for 5m (up=0). This fires when the scrape itself times out or the exporter is down — PostgresDown (pg_up) stays silent in that case because pg_up is absent without a successful scrape. Check the exporter sidecar alloc, the listen binding on 192.168.2.30:9187, and firebat ufw (allow 192.168.2.47 to 9187, known to drift after a ufw apply)."
 
-      - uid: alert-minio-degraded
-        title: MinIOClusterDegraded
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange: { from: 600, to: 0 }
-            datasourceUid: prometheus
-            model:
-              editorMode: code
-              expr: 'minio_cluster_nodes_offline_total > 0 or absent(minio_cluster_nodes_online_total)'
-              instant: true
-              refId: A
-          - refId: C
-            relativeTimeRange: { from: 0, to: 0 }
-            datasourceUid: __expr__
-            model:
-              type: threshold
-              refId: C
-              expression: A
-              conditions:
-                - evaluator: { type: gt, params: [0] }
-                  operator: { type: and }
-                  query: { params: [C] }
-                  reducer: { type: last, params: [] }
-                  type: query
-        noDataState: OK
-        execErrState: Error
-        for: 5m
-        labels: { severity: critical, component: minio }
-        annotations:
-          summary: "MinIO degraded on orangepi4a"
-          description: "Offline nodes reported or metrics absent. Check MinIO alloc + minio_data host volume."
-
       - uid: alert-seaweedfs-down
         title: SeaweedFSDown
         condition: C
@@ -756,7 +723,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="minio"}) or absent(up{job="seaweedfs"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"}) or absent(up{job="openviking"}) or absent(up{job="driftwatch"})'
+              expr: 'absent(up{job="node"}) or absent(up{job="nomad"}) or absent(up{job="consul"}) or absent(up{job="haproxy"}) or absent(up{job="postgres"}) or absent(up{job="seaweedfs"}) or absent(up{job="prometheus"}) or absent(up{job="bifrost"}) or absent(up{job="openviking"}) or absent(up{job="driftwatch"})'
               instant: true
               refId: A
           - refId: C
@@ -895,7 +862,7 @@ groups:
         labels: { severity: warning, component: openviking }
         annotations:
           summary: "An OpenViking readiness gauge has read 0 for ten minutes"
-          description: "OpenViking is up and scraping but one of its backends is not answering, so searches against it return nothing and Hermes' 08:00 and 10:00 crons fail quietly. Nothing restarts the task for this on purpose -- the readiness probes cover MinIO, Postgres and embark as well as OpenViking itself, and cycling the task reaches none of them (services/openviking.hcl). Read which probe is down: curl -s http://192.168.2.50:1933/ready. This rule covers only a reachable OpenViking with a sick backend. A dead or wedged process reads as no data here, which noDataState resolves, and is covered by OpenVikingDown above; ScrapeJobMissing fires when the scrape block is deleted, not when the target it names is down, so it does not cover this either."
+          description: "OpenViking is up and scraping but one of its backends is not answering, so searches against it return nothing and Hermes' 08:00 and 10:00 crons fail quietly. Nothing restarts the task for this on purpose -- the readiness probes cover SeaweedFS, Postgres and embark as well as OpenViking itself, and cycling the task reaches none of them (services/openviking.hcl). Read which probe is down: curl -s http://192.168.2.50:1933/ready. This rule covers only a reachable OpenViking with a sick backend. A dead or wedged process reads as no data here, which noDataState resolves, and is covered by OpenVikingDown above; ScrapeJobMissing fires when the scrape block is deleted, not when the target it names is down, so it does not cover this either."
 
   - orgId: 1
     name: retrieval-quality

@@ -1,10 +1,9 @@
-"""Drift tests: SeaweedFS gets MinIO's durable and log buckets, users and grants.
+"""Drift tests: SeaweedFS keeps its catalog of buckets, users and grants.
 
 `deployments/applications/storage.tf` derives every SeaweedFS bucket and user
-from MinIO's `local.buckets`, so these tests read the few literals that steer
-the derivation: which buckets are dropped, which actions a writer, a reader and
-the backup user get (compared with MinIO's own policies in modules/bucket), and
-which buckets the backup user reaches.
+from `local.buckets`, so these tests read the few literals that steer the
+derivation: which buckets exist, which actions a writer, a reader and the
+backup user get, and which buckets the backup user reaches.
 """
 
 import re
@@ -15,7 +14,6 @@ import pytest
 # cli/tests/<this file> -> repo root is two up.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STORAGE = REPO_ROOT / "deployments" / "applications" / "storage.tf"
-MINIO_MODULE = REPO_ROOT / "deployments" / "applications" / "modules" / "bucket" / "main.tf"
 
 SEAWEEDFS_BUCKETS = {"datalake", "models", "registry", "openviking", "loki", "tempo"}
 DURABLE_BUCKETS = {"openviking", "registry", "models", "datalake"}
@@ -34,7 +32,7 @@ def _list(storage: str, name: str) -> list[str]:
     return re.findall(r'"([^"]+)"', match.group(1))
 
 
-def _minio_buckets(storage: str) -> set[str]:
+def _catalog_buckets(storage: str) -> set[str]:
     start = storage.find("buckets = {")
     depth = 0
     names: set[str] = set()
@@ -59,9 +57,8 @@ def _resource(storage: str, kind: str, name: str) -> str:
 
 
 def test_seaweedfs_gets_exactly_the_six_buckets(storage: str) -> None:
-    dropped = set(_list(storage, "seaweedfs_dropped_buckets"))
-    assert dropped == {"memex", "mlflow-artifacts"}, f"dropped buckets are {sorted(dropped)}"
-    assert _minio_buckets(storage) - dropped == SEAWEEDFS_BUCKETS
+    assert _catalog_buckets(storage) == SEAWEEDFS_BUCKETS
+    assert "seaweedfs_buckets = local.buckets" in storage
 
 
 @pytest.mark.parametrize(
@@ -79,7 +76,7 @@ def test_resources_follow_the_derived_locals(
     assert f"for_each = {source}" in _resource(storage, kind, name)
 
 
-def test_users_keep_their_minio_split(storage: str) -> None:
+def test_users_keep_their_reader_writer_split(storage: str) -> None:
     """Writers get the write actions and readers the read actions, per bucket."""
     users = re.search(r"seaweedfs_users = merge\(\[(.*?)\]\.\.\.\)", storage, re.S)
     assert users, "storage.tf has no seaweedfs_users local"
@@ -93,25 +90,17 @@ def test_users_keep_their_minio_split(storage: str) -> None:
     )
 
 
-def _minio_actions(policy: str) -> list[str]:
-    module = MINIO_MODULE.read_text()
-    match = re.search(
-        rf'resource "minio_iam_policy" "{policy}".*?"Action": \[([^\]]*)\]', module, re.S
-    )
-    if not match:
-        pytest.fail(f"modules/bucket/main.tf has no Action list in minio_iam_policy.{policy}")
-    return re.findall(r'"([^"]+)"', match.group(1))
+# The grants carried over from the previous store: writers get every action on
+# their bucket, readers can get an object but not list.
+EXPECTED_ACTIONS = {
+    "seaweedfs_write_actions": ["s3:*"],
+    "seaweedfs_read_actions": ["s3:GetBucketLocation", "s3:GetObject"],
+}
 
 
-@pytest.mark.parametrize(
-    ("local", "minio_policy"),
-    [
-        ("seaweedfs_write_actions", "policy_read_write"),
-        ("seaweedfs_read_actions", "policy_read_only"),
-    ],
-)
-def test_actions_match_minio(storage: str, local: str, minio_policy: str) -> None:
-    assert sorted(_list(storage, local)) == sorted(_minio_actions(minio_policy))
+@pytest.mark.parametrize("local", sorted(EXPECTED_ACTIONS))
+def test_actions_keep_their_grants(storage: str, local: str) -> None:
+    assert sorted(_list(storage, local)) == sorted(EXPECTED_ACTIONS[local])
 
 
 def test_backup_actions_are_read_plus_list(storage: str) -> None:

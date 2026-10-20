@@ -86,8 +86,8 @@ binding rule maps this group to Nomad's `developer` ACL policy, which grants
 a signed-in developer can attach any host volume read-write and exec into it as
 root. Measured: `nomad alloc exec` into a running container returns
 `uid=0(root)`, and every host volume in the cluster is attachable:
-`postgres`, `minio_data` and `acme_lego_state` among them, which hold the
-Postgres data directory, the MinIO object store and the ACME account key.
+`postgres`, `seaweedfs_data` and `acme_lego_state` among them, which hold the
+Postgres data directory, the SeaweedFS object store and the ACME account key.
 
 The policy is Ansible's
 (`bootstrap/roles/nomad_server/files/nomad_developer_policy.hcl`), and the

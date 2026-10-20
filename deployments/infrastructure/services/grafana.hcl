@@ -268,16 +268,6 @@ job "grafana" {
         left_delimiter  = "<<<<"
         right_delimiter = ">>>>"
         data            = <<-EOF
-        ${minio_dashboard}
-        EOF
-
-        destination = "local/dashboards/minio.json"
-      }
-
-      template {
-        left_delimiter  = "<<<<"
-        right_delimiter = ">>>>"
-        data            = <<-EOF
         ${seaweedfs_dashboard}
         EOF
 

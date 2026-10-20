@@ -1,13 +1,13 @@
 ---
-description: How a Nomad task's Workload Identity JWT becomes a scoped Vault token or MinIO credential, and the conventions a new consumer follows.
-stale_after: 2027-01-19
+description: How a Nomad task's Workload Identity JWT becomes a scoped Vault token or SeaweedFS credential, and the conventions a new consumer follows.
+stale_after: 2027-04-20
 sources:
   - resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
   - resource: bootstrap/roles/nomad_server/tasks/main.yml
   - resource: bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json
   - resource: bootstrap/roles/nomad_server/templates/vault_nomad_workloads.hcl.j2
   - resource: deployments/infrastructure/machine_roles.tf
-  - resource: deployments/infrastructure/services/minio.hcl
+  - resource: deployments/infrastructure/services/seaweedfs.hcl
   - resource: deployments/applications/storage.tf
   - resource: deployments/applications/services/memex/auth_oidc.json
   - resource: deployments/applications/services/openviking.hcl
@@ -21,7 +21,7 @@ through the `jwt-nomad` auth mount and hands the task a scoped token. That is
 the cluster's machine identity: the default path carries no static credential,
 and every secret read is keyed on the job that asked for it. This page documents
 the chain as it runs today, the ownership split between Ansible and Terraform,
-and the convention downstream consumers (MinIO STS, service bearer auth) follow
+and the convention downstream consumers (SeaweedFS STS, service bearer auth) follow
 when they need their own audience.
 
 ## The chain, end to end
@@ -48,9 +48,8 @@ when they need their own audience.
    curl -s "$NOMAD_ADDR/.well-known/jwks.json" | jq '.keys | length'
    ```
 
-   MinIO does NOT consume this URL. Its `identity_openid` takes a discovery
-   document, not a bare JWKS, and the pinned release strips `jwks_url`
-   outright. See "Keyless MinIO access" below for the URL it does use.
+   SeaweedFS does not use this URL. It is configured with Nomad's issuer
+   instead. See "Keyless SeaweedFS access" below.
 3. **The `nomad-workloads` role maps claims to a policy.** The role
    (`bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json`)
    binds `aud = ["vault.io"]`, takes `nomad_job_id` as the user claim, and
@@ -142,7 +141,7 @@ A task gets a Vault WI JWT one of two ways:
 - **Implicit.** A bare `vault {}` block rides the server-side
   `default_identity` (`aud = ["vault.io"]`). No JWT is written to the alloc
   (`File: null`, `Env: null`), so the token cannot be captured or replayed.
-  This is how minio, memex and grafana read KV secrets, through
+  This is how memex and grafana read KV secrets, through
   `template { env = true }`. hermes rides the same default identity but
   names its own role with `vault { role = ... }`.
 - **Explicit.** A named `identity` block overrides the default for that
@@ -214,7 +213,7 @@ silent if that consumer falls back to another credential.
 
 ### One audience per verifying service, never per job
 
-`aud` identifies the **verifier** (Vault, MinIO), not the client job. Per-job
+`aud` identifies the **verifier** (Vault, SeaweedFS), not the client job. Per-job
 distinction comes from `nomad_job_id`, which the policy templates on. Giving
 each job its own audience would force every verifier to run a separate role
 or provider per client, for no scoping gain.
@@ -222,8 +221,8 @@ or provider per client, for no scoping gain.
 - Keep `vault.io` for the existing Vault path. Renaming breaks every running
   workload at once.
 - Add a distinct audience only per new consumer class that verifies tokens
-  (for example `minio` for MinIO STS, described in "Keyless MinIO access"
-  below).
+  (for example `seaweedfs` for SeaweedFS STS, described in "Keyless
+  SeaweedFS access" below).
 
 Audience registry:
 
@@ -232,15 +231,6 @@ Audience registry:
 | `vault.io` | Vault, via the `jwt-nomad` mount | `bootstrap/roles/nomad_server/files/vault_role_nomad_workloads.json` |
 | `memex` | the memex server, against Nomad's JWKS | `deployments/applications/services/memex/auth_oidc.json` |
 | `seaweedfs` | SeaweedFS STS, one role per job bound to `nomad_job_id` and `sub` | `deployments/infrastructure/services.tf` (`local.seaweedfs_iam`) |
-| `minio` | MinIO STS, `NOMAD` target | `deployments/infrastructure/services/minio.hcl` |
-| `minio-poc2` | MinIO STS, `POC2` target | `deployments/infrastructure/services/minio.hcl` |
-
-The last two rows share a verifier, which the rule above forbids. They are
-the documented exception, not a precedent: MinIO refuses more than one
-claim-mode target, so proving it can serve a second identity provider at all
-requires a second target with its own client id, and a client id is matched
-against `aud`. Nothing else may add an audience to a verifier it already has.
-See "Keyless MinIO access" below.
 
 `memex` is the first verifier that is not Vault: memex fetches Nomad's JWKS
 itself and needs no Vault role. Per-job authorization is a `grant_rule` on
@@ -251,75 +241,64 @@ itself and needs no Vault role. Per-job authorization is a `grant_rule` on
 - **Env** (`template { env = true }`) is the default for Vault-templated
   secrets. The existing workloads all use it.
 - **File** (`identity { file = true }`) is for consumers that read a raw JWT
-  (MinIO STS, service bearer auth). Both carry ephemeral credentials, and no
+  (SeaweedFS STS, service bearer auth). Both carry ephemeral credentials, and no
   static secret is reintroduced.
 
-## Keyless MinIO access
+## Keyless SeaweedFS access
 
-A Nomad job can read its bucket with no static S3 key: it trades its
-Workload Identity JWT for short-lived MinIO credentials. The static keys in
-`deployments/applications/storage.tf` still exist and still work, and memex
-still uses its key. No job runs keyless against MinIO today: tempo, loki and
-the OCI registry did until 2026-10-20. They now store in SeaweedFS and log in
-there the same way, with `aud = ["seaweedfs"]` and a role per job (the
-`seaweedfs` row in the audience registry above). Other holders
-exist outside this set: the `backup-minio` job ran on the MinIO root
-credential until 2026-10-20 and now reads SeaweedFS with a read-only static
-key, and `deployments/applications/storage.tf` still mints keys no job uses, the
-MinIO `openviking` key among them. Since 2026-10-20 OpenViking keeps its
-blobs in SeaweedFS and reads a static SeaweedFS key from
-`default/openviking/seaweedfs`. It holds a static key deliberately, because
-OpenViking's config layer makes `access_key` and `secret_key` mandatory for
-an s3 backend and its S3 client drops the session token STS credentials
-require. See `.okf/decisions/0007-openviking-static-key-has-no-claim-policy.md`.
+A Nomad job can use its bucket with no static S3 key: it trades its Workload
+Identity JWT at SeaweedFS's STS for credentials that last an hour. Tempo, loki
+and the OCI registry work this way.
 
-**What MinIO trusts.** Three env vars on the MinIO job
-(`deployments/infrastructure/services/minio.hcl`, with the URL filled from
-`deployments/infrastructure/services.tf`) define the `NOMAD` target:
+Every other S3 client holds a static key that
+`deployments/applications/storage.tf` mints. OpenViking reads one from
+`default/openviking/seaweedfs` deliberately, because OpenViking's config layer
+makes `access_key` and `secret_key` mandatory for an s3 backend and its S3
+client drops the session token STS credentials require. See
+`.okf/decisions/0007-openviking-static-key-has-no-claim-policy.md`. The
+`backup-s3` and `restore-s3` jobs read static keys too. Tempo, loki and the
+registry also have a static key under `default/<job>/seaweedfs`, kept as a
+rollback path that their jobs do not read.
 
-```
-MINIO_IDENTITY_OPENID_CONFIG_URL_NOMAD=https://nomad.lab.orangecluster.nl/.well-known/openid-configuration
-MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD=minio
-MINIO_IDENTITY_OPENID_CLAIM_NAME_NOMAD=nomad_job_id
-```
+**What SeaweedFS trusts.** The `seaweedfs` job renders `secrets/iam.json` from
+`local.seaweedfs_iam` in `deployments/infrastructure/services.tf`. It names
+Nomad's issuer, `https://nomad.lab.orangecluster.nl`, as an OIDC provider with
+client id `seaweedfs`, which is why a consumer's identity block must carry
+`aud = ["seaweedfs"]`. The STS signing key comes from Vault at
+`default/seaweedfs/sts`, and `defaultEffect` is `Deny`, so a request no policy
+allows is refused.
 
-The config URL is the discovery document Nomad serves as an OIDC issuer
-(`oidc_issuer` in `bootstrap/roles/nomad_server/templates/nomad.hcl.j2`), not a
-bare JWKS: the pinned release removed `jwks_url`. The client id is why a
-consumer's identity block must carry `aud = ["minio"]`, because MinIO validates
-the audience against it in every mode. The trailing `_NOMAD` names the target
-and MinIO reads it verbatim, so the target is `NOMAD` and never `nomad`.
+**How access is decided.** Each entry in `local.seaweedfs_keyless_jobs` becomes
+one role and one policy. The policy reaches only that job's bucket. The role's
+trust policy requires the token's `nomad_job_id` to equal the job id and its
+`sub` to match `global:default:<job>:*`. Nomad signs both claims, so a job
+cannot assume another job's role, and the client must name the role it wants
+by sending `RoleArn` and `RoleSessionName`. Keying off the job id rather than a
+custom claim is deliberate: Vault's `nomad-workloads` role maps only three
+claims (see "The fixed-claims constraint" above), and using the same key for
+SeaweedFS keeps one scoping story across both verifiers.
 
-**How access is decided.** `claim_name = nomad_job_id` tells MinIO to apply
-the policy whose NAME matches the JWT's `nomad_job_id` claim. So a job called
-`foo` gets the MinIO policy called `foo`, and nothing else. Keying off the
-job id rather than a custom claim is deliberate: Vault's `nomad-workloads`
-role maps only three claims (see "The fixed-claims constraint" above), and
-using the same key for MinIO keeps one scoping story across both verifiers.
+SeaweedFS also has a claim mode, `policyClaim`, which applies the policy named
+by a claim. The cluster does not use it, because it splits the claim on commas:
+in a spike, a job named `evil,tempo` was given tempo's policy. The record is
+`.okf/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md`.
+
+SeaweedFS reads `secrets/iam.json` only at start, so adding a keyless job
+restarts it.
 
 Giving a job keyless access is
-[How to give a job keyless MinIO access](../how-to/give-a-job-keyless-minio-access.md), or, for a service built on
-aws-sdk-go v1,
-[How to give an aws-sdk-go v1 service keyless MinIO access](../how-to/give-an-aws-sdk-go-service-keyless-minio-access.md).
+[How to give a job keyless SeaweedFS access](../how-to/give-a-job-keyless-seaweedfs-access.md),
+or, for a service built on aws-sdk-go v1,
+[How to give an aws-sdk-go v1 service keyless SeaweedFS access](../how-to/give-an-aws-sdk-go-service-keyless-seaweedfs-access.md).
 Proving the exchange by hand is
-[How to exchange a workload JWT for MinIO credentials](../how-to/exchange-a-workload-jwt-for-minio-credentials.md).
+[How to exchange a workload JWT for SeaweedFS credentials](../how-to/exchange-a-workload-jwt-for-seaweedfs-credentials.md).
 
-**A second target already exists.** `POC2` (`aud = minio-poc2`) is configured
-alongside `NOMAD`, on the same discovery document under a different client
-id, and proves MinIO can hold two IdPs at once. MinIO has no human login
-through Vault yet.
-Its `role_policy` names `poc2-intentionally-undefined`, a policy that does
-not exist and must not be created. MinIO's only principal check is `aud`
-matching `client_id`, and any jobspec author chooses their own `aud`, so a
-real policy here would grant that bucket to anyone who asked for the
-audience. Pointing at nothing costs nothing at startup and fails per
-request, which is what keeps the target safe to leave standing. Whoever
-wires Vault in should REPLACE it rather than add a third target.
-
-**Two MinIO behaviors worth knowing before editing its config.** Only one
-provider may run in claim mode. A token arriving with no `RoleArn` has to
-resolve to exactly one, so every other provider needs a `role_policy`, which
-is why `POC2` carries one and `NOMAD` does not. And `LookupConfig` aborts the
-WHOLE OIDC config load, every provider, if any
-one provider's discovery document fails to parse, so pointing a new provider
-at a URL that is not live takes down the working ones with it.
+**Before SeaweedFS.** Until 2026-10-20 MinIO was the cluster's S3 store and
+the verifier for audience `minio`. It ran in claim mode, applying the MinIO
+policy whose name matched the token's `nomad_job_id`, and it carried a second
+target with audience `minio-poc2` as a documented exception to the
+one-audience-per-verifier rule. MinIO was end of life and its image no longer
+downloaded, so every bucket moved to SeaweedFS and MinIO was removed the same
+day, with both its audiences. The records are
+`.okf/decisions/0016-seaweedfs-replaces-minio.md` and
+`.okf/decisions/0018-remove-minio.md`.
