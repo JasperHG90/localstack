@@ -6,12 +6,12 @@ tags:
 - eval
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T04:37:32+00:00'
+  at: '2026-10-20T08:01:50+00:00'
 slug: seaweedfs-cutover
 signoff:
   signer: delegated:jasperginn@gmail.com/planner
-  hash: deadbf5e2722260c3b7e38e03b61da7fc1d2a8e94a9a50aac9cf0342df7d399c
-  at: '2026-10-20T04:37:32+00:00'
+  hash: 8939bab47d465b3c4472dda0d5ac1af555ca4b03cbdcbff76504348e2e706b20
+  at: '2026-10-20T08:01:50+00:00'
 verified: null
 ---
 
@@ -23,5 +23,5 @@ Rows: rows.json; the fields each row takes: loopctl schema eval-rows.
   Fails when: any of those still points at MinIO, or a hardcoded MinIO endpoint remains outside those two files
 - r3 (judgment): Before the apply, a one-way rclone check from each durable bucket's GCS prefix to SeaweedFS is recorded, with --missing-on-dst and --differ lists, and each listed object is named with the app that rewrote or deleted it and a SeaweedFS modtime after that bucket's restore.
   Fails when: a bucket's check is missing, or any listed object is unexplained
-- r4 (judgment): The backup job's next run exits 0 against SeaweedFS and rclone check seaweedfs:<b> against its GCS prefix then exits 0 for each durable bucket, s3.lab serves SeaweedFS, MinIO's S3 request rate is zero for an hour after the last applications-root run, the docs under docs/ point readers at SeaweedFS, and .devcontainer/.env.example names the mc alias's key.
+- r4 (judgment): The backup job's next run exits 0 against SeaweedFS and rclone check seaweedfs:<b> against its GCS prefix then exits 0 for each durable bucket, s3.lab serves SeaweedFS, MinIO's object counts stay fixed across two readings at least 10 minutes apart after the last applications-root run (operator, 2026-10-20: remove MinIO once the data is synced, without the long wait), the docs under docs/ point readers at SeaweedFS, and .devcontainer/.env.example names the mc alias's key.
   Fails when: any of those fails, or the evidence is not recorded in the review

@@ -21,7 +21,7 @@
     },
     {
       "id": "r4",
-      "behavior": "The backup job's next run exits 0 against SeaweedFS and rclone check seaweedfs:<b> against its GCS prefix then exits 0 for each durable bucket, s3.lab serves SeaweedFS, MinIO's S3 request rate is zero for an hour after the last applications-root run, the docs under docs/ point readers at SeaweedFS, and .devcontainer/.env.example names the mc alias's key.",
+      "behavior": "The backup job's next run exits 0 against SeaweedFS and rclone check seaweedfs:<b> against its GCS prefix then exits 0 for each durable bucket, s3.lab serves SeaweedFS, MinIO's object counts stay fixed across two readings at least 10 minutes apart after the last applications-root run (operator, 2026-10-20: remove MinIO once the data is synced, without the long wait), the docs under docs/ point readers at SeaweedFS, and .devcontainer/.env.example names the mc alias's key.",
       "fails_when": "any of those fails, or the evidence is not recorded in the review",
       "judgment": true
     }
