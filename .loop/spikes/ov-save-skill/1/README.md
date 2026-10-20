@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:43:17+00:00'
+  at: '2026-10-20T14:58:32+00:00'
 slug: ov-save-skill
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-save-skill/1
@@ -24,7 +24,10 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-save-skill 1`.
+In ghcr.io/jasperhg90/hermes:0.22.2-1 under a 2048 MB cap, the gateway's inbound voice path (`GatewayInboundMixin._enrich_message_with_transcription`) did not transcribe a 3 s espeak .ogg/opus clip. It returned "[voice message could not be transcribed automatically; the audio is available at: ...]" in 1.1 s at a cgroup peak of 105 MB. The result was the same after a restart on the same /opt/data volume.
+Nothing was installed: faster_whisper is missing before and after, and /opt/data stays at 24K. So the lazy install in the plan never runs from this path.
+Risk 1 is real. spike:ov-save-skill/3 gives the reason.
+Limit: the handler was driven directly as uid 10000, not through s6 or Telegram.
 
 ## Files
 
