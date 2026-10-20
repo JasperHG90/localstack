@@ -1,0 +1,71 @@
+s3 on 32804
+== step 1: openviking user on bucket openviking
+Apply complete! Resources: 11 added, 0 changed, 0 destroyed.
+apply1 exit 0
+ov key after step 1: AKIAGJIKM9FQWMLJ7CPT (secret sha e75d11ce466e)
+PASS [step1] unknown key refused (denied) ClientError: An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The access key ID you provided does not exist in our records.
+PASS [step1] ov put openviking/old1 (allowed) 200
+PASS [step1] ov put openviking/old2 (allowed) 200
+PASS [step1] ov get openviking/old1 (allowed) b'x'
+PASS [step1] ov list openviking (allowed) ['old1', 'old2']
+PASS [step1] ov delete openviking/old2 (allowed) deleted
+PASS [step1] ov put loki (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [step1] backup get openviking/old1 (allowed) b'x'
+RESULT step1 fails=0
+== step 2: policy moved to openviking-v2
+  # aws_iam_user_policy.seaweedfs["openviking"] must be replaced
+        # (1 unchanged attribute hidden)
+  # aws_iam_user_policy.seaweedfs_backup will be updated in-place
+        # (2 unchanged attributes hidden)
+  # aws_s3_bucket.seaweedfs["openviking-v2"] will be created
+Plan: 2 to add, 1 to change, 1 to destroy.
+aws_iam_user_policy.seaweedfs["openviking"]: Destroying... [id=openviking:openviking-openviking]
+aws_s3_bucket.seaweedfs["openviking-v2"]: Creation complete after 0s [id=openviking-v2]
+aws_iam_user_policy.seaweedfs_backup: Modifying... [id=backup:backup-durable-read]
+aws_iam_user_policy.seaweedfs["openviking"]: Creation complete after 0s [id=openviking:openviking-openviking-v2]
+aws_iam_user_policy.seaweedfs_backup: Modifications complete after 0s [id=backup:backup-durable-read]
+Apply complete! Resources: 2 added, 1 changed, 1 destroyed.
+apply2 exit 0
+ov key after step 2: AKIAGJIKM9FQWMLJ7CPT (secret sha e75d11ce466e)
+key unchanged: yes
+No changes. Your infrastructure matches the configuration.
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+third plan exit 0 (0 clean)
+-- policies on user openviking (admin view)
+policies ['openviking-openviking-v2']
+keys ['AKIAGJIKM9FQWMLJ7CPT']
+PASS [step2] unknown key refused (denied) ClientError: An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The access key ID you provided does not exist in our records.
+PASS [step2] ov put openviking/new (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [step2] ov get openviking/old1 (denied) AccessDenied: An error occurred (AccessDenied) when calling the GetObject operation: Access Denied.
+PASS [step2] ov list openviking (denied) AccessDenied: An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied.
+PASS [step2] ov delete openviking/old1 (denied) AccessDenied: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied.
+PASS [step2] admin still sees openviking/old1 (allowed) b'x'
+PASS [step2] ov put openviking-v2/a (allowed) 200
+PASS [step2] ov put openviking-v2/b (allowed) 200
+PASS [step2] ov get openviking-v2/a (allowed) b'x'
+PASS [step2] ov list openviking-v2 (allowed) ['a', 'b']
+PASS [step2] ov delete openviking-v2/b (allowed) deleted
+PASS [step2] ov put loki (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [step2] backup get openviking/old1 (allowed) b'x'
+PASS [step2] backup get openviking-v2/a (allowed) b'x'
+PASS [step2] backup list openviking-v2 (allowed) ['a']
+RESULT step2 fails=0
+== docker restart
+PASS [step2] unknown key refused (denied) ClientError: An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The access key ID you provided does not exist in our records.
+PASS [step2] ov put openviking/new (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [step2] ov get openviking/old1 (denied) AccessDenied: An error occurred (AccessDenied) when calling the GetObject operation: Access Denied.
+PASS [step2] ov list openviking (denied) AccessDenied: An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied.
+PASS [step2] ov delete openviking/old1 (denied) AccessDenied: An error occurred (AccessDenied) when calling the DeleteObject operation: Access Denied.
+PASS [step2] admin still sees openviking/old1 (allowed) b'x'
+PASS [step2] ov put openviking-v2/a (allowed) 200
+PASS [step2] ov put openviking-v2/b (allowed) 200
+PASS [step2] ov get openviking-v2/a (allowed) b'x'
+PASS [step2] ov list openviking-v2 (allowed) ['a', 'b']
+PASS [step2] ov delete openviking-v2/b (allowed) deleted
+PASS [step2] ov put loki (denied) AccessDenied: An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.
+PASS [step2] backup get openviking/old1 (allowed) b'x'
+PASS [step2] backup get openviking-v2/a (allowed) b'x'
+PASS [step2] backup list openviking-v2 (allowed) ['a']
+RESULT step2 fails=0
+SUMMARY apply1=0 checks1=0 apply2=0 key_same=0 plan3=0 checks2=0 checks_restart=0
