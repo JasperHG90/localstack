@@ -1,0 +1,99 @@
+warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/vscode/workspace.worktrees/ov-fresh-instance/cli
+configfile: pyproject.toml
+testpaths: tests
+plugins: textual-snapshot-1.0.0, respx-0.23.1, asyncio-1.4.0, syrupy-5.5.3, anyio-4.14.2
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 683 items / 21 deselected / 662 selected
+
+tests/api/test_grants.py ............                                    [  1%]
+tests/api/test_haproxy.py ............                                   [  3%]
+tests/api/test_secrets.py ........                                       [  4%]
+tests/api/test_services.py ........................                      [  8%]
+tests/api/test_status.py .....                                           [  9%]
+tests/api/test_vault_reads.py .........                                  [ 10%]
+tests/auth/test_broker.py ...................                            [ 13%]
+tests/auth/test_session.py ..........................                    [ 17%]
+tests/auth/test_vault.py ..............................                  [ 21%]
+tests/auth/test_vault_token_file.py ...............                      [ 24%]
+tests/commands/test_auth_commands.py ................................... [ 29%]
+........                                                                 [ 30%]
+tests/commands/test_breakglass.py .....................                  [ 33%]
+tests/commands/test_breakglass_probes.py ..........                      [ 35%]
+tests/commands/test_breakglass_runbook_facts.py ............             [ 37%]
+tests/commands/test_deps.py ..............                               [ 39%]
+tests/commands/test_monitor_command.py .....                             [ 40%]
+tests/commands/test_read_commands.py ................................... [ 45%]
+.                                                                        [ 45%]
+tests/commands/test_token_command.py ........                            [ 46%]
+tests/test_api_consul.py ..........                                      [ 48%]
+tests/test_api_nomad.py ..............                                   [ 50%]
+tests/test_api_vault.py .....                                            [ 51%]
+tests/test_backup_coverage.py ..........                                 [ 52%]
+tests/test_bifrost_version.py ...                                        [ 53%]
+tests/test_branding.py ...........                                       [ 54%]
+tests/test_config.py ......                                              [ 55%]
+tests/test_devcontainer_path.py ...                                      [ 56%]
+tests/test_devcontainer_volumes.py .....                                 [ 56%]
+tests/test_docs_index.py ..                                              [ 57%]
+tests/test_health_rules.py .........................                     [ 60%]
+tests/test_hermes_version.py .....                                       [ 61%]
+tests/test_how_to_skeleton.py .......................................... [ 67%]
+.................                                                        [ 70%]
+tests/test_install.py ...........                                        [ 72%]
+tests/test_lazy.py .......                                               [ 73%]
+tests/test_main.py ......                                                [ 74%]
+tests/test_monitor_guardrails.py .........                               [ 75%]
+tests/test_monitor_tui.py ....................                           [ 78%]
+tests/test_no_minio.py F.                                                [ 78%]
+tests/test_observability_s3_clients.py ........                          [ 80%]
+tests/test_ov_fresh_instance.py .....                                    [ 80%]
+tests/test_platforms.py ..........                                       [ 82%]
+tests/test_read_guardrails.py ........                                   [ 83%]
+tests/test_registry_s3.py ...                                            [ 83%]
+tests/test_restore_s3.py .........                                       [ 85%]
+tests/test_s3_cutover.py .....                                           [ 86%]
+tests/test_seaweedfs_buckets.py ..........                               [ 87%]
+tests/test_seaweedfs_iam_config.py ...........                           [ 89%]
+tests/test_seaweedfs_jobspec.py .............                            [ 91%]
+tests/test_seed_worktree.py ......                                       [ 92%]
+tests/test_shims.py ....................                                 [ 95%]
+tests/test_status.py ..............                                      [ 97%]
+tests/test_versions.py ..................                                [100%]
+
+=================================== FAILURES ===================================
+_______________ test_no_minio_outside_the_names_that_outlive_it ________________
+
+    def test_no_minio_outside_the_names_that_outlive_it() -> None:
+        offenders = []
+        for path in _files():
+            try:
+                text = path.read_text()
+            except UnicodeDecodeError:
+                continue
+            for number, line in enumerate(text.splitlines(), 1):
+                if "minio" in line.lower() and _unexplained(path, line):
+                    offenders.append(f"{path.relative_to(REPO_ROOT)}:{number}: {line.strip()[:100]}")
+>       assert offenders == [], "MinIO is still named in:\n" + "\n".join(offenders)
+E       AssertionError: MinIO is still named in:
+E         deployments/applications/services/openviking/README.md:201: $ gsutil ls gs://<bucket>/minio/openviking-v2/
+E         deployments/applications/services/openviking/README.md:202: $ gsutil ls gs://<bucket>/minio/openviking/
+E       assert ['deployments.../openviking/'] == []
+E         
+E         Left contains 2 more items, first extra item: 'deployments/applications/services/openviking/README.md:201: $ gsutil ls gs://<bucket>/minio/openviking-v2/'
+E         Use -v to get more diff
+
+tests/test_no_minio.py:59: AssertionError
+=============================== warnings summary ===============================
+tests/commands/test_auth_commands.py: 15 warnings
+  /home/vscode/.local/share/uv/python/cpython-3.12.15-linux-aarch64-gnu/lib/python3.12/getpass.py:62: GetPassWarning: Can not control echo on the terminal.
+    passwd = fallback_getpass(prompt, stream)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+7 snapshots passed.
+=========================== short test summary info ============================
+FAILED tests/test_no_minio.py::test_no_minio_outside_the_names_that_outlive_it
+===== 1 failed, 661 passed, 21 deselected, 15 warnings in 61.40s (0:01:01) =====

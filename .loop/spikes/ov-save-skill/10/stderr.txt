@@ -1,0 +1,3 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+onnxruntime cpuid_info warning: Unknown CPU vendor. cpuinfo_vendor value: 0
+onnxruntime cpuid_info warning: Unknown CPU vendor. cpuinfo_vendor value: 0

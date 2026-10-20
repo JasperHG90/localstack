@@ -14,6 +14,10 @@ sources:
     resource: deployments/applications/services/hermes/ov_auth_proxy.py
   - id: hermes-dockerfile
     resource: deployments/applications/services/hermes/Dockerfile
+  - id: openviking-tools
+    resource: deployments/applications/services/hermes/openviking_tools/__init__.py
+  - id: hermes-soul
+    resource: deployments/applications/services/hermes/SOUL.md
   - id: app-services
     resource: deployments/applications/services.tf
   - id: app-secrets
@@ -49,9 +53,9 @@ radxa itself.
 
 **The image** is `ghcr.io/jasperhg90/hermes:<hermes_version>`, built from
 `deployments/applications/services/hermes/Dockerfile`: the
-`nousresearch/hermes-agent:v0.22.2` base plus `jq`, `chromium` and the
-OpenViking memory-provider plugin. The tag
-(`0.22.2-1`) is set once, in `nomad_job.hermes` in
+`nousresearch/hermes-agent:v0.22.2` base plus `jq`, `chromium`, the
+OpenViking memory-provider plugin and the `openviking_tools` wrapper around it.
+The tag (`0.22.2-2`) is set once, in `nomad_job.hermes` in
 `deployments/applications/services.tf`, and `just rebuild_hermes` in
 `deployments/applications/justfile` reads it from there. Build and push
 before applying a tag change. `force_pull = true` re-pulls on every alloc.
@@ -131,24 +135,28 @@ check which one the consuming code reads.
 
 **Config lines that look load-bearing and are not.** `plugins.enabled` does
 not select the memory provider, because the plugin scanner skips
-`plugins/memory`; `memory.provider: "openviking"` does. Since v0.22.0 the
+`plugins/memory`; `memory.provider` does. Since v0.22.0 the
 provider is no longer in the base image. The Dockerfile copies Volcengine's
 catalog plugin 2.1.1, pinned by commit, into
 `/opt/hermes/plugins/memory/openviking`, so no start fetches it from GitHub
 ([ADR 0019](/decisions/0019-hermes-openviking-plugin-built-into-the-image.md)).
 
-**Recall gets a budget that fits Hermes's own limit.** Plugin 2.1.1 gives its
-pre-turn recall 3s per request and 4s in all. Our memory search takes 3.5 to
-7s, so recall timed out on 8 of the first 11 turns after the upgrade, and
-Hermes made up for it with its own `viking_search` and `viking_browse` calls,
-each a model round longer. Hermes itself drops a recall still running at 8s
-(`_EXTERNAL_PREFETCH_TIMEOUT_S` in `agent/memory_manager.py`, not
-configurable), so a longer plugin budget only adds waiting. `config.yaml`
-sets `memory.openviking.recall_timeout_seconds` and
-`recall_request_timeout_seconds` to 7.5 and `recall_prefer_abstract: true`,
-which skips the full-content reads that would follow the search;
-`cli/tests/test_hermes_version.py` holds them there. Recall stays a near
-thing until OpenViking search gets faster.
+**OpenViking is reached through tools only.** `memory.provider:
+"openviking_tools"` selects a wrapper in
+`deployments/applications/services/hermes/openviking_tools/`, which the
+Dockerfile copies to `/opt/hermes/plugins/memory/openviking_tools` beside the
+upstream plugin. It subclasses the upstream provider, imported as
+`plugins.memory.openviking`, and keeps its six `viking_*` tools. It starts
+upstream's `initialize` in the writes-off mode upstream uses for cron, subagent
+and flush contexts, which stops turn uploads, session commits and memory
+mirroring. It also skips the startup recovery of leftover sessions, which
+upstream runs whatever that mode says, and returns no recall from `prefetch`.
+Its module must define `register(ctx)`: without it, Hermes scans the module
+for a provider class and builds the imported upstream one instead. `SOUL.md`
+no longer tells the model to search at conversation start or save after each
+reply. `cli/tests/test_hermes_openviking_tools.py` holds the wrapper's
+behavior against a stand-in for upstream
+([ADR 0020](/decisions/0020-agents-use-openviking-through-tools-only.md)).
 
 **Sessions are kept.** v0.22 prunes ended sessions idle for 90 days at
 startup by default. `config.yaml` sets `sessions.auto_prune: false` to keep
@@ -219,7 +227,8 @@ and then with its own Vault identity token (`0007e46`, `88b089f`). U5 bumped
 the base image to `v2026.7.30` and Bifrost to 1.6.7. `fe10862` moved to
 `v2026.8.31` (hermes-agent 0.21.0). `fd5134d` added the dashboard and its
 OIDC client. `hermes-update` moved to hermes-agent v0.22.2 on 2026-10-20,
-with the OpenViking plugin built into the image.
+with the OpenViking plugin built into the image. `ov-no-auto-capture` (also
+2026-10-20) turned off automatic recall and capture, leaving the tools.
 
 ## Related concepts
 

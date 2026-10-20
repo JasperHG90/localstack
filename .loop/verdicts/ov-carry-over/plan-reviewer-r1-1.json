@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The sidecar text rewrite breaks the copy's own hash check. Every .abstract.md/.overview.md copied from blog-scraper (outside the 26 shared keys) is rewritten by cat|sed|rcat, so its hash no longer matches the old object. `rclone check --one-way` on blog-scraper skips only the 26 shared keys, so it reports every rewritten sidecar as differing and the job exits non-zero. The outcome (\"job exits 0, so every old file ... at its key with the same hash\") cannot hold for those keys. The plan must say how the rewritten sidecars are checked instead (for example: excluded from the hash check, then checked for presence and for holding no `blog-scraper/` URI), and the outcome must stop promising the same hash for them. The same goes for re-runs: the rewrite step needs the same skip-existing rule as the copy.",
+      "anchor": ".loop/plans/ov-carry-over.md (Intent step 1, Outcome)",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "vectors_only likely leaves image files unindexed, and no spike covered them. The four trees hold 71 non-text files (clips 40 png + 1 jpg of 182 files, blog-scraper 25 webp, 4 png, 1 gif). In v0.4.17.1-9, `ReindexExecutor._best_resource_file_vector_text` embeds content only for TEXT types; for an image it uses the summary from `_best_file_summary`, which parses only `## <filename>` H2 sections of the parent .overview.md, while the real overview prompt (`prompts/templates/semantic/overview_generation.yaml`) writes one H3 link per entry. With a fresh schema there is no existing L2 record to fall back on, so the image is counted `unsupported` (\"No vector source found\"), not `failed`. The re-index would report failed 0 while the images are dropped from search, and the outcome's 10-random-files title search on clips (about 1 in 4 files is an image) would likely miss. Spikes 1 and 3 used .md files only and a stub VLM that writes `## Entries`. Next step is a spike: after a key-for-key copy of a directory holding a .png with sidecars in the real overview format, does vectors_only write an L2 row for the image and does find return it? If not, the plan needs a path for image directories (semantic reindex there, or an operator acceptance that images are not searchable) and an outcome that counts `unsupported`.",
+      "anchor": ".loop/plans/ov-carry-over.md (Intent step 3, Outcome)",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "a37a73795a7c9b0c9616673c311dd3e4ee1e1bcf26338d5cbd102facbda58a13"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T14:49:04+00:00"
+}

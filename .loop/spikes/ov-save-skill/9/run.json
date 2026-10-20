@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "ov-save-skill",
+  "n": 9,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-skillpick/spike_skillpick2.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-skillpick/spike_skillpick2.sh",
+      "copy": "files/spike_skillpick2.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "f0513aff6160db3af212d616dcc3b42a54ce7fde",
+  "fingerprint": "eb75f3165fa3c82a4c2121ee882402b09b5abe130af5d7795fbe9203028a5dfd",
+  "started_at": "2026-10-20T15:03:06+00:00",
+  "finished_at": "2026-10-20T15:06:21+00:00",
+  "duration_seconds": 194.777,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

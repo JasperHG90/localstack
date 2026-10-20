@@ -1,0 +1,80 @@
+== instance A: bucket ovi-a, schema ovi_a
+== ov up (ovi-a/ovi_a)
+-- A ingest VLM: image 3, file 11, overview 9
+----- clips/pelican-clip/.overview.md
+### [pelican-diagram.png](viking://user/jasper/resources/clips/pelican-clip/pelican-diagram.png)
+The image shows lighthouse harbour quarry albatross velvet.
+### [pelican-notes.md](viking://user/jasper/resources/clips/pelican-clip/pelican-notes.md)
+----- clips/heron-clip/.overview.md
+### [heron-photo.png](viking://user/jasper/resources/clips/heron-clip/heron-photo.png)
+The image shows granite crimson velvet harbour pelican.
+-- A rows under clips/:
+/user/jasper/resources/clips/heron-clip|0
+/user/jasper/resources/clips/heron-clip|1
+/user/jasper/resources/clips/heron-clip/heron-photo.png|2
+/user/jasper/resources/clips/pelican-clip|0
+/user/jasper/resources/clips/pelican-clip|1
+/user/jasper/resources/clips/pelican-clip/pelican-diagram.png|2
+/user/jasper/resources/clips/pelican-clip/pelican-notes.md|2
+-- queries: pelican [The image shows lighthouse harbour quarry albatross velvet.] heron [The image shows granite crimson velvet harbour pelican.]
+PASS find 'The image shows lighthouse harbour quarry albatross velvet.' -> /user/jasper/resources/clips/pelican-clip/pelican-diagram.png
+PASS find 'The image shows granite crimson velvet harbour pelican.' -> /user/jasper/resources/clips/heron-clip/heron-photo.png
+== instance B: fresh bucket ovi-b, empty schema ovi_b
+== ov up (ovi-b/ovi_b)
+copied 12 keys under clips/:
+   lab/user/jasper/resources/clips/
+   lab/user/jasper/resources/clips/.abstract.md
+   lab/user/jasper/resources/clips/.overview.md
+   lab/user/jasper/resources/clips/heron-clip/
+   lab/user/jasper/resources/clips/heron-clip/.abstract.md
+   lab/user/jasper/resources/clips/heron-clip/.overview.md
+   lab/user/jasper/resources/clips/heron-clip/heron-photo.png
+   lab/user/jasper/resources/clips/pelican-clip/
+   lab/user/jasper/resources/clips/pelican-clip/.abstract.md
+   lab/user/jasper/resources/clips/pelican-clip/.overview.md
+   lab/user/jasper/resources/clips/pelican-clip/pelican-diagram.png
+   lab/user/jasper/resources/clips/pelican-clip/pelican-notes.md
+RESULT {"status": "completed", "scanned_records": 6, "rebuilt_records": 7, "unsupported_records": 2, "failed_records": 0, "warnings": ["No vector source found for viking://user/jasper/resources/clips/heron-clip/heron-photo.png", "No vector source found for viking://user/jasper/resources/clips/pelican-clip/pelican-diagram.png"]}
+-- 1 vectors_only on clips VLM: image 0, file 0, overview 0
+-- after 1 vectors_only on clips: pelican-diagram.png L2 rows 0, find returns the file: no
+-- after 1 (heron): heron-photo.png L2 rows 0, find returns the file: no
+RESULT {"status": "completed", "scanned_records": 1, "rebuilt_records": 2, "unsupported_records": 0, "failed_records": 0, "warnings": []}
+-- 2a semantic_and_vectors recursive=false on pelican dir VLM: image 1, file 1, overview 1
+-- after 2a semantic_and_vectors recursive=false on pelican dir: pelican-diagram.png L2 rows 0, find returns the file: no
+RESULT {"status": "completed", "scanned_records": 3, "rebuilt_records": 3, "unsupported_records": 1, "failed_records": 0, "warnings": ["No vector source found for viking://user/jasper/resources/clips/pelican-clip/pelican-diagram.png"]}
+-- 2b vectors_only on pelican dir after 2a VLM: image 0, file 0, overview 0
+-- after 2b vectors_only on pelican dir after 2a: pelican-diagram.png L2 rows 0, find returns the file: no
+RESULT {"status": "completed", "scanned_records": 3, "rebuilt_records": 3, "unsupported_records": 1, "failed_records": 0, "warnings": ["No vector source found for viking://user/jasper/resources/clips/pelican-clip/pelican-diagram.png"]}
+-- 3 semantic_and_vectors recursive=true on pelican dir VLM: image 1, file 1, overview 1
+-- after 3 semantic_and_vectors recursive=true on pelican dir: pelican-diagram.png L2 rows 0, find returns the file: no
+RESULT {"status": "completed", "scanned_records": 1, "rebuilt_records": 0, "unsupported_records": 1, "failed_records": 0, "warnings": ["No vector source found for viking://user/jasper/resources/clips/pelican-clip/pelican-diagram.png"]}
+-- 4 semantic_and_vectors on the pelican png URI VLM: image 0, file 1, overview 0
+-- after 4 semantic_and_vectors on the pelican png URI: pelican-diagram.png L2 rows 0, find returns the file: no
+-- 5 add_resource the heron png again to the same dir VLM: image 0, file 5, overview 0
+-- after 5 add_resource the heron png again to the same dir: heron-photo.png L2 rows 0, find returns the file: no
+----- clips/heron-clip/.overview.md
+### [heron-photo.png](viking://user/jasper/resources/clips/heron-clip/heron-photo.png)
+The image shows granite crimson velvet harbour pelican.
+copied L2 rows for pelican png: 1
+RESULT {"status": "completed", "scanned_records": 3, "rebuilt_records": 3, "unsupported_records": 1, "failed_records": 0, "warnings": ["No vector source found for viking://user/jasper/resources/clips/pelican-clip/pelican-diagram.png"]}
+-- 6 copy the old L2 row for the pelican png, then vectors_only on its dir VLM: image 0, file 0, overview 0
+-- after 6 copy the old L2 row for the pelican png, then vectors_only on its dir: pelican-diagram.png L2 rows 1, find returns the file: yes
+-- 6 VLM since the row copy: image 0, file 0, overview 0
+-- B rows under clips/:
+/user/jasper/resources/clips/heron-clip|0
+/user/jasper/resources/clips/heron-clip|1
+/user/jasper/resources/clips/pelican-clip|0
+/user/jasper/resources/clips/pelican-clip|1
+/user/jasper/resources/clips/pelican-clip/pelican-diagram.png|2
+/user/jasper/resources/clips/pelican-clip/pelican-notes.md|2
+== B log lines
+2026-10-20 15:12:40.962 | ERROR    | openviking.session.memory.extract_loop:_call_llm:731 - Failed to parse memory operations failure_kind=parse_error error=Expected dict after parsing, got  response_preview='Summary of the content. version content identity Fill this during your first conversation Make yours Name Creature assistant Vibe Emoji Avatar tThe start figuring memory type identity page'
+2026-10-20 15:12:40.962 | ERROR    | openviking.session.memory.extract_loop:run:321 - LLM returned neither tool calls nor operations (iteration 1/3) failure_kind=parse_error response_preview='Summary of the content. version content identity Fill this during your first conversation Make yours Name Creature assistant Vibe Emoji Avatar tThe start figuring memory type identity page'
+2026-10-20 15:12:40.966 | ERROR    | openviking.session.memory.extract_loop:_call_llm:731 - Failed to parse memory operations failure_kind=parse_error error=Expected dict after parsing, got  response_preview='Summary of the content. Emoji Avatar tThe start figuring memory type identity page role user content Your previous output could parsed valid JSON Please output ONLY valid JSON object matching required schema include explanation'
+2026-10-20 15:12:40.967 | ERROR    | openviking.session.memory.extract_loop:run:321 - LLM returned neither tool calls nor operations (iteration 2/4) failure_kind=parse_error response_preview='Summary of the content. Emoji Avatar tThe start figuring memory type identity page role user content Your previous output could parsed valid JSON Please output ONLY valid JSON object matching required schema include explanation'
+2026-10-20 15:12:40.970 | ERROR    | openviking.session.memory.extract_loop:_call_llm:731 - Failed to parse memory operations failure_kind=parse_error error=Expected dict after parsing, got  response_preview='Summary of the content. Emoji Avatar tThe start figuring memory type identity page role user content Your previous output could parsed valid JSON Please output ONLY valid JSON object matching required schema include explanation'
+2026-10-20 15:12:40.970 | ERROR    | openviking.session.memory.extract_loop:run:321 - LLM returned neither tool calls nor operations (iteration 3/4) failure_kind=parse_error response_preview='Summary of the content. Emoji Avatar tThe start figuring memory type identity page role user content Your previous output could parsed valid JSON Please output ONLY valid JSON object matching required schema include explanation'
+2026-10-20 15:12:40.974 | ERROR    | openviking.session.memory.extract_loop:_call_llm:731 - Failed to parse memory operations failure_kind=parse_error error=Expected dict after parsing, got  response_preview='Summary of the content. call more tools Return your final result ONLY valid JSON object matching required schema include explanations markdown there memory changes return this exact empty shape JSON with fields present delete'
+2026-10-20 15:12:40.974 | ERROR    | openviking.session.memory.extract_loop:run:321 - LLM returned neither tool calls nor operations (iteration 4/4) failure_kind=parse_error response_preview='Summary of the content. call more tools Return your final result ONLY valid JSON object matching required schema include explanations markdown there memory changes return this exact empty shape JSON with fields present delete'
+STEPS THAT MADE AN IMAGE SEARCHABLE:
+  6 copy the old L2 row for the pelican png, then vectors_only on its dir (image 0, file 0, overview 0)

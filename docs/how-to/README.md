@@ -11,7 +11,7 @@
 - [How to check that lab names resolve](check-lab-dns.md): Confirm that lab.orangecluster.nl names resolve to the edge and the apex still points at the public site.
 - [How to check the edge certificate](check-the-edge-certificate.md): See when the edge's wildcard certificate last renewed, whether the nightly acme job succeeded, and whether clients trust it.
 - [How to connect a Nomad job to NATS](connect-a-nomad-job-to-nats.md): Hand a Nomad task the NATS broker's URL through its environment.
-- [How to connect Claude Code to OpenViking](connect-claude-code-to-openviking.md): Give Claude Code recall from and capture into OpenViking through the memory plugin.
+- [How to connect Claude Code to OpenViking on request](connect-claude-code-to-openviking.md): Remove the OpenViking memory plugin from Claude Code, so Claude Code reads and writes OpenViking only when you ask.
 - [How to create a JetStream stream](create-a-jetstream-stream.md): Create a JetStream stream, publish to it and read it back through a durable consumer.
 - [How to delete a lost session's Nomad and Consul tokens](delete-a-lost-sessions-brokered-tokens.md): Close a lost localstack session by deleting its brokered Nomad and Consul tokens when its Vault token cannot be revoked.
 - [How to delete a Nomad dynamic host volume](delete-a-nomad-dynamic-host-volume.md): Delete a Nomad dynamic host volume that Terraform does not manage, through the Nomad HTTP API.

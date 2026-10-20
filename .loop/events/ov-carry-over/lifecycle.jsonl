@@ -1,2 +1,13 @@
 {"at": "2026-10-20T13:56:22+00:00", "kind": "register", "schema_version": "1.0", "stage": "planning"}
 {"at": "2026-10-20T14:32:46+00:00", "kind": "spike-note", "n": 1, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T14:45:05+00:00", "kind": "spike-note", "n": 3, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T14:45:06+00:00", "kind": "spike-note", "n": 2, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T14:45:50+00:00", "binds": "a37a73795a7c9b0c9616673c311dd3e4ee1e1bcf26338d5cbd102facbda58a13", "kind": "round-start", "n": 1, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
+{"at": "2026-10-20T15:13:14+00:00", "kind": "spike-note", "n": 4, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T15:16:43+00:00", "dispatched_at": "2026-10-20T14:45:50+00:00", "kind": "round-close", "n": 1, "outcome": "fail", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-10-20T14:49:04+00:00"}}
+{"at": "2026-10-20T15:17:12+00:00", "binds": "137ae5d639abedd6035cb8125e369384362d707e138fdc0bdc7d48c6e010f30a", "kind": "round-start", "n": 2, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
+{"at": "2026-10-20T15:19:53+00:00", "dispatched_at": "2026-10-20T15:17:12+00:00", "kind": "round-close", "n": 2, "outcome": "fail", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-10-20T15:19:32+00:00"}}
+{"at": "2026-10-20T15:20:20+00:00", "binds": "8f6909b831421a7c85240f531ebdfd21b27da0fcfe8fb521a7f64f1e532037c4", "kind": "round-start", "n": 3, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
+{"at": "2026-10-20T16:09:36+00:00", "dispatched_at": "2026-10-20T15:20:20+00:00", "kind": "round-close", "n": 3, "outcome": "pass", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-10-20T15:21:51+00:00"}}
+{"at": "2026-10-20T16:09:39+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
+{"at": "2026-10-20T16:10:13+00:00", "grant": "g1", "hash": "8c6e8b564618d18a49a89f2b4ae8786b4bc38552abbf0d04c8061da0e62db96d", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/claude-opus/5.5", "step": "eval-sign"}

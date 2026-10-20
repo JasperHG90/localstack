@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "The sidecar rewrite broke the hash check. The plan now leaves rewritten blog-scraper sidecars (and the 26 shared keys) out of the hash check, checks them on their own (each present at its blogs/ key, no blog-scraper/ text under blogs/), and gives the rewrite skip-existing semantics.",
+      "anchor": ".loop/plans/ov-carry-over.md",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "Images got no vector after vectors_only. spike:ov-carry-over/4 shows no re-index mode fixes it in 0.4.17.1 and that copying the old level-2 row (INSERT ... SELECT, no VLM call) makes find return the image and survives a later vectors_only. The plan copies the 52 old rows after the re-index and checks each one.",
+      "anchor": ".loop/plans/ov-carry-over.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "open",
+      "claim": "The plan promises that 'nomad job dispatch ov-carry-over re-runs it, and a re-run only adds missing keys', but only the blog-scraper copy uses --ignore-existing. clips, leo and blogs copy with plain rclone copy, which overwrites any target whose hash differs. After step 3 the merged blogs/ and blogs/<source>/ sidecars are regenerated on purpose, and once the instance is live, ov-clip and the blog scraper add files that make OpenViking rewrite parent .overview.md/.abstract.md under clips/ and blogs/. A re-run then puts the old sidecars back over the new ones without a word, and the 'rclone check --one-way' hash check fails on exactly those keys, so the re-run cannot exit 0 either. Fix: make every copy skip existing keys, and define what the hash check means once the target's sidecars have moved on. For example, on every run check only that non-sidecar files are present with the same hash, and that sidecars are present.",
+      "anchor": ".loop/plans/ov-carry-over.md",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "137ae5d639abedd6035cb8125e369384362d707e138fdc0bdc7d48c6e010f30a"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T15:19:32+00:00"
+}

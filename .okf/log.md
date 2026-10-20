@@ -118,8 +118,10 @@
 - **Hermes recall outwaits OpenViking search** (`components/hermes`): plugin 2.1.1's recall defaults (3s per request, 4s total) are shorter than our search/find, so recall timed out on most turns; the config now sets 10s and 12s.
 - **Hermes recall budget fits under its 8s limit** (`components/hermes`): the 12s/10s budget from the previous entry could never take effect, because Hermes drops recall at 8s; now 7.5s with abstracts only.
 
-## 2026-10-20 (ov-fresh-instance)
+## 2026-10-20
 
+- Added `decisions/0020-agents-use-openviking-through-tools-only` with `kmctl new decision`.
+- **Hermes and Claude Code use OpenViking through tools only** (`components/hermes`, `decisions/0020-agents-use-openviking-through-tools-only`, `summary`): Hermes now runs the `openviking_tools` wrapper, which keeps the six `viking_*` tools and turns off recall, turn sync, session commits, startup recovery and memory mirroring, and `SOUL.md` lost its Session Bootstrap and Auto-Capture Protocol. The recall-budget trap is gone with recall. Claude Code's memory plugin comes out, per the rewritten how-to. The summary still holds and was acked.
 - Added `decisions/0021-openviking-starts-over-on-a-v2-store` with `kmctl new decision` (numbered 0021 because 0020 went to the tools-only decision).
 - **OpenViking starts over on a v2 store** (`decisions/0021-openviking-starts-over-on-a-v2-store`, `components/openviking-service`, `components/openviking-database`, `summary`): OpenViking now runs on bucket `openviking-v2`, schema `openviking_v2` and volume `openviking_data_v2` as `lab`/`jasper`. The `openviking` storage user's policy moved to the new bucket, so its key cannot reach the old one, and the old bucket, schema and volume stay as a read-only backup. Schema `openviking_v2` is created by hand before the first boot, and no account is created. veerle's consumer entry is gone.
 - **Both OpenViking buckets are backed up** (`components/gcs-backups`, `components/seaweedfs`): `openviking-v2` joins the durable buckets with its own sync line to `minio/openviking-v2/` and an entry in the restore allowlist, and a test checks no other bucket writes that prefix.

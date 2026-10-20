@@ -1,17 +1,17 @@
 {
   "schema_version": "1.0",
   "slug": "ov-save-skill",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
   "fix": null,
   "ask": null,
-  "split": null,
-  "split_plan_hash": null,
+  "split": "j-20261020T150715+0000-9d2a4cce",
+  "split_plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
   "split_hold": false,
   "commit_sha": null,
   "closed_outside": false,
@@ -20,16 +20,82 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/claude-opus/5.5",
+    "hash": "0781278fe9850de90d398d7a95568f8ebdf061b5ab0b946f28c329f31282ef6b",
+    "at": "2026-10-20T16:10:15+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "The save-to-openviking skill loads (front matter), reads .map.md before saving, asks when no place was given and saves nothing before the answer, appends a new root to the map, falls back to exactly one list of the resources root, seeds the four roots, writes the map only with viking_write, and holds no hardcoded leaf folders beyond the seed.",
+      "fails_when": "any of those instructions is missing or contradicted in the skill.",
+      "command": "uv run --directory cli pytest tests/test_hermes_save_skill.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "SOUL.md points at the save-to-openviking skill for any save and lists viking_write in its tool table, and still forbids shelling out to curl.",
+      "fails_when": "SOUL.md lacks the pointer or the viking_write row, or drops the curl rule.",
+      "command": "uv run --directory cli pytest tests/test_hermes_save_skill.py::test_soul_points_at_the_skill -q",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "The openviking_tools wrapper exposes viking_write with create, replace and append; a call posts content/write with uri, content and mode; a bad mode or missing uri errors without a request; the upstream six still pass through.",
+      "fails_when": "viking_write is missing from the schemas, sends a different request, sends on bad input, or an upstream tool stops passing through.",
+      "command": "uv run --directory cli pytest tests/test_hermes_openviking_tools.py -k viking_write -q",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "viking_add_resource with a parent reaches OpenViking with create_parent: true; without a parent it does not.",
+      "fails_when": "a parent-bearing call lacks create_parent: true, or a call without parent carries it.",
+      "command": "uv run --directory cli pytest tests/test_hermes_openviking_tools.py -k create_parent -q",
+      "judgment": false
+    },
+    {
+      "id": "r5",
+      "behavior": "The image bakes faster-whisper 1.2.1 pinned to Hermes's uv.lock, config pins stt.provider local and stt.local.model base, and hermes_version is 0.22.2-3.",
+      "fails_when": "the Dockerfile line is missing or unpinned, either stt key differs, or the version pin is not 0.22.2-3.",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r6",
+      "behavior": "Live after deploy on Telegram: 'save this <url>' with no place makes Hermes read the map, propose a folder and ask before writing; 'save this to <folder>' writes there without asking; a voice note plus 'save the transcript' lands as a Markdown file in the confirmed folder; a new root the operator names appears in .map.md with its description.",
+      "fails_when": "the recorded post-deploy evidence shows any of these failing.",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "7640991b5bb4edc6695b9d6493922d51fb55d4c32c27ab652fcd740148c8ff96",
+  "round": {
+    "kind": "plan",
+    "n": 2,
+    "binds": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
+    "started_at": "2026-10-20T15:21:04+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": true,
+    "outcome": "pass"
+  },
+  "plan_hash": "769ed21fc85f405429f2650ce57a1ff0ffdef63f00c3a287039952f278b91c1c",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -41,8 +107,14 @@
       "to": "planning",
       "at": "2026-10-20T14:37:56+00:00",
       "by": "register"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-10-20T16:09:43+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T14:37:56+00:00"
+  "at": "2026-10-20T16:10:15+00:00"
 }

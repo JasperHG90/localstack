@@ -1,1 +1,4 @@
 {"at": "2026-10-20T14:32:32+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovcarry/spike.sh", "exit": 0, "kind": "spike", "n": 1, "schema_version": "1.0"}
+{"at": "2026-10-20T14:40:08+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovmerge/spike.sh", "exit": 1, "kind": "spike", "n": 2, "schema_version": "1.0"}
+{"at": "2026-10-20T14:44:39+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovmerge/spike.sh", "exit": 0, "kind": "spike", "n": 3, "schema_version": "1.0"}
+{"at": "2026-10-20T15:13:00+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-ovimg/spike.sh", "exit": 0, "kind": "spike", "n": 4, "schema_version": "1.0"}

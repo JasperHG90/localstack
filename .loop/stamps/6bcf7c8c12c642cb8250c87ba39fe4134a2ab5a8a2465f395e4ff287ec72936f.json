@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "fingerprint": "6bcf7c8c12c642cb8250c87ba39fe4134a2ab5a8a2465f395e4ff287ec72936f",
+  "slug": "ov-fresh-instance",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_openviking_uses_the_v2_store -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r2",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_old_bucket_is_read_only_for_openviking -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r3",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_seaweedfs_buckets.py tests/test_backup_coverage.py tests/test_restore_s3.py tests/test_ov_fresh_instance.py::test_v2_bucket_has_its_own_backup_prefix -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 30,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r4",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_only_jasper_consumes_openviking -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r5",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_ov_fresh_instance.py::test_cutover_steps_are_documented -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    }
+  ],
+  "green": true,
+  "at": "2026-10-20T15:07:21+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696"
+}
