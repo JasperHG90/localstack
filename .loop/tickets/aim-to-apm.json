@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "slug": "aim-to-apm",
+  "stage": "planning",
+  "attempts": 0,
+  "plan_rounds": 0,
+  "review_rounds": 0,
+  "extra_plan_rounds": 0,
+  "extra_review_rounds": 0,
+  "blocker": null,
+  "fix": null,
+  "ask": "j-20261020T204019+0000-525087dc",
+  "split": null,
+  "split_plan_hash": null,
+  "split_hold": false,
+  "commit_sha": null,
+  "closed_outside": false,
+  "dropped": false,
+  "archived": false,
+  "worktree": null,
+  "branch": null,
+  "stamps": [],
+  "signoff": null,
+  "delegation": null,
+  "budget_base": null,
+  "signed_rows": [],
+  "resigns": [],
+  "accepted_risks": [],
+  "waivers": [],
+  "overrides": [],
+  "round": null,
+  "plan_hash": "ff6b113ab54064481a8b410f223ff8ac038d2b73dfb0e6eb3c47fdef10d53a8d",
+  "intent": {
+    "epic": null,
+    "depends_on": [],
+    "priority": null
+  },
+  "history": [
+    {
+      "from": "stub",
+      "to": "planning",
+      "at": "2026-10-20T20:41:40+00:00",
+      "by": "register"
+    }
+  ],
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T20:41:40+00:00"
+}
