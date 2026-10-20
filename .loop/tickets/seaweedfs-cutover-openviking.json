@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-cutover-openviking",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 2,
   "plan_rounds": 3,
   "review_rounds": 4,
@@ -30,7 +30,7 @@
   "split": "j-20261019T210141+0000-95335a6e",
   "split_plan_hash": "f13bef5d309b0df4701226a8c54d86e8f115dc9457a3abe88c193e5ff208c1ea",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "a0df05077cc0192c633f55547c8ab36c01fe6cb0",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -192,8 +192,14 @@
       "to": "verifying",
       "at": "2026-10-20T07:39:30+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T07:41:41+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T07:41:27+00:00"
+  "at": "2026-10-20T07:41:41+00:00"
 }
