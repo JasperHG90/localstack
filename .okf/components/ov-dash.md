@@ -40,10 +40,9 @@ is not in this repository. The image is built and released from
 On 2026-10-20 `nomad job stop ov-dash` (no purge) gave its 512 MB on
 orangepi4a to SeaweedFS, which could not place while MinIO still holds
 2560 MB there (`spike:seaweedfs-service/4`). ov-dash holds no state, so
-nothing is lost. `minio-removal` starts it again once MinIO's job is gone.
-Until then, an applications-root apply re-registers it and it queues
-without placing, so a cutover ticket applies with `-target` or expects
-that queued allocation.
+nothing is lost. `minio-removal` starts it again with `nomad job start
+ov-dash` once MinIO's job is gone. An applications-root apply does not:
+Terraform shows the stopped job as no change (`spike:seaweedfs-buckets/3`).
 
 ## Sign-in is three hops
 

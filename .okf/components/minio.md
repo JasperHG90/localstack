@@ -153,10 +153,9 @@ no ticket owns it yet.
 
 ## Planned, not built
 
-MinIO is due to be replaced by SeaweedFS. Ticket `seaweedfs-service` plans a
-SeaweedFS job with an S3 gateway beside MinIO on orangepi4a,
-`seaweedfs-buckets` its buckets, users and keys from the applications root,
-and `minio-removal` the removal of the MinIO job, provider, resources, routes
+MinIO is due to be replaced by SeaweedFS, which already runs beside it on
+orangepi4a with its own buckets, users and keys
+([SeaweedFS](/components/seaweedfs.md)). `minio-removal` plans the removal of the MinIO job, provider, resources, routes
 and monitoring once nothing uses it. The nightly
 [GCS backup](/components/gcs-backups.md) copies every durable bucket, so the
 migration can restore from off-site. The `minio_data` volume and its data stay until the operator

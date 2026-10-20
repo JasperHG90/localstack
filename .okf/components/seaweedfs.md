@@ -1,7 +1,7 @@
 ---
 type: component
 title: SeaweedFS
-description: "The single-node SeaweedFS on orangepi4a that replaces MinIO: one weed server with its S3 gateway, run by the infrastructure root beside MinIO until the cutover. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
+description: "The single-node SeaweedFS on orangepi4a that replaces MinIO: one weed server with its S3 gateway, run by the infrastructure root beside MinIO until the cutover, with six buckets and per-user keys from the applications root. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
 tags: [seaweedfs, s3, object-storage, terraform, component]
 status: stable
 generated:
@@ -16,6 +16,14 @@ sources:
     resource: deployments/infrastructure/secrets.tf
   - id: jobspec-test
     resource: cli/tests/test_seaweedfs_jobspec.py
+  - id: app-storage
+    resource: deployments/applications/storage.tf
+  - id: app-providers
+    resource: deployments/applications/providers.tf
+  - id: app-secrets
+    resource: deployments/applications/secrets.tf
+  - id: buckets-test
+    resource: cli/tests/test_seaweedfs_buckets.py
 ---
 
 # SeaweedFS
@@ -23,8 +31,8 @@ sources:
 MinIO is end of life and its published image no longer downloads, so the
 cluster moves its object storage to SeaweedFS
 ([ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md)). This page covers
-the server. Buckets, keyless access and the cutover come in later tickets of
-the `seaweedfs-migration` epic. Until the cutover MinIO keeps serving every
+the server and its buckets. Keyless access and the cutover come in later
+tickets of the `seaweedfs-migration` epic. Until the cutover MinIO keeps serving every
 consumer and keeps the `s3` Consul tag ([MinIO](/components/minio.md)).
 
 ## What runs
@@ -36,6 +44,29 @@ consumer and keeps the `s3` Consul tag ([MinIO](/components/minio.md)).
 `default/seaweedfs/admin` and rendered into the file passed to
 `-s3.config`. The embedded IAM API shares the S3 port, 8333. Prometheus
 scrapes `/metrics` on 9327. The Consul check is `GET /healthz` on 8333.
+
+## Buckets and users
+
+The applications root manages them with the `hashicorp/aws` provider, whose S3
+and IAM endpoints are SeaweedFS's port 8333. The minio provider's IAM
+resources fail against SeaweedFS (`spike:seaweedfs-buckets/2`). The provider
+finds the server through `data "consul_service" "seaweedfs"`, which the
+brokered `deploy` Consul token may read because
+`bootstrap/playbooks/enable_consul_secrets.yml` grants it, and logs in with
+the admin key.
+
+`storage.tf` derives everything from MinIO's `local.buckets`: six buckets
+(memex and mlflow-artifacts are not recreated), one IAM user per MinIO user
+with the same writer or reader split and MinIO's exact action sets from
+`modules/bucket`, and a `backup` user that reads and lists the four durable
+buckets. Readers get `s3:GetBucketLocation` and `s3:GetObject` but cannot
+list, as on MinIO. Only the backup user adds `s3:ListBucket`, because rclone
+lists to sync.
+`secrets.tf` writes each job's key to `default/<job>/seaweedfs` beside its
+MinIO key, and the backup key to `default/backup-minio/seaweedfs`.
+`cli/tests/test_seaweedfs_buckets.py` pins the bucket set, the derivation and
+the action sets against MinIO's. The live isolation checks are in
+`spike:seaweedfs-buckets/3` and `spike:seaweedfs-buckets/4`.
 
 ## Traps
 
@@ -56,8 +87,8 @@ scrapes `/metrics` on 9327. The Consul check is `GET /healthz` on 8333.
   (512 MB), alloy and the worker reservation, the node had under 128 MB
   unreserved, and the job could not place. `ov-dash` is stopped until
   `minio-removal` frees MinIO's share and starts it again
-  (`spike:seaweedfs-service/4`). An applications-root apply re-registers
-  ov-dash, which then queues without placing.
+  (`spike:seaweedfs-service/4`) with `nomad job start ov-dash`. An
+  applications-root apply leaves the stopped job alone.
 - **Ed25519 keys.** SeaweedFS parses RSA and EC JWKS keys only. Nomad signs
   workload identities with RS256 today. If it ever adds an EdDSA key,
   SeaweedFS rejects the tokens it signs.
