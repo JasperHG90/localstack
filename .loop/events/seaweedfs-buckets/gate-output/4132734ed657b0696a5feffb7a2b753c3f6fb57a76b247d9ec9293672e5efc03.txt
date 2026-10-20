@@ -1,0 +1,144 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  E501 Line too long (102 > 100)
+    --> cli/tests/test_seaweedfs_buckets.py:74:101
+     |
+  72 |     ],
+  73 | )
+  74 | def test_resources_follow_the_derived_locals(storage: str, kind: str, name: str, source: str) -> None:
+     |                                                                                                     ^^
+  75 |     assert f"for_each = {source}" in _resource(storage, kind, name)
+     |
+
+  E501 Line too long (106 > 100)
+    --> cli/tests/test_seaweedfs_buckets.py:84:101
+     |
+  82 |     body = users.group(1)
+  83 |     assert "for name, bucket in local.seaweedfs_buckets" in body
+  84 |     assert re.search(r"for w in bucket\.writers : w\.name => \{[^}]*local\.seaweedfs_write_actions", body)
+     |                                                                                                     ^^^^^^
+  85 |     assert re.search(r"for r in bucket\.readers : r\.name => \{[^}]*local\.seaweedfs_read_actions", body)
+     |
+
+  E501 Line too long (105 > 100)
+    --> cli/tests/test_seaweedfs_buckets.py:85:101
+     |
+  83 |     assert "for name, bucket in local.seaweedfs_buckets" in body
+  84 |     assert re.search(r"for w in bucket\.writers : w\.name => \{[^}]*local\.seaweedfs_write_actions", body)
+  85 |     assert re.search(r"for r in bucket\.readers : r\.name => \{[^}]*local\.seaweedfs_read_actions", body)
+     |                                                                                                     ^^^^^
+
+  E501 Line too long (103 > 100)
+    --> cli/tests/test_seaweedfs_buckets.py:91:101
+     |
+  89 |     actions = _list(storage, "seaweedfs_read_actions")
+  90 |     assert actions, "seaweedfs_read_actions is empty"
+  91 |     assert not [a for a in actions if WRITE_ACTION.match(a)], f"read actions include writes: {actions}"
+     |                                                                                                     ^^^
+
+  E501 Line too long (109 > 100)
+    --> cli/tests/test_seaweedfs_buckets.py:97:101
+     |
+  95 |     assert set(_list(storage, "seaweedfs_durable_buckets")) == DURABLE_BUCKETS
+  96 |     policy = _resource(storage, "aws_iam_user_policy", "seaweedfs_backup")
+  97 |     assert "Action = local.seaweedfs_read_actions" in policy, "backup policy is not the read-only action set"
+     |                                                                                                     ^^^^^^^^^
+  98 |     assert "for b in local.seaweedfs_durable_buckets" in policy, "backup policy reaches other buckets"
+     |
+
+  E501 Line too long (102 > 100)
+    --> cli/tests/test_seaweedfs_buckets.py:98:101
+     |
+  96 |     policy = _resource(storage, "aws_iam_user_policy", "seaweedfs_backup")
+  97 |     assert "Action = local.seaweedfs_read_actions" in policy, "backup policy is not the read-only action set"
+  98 |     assert "for b in local.seaweedfs_durable_buckets" in policy, "backup policy reaches other buckets"
+     |                                                                                                     ^^
+
+  Found 6 errors.
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  17 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  16 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  16 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  16 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  16 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  unformatted: File would be reformatted
+     --> cli/tests/test_seaweedfs_buckets.py:74:46
+      |
+  73  | )
+      - def test_resources_follow_the_derived_locals(storage: str, kind: str, name: str, source: str) -> None:
+  74  + def test_resources_follow_the_derived_locals(
+  75  +     storage: str, kind: str, name: str, source: str
+  76  + ) -> None:
+  77  |     assert f"for_each = {source}" in _resource(storage, kind, name)
+  --------------------------------------------------------------------------------
+  85  |     assert "for name, bucket in local.seaweedfs_buckets" in body
+      -     assert re.search(r"for w in bucket\.writers : w\.name => \{[^}]*local\.seaweedfs_write_actions", body)
+      -     assert re.search(r"for r in bucket\.readers : r\.name => \{[^}]*local\.seaweedfs_read_actions", body)
+  86  +     assert re.search(
+  87  +         r"for w in bucket\.writers : w\.name => \{[^}]*local\.seaweedfs_write_actions", body
+  88  +     )
+  89  +     assert re.search(
+  90  +         r"for r in bucket\.readers : r\.name => \{[^}]*local\.seaweedfs_read_actions", body
+  91  +     )
+  92  |
+  --------------------------------------------------------------------------------
+  96  |     assert actions, "seaweedfs_read_actions is empty"
+      -     assert not [a for a in actions if WRITE_ACTION.match(a)], f"read actions include writes: {actions}"
+  97  +     assert not [a for a in actions if WRITE_ACTION.match(a)], (
+  98  +         f"read actions include writes: {actions}"
+  99  +     )
+  100 |
+  --------------------------------------------------------------------------------
+  104 |     policy = _resource(storage, "aws_iam_user_policy", "seaweedfs_backup")
+      -     assert "Action = local.seaweedfs_read_actions" in policy, "backup policy is not the read-only action set"
+      -     assert "for b in local.seaweedfs_durable_buckets" in policy, "backup policy reaches other buckets"
+  105 +     assert "Action = local.seaweedfs_read_actions" in policy, (
+  106 +         "backup policy is not the read-only action set"
+  107 +     )
+  108 +     assert "for b in local.seaweedfs_durable_buckets" in policy, (
+  109 +         "backup policy reaches other buckets"
+  110 +     )
+      |
+
+  1 file would be reformatted, 15 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  16 files already formatted
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
