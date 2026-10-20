@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T09:39:04+00:00'
+  at: '2026-10-20T09:39:12+00:00'
 slug: minio-volume-destroy
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike minio-volume-destroy/1
@@ -24,7 +24,7 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note minio-volume-destroy 1`.
+Yes. On 2026-10-20, with the operator's approval ("Yes do it"), a targeted apply destroyed `nomad_dynamic_host_volume.minio_data` (volume cb07eebf on orangepi4a; 0 added, 0 changed, 1 destroyed, 16s). `vault kv metadata delete` purged every version of the 17 old MinIO key paths (default/minio/<user> and default/<job>/minio). stdout.txt shows Nomad lists no `minio_data`, the host directory /opt/nomad/data/host_volumes/cb07eebf-... is gone on the node, none of those Vault paths remains, and the infrastructure plan lists only the 15 `null_resource.firewall` replacements its `always_run` timestamp forces on every plan.
 
 ## Files
 
