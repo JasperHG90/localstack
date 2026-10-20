@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The one-way directory check passes when the GCS listing fails. `rclone lsf ... \"$src\" $conf | sort > /tmp/src-dirs || exit 4` tests sort's status, not rclone's (the job's sh has no pipefail), so a failed GCS listing leaves /tmp/src-dirs empty, `comm -23` prints nothing and the run exits 0. The `|| exit 4` on that line and the `|| exit 3` on the SeaweedFS line can never fire. The exit-code table in the jobspec header and in docs/reference/gcs-backups.md promises 4 for a GCS listing failure. test_every_gcs_directory_must_exist_on_seaweedfs only checks that the text is present, so r1 stays green with the guard broken.",
+      "anchor": "deployments/infrastructure/services/restore-s3.hcl:62",
+      "category": "bug",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "A dispatch with any bucket name that has no prefix under gcs:<bucket>/minio/ exits 0 with 'nothing to restore'. Exit codes are the operator's only signal, so a typo (`bucket=openvking`) or a backup that never ran reads the same as a successful restore. Refuse any name outside the four durable buckets with its own exit code. A durable bucket with no prefix can stay exit 0, as it does for models and datalake.",
+      "anchor": "deployments/infrastructure/services/restore-s3.hcl:54",
+      "category": "hardening",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "8326dce2832e08654573112a78d1f2e5af4d9e0e810a25799a5f68b4d40f63c9",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T07:19:43+00:00"
+}
