@@ -1,7 +1,7 @@
 ---
 type: component
 title: MinIO
-description: "Superseded by SeaweedFS. The single-node MinIO on orangepi4a held every bucket until the 2026-10-20 cutover, and minio-removal took out its job, routes, monitoring, keys and Terraform state the same day. Only the minio_data host volume and its data remain, until the operator promotes minio-volume-destroy. Kept as the history of how MinIO and its claim-mode keyless access were laid out."
+description: "Superseded by SeaweedFS. The single-node MinIO on orangepi4a held every bucket until the 2026-10-20 cutover, and minio-removal took out its job, routes, monitoring, keys and Terraform state the same day. minio-volume-destroy then deleted its minio_data volume and data. Nothing of it remains on the cluster, and only the GCS backup prefix minio/ keeps the name. Kept as the history of how MinIO and its claim-mode keyless access were laid out."
 tags: [minio, s3, object-storage, workload-identity, terraform, component, history]
 status: deprecated
 generated:
@@ -27,12 +27,16 @@ grant are gone, and the applications root dropped every `minio_*` resource
 and `module.buckets` from state without destroying anything. The
 `aminueza/minio` provider and `modules/bucket` are deleted.
 
-**What remains.** The `minio_data` dynamic host volume
-(`nomad_dynamic_host_volume.minio_data` in
-`deployments/infrastructure/services.tf`) and the data on it, MinIO's buckets
-included, stay on orangepi4a until the operator promotes the stub
-`minio-volume-destroy`. Nothing mounts the volume. The GCS backup prefix is
-still `minio/`, so the backup history carries on
+**What remains.** Nothing on the cluster. `minio-volume-destroy` removed
+`nomad_dynamic_host_volume.minio_data` from
+`deployments/infrastructure/services.tf` on 2026-10-20, with the operator's
+approval, and the apply deleted the volume (`cb07eebf`) and MinIO's last data
+on orangepi4a. Everything durable was already in SeaweedFS and backed up in
+GCS. Loki's and Tempo's 30 days from before the cutover, which the operator
+chose not to migrate, and the frozen copies of the other buckets went with
+it. Every old MinIO key in Vault, `default/minio/*` and
+`default/<job>/minio`, was purged with all its versions. Only the GCS backup
+prefix `minio/` keeps the name, so the backup history carries on
 ([GCS backups](/components/gcs-backups.md)).
 
 Everything below is history: how MinIO was laid out and what bit people who
@@ -44,7 +48,7 @@ changed it. How a job gets keyless S3 access today is
 | Piece | Where it was |
 | --- | --- |
 | Job `minio`, pinned to orangepi4a, `RELEASE.2025-09-07T16-13-09Z` | `deployments/infrastructure/services/minio.hcl` |
-| Host volume `minio_data` (1 to 3.5 TiB), still declared | `deployments/infrastructure/services.tf` |
+| Host volume `minio_data` (1 to 3.5 TiB), deleted in `minio-volume-destroy` | `deployments/infrastructure/services.tf` |
 | Firewall: 9000 (S3) and 9001 (console) from `192.168.0.0/16` | `local.firewall_rules`, same file |
 | Edge: `backend minio` (console) | `deployments/infrastructure/services/haproxy.hcl` |
 | Root key: access key `minio`, secret `random_password.minio_secret_key` | KV `default/minio/localstack`, `deployments/infrastructure/secrets.tf` |
@@ -111,7 +115,8 @@ Memex held a static key. Its job is still commented out, and its bucket and
 key went with MinIO, so it needs a SeaweedFS bucket and key before it comes
 back ([memex](/components/memex.md)). `backup-minio` read a copy of the ROOT
 key until 2026-10-20. Every MinIO key in Vault, `default/<job>/minio` and
-`default/minio/<user>`, was deleted in `minio-removal`.
+`default/minio/<user>`, was deleted in `minio-removal`, and
+`minio-volume-destroy` purged every version of them.
 
 ## What bit people
 
@@ -130,8 +135,8 @@ key until 2026-10-20. Every MinIO key in Vault, `default/<job>/minio` and
   Prometheus `minio` job scrape without a token, and served metrics to the
   whole LAN on 9000.
 - **`loki`, `tempo`, `memex` and `mlflow-artifacts` never had an off-site
-  copy.** Their MinIO data is on the `minio_data` volume only, and goes when
-  the volume does.
+  copy.** Their MinIO data was on the `minio_data` volume only, and went with
+  it in `minio-volume-destroy`.
 
 ## Evidence
 
@@ -145,3 +150,4 @@ Built or recorded from these, which a `sources` entry cannot point at:
 - loop ticket `R12-rollout-memex-keyless-minio`, a stub the operator dropped (its plan is `.loop/plans/` at commit `48f52e2`, dropped in `a7aa595`)
 - commit `84b69a1`, the R13 plan that supersedes R10 and R11
 - loop ticket `minio-removal` (its plan, spikes and verdicts are under `.loop/`)
+- loop ticket `minio-volume-destroy` (its plan is `.loop/plans/minio-volume-destroy.md`)

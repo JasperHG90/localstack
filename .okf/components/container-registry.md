@@ -142,9 +142,9 @@ the registry never had on MinIO. They were deleted before the registry
 started again, so the bucket holds what MinIO held. All 33 tags read back
 unchanged and a new push worked (`spike:seaweedfs-cutover-registry/2`). An
 earlier spike pushed, served and garbage-collected on SeaweedFS with only the
-role's credentials (`spike:seaweedfs-cutover-registry/1`). MinIO's `registry`
-bucket stays on the `minio_data` volume, unread, until the operator destroys
-the volume in `minio-volume-destroy`.
+role's credentials (`spike:seaweedfs-cutover-registry/1`). MinIO's copy of
+the `registry` bucket was deleted with the `minio_data` volume in
+`minio-volume-destroy`.
 
 ## Image references in jobspecs (T4)
 

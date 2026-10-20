@@ -136,9 +136,8 @@ on its log lines:
 Retention is 30 days, matching Loki, so a trace and the logs that reference it
 expire together. Completed blocks are in the `tempo` SeaweedFS bucket. The
 `tempo_data` host volume holds only the write-ahead log and blocks not yet
-flushed. Traces and logs written before 2026-10-20 stayed in MinIO, which was
-removed that day, so Grafana cannot search them. They remain on the
-`minio_data` volume on orangepi4a until the operator destroys it.
+flushed. Traces and logs written before 2026-10-20 were not moved out of
+MinIO and were deleted with it that day, so Grafana cannot show them.
 
 Tempo's own gRPC server runs on 9096 rather than its default 9095, which Loki
 already holds on that node.

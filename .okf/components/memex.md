@@ -61,7 +61,7 @@ firewall entry are commented out or gone. The daily MinIO backup moved from
 the `memex` bucket to `openviking` (ticket `backup-swap-memex-for-openviking`).
 memex has no object store any more: its MinIO bucket was not carried over to
 SeaweedFS, and its MinIO key was deleted in `minio-removal`. The old bucket's
-data is on the `minio_data` volume until the operator destroys it.
+data went with the `minio_data` volume in `minio-volume-destroy`.
 
 ## Two OIDC trust paths
 
@@ -177,8 +177,8 @@ What that looks like against memex's tables is
 - [embark, the embedding and rerank server](/components/embark.md), which holds the Jetson now
 - [The host firewall](/components/host-firewall.md)
 - [SeaweedFS](/components/seaweedfs.md), where a new `memex` bucket would go
-- [MinIO](/components/minio.md), whose `minio_data` volume still holds the
-  old `memex` bucket
+- [MinIO](/components/minio.md), which held the old `memex` bucket until its
+  volume was deleted
 
 - `docs/how-to/verify-memex-oidc.md`, the V1 to V5 checks for both paths
 - `docs/explanation/vault-oidc-tokens.md`, why the ID token and not the access

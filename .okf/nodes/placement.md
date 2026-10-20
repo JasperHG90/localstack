@@ -72,7 +72,7 @@ run everywhere.
 | Node | Jobs | Host volumes |
 |---|---|---|
 | [`firebat`](/nodes/firebat.md) | haproxy, postgres | `postgres` |
-| [`orangepi4a`](/nodes/orangepi4a.md) | seaweedfs, ov-dash | `seaweedfs_data`, `minio_data` (unmounted, kept until `minio-volume-destroy`) |
+| [`orangepi4a`](/nodes/orangepi4a.md) | seaweedfs, ov-dash | `seaweedfs_data` |
 | [`jetson-orin-nano`](/nodes/jetson-orin-nano.md) | embark | `embark_data`, `memex_data` |
 | [`ubuntu`](/nodes/ubuntu.md) | prometheus, grafana, loki, tempo, registry, acme | `prometheus_data`, `grafana_data`, `loki_data`, `tempo_data`, `acme_lego_state` |
 | [`radxa-dragon-q6a`](/nodes/radxa-dragon-q6a.md) | hermes, bifrost, openviking, dash, registry-ui, driftwatch, redis, nats, both oauth2-proxy jobs, backup-postgres, backup-s3, restore-s3 (when dispatched) | `hermes_data`, `openviking_data`, `driftwatch_data`, `registry_ui_data`, `nats_data` |

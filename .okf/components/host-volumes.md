@@ -36,7 +36,6 @@ mounts them.
 | --- | --- | --- | --- |
 | `postgres` | firebat | postgres | infrastructure |
 | `seaweedfs_data` | orangepi4a | seaweedfs | infrastructure |
-| `minio_data` | orangepi4a | nothing since `minio-removal`. It keeps MinIO's data until the operator promotes `minio-volume-destroy` | none |
 | `prometheus_data`, `grafana_data`, `acme_lego_state` | ubuntu | prometheus, grafana, acme | infrastructure |
 | `nats_data` | radxa-dragon-q6a | nats | infrastructure |
 | `loki_data`, `tempo_data` | ubuntu | loki, tempo | applications |
