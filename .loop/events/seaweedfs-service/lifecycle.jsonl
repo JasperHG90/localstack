@@ -29,3 +29,4 @@
 {"at": "2026-10-20T05:49:26+00:00", "by": "delegated:jasperginn@gmail.com/implementer", "edge": "blocked->ready", "grant": "g1", "kind": "override", "reason": "round 3 passed; the only change since is ruff wrapping two long lines in a test, which the commit hook required and the stamp did not catch", "schema_version": "1.0", "step": "ticket-override"}
 {"at": "2026-10-20T05:49:26+00:00", "kind": "unblock", "schema_version": "1.0"}
 {"at": "2026-10-20T05:49:30+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-20T05:50:36+00:00", "by": "advance", "from": "building", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
