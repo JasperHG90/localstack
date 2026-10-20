@@ -1,0 +1,1 @@
+{"at": "2026-10-20T09:05:46+00:00", "command": "just pre_commit", "exit": 1, "fingerprint": "78e6af4271fae01725d5b2159de0789a73637426f74296e14b37926f83701bae", "kind": "red", "name": "pre_commit", "note": null, "output": ".loop/events/minio-removal/gate-output/7793468225b06cd9430ae7c404176506ce7f09e0e1c5c0baa787c5ea297235c8.txt", "schema_version": "1.0"}
