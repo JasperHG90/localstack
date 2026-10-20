@@ -1,0 +1,1 @@
+{"at": "2026-10-20T06:28:07+00:00", "command": "just pre_commit", "exit": 1, "fingerprint": "c1bac8b5b568ff7219134717ecb7d3e498c26fdc9bcaf9b58e3cbcd1949bf4c8", "kind": "red", "name": "pre_commit", "note": null, "output": ".loop/events/seaweedfs-workload-identity/gate-output/8dd47f3f0bd1d198c8c4b7ac34aa934727f654284c1c4700323d670764718dfe.txt", "schema_version": "1.0"}
