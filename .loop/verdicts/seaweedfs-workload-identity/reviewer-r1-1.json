@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The r1 test rebuilds the nomad_job.seaweedfs templatefile call itself, passing its own sts_secret and its own iam_members expression, so it never checks what services.tf and secrets.tf actually wire in. A scratch copy with the Vault secret renamed to default/other/sts and sts_secret pointed at seaweedfs_admin still passes 11 of 11, and so does a copy with iam_members = \"\" (which renders invalid JSON with no roles). Row r1's fails_when names 'the signing key comes from anywhere but default/seaweedfs/sts'.",
+      "anchor": "cli/tests/test_seaweedfs_iam_config.py:42",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "docs/explanation/workload-identity.md has an 'Audience registry' table, which .okf/components/workload-identity-chain.md points readers to, and it does not list the new seaweedfs audience (verifier: SeaweedFS STS, defined in deployments/infrastructure/services.tf). The page now misses a live audience.",
+      "anchor": "docs/explanation/workload-identity.md:227",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "1e4cd7551b960a7bc216b205f111cd2ddcf227a075b29537ea63704106e5adc3",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T06:33:05+00:00"
+}
