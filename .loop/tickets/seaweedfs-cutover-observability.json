@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-cutover-observability",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 2,
@@ -29,7 +29,7 @@
   "split": "j-20261019T205329+0000-a22e65f6",
   "split_plan_hash": "e7c32fde963eeb5c826381aa9473483b90e5f3e30c362a103a6883fa24187516",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "3f41b867c7d9945d883fe076ec3ea86b37ebd0ab",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -137,8 +137,14 @@
       "to": "verifying",
       "at": "2026-10-20T07:18:45+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T07:22:39+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T07:22:21+00:00"
+  "at": "2026-10-20T07:22:39+00:00"
 }
