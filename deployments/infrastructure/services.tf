@@ -159,7 +159,7 @@ resource "nomad_dynamic_host_volume" "loki_data" {
   }
 }
 
-### Tempo's WAL and local block staging. Completed blocks go to MinIO (the
+### Tempo's WAL and local block staging. Completed blocks go to SeaweedFS (the
 ### `tempo` bucket, deployments/applications/storage.tf), so this only ever
 ### holds what has not been flushed yet — same split as loki_data.
 resource "nomad_dynamic_host_volume" "tempo_data" {
@@ -235,7 +235,7 @@ resource "nomad_dynamic_host_volume" "registry_ui_data" {
 }
 
 ### OpenViking's workspace and RAGFS's local scratch.
-### The vectors live in Postgres and the blobs in MinIO, so this is working
+### The vectors live in Postgres and the blobs in SeaweedFS, so this is working
 ### state rather than the store itself.
 resource "nomad_dynamic_host_volume" "openviking_data" {
   name      = "openviking_data"
@@ -340,15 +340,6 @@ locals {
       ssh_user = "firebat"
       rules = [
         "allow from 192.168.0.0/16 to any port 5432 proto tcp",
-      ]
-    }
-    # MinIO on orange_pi_4a
-    minio = {
-      host     = "192.168.2.29"
-      ssh_user = "orangepi"
-      rules = [
-        "allow from 192.168.0.0/16 to any port 9000 proto tcp",
-        "allow from 192.168.0.0/16 to any port 9001 proto tcp",
       ]
     }
     # SeaweedFS on orange_pi_4a: S3 and metrics only. Never its S3 gRPC
@@ -515,29 +506,12 @@ resource "nomad_job" "postgres" {
   )
 }
 
-### Minio
-resource "nomad_job" "minio" {
-  jobspec = templatefile(
-    "${path.module}/services/minio.hcl",
-    {
-      minio_secret = vault_kv_secret_v2.minio_credentials.path
-      # Nomad's own OIDC discovery document, which F10 turned on by setting
-      # `server { oidc_issuer = ... }` in
-      # bootstrap/roles/nomad_server/templates/nomad.hcl.j2. That Ansible
-      # variable is the source of truth for the host; change it there and
-      # this must follow. Served through the HAProxy edge on the public
-      # Let's Encrypt wildcard, so MinIO needs no extra trust bundle.
-      nomad_oidc_config_url = "https://nomad.lab.orangecluster.nl/.well-known/openid-configuration"
-    }
-  )
-}
-
 ### SeaweedFS
 ###
 ### Keyless jobs log in with their Nomad workload identity (audience
 ### `seaweedfs`) through SeaweedFS's STS, one role per job. Each role's trust
 ### policy pins the job by `nomad_job_id` and `sub`, so a job cannot assume
-### another's role (spike:seaweedfs-workload-identity/2). Not MinIO's claim
+### another's role (spike:seaweedfs-workload-identity/2). Not claim
 ### mode: SeaweedFS's `policyClaim` splits the claim on commas, and a job named
 ### `evil,tempo` got tempo's policy. Key: job id. Value: its one bucket.
 locals {
@@ -643,7 +617,6 @@ resource "nomad_job" "grafana" {
       node_dashboard              = file("${path.module}/services/grafana/node-detail.json")
       nomad_dashboard             = file("${path.module}/services/grafana/nomad.json")
       postgres_dashboard          = file("${path.module}/services/grafana/postgres.json")
-      minio_dashboard             = file("${path.module}/services/grafana/minio.json")
       seaweedfs_dashboard         = file("${path.module}/services/grafana/seaweedfs.json")
       ingress_dashboard           = file("${path.module}/services/grafana/ingress.json")
       nats_dashboard              = file("${path.module}/services/grafana/nats.json")
@@ -670,8 +643,8 @@ resource "nomad_job" "grafana" {
 
 ### Alloy (system job, all nodes) — ships journald and Nomad task logs to Loki.
 ### Replaced Promtail, which reached end of life on 2 March 2026. Loki itself
-### lives in the applications layer because it depends on the Loki MinIO bucket
-### creds (provisioned there).
+### lives in the applications layer because it depends on the Loki bucket
+### and role (provisioned there and in local.seaweedfs_iam).
 resource "nomad_job" "alloy" {
   jobspec = templatefile("${path.module}/services/alloy.hcl", {})
 }
@@ -823,14 +796,14 @@ resource "nomad_job" "restore_s3" {
   )
 }
 
-resource "nomad_job" "backup_minio" {
+resource "nomad_job" "backup_s3" {
   jobspec = templatefile(
-    "${path.module}/services/backup-minio.hcl",
+    "${path.module}/services/backup-s3.hcl",
     {
       # Written by the applications root (secrets.tf there), which applies
       # after this one, so the job names the path, not a resource.
-      seaweedfs_secret = "${vault_mount.kvv2.path}/data/default/backup-minio/seaweedfs"
-      gcs_secret       = vault_kv_secret_v2.backup_minio_gcs_credentials.path
+      seaweedfs_secret = "${vault_mount.kvv2.path}/data/default/backup-s3/seaweedfs"
+      gcs_secret       = vault_kv_secret_v2.backup_s3_gcs_credentials.path
       seaweedfs_host   = "192.168.2.29"
       gcs_bucket       = var.gcs_backup_bucket
     }

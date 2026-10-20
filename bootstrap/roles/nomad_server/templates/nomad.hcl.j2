@@ -32,13 +32,13 @@ server {
 
   # OIDC discovery issuer. Without this Nomad signs Workload Identity JWTs
   # and serves JWKS but advertises no /.well-known/openid-configuration, so
-  # consumers that need a discovery document (MinIO identity_openid's
-  # config_url, oauth2-proxy's bare-JWKS fallback) cannot be configured.
+  # consumers that need a discovery document (SeaweedFS's OIDC provider,
+  # oauth2-proxy's bare-JWKS fallback) cannot be configured.
   # Nomad derives the discovery document's `issuer` and `jwks_uri` from this
   # value, and minted WI JWTs carry it as `iss`. Served over HTTPS through
   # the HAProxy edge (acl is_nomad at haproxy.hcl:101), reachable from any
   # cluster node. F1's docs/workload-identity.md defers discovery to F10;
-  # this is the URL F10 owns and M1 points MinIO's config_url at.
+  # this is the URL F10 owns and SeaweedFS's IAM config names as its issuer.
   oidc_issuer = "{{ nomad_oidc_issuer }}"
 }
 

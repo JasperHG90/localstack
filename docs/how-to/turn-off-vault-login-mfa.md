@@ -41,7 +41,8 @@ terraform apply -var-file=./vars/prod.tfvars \
 
 Targeted, like every apply in the
 [rollout](roll-out-vault-login-mfa.md). This is the recipe somebody
-runs under pressure, and an untargeted apply here also restarts MinIO.
+runs under pressure, and an untargeted apply here also applies whatever else
+is pending in the infrastructure root.
 
 In a hurry, at the cost of drift the next apply silently reverts:
 

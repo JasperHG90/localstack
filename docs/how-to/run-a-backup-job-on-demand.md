@@ -1,18 +1,18 @@
 ---
 description: Force the nightly Postgres or object storage backup job to run now, and check its logs and what landed in GCS.
-stale_after: 2027-01-19
+stale_after: 2027-04-20
 sources:
   - resource: deployments/infrastructure/services/backup-postgres.hcl
-  - resource: deployments/infrastructure/services/backup-minio.hcl
+  - resource: deployments/infrastructure/services/backup-s3.hcl
 ---
 
 # How to run a backup job on demand
 
 ## Introduction
 
-`backup-postgres` runs nightly at 02:00 and `backup-minio` at 03:00. Use
-this to run one now, without waiting for the schedule, and to check what it
-did. Despite its name, `backup-minio` copies the SeaweedFS buckets since
+`backup-postgres` runs nightly at 02:00 and `backup-s3` at 03:00. Use this to
+run one now, without waiting for the schedule, and to check what it did.
+`backup-s3` copies the SeaweedFS buckets. It was called `backup-minio` until
 2026-10-20.
 
 ## Prerequisites
@@ -27,14 +27,14 @@ did. Despite its name, `backup-minio` copies the SeaweedFS buckets since
 ```bash
 # Run now, without waiting for the nightly schedule
 nomad job periodic force backup-postgres
-nomad job periodic force backup-minio
+nomad job periodic force backup-s3
 ```
 
 ### Step 2: Check registration and schedule
 
 ```bash
 nomad job status backup-postgres
-nomad job status backup-minio
+nomad job status backup-s3
 ```
 
 ### Step 3: Read the allocation logs
@@ -44,7 +44,7 @@ nomad job status backup-minio
 nomad alloc logs <alloc-id> pgdump
 nomad alloc logs <alloc-id> upload
 
-# backup-minio has one task
+# backup-s3 has one task
 nomad alloc logs <alloc-id> sync
 ```
 
@@ -61,13 +61,12 @@ gsutil ls gs://<bucket>/postgres/
 gsutil ls gs://<bucket>/minio/   # openviking/ registry/ models/ datalake/
 ```
 
-The SeaweedFS copies keep the `minio/` prefix, so older and newer runs land
-in the same place.
+The bucket copies keep the `minio/` prefix, named after the store the job
+first backed up, so older and newer runs land in the same place.
 
 They show what is in the bucket, not which run put it there: `nomad job
 periodic force` writes a dump under today's date exactly as the 02:00 run
-does, and `backup-minio` syncs the four buckets the same way the 03:00 run
-does.
+does, and `backup-s3` syncs the four buckets the same way the 03:00 run does.
 
 ## Additional resources
 

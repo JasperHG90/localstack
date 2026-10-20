@@ -47,9 +47,9 @@ Each folder also has an index of its own pages:
 **Workload identity**
 
 - [Verify the workload identity chain](how-to/verify-the-workload-identity-chain.md)
-- [Give a job keyless MinIO access](how-to/give-a-job-keyless-minio-access.md)
-- [Give an aws-sdk-go v1 service keyless MinIO access](how-to/give-an-aws-sdk-go-service-keyless-minio-access.md)
-- [Exchange a workload JWT for MinIO credentials](how-to/exchange-a-workload-jwt-for-minio-credentials.md)
+- [Give a job keyless SeaweedFS access](how-to/give-a-job-keyless-seaweedfs-access.md)
+- [Give an aws-sdk-go v1 service keyless SeaweedFS access](how-to/give-an-aws-sdk-go-service-keyless-seaweedfs-access.md)
+- [Exchange a workload JWT for SeaweedFS credentials](how-to/exchange-a-workload-jwt-for-seaweedfs-credentials.md)
 - [Verify memex OIDC for workloads and humans](how-to/verify-memex-oidc.md)
 
 **Edge, DNS and certificates**

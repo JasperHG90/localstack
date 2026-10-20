@@ -10,7 +10,7 @@ sources:
 
 ## Introduction
 
-Give a service its own access level, such as `app-minio-readers`, as a Vault
+Give a service its own access level, such as `app-s3-readers`, as a Vault
 group its OIDC client can admit. Use this when no existing tier names who
 should get in, which is branch 2 in
 [Which of the four to reach for](../reference/cluster-roles.md#which-of-the-four-to-reach-for).
@@ -33,7 +33,7 @@ Add an entry to `local.app_user_groups` in
 ```hcl
 locals {
   app_user_groups = {
-    "app-minio-readers" = "Read-only access to MinIO buckets"
+    "app-s3-readers" = "Read-only access to the S3 buckets"
   }
 }
 ```
@@ -44,7 +44,7 @@ Then name it from your own `vault_identity_oidc_assignment`, binding **only
 your own key**:
 
 ```hcl
-group_ids = [local.app_user_group_ids["app-minio-readers"]]
+group_ids = [local.app_user_group_ids["app-s3-readers"]]
 ```
 
 `local.app_user_group_ids` is keyed by group name for exactly this reason. Do
@@ -60,7 +60,7 @@ the map beside `local.app_user_groups`:
 ```hcl
 locals {
   app_user_group_members = {
-    "app-minio-readers" = [vault_identity_entity.operator.id]
+    "app-s3-readers" = [vault_identity_entity.operator.id]
   }
 }
 ```

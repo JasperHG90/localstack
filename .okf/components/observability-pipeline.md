@@ -79,7 +79,7 @@ the host volumes' node constraint.
 (`deployments/infrastructure/services/prometheus.hcl`):
 
 - Static targets for Nomad (all five agents), Consul, HAProxy, the Postgres
-  exporter, MinIO, SeaweedFS, Tempo and node-exporter. The `node` and `nomad` jobs
+  exporter, SeaweedFS, Tempo and node-exporter. The `node` and `nomad` jobs
   relabel `instance` to the hostname.
 - Dedicated jobs for Bifrost and OpenViking. Bifrost's `/metrics` needs basic
   auth since B1, and the shared discovery job cannot carry a per-target

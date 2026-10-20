@@ -179,7 +179,7 @@ any part of it:
 
 - No Consul catalog or KV. Both Terraform roots keep their state in Consul
   here, so neither can plan. The applications root's catalog lookups for
-  MinIO and Postgres fail.
+  SeaweedFS and Postgres fail.
 - No Vault, so no secret renders, no workload identity exchange, no brokered
   Nomad or Consul token, and no human login.
 - No Nomad server, so nothing schedules. Allocations already running on
@@ -189,8 +189,7 @@ any part of it:
   at `https://nomad.lab.orangecluster.nl`, through this edge to the Nomad
   server here, so loki, tempo and the registry cannot trade their workload
   identity for fresh S3 credentials either (`local.seaweedfs_iam` in
-  `deployments/infrastructure/services.tf`). MinIO reads the same discovery
-  document (`nomad_oidc_config_url`), but no job logs in there any more.
+  `deployments/infrastructure/services.tf`).
 - No Postgres: OpenViking, Bifrost's config store and every other database
   consumer fails.
 

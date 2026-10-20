@@ -1,7 +1,7 @@
 ---
 type: component
 title: memex, staged off the cluster
-description: "memex's Nomad job has been commented out since 2026-09-04 to give the Jetson to embark, while its Vault OIDC clients, keys, groups, database, bucket, secrets and edge route stay declared in Terraform. Covers how its two OIDC trust paths (workloads and humans) are wired and what has to change before the job can come back."
+description: "memex's Nomad job has been commented out since 2026-09-04 to give the Jetson to embark, while its Vault OIDC clients, keys, groups, database, secrets and edge route stay declared in Terraform. Its MinIO bucket and key went with MinIO, so it needs a SeaweedFS bucket and key first. Covers how its two OIDC trust paths (workloads and humans) are wired and what has to change before the job can come back."
 tags: [memex, oidc, vault, nomad, workload-identity, postgres, staged]
 status: stable
 generated:
@@ -49,8 +49,7 @@ right. Hermes used to be its main caller and now uses OpenViking instead ([Herme
 | `local.memex_auth_keys`, `local.memex_auth_oidc`, and the `memex_auth_oidc_shape_check` output | `deployments/applications/services.tf` |
 | `data.vault_identity_oidc_client_creds.memex` (reads the human client's id by name) | `deployments/applications/services.tf` |
 | Postgres role and database `memex`, with the `vector` extension | `deployments/applications/database.tf` |
-| MinIO bucket `memex` and its writer key | `deployments/applications/storage.tf` |
-| KV `default/memex/{postgres,minio,auth,bifrost}` | `deployments/applications/secrets.tf` |
+| KV `default/memex/{postgres,auth,bifrost}` | `deployments/applications/secrets.tf` |
 | `bifrost_virtual_key.memex` | `deployments/applications/services.tf` |
 | `vault_identity_oidc_key.memex_human`, `vault_identity_oidc_assignment.memex`, `vault_identity_oidc_client.memex` | `deployments/infrastructure/oidc.tf` |
 | Groups `app-memex-admins`, `app-memex-readers` in `local.app_user_groups` | `deployments/infrastructure/identity.tf` |
@@ -60,6 +59,9 @@ right. Hermes used to be its main caller and now uses OpenViking instead ([Herme
 Its Redis consumer entry (`deployments/infrastructure/database.tf`) and its
 firewall entry are commented out or gone. The daily MinIO backup moved from
 the `memex` bucket to `openviking` (ticket `backup-swap-memex-for-openviking`).
+memex has no object store any more: its MinIO bucket was not carried over to
+SeaweedFS, and its MinIO key was deleted in `minio-removal`. The old bucket's
+data is on the `minio_data` volume until the operator destroys it.
 
 ## Two OIDC trust paths
 
@@ -139,17 +141,22 @@ That is not enough, and no ticket has exercised it:
    Q3). Hermes no longer carries a memex identity, so the rule matches
    nothing today, and would give admin to any future job named `hermes`.
    `leo-consumer`'s `writer` grant is the only one with a known caller.
-4. **Firewall.** `local.firewall_rules` has no memex entry. Its old LAN-wide
+4. **No bucket or S3 key.** Add a `memex` entry to `local.buckets` in
+   `deployments/applications/storage.tf`, write its key in `secrets.tf`, and
+   pass that key's path as `memex_s3_secret`, as the comment above the
+   commented block says. The jobspec already points at SeaweedFS's port 8333
+   through `s3_host`.
+5. **Firewall.** `local.firewall_rules` has no memex entry. Its old LAN-wide
    rule on port 8000 outlived the job by a fortnight and silently widened
    embark's narrower rules on the same port (`services.tf`, comment above
    `null_resource.firewall`). A new entry should name its callers.
-5. **The edge route points at embark's port.** `backend memex` still sends
+6. **The edge route points at embark's port.** `backend memex` still sends
    `memex.lab` to 192.168.2.46:8000, where embark now listens. embark's rules
    do not admit HAProxy (.30), so the route should fail its health check and
    answer 503. That holds only if no wider rule survives on the node. Not
    measured.
 
-The MinIO credentials are still the static `default/memex/minio` key. Ticket
+memex took a static MinIO key, and will take a static SeaweedFS key. Ticket
 R12 planned to make memex keyless like tempo, loki and registry
 ([MinIO](/components/minio.md)), and the operator dropped it (`a7aa595`):
 memex reads its key as two explicit settings
@@ -169,7 +176,9 @@ What that looks like against memex's tables is
 - [Vault's OIDC provider and its clients](/components/vault-oidc-provider.md)
 - [embark, the embedding and rerank server](/components/embark.md), which holds the Jetson now
 - [The host firewall](/components/host-firewall.md)
-- [MinIO](/components/minio.md), which holds the `memex` bucket
+- [SeaweedFS](/components/seaweedfs.md), where a new `memex` bucket would go
+- [MinIO](/components/minio.md), whose `minio_data` volume still holds the
+  old `memex` bucket
 
 - `docs/how-to/verify-memex-oidc.md`, the V1 to V5 checks for both paths
 - `docs/explanation/vault-oidc-tokens.md`, why the ID token and not the access

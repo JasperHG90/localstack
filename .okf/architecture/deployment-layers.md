@@ -36,8 +36,8 @@ sources:
     resource: README.md
   - id: apps-storage
     resource: deployments/applications/storage.tf
-  - id: minio-jobspec
-    resource: deployments/infrastructure/services/minio.hcl
+  - id: seaweedfs-jobspec
+    resource: deployments/infrastructure/services/seaweedfs.hcl
   - id: infra-database
     resource: deployments/infrastructure/database.tf
   - id: infra-justfile
@@ -86,8 +86,8 @@ split is `.claude/rules/terraform-file-layout.md`.
 | Layer | Owns | Does not own |
 |---|---|---|
 | Ansible | packages and HashiStack versions (`bootstrap/inventory/group_vars/all.yml`), every Consul, Vault and Nomad config file, Consul ACL bootstrap, Vault init and unseal, Nomad ACL bootstrap, the Consul ACL policies and tokens Vault and Nomad use to reach Consul, the Nomad `developer` ACL policy, the `jwt-nomad` auth mount with its default role and the shared `nomad-workloads` policy, the `nomad/` and `consul/` engine mounts and their `config/access`, the Consul `deploy` ACL policy, the `bootstrap/` KV mount and its two secrets, Podman, the NVIDIA runtime, Tailscale, and ufw's default policy plus the HashiStack ports | any Nomad job, any Vault policy other than `nomad-workloads` |
-| Infrastructure root | the `secret` KV mount, human auth (`userpass`, `jwt-lab`), identity, groups and human policies (`identity.tf`), the OIDC provider, every client and the Nomad OIDC auth method (`oidc.tf`), the Nomad and Consul engine roles, the Nomad `deploy` and `dash_read` ACL policies, the per-job JWT roles and their policies (`machine_roles.tf`), the `redis/` database engine (`database.tf`), all fourteen host volumes, the shared jobs (postgres, minio, haproxy, acme, prometheus, grafana, alloy, node-exporter, the two oauth2-proxy jobs, nats, redis, two backup jobs), their KV secrets and firewall rules, and the GCS backup bucket | MinIO buckets, Postgres roles and databases, application jobs |
-| Applications root | the application jobs (hermes, loki, tempo, registry, embark, openviking, ov-dash, driftwatch, dash, registry-ui, bifrost), their MinIO and SeaweedFS buckets, IAM and access keys (`storage.tf`), Postgres roles, databases and grants (`database.tf`), their KV secrets (`secrets.tf`), the Bifrost virtual keys, and their firewall rules | any Vault mount, auth method, policy or role, any host volume |
+| Infrastructure root | the `secret` KV mount, human auth (`userpass`, `jwt-lab`), identity, groups and human policies (`identity.tf`), the OIDC provider, every client and the Nomad OIDC auth method (`oidc.tf`), the Nomad and Consul engine roles, the Nomad `deploy` and `dash_read` ACL policies, the per-job JWT roles and their policies (`machine_roles.tf`), the `redis/` database engine (`database.tf`), all fourteen host volumes, the shared jobs (postgres, seaweedfs, haproxy, acme, prometheus, grafana, alloy, node-exporter, the two oauth2-proxy jobs, nats, redis, two backup jobs and `restore-s3`), their KV secrets and firewall rules, and the GCS backup bucket | S3 buckets, Postgres roles and databases, application jobs |
+| Applications root | the application jobs (hermes, loki, tempo, registry, embark, openviking, ov-dash, driftwatch, dash, registry-ui, bifrost), their SeaweedFS buckets, IAM users and access keys (`storage.tf`), Postgres roles, databases and grants (`database.tf`), their KV secrets (`secrets.tf`), the Bifrost virtual keys, and their firewall rules | any Vault mount, auth method, policy or role, any host volume |
 
 Four placements surprise a first reader:
 
@@ -157,17 +157,17 @@ the history: the commit that split the roots (`f76edbe`, 2025-10-31) put
 Postgres in infrastructure, and `1855ed9` added MinIO there a day later,
 together with a registry that an applications job later replaced.
 
-The applications root configures four providers from services that must
-already be running: `minio`, `aws` (pointed at SeaweedFS) and `postgresql`
-from the Consul catalog and an admin credential in KV, and `bifrost` from its
-own job (`deployments/applications/providers.tf:48-94`). The `minio`, `aws`
-and `postgresql` providers are fed by data-source and ephemeral reads that
+The applications root configures three providers from services that must
+already be running: `aws` (pointed at SeaweedFS) and `postgresql` from the
+Consul catalog and an admin credential in KV, and `bifrost` from its own job
+(`deployments/applications/providers.tf`). The `aws` and `postgresql`
+providers are fed by data-source and ephemeral reads that
 run at plan time with no dependency edge
 (`deployments/applications/services.tf:1-29`), so their services must
 already be running when the plan starts. So:
 
 - a service that applications' providers log into belongs in infrastructure
-  (postgres, minio, seaweedfs), and so does a service an infrastructure Vault engine
+  (postgres, seaweedfs), and so does a service an infrastructure Vault engine
   connects to during apply (redis, `deployments/infrastructure/database.tf`)
 - anything written through those providers belongs in applications: buckets,
   IAM, Postgres roles and databases, Bifrost keys
@@ -179,7 +179,7 @@ plumbing an application would otherwise rebuild (the edge, metrics, NATS,
 backups, host volumes). Bifrost shows the other way to do it: its provider is
 in the same root as its job and waits on it through a resource reference to
 `null_resource.bifrost_ready`, because provider blocks take no `depends_on`.
-That works, and was not used for MinIO or Postgres.
+That works, and was not used for MinIO, SeaweedFS or Postgres.
 
 ## How a later layer finds an earlier one
 
@@ -193,11 +193,10 @@ Ansible's output. Every handoff is a name.
 | Nomad `developer` ACL policy | Ansible, infrastructure | referenced by name in `nomad_acl_binding_rule.developer` (`deployments/infrastructure/oidc.tf:423-435`) |
 | Consul `deploy` ACL policy | Ansible, infrastructure | `consul_policies = ["deploy"]` in `machine_roles.tf` |
 | `nomad-workloads` role and policy | Ansible, both roots' jobs | every per-job JWT role repeats both policy names and the claim mappings |
-| MinIO, SeaweedFS and Postgres addresses | infrastructure jobs, applications | `data "consul_service"` for `minio`, `seaweedfs` and `postgres-db`, which the Consul `deploy` policy allows by name (`bootstrap/playbooks/enable_consul_secrets.yml:49-57`) |
-| MinIO, SeaweedFS and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack`, `default/seaweedfs/admin` and `default/postgres/localstack` |
+| SeaweedFS and Postgres addresses | infrastructure jobs, applications | `data "consul_service"` for `seaweedfs` and `postgres-db`, which the Consul `deploy` policy allows by name (`bootstrap/playbooks/enable_consul_secrets.yml`) |
+| SeaweedFS and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/seaweedfs/admin` and `default/postgres/localstack` |
 | OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:44-56`) |
 | Host volumes and JWT roles | infrastructure, applications jobs | the name in the jobspec |
-| MinIO access by workload identity (no job since 2026-10-20) | applications `storage.tf`, the infrastructure `minio` job | MinIO runs in claim mode on `nomad_job_id` and applies the `minio_iam_policy` of that name, so each `*_wi` policy's `name` must equal its job id. The job's `identity` block must carry `aud = ["minio"]`, the `MINIO_IDENTITY_OPENID_CLIENT_ID_NOMAD` in `deployments/infrastructure/services/minio.hcl` |
 | SeaweedFS access by workload identity (loki, tempo, registry) | infrastructure `local.seaweedfs_iam` in `services.tf`, applications jobs | each job asks for the role `arn:aws:iam::role/<job id>`, whose trust policy requires that job's `nomad_job_id` and `sub`. The job's `identity` block must carry `aud = ["seaweedfs"]`, the provider `clientId` in `local.seaweedfs_iam` |
 | Loki, Tempo, dash, registry-ui, every edge backend | applications, infrastructure jobs | literal addresses in infrastructure jobspecs |
 
@@ -216,7 +215,7 @@ gives the three layers in that order. What goes wrong out of order:
 | Broken order | Symptom |
 |---|---|
 | Terraform before Ansible | no Consul, Vault or Nomad to talk to, and no engine mounts |
-| applications before infrastructure | provider setup fails before any resource when MinIO or Postgres is missing from the catalog or their admin KV is missing. The OIDC client reads then fail at refresh. `localstack login` also fails, because its roles and policy are infrastructure's. |
+| applications before infrastructure | provider setup fails before any resource when SeaweedFS or Postgres is missing from the catalog or their admin KV is missing. The OIDC client reads then fail at refresh. `localstack login` also fails, because its roles and policy are infrastructure's. |
 | a job before its host volume | the job cannot be placed |
 | a job before its JWT role | the task cannot log in to Vault |
 | an application behind the edge before its HAProxy route | the hostname answers with no backend |
@@ -257,7 +256,7 @@ writes the workaround down.
 |---|---|
 | Ansible | SSH with `.ssh/id_rsa` and sudo (`bootstrap/ansible.cfg`). On the manager it reads the three bootstrap credentials from disk. On day 0 it reads GitHub and Tailscale secrets from the environment. |
 | Infrastructure | Day 0: the bootstrap tokens (see above). Day 2: the operator's `localstack login` session: `VAULT_TOKEN` carrying `developer`, a brokered Nomad deploy token and a brokered Consul token. A fresh brokered Nomad management token per run. `.ssh/id_rsa` for the ufw `null_resource`. gcloud credentials for the `google` provider. |
-| Applications | The same session. MinIO, Postgres and Bifrost admin credentials read ephemerally from KV. `.ssh/id_rsa` for its ufw `null_resource`. |
+| Applications | The same session. SeaweedFS, Postgres and Bifrost admin credentials read ephemerally from KV. `.ssh/id_rsa` for its ufw `null_resource`. |
 
 Neither root has an identity of its own. Why the per-root deployers were
 dropped, and what `developer` can reach, is [Terraform deployer
@@ -282,7 +281,8 @@ credentials](/components/deployer-credentials.md).
 | Human auth method, group, or human policy | infrastructure `identity.tf` (a per-job policy goes in `machine_roles.tf`) |
 | OIDC client | infrastructure `oidc.tf` (`docs/how-to/add-a-vault-oidc-client.md`) |
 | Vault secrets engine | infrastructure, with an exact `sys/mounts/<path>` grant added to `developer` in `identity.tf` first. If configuring it needs a bootstrap credential, Ansible instead. |
-| MinIO bucket or IAM | applications `storage.tf` and `deployments/applications/modules/bucket/` |
+| S3 bucket or IAM user | applications `storage.tf`, an entry in `local.buckets` |
+| Keyless S3 access for a job | infrastructure `services.tf`, an entry in `local.seaweedfs_keyless_jobs` (`docs/how-to/give-a-job-keyless-seaweedfs-access.md`) |
 | Postgres role or database | applications `database.tf` |
 | Consul catalog lookup from Terraform | a `service` line in `bootstrap/playbooks/enable_consul_secrets.yml` first |
 
@@ -292,8 +292,6 @@ credentials](/components/deployer-credentials.md).
   `state_rm` (`deployments/applications/justfile:9-31`) run without the
   `localstack env` exports. The detail is in [Terraform deployer
   credentials](/components/deployer-credentials.md#what-a-run-authenticates-with).
-- **`README.md:24` puts the registry in infrastructure.** It is an application
-  job (`nomad_job.registry`, `deployments/applications/services.tf:393`).
 - **`README.md:51-59` runs `just init` in applications**, which is one of the
   recipes above.
 - **`developer` names no path under `jwt-lab`.** The infrastructure root
@@ -336,7 +334,7 @@ Modules and files:
   `bootstrap/roles/nomad_server/tasks/main.yml`
 - `deployments/infrastructure/`, with `services.tf`, `identity.tf`,
   `oidc.tf`, `machine_roles.tf`, `secrets.tf`, `database.tf` and
-  `services/minio.hcl`
+  `services/seaweedfs.hcl`
 - `deployments/applications/`, with `providers.tf`, `services.tf` and
   `storage.tf`
 

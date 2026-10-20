@@ -170,9 +170,9 @@ locals {
 ### The shared claim contract. Emits the entity's Vault group names as a
 ### `groups` array, which oauth2-proxy consumes via --oidc-groups-claim.
 ###
-### NOT every relying party reads this claim: M2 tiers MinIO on `role_policy`,
-### which bypasses the claim entirely and gates on the per-client assignment
-### instead. See plan Q8. Each consumer ticket states which mechanism it uses.
+### NOT every relying party reads this claim: a consumer may gate on its
+### per-client assignment instead (the removed object store's M2 tiers did,
+### through `role_policy`). See plan Q8. Each consumer ticket states which mechanism it uses.
 resource "vault_identity_oidc_scope" "groups" {
   name        = "groups"
   description = "Vault group names of the authenticated entity"

@@ -49,9 +49,9 @@ How the `.tf` files inside a root are split is the local rule
   write in both roots lands in
 - every Nomad dynamic host volume, including those mounted by application
   jobs (`services.tf`)
-- the platform jobs: postgres, minio, haproxy, prometheus, grafana, alloy,
-  node-exporter, the two oauth2-proxy instances, nats, redis, acme and the
-  two backup jobs
+- the platform jobs: postgres, seaweedfs, haproxy, prometheus, grafana,
+  alloy, node-exporter, the two oauth2-proxy instances, nats, redis, acme,
+  the two backup jobs and `restore-s3`
 - Vault identity, the OIDC provider and every OIDC client (`identity.tf`,
   `oidc.tf`), and the machine roles Vault brokers (`machine_roles.tf`)
 - Vault's Redis database secrets engine and its `cache-*` roles (`database.tf`)
@@ -61,8 +61,8 @@ How the `.tf` files inside a root are split is the local rule
 
 `deployments/applications` owns the workloads that change weekly: hermes, loki,
 tempo, registry, embark, openviking, ov-dash, driftwatch, dash, registry-ui and
-bifrost; their MinIO buckets and IAM (`storage.tf` and
-`deployments/applications/modules/bucket/`); their Postgres roles and databases
+bifrost; their SeaweedFS buckets, users and keys (`storage.tf`, through the
+`hashicorp/aws` provider); their Postgres roles and databases
 (`database.tf`); and the Bifrost virtual keys.
 
 ## State and credentials
@@ -96,8 +96,8 @@ The brokered tokens are narrow, and that shapes what a root can add:
 - The Consul `deploy` policy is written by Ansible, not Terraform
   (`bootstrap/playbooks/enable_consul_secrets.yml`). It grants write on
   `terraform/` and sessions, which is all the state backend needs. It also
-  grants read on exactly three services, `minio`, `seaweedfs` and
-  `postgres-db`, plus `node_prefix` read. A new `data "consul_service"` in applications will be
+  grants read on exactly two services, `seaweedfs` and `postgres-db`, plus
+  `node_prefix` read. Its `minio` grant went in `minio-removal`. A new `data "consul_service"` in applications will be
   denied until that playbook grows a line and is re-run.
 - The Nomad `deploy` policy (`nomad_acl_policy.deploy`, `machine_roles.tf`)
   allows `submit-job`, `read-job`, `dispatch-job` (for the parameterized
@@ -119,16 +119,16 @@ There is no `terraform_remote_state` anywhere. The channels are:
 
 | What applications needs | How it gets it | Written by |
 |---|---|---|
-| MinIO and Postgres addresses | `data "consul_service"` for `minio` and `postgres-db` | the infra jobs registering in Consul |
-| MinIO and Postgres admin credentials | `ephemeral "vault_kv_secret_v2"` at `default/minio/localstack` and `default/postgres/localstack` | `deployments/infrastructure/secrets.tf` |
+| SeaweedFS and Postgres addresses | `data "consul_service"` for `seaweedfs` and `postgres-db` | the infra jobs registering in Consul |
+| SeaweedFS and Postgres admin credentials | `ephemeral "vault_kv_secret_v2"` at `default/seaweedfs/admin` and `default/postgres/localstack` | `deployments/infrastructure/secrets.tf` |
 | OIDC client ids for memex and the Hermes dashboard | `data "vault_identity_oidc_client_creds"` by client name | `deployments/infrastructure/oidc.tf` |
 | A host volume to mount | the volume name in the jobspec | `deployments/infrastructure/services.tf` |
 | Vault JWT roles for its jobs | the role name in the jobspec | `deployments/infrastructure/machine_roles.tf` |
 
-The `minio`, `postgresql` and `bifrost` providers in
+The `aws` (SeaweedFS), `postgresql` and `bifrost` providers in
 `deployments/applications/providers.tf` are configured from these reads. So a
-plan of applications fails at provider setup, before any resource, when MinIO or
-Postgres is not registered in Consul or when the externally seeded
+plan of applications fails at provider setup, before any resource, when
+SeaweedFS or Postgres is not registered in Consul or when the externally seeded
 `default/bifrost/credentials` is missing. The `bifrost` provider also reads
 `null_resource.bifrost_ready`, which polls Bifrost's `/health` after each
 redeploy. Provider blocks take no `depends_on`, and the comment in
@@ -144,7 +144,7 @@ only link is a comment beside each:
 - The upstreams of the two oauth2-proxy jobs in
   `deployments/infrastructure/services.tf` are loopback addresses for dash and
   registry-ui in applications, colocated on the same node.
-- Apart from MinIO and Postgres, which come from the Consul catalog, every
+- Apart from SeaweedFS and Postgres, which come from the Consul catalog, every
   node address is a literal (`*_host = "192.168.2.50"`). The node map is
   [node placement](/nodes/placement.md).
 

@@ -196,7 +196,7 @@ job "alloy" {
 
       # 128 MB reserved, matching what Promtail ran on for the same two log
       # sources: this is a system job, so the reservation has to fit the
-      # tightest node. orangepi4a carries MinIO and Phoenix and has no room
+      # tightest node. orangepi4a carries the object store and has no room
       # for 256, and a system job that cannot place there silently stops
       # shipping that node's logs. memory_max lets Alloy use more where a
       # node has slack.

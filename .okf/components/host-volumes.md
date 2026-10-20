@@ -35,7 +35,8 @@ mounts them.
 | Volume | Node | Mounted by | Job's root |
 | --- | --- | --- | --- |
 | `postgres` | firebat | postgres | infrastructure |
-| `minio_data` | orangepi4a | minio | infrastructure |
+| `seaweedfs_data` | orangepi4a | seaweedfs | infrastructure |
+| `minio_data` | orangepi4a | nothing since `minio-removal`. It keeps MinIO's data until the operator promotes `minio-volume-destroy` | none |
 | `prometheus_data`, `grafana_data`, `acme_lego_state` | ubuntu | prometheus, grafana, acme | infrastructure |
 | `nats_data` | radxa-dragon-q6a | nats | infrastructure |
 | `loki_data`, `tempo_data` | ubuntu | loki, tempo | applications |
@@ -56,7 +57,7 @@ losing it matters. Read it before resizing or moving one.
   volume does not follow its job, so moving one without the other leaves the
   job unplaceable. Nothing checks the pair.
 - **Apply infrastructure first.** Four infrastructure jobs carry `depends_on`
-  their volume (prometheus, grafana, nats, acme). postgres and minio do not. The applications root cannot reference resources in the other
+  their volume (prometheus, grafana, nats, acme). postgres and seaweedfs do not. The applications root cannot reference resources in the other
   root, so its jobs have no ordering at all. A job applied before its volume
   exists fails to place.
 - **Volumes belong to root.** The `mkdir` plugin creates each directory as

@@ -99,9 +99,9 @@ def test_basic_auth_rides_every_request() -> None:
 @respx.mock
 def test_a_blob_follows_the_307_to_its_final_body() -> None:
     respx.get(f"{REG}/v2/a/blobs/sha256:cfg").mock(
-        return_value=httpx.Response(307, headers={"Location": "https://minio.test/blob"})
+        return_value=httpx.Response(307, headers={"Location": "https://s3.test/blob"})
     )
-    respx.get("https://minio.test/blob").mock(
+    respx.get("https://s3.test/blob").mock(
         return_value=httpx.Response(200, json={"package": {"name": "a"}})
     )
     assert asyncio.run(client().get_config_json("a", "sha256:cfg")) == {"package": {"name": "a"}}

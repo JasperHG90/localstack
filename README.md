@@ -9,10 +9,10 @@ This is my lab, not a general-purpose template — topology, hostnames, and serv
 ## What it runs
 
 - **Core:** Nomad, Vault, Consul
-- **Data:** PostgreSQL, MinIO (S3-compatible), a private Docker registry, DuckLake
+- **Data:** PostgreSQL, SeaweedFS (S3-compatible), a private Docker registry, DuckLake
 - **Observability:** Prometheus, Loki, Grafana, HAProxy (reverse proxy + metrics)
 - **Applications:** [Hermes](https://github.com/JasperHG90/hermes) (AI gateway + agent), [Memex](https://github.com/JasperHG90/memex) (notes/memory service), ov-dash (browser dashboard over OpenViking)
-- **Backups:** nightly GCS off-site jobs for PostgreSQL and MinIO
+- **Backups:** nightly GCS off-site jobs for PostgreSQL and SeaweedFS
 
 ## Layout
 
@@ -21,8 +21,8 @@ The repo is three deploy layers, plus a CLI:
 | Layer | Path | What it does |
 |---|---|---|
 | Bootstrap | `bootstrap/` | Ansible playbooks — install Nomad/Vault/Consul/Podman/CNI on the nodes, seed initial secrets |
-| Infrastructure | `deployments/infrastructure/` | Terraform — Vault mounts, dynamic host volumes, core services (PostgreSQL, MinIO, registry) |
-| Applications | `deployments/applications/` | Terraform — databases/roles, MinIO buckets/policies, application Nomad jobs |
+| Infrastructure | `deployments/infrastructure/` | Terraform — Vault mounts, dynamic host volumes, core services (PostgreSQL, SeaweedFS) |
+| Applications | `deployments/applications/` | Terraform — databases/roles, SeaweedFS buckets/users, the registry, application Nomad jobs |
 | CLI | `cli/` | Python — the `localstack` cockpit. `login`, `logout`, `whoami`, `env`, `token`, `config`, `breakglass`, `deps`, `monitor`, `status`, `service`, `secret` and `vault grants` |
 
 Database schema changes live in `applications/migrations/` and run through [golang-migrate](https://github.com/golang-migrate/migrate).
@@ -63,7 +63,7 @@ Pre-commit hooks (JSON/YAML lint, HCL format, private-key detection, and for `cl
 
 ## Local dev container
 
-`.devcontainer/` has a Dockerfile for a reproducible shell with Terraform, Ansible, Nomad, Vault, Consul, MinIO CLI, and `just` preinstalled. Copy `.devcontainer/.env.example` to `.devcontainer/.env` and fill in your cluster credentials before starting the container.
+`.devcontainer/` has a Dockerfile for a reproducible shell with Terraform, Ansible, Nomad, Vault, Consul, the `mc` S3 client, and `just` preinstalled. Copy `.devcontainer/.env.example` to `.devcontainer/.env` and fill in your cluster credentials before starting the container.
 
 The uv and prek caches are the named volumes `loop-harness-uv-cache` and
 `loop-harness-prek-cache`, shared with the loop-engineering-harness

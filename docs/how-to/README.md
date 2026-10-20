@@ -15,11 +15,11 @@
 - [How to create a JetStream stream](create-a-jetstream-stream.md): Create a JetStream stream, publish to it and read it back through a durable consumer.
 - [How to delete a lost session's Nomad and Consul tokens](delete-a-lost-sessions-brokered-tokens.md): Close a lost localstack session by deleting its brokered Nomad and Consul tokens when its Vault token cannot be revoked.
 - [How to delete a Nomad dynamic host volume](delete-a-nomad-dynamic-host-volume.md): Delete a Nomad dynamic host volume that Terraform does not manage, through the Nomad HTTP API.
-- [How to exchange a workload JWT for MinIO credentials](exchange-a-workload-jwt-for-minio-credentials.md): Trade a Nomad job's workload JWT for short-lived MinIO credentials by hand with curl.
+- [How to exchange a workload JWT for SeaweedFS credentials](exchange-a-workload-jwt-for-seaweedfs-credentials.md): Trade a Nomad job's workload JWT for short-lived SeaweedFS credentials by hand, to prove a keyless job's role works.
 - [How to expose Python metrics to Prometheus](expose-python-metrics-to-prometheus.md): Expose a Python service's metrics and register them in Consul so Prometheus scrapes them with no config change.
 - [How to get the operator password](get-the-operator-password.md): Read the Vault operator password out of band once, so localstack login can prompt for it.
-- [How to give a job keyless MinIO access](give-a-job-keyless-minio-access.md): Give a minio-go-based Nomad job keyless MinIO access by trading its workload identity JWT for short-lived credentials, with tempo as the example.
-- [How to give an aws-sdk-go v1 service keyless MinIO access](give-an-aws-sdk-go-service-keyless-minio-access.md): Give an aws-sdk-go v1 service keyless MinIO access through a credential_process helper, as loki and registry did before they moved to SeaweedFS.
+- [How to give a job keyless SeaweedFS access](give-a-job-keyless-seaweedfs-access.md): Give a minio-go-based Nomad job keyless SeaweedFS access through a role bound to that job, with tempo as the example.
+- [How to give an aws-sdk-go v1 service keyless SeaweedFS access](give-an-aws-sdk-go-service-keyless-seaweedfs-access.md): Give an aws-sdk-go v1 service keyless SeaweedFS access through a credential_process helper, as loki and the registry do.
 - [How to join and leave the admin group](join-and-leave-the-admin-group.md): Join the Vault admin group for an incident and leave it afterward, without wiping the group's other members.
 - [How to log in to memex from a laptop](log-in-to-memex-from-a-laptop.md): Log in to memex from a laptop as yourself through the Vault lab OIDC provider, so the memex CLI carries your own 30-day token.
 - [How to log in to Vault](log-in-to-vault.md): Log in to Vault as yourself with userpass and a TOTP passcode, so your token carries the identity that group membership and OIDC assignments need.

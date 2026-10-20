@@ -5,7 +5,10 @@
       "context": "."
     },
     "containerEnv": {
-      "HOME": "/home/vscode"
+      "HOME": "/home/vscode",
+      "UV_CACHE_DIR": "/home/vscode/.cache/uv",
+      "UV_LINK_MODE": "copy",
+      "PREK_HOME": "/home/vscode/.cache/prek"
     },
     "customizations": {
       "vscode": {

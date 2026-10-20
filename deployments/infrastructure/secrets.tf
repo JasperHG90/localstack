@@ -51,28 +51,6 @@ resource "vault_kv_secret_v2" "seaweedfs_sts" {
   }
 }
 
-### Minio credentials
-resource "random_password" "minio_secret_key" {
-  length  = 32
-  special = false
-}
-
-resource "vault_kv_secret_v2" "minio_credentials" {
-  mount = vault_mount.kvv2.path
-  name  = "default/minio/localstack"
-  data_json = jsonencode({
-    access_key = "minio"
-    secret_key = random_password.minio_secret_key.result
-  })
-  delete_all_versions = false
-  custom_metadata {
-    max_versions = 5
-    data = {
-      managed_by = "terraform"
-    }
-  }
-}
-
 ### Grafana admin password
 resource "random_password" "grafana_admin" {
   length  = 24
@@ -402,22 +380,6 @@ resource "vault_kv_secret_v2" "backup_postgres_gcs_credentials" {
   }
 }
 
-resource "vault_kv_secret_v2" "backup_minio_s3_credentials" {
-  mount = vault_mount.kvv2.path
-  name  = "default/backup-minio/minio"
-  data_json = jsonencode({
-    access_key = "minio"
-    secret_key = random_password.minio_secret_key.result
-  })
-  delete_all_versions = false
-  custom_metadata {
-    max_versions = 5
-    data = {
-      managed_by = "terraform"
-    }
-  }
-}
-
 ### restore-s3 reads only `default/restore-s3/*` (a dispatched job keeps its
 ### parent's id), so it gets its own copy of the backup key.
 resource "vault_kv_secret_v2" "restore_s3_gcs_credentials" {
@@ -435,9 +397,9 @@ resource "vault_kv_secret_v2" "restore_s3_gcs_credentials" {
   }
 }
 
-resource "vault_kv_secret_v2" "backup_minio_gcs_credentials" {
+resource "vault_kv_secret_v2" "backup_s3_gcs_credentials" {
   mount = vault_mount.kvv2.path
-  name  = "default/backup-minio/gcs"
+  name  = "default/backup-s3/gcs"
   data_json = jsonencode({
     service_account_json = base64decode(google_service_account_key.backup.private_key)
   })

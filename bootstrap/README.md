@@ -15,7 +15,6 @@ cp .env.example .env
 | Variable | Description |
 |---|---|
 | `DOCKER_REGISTRY_PASSWORD` | Password for the private Docker registry |
-| `MINIO_ROOT_PASSWORD` | MinIO root password |
 | `CONSUL_AGENT_TOKEN_SECRET` | Consul agent ACL token |
 | `VAULT_CONSUL_TOKEN_SECRET` | Vault's Consul ACL token |
 | `NOMAD_CONSUL_TOKEN_SECRET` | Nomad's Consul ACL token |

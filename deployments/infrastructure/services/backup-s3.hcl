@@ -1,4 +1,4 @@
-job "backup-minio" {
+job "backup-s3" {
   datacenters = ["localstack"]
   type        = "batch"
   namespace   = "default"
@@ -23,8 +23,8 @@ job "backup-minio" {
         network_mode = "host"
         entrypoint   = ["/bin/sh", "-c"]
         ### Every bucket is attempted, and one failed sync still fails the run.
-        ### The source is SeaweedFS since the cutover; the GCS prefix stays
-        ### minio/ so the backup history carries on.
+        ### The GCS prefix minio/ is named after the store this job first
+        ### backed up, and kept so the backup history carries on.
         ### loki and tempo keep 30 days and are not backed up.
         ### OpenViking stores each directory as a zero-byte key ending in `/`.
         ### Without the two marker flags rclone drops them, empty directories

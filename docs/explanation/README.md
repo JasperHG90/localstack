@@ -11,4 +11,4 @@
 - [Two-factor auth on Vault logins](vault-login-mfa.md): Why the TOTP second factor is on the Vault userpass login, and what it leaves uncovered.
 - [Vault OIDC tokens, and what a relying party has to know](vault-oidc-tokens.md): What a service that verifies Vault OIDC tokens itself has to know, and how to revoke a long-lived ID token.
 - [Why monitoring is not behind the edge](why-monitoring-is-not-behind-the-edge.md): Why Prometheus, Loki and Tempo have no route through the edge proxy, and what that costs.
-- [Nomad Workload Identity and the Vault JWT trust chain](workload-identity.md): How a Nomad task's Workload Identity JWT becomes a scoped Vault token or MinIO credential, and the conventions a new consumer follows.
+- [Nomad Workload Identity and the Vault JWT trust chain](workload-identity.md): How a Nomad task's Workload Identity JWT becomes a scoped Vault token or SeaweedFS credential, and the conventions a new consumer follows.

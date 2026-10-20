@@ -13,9 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEPLOYMENTS = REPO_ROOT / "deployments"
 HAPROXY = DEPLOYMENTS / "infrastructure" / "services" / "haproxy.hcl"
 TILES = DEPLOYMENTS / "applications" / "services" / "dash" / "tiles.json"
-MINIO_ADDRESS = "192.168.2.29:9000"
-# MinIO's own jobspec and its scrape target keep the address until minio-removal.
-ALLOWED_MINIO_ADDRESS = {"minio.hcl", "prometheus.hcl"}
+OLD_STORE_ADDRESS = "192.168.2.29:9000"
 
 
 def _backend(name: str) -> str:
@@ -28,8 +26,9 @@ def test_s3_route_points_at_seaweedfs() -> None:
     assert "server s3_1 192.168.2.29:8333 check" in _backend("s3")
 
 
-def test_minio_console_route_stays_on_minio_until_removal() -> None:
-    assert "192.168.2.29:9001" in _backend("minio")
+def test_old_console_route_is_gone() -> None:
+    assert "backend minio" not in HAPROXY.read_text()
+    assert "192.168.2.29:9001" not in HAPROXY.read_text()
 
 
 def test_dash_tile_is_seaweedfs() -> None:
@@ -48,10 +47,10 @@ def test_devcontainer_alias_and_example_name_seaweedfs() -> None:
     assert "MINIO_" not in example
 
 
-def test_no_jobspec_hardcodes_minio_outside_its_own_files() -> None:
+def test_no_jobspec_names_the_old_store_address() -> None:
     offenders = [
         str(path.relative_to(REPO_ROOT))
         for path in DEPLOYMENTS.rglob("*.hcl")
-        if MINIO_ADDRESS in path.read_text() and path.name not in ALLOWED_MINIO_ADDRESS
+        if OLD_STORE_ADDRESS in path.read_text()
     ]
-    assert offenders == [], f"jobspecs still naming MinIO's address: {offenders}"
+    assert offenders == [], f"jobspecs still naming the old store's address: {offenders}"

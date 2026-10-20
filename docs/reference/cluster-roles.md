@@ -61,7 +61,7 @@ Documented, not enforced. Nothing validates it.
 
 Whether a level is per-app or per-resource is up to the service that adds the
 tier. Services express levels differently, and only the service knows its own
-constraint: MinIO thinks in bucket policies, Grafana in org roles. Forcing
+constraint: SeaweedFS thinks in bucket policies, Grafana in org roles. Forcing
 one shape here would be guessing on their behalf.
 
 Adding a tier is [How to add an app-user tier](../how-to/add-an-app-user-tier.md).

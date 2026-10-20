@@ -332,7 +332,7 @@ resource "vault_identity_entity_alias" "ov_dash_consumer" {
 ### The `developer` group: one human identity that covers everything a person
 ### does on this cluster. Bound to the operator entity through a group, so
 ### adding a second human is one `member_entity_ids` entry and the group name
-### rides the OIDC `groups` claim (oidc.tf) to Nomad, Grafana and MinIO.
+### rides the OIDC `groups` claim (oidc.tf) to Nomad and Grafana.
 ###
 ### THIS IS NOT A CONTAINMENT BOUNDARY, and no comment here should say it is.
 ### The holder can write `identity/*` and `sys/policies/acl/*`, so they can
@@ -501,7 +501,7 @@ resource "vault_policy" "developer" {
 
 ### Binding through a group, not the entity and not the auth mount: adding a
 ### person is one entry here, and the group NAME is what the OIDC `groups`
-### scope emits (oidc.tf) for Nomad, Grafana and MinIO to map.
+### scope emits (oidc.tf) for Nomad and Grafana to map.
 ###
 ### Note for anyone checking a token: the policy arrives via the group, so it
 ### appears in `identity_policies` and NOT in `policies`, which holds only
@@ -671,7 +671,7 @@ locals {
   app_user_groups = {
     # >>> CONSUMER TICKETS: ADD YOUR TIER HERE. <<<
     #
-    #   "app-minio-readers" = "Read-only access to MinIO buckets"
+    #   "app-s3-readers" = "Read-only access to the S3 buckets"
     #
     # Then bind it in your own vault_identity_oidc_assignment. Adding a person
     # is a Terraform edit to app_user_group_members below, which is the point:
@@ -715,7 +715,7 @@ resource "vault_identity_group" "app_user" {
 ### >>> CONSUMER TICKETS: READ THIS, DO NOT EDIT IT. <<<
 ### Derived from the map above. Add your tier there, then bind YOUR OWN key:
 ###
-###   group_ids = [local.app_user_group_ids["app-minio-readers"]]
+###   group_ids = [local.app_user_group_ids["app-s3-readers"]]
 ###
 ### KEYED, NOT A FLAT LIST, and that is not cosmetic. An earlier revision
 ### exposed every tier's id in one list and told consumers to bind it. With one

@@ -1,8 +1,3 @@
-data "consul_service" "minio" {
-  name       = "minio"
-  datacenter = "localstack"
-}
-
 data "consul_service" "seaweedfs" {
   name       = "seaweedfs"
   datacenter = "localstack"
@@ -11,11 +6,6 @@ data "consul_service" "seaweedfs" {
 data "consul_service" "postgres" {
   name       = "postgres-db"
   datacenter = "localstack"
-}
-
-ephemeral "vault_kv_secret_v2" "minio_admin" {
-  mount = var.secret_mount
-  name  = "default/minio/localstack"
 }
 
 ephemeral "vault_kv_secret_v2" "seaweedfs_admin" {
@@ -531,8 +521,8 @@ resource "nomad_job" "openviking" {
   )
 
   # The database must exist before the adapter creates its tables, and the
-  # Bifrost key before the config template renders. No MinIO policy dependency:
-  # this job authenticates with a static key (see secrets.tf).
+  # Bifrost key before the config template renders. No role dependency: this
+  # job authenticates to SeaweedFS with a static key (see secrets.tf).
   depends_on = [
     postgresql_database.database,
     vault_kv_secret_v2.bifrost_openviking_key,
@@ -842,16 +832,19 @@ output "memex_auth_oidc_shape_check" {
 ### Staged, not dead. Commented out to free jetson-orin-nano for embark, which
 ### needs the GPU there and will not fit beside memex's ~6.5 GB. Uncomment when
 ### memex has somewhere else to run: change `memex_host` to that node first, or
-### it lands back on the Jetson and one of the two stops placing.
+### it lands back on the Jetson and one of the two stops placing. It also needs
+### an object store first: its old bucket was not carried over to SeaweedFS,
+### so add a `memex` entry to `local.buckets` (storage.tf) and its key to
+### secrets.tf, then pass that key's path as `memex_s3_secret`.
 # resource "nomad_job" "memex" {
 #   jobspec = templatefile(
 #     "${path.module}/services/memex.hcl",
 #     {
 #       memex_postgres_secret = vault_kv_secret_v2.memex_db_credentials.path
-#       memex_minio_secret    = vault_kv_secret_v2.memex_minio_credentials.path
+#       memex_s3_secret       = <a SeaweedFS key for memex; see below>
 #       memex_auth_secret     = vault_kv_secret_v2.memex_auth_keys.path
 #       postgres_host         = data.consul_service.postgres.service[0].node_address
-#       minio_host            = data.consul_service.minio.service[0].node_address
+#       s3_host               = data.consul_service.seaweedfs.service[0].node_address
 #       memex_host            = "192.168.2.46"
 #       memex_auth_keys       = local.memex_auth_keys
 #       memex_auth_oidc       = local.memex_auth_oidc

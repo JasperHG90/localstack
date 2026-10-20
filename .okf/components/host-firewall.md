@@ -33,7 +33,7 @@ on the live hosts, are [ufw rules outside user.rules](/practices/ufw-rules-outsi
 | Writer | File | Owns | Runs |
 | --- | --- | --- | --- |
 | Ansible `firewall` role | `bootstrap/roles/firewall/tasks/main.yml`, ports in `bootstrap/playbooks/configure_network.yml` | SSH, Consul, Vault, Nomad, the Nomad dynamic range `20000:32000` | `configure_network.yml`, the last step of `just bootstrap` |
-| `null_resource.firewall`, infrastructure root | `local.firewall_rules` in `deployments/infrastructure/services.tf` | Postgres, postgres_exporter, MinIO, HAProxy, Prometheus, Grafana, node-exporter, Redis, NATS, oauth2-proxy, and 8080 on ubuntu open to the LAN and tailnet (`nomad_pack_applications_ubuntu`) | every `terraform apply` |
+| `null_resource.firewall`, infrastructure root | `local.firewall_rules` in `deployments/infrastructure/services.tf` | Postgres, postgres_exporter, SeaweedFS, HAProxy, Prometheus, Grafana, node-exporter, Redis, NATS, oauth2-proxy, and 8080 on ubuntu open to the LAN and tailnet (`nomad_pack_applications_ubuntu`) | every `terraform apply` |
 | `null_resource.firewall`, applications root | `local.firewall_rules` in `deployments/applications/services.tf` | ov-dash, Hermes, Loki, Tempo, embark, registry, Bifrost, dash, OpenViking, driftwatch | only when an entry's `rules` or `host` change |
 
 The Ansible role also sets default deny inbound, allow outbound,
@@ -74,7 +74,9 @@ when it was written and is not now.
   destroy provisioner. `terraform plan` reporting a destroy says nothing about
   the host. N2 destroyed the dnsmasq entry and ports 53/udp and 53/tcp stayed
   open. N1 narrowed Prometheus and Loki and the broad rules stayed live, which
-  made the change look done while changing nothing. Finish every narrowing on
+  made the change look done while changing nothing. `minio-removal` deleted
+  MinIO's 9000 and 9001 rules on orangepi4a by hand for the same reason.
+  Finish every narrowing on
   the host, and delete by rule spec, not by number, because
   `ufw status numbered` renumbers after each delete. The comment above
   `null_resource.firewall` in the applications root says to delete by number,
