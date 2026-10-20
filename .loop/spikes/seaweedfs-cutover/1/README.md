@@ -6,7 +6,7 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T08:09:09+00:00'
+  at: '2026-10-20T08:09:29+00:00'
 slug: seaweedfs-cutover
 n: 1
 outcome_written: true
@@ -24,13 +24,8 @@ The command exited 0:
 
 ## Outcome
 
-Yes, with every mismatch explained. A per-key listing compares each durable bucket's GCS copy (gcs:localstack-cluster-backups/minio/<b>/) with SeaweedFS, one way, before `backup-minio` switches its source. A sync from a SeaweedFS bucket that lacked GCS objects would delete them from GCS.
-
-- openviking: GCS 37,286, SeaweedFS 47,725. Nothing is missing on SeaweedFS. 5 keys differ in size, all with a SeaweedFS modtime after the restore ended (07:02:45 UTC), so OpenViking rewrote them after the move. SeaweedFS has more keys because the restore wrote a marker per directory and OpenViking keeps writing.
-- registry: GCS 1,124, SeaweedFS 404. The 725 missing are exactly the zero-byte `dir/` markers deleted after the restore (`spike:seaweedfs-cutover-registry/2`). The registry never had them, and no file is missing. Nothing differs. The 5 extra SeaweedFS keys are the post-switch test push.
-- models and datalake: empty on both sides.
-
-The next backup run therefore removes only GCS's registry markers and replaces openviking's rewritten objects. No real object is lost.
+Passed (exit 0), but did not test multipart blobs. The 30 MiB layer's blob landed on MinIO with a single-part MD5 ETag, because registry 3 commits a blob with one CopyObject below multipartcopythresholdsize (32 MiB default). Both restore paths served both images by tag and digest with matching blob sha256s.
+Run 3 replaces this one with a 40 MiB layer and a check that its blob has a multipart ETag.
 
 ## Files
 
