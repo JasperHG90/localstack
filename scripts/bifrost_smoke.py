@@ -109,7 +109,8 @@ def assert_inference_auth_enforced(base: str) -> None:
     ]
     for label, headers in (
         ("virtual_key_required", {}),
-        ("virtual_key_not_found", {"x-bf-vk": "definitely-not-a-real-key"}),
+        # 2.1.0 renamed the unknown-key refusal from `virtual_key_not_found`.
+        ("access_not_found", {"x-bf-vk": "definitely-not-a-real-key"}),
     ):
         status, raw = request(
             f"{base}/v1/rerank",
