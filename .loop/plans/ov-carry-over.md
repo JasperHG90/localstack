@@ -63,7 +63,12 @@ old instance, so it is the fallback, not the plan.
    rewritten to `viking://user/jasper/resources/blogs/` on the way
    (`rclone cat | sed | rclone rcat`), so directories that exist only in
    blog-scraper need no new summary: their copied sidecars would otherwise
-   still point at `blog-scraper/` URIs (spike:ov-carry-over/3); `rclone check` for blog-scraper skips those 26 keys by an
+   still point at `blog-scraper/` URIs (spike:ov-carry-over/3). The rewrite
+   skips a target key that already exists, like the copy, so a re-run only
+   adds missing keys. Rewritten sidecars change hash by design, so the hash
+   check excludes them (with the 26 shared keys) and a separate check
+   requires each one present at its `blogs/` key with no `blog-scraper/`
+   text left anywhere under `blogs/`; `rclone check` for blog-scraper skips those 26 keys by an
    explicit list, then `rclone check --one-way` (every old file present with
    the same hash), then the one-way directory check from restore-s3, because
    `rclone check` passes with every marker missing
@@ -94,7 +99,20 @@ old instance, so it is the fallback, not the plan.
    and makes no VLM call, so ~2900 files cost embeddings only (embark via
    Bifrost), not new summaries. The script then checks the outcome below and
    exits non-zero on the first miss.
-4. Tests in `new:cli/tests/test_ov_carry_over.py`, in the style of
+4. Image rows. OpenViking 0.4.17.1 cannot give a copied image a vector:
+   its re-index parser reads `## name` sections while real overviews write
+   `### [name](uri)` entries, and no re-index mode fixes it
+   (spike:ov-carry-over/4). The trees hold 71 images in 36 folders (clips
+   41, blog-scraper 30); the old schema has level-2 rows for 52 of them (a
+   read-only query on 2026-10-20), and the other 19 were not searchable in
+   the old instance either. After the re-index, the script copies those
+   rows from `openviking.ov_context` into `openviking_v2.ov_context` with
+   `INSERT ... SELECT` as the `openviking` role (the old schema is only
+   read), rewriting `blog-scraper/` to `blogs/` in the URI. Both schemas
+   use the same embedder and dimension (`embark/embedding`, 384), so the
+   vectors carry over as they are. A row copy costs no VLM call and
+   survives a later `vectors_only` re-index (spike:ov-carry-over/4).
+5. Tests in `new:cli/tests/test_ov_carry_over.py`, in the style of
    `cli/tests/test_restore_s3.py`: the job copies only the four prefixes, remaps blog-scraper into blogs,
    keeps the marker flags, and fails on a failed check or a missing
    directory; the key is read-only on `openviking`; and the script's
@@ -111,14 +129,19 @@ so the reset does not touch it. The skill's save path moves from
 OpenViking.
 
 Outcome: the job exits 0, so every old file in the four trees is in the
-new bucket at its key with the same hash, empty directories included.
+new bucket at its key, with the same hash except for the rewritten
+blog-scraper sidecars (present, holding no `blog-scraper/` text), empty
+directories included.
 Then the script passes: through the new instance's API, clips and leo list
 the same file count as the old bucket, and blogs lists the union of the two
 blog trees' files (each old file at its new key; the duplicated article
 once), plus any file written since the cutover, which it names; the merged
 directories' `.overview.md` mention files from both halves; the re-index reports zero
+(images count as `unsupported`, by design)
 failures, and a search for the title of each of 10 files chosen at random
-per tree returns that file. Outside clips, blogs and leo the new instance holds
+per tree returns that file. Each of the 52 images with a row in the old
+schema has one in the new schema at its new URI, and a find for its file
+name returns it. Outside clips, blogs and leo the new instance holds
 only what `ov-fresh-instance` created. The old bucket's object count does
 not change. `just pre_commit` and `uv run --directory cli pytest` pass.
 
@@ -142,3 +165,10 @@ not change. `just pre_commit` and `uv run --directory cli pytest` pass.
   row mentioning blog-scraper; find returned each title. The spike also
   showed that directories present only in blog-scraper keep sidecars that
   name `blog-scraper/` URIs, which the copy's text rewrite handles.
+- Image files. Settled by spike:ov-carry-over/4 (plan-review round 1,
+  finding p2): after a key-for-key copy, `vectors_only` counts images as
+  unsupported and leaves them without a vector, and no re-index mode fixes
+  that in 0.4.17.1; copying an image's old level-2 row into the new schema
+  made find return the image itself, with no VLM call, and the row survived
+  a later `vectors_only`. The old schema has rows for 52 of the 71 images;
+  the other 19 had none before the reset either.
