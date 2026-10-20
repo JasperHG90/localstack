@@ -1,0 +1,16 @@
+## readiness
+{"status":"ready","checks":{"agfs":{"status":"ok","checks":{"filesystem":"ok","multiwrite_sync":"not_supported"}},"vectordb":"ok","api_key_manager":"not_configured","embedding":"ok","ollama":"not_configured"}}
+## before (step 0 baseline, 06:40 UTC)
+entries 53: 32 files, 21 dirs, 11 empty dirs; listing sha256 9e514edefaad091da694da57aae90aa93b205bbd2c82769a30f91da6cfb97eba (taken 2026-10-20 06:40 UTC, before OpenViking was stopped)
+## after
+entries 53: 32 files, 21 dirs, 11 empty dirs; listing sha256 9e514edefaad091da694da57aae90aa93b205bbd2c82769a30f91da6cfb97eba
+## listing diff (empty means identical)
+(identical)
+## hash diff (empty means identical)
+(identical)
+## new write
+openviking  seaweedfs   47680  minio   45765
+mkdir: 200 {"status":"ok","result":{"uri":"viking://resources/seaweedfs-cutover-check"},"error":null,"telemetry":null,"profile":null}
+stat: 200 {"status":"ok","result":{"name":"seaweedfs-cutover-check","size":0,"mode":493,"modTime":"2026-10-20T07:08:51Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+openviking  seaweedfs   47682  minio   45765
+delete: 200 {"status":"ok","result":{"uri":"viking://resources/seaweedfs-cutover-check","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://resou

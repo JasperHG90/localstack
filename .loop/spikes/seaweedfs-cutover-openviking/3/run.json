@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "slug": "seaweedfs-cutover-openviking",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/verify.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/verify.sh",
+      "copy": "files/verify.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/snapshot.py",
+      "copy": "files/snapshot.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/write_check.py",
+      "copy": "files/write_check.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/before/listing.txt",
+      "copy": "files/listing.txt"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/before/hashes.txt",
+      "copy": "files/hashes.txt"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/before/sample.txt",
+      "copy": "files/sample.txt"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/ov-baseline/before/summary.txt",
+      "copy": "files/summary.txt"
+    }
+  ],
+  "where": "here",
+  "head": "93d4192cdb0a94331c19c296546883a4ecc51cea",
+  "fingerprint": "5ac95256a90fab8c5f7dcde1898b8da5cfd6b5b5079ecde5f46f99eea4f60af4",
+  "started_at": "2026-10-20T07:08:09+00:00",
+  "finished_at": "2026-10-20T07:09:18+00:00",
+  "duration_seconds": 69.267,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
