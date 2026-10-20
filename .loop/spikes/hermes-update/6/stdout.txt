@@ -1,0 +1,28 @@
+## deployment
+Status      = successful
+Description = Deployment completed successfully
+hermes memory: 816 MiB/2.0 GiB
+image: ghcr.io/jasperhg90/hermes:0.22.2-1
+## memory provider
+  Provider:  openviking
+  Plugin:    installed ✓
+  Status:    available ✓
+version: 2.1.1
+## search through the 1934 sidecar
+status ok hits 3
+  viking://user/jasper/resources/blog-scraper/spotify-inside-the-archive-2025-wrapped.md/.overview.md
+  viking://user/jasper/resources/engineering/Engineering_-_Anthropic/.overview.md
+  viking://user/jasper/resources/engineering/.abstract.md
+## cron jobs: name, pinned model, last run, status
+daily-blog-scrape              pinned=- last=2026-10-20T11:08:07.551000+00:00 ok
+weekly-digest                  pinned=- last=2026-10-19T08:00:23.083257+00:00 ok
+insight-linker-daily           pinned=- last=2026-10-20T11:03:22.743902+00:00 ok
+trader-advisor-briefing        pinned=- last=2026-06-05T06:13:55.755167+00:00 ok
+trend-scout-weekly             pinned=- last=2026-06-09T07:31:49.945275+00:00 ok
+Daily reflect                  pinned=- last=2026-10-20T00:01:55.963905+00:00 ok
+memory-merger-daily            pinned=- last=2026-10-20T05:01:23.368514+00:00 ok
+insight-project-linker-daily   pinned=- last=2026-10-20T06:01:30.318944+00:00 ok
+project-md-maintainer-daily    pinned=- last=2026-10-20T07:01:26.224536+00:00 ok
+meeting-digest-daily           pinned=- last=2026-10-20T06:01:43.310961+00:00 ok
+daily-brief-daily              pinned=- last=2026-10-20T04:33:34.478071+00:00 ok
+weekly-brief-sunday            pinned=- last=2026-10-18T04:33:36.263906+00:00 ok
