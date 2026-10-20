@@ -112,12 +112,14 @@ New names: bucket `openviking-v2`, schema `openviking_v2`, host volume
 
 ### Cutover order
 
-Before anything: record a baseline of the old store. For the bucket, an
+First stop the `openviking` job, so nothing (the hourly reflection sweep,
+Hermes, leo-consumer) writes to the old store. Then record a baseline of the
+old store. For the bucket, an
 `rclone lsf -R --format pst` listing plus `rclone md5sum` of `openviking`, as
 the backup key. For the schema, per-table row counts and
 `n_tup_ins + n_tup_upd + n_tup_del` from `pg_stat_user_tables` for schema
-`openviking`, and `pg_dump --schema=openviking` hashed. Then stop the
-`openviking` job, apply infrastructure, create schema `openviking_v2`, apply
+`openviking`, and `pg_dump --schema=openviking` hashed. Then apply
+infrastructure, create schema `openviking_v2`, apply
 applications. Restart Hermes so it opens a new
 session rather than committing to one the new instance has never seen. The
 nightly backup fails between the two applies, because the bucket does not
@@ -155,3 +157,11 @@ GCS prefixes. `just pre_commit` and `uv run --directory cli pytest` pass.
   writes, a search and a reflection sweep on `openviking_v2`, and nothing
   new appeared in `public`. The schema must exist before ov-ext's first boot
   (see Bootstrap).
+- Moving the `openviking` storage user's policy to `openviking-v2` on
+  SeaweedFS (plan-review round 1, finding p1). Terraform replaces the
+  policy because its name includes the bucket. Settled by
+  spike:ov-fresh-instance/4: on SeaweedFS 4.48 with the service's IAM flags
+  the move applied, the access key id and secret were unchanged, the next
+  plan was clean, and the key was denied put, get, list and delete on
+  `openviking` while it kept full access to `openviking-v2`; the backup key
+  read both. All checks held again after a restart.

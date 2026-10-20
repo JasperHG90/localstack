@@ -3,7 +3,7 @@
   "slug": "ov-fresh-instance",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "2a7bdb1a305805c2c6c2604a1c1c1348b80f13266f57b247316833da7c07b821",
-    "started_at": "2026-10-20T14:29:07+00:00",
+    "n": 2,
+    "binds": "cafe335053faae41cc9e8da7b5ad7059dd338690416daefb4b62079d3412967b",
+    "started_at": "2026-10-20T14:37:22+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "2a7bdb1a305805c2c6c2604a1c1c1348b80f13266f57b247316833da7c07b821",
+  "plan_hash": "cafe335053faae41cc9e8da7b5ad7059dd338690416daefb4b62079d3412967b",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T14:37:19+00:00"
+  "at": "2026-10-20T14:37:22+00:00"
 }
