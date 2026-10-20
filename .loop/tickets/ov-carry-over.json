@@ -19,7 +19,9 @@
   "archived": false,
   "worktree": "/home/vscode/workspace.worktrees/ov-carry-over",
   "branch": "loop/ov-carry-over",
-  "stamps": [],
+  "stamps": [
+    "402cfea9e058b6fc5667439ff30a2931701c529938e17e1c1f8a416bd2d70ea2"
+  ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus/5.5",
     "hash": "8c6e8b564618d18a49a89f2b4ae8786b4bc38552abbf0d04c8061da0e62db96d",
@@ -136,5 +138,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T16:14:13+00:00"
+  "at": "2026-10-20T16:36:08+00:00"
 }
