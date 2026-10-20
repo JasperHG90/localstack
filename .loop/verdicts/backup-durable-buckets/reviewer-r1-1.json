@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The manifesto now points at a test that no longer exists and still calls I11 planned. I10 cites test_minio_backup_syncs_a_declared_bucket, which the change renamed to test_minio_backup_syncs_declared_buckets. I11 says 'planned' and that the ticket 'widens the job', but this change built it and test_minio_backup_syncs_the_durable_buckets now enforces it. .okf/summary.md lines 69-70 also say the backup jobs 'do not have yet' a copy of every durable bucket.",
+      "anchor": ".okf/manifesto.md:86",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "Several pages still say only openviking is backed up, or describe this ticket as future work. In .okf/components/gcs-backups.md the 'Planned, not built' section describes this ticket as unbuilt. Its 180-day trap quotes the reference page as calling the rule 'a safety net for orphaned objects', a sentence this change removed. 'The marker flags fix that from the next run' is also out of date, since the run has happened. The same claim is in .okf/components/minio.md:141 ('Only one bucket is backed up'), .okf/components/container-registry.md:114 ('Not backed up'), .okf/nodes/orangepi4a.md:127, docs/how-to/run-a-backup-job-on-demand.md:65 ('syncs the openviking bucket') and the generated line in .okf/components/index.md:15, which kmctl check --fix regenerates.",
+      "anchor": ".okf/components/gcs-backups.md:136",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "SYNC_LINE matches only the exact 'rclone sync minio:X gcs:${gcs_bucket}/minio/Y/ ...' shape, and every check iterates over its matches. A fifth sync in another shape is invisible to the set-equality check, as are a sync with the flags before the destination or one that is not the last command on its line. The same goes for a bucket copied with 'rclone copy'. Count every 'rclone (sync|copy)' occurrence in the args and assert it equals the number of SYNC_LINE matches, so an unmatched command fails the test instead of slipping past it.",
+      "anchor": "cli/tests/test_backup_coverage.py:26",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r1"
+    }
+  ],
+  "binds": {
+    "fingerprint": "d1abcc95545281d0d1e91e6a7616eab45c192b4572b41b109378c121e91e0217",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T04:45:23+00:00"
+}
