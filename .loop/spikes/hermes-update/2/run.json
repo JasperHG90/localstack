@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "hermes-update",
+  "n": 2,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-hermes-1/spike_lazy.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-hermes-1/spike_lazy.sh",
+      "copy": "files/spike_lazy.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "249f9aa2539b776fae48aacc278a98adf03d53e9",
+  "fingerprint": "b7614bddb3462a7b7d7fd862d29840d9ca0384f9a4463eca9438b0e092007323",
+  "started_at": "2026-10-20T08:40:23+00:00",
+  "finished_at": "2026-10-20T08:42:48+00:00",
+  "duration_seconds": 144.007,
+  "timeout_seconds": 900.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
