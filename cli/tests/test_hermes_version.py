@@ -43,3 +43,17 @@ def test_config_keeps_openviking_and_sessions() -> None:
     assert memory and 'provider: "openviking"' in memory.group(1)
     sessions = re.search(r"^sessions:\n((?:  .*\n)+)", hcl, re.M)
     assert sessions and "auto_prune: false" in sessions.group(1)
+
+
+def test_recall_outwaits_openviking_search() -> None:
+    # Plugin 2.1.1 gives recall 3s per request and 4s in all; our OpenViking
+    # search/find takes 5.5-10s, so at the defaults recall always timed out
+    # and Hermes ran the searches itself as tool calls instead.
+    hcl = (APPS / "services" / "hermes.hcl").read_text()
+    block = re.search(r"^  openviking:\n((?:    .*\n)+)", hcl, re.M)
+    assert block, "memory.openviking is missing from the Hermes config"
+    settings = dict(re.findall(r"^    (\w+): ([\d.]+)$", block.group(1), re.M))
+    request = float(settings["recall_request_timeout_seconds"])
+    total = float(settings["recall_timeout_seconds"])
+    assert request >= 10
+    assert total >= request

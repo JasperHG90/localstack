@@ -11,17 +11,12 @@ Each allowed name has a reason that is not "MinIO still runs":
 """
 
 import re
+import subprocess
 from pathlib import Path
 
 # cli/tests/<this file> -> repo root is two up.
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SCANNED = [
-    REPO_ROOT / "deployments",
-    REPO_ROOT / "bootstrap",
-    REPO_ROOT / "cli" / "src",
-    REPO_ROOT / ".devcontainer" / "Dockerfile",
-]
-SKIPPED_PARTS = {".terraform", "__pycache__", ".venv", "node_modules"}
+SCANNED = ["deployments", "bootstrap", "cli/src", ".devcontainer/Dockerfile"]
 ALLOWED = [
     (re.compile(r"\bminio/"), {"backup-s3.hcl", "restore-s3.hcl"}),
     (re.compile(r"minio-go"), {"tempo.hcl"}),
@@ -31,15 +26,17 @@ ALLOWED = [
 
 
 def _files() -> list[Path]:
-    files: list[Path] = []
-    for root in SCANNED:
-        if root.is_file():
-            files.append(root)
-            continue
-        for path in root.rglob("*"):
-            if path.is_file() and not SKIPPED_PARTS & set(path.parts):
-                files.append(path)
-    return files
+    # Tracked files only: ignored caches (Ansible collections, Terraform lock
+    # files of a checkout) name MinIO, or "minion", without being our code.
+    listed = subprocess.run(
+        ["git", "ls-files", "-z", "--", *SCANNED],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout
+    paths = [REPO_ROOT / name for name in listed.split("\0") if name]
+    return [path for path in paths if path.is_file()]
 
 
 def _unexplained(path: Path, line: str) -> bool:

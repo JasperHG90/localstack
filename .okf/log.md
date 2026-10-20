@@ -115,3 +115,4 @@
 ## 2026-10-19 (seaweedfs-service)
 
 - **SeaweedFS stands beside MinIO** (`components/seaweedfs`, `decisions/0016-seaweedfs-replaces-minio`): MinIO's pinned image no longer downloads, so the cluster's S3 store moves to SeaweedFS. This change runs the server only, with the flags its spikes proved, and records why SeaweedFS was chosen over Garage and over building MinIO from source.
+- **Hermes recall outwaits OpenViking search** (`components/hermes`): plugin 2.1.1's recall defaults (3s per request, 4s total) are shorter than our search/find, so recall timed out on most turns; the config now sets 10s and 12s.

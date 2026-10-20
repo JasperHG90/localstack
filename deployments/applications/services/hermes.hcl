@@ -263,6 +263,11 @@ memory:
   memory_char_limit: 2200
   user_char_limit: 1375
   provider: "openviking"
+  # Plugin defaults (4s total, 3s per request) are shorter than our
+  # search/find (5.5-10s), so recall timed out on nearly every turn.
+  openviking:
+    recall_timeout_seconds: 12
+    recall_request_timeout_seconds: 10
 
 # v0.22 prunes ended sessions idle for 90 days by default; keep them, as 0.21 did.
 sessions:
