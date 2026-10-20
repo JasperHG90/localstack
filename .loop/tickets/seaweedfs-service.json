@@ -1,14 +1,49 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-service",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "1b9c6ca89fa6a0d8a4f070ba967a60af4541696a701fcabca0fedf2ef75c1f47",
+    "tree": "7b7d45285d2227c6916e26138c4f04c9eeb3befa",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "blocking",
+        "judgement": null,
+        "paths": [
+          ".okf/components/ov-dash.md",
+          ".okf/nodes/orangepi4a.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "cleared-unreviewed",
+        "by": "fallback",
+        "judgement": "j-20261020T054334+0000-066c624d",
+        "paths": [
+          "cli/tests/test_seaweedfs_jobspec.py"
+        ]
+      },
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/summary.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T05:43:35+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T205026+0000-26587f67",
   "split_plan_hash": "dbe0c347e818d4477be935b6d99aa1a975cf39dbb7477264fc5be5b280c95ced",
@@ -128,8 +163,14 @@
       "to": "fixing",
       "at": "2026-10-20T05:41:51+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T05:43:35+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T05:43:32+00:00"
+  "at": "2026-10-20T05:43:35+00:00"
 }
