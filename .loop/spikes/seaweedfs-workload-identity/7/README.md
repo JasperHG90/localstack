@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T06:29:39+00:00'
+  at: '2026-10-20T06:29:53+00:00'
 slug: seaweedfs-workload-identity
 n: 7
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-workload-identity/7
@@ -24,7 +24,7 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-workload-identity 7`.
+Yes. Both probe jobs were purged: `nomad job status wi-probe` and `wi-probe-other` return 404, read in the operator shell. The `wi-probe` bucket was emptied and deleted, and the `wi-probe` entry was taken out of `local.seaweedfs_keyless_jobs`. A targeted apply of `nomad_job.seaweedfs` (1 changed) redeployed the job: deployment 059d55cc is successful, with alloc b19199a4 running. stdout.txt shows the job list has no wi-probe, the admin key lists exactly the six buckets, and STS still refuses a junk token (400), so the IAM config is still loaded.
 
 ## Files
 
