@@ -1,0 +1,38 @@
+---
+type: verdict
+title: 'Verdict: backup-durable-buckets reviewer round 2'
+description: 'reviewer verdict for round 2 of backup-durable-buckets: fix.'
+tags:
+- verdict
+- review
+generated:
+  by: claude-opus/5.5
+  at: '2026-10-20T04:50:27+00:00'
+slug: backup-durable-buckets
+pass: reviewer
+round: 2
+body_schema: verdict/1
+---
+
+## Summary
+
+f1 is fixed. Every location named in f2 is fixed, and the new text is true when checked against the jobspec, storage.tf and spike 3. One more sentence in a file f2 covered is still false: the Planned, not built section of minio.md calls the backup widening planned. It needs a one-line edit that I trust without another look, so the verdict is fix.
+
+## Checked
+
+- Gates: `loopctl gate stamp` from the worktree gave `pass gate pre_commit`, `pass gate cli_tests`, `pass eval-row r1`, and `stamp green: 8ede4c0b542a5148fa94a1475c65233f82c2e6a0a96e0aada422e9ed77b8f251`.
+- f1: manifesto I10 now names `test_minio_backup_syncs_declared_buckets` and I11 is enforced by `test_minio_backup_syncs_the_durable_buckets`. Both tests exist in `cli/tests/test_backup_coverage.py`. I1 to I11 are all marked enforced, so the summary's "All eleven" is true. The summary's SeaweedFS bullet now says the backup jobs make the copies.
+- f2: in gcs-backups.md the description, the coverage bullet, the enforcer paragraph and the 180-day trap are fixed. The Planned section and the safety-net quote are gone, and "from the next run" no longer appears. The fixes are also in minio.md:141, container-registry.md:114, nodes/orangepi4a.md:126, the how-to's Step 4, and components/index.md:15, which matches the page's new description. The unbacked buckets listed (loki, tempo, memex, mlflow-artifacts) agree with storage.tf and with the reference page.
+- New traps in gcs-backups.md: the 93 openviking markers, the 725 registry markers with no MinIO directory keys, and the U+240A/U+240D encoding all match `.loop/spikes/backup-durable-buckets/3/README.md`. The claim that copies made before 2026-10-20 have no empty directories and that the flagged run restored them agrees with spike 3's zero lost directories.
+- f3: `test_every_rclone_transfer_is_a_checked_sync_line` counts every `rclone sync|copy|move` in the jobspec and requires the same count of parsed sync lines. A transfer in any other shape now fails it.
+- Grep of `.okf/` and `docs/` for other stale backup claims ("one bucket", "only openviking", "planned", "safety net"). The only hit was the minio.md one below. The log.md entries are history and stay as written.
+
+## Findings
+
+- f1: resolved, in `.okf/manifesto.md:86-92` and `.okf/summary.md:65-70`.
+- f2: open, non-blocking. `.okf/components/minio.md:159-161` still says "`backup-durable-buckets` plans a nightly GCS copy of every durable bucket first, so the migration can restore from off-site." That is now built. Change it to past tense, or say the copy exists, and link GCS backups. Every other location f2 named is resolved.
+- f3: resolved, in `cli/tests/test_backup_coverage.py` (`test_every_rclone_transfer_is_a_checked_sync_line`).
+
+## Notes
+
+`components/index.md` was set by hand because kmctl is not installed. It matches the page's description now, but someone should run `kmctl check --fix` once kmctl is available, to confirm it.

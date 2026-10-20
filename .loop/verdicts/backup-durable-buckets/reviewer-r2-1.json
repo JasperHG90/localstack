@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "manifesto I10/I11 and the summary were stale after the change",
+      "anchor": ".okf/manifesto.md:86",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "minio.md's Planned, not built section still says backup-durable-buckets plans the nightly GCS copy of every durable bucket, which this ticket built",
+      "anchor": ".okf/components/minio.md:160",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "a sync line outside the regex's shape escaped every check",
+      "anchor": "cli/tests/test_backup_coverage.py:83",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "8ede4c0b542a5148fa94a1475c65233f82c2e6a0a96e0aada422e9ed77b8f251",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T04:50:27+00:00"
+}
