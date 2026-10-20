@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-buckets",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 2,
   "plan_rounds": 2,
   "review_rounds": 4,
@@ -29,7 +29,7 @@
   "split": "j-20261019T180813+0000-34ce1826",
   "split_plan_hash": "c58b87e248fd7a9893d66ed47be4eacb1365214ffe38d5b7eacf1feab6a5298a",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "0dfa5e36adb15a56f073bac3b6393eab6a21b8ef",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -189,8 +189,14 @@
       "to": "verifying",
       "at": "2026-10-20T06:16:50+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T06:18:50+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T06:18:42+00:00"
+  "at": "2026-10-20T06:18:50+00:00"
 }
