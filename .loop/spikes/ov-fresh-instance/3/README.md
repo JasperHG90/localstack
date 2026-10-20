@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:28:34+00:00'
+  at: '2026-10-20T14:28:46+00:00'
 slug: ov-fresh-instance
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-fresh-instance/3
@@ -24,7 +24,9 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-fresh-instance 3`.
+Same local setup as spike:ov-fresh-instance/2 (image v0.4.17.1-9, auth_mode oidc, empty SeaweedFS 4.48 bucket, schema `openviking_v2` created before boot); only the final assertion changed. A token with ov_account=lab, ov_user=jasper passed all 9 calls on the first try (health, ls viking:// and viking://resources, mkdir, write, read, find, search, recursive ls) with no Admin API call.
+The bucket held 31 keys afterwards: 6 under `lab/resources/` (the written note and its directory files), and 25 outside `lab/`, every one matching the exact preset allowlist: `backend_meta.json` plus directory markers, `.abstract.md` and `.overview.md` for `default/resources` and `default/user/default/{memories,peers,privacy,resources,sessions,skills}`. No `_system/` key, no other account prefix, no user besides `default` under `default/`.
+This settles risk 1 as the plan now words it. Limits: one local run, stub embedder, reranker and LLM, a plain-http fake issuer in place of Vault, the admin S3 key; preset files were checked by path, not by content.
 
 ## Files
 
