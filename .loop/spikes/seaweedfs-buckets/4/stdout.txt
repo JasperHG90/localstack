@@ -1,0 +1,22 @@
+admin sees: ['datalake', 'loki', 'models', 'openviking', 'registry', 'tempo']
+backup           reader | datalake: read=True list=True write=False; models: read=True list=True write=False; openviking: read=True list=True write=False; registry: read=True list=True write=False | loki denied=True
+ducklake_reader  reader | datalake: read=True list=False write=False | loki denied=True
+ducklake_writer  writer | datalake: read=True list=True write=True | loki denied=True
+loki             writer | loki: read=True list=True write=True | datalake denied=True
+models_reader    reader | models: read=True list=False write=False | datalake denied=True
+models_writer    writer | models: read=True list=True write=True | datalake denied=True
+openviking       writer | openviking: read=True list=True write=True | datalake denied=True
+registry         writer | registry: read=True list=True write=True | datalake denied=True
+tempo            writer | tempo: read=True list=True write=True | datalake denied=True
+cleaned up verify/ keys
+## vault paths
+loki/seaweedfs: present
+loki/minio: present
+tempo/seaweedfs: present
+tempo/minio: present
+registry/seaweedfs: present
+registry/minio: present
+openviking/seaweedfs: present
+openviking/minio: present
+backup-minio/seaweedfs: present
+backup-minio/minio: present
