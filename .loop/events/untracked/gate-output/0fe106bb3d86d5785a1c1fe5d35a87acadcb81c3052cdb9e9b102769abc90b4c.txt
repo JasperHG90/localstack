@@ -1,0 +1,54 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Failed
+- hook id: terraform-validate
+- exit code: 1
+
+  ==> terraform validate deployments/infrastructure
+
+  Warning: Deprecated Resource
+
+    with data.vault_kv_secret_v2.bifrost_admin,
+    on secrets.tf line 156, in data "vault_kv_secret_v2" "bifrost_admin":
+   156: data "vault_kv_secret_v2" "bifrost_admin" {
+
+  Deprecated. Please use new Ephemeral KVV2 Secret resource
+  `vault_kv_secret_v2` instead
+
+  Warning: Deprecated value used
+
+    with vault_kv_secret_v2.prometheus_bifrost_admin,
+    on secrets.tf line 164, in resource "vault_kv_secret_v2" "prometheus_bifrost_admin":
+   164:   data_json = jsonencode({
+   165:     username = data.vault_kv_secret_v2.bifrost_admin.data.username
+   166:     password = data.vault_kv_secret_v2.bifrost_admin.data.password
+   167:   })
+
+    The deprecation originates from data.vault_kv_secret_v2.bifrost_admin
+
+  Deprecated resource used as value. Refer to the provider documentation for
+  details.
+  Success! The configuration is valid, but there were some validation warnings
+  as shown above.
+
+  ==> terraform validate deployments/applications
+
+  Error: Failed to install provider
+
+  Error while installing hashicorp/aws v6.69.1: write
+  .terraform/providers/registry.terraform.io/hashicorp/aws/6.69.1/linux_arm64/terraform-provider-aws_v6.69.1_x5:
+  no space left on device
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
