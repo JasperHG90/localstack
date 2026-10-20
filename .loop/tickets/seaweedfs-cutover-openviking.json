@@ -1,41 +1,14 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-cutover-openviking",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 3,
   "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": {
-    "round": 1,
-    "fingerprint": "141a16ef1e7eb5a3eda8046f3154484cf3731a73e581b95dcdde3bbb4747af62",
-    "tree": "335d39df0df1e2520444022b0980ce18cd018696",
-    "decisions": [
-      {
-        "finding": "reviewer:f1",
-        "outcome": "sent-back",
-        "by": "blocking",
-        "judgement": null,
-        "paths": [
-          ".okf/components/seaweedfs.md",
-          ".okf/components/workload-identity-chain.md",
-          ".okf/decisions/0017-seaweedfs-keyless-roles-bound-per-job.md",
-          ".okf/decisions/index.md",
-          ".okf/log.md",
-          "cli/tests/test_restore_s3.py",
-          "cli/tests/test_seaweedfs_iam_config.py",
-          "deployments/infrastructure/secrets.tf",
-          "deployments/infrastructure/services.tf",
-          "deployments/infrastructure/services/restore-s3.hcl",
-          "deployments/infrastructure/services/seaweedfs.hcl",
-          "docs/explanation/workload-identity.md"
-        ]
-      }
-    ],
-    "at": "2026-10-20T07:26:52+00:00"
-  },
+  "fix": null,
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T210141+0000-95335a6e",
   "split_plan_hash": "f13bef5d309b0df4701226a8c54d86e8f115dc9457a3abe88c193e5ff208c1ea",
@@ -102,8 +75,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "f13bef5d309b0df4701226a8c54d86e8f115dc9457a3abe88c193e5ff208c1ea",
   "intent": {
@@ -150,8 +123,14 @@
       "to": "verifying",
       "at": "2026-10-20T07:26:52+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-10-20T07:30:59+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T07:26:57+00:00"
+  "at": "2026-10-20T07:30:59+00:00"
 }
