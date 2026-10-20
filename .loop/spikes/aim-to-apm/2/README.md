@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T20:55:55+00:00'
+  at: '2026-10-20T20:56:10+00:00'
 slug: aim-to-apm
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike aim-to-apm/2
@@ -24,7 +24,10 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note aim-to-apm 2`.
+APM 0.33.0 cannot install a single plain `.md` file: all 3 of the 4 entries that were files failed (`rules/plain-language.md`, `.claude/rules/slop-scan-for-docs.md`, `agents/feature-planner.md`). The object form (`- git: URL` / `path:` / `ref: SHA`) fails at fetch with "Path '...' is not a directory". The string shorthand `owner/repo/path.md#sha` fails at parse because a single file must end in `.prompt.md`, `.instructions.md` or `.agent.md` (`VIRTUAL_FILE_EXTENSIONS` in `apm_cli/models/dependency/reference.py`).
+The skill folder works. `skills/tools/generate-art` pinned to 516c105 landed in `.claude/skills/generate-art/` and `.agents/skills/generate-art/` (opencode reads the shared `.agents/skills/`). The bytes match a git checkout at the pin, `apm.lock.yaml` records the SHA, and after deleting the deployed files `apm install --frozen` restored them byte for byte.
+One repo at two commits works: two skill folders from jasperhg90/skills at 516c105 and 7e0ee1b installed side by side, each locked to its own SHA. A failed file entry aborts the whole install with no lockfile.
+Risk 1 holds for rules and agents, not for skill folders. This was not tested: renaming upstream to `.instructions.md`/`.agent.md`, or a wrapper package with its own `apm.yml`.
 
 ## Files
 
