@@ -1,0 +1,6 @@
+== make voice.ogg (espeak-ng -> ffmpeg libopus, as Telegram sends)
+-rw-r--r-- 1 root root 20901 Oct 20 16:58 /tmp/claude-1000/-home-vscode-workspace/4ca90099-be7e-4fbd-920f-0030c7cc5d96/scratchpad/spike-voice/run.9Mlv/voice.ogg
+== bake faster-whisper into the image venv
+FROM ghcr.io/jasperhg90/hermes:0.22.2-1
+USER root
+RUN /opt/hermes/tools/uv-0.12.3-linux-arm64/uv pip install --no-cache --python /opt/hermes/.venv/bin/python faster-whisper==1.2.1
