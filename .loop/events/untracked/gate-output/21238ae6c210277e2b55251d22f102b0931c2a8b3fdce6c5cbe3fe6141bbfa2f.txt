@@ -1,0 +1,56 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  E501 Line too long (101 > 100)
+    --> cli/tests/test_no_minio.py:38:101
+     |
+  36 |         text=True,
+  37 |     ).stdout
+  38 |     return [REPO_ROOT / name for name in listed.split("\0") if name and (REPO_ROOT / name).is_file()]
+     |                                                                                                     ^
+
+  Found 1 error.
+  All checks passed!
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  18 files already formatted
+  18 files already formatted
+  17 files already formatted
+  17 files already formatted
+  17 files already formatted
+  unformatted: File would be reformatted
+    --> cli/tests/test_no_minio.py:38:13
+     |
+  37 |     ).stdout
+     -     return [REPO_ROOT / name for name in listed.split("\0") if name and (REPO_ROOT / name).is_file()]
+  38 +     return [
+  39 +         REPO_ROOT / name for name in listed.split("\0") if name and (REPO_ROOT / name).is_file()
+  40 +     ]
+  41 |
+     |
+
+  1 file would be reformatted, 16 files already formatted
+  17 files already formatted
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
