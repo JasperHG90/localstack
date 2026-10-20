@@ -3,7 +3,7 @@
   "slug": "hermes-update",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "0db4cfd30ff534d42c48489caa0d8e3e37070adda6066f81ea05d3ff8168668c",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "d7b4419f30c009da2ed7e8bc113d92c32beabc0c4b3b2f57b12124c30d8b6398",
+    "started_at": "2026-10-20T08:54:12+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "d7b4419f30c009da2ed7e8bc113d92c32beabc0c4b3b2f57b12124c30d8b6398",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T08:54:05+00:00"
+  "at": "2026-10-20T08:54:12+00:00"
 }

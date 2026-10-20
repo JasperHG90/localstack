@@ -37,8 +37,11 @@ The tag: bump the Dockerfile base to `v0.22.2` and `hermes_version` to
 
 The provider: OpenViking left core in v0.22.0 (upstream PR 134350) and now
 comes from Volcengine's catalog plugin (`openviking` 2.1.1 at `9f150ece`),
-which Hermes installs at first start when `memory.provider: openviking` is
-set and lazy installs are on (see the first risk). The plugin reads the same
+which Hermes would install from GitHub at first start. Instead the
+Dockerfile copies that pinned subdirectory (`examples/hermes-plugin` at
+`9f150ece`) into `/opt/hermes/plugins/memory/openviking`, so the image
+carries the provider and no start depends on a network fetch
+(`spike:hermes-update/3`; operator default, 2026-10-20). The plugin reads the same
 `OPENVIKING_ENDPOINT`, `OPENVIKING_API_KEY`, `OPENVIKING_ACCOUNT` and
 `OPENVIKING_USER` env and exposes the same six `viking_*` tools the skills
 call, so the sidecar contract with
@@ -46,7 +49,9 @@ call, so the sidecar contract with
 
 The config: change `config.yaml` in the jobspec only where 0.22 needs it.
 Release notes that touch this job: `sessions.auto_prune` now defaults to on
-and deletes ended sessions idle for 90 days at startup; cron tools load
+and deletes ended sessions idle for 90 days at startup, so `config.yaml`
+sets `sessions.auto_prune: false` to keep today's behaviour (operator
+default, 2026-10-20); cron tools load
 behind `tool_search` and `cronjob` is renamed `cronjob_manage` (the old name
 still works); unpinned cron jobs follow the main model at fire time; one
 gateway per machine is the default (this job has one profile). The skills
@@ -85,10 +90,20 @@ or forced with `/cron run`); the `hermes` task stays under 2048 MiB;
   to OpenViking through the sidecar with a placeholder key and account
   `lab` (or tries to start its own `openviking-server` because the endpoint
   is localhost), Hermes loses its memory and the plan needs a different way
-  to supply the provider. Waiting on a spike.
+  to supply the provider.
+  Settled by `spike:hermes-update/2`: in the v0.22.2 arm64 image the
+  unattended gateway installed catalog plugin 2.1.1 onto `/opt/data`, kept it
+  across an offline restart, sent `viking_search` to the 1934 sidecar with
+  the placeholder key and started no `openviking-server`. The first start
+  needs GitHub, so the plan copies the plugin in at build time instead,
+  proven by `spike:hermes-update/3` (a `pip`/`uv` install does not build).
+  Not tested: account `lab` comes from the sidecar's token, as on 0.21.
 - Bifrost provider profile under 0.22. Every model call goes through the
   drop-in `model-providers/bifrost` plugin the `config` task writes. v0.22.0
   removed the plugin compat import layer and moved the runtime to Python
   3.14. If `from providers import register_provider` or `ProviderProfile`
   no longer load from `$HERMES_HOME/plugins/model-providers/`, no model call
-  works and the plan grows a provider rewrite. Waiting on a spike.
+  works and the plan grows a provider rewrite.
+  Settled by `spike:hermes-update/1`: the plugin, copied byte for byte from
+  `hermes.hcl`, loads in v0.22.2 (Python 3.14.7) as provider `bifrost`, and
+  a one-shot run sent `POST /v1/chat/completions` to a stub Bifrost.
