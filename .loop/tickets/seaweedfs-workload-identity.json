@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-workload-identity",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 3,
@@ -29,7 +29,7 @@
   "split": "j-20261019T205857+0000-a8a9cfd5",
   "split_plan_hash": "e5f857b026da4ade8480d3edc7af0d25d4572c48be71451ed9802b83f7d90ca1",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "b5a9a175e50415776e253eb3ee34db9548c2d611",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -158,8 +158,14 @@
       "to": "verifying",
       "at": "2026-10-20T06:39:00+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-20T06:40:57+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T06:40:45+00:00"
+  "at": "2026-10-20T06:40:57+00:00"
 }
