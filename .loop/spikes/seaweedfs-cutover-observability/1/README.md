@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T07:12:19+00:00'
+  at: '2026-10-20T07:12:33+00:00'
 slug: seaweedfs-cutover-observability
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike seaweedfs-cutover-observability/1
@@ -24,7 +24,9 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note seaweedfs-cutover-observability 1`.
+Yes. On 2026-10-20 the applications root updated `nomad_job.loki` (06:52 UTC), checked it, then updated `nomad_job.tempo` (06:54). Both deployments are successful. The infrastructure root updated `nomad_job.grafana`, which also delivered the OpenViking alerts already committed on main but never applied.
+
+SeaweedFS's object counts since the switch: loki 1 (06:53), 3 (06:55), 7 (07:10 and 07:12, flat within the two-minute window because Loki flushes chunks and index in batches); tempo 8 (06:55), 86 (07:10), 98 (07:12). MinIO stayed fixed: loki at 13,581 throughout, and tempo at 6,502 from 06:55 on. Tempo's last flush before the switch took it from 6,494 to 6,502. Through Grafana's datasource proxy, Loki returns 1,866 log lines for the last 10 minutes and Tempo returns 5 traces. Both ranges fall wholly after the switch. The SeaweedFS dashboard (uid localstack-seaweedfs, 12 panels) is provisioned. The SeaweedFSDown, SeaweedFSDiskError and ScrapeJobMissing rules are loaded with health=ok and state inactive.
 
 ## Files
 
