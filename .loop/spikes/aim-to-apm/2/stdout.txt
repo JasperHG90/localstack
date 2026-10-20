@@ -1,0 +1,99 @@
+=== A. all four in one apm.yml (jasperhg90/skills at three commits) ===
+name: spike
+version: 0.0.1
+targets: [claude, opencode]
+dependencies:
+  apm:
+    - git: https://github.com/jasperhg90/skills
+      path: rules/plain-language.md
+      ref: d0f02626629875a5dd57ddbc611ba129cdb4092b
+    - git: https://github.com/athola/claude-night-market
+      path: .claude/rules/slop-scan-for-docs.md
+      ref: b226e39776d69a4b16faebd78d5d2973679df198
+    - git: https://github.com/jasperhg90/skills
+      path: skills/tools/generate-art
+      ref: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+    - git: https://github.com/jasperhg90/skills
+      path: agents/feature-planner.md
+      ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+exit=1
+[>] Installing dependencies from apm.yml...
+[>] Resolving claude-night-market-slop-scan-for-docs.md...
+[>] Resolving skills-plain-language.md...
+[>] Resolving skills-generate-art...
+[>] Resolving skills-feature-planner.md...
+[i] Targets: claude, opencode  (source: apm.yml)
+  [+] 
+github.com/jasperhg90/skills/skills/tools/generate-art#516c105a9d8260c80a9d1fd8c
+b4004fe22a74225 #516c105a9d8260c80a9d1fd8cb4004fe22a74225 @516c105a
+  |-- Skill integrated -> .agents/skills/, .claude/skills/
+  [x] 3 packages failed:
+    +- claude-night-market-slop-scan-for-docs.md -- Failed to download 
+dependency athola/claude-night-market: Path 
+'.claude/rules/slop-scan-for-docs.md' is not a directory
+    +- skills-plain-language.md -- Failed to download dependency 
+jasperhg90/skills: Path 'rules/plain-language.md' is not a directory
+    +- skills-feature-planner.md -- Failed to download dependency 
+jasperhg90/skills: Path 'agents/feature-planner.md' is not a directory
+[x] Installation failed with 3 error(s) in 0.0s. No install transaction changes 
+were committed.
+no lockfile written
+
+=== B. each dependency alone: install, byte-compare, delete, --frozen, compare ===
+--- rule-plain-language (rules/plain-language.md @ d0f026266298)
+install exit=1
+  [x] 1 package failed:
+    +- skills-plain-language.md -- Failed to download dependency 
+[x] Installation failed with 1 error(s) in 0.0s. No install transaction changes 
+deployed files:
+--- rule-slop-scan (.claude/rules/slop-scan-for-docs.md @ b226e39776d6)
+install exit=1
+  [x] 1 package failed:
+    +- claude-night-market-slop-scan-for-docs.md -- Failed to download 
+[x] Installation failed with 1 error(s) in 0.0s. No install transaction changes 
+deployed files:
+--- skill-generate-art (skills/tools/generate-art @ 516c105a9d82)
+install exit=0
+deployed files:
+  ./.agents/skills/generate-art/README.md
+  ./.agents/skills/generate-art/scripts/generate_art.py
+  ./.agents/skills/generate-art/SKILL.md
+  ./.claude/skills/generate-art/README.md
+  ./.claude/skills/generate-art/scripts/generate_art.py
+  ./.claude/skills/generate-art/SKILL.md
+  ./.gitignore
+7:  resolved_commit: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+8:  resolved_ref: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+identical to upstream: .claude/skills/generate-art
+identical to upstream: .agents/skills/generate-art
+frozen exit=0
+frozen identical: .claude/skills/generate-art
+frozen identical: .agents/skills/generate-art
+--- agent-feature-planner (agents/feature-planner.md @ 7e0ee1b4260c)
+install exit=1
+  [x] 1 package failed:
+    +- skills-feature-planner.md -- Failed to download dependency 
+[x] Installation failed with 1 error(s) in 0.0s. No install transaction changes 
+deployed files:
+
+=== C. one repo at two commits (two skill folders from jasperhg90/skills) ===
+exit=0
+  [i] Skipped inactive experimental resolver for target 'copilot-app' during 
+lockfile reconciliation.
+[*] Installed 2 APM dependencies in 0.1s.
+7:  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+8:  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+49:  resolved_commit: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+50:  resolved_ref: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+generate-art
+manifesto
+
+=== D. string shorthand for a plain .md file ===
+[x] Failed to parse apm.yml: Invalid APM dependency 
+'jasperhg90/skills/rules/plain-language.md#d0f02626629875a5dd57ddbc611ba129cdb40
+92b': Invalid virtual package path 'rules/plain-language.md'. Individual files 
+must end with one of: .prompt.md, .instructions.md, .agent.md. For subdirectory 
+packages, the path should not have a file extension.
+[x] Install failed after 0.0s.
+
+RESULT FAIL=1
