@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T08:48:43+00:00'
+  at: '2026-10-20T08:49:00+00:00'
 slug: hermes-update
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike hermes-update/3
@@ -24,7 +24,9 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note hermes-update 3`.
+`uv pip install` of the catalog plugin (2.1.1 at 9f150ece, subdirectory examples/hermes-plugin) fails to build ("Multiple top-level modules discovered in a flat-layout"). The plugin also declares no `hermes_agent.memory_providers` entry point, so a pip install could not register the provider even if it built. That rules out the pip/uv route.
+Copying the same pinned subdirectory into /opt/hermes/plugins/memory/openviking in a Dockerfile layer works: find_provider_dir resolves it, and the gateway on a fresh volume with no route off the host sent viking_search to the 1934 stub with the placeholder key. It made no runtime install attempt, wrote nothing to /opt/data/plugins, and started no openviking-server.
+This is a working build-time alternative to risk 1's lazy install, with the same stub limits as spike 2.
 
 ## Files
 
