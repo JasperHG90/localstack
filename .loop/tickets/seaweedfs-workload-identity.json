@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-workload-identity",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 2,
+    "fingerprint": "36adeb7f28cc16b72cafe706d8fc15a361da71a8f323c16cb68b3ecb2c4a1a59",
+    "tree": "ea5b45ac47ea41e3084840c093366ae9465d7e9e",
+    "decisions": [
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          "docs/explanation/workload-identity.md"
+        ]
+      }
+    ],
+    "at": "2026-10-20T06:39:00+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T205857+0000-a8a9cfd5",
   "split_plan_hash": "e5f857b026da4ade8480d3edc7af0d25d4572c48be71451ed9802b83f7d90ca1",
@@ -136,8 +152,14 @@
       "to": "fixing",
       "at": "2026-10-20T06:37:44+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T06:39:00+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T06:38:53+00:00"
+  "at": "2026-10-20T06:39:00+00:00"
 }
