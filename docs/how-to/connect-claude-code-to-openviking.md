@@ -1,39 +1,62 @@
 ---
-description: Give Claude Code recall from and capture into OpenViking through the memory plugin.
+description: Remove the OpenViking memory plugin from Claude Code, so Claude Code reads and writes OpenViking only when you ask.
 stale_after: 2027-01-19
 sources:
   - resource: deployments/applications/services/openviking.hcl
-  - resource: deployments/infrastructure/oidc.tf
 ---
 
-# How to connect Claude Code to OpenViking
+# How to connect Claude Code to OpenViking on request
 
 ## Introduction
 
-This gives Claude Code recall from and capture into OpenViking. For Claude
-Code, use the memory plugin, not an MCP registration.
+This leaves Claude Code with no automatic link to OpenViking. The memory
+plugin searched OpenViking at the start of each prompt and saved each session
+into it. Remove it if you installed it, then call OpenViking yourself when you
+want it.
 
 ## Prerequisites
 
-- A `~/.openviking/ovcli.conf` holding an OpenViking identity token. The
-  token comes from
-  [How to call OpenViking from the CLI](call-openviking-from-the-cli.md),
-  which does not write this file.
-- Claude Code installed.
+- [Claude Code](https://code.claude.com/docs/en/setup) installed.
+- A Vault login that can mint an OpenViking token, for step 4. See
+  [How to call OpenViking from the CLI](call-openviking-from-the-cli.md).
 
 ## Directions
 
-### Step 1: Install the memory plugin
+### Step 1: Find the memory plugin
 
 ```console
-$ bash <(curl -fsSL https://raw.githubusercontent.com/volcengine/OpenViking/\
-main/examples/memory-plugin-shared/install.sh)
+$ claude plugin list
 ```
 
-It hooks the session lifecycle for auto-recall and auto-capture and reads
-`~/.openviking/ovcli.conf`. The installer's legacy path registers a stdio MCP
-proxy instead. Plugin mode does not, so a separate `claude mcp add` is
-redundant with it.
+Look for `openviking-memory@openviking`. If it is not listed, skip to step 4.
+An older installer named the marketplace `openviking-plugins-local`. If you
+see `openviking-memory@openviking-plugins-local`, use that id and marketplace
+name in step 2.
+
+### Step 2: Uninstall the plugin and its marketplace
+
+```console
+$ claude plugin uninstall openviking-memory@openviking
+$ claude plugin marketplace remove openviking
+```
+
+These are the commands the installer prints for removal.
+
+### Step 3: Check that it is gone
+
+```console
+$ claude plugin list
+$ claude plugin marketplace list
+```
+
+Neither list should name `openviking-memory` or `openviking`. Start a new
+Claude Code session so the old hooks stop running.
+
+### Step 4: Call OpenViking when you want it
+
+Follow [How to call OpenViking from the CLI](call-openviking-from-the-cli.md)
+and paste what you need into the session, or ask Claude Code to run those
+commands for you.
 
 ## Additional resources
 

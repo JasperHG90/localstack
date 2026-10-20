@@ -7,9 +7,9 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-10-20T10:39:22Z
+  at: 2026-10-20T14:32:36Z
   against:
-    - decisions/0019-hermes-openviking-plugin-built-into-the-image
+    - decisions/0020-agents-use-openviking-through-tools-only
 ---
 
 # Summary

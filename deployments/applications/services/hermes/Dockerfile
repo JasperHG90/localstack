@@ -31,5 +31,9 @@ RUN mkdir -p /opt/hermes/plugins/memory/openviking \
     && rm -rf /opt/hermes/plugins/memory/openviking/tests \
     && grep -q 'version: 2.1.1' /opt/hermes/plugins/memory/openviking/plugin.yaml
 
+# `memory.provider: openviking_tools` selects this wrapper around the plugin
+# above: its viking_* tools, with recall and capture off.
+COPY openviking_tools /opt/hermes/plugins/memory/openviking_tools
+
 # No trailing `USER hermes`: s6-overlay's /init must run as root so cont-init.d
 # can remap/chown, then main-wrapper.sh drops to the hermes user itself.
