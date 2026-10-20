@@ -25,3 +25,4 @@
 {"at": "2026-10-20T05:46:00+00:00", "binds": "1b9c6ca89fa6a0d8a4f070ba967a60af4541696a701fcabca0fedf2ef75c1f47", "kind": "round-start", "n": 3, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "7b7d45285d2227c6916e26138c4f04c9eeb3befa"}
 {"at": "2026-10-20T05:47:48+00:00", "dispatched_at": "2026-10-20T05:46:00+00:00", "kind": "round-close", "n": 3, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-10-20T05:47:37+00:00"}}
 {"at": "2026-10-20T05:49:07+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "verifying"}
+{"at": "2026-10-20T05:49:14+00:00", "code": "review-cap", "from": "verifying", "kind": "block", "message": "the review round cap (3) is reached", "notified": false, "schema_version": "1.0"}
