@@ -85,9 +85,17 @@ pass.
   `metadata` field, the `key_ids` change, the `value_hash` index) make it
   show drift or fail the post-apply consistency check, the ticket must also
   move the provider to 0.4.x, which can change resource schemas and state.
-  Waiting on a spike.
+  Settled by `spike:bifrost-update/1` (keys made fresh on 2.3.1) and
+  `spike:bifrost-update/4` (keys made on 2.0.0, store migrated to 2.3.1 on
+  the same Postgres database): provider 0.1.1 plans clean, keys keep their
+  ids and values and authenticate, and an in-place update applies. The
+  provider stays at `~>0.1.0`.
 - Rerank and embeddings through embark. OpenViking needs bare-string rerank
   documents accepted at the gateway and forwarded to an `openai`-based custom
   provider in a shape embark takes, and the 2.1.0 rerank change could alter
   what reaches embark. If 2.3.1 breaks either call, the target version is
-  wrong and the pin must stop at an earlier 2.x. Waiting on a spike.
+  wrong and the pin must stop at an earlier 2.x.
+  Settled by `spike:bifrost-update/3`: on 2.3.1 and 2.0.0 alike, a
+  bare-string rerank returned 200 and reached embark as identical
+  `{"text": ...}` documents that embark v0.2.1's own request models accept,
+  and embeddings report `embark` in `routing_info`.
