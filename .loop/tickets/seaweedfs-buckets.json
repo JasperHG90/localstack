@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-buckets",
-  "stage": "building",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 0,
@@ -103,8 +103,14 @@
       "to": "building",
       "at": "2026-10-20T05:54:20+00:00",
       "by": "advance"
+    },
+    {
+      "from": "building",
+      "to": "verifying",
+      "at": "2026-10-20T06:02:54+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T06:02:49+00:00"
+  "at": "2026-10-20T06:02:54+00:00"
 }
