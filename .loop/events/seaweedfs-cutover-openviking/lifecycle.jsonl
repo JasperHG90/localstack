@@ -11,3 +11,4 @@
 {"at": "2026-10-19T21:17:26+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-10-20T04:37:30+00:00", "grant": "g1", "hash": "83c92ae8b507da7cae8c826a631a668a0d3d98a0fc9f224d8a07c782a6108434", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/planner", "step": "eval-sign"}
 {"at": "2026-10-20T06:30:22+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-20T07:09:32+00:00", "kind": "spike-note", "n": 3, "replaced": false, "schema_version": "1.0"}
