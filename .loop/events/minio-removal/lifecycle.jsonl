@@ -13,3 +13,4 @@
 {"at": "2026-10-20T08:51:18+00:00", "diff": {"added": [], "changed": {"r1": ["behavior", "fails_when"]}, "removed": []}, "grant": "g1", "hash": "af8b467c75d04aad1d9ec7ede799afd76f5fcfe91546b644a3d6d31d3d8f5a79", "kind": "signoff", "reason": "r1 named only the backup prefix, but the plan keeps the minio_data volume until minio-volume-destroy, restore-s3 reads the same prefix, minio-go is a client library and mc stays as the devcontainer S3 client (plan step 4 amended)", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/planner", "step": "eval-sign"}
 {"at": "2026-10-20T08:53:29+00:00", "kind": "spike-note", "n": 3, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-10-20T08:53:30+00:00", "kind": "spike-note", "n": 4, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T09:07:14+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
