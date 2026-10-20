@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "SeaweedFS reader policies granted more than MinIO's read set",
+      "anchor": "deployments/applications/storage.tf:200",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "no test tied the SeaweedFS action lists to MinIO's",
+      "anchor": "cli/tests/test_seaweedfs_buckets.py",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "okf pages did not name seaweedfs and the aws provider",
+      "anchor": ".okf/components/terraform-roots.md:99",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f4",
+      "disposition": "open",
+      "claim": "deployment-layers.md still cites services.tf:383 for nomad_job.registry, which is now at line 393",
+      "anchor": ".okf/architecture/deployment-layers.md:295",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "ebff7802c1be15c0e8fb0d6c155a7e5e7c8e3ebd2d27896ccc2cf1ebc00b32a1",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-20T06:14:09+00:00"
+}
