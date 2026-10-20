@@ -4,3 +4,4 @@
 {"at": "2026-10-19T20:56:19+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-10-20T04:37:29+00:00", "grant": "g1", "hash": "cf707507a63bb6aa02e26bddcbb4874623caf445cd8fdbeda2323bc7b3772f77", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/planner", "step": "eval-sign"}
 {"at": "2026-10-20T06:50:06+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-20T07:06:46+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
