@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "seaweedfs-cutover-observability",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "89c5ddcd07361022949cbc47de8397149508f01bcf2f25f9877353b18e42f185",
+    "tree": "8100619edac7bad7bacfd7636bc0f555303a19d1",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "judgement",
+        "judgement": "j-20261020T071845+0000-4c997762",
+        "paths": [
+          "deployments/infrastructure/services/grafana/seaweedfs.json"
+        ]
+      }
+    ],
+    "at": "2026-10-20T07:18:45+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261019T205329+0000-a22e65f6",
   "split_plan_hash": "e7c32fde963eeb5c826381aa9473483b90e5f3e30c362a103a6883fa24187516",
@@ -115,8 +131,14 @@
       "to": "fixing",
       "at": "2026-10-20T07:17:08+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T07:18:45+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T07:18:42+00:00"
+  "at": "2026-10-20T07:18:45+00:00"
 }
