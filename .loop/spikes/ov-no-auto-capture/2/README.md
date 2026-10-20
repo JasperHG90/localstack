@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:01:59+00:00'
+  at: '2026-10-20T14:02:14+00:00'
 slug: ov-no-auto-capture
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-no-auto-capture/2
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-no-auto-capture 2`.
+This is the same harness as spike 1, with the wrapper also overriding `_recover_pending_sessions` as a no-op. With the stale pending-session marker seeded, startup sent only `GET /health`. A plain turn, `/new`, a built-in memory write and shutdown sent 0 requests to the 1934 stub. An explicit viking_search sent 1 `POST /api/v1/search/find`, and its result reached the model.
+Hermes loaded and activated the provider from `/opt/hermes/plugins/memory/openviking_tools` with all six viking_* tools on the tool surface. `hermes memory status` shows `openviking_tools ← active`.
+This settles risk 1, provided the plan adds the `_recover_pending_sessions` override (spike 1 shows the wrapper as written still commits stale sessions at start).
+Limits: stubs stood in for OpenViking and Bifrost. The driver called AIAgent directly with platform=telegram rather than a running gateway with a real Telegram chat. `/new` was the MemoryManager call the CLI makes, not the gateway's command handler.
 
 ## Files
 
