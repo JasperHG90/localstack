@@ -12,3 +12,4 @@
 {"at": "2026-10-20T09:44:54+00:00", "by": "review close", "from": "verifying", "kind": "transition", "schema_version": "1.0", "to": "fixing"}
 {"at": "2026-10-20T09:44:54+00:00", "dispatched_at": "2026-10-20T09:42:04+00:00", "kind": "round-close", "n": 1, "outcome": "fail", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-10-20T09:44:25+00:00"}}
 {"at": "2026-10-20T09:45:16+00:00", "kind": "spike-note", "n": 2, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-10-20T09:45:24+00:00", "by": "review fixed", "from": "fixing", "kind": "transition", "schema_version": "1.0", "to": "verifying"}

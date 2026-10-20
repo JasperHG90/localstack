@@ -1,14 +1,28 @@
 {
   "schema_version": "1.0",
   "slug": "minio-volume-destroy",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "f032c681eb3af42e51f330eb2ec6384cb7ed97fcb7a68e5bf820d50823bbcdf7",
+    "tree": "c388b5a8c5e2d31903da7db90c94d343a4a41768",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "blocking",
+        "judgement": null,
+        "paths": []
+      }
+    ],
+    "at": "2026-10-20T09:45:24+00:00"
+  },
   "ask": "j-20261019T173118+0000-f2537ae7",
   "split": "j-20261020T093555+0000-df7d1671",
   "split_plan_hash": "97a6407221d96ea49352d1d8a5829a6d4a817c15d1f6bb9bd40e6945031b42f8",
@@ -114,8 +128,14 @@
       "to": "fixing",
       "at": "2026-10-20T09:44:54+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-20T09:45:24+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-20T09:44:54+00:00"
+  "at": "2026-10-20T09:45:24+00:00"
 }
