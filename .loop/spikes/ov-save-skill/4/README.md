@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-20T14:45:15+00:00'
+  at: '2026-10-20T14:46:16+00:00'
 slug: ov-save-skill
 n: 4
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-save-skill/4
@@ -24,7 +24,8 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-save-skill 4`.
+Harness was wrong, so this run does not answer risk 3. The agent had no `OPENVIKING_ENDPOINT` (the spike left out the `/opt/data/.env` that setup.sh writes), so every `viking_*` call returned "server not connected". Both example.com URLs return 404, and the model refused to save a 404 page. The post-turn self-improvement review also patched the draft skill between runs.
+What it did show: in 8 of 8 fresh sessions the model's first tool call was `skill_view("save-to-openviking")`, with the pointer line in SOUL.md. No run called `viking_add_resource` first. Superseded by the next run.
 
 ## Files
 
