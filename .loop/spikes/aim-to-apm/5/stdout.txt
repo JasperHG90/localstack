@@ -1,0 +1,163 @@
+=== clone HEAD c000408
+=== (a) just check-install on clean clone
+check-install exit=1
+[*] Configured 1 server
+  [!] 1 file(s) contain hidden characters
+    Run with --verbose to see details
+  [!] [kmctl] OpenCode agent 'kmctl/kmctl-auditor.md' has tools as str; OpenCode
+requires a mapping of tool-name to boolean. OpenCode will reject this agent at 
+load time. Fix: rewrite the frontmatter as 'tools: {Read: true, Grep: true}'.
+  [!] [jasperhg90/kmctl/apm/antigravity] Package targets [antigravity] do not 
+overlap authorized active targets; skipping
+  [!] [okf] OpenCode agent 'okf/bundle-weaver.md' has tools as str; OpenCode 
+requires a mapping of tool-name to boolean. OpenCode will reject this agent at 
+load time. Fix: rewrite the frontmatter as 'tools: {Read: true, Grep: true}'.
+  [!] [okf] OpenCode agent 'okf/bundle-weaver.md' has color='green'; OpenCode 
+requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 'info', 
+'primary', 'secondary', 'success', 'warning']. OpenCode will reject this agent 
+at load time. Fix: replace the color with a '#rgb' or '#rrggbb' hex literal or 
+one of the listed theme names.
+  [!] [okf] OpenCode agent 'okf/event-analyzer.md' has tools as str; OpenCode 
+requires a mapping of tool-name to boolean. OpenCode will reject this agent at 
+load time. Fix: rewrite the frontmatter as 'tools: {Read: true, Grep: true}'.
+  [!] [okf] OpenCode agent 'okf/event-analyzer.md' has color='blue'; OpenCode 
+requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 'info', 
+'primary', 'secondary', 'success', 'warning']. OpenCode will reject this agent 
+at load time. Fix: replace the color with a '#rgb' or '#rrggbb' hex literal or 
+one of the listed theme names.
+  [!] Transitive package 'okf' declares self-defined MCP server 'bundle' 
+(registry: false). Re-declare it in your apm.yml or use --trust-transitive-mcp.
+  [i] Skipped inactive experimental resolver for target 'copilot-cowork' during 
+lockfile reconciliation.
+  [i] Skipped inactive experimental resolver for target 'copilot-app' during 
+lockfile reconciliation.
+[*] Installed 3 APM dependencies and 1 MCP server in 0.5s.
+[i] Lockfile presence verified. Run 'apm audit' for on-disk content integrity.
+uvx --from git+https://github.com/JasperHG90/kmctl@v0.12.1 kmctl plugin patch
+note: wrote 3 OpenCode files (.opencode/agents/kmctl-auditor.md, .opencode/agents/bundle-weaver.md, .opencode/agents/event-analyzer.md): the agents in OpenCode's format, the rules, their .opencode/rules/*.md entry in opencode.json and the briefing plugin; apm install puts APM's agents back, so run kmctl plugin patch after every apm install
+patched kmctl's package v0.12.1 for claude, opencode (project scope)
+Next: start a new Claude Code session, then start a new OpenCode session, then kmctl doctor
+ M .agents/skills/audit/evals/sample-findings.json
+ M opencode.json
+the committed files above differ from what apm.lock.yaml installs; make the change in the package they come from, and commit what just install-frozen writes
+error: recipe `check-install` failed with exit code 1
+--- (a) changed files:
+ M .agents/skills/audit/evals/sample-findings.json
+ M opencode.json
+--- (a) diff stat:
+ .agents/skills/audit/evals/sample-findings.json | 2 +-
+ opencode.json                                   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+--- (a) diff (first 120 lines):
+diff --git a/.agents/skills/audit/evals/sample-findings.json b/.agents/skills/audit/evals/sample-findings.json
+index a1e7170..4749b2c 100644
+--- a/.agents/skills/audit/evals/sample-findings.json
++++ b/.agents/skills/audit/evals/sample-findings.json
+@@ -163,4 +163,4 @@
+       "src/loop_harness/hooks/table.py:69"
+     ]
+   }
+-]
++]
+\ No newline at end of file
+diff --git a/opencode.json b/opencode.json
+index 57a1602..b9c7941 100644
+--- a/opencode.json
++++ b/opencode.json
+@@ -13,4 +13,4 @@
+   "instructions": [
+     ".opencode/rules/*.md"
+   ]
+-}
++}
+\ No newline at end of file
+=== (b) apply step-8 exclude, commit what install-frozen writes
+exclude: '^(\.(claude|loop|agents|opencode)/|opencode\.json$|\.mcp\.json$|apm\.lock\.yaml$)'
+committed
+ .agents/skills/audit/evals/sample-findings.json | 2 +-
+ .pre-commit-config.yaml                         | 2 +-
+ opencode.json                                   | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+=== (b) prek run --all-files
+prek exit=1
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Failed
+- hook id: terraform-validate
+- exit code: 1
+
+  ==> terraform validate deployments/infrastructure
+
+  Warning: Deprecated Resource
+
+    with data.vault_kv_secret_v2.bifrost_admin,
+    on secrets.tf line 156, in data "vault_kv_secret_v2" "bifrost_admin":
+   156: data "vault_kv_secret_v2" "bifrost_admin" {
+
+  Deprecated. Please use new Ephemeral KVV2 Secret resource
+  `vault_kv_secret_v2` instead
+
+  Warning: Deprecated value used
+
+    with vault_kv_secret_v2.prometheus_bifrost_admin,
+    on secrets.tf line 164, in resource "vault_kv_secret_v2" "prometheus_bifrost_admin":
+   164:   data_json = jsonencode({
+   165:     username = data.vault_kv_secret_v2.bifrost_admin.data.username
+   166:     password = data.vault_kv_secret_v2.bifrost_admin.data.password
+   167:   })
+
+    The deprecation originates from data.vault_kv_secret_v2.bifrost_admin
+
+  Deprecated resource used as value. Refer to the provider documentation for
+  details.
+
+  Error: Invalid function argument
+
+    on services.tf line 499, in resource "null_resource" "firewall":
+   499:       private_key = file("${path.root}/../../.ssh/id_rsa")
+      ├────────────────
+      │ while calling file(path)
+      │ path.root is "."
+
+  Invalid value for "path" parameter: no file exists at "./../../.ssh/id_rsa";
+  this function works only with files that are distributed as part of the
+  configuration source code, so if this file will be created by a resource in
+  this configuration you must instead obtain this result from an attribute of
+  that resource.
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+--- after prek:
+=== (b) just check-install again
+check-install exit=0
+  [!] [okf] OpenCode agent 'okf/event-analyzer.md' has tools as str; OpenCode 
+requires a mapping of tool-name to boolean. OpenCode will reject this agent at 
+load time. Fix: rewrite the frontmatter as 'tools: {Read: true, Grep: true}'.
+  [!] [okf] OpenCode agent 'okf/event-analyzer.md' has color='blue'; OpenCode 
+requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 'info', 
+'primary', 'secondary', 'success', 'warning']. OpenCode will reject this agent 
+at load time. Fix: replace the color with a '#rgb' or '#rrggbb' hex literal or 
+one of the listed theme names.
+  [!] Transitive package 'okf' declares self-defined MCP server 'bundle' 
+(registry: false). Re-declare it in your apm.yml or use --trust-transitive-mcp.
+  [i] Skipped inactive experimental resolver for target 'copilot-cowork' during 
+lockfile reconciliation.
+  [i] Skipped inactive experimental resolver for target 'copilot-app' during 
+lockfile reconciliation.
+[*] Installed 3 APM dependencies and 1 MCP server in 0.5s.
+[i] Lockfile presence verified. Run 'apm audit' for on-disk content integrity.
+uvx --from git+https://github.com/JasperHG90/kmctl@v0.12.1 kmctl plugin patch
+note: wrote 3 OpenCode files (.opencode/agents/kmctl-auditor.md, .opencode/agents/bundle-weaver.md, .opencode/agents/event-analyzer.md): the agents in OpenCode's format, the rules, their .opencode/rules/*.md entry in opencode.json and the briefing plugin; apm install puts APM's agents back, so run kmctl plugin patch after every apm install
+patched kmctl's package v0.12.1 for claude, opencode (project scope)
+Next: start a new Claude Code session, then start a new OpenCode session, then kmctl doctor
+--- final git status --porcelain:
+
+RESULT clean
