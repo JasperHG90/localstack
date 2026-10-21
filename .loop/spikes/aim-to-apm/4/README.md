@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-10-21T04:31:40+00:00'
+  at: '2026-10-21T04:32:37+00:00'
 slug: aim-to-apm
 n: 4
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike aim-to-apm/4
@@ -24,7 +24,8 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note aim-to-apm 4`.
+Flawed run, superseded by spike:aim-to-apm/5. The script wrote its logs inside the clone, so the second `just check-install` failed on the untracked `b2.log`. The final clean status came only from the script deleting that log, so the exit 0 proves nothing.
+Its part (a) still stands and matches run 5: at 501356f, check-install fails on `.agents/skills/audit/evals/sample-findings.json` and `opencode.json`, both missing a trailing newline when the install writes them. After step 8, prek modified no file.
 
 ## Files
 
