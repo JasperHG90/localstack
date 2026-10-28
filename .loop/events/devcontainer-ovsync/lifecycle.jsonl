@@ -9,3 +9,4 @@
 {"at": "2026-10-28T09:26:50+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-10-28T10:18:36+00:00", "grant": "g3", "hash": "13c7c172d1446b886edd34a86bf4b1a1d5f299b13642f98a62fb7096594f0b4d", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/agent", "step": "eval-sign"}
 {"at": "2026-10-28T10:18:58+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-10-28T10:24:24+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
