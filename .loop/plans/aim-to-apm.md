@@ -105,7 +105,20 @@ What aim installs today (counted from `aim.toml`):
    with `kmctl new decision`, naming moving it into a rule as the rejected
    option. Git tracks `CLAUDE.md` as a symlink (mode 120000), so it stays
    after aim goes, and nothing has to recreate it.
-8. Docs: the "Knowledge management with kmctl" section of `README.md` says
+8. Pre-commit ownership: the top-level `exclude` in
+   `.pre-commit-config.yaml` covers `.claude/` and `.loop/` only, so
+   `end-of-file-fixer` rewrites APM-installed files under `.agents/` and
+   `.opencode/` and `opencode.json`, and `just check-install` already fails
+   on a clean checkout at HEAD (plan review round 1, p2). Widen the exclude
+   to every path APM or `kmctl plugin patch` writes (`.agents/`, `.opencode/`,
+   `opencode.json`, `.mcp.json`, `apm.lock.yaml`), so the installer owns them.
+   In the same commit, take `.agents/skills/audit/evals/sample-findings.json`
+   and `opencode.json` exactly as the install writes them, without a final
+   newline. The missing newline comes from kmctl, not this repo. The operator
+   chose on 2026-10-28 to keep this exclude rather than wait on a kmctl fix.
+   The exclude stays as a guard even after kmctl writes the newline, because
+   the installer, not a hook, owns these paths.
+9. Docs: the "Knowledge management with kmctl" section of `README.md` says
    `apm.yml` also carries the agent tooling, and how to get anything APM
    cannot install (the caveman plugin). That section names `just
    install`, `just init` and `just check`, but `justfile` defines
@@ -139,7 +152,9 @@ On a clean clone, `just kmctl-install-frozen` (the recipe the operator calls
 the step 1 snapshot (`diff -r` is empty). Rules and subagents match
 jasperhg90/skills at 1c3dd31 as APM deploys them, and their diff against the
 step 1 snapshot is recorded for the operator; `slop-scan-for-docs` is
-byte-identical to aim's copy. For OpenCode, the 12 skills land in
+byte-identical to aim's copy. `python-testing` now loads only when Claude
+works on `**/*.py` files (upstream `applyTo`, accepted by the operator on
+2026-10-21); the other rules stay always on. For OpenCode, the 12 skills land in
 `.agents/skills/`, no subagent stays in `.opencode/agents/`, and the 7 rules in
 `.opencode/rules/`, each rule byte-identical to its `.claude/rules/` copy.
 `.mcp.json` holds no drawio-mcp or excalidraw-mcp entry. `apm.lock.yaml` records each
@@ -159,3 +174,10 @@ marker in `AGENTS.md` are gone. `CLAUDE.md` still resolves to `AGENTS.md`.
   `.claude/agents`, a skill folder at another pin installs beside them,
   `apm.lock.yaml` pins each, and `apm install --frozen` restores all of them
   byte for byte.
+- `just check-install` may not pass on a clean checkout even after step 8,
+  if another hook or a tracked file disagrees with what APM writes. Plan
+  review round 1 (p2) showed it fails at HEAD today. Settled by
+  spike:aim-to-apm/5: on a clean clone, with the step 8 exclude and the two
+  install-written files committed without their final newline, `prek run
+  --all-files` changes nothing and `just check-install` exits 0 with a clean
+  `git status`. No other hook rewrites an APM-managed file.
