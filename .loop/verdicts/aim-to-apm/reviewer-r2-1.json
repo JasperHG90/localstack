@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "The r5 recipe test now requires the set of rules copied by name to equal the 7, and the conditional byte comparison carries a docstring naming r8 as the clean-checkout proof.",
+      "anchor": "cli/tests/test_agent_tooling.py:132",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "The .gitignore comment now says why slop-scan-for-docs.md is tracked.",
+      "anchor": ".gitignore:23",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "README now says APM cannot install two things and names both, with slop-scan-for-docs committed in .claude/rules/ and caveman added by hand.",
+      "anchor": "README.md:96",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "f4836b6b0b24cf8b6ad5166e65f1cdcca2aae9188218ac006820325d9437880f",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T10:42:05+00:00"
+}
