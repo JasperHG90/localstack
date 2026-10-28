@@ -53,6 +53,7 @@
       "source=loop-harness-prek-cache,target=/home/vscode/.cache/prek,type=volume",
       "source=localstack-cli-venv,target=${containerWorkspaceFolder}/cli/.venv,type=volume",
       "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind",
-      "source=${localEnv:HOME}/.ovx,target=/home/vscode/.ovx,type=bind"
+      "source=${localEnv:HOME}/.ovx,target=/home/vscode/.ovx,type=bind",
+      "source=${localEnv:HOME}/.openviking,target=/home/vscode/.openviking,type=bind,readonly"
     ]
 }

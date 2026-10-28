@@ -7,10 +7,9 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-10-20T16:20:53Z
+  at: 2026-10-28T10:21:01Z
   against:
-    - decisions/0019-hermes-openviking-plugin-built-into-the-image
-    - decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots
+    - decisions/0024-the-devcontainer-reads-the-host-openviking-login-through-a-read-only-mount
 ---
 
 # Summary

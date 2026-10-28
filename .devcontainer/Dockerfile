@@ -69,6 +69,9 @@ RUN uv tool install git+https://github.com/JasperHG90/loop-engineering-harness.g
 # Install ovx
 RUN uv tool install ovx --from "git+https://github.com/JasperHG90/openviking_extensions@ovx-v0.4.0#subdirectory=packages/ovx"
 
+# Install ovsync
+RUN uv tool install ov-sync --from "git+https://github.com/JasperHG90/openviking_extensions@ov-sync-v0.3.0#subdirectory=packages/ov-sync"
+
 # Shims first, then the pinned binaries, then the system. `localstack deps`
 # writes both directories and never writes to one what belongs in the other.
 # A bare `nomad`, `consul` or `vault` finds its shim, which execs the pinned
