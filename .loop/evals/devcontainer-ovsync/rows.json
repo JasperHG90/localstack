@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "The devcontainer image installs ovsync from openviking_extensions pinned to the ov-sync-v0.3.0 tag.",
+      "fails_when": "the Dockerfile has no uv tool install of ov-sync, or installs it from a branch, another tag or no ref",
+      "command": "uv run --directory cli pytest tests/test_devcontainer_volumes.py -q -k ovsync_is_installed_at_the_pinned_tag"
+    },
+    {
+      "id": "r2",
+      "behavior": "devcontainer.json bind-mounts the host's ~/.openviking directory read-only at /home/vscode/.openviking.",
+      "fails_when": "no mount has source ${localEnv:HOME}/.openviking, target /home/vscode/.openviking, type bind and readonly, or the mount names the ovcli.conf file instead of the directory",
+      "command": "uv run --directory cli pytest tests/test_devcontainer_volumes.py -q -k openviking_credentials_are_read_only"
+    },
+    {
+      "id": "r3",
+      "behavior": "The ~/.ovx bind mount stays writable, so ovx -L can store a token from inside the container.",
+      "fails_when": "the ~/.ovx mount is gone or carries readonly",
+      "command": "uv run --directory cli pytest tests/test_devcontainer_volumes.py -q -k ovx_stays_writable"
+    },
+    {
+      "id": "r4",
+      "behavior": "A how-to in docs/how-to tells the reader to create ~/.openviking on the host with ovx --bind localstack and ov language en before building the container, to refresh the token on the host, and to log in inside the container only with ovx -L --no-bind; it passes the how-to skeleton test.",
+      "fails_when": "no docs/how-to page names all of ov language en, --bind localstack and ovx -L --no-bind, or uv run --directory cli pytest tests/test_how_to_skeleton.py fails",
+      "command": "grep -l 'ov language en' docs/how-to/*.md | xargs grep -l -- '--bind localstack' | xargs grep -l -- 'ovx -L --no-bind' | grep -q . && uv run --directory cli pytest tests/test_how_to_skeleton.py -q"
+    },
+    {
+      "id": "r5",
+      "behavior": "After a rebuild on the operator's host, ovsync --help runs, touch ~/.openviking/x fails with a read-only error, and ovsync reaches the lab OpenViking with the host's credentials.",
+      "fails_when": "any of the three fails in the rebuilt container; judged after the operator rebuilds, since the build cannot rebuild its own container",
+      "judgment": true
+    }
+  ]
+}
