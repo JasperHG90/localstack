@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The how-to's first prerequisite points to call-openviking-from-the-cli.md for installing ov and ovx and creating the ovx profile localstack, but that page covers neither. It uses vault and curl only. The VAULT_ADDR bullet has no link at all, though the how-to skeleton rule says each prerequisite links to where to get it.",
+      "anchor": "docs/how-to/sync-a-folder-to-openviking-from-the-devcontainer.md:22",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "2b28115609be50aa478b3f6caa4233d8bcd40b0a159d05f167fd54f475c022cd",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T10:27:05+00:00"
+}
