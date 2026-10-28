@@ -1,24 +1,5 @@
 {
   "mcpServers": {
-    "drawio-mcp": {
-      "args": [
-        "drawio-mcp"
-      ],
-      "command": "uvx",
-      "env": {},
-      "headers": {},
-      "type": "stdio"
-    },
-    "excalidraw-mcp": {
-      "args": [
-        "-y",
-        "@cmd8/excalidraw-mcp"
-      ],
-      "command": "npx",
-      "env": {},
-      "headers": {},
-      "type": "stdio"
-    },
     "bundle": {
       "type": "stdio",
       "command": "sh",

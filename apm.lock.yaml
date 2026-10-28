@@ -1,6 +1,36 @@
 lockfile_version: '1'
 apm_version: 0.33.0
 dependencies:
+- repo_url: bencium/bencium-marketplace
+  name: bencium-impact-designer
+  host: github.com
+  resolved_commit: a5d02a417dba380071f57cb18fb5e65bc5f7df5f
+  resolved_ref: a5d02a417dba380071f57cb18fb5e65bc5f7df5f
+  version: unknown
+  virtual_path: bencium-impact-designer/skills/bencium-impact-designer
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/bencium-impact-designer
+  - .agents/skills/bencium-impact-designer/ACCESSIBILITY.md
+  - .agents/skills/bencium-impact-designer/MOTION-SPEC.md
+  - .agents/skills/bencium-impact-designer/RESPONSIVE-DESIGN.md
+  - .agents/skills/bencium-impact-designer/SKILL.md
+  - .claude/skills/bencium-impact-designer
+  - .claude/skills/bencium-impact-designer/ACCESSIBILITY.md
+  - .claude/skills/bencium-impact-designer/MOTION-SPEC.md
+  - .claude/skills/bencium-impact-designer/RESPONSIVE-DESIGN.md
+  - .claude/skills/bencium-impact-designer/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/bencium-impact-designer/ACCESSIBILITY.md: sha256:514bece60489d5ee1cd35448e0364a138191100730e506dd55a9be97b8e2833f
+    .agents/skills/bencium-impact-designer/MOTION-SPEC.md: sha256:bb44c1408df49bd9b53eaaab77d5b8e0873a218a38afc5534a5c296dc2127eba
+    .agents/skills/bencium-impact-designer/RESPONSIVE-DESIGN.md: sha256:b58327438ea636d3b5c2f0ec7a547128418964ce27897747867af26ba899b46d
+    .agents/skills/bencium-impact-designer/SKILL.md: sha256:1fca052c27ebaa5e250c9a966db50b2921015e6524cbefba02e4d403f35af066
+    .claude/skills/bencium-impact-designer/ACCESSIBILITY.md: sha256:514bece60489d5ee1cd35448e0364a138191100730e506dd55a9be97b8e2833f
+    .claude/skills/bencium-impact-designer/MOTION-SPEC.md: sha256:bb44c1408df49bd9b53eaaab77d5b8e0873a218a38afc5534a5c296dc2127eba
+    .claude/skills/bencium-impact-designer/RESPONSIVE-DESIGN.md: sha256:b58327438ea636d3b5c2f0ec7a547128418964ce27897747867af26ba899b46d
+    .claude/skills/bencium-impact-designer/SKILL.md: sha256:1fca052c27ebaa5e250c9a966db50b2921015e6524cbefba02e4d403f35af066
+  content_hash: sha256:a1811508c23426aebfdac4fc449c3985a505c3cd0edf00582a7b7aac664f0bb7
 - repo_url: jasperhg90/kmctl
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl
@@ -116,6 +146,432 @@ dependencies:
     .claude/skills/write-docs/references/tutorial.md: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
     .opencode/agents/kmctl-auditor.md: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
   content_hash: sha256:c3b0c85c3a085ff93dcd8ed21cbfcfb2a82d2de2db68a48b3d25e8848e2d6331
+- repo_url: jasperhg90/skills
+  name: skills-adversarial-reviewer
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: agents/adversarial-reviewer.agent.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/agents/adversarial-reviewer.md
+  - .opencode/agents/adversarial-reviewer.md
+  deployed_file_hashes:
+    .claude/agents/adversarial-reviewer.md: sha256:a4c50bf72ce80502f17b675031cac5d577148d95711d2c212452c62e37222ff3
+    .opencode/agents/adversarial-reviewer.md: sha256:a4c50bf72ce80502f17b675031cac5d577148d95711d2c212452c62e37222ff3
+  content_hash: sha256:bc456073561144e177730378f0af793d020db2308f4e3127baaa35af0d707478
+- repo_url: jasperhg90/skills
+  name: skills-feature-planner
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: agents/feature-planner.agent.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/agents/feature-planner.md
+  - .opencode/agents/feature-planner.md
+  deployed_file_hashes:
+    .claude/agents/feature-planner.md: sha256:2be041ff3f9ade023137fcd45c0dc172cef751f5f5f06011984c43834a438f62
+    .opencode/agents/feature-planner.md: sha256:2be041ff3f9ade023137fcd45c0dc172cef751f5f5f06011984c43834a438f62
+  content_hash: sha256:1ac58f7cd3f60b6ad399732658c5c3b71bb65d48c04fff18eeadf58f289afe5c
+- repo_url: jasperhg90/skills
+  name: skills-adversarial-reviews
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: rules/adversarial-reviews.instructions.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/adversarial-reviews.md
+  deployed_file_hashes:
+    .claude/rules/adversarial-reviews.md: sha256:b600a415fa5a3b364187965e2b8dfa64e74f7be209447ea4492a1504d85c9916
+  content_hash: sha256:d54cd744dca347ae24539066b348d03adc6fba9b4fb26c6c99ce87e6f25081eb
+- repo_url: jasperhg90/skills
+  name: skills-plain-language
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: rules/plain-language.instructions.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/plain-language.md
+  deployed_file_hashes:
+    .claude/rules/plain-language.md: sha256:210e4360c7f71b8ec2269d42c80873a8b03e368a27a471f34cd9d07f4fca4ae8
+  content_hash: sha256:64f9032637aa540ff050ce0f578f24e4de4ceb5dd4ddb7692d858bd79082f2cb
+- repo_url: jasperhg90/skills
+  name: skills-pre-existing-issues
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: rules/pre-existing-issues.instructions.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/pre-existing-issues.md
+  deployed_file_hashes:
+    .claude/rules/pre-existing-issues.md: sha256:40e7867b84a9954f7560404d5b6b76d06a17f9d250425e03991d81ec9cb27bf3
+  content_hash: sha256:ab242830922bf8933415ef332511f97d0d8729f97e194adb4456270fe04ced9b
+- repo_url: jasperhg90/skills
+  name: skills-prek-code-quality
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: rules/prek-code-quality.instructions.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/prek-code-quality.md
+  deployed_file_hashes:
+    .claude/rules/prek-code-quality.md: sha256:a15659de541045764bc3ac1d1fc8278cf6e01117b9bcb011cd536ecb5d2b0392
+  content_hash: sha256:24a12b3eb44928aeb65e11a7b113a3cf5e0be7b3eb0761b2aa3abda9a300a0a4
+- repo_url: jasperhg90/skills
+  name: skills-python-testing
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: rules/python-testing.instructions.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/python-testing.md
+  deployed_file_hashes:
+    .claude/rules/python-testing.md: sha256:d0b43be2e2176fb327ce1b2770ec88179042a227725d74648aef67c508bd7a7e
+  content_hash: sha256:e17a02dee342fe4593081f02feb0b21e445d927efefe98ab83bb053dae067756
+- repo_url: jasperhg90/skills
+  name: skills-uv-installer
+  host: github.com
+  resolved_commit: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  resolved_ref: 1c3dd312537694aeea9710c0cc545d0e07d5422c
+  version: 1.0.0
+  virtual_path: rules/uv-installer.instructions.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/uv-installer.md
+  deployed_file_hashes:
+    .claude/rules/uv-installer.md: sha256:1b82b90fe4caa6e484f6210b619e6bb2c7bf35e13f7739930243b5546c8f4685
+  content_hash: sha256:9f378be3cbaae1a485e9148904c99b1f440df45a2e78d730242c5e0c11c94fe2
+- repo_url: jasperhg90/skills
+  name: manifesto
+  host: github.com
+  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  version: unknown
+  virtual_path: skills/architecture/manifesto
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/manifesto
+  - .agents/skills/manifesto/SKILL.md
+  - .agents/skills/manifesto/evals/evals.json
+  - .agents/skills/manifesto/references/init-interview.md
+  - .agents/skills/manifesto/references/manifesto-template.md
+  - .agents/skills/manifesto/scripts/install_hook.py
+  - .agents/skills/manifesto/scripts/manifesto_hook.py
+  - .agents/skills/manifesto/scripts/manifesto_state.py
+  - .claude/skills/manifesto
+  - .claude/skills/manifesto/SKILL.md
+  - .claude/skills/manifesto/evals/evals.json
+  - .claude/skills/manifesto/references/init-interview.md
+  - .claude/skills/manifesto/references/manifesto-template.md
+  - .claude/skills/manifesto/scripts/install_hook.py
+  - .claude/skills/manifesto/scripts/manifesto_hook.py
+  - .claude/skills/manifesto/scripts/manifesto_state.py
+  deployed_file_hashes:
+    .agents/skills/manifesto/SKILL.md: sha256:074136497220ed52abfff8e7cf42335c64752a7ad31a75f372ba9c58be70cc12
+    .agents/skills/manifesto/evals/evals.json: sha256:2dfb0773c5ec8cb36e59933e5b934deab1f39ae791bbd1b393f5177451552d64
+    .agents/skills/manifesto/references/init-interview.md: sha256:7bc5d5f0f4c8db492e61e109399dee05a4828b4775be7b8e114b08cfd0b651b2
+    .agents/skills/manifesto/references/manifesto-template.md: sha256:ac9945dd93595afdfa93559dc8b512d2020d70f89f725d99189afdf5902a09ca
+    .agents/skills/manifesto/scripts/install_hook.py: sha256:6fc3857fdb05b7a931d3e3bdd4f990366b105d6018ffb4f0e34855d9a494c93a
+    .agents/skills/manifesto/scripts/manifesto_hook.py: sha256:33542e992f7e8fffbf50942b92018fa17e4e12d3113c13d6a8b87d2267c90d8f
+    .agents/skills/manifesto/scripts/manifesto_state.py: sha256:3e5a530e28dccad2f7ed0676fdb3a7ed5b0b823b32e978d1ad1c6bcb6e7f9667
+    .claude/skills/manifesto/SKILL.md: sha256:074136497220ed52abfff8e7cf42335c64752a7ad31a75f372ba9c58be70cc12
+    .claude/skills/manifesto/evals/evals.json: sha256:2dfb0773c5ec8cb36e59933e5b934deab1f39ae791bbd1b393f5177451552d64
+    .claude/skills/manifesto/references/init-interview.md: sha256:7bc5d5f0f4c8db492e61e109399dee05a4828b4775be7b8e114b08cfd0b651b2
+    .claude/skills/manifesto/references/manifesto-template.md: sha256:ac9945dd93595afdfa93559dc8b512d2020d70f89f725d99189afdf5902a09ca
+    .claude/skills/manifesto/scripts/install_hook.py: sha256:6fc3857fdb05b7a931d3e3bdd4f990366b105d6018ffb4f0e34855d9a494c93a
+    .claude/skills/manifesto/scripts/manifesto_hook.py: sha256:33542e992f7e8fffbf50942b92018fa17e4e12d3113c13d6a8b87d2267c90d8f
+    .claude/skills/manifesto/scripts/manifesto_state.py: sha256:3e5a530e28dccad2f7ed0676fdb3a7ed5b0b823b32e978d1ad1c6bcb6e7f9667
+  content_hash: sha256:4e5816c8426fac83fccc40152199d006fc33c66861093c41935d380c24bfbaf9
+- repo_url: jasperhg90/skills
+  name: python-review
+  host: github.com
+  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  version: unknown
+  virtual_path: skills/development/python-review
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/python-review
+  - .agents/skills/python-review/README.md
+  - .agents/skills/python-review/SKILL.md
+  - .agents/skills/python-review/references/checklist.md
+  - .claude/skills/python-review
+  - .claude/skills/python-review/README.md
+  - .claude/skills/python-review/SKILL.md
+  - .claude/skills/python-review/references/checklist.md
+  deployed_file_hashes:
+    .agents/skills/python-review/README.md: sha256:3ddecbd6b531d81e58b2d60047494791759d483e0fe632c8fe14b4ca846cfe21
+    .agents/skills/python-review/SKILL.md: sha256:7aaa35cc184ed212ee1faa24774799cd17e447865e51a1a88bc8af4c36456931
+    .agents/skills/python-review/references/checklist.md: sha256:77f94ae18da14030b21aa90f482004111999bee99e9853afa326027d69912f6c
+    .claude/skills/python-review/README.md: sha256:3ddecbd6b531d81e58b2d60047494791759d483e0fe632c8fe14b4ca846cfe21
+    .claude/skills/python-review/SKILL.md: sha256:7aaa35cc184ed212ee1faa24774799cd17e447865e51a1a88bc8af4c36456931
+    .claude/skills/python-review/references/checklist.md: sha256:77f94ae18da14030b21aa90f482004111999bee99e9853afa326027d69912f6c
+  content_hash: sha256:36375537603726a82be38840074b917fa053c4bd4698623f754dfbf50025d17f
+- repo_url: jasperhg90/skills
+  name: doc-write
+  host: github.com
+  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  version: unknown
+  virtual_path: skills/documentation/doc-write
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/doc-write
+  - .agents/skills/doc-write/README.md
+  - .agents/skills/doc-write/SKILL.md
+  - .claude/skills/doc-write
+  - .claude/skills/doc-write/README.md
+  - .claude/skills/doc-write/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/doc-write/README.md: sha256:8fcc44bd58fdbc47eb5b4b8c17db5ade9b2ea71d98fcdf94d6b15d6110533570
+    .agents/skills/doc-write/SKILL.md: sha256:11a36e9acfad10362aff9ea9d92af8153438e23a13e1eacfcb44d5fa5753ccd5
+    .claude/skills/doc-write/README.md: sha256:8fcc44bd58fdbc47eb5b4b8c17db5ade9b2ea71d98fcdf94d6b15d6110533570
+    .claude/skills/doc-write/SKILL.md: sha256:11a36e9acfad10362aff9ea9d92af8153438e23a13e1eacfcb44d5fa5753ccd5
+  content_hash: sha256:91528805aa3c454363fd9e1dfc6da99874d175aea18c9367c2a2d56dc43ddffb
+- repo_url: jasperhg90/skills
+  name: readme-creator
+  host: github.com
+  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  version: unknown
+  virtual_path: skills/documentation/readme-creator
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/readme-creator
+  - .agents/skills/readme-creator/LICENSE.txt
+  - .agents/skills/readme-creator/README.md
+  - .agents/skills/readme-creator/SKILL.md
+  - .agents/skills/readme-creator/evals/evals.json
+  - .agents/skills/readme-creator/examples/minimal.md
+  - .agents/skills/readme-creator/examples/readme.md
+  - .agents/skills/readme-creator/references/ladder-of-abstraction.md
+  - .agents/skills/readme-creator/references/theme-fallback.md
+  - .agents/skills/readme-creator/references/ux-checklist.md
+  - .agents/skills/readme-creator/scripts/check_readme.py
+  - .claude/skills/readme-creator
+  - .claude/skills/readme-creator/LICENSE.txt
+  - .claude/skills/readme-creator/README.md
+  - .claude/skills/readme-creator/SKILL.md
+  - .claude/skills/readme-creator/evals/evals.json
+  - .claude/skills/readme-creator/examples/minimal.md
+  - .claude/skills/readme-creator/examples/readme.md
+  - .claude/skills/readme-creator/references/ladder-of-abstraction.md
+  - .claude/skills/readme-creator/references/theme-fallback.md
+  - .claude/skills/readme-creator/references/ux-checklist.md
+  - .claude/skills/readme-creator/scripts/check_readme.py
+  deployed_file_hashes:
+    .agents/skills/readme-creator/LICENSE.txt: sha256:21fa7714c0a82030d25e2b75880ef2da7f917fca5ed49ea7b3f16e7d19112135
+    .agents/skills/readme-creator/README.md: sha256:9668db8fb4c910b50fcd531c94055cf8fdb4b8526d96b59cc450b82fe7df6a0c
+    .agents/skills/readme-creator/SKILL.md: sha256:46eb940d27f669dd5b2c93db635344a0a338797fcc65b9cca0de9f3802960484
+    .agents/skills/readme-creator/evals/evals.json: sha256:1ec2525f3bb2b112382ec9e60691e4dc31065c5adee3402bb5b0a2b8ba89c11a
+    .agents/skills/readme-creator/examples/minimal.md: sha256:f14f92ba0409c9d8409a0fc20f6054d19b5df8438ce7e801ffef07347cb52621
+    .agents/skills/readme-creator/examples/readme.md: sha256:d88701a23ca77dac8d08a9774538238dcd54efc028b6ac6506b0e2aede8e5124
+    .agents/skills/readme-creator/references/ladder-of-abstraction.md: sha256:58f805b4cce644d9b210a850e15bf6691bb735a27c0575b21700d0e0834d2bcf
+    .agents/skills/readme-creator/references/theme-fallback.md: sha256:c6e19f5fb74d91448a1aa79e5ba2540cc8b6ac6c3176c63d07258bd1227525af
+    .agents/skills/readme-creator/references/ux-checklist.md: sha256:a37d90b05cb25e5e9b6d8a208967944d54c6014e2c8c19a837dfdb2230a6fea0
+    .agents/skills/readme-creator/scripts/check_readme.py: sha256:068c297e92a487a4b2eea62e46452e69e6d58dc583ac16b0fb3458de7731668b
+    .claude/skills/readme-creator/LICENSE.txt: sha256:21fa7714c0a82030d25e2b75880ef2da7f917fca5ed49ea7b3f16e7d19112135
+    .claude/skills/readme-creator/README.md: sha256:9668db8fb4c910b50fcd531c94055cf8fdb4b8526d96b59cc450b82fe7df6a0c
+    .claude/skills/readme-creator/SKILL.md: sha256:46eb940d27f669dd5b2c93db635344a0a338797fcc65b9cca0de9f3802960484
+    .claude/skills/readme-creator/evals/evals.json: sha256:1ec2525f3bb2b112382ec9e60691e4dc31065c5adee3402bb5b0a2b8ba89c11a
+    .claude/skills/readme-creator/examples/minimal.md: sha256:f14f92ba0409c9d8409a0fc20f6054d19b5df8438ce7e801ffef07347cb52621
+    .claude/skills/readme-creator/examples/readme.md: sha256:d88701a23ca77dac8d08a9774538238dcd54efc028b6ac6506b0e2aede8e5124
+    .claude/skills/readme-creator/references/ladder-of-abstraction.md: sha256:58f805b4cce644d9b210a850e15bf6691bb735a27c0575b21700d0e0834d2bcf
+    .claude/skills/readme-creator/references/theme-fallback.md: sha256:c6e19f5fb74d91448a1aa79e5ba2540cc8b6ac6c3176c63d07258bd1227525af
+    .claude/skills/readme-creator/references/ux-checklist.md: sha256:a37d90b05cb25e5e9b6d8a208967944d54c6014e2c8c19a837dfdb2230a6fea0
+    .claude/skills/readme-creator/scripts/check_readme.py: sha256:068c297e92a487a4b2eea62e46452e69e6d58dc583ac16b0fb3458de7731668b
+  content_hash: sha256:ea4c9b7d772ac40086084ac7e7d411eabb5011fc6d79aed8345259d707ecc152
+- repo_url: jasperhg90/skills
+  name: deep-explain
+  host: github.com
+  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  version: unknown
+  virtual_path: skills/learning/deep-explain
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/deep-explain
+  - .agents/skills/deep-explain/SKILL.md
+  - .claude/skills/deep-explain
+  - .claude/skills/deep-explain/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/deep-explain/SKILL.md: sha256:ebcf37bdd4fed9b35d619ac0a7655713aa066e360e64d2da6a5b4577dcf9d4a1
+    .claude/skills/deep-explain/SKILL.md: sha256:ebcf37bdd4fed9b35d619ac0a7655713aa066e360e64d2da6a5b4577dcf9d4a1
+  content_hash: sha256:36812423b94209ade6d0c4ab00b9524a3014c584c70882d0a133ab4d18d14842
+- repo_url: jasperhg90/skills
+  name: release
+  host: github.com
+  resolved_commit: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  resolved_ref: 7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+  version: unknown
+  virtual_path: skills/ops/release
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/release
+  - .agents/skills/release/README.md
+  - .agents/skills/release/SKILL.md
+  - .claude/skills/release
+  - .claude/skills/release/README.md
+  - .claude/skills/release/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/release/README.md: sha256:02d3a85ed5b3e229ad0d5275534e80ecfae8e99200b9602d153c6b73079694dc
+    .agents/skills/release/SKILL.md: sha256:81d465663b8e4a35c8e545e9bcb4c44fed0008a76dfe69d87ff2253e7e603e40
+    .claude/skills/release/README.md: sha256:02d3a85ed5b3e229ad0d5275534e80ecfae8e99200b9602d153c6b73079694dc
+    .claude/skills/release/SKILL.md: sha256:81d465663b8e4a35c8e545e9bcb4c44fed0008a76dfe69d87ff2253e7e603e40
+  content_hash: sha256:a4277e6a3ddf2d573d321a34fc40ae25d7a9abf8630186e84a5d4255d80e63e6
+- repo_url: jasperhg90/skills
+  name: agent-creator
+  host: github.com
+  resolved_commit: ba5842dee9bd077b2f1e65843c6b497a526cef77
+  resolved_ref: ba5842dee9bd077b2f1e65843c6b497a526cef77
+  version: unknown
+  virtual_path: skills/tools/agent-creator
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/agent-creator
+  - .agents/skills/agent-creator/README.md
+  - .agents/skills/agent-creator/SKILL.md
+  - .agents/skills/agent-creator/agents/grader.md
+  - .agents/skills/agent-creator/references/agent-design-guide.md
+  - .agents/skills/agent-creator/references/agent-template.md
+  - .claude/skills/agent-creator
+  - .claude/skills/agent-creator/README.md
+  - .claude/skills/agent-creator/SKILL.md
+  - .claude/skills/agent-creator/agents/grader.md
+  - .claude/skills/agent-creator/references/agent-design-guide.md
+  - .claude/skills/agent-creator/references/agent-template.md
+  deployed_file_hashes:
+    .agents/skills/agent-creator/README.md: sha256:228fd1378154d365cd7c8af93706ad25634bccbc24e5f0f684213ccc9c4c1d14
+    .agents/skills/agent-creator/SKILL.md: sha256:30cac6f8555d69db7bb3082524b3908399a1a3d7c93131d8fc68de16af2bbc75
+    .agents/skills/agent-creator/agents/grader.md: sha256:f4b8105617960359bc469984233a2159e947114411fbbc79c44b5765a34c1f88
+    .agents/skills/agent-creator/references/agent-design-guide.md: sha256:e8aff12a4fff76a888faf0bf90fff3fdf134c9bcb60b7adda0e1762629881543
+    .agents/skills/agent-creator/references/agent-template.md: sha256:a2221b6825fac5ea93fe5a00a4bd41a7def999fdeefa3ffa558e3398c453f03f
+    .claude/skills/agent-creator/README.md: sha256:228fd1378154d365cd7c8af93706ad25634bccbc24e5f0f684213ccc9c4c1d14
+    .claude/skills/agent-creator/SKILL.md: sha256:30cac6f8555d69db7bb3082524b3908399a1a3d7c93131d8fc68de16af2bbc75
+    .claude/skills/agent-creator/agents/grader.md: sha256:f4b8105617960359bc469984233a2159e947114411fbbc79c44b5765a34c1f88
+    .claude/skills/agent-creator/references/agent-design-guide.md: sha256:e8aff12a4fff76a888faf0bf90fff3fdf134c9bcb60b7adda0e1762629881543
+    .claude/skills/agent-creator/references/agent-template.md: sha256:a2221b6825fac5ea93fe5a00a4bd41a7def999fdeefa3ffa558e3398c453f03f
+  content_hash: sha256:2927a2805a9d9cd60f2747c5c3a857280091873fe4eb60a48dbce32354104b8d
+- repo_url: jasperhg90/skills
+  name: generate-art
+  host: github.com
+  resolved_commit: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+  resolved_ref: 516c105a9d8260c80a9d1fd8cb4004fe22a74225
+  version: unknown
+  virtual_path: skills/tools/generate-art
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/generate-art
+  - .agents/skills/generate-art/README.md
+  - .agents/skills/generate-art/SKILL.md
+  - .agents/skills/generate-art/scripts/generate_art.py
+  - .claude/skills/generate-art
+  - .claude/skills/generate-art/README.md
+  - .claude/skills/generate-art/SKILL.md
+  - .claude/skills/generate-art/scripts/generate_art.py
+  deployed_file_hashes:
+    .agents/skills/generate-art/README.md: sha256:287e105b65855c859324942f53e4c36ab0f7598625d0c12edf3f04fb29998b13
+    .agents/skills/generate-art/SKILL.md: sha256:e14fc33345471e0d7c225750e0a85cbe272f886f617f1af58da3855195e9c54c
+    .agents/skills/generate-art/scripts/generate_art.py: sha256:13f6662e1d5e15751b240d1fe3b44bfa2873f040350c91a0eadaf79f17433887
+    .claude/skills/generate-art/README.md: sha256:287e105b65855c859324942f53e4c36ab0f7598625d0c12edf3f04fb29998b13
+    .claude/skills/generate-art/SKILL.md: sha256:e14fc33345471e0d7c225750e0a85cbe272f886f617f1af58da3855195e9c54c
+    .claude/skills/generate-art/scripts/generate_art.py: sha256:13f6662e1d5e15751b240d1fe3b44bfa2873f040350c91a0eadaf79f17433887
+  content_hash: sha256:4896ffc8608c731d3d47022744267ac60e6f2482fc54f26c43a141941a527ec6
+- repo_url: jasperhg90/skills
+  name: remove-image-background
+  host: github.com
+  resolved_commit: 8618a2dea8b1997e94bab553b436054ab7fec9c3
+  resolved_ref: 8618a2dea8b1997e94bab553b436054ab7fec9c3
+  version: unknown
+  virtual_path: skills/tools/remove-image-background
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/remove-image-background
+  - .agents/skills/remove-image-background/README.md
+  - .agents/skills/remove-image-background/SKILL.md
+  - .agents/skills/remove-image-background/scripts/remove_background.py
+  - .claude/skills/remove-image-background
+  - .claude/skills/remove-image-background/README.md
+  - .claude/skills/remove-image-background/SKILL.md
+  - .claude/skills/remove-image-background/scripts/remove_background.py
+  deployed_file_hashes:
+    .agents/skills/remove-image-background/README.md: sha256:04506d650c5b61e2ad710296e7142ae13144a631ddc094bba500ee8a2e218119
+    .agents/skills/remove-image-background/SKILL.md: sha256:5ed68f34addd347a67605d0ad589ee861156959f7cc3d3335148a4f4615587ae
+    .agents/skills/remove-image-background/scripts/remove_background.py: sha256:93476eb4acf70d1196eecbd99927e0532e2cd5dc69e686341e5eb52d45d7bcd9
+    .claude/skills/remove-image-background/README.md: sha256:04506d650c5b61e2ad710296e7142ae13144a631ddc094bba500ee8a2e218119
+    .claude/skills/remove-image-background/SKILL.md: sha256:5ed68f34addd347a67605d0ad589ee861156959f7cc3d3335148a4f4615587ae
+    .claude/skills/remove-image-background/scripts/remove_background.py: sha256:93476eb4acf70d1196eecbd99927e0532e2cd5dc69e686341e5eb52d45d7bcd9
+  content_hash: sha256:c4c32f44951daac5ee438121e1d7bfa42db43b0f7cad85dba753e9ea67ad0f31
+- repo_url: jasperhg90/skills
+  name: rule-creator
+  host: github.com
+  resolved_commit: c3e24452dfb7152cfee4fc13ee2da5f3a0f9198a
+  resolved_ref: c3e24452dfb7152cfee4fc13ee2da5f3a0f9198a
+  version: unknown
+  virtual_path: skills/tools/rule-creator
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/rule-creator
+  - .agents/skills/rule-creator/README.md
+  - .agents/skills/rule-creator/SKILL.md
+  - .claude/skills/rule-creator
+  - .claude/skills/rule-creator/README.md
+  - .claude/skills/rule-creator/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/rule-creator/README.md: sha256:5097d441238b772be44546e1b443e3e791699992451df012eeb242fa87251629
+    .agents/skills/rule-creator/SKILL.md: sha256:a581be55d5d89ee471e6114da4dd915a1e4751b8fc5673d77c00799577a43600
+    .claude/skills/rule-creator/README.md: sha256:5097d441238b772be44546e1b443e3e791699992451df012eeb242fa87251629
+    .claude/skills/rule-creator/SKILL.md: sha256:a581be55d5d89ee471e6114da4dd915a1e4751b8fc5673d77c00799577a43600
+  content_hash: sha256:b788da6085ef3d1a34f69064d6b147738a47d88fd3352b2896ae29ebfae32da7
+- repo_url: uditakhourii/adhd
+  name: adhd
+  host: github.com
+  resolved_commit: 55ed38514cd996f6096b51c8320331a8a5dced19
+  resolved_ref: 55ed38514cd996f6096b51c8320331a8a5dced19
+  version: unknown
+  virtual_path: skills/adhd
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/adhd
+  - .agents/skills/adhd/SKILL.md
+  - .claude/skills/adhd
+  - .claude/skills/adhd/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/adhd/SKILL.md: sha256:06debe68a370206acd93e0b2ee54d6395bc367fdfbc079f2348e3ce2966dac0a
+    .claude/skills/adhd/SKILL.md: sha256:06debe68a370206acd93e0b2ee54d6395bc367fdfbc079f2348e3ce2966dac0a
+  content_hash: sha256:c9dd844eb830e59e60398765600e5504d06c6092323cfe6509de73520018deaf
 - repo_url: jasperhg90/kmctl
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl-antigravity
@@ -242,6 +698,15 @@ dependencies:
 deployments:
 - kind: project-relative
   target: claude
+  value: .claude/agents/adversarial-reviewer.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/agents/adversarial-reviewer.agent.md
+  active_owner: jasperhg90/skills/agents/adversarial-reviewer.agent.md
+  content_hash: sha256:a4c50bf72ce80502f17b675031cac5d577148d95711d2c212452c62e37222ff3
+- kind: project-relative
+  target: claude
   value: .claude/agents/bundle-weaver.md
   runtime: null
   scope: project
@@ -260,6 +725,15 @@ deployments:
   content_hash: sha256:c88c8bfe0ccf082407e830291e7f78e9e052683b6db19bcf27229c17ed008a77
 - kind: project-relative
   target: claude
+  value: .claude/agents/feature-planner.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/agents/feature-planner.agent.md
+  active_owner: jasperhg90/skills/agents/feature-planner.agent.md
+  content_hash: sha256:2be041ff3f9ade023137fcd45c0dc172cef751f5f5f06011984c43834a438f62
+- kind: project-relative
+  target: claude
   value: .claude/agents/kmctl-auditor.md
   runtime: null
   scope: project
@@ -276,6 +750,15 @@ deployments:
   - scaccogatto/okf-skills
   active_owner: scaccogatto/okf-skills
   content_hash: sha256:7d24353e2cedb35dbf6ff7ee0307a6f3f6dd2a767185bc72b071493e1bf361c9
+- kind: project-relative
+  target: claude
+  value: .claude/rules/adversarial-reviews.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/rules/adversarial-reviews.instructions.md
+  active_owner: jasperhg90/skills/rules/adversarial-reviews.instructions.md
+  content_hash: sha256:b600a415fa5a3b364187965e2b8dfa64e74f7be209447ea4492a1504d85c9916
 - kind: project-relative
   target: claude
   value: .claude/rules/diagrams-stay-current.md
@@ -312,6 +795,123 @@ deployments:
   - jasperhg90/kmctl/apm/claude
   active_owner: jasperhg90/kmctl/apm/claude
   content_hash: sha256:1c0bd241e2d334ab0467148898f185d1120ba45f249e5236c9a8f8257c54b7ec
+- kind: project-relative
+  target: claude
+  value: .claude/rules/plain-language.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/rules/plain-language.instructions.md
+  active_owner: jasperhg90/skills/rules/plain-language.instructions.md
+  content_hash: sha256:210e4360c7f71b8ec2269d42c80873a8b03e368a27a471f34cd9d07f4fca4ae8
+- kind: project-relative
+  target: claude
+  value: .claude/rules/pre-existing-issues.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/rules/pre-existing-issues.instructions.md
+  active_owner: jasperhg90/skills/rules/pre-existing-issues.instructions.md
+  content_hash: sha256:40e7867b84a9954f7560404d5b6b76d06a17f9d250425e03991d81ec9cb27bf3
+- kind: project-relative
+  target: claude
+  value: .claude/rules/prek-code-quality.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/rules/prek-code-quality.instructions.md
+  active_owner: jasperhg90/skills/rules/prek-code-quality.instructions.md
+  content_hash: sha256:a15659de541045764bc3ac1d1fc8278cf6e01117b9bcb011cd536ecb5d2b0392
+- kind: project-relative
+  target: claude
+  value: .claude/rules/python-testing.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/rules/python-testing.instructions.md
+  active_owner: jasperhg90/skills/rules/python-testing.instructions.md
+  content_hash: sha256:d0b43be2e2176fb327ce1b2770ec88179042a227725d74648aef67c508bd7a7e
+- kind: project-relative
+  target: claude
+  value: .claude/rules/uv-installer.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/rules/uv-installer.instructions.md
+  active_owner: jasperhg90/skills/rules/uv-installer.instructions.md
+  content_hash: sha256:1b82b90fe4caa6e484f6210b619e6bb2c7bf35e13f7739930243b5546c8f4685
+- kind: project-relative
+  target: claude
+  value: .claude/skills/adhd
+  runtime: null
+  scope: project
+  owners:
+  - uditakhourii/adhd/skills/adhd
+  active_owner: uditakhourii/adhd/skills/adhd
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/adhd/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - uditakhourii/adhd/skills/adhd
+  active_owner: uditakhourii/adhd/skills/adhd
+  content_hash: sha256:06debe68a370206acd93e0b2ee54d6395bc367fdfbc079f2348e3ce2966dac0a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/agent-creator
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/agent-creator/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:228fd1378154d365cd7c8af93706ad25634bccbc24e5f0f684213ccc9c4c1d14
+- kind: project-relative
+  target: claude
+  value: .claude/skills/agent-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:30cac6f8555d69db7bb3082524b3908399a1a3d7c93131d8fc68de16af2bbc75
+- kind: project-relative
+  target: claude
+  value: .claude/skills/agent-creator/agents/grader.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:f4b8105617960359bc469984233a2159e947114411fbbc79c44b5765a34c1f88
+- kind: project-relative
+  target: claude
+  value: .claude/skills/agent-creator/references/agent-design-guide.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:e8aff12a4fff76a888faf0bf90fff3fdf134c9bcb60b7adda0e1762629881543
+- kind: project-relative
+  target: claude
+  value: .claude/skills/agent-creator/references/agent-template.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:a2221b6825fac5ea93fe5a00a4bd41a7def999fdeefa3ffa558e3398c453f03f
 - kind: project-relative
   target: claude
   value: .claude/skills/architecture-review
@@ -404,6 +1004,51 @@ deployments:
   content_hash: sha256:12bceb5872a4c7375f863d97186f681278908bdc2052017cac37844f9a76ce27
 - kind: project-relative
   target: claude
+  value: .claude/skills/bencium-impact-designer
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/bencium-impact-designer/ACCESSIBILITY.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:514bece60489d5ee1cd35448e0364a138191100730e506dd55a9be97b8e2833f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/bencium-impact-designer/MOTION-SPEC.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:bb44c1408df49bd9b53eaaab77d5b8e0873a218a38afc5534a5c296dc2127eba
+- kind: project-relative
+  target: claude
+  value: .claude/skills/bencium-impact-designer/RESPONSIVE-DESIGN.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:b58327438ea636d3b5c2f0ec7a547128418964ce27897747867af26ba899b46d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/bencium-impact-designer/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:1fca052c27ebaa5e250c9a966db50b2921015e6524cbefba02e4d403f35af066
+- kind: project-relative
+  target: claude
   value: .claude/skills/continue
   runtime: null
   scope: project
@@ -458,6 +1103,87 @@ deployments:
   content_hash: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
 - kind: project-relative
   target: claude
+  value: .claude/skills/deep-explain
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/learning/deep-explain
+  active_owner: jasperhg90/skills/skills/learning/deep-explain
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/deep-explain/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/learning/deep-explain
+  active_owner: jasperhg90/skills/skills/learning/deep-explain
+  content_hash: sha256:ebcf37bdd4fed9b35d619ac0a7655713aa066e360e64d2da6a5b4577dcf9d4a1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/doc-write
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/doc-write
+  active_owner: jasperhg90/skills/skills/documentation/doc-write
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/doc-write/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/doc-write
+  active_owner: jasperhg90/skills/skills/documentation/doc-write
+  content_hash: sha256:8fcc44bd58fdbc47eb5b4b8c17db5ade9b2ea71d98fcdf94d6b15d6110533570
+- kind: project-relative
+  target: claude
+  value: .claude/skills/doc-write/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/doc-write
+  active_owner: jasperhg90/skills/skills/documentation/doc-write
+  content_hash: sha256:11a36e9acfad10362aff9ea9d92af8153438e23a13e1eacfcb44d5fa5753ccd5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/generate-art
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/generate-art/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: sha256:287e105b65855c859324942f53e4c36ab0f7598625d0c12edf3f04fb29998b13
+- kind: project-relative
+  target: claude
+  value: .claude/skills/generate-art/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: sha256:e14fc33345471e0d7c225750e0a85cbe272f886f617f1af58da3855195e9c54c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/generate-art/scripts/generate_art.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: sha256:13f6662e1d5e15751b240d1fe3b44bfa2873f040350c91a0eadaf79f17433887
+- kind: project-relative
+  target: claude
   value: .claude/skills/handoff
   runtime: null
   scope: project
@@ -492,6 +1218,78 @@ deployments:
   - jasperhg90/kmctl/apm
   active_owner: jasperhg90/kmctl/apm
   content_hash: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:074136497220ed52abfff8e7cf42335c64752a7ad31a75f372ba9c58be70cc12
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/evals/evals.json
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:2dfb0773c5ec8cb36e59933e5b934deab1f39ae791bbd1b393f5177451552d64
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/references/init-interview.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:7bc5d5f0f4c8db492e61e109399dee05a4828b4775be7b8e114b08cfd0b651b2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/references/manifesto-template.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:ac9945dd93595afdfa93559dc8b512d2020d70f89f725d99189afdf5902a09ca
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/scripts/install_hook.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:6fc3857fdb05b7a931d3e3bdd4f990366b105d6018ffb4f0e34855d9a494c93a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/scripts/manifesto_hook.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:33542e992f7e8fffbf50942b92018fa17e4e12d3113c13d6a8b87d2267c90d8f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manifesto/scripts/manifesto_state.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:3e5a530e28dccad2f7ed0676fdb3a7ed5b0b823b32e978d1ad1c6bcb6e7f9667
 - kind: project-relative
   target: claude
   value: .claude/skills/okf
@@ -591,6 +1389,231 @@ deployments:
   - jasperhg90/kmctl/apm
   active_owner: jasperhg90/kmctl/apm
   content_hash: sha256:4e1b9fedf0dd7a2f8a9ca4e9c9a342d7edf014e6617d2bc62d6b1e8d75dcee72
+- kind: project-relative
+  target: claude
+  value: .claude/skills/python-review
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/python-review/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: sha256:3ddecbd6b531d81e58b2d60047494791759d483e0fe632c8fe14b4ca846cfe21
+- kind: project-relative
+  target: claude
+  value: .claude/skills/python-review/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: sha256:7aaa35cc184ed212ee1faa24774799cd17e447865e51a1a88bc8af4c36456931
+- kind: project-relative
+  target: claude
+  value: .claude/skills/python-review/references/checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: sha256:77f94ae18da14030b21aa90f482004111999bee99e9853afa326027d69912f6c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/LICENSE.txt
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:21fa7714c0a82030d25e2b75880ef2da7f917fca5ed49ea7b3f16e7d19112135
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:9668db8fb4c910b50fcd531c94055cf8fdb4b8526d96b59cc450b82fe7df6a0c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:46eb940d27f669dd5b2c93db635344a0a338797fcc65b9cca0de9f3802960484
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/evals/evals.json
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:1ec2525f3bb2b112382ec9e60691e4dc31065c5adee3402bb5b0a2b8ba89c11a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/examples/minimal.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:f14f92ba0409c9d8409a0fc20f6054d19b5df8438ce7e801ffef07347cb52621
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/examples/readme.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:d88701a23ca77dac8d08a9774538238dcd54efc028b6ac6506b0e2aede8e5124
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/references/ladder-of-abstraction.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:58f805b4cce644d9b210a850e15bf6691bb735a27c0575b21700d0e0834d2bcf
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/references/theme-fallback.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:c6e19f5fb74d91448a1aa79e5ba2540cc8b6ac6c3176c63d07258bd1227525af
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/references/ux-checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:a37d90b05cb25e5e9b6d8a208967944d54c6014e2c8c19a837dfdb2230a6fea0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/readme-creator/scripts/check_readme.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:068c297e92a487a4b2eea62e46452e69e6d58dc583ac16b0fb3458de7731668b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/release
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/ops/release
+  active_owner: jasperhg90/skills/skills/ops/release
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/release/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/ops/release
+  active_owner: jasperhg90/skills/skills/ops/release
+  content_hash: sha256:02d3a85ed5b3e229ad0d5275534e80ecfae8e99200b9602d153c6b73079694dc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/release/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/ops/release
+  active_owner: jasperhg90/skills/skills/ops/release
+  content_hash: sha256:81d465663b8e4a35c8e545e9bcb4c44fed0008a76dfe69d87ff2253e7e603e40
+- kind: project-relative
+  target: claude
+  value: .claude/skills/remove-image-background
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/remove-image-background/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: sha256:04506d650c5b61e2ad710296e7142ae13144a631ddc094bba500ee8a2e218119
+- kind: project-relative
+  target: claude
+  value: .claude/skills/remove-image-background/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: sha256:5ed68f34addd347a67605d0ad589ee861156959f7cc3d3335148a4f4615587ae
+- kind: project-relative
+  target: claude
+  value: .claude/skills/remove-image-background/scripts/remove_background.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: sha256:93476eb4acf70d1196eecbd99927e0532e2cd5dc69e686341e5eb52d45d7bcd9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/rule-creator
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/rule-creator
+  active_owner: jasperhg90/skills/skills/tools/rule-creator
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/rule-creator/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/rule-creator
+  active_owner: jasperhg90/skills/skills/tools/rule-creator
+  content_hash: sha256:5097d441238b772be44546e1b443e3e791699992451df012eeb242fa87251629
+- kind: project-relative
+  target: claude
+  value: .claude/skills/rule-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/rule-creator
+  active_owner: jasperhg90/skills/skills/tools/rule-creator
+  content_hash: sha256:a581be55d5d89ee471e6114da4dd915a1e4751b8fc5673d77c00799577a43600
 - kind: project-relative
   target: claude
   value: .claude/skills/validate
@@ -746,6 +1769,78 @@ deployments:
   content_hash: null
 - kind: project-relative
   target: opencode
+  value: .agents/skills/adhd
+  runtime: null
+  scope: project
+  owners:
+  - uditakhourii/adhd/skills/adhd
+  active_owner: uditakhourii/adhd/skills/adhd
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/adhd/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - uditakhourii/adhd/skills/adhd
+  active_owner: uditakhourii/adhd/skills/adhd
+  content_hash: sha256:06debe68a370206acd93e0b2ee54d6395bc367fdfbc079f2348e3ce2966dac0a
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/agent-creator
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/agent-creator/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:228fd1378154d365cd7c8af93706ad25634bccbc24e5f0f684213ccc9c4c1d14
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/agent-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:30cac6f8555d69db7bb3082524b3908399a1a3d7c93131d8fc68de16af2bbc75
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/agent-creator/agents/grader.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:f4b8105617960359bc469984233a2159e947114411fbbc79c44b5765a34c1f88
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/agent-creator/references/agent-design-guide.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:e8aff12a4fff76a888faf0bf90fff3fdf134c9bcb60b7adda0e1762629881543
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/agent-creator/references/agent-template.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/agent-creator
+  active_owner: jasperhg90/skills/skills/tools/agent-creator
+  content_hash: sha256:a2221b6825fac5ea93fe5a00a4bd41a7def999fdeefa3ffa558e3398c453f03f
+- kind: project-relative
+  target: opencode
   value: .agents/skills/architecture-review
   runtime: null
   scope: project
@@ -836,6 +1931,51 @@ deployments:
   content_hash: sha256:12bceb5872a4c7375f863d97186f681278908bdc2052017cac37844f9a76ce27
 - kind: project-relative
   target: opencode
+  value: .agents/skills/bencium-impact-designer
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/bencium-impact-designer/ACCESSIBILITY.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:514bece60489d5ee1cd35448e0364a138191100730e506dd55a9be97b8e2833f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/bencium-impact-designer/MOTION-SPEC.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:bb44c1408df49bd9b53eaaab77d5b8e0873a218a38afc5534a5c296dc2127eba
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/bencium-impact-designer/RESPONSIVE-DESIGN.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:b58327438ea636d3b5c2f0ec7a547128418964ce27897747867af26ba899b46d
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/bencium-impact-designer/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  active_owner: bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer
+  content_hash: sha256:1fca052c27ebaa5e250c9a966db50b2921015e6524cbefba02e4d403f35af066
+- kind: project-relative
+  target: opencode
   value: .agents/skills/continue
   runtime: null
   scope: project
@@ -890,6 +2030,87 @@ deployments:
   content_hash: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
 - kind: project-relative
   target: opencode
+  value: .agents/skills/deep-explain
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/learning/deep-explain
+  active_owner: jasperhg90/skills/skills/learning/deep-explain
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/deep-explain/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/learning/deep-explain
+  active_owner: jasperhg90/skills/skills/learning/deep-explain
+  content_hash: sha256:ebcf37bdd4fed9b35d619ac0a7655713aa066e360e64d2da6a5b4577dcf9d4a1
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/doc-write
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/doc-write
+  active_owner: jasperhg90/skills/skills/documentation/doc-write
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/doc-write/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/doc-write
+  active_owner: jasperhg90/skills/skills/documentation/doc-write
+  content_hash: sha256:8fcc44bd58fdbc47eb5b4b8c17db5ade9b2ea71d98fcdf94d6b15d6110533570
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/doc-write/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/doc-write
+  active_owner: jasperhg90/skills/skills/documentation/doc-write
+  content_hash: sha256:11a36e9acfad10362aff9ea9d92af8153438e23a13e1eacfcb44d5fa5753ccd5
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/generate-art
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/generate-art/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: sha256:287e105b65855c859324942f53e4c36ab0f7598625d0c12edf3f04fb29998b13
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/generate-art/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: sha256:e14fc33345471e0d7c225750e0a85cbe272f886f617f1af58da3855195e9c54c
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/generate-art/scripts/generate_art.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/generate-art
+  active_owner: jasperhg90/skills/skills/tools/generate-art
+  content_hash: sha256:13f6662e1d5e15751b240d1fe3b44bfa2873f040350c91a0eadaf79f17433887
+- kind: project-relative
+  target: opencode
   value: .agents/skills/handoff
   runtime: null
   scope: project
@@ -924,6 +2145,78 @@ deployments:
   - jasperhg90/kmctl/apm
   active_owner: jasperhg90/kmctl/apm
   content_hash: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:074136497220ed52abfff8e7cf42335c64752a7ad31a75f372ba9c58be70cc12
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/evals/evals.json
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:2dfb0773c5ec8cb36e59933e5b934deab1f39ae791bbd1b393f5177451552d64
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/references/init-interview.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:7bc5d5f0f4c8db492e61e109399dee05a4828b4775be7b8e114b08cfd0b651b2
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/references/manifesto-template.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:ac9945dd93595afdfa93559dc8b512d2020d70f89f725d99189afdf5902a09ca
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/scripts/install_hook.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:6fc3857fdb05b7a931d3e3bdd4f990366b105d6018ffb4f0e34855d9a494c93a
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/scripts/manifesto_hook.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:33542e992f7e8fffbf50942b92018fa17e4e12d3113c13d6a8b87d2267c90d8f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/manifesto/scripts/manifesto_state.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/architecture/manifesto
+  active_owner: jasperhg90/skills/skills/architecture/manifesto
+  content_hash: sha256:3e5a530e28dccad2f7ed0676fdb3a7ed5b0b823b32e978d1ad1c6bcb6e7f9667
 - kind: project-relative
   target: opencode
   value: .agents/skills/okf
@@ -1023,6 +2316,231 @@ deployments:
   - jasperhg90/kmctl/apm
   active_owner: jasperhg90/kmctl/apm
   content_hash: sha256:4e1b9fedf0dd7a2f8a9ca4e9c9a342d7edf014e6617d2bc62d6b1e8d75dcee72
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/python-review
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/python-review/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: sha256:3ddecbd6b531d81e58b2d60047494791759d483e0fe632c8fe14b4ca846cfe21
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/python-review/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: sha256:7aaa35cc184ed212ee1faa24774799cd17e447865e51a1a88bc8af4c36456931
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/python-review/references/checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/development/python-review
+  active_owner: jasperhg90/skills/skills/development/python-review
+  content_hash: sha256:77f94ae18da14030b21aa90f482004111999bee99e9853afa326027d69912f6c
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/LICENSE.txt
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:21fa7714c0a82030d25e2b75880ef2da7f917fca5ed49ea7b3f16e7d19112135
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:9668db8fb4c910b50fcd531c94055cf8fdb4b8526d96b59cc450b82fe7df6a0c
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:46eb940d27f669dd5b2c93db635344a0a338797fcc65b9cca0de9f3802960484
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/evals/evals.json
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:1ec2525f3bb2b112382ec9e60691e4dc31065c5adee3402bb5b0a2b8ba89c11a
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/examples/minimal.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:f14f92ba0409c9d8409a0fc20f6054d19b5df8438ce7e801ffef07347cb52621
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/examples/readme.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:d88701a23ca77dac8d08a9774538238dcd54efc028b6ac6506b0e2aede8e5124
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/references/ladder-of-abstraction.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:58f805b4cce644d9b210a850e15bf6691bb735a27c0575b21700d0e0834d2bcf
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/references/theme-fallback.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:c6e19f5fb74d91448a1aa79e5ba2540cc8b6ac6c3176c63d07258bd1227525af
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/references/ux-checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:a37d90b05cb25e5e9b6d8a208967944d54c6014e2c8c19a837dfdb2230a6fea0
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/readme-creator/scripts/check_readme.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/documentation/readme-creator
+  active_owner: jasperhg90/skills/skills/documentation/readme-creator
+  content_hash: sha256:068c297e92a487a4b2eea62e46452e69e6d58dc583ac16b0fb3458de7731668b
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/release
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/ops/release
+  active_owner: jasperhg90/skills/skills/ops/release
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/release/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/ops/release
+  active_owner: jasperhg90/skills/skills/ops/release
+  content_hash: sha256:02d3a85ed5b3e229ad0d5275534e80ecfae8e99200b9602d153c6b73079694dc
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/release/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/ops/release
+  active_owner: jasperhg90/skills/skills/ops/release
+  content_hash: sha256:81d465663b8e4a35c8e545e9bcb4c44fed0008a76dfe69d87ff2253e7e603e40
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/remove-image-background
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/remove-image-background/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: sha256:04506d650c5b61e2ad710296e7142ae13144a631ddc094bba500ee8a2e218119
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/remove-image-background/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: sha256:5ed68f34addd347a67605d0ad589ee861156959f7cc3d3335148a4f4615587ae
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/remove-image-background/scripts/remove_background.py
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/remove-image-background
+  active_owner: jasperhg90/skills/skills/tools/remove-image-background
+  content_hash: sha256:93476eb4acf70d1196eecbd99927e0532e2cd5dc69e686341e5eb52d45d7bcd9
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/rule-creator
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/rule-creator
+  active_owner: jasperhg90/skills/skills/tools/rule-creator
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/rule-creator/README.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/rule-creator
+  active_owner: jasperhg90/skills/skills/tools/rule-creator
+  content_hash: sha256:5097d441238b772be44546e1b443e3e791699992451df012eeb242fa87251629
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/rule-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/skills/tools/rule-creator
+  active_owner: jasperhg90/skills/skills/tools/rule-creator
+  content_hash: sha256:a581be55d5d89ee471e6114da4dd915a1e4751b8fc5673d77c00799577a43600
 - kind: project-relative
   target: opencode
   value: .agents/skills/validate
@@ -1160,6 +2678,15 @@ deployments:
   content_hash: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
 - kind: project-relative
   target: opencode
+  value: .opencode/agents/adversarial-reviewer.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/agents/adversarial-reviewer.agent.md
+  active_owner: jasperhg90/skills/agents/adversarial-reviewer.agent.md
+  content_hash: sha256:a4c50bf72ce80502f17b675031cac5d577148d95711d2c212452c62e37222ff3
+- kind: project-relative
+  target: opencode
   value: .opencode/agents/bundle-weaver.md
   runtime: null
   scope: project
@@ -1176,6 +2703,15 @@ deployments:
   - scaccogatto/okf-skills
   active_owner: scaccogatto/okf-skills
   content_hash: sha256:c88c8bfe0ccf082407e830291e7f78e9e052683b6db19bcf27229c17ed008a77
+- kind: project-relative
+  target: opencode
+  value: .opencode/agents/feature-planner.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/skills/agents/feature-planner.agent.md
+  active_owner: jasperhg90/skills/agents/feature-planner.agent.md
+  content_hash: sha256:2be041ff3f9ade023137fcd45c0dc172cef751f5f5f06011984c43834a438f62
 - kind: project-relative
   target: opencode
   value: .opencode/agents/kmctl-auditor.md

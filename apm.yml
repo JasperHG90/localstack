@@ -9,6 +9,32 @@ dependencies:
     - git: https://github.com/JasperHG90/kmctl.git
       path: apm
       ref: v0.12.1
+    # Skills, each at the commit aim installed it from, so their content does
+    # not change in the move from aim.
+    - jasperhg90/skills/skills/architecture/manifesto#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+    - jasperhg90/skills/skills/learning/deep-explain#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+    - jasperhg90/skills/skills/documentation/doc-write#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+    - jasperhg90/skills/skills/development/python-review#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+    - jasperhg90/skills/skills/documentation/readme-creator#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+    - jasperhg90/skills/skills/ops/release#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c
+    - jasperhg90/skills/skills/tools/generate-art#516c105a9d8260c80a9d1fd8cb4004fe22a74225
+    - jasperhg90/skills/skills/tools/remove-image-background#8618a2dea8b1997e94bab553b436054ab7fec9c3
+    - jasperhg90/skills/skills/tools/agent-creator#ba5842dee9bd077b2f1e65843c6b497a526cef77
+    - jasperhg90/skills/skills/tools/rule-creator#c3e24452dfb7152cfee4fc13ee2da5f3a0f9198a
+    - uditakhourii/adhd/skills/adhd#55ed38514cd996f6096b51c8320331a8a5dced19
+    - bencium/bencium-marketplace/bencium-impact-designer/skills/bencium-impact-designer#a5d02a417dba380071f57cb18fb5e65bc5f7df5f
+    # Rules and subagents. APM refuses a plain .md file, so these come from
+    # the .instructions.md and .agent.md files the skills repo ships.
+    # slop-scan-for-docs is committed in .claude/rules instead: its upstream
+    # is a plain .md in a third-party repo.
+    - jasperhg90/skills/rules/adversarial-reviews.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/pre-existing-issues.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/prek-code-quality.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/python-testing.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/uv-installer.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/rules/plain-language.instructions.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/agents/adversarial-reviewer.agent.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
+    - jasperhg90/skills/agents/feature-planner.agent.md#1c3dd312537694aeea9710c0cc545d0e07d5422c
 targets:
   - claude
   - opencode

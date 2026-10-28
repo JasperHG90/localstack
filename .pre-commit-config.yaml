@@ -1,4 +1,4 @@
-exclude: '^\.(claude|loop)/'
+exclude: '^(\.(claude|loop|agents|opencode)/|opencode\.json$|\.mcp\.json$|apm\.lock\.yaml$)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

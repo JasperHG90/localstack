@@ -90,15 +90,28 @@ just bootstrap
 ```
 
 That installs the kmctl CLI (`just kmctl`), installs the APM dependencies in
-`apm.yml` and runs `kmctl plugin patch` (`just install`), and creates `docs/`
-and `.okf/` when they are missing (`just init`). `just check` confirms it
-worked.
+`apm.yml` and runs `kmctl plugin patch` (`just kmctl-install`), and creates
+`docs/` and `.okf/` when they are missing (`just kmctl-init`).
+`just kmctl-check` confirms it worked.
+
+`apm.yml` also carries the rest of the agent tooling: the skills, rules and
+subagents in `.claude/`, each pinned to a commit. APM cannot install two
+things. The `slop-scan-for-docs` rule is a plain `.md` in a third-party repo,
+so it is committed in `.claude/rules/`. The caveman plugin needs a marketplace,
+so add it by hand:
+
+```
+claude plugin marketplace add juliusbrussee/caveman
+claude plugin install caveman@caveman
+```
 
 In OpenCode, start a new session in the repository. kmctl supports OpenCode
-2.x only. OpenCode has no rules scoped to paths, so all four of kmctl's rules
-load in every session. `apm install` puts APM's copies of the agents back over
-the ones `kmctl plugin patch` rewrites, so after any `apm install` run
-`just install` again, which runs both.
+2.x only. OpenCode has no rules scoped to paths, so every rule in
+`.opencode/rules/` loads in every session. The install recipes copy seven of
+the rules there, because APM writes none for OpenCode, and leave out the two
+subagents, whose front matter OpenCode rejects. `apm install` puts APM's
+copies of the agents back over the ones `kmctl plugin patch` rewrites, so
+after any `apm install` run `just kmctl-install` again, which runs all of it.
 
 Run `just` to see the other recipes. `AGENTS.md` says how this repository
 keeps its knowledge.

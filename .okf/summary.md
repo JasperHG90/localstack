@@ -7,9 +7,9 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-10-28T10:21:01Z
+  at: 2026-10-28T10:28:30Z
   against:
-    - decisions/0024-the-devcontainer-reads-the-host-openviking-login-through-a-read-only-mount
+    - decisions/0025-the-agent-guidelines-stay-in-agents-md
 ---
 
 # Summary
