@@ -1,0 +1,1 @@
+{"ask":"I want to update this devcontainer so that it installs ovsync by default, and so that it adds the openviking credentials fro mthe host as a read-only volume so authentication is covered."}
