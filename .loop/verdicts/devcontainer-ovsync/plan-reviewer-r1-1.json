@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan keeps ~/.ovx writable \"so `ovx -L` still works inside the container\", but a read-only ~/.openviking breaks `ovx -L` there. ovx 4.0's `_offer_to_bind` (cli.py:242-245) re-binds without asking whenever a terminal is attached and ~/.ovx/bound.json exists. The host's bound.json reaches the container through the shared ~/.ovx mount, so that is the normal case. `bind()` then writes `ov_config_file()`, which is ~/.openviking/ovcli.conf inside the container, and fails with \"could not write ... Read-only file system\". The token is already saved by then, so `ovx -L lab` stores it and still exits with an error. The token refreshed in the container never reaches the ovcli.conf that ovsync reads. So when the bound token expires (the current one lasts about 14 days), the only fix is a re-bind on the host. Without one, ovsync fails with an auth error rather than a write error. Revise the plan so in-container login is `ovx -L --no-bind` (or document the error) and the docs step says refresh and bind happen on the host. Then the Outcome no longer depends on an in-container login the mount forbids.",
+      "anchor": ".loop/plans/devcontainer-ovsync.md (Change, step 2)",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "5c4cccb0a83981d8c763a2494202fde40f2c418b055c0216185fe687a60b4615"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T09:23:52+00:00"
+}
