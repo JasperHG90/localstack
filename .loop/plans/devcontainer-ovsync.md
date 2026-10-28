@@ -41,12 +41,19 @@ ovsync needs.
    `source=${localEnv:HOME}/.openviking,target=/home/vscode/.openviking,type=bind,readonly`.
    Mount the directory, not the file: `ovx --bind` replaces the file, and a
    file bind would keep showing the old inode. The `~/.ovx` mount stays
-   writable so `ovx -L` still works inside the container.
+   writable so `ovx -L --no-bind` still stores a token inside the container.
+   Plain `ovx -L` there re-binds on its own whenever the host's
+   bound.json in `~/.ovx` exists (ovx `cli.py` `_offer_to_bind`), and that write
+   to the read-only `~/.openviking` fails (plan review round 1, p1). So the
+   token ovsync uses is refreshed and bound on the host, with
+   `ovx -L --bind lab`, and the container sees it through the mount.
 3. Like the `gcloud` and `~/.ovx` mounts, the host folder must exist before the
    container is created (operator's choice, 2026-10-28). It must also hold
    `ovcli.settings.conf`, which `ov language en` writes on the host: ov 0.5.0
    refuses every command without it and reads it only from `~/.openviking`
-   (spike:devcontainer-ovsync/1). The step that says so
+   (spike:devcontainer-ovsync/1). The page also says to refresh an expired
+   token on the host and to log in inside the container only with
+   `ovx -L --no-bind`. The step that says so
    goes in the devcontainer docs page that covers the other host mounts, or a
    new how-to if none exists.
 
