@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "In-container plain `ovx -L` re-binds to the read-only ~/.openviking when bound.json exists. The plan now says login inside the container is `ovx -L --no-bind` and that refresh and bind happen on the host; step 3 and eval row r4 carry it to the docs. ovx cli.py `_offer_to_bind` returns before reading bound.json when `--no-bind` is given, so the fix works.",
+      "anchor": ".loop/plans/devcontainer-ovsync.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "The plan and eval row r4 hard-code the ovx profile name `lab` (`ovx -L --bind lab`, `ovx --bind lab`), but the operator's ovx config, which the container shares through the ~/.ovx mount, has one profile, `localstack`, and bound.json records profile `localstack`. ovx `_resolve_profile` refuses an unknown name with \"profile 'lab' not found\", so the host step the docs must prescribe fails as written, and r4 requires the literal `--bind lab`, so a correct page fails the contract. `lab` comes from ovx's own help examples. Use the real profile name (or a placeholder the docs explain) in step 2 and 3 and in r4's grep.",
+      "anchor": "/home/vscode/.ovx/config.toml",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "71ccbf568c45ac439e507e94aec01fddf1e8d8f93f22a91aa3fb0ae636ec4021"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T09:25:35+00:00"
+}
