@@ -22,7 +22,8 @@ tmp
 .claude
 # Track only the project rules that govern tracked content: the .okf/ bundle,
 # the docs/ layout, and the Terraform file layout those two cite. Everything
-# else under .claude/ stays local.
+# else under .claude/ stays local. slop-scan-for-docs.md is tracked too: it is
+# a plain .md in a third-party repo, which APM cannot install.
 !/.claude/
 /.claude/*
 !/.claude/rules/
@@ -31,6 +32,7 @@ tmp
 !/.claude/rules/docs-layout.md
 !/.claude/rules/how-to-skeleton.md
 !/.claude/rules/terraform-file-layout.md
+!/.claude/rules/slop-scan-for-docs.md
 
 # APM dependencies
 apm_modules/

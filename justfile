@@ -173,14 +173,19 @@ kmctl:
     kmctl --version
 
 # Install the APM dependencies in apm.yml for its targets, then what APM cannot install yet.
+# APM writes no OpenCode rules, and OpenCode rejects the two subagents' front matter.
 kmctl-install:
     {{apm}} install
     {{kmctl}} plugin patch
+    mkdir -p .opencode/rules && cp .claude/rules/adversarial-reviews.md .claude/rules/pre-existing-issues.md .claude/rules/prek-code-quality.md .claude/rules/python-testing.md .claude/rules/uv-installer.md .claude/rules/plain-language.md .claude/rules/slop-scan-for-docs.md .opencode/rules/
+    rm -f .opencode/agents/adversarial-reviewer.md .opencode/agents/feature-planner.md
 
 # Install exactly what apm.lock.yaml records (for a clean clone or CI).
 kmctl-install-frozen:
     {{apm}} install --frozen
     {{kmctl}} plugin patch
+    mkdir -p .opencode/rules && cp .claude/rules/adversarial-reviews.md .claude/rules/pre-existing-issues.md .claude/rules/prek-code-quality.md .claude/rules/python-testing.md .claude/rules/uv-installer.md .claude/rules/plain-language.md .claude/rules/slop-scan-for-docs.md .opencode/rules/
+    rm -f .opencode/agents/adversarial-reviewer.md .opencode/agents/feature-planner.md
 
 # Fail when a frozen install changes a committed file, such as a hand edit to an installed skill.
 # Run it on a clean checkout, as in CI: the install overwrites an uncommitted edit without a word.
