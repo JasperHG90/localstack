@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "In-container ovx -L re-binds onto the read-only ~/.openviking; settled in round 2 by ovx -L --no-bind and refreshing on the host.",
+      "anchor": ".loop/plans/devcontainer-ovsync.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "The plan and r4 named an ovx profile lab that does not exist; both now say --bind localstack, the operator's only profile.",
+      "anchor": ".loop/plans/devcontainer-ovsync.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "e3209d36b8c433fc229b167ea022a6b1a09c35c7e3aaa3f6c7773cf190a3f7f7"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T09:26:39+00:00"
+}
