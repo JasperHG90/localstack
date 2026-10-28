@@ -29,9 +29,13 @@ and does not mount `~/.openviking`.
 (packages/ov-sync/src/ov_sync/config.py in JasperHG90/openviking_extensions)
 reads `url` and `api_key` from `$OPENVIKING_CLI_CONFIG_FILE`, falling back to
 ~/.openviking/ovcli.conf, then lets `OV_SYNC_*` variables override them. On
-the host, `ovx -L --bind lab` (or `ovx --bind lab`) writes that file with the
+the host, `ovx -L --bind localstack` (or `ovx --bind localstack`) writes that file with the
 token expanded. So the host's `~/.openviking` already carries everything
 ovsync needs.
+
+The operator's ovx profile is `localstack`: it is the only profile in the
+host's ovx config.toml, and `bound.json` records it (plan review round 2,
+p2).
 
 **Change.**
 
@@ -46,7 +50,7 @@ ovsync needs.
    bound.json in `~/.ovx` exists (ovx `cli.py` `_offer_to_bind`), and that write
    to the read-only `~/.openviking` fails (plan review round 1, p1). So the
    token ovsync uses is refreshed and bound on the host, with
-   `ovx -L --bind lab`, and the container sees it through the mount.
+   `ovx -L --bind localstack`, and the container sees it through the mount.
 3. Like the `gcloud` and `~/.ovx` mounts, the host folder must exist before the
    container is created (operator's choice, 2026-10-28). It must also hold
    `ovcli.settings.conf`, which `ov language en` writes on the host: ov 0.5.0
