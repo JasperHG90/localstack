@@ -137,4 +137,5 @@
 
 ## 2026-10-28
 
+- Added `decisions/0024-the-devcontainer-reads-the-host-openviking-login-through-a-read-only-mount` with `kmctl new decision`.
 - Added `decisions/0025-the-agent-guidelines-stay-in-agents-md` with `kmctl new decision`.

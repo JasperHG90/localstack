@@ -1,25 +1,64 @@
 {
   "schema_version": "1.0",
   "slug": "aim-to-apm",
-  "stage": "ready",
-  "attempts": 0,
+  "stage": "done",
+  "attempts": 1,
   "plan_rounds": 2,
-  "review_rounds": 0,
+  "review_rounds": 3,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "f4836b6b0b24cf8b6ad5166e65f1cdcca2aae9188218ac006820325d9437880f",
+    "tree": "0474c66578aa3fedb712c7c4d69b2d55cbf0ab7a",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "cleared-unreviewed",
+        "by": "judgement",
+        "judgement": "j-20261028T104008+0000-cd34c24a",
+        "paths": [
+          "cli/tests/test_agent_tooling.py"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "cleared-unreviewed",
+        "by": "judgement",
+        "judgement": "j-20261028T104009+0000-14829ee8",
+        "paths": [
+          ".gitignore"
+        ]
+      },
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          "README.md"
+        ]
+      }
+    ],
+    "at": "2026-10-28T10:40:09+00:00"
+  },
   "ask": "j-20261020T204019+0000-525087dc",
   "split": "j-20261028T091804+0000-0efea9a2",
   "split_plan_hash": "4892234606e761c01f78c35f579f43164875884a3478918adc6510edfa5eda80",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "2afa040f2394cf6d74dd2c3c4ffed7cfe0eb47b2",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
-  "worktree": null,
-  "branch": null,
-  "stamps": [],
+  "worktree": "/home/vscode/workspace.worktrees/aim-to-apm",
+  "branch": "loop/aim-to-apm",
+  "stamps": [
+    "24957d464fa66aa3e7b6edcbd5748d6c4266a68815272da7f0a01d40794f73a1",
+    "5644de5fc33e662e53238f80e82da8274e3ad930965a7702de91558264ff464d",
+    "f4836b6b0b24cf8b6ad5166e65f1cdcca2aae9188218ac006820325d9437880f",
+    "ce8df0cb6a71bbf7c45b6216f7512f2ac310a86596e7734d4d1a99174d173d04"
+  ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/agent",
     "hash": "07dd9d7c89791d37a0775d82e79afc6c82b65687a9e78f02c83073ad28961c28",
@@ -104,16 +143,16 @@
   "waivers": [],
   "overrides": [],
   "round": {
-    "kind": "plan",
-    "n": 2,
-    "binds": "4892234606e761c01f78c35f579f43164875884a3478918adc6510edfa5eda80",
-    "started_at": "2026-10-28T10:18:42+00:00",
+    "kind": "review",
+    "n": 3,
+    "binds": "ce8df0cb6a71bbf7c45b6216f7512f2ac310a86596e7734d4d1a99174d173d04",
+    "started_at": "2026-10-28T10:44:03+00:00",
     "passes": [
-      "plan-reviewer"
+      "reviewer"
     ],
-    "tree": null,
-    "plan_hash": null,
-    "eval_hash": null,
+    "tree": "bbaaf492031f92605368c0b01629c67dd1b3224b",
+    "plan_hash": "4892234606e761c01f78c35f579f43164875884a3478918adc6510edfa5eda80",
+    "eval_hash": "07dd9d7c89791d37a0775d82e79afc6c82b65687a9e78f02c83073ad28961c28",
     "scope": "full",
     "sent_back": [],
     "since": null,
@@ -141,8 +180,38 @@
       "to": "ready",
       "at": "2026-10-28T10:19:50+00:00",
       "by": "advance"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-10-28T10:25:39+00:00",
+      "by": "advance"
+    },
+    {
+      "from": "building",
+      "to": "verifying",
+      "at": "2026-10-28T10:34:51+00:00",
+      "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-10-28T10:38:14+00:00",
+      "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-10-28T10:40:09+00:00",
+      "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-10-28T10:47:26+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-10-28T10:25:20+00:00"
+  "at": "2026-10-28T10:47:27+00:00"
 }

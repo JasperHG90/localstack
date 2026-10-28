@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The r5 tests are weaker than the row. test_opencode_rule_matches_the_claude_rule skips the byte comparison when .claude/rules/<rule>.md is absent, which it is on any checkout without an install. test_opencode_rules_come_from_both_install_recipes rejects only a `.claude/rules/*` glob, so a recipe that also copies an eighth rule by name (for example minimal-comments.md) still passes, though the row's fails_when names \"a rule outside the 7 is copied\".",
+      "anchor": "cli/tests/test_agent_tooling.py:120",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "The .gitignore comment above the whitelist still says it tracks only the project rules that govern tracked content (the .okf bundle, the docs layout, the Terraform layout). slop-scan-for-docs is now tracked for another reason, because APM cannot install a plain .md from a third-party repo, so the comment no longer covers what the block does.",
+      "anchor": ".gitignore:23",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "README says apm.yml carries \"the rest of the agent tooling\" and that caveman is \"the one thing APM cannot install\". slop-scan-for-docs is a second thing APM cannot install, and it is committed in .claude/rules, not declared in apm.yml.",
+      "anchor": "README.md:97",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "5644de5fc33e662e53238f80e82da8274e3ad930965a7702de91558264ff464d",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T10:37:55+00:00"
+}

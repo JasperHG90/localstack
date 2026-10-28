@@ -61,3 +61,26 @@ def test_setup_replaces_a_leftover_pre_commit_hook() -> None:
 
     assert "prek install --overwrite" in justfile
     assert "just setup" in (devcontainer() / "bootstrap.sh").read_text()
+
+
+def test_ovsync_is_installed_at_the_pinned_tag() -> None:
+    dockerfile = (devcontainer() / "Dockerfile").read_text()
+
+    assert (
+        'RUN uv tool install ov-sync --from "git+https://github.com/JasperHG90/'
+        'openviking_extensions@ov-sync-v0.3.0#subdirectory=packages/ov-sync"\n'
+    ) in dockerfile
+
+
+def test_openviking_credentials_are_read_only() -> None:
+    """The directory, not ovcli.conf: ovx --bind replaces the file by rename,
+    and a file bind would keep showing the old one."""
+    assert (
+        "source=${localEnv:HOME}/.openviking,target=/home/vscode/.openviking,type=bind,readonly"
+        in mounts()
+    )
+
+
+def test_ovx_stays_writable() -> None:
+    """ovx -L --no-bind stores its token in ~/.ovx from inside the container."""
+    assert "source=${localEnv:HOME}/.ovx,target=/home/vscode/.ovx,type=bind" in mounts()

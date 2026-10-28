@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "The r5 recipe test requires the set of rules copied by name to equal the 7, and the conditional byte comparison has a docstring naming r8 as the clean-checkout proof.",
+      "anchor": "cli/tests/test_agent_tooling.py:137",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "The .gitignore comment says why slop-scan-for-docs.md is tracked.",
+      "anchor": ".gitignore:23",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "README says APM cannot install two things and names both.",
+      "anchor": "README.md:96",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "ce8df0cb6a71bbf7c45b6216f7512f2ac310a86596e7734d4d1a99174d173d04",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-10-28T10:47:01+00:00"
+}

@@ -93,6 +93,7 @@ Each folder also has an index of its own pages:
 - [Verify an OpenViking deployment](how-to/verify-an-openviking-deployment.md)
 - [Carry the kept trees over to the new OpenViking](how-to/carry-the-kept-trees-over-to-the-new-openviking.md)
 - [Save something to OpenViking through Hermes](how-to/save-something-to-openviking-through-hermes.md)
+- [Sync a folder to OpenViking from the devcontainer](how-to/sync-a-folder-to-openviking-from-the-devcontainer.md)
 - [Add, remove, or reorder a dash tile](how-to/change-a-dash-tile.md)
 - [Rebuild and deploy the dash images](how-to/rebuild-the-dash-images.md)
 - [Rebuild and deploy the registry-ui images](how-to/rebuild-the-registry-ui-images.md)
