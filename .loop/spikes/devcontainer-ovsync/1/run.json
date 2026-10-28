@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "devcontainer-ovsync",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/spike.sh",
+      "copy": "files/spike.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "21d27aeb406aa6a499b0c9ffa68cb9f17759c00d",
+  "fingerprint": "52b48135d6a1574076c026086e2db2f62b8f82b8a3523e09435670bbebad4afe",
+  "started_at": "2026-10-28T09:21:14+00:00",
+  "finished_at": "2026-10-28T09:21:23+00:00",
+  "duration_seconds": 8.842,
+  "timeout_seconds": 300.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

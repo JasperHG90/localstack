@@ -1,0 +1,46 @@
+touch under ~/.openviking refused: ok
+=== ov_nolang: /home/vscode/.local/bin/ov status
+exit 2
+OpenViking needs a display language before running commands.
+Run one of:
+  ov language en
+  ov language zh-CN
+=== ov_status_env: OPENVIKING_LANG=en /home/vscode/.local/bin/ov status
+exit 2
+OpenViking needs a display language before running commands.
+Run one of:
+  ov language en
+  ov language zh-CN
+=== ovsync_status: /tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/bin/ovsync status /tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/run.yCCo/notes --root-uri viking://user/jasper/resources/x
+exit 0
+└──────────────────────┴───────────────────────────────────────────────────────┘
+
+Would send:
+  a.md
+=== ovsync_run: OV_SYNC_SYNC__ROOT_URI=viking://user/jasper/resources/x /tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/bin/ovsync run /tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/run.yCCo/notes --root-uri viking://user/jasper/resources/x
+exit 1
+Cannot reach OpenViking: Cannot reach http://127.0.0.1:9: [Errno 111] Connection
+refused
+=== ov_status_settings: /home/vscode/.local/bin/ov status
+exit 0
+What to try
+  ov config validate        Check config, auth, and server reachability
+  ov config                 Edit or switch config
+  ov health                 Run a quick health check
+=== ov_ls_settings: /home/vscode/.local/bin/ov ls viking://
+exit 1
+Next:
+  ov config validate  Check the active config
+  ov health           Run a quick server health check
+  ov config switch    Switch to another config
+=== override case: OpenViking needs a display language before running commands.
+"/tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/run.yCCo/home2/.openviking/ovcli.settings.conf"
+=== HOME diff (excluding the settings file added on purpose)
+no change in HOME across cases 1-3
+ovsync state: /tmp/claude-1000/-home-vscode-workspace/bb29ac4a-7b6b-458a-a055-0c05909aba19/scratchpad/spike-devcontainer-ovsync/run.yCCo/notes/.ov-sync.db (in the synced folder)
+total 8
+dr-xr-xr-x 2 vscode vscode 80 Oct 28 10:21 .
+drwxr-xr-x 3 vscode vscode 60 Oct 28 10:21 ..
+-r--r--r-- 1 vscode vscode 50 Oct 28 10:21 ovcli.conf
+-r--r--r-- 1 vscode vscode 22 Oct 28 10:21 ovcli.settings.conf
+fail=0
