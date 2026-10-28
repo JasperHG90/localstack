@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "fingerprint": "1f7eff10b73acbf5d0a4d5e82d692c46c47ebfc87539f335db9bdd49ffb611f7",
+  "slug": "devcontainer-ovsync",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 1,
+      "passed": false,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_devcontainer_volumes.py -q -k ovsync_is_installed_at_the_pinned_tag",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r2",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_devcontainer_volumes.py -q -k openviking_credentials_are_read_only",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r3",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_devcontainer_volumes.py -q -k ovx_stays_writable",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r4",
+      "kind": "eval-row",
+      "command": "grep -l 'ov language en' docs/how-to/*.md | xargs grep -l -- '--bind localstack' | xargs grep -l -- 'ovx -L --no-bind' | grep -q . && uv run --directory cli pytest tests/test_how_to_skeleton.py -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 63,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    }
+  ],
+  "green": false,
+  "at": "2026-10-28T10:22:56+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696"
+}

@@ -1,0 +1,1 @@
+{"at": "2026-10-28T10:22:56+00:00", "command": "uv run --directory cli pytest", "exit": 1, "fingerprint": "1f7eff10b73acbf5d0a4d5e82d692c46c47ebfc87539f335db9bdd49ffb611f7", "kind": "red", "name": "cli_tests", "note": null, "output": ".loop/events/devcontainer-ovsync/gate-output/2af88eb43f988fe7f80ed192f9fe52ae5e62ec0492540ce2d98eee00aa7e6ddd.txt", "schema_version": "1.0"}
