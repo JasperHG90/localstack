@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "SeaweedFS's uptime now depends on the receiver never exiting, and the plan does not say how the receiver behaves when NATS on radxa is down. Spikes 9 and 11 show that any exit of the namespace owner fails the whole seaweedfs alloc and Nomad reschedules both tasks with the service's exponential delay. A plain nats.go receiver that gives up when `Connect` fails at start, or exits on a publish error, turns every radxa outage or NATS restart into an S3 outage on orangepi4a for loki, tempo, registry and the backups. The same holds for a restart caused by the receiver's own bearer-token template, whose default change_mode is restart. The plan must set the contract: the receiver starts and stays up without NATS, reconnects forever, answers the webhook with a non-2xx status while it cannot publish (the catch-up pass repairs what the webhook drops), its template does not restart it, and its memory limit leaves headroom. \"The receiver stays small\" names the goal but not the behavior that meets it.",
+      "anchor": ".loop/plans/ov-sync-consumer.md (Wiring, seaweedfs.hcl bullet; receiver bullet)",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "67301cfe5de3b5c1efec815bbe7c30f895ec6e6082dcf1e4b9e116aaf7f80193"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T20:44:40+00:00"
+}
