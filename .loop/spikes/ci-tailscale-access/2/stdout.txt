@@ -1,0 +1,10 @@
+vault Vault v1.21.1 (2453aac2638a6ae243341b4e0657fd8aea1cbf18), built 2025-11-18T13:04:32Z
+Success! Enabled jwt auth method at: jwt-github/
+Success! Data written to: auth/jwt-github/config
+Success! Data written to: auth/jwt-github/role/probe
+{"bound_audiences":["spike-only-not-trusted"],"bound_claims":{"environment":"lab","ref":"refs/heads/main","repository":"JasperHG90/lab-auth-probe","workflow_ref":"JasperHG90/lab-auth-probe/.github/workflows/probe.yaml@refs/heads/main"},"bound_claims_type":"string","user_claim":"repository"}
+OK case=accept_probe-main-lab want=accept got=accept :: {"role":"probe"}
+OK case=refuse_other-main-lab want=refuse got=refuse :: * error validating claims: claim "workflow_ref" does not match any associated bound claim values 
+OK case=refuse_probe-branch-lab want=refuse got=refuse :: * error validating claims: claim "ref" does not match any associated bound claim values 
+OK case=refuse_probe-branch-noenv want=refuse got=refuse :: * error validating claims: claim "environment" is missing 
+OK case=refuse_probe-main-noenv want=refuse got=refuse :: * error validating claims: claim "environment" is missing 
