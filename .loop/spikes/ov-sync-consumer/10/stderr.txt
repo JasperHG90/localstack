@@ -1,0 +1,24 @@
+Unable to find image 'busybox:1.36' locally
+1.36: Pulling from library/busybox
+821d9dafb26d: Pulling fs layer
+821d9dafb26d: Download complete
+f015501df97a: Download complete
+821d9dafb26d: Pull complete
+Digest: sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+Status: Downloaded newer image for busybox:1.36
+template parsing error: template: :1:18: executing "" at <.NetworkSettings.IPAddress>: map has no entry for key "IPAddress"
+
+
+==> View client details and metrics in the Web UI: http://127.0.0.1:4646/ui/clients/8cd8e11b-9062-969d-edbb-955939c07c42
+
+
+==> View this job in the Web UI: http://127.0.0.1:4646/ui/jobs/ns@default
+
+
+==> View allocation details in the Web UI: http://127.0.0.1:4646/ui/allocations/0e9bd073-3567-38eb-4d07-610da879e68f
+
+
+==> View allocation details in the Web UI: http://127.0.0.1:4646/ui/allocations/0e9bd073-3567-38eb-4d07-610da879e68f
+
+
+==> View allocation details in the Web UI: http://127.0.0.1:4646/ui/allocations/0e9bd073-3567-38eb-4d07-610da879e68f

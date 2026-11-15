@@ -1,0 +1,97 @@
+podman podman 3.4.4
+Nomad v2.0.4
+driver.podman                     = 1
+driver.podman.health              = healthy
+driver.podman.version             = 3.4.4
+alloc=0e9bd073-3567-38eb-4d07-610da879e68f hostip=172.17.0.2 state: running a=running/0 r=running/0
+Task "r" (prestart sidecar) is "running"
+2026-11-15T20:37:12Z  Started     Task started by client
+2026-11-15T20:37:12Z  Task Setup  Building Task Directory
+2026-11-15T20:37:12Z  Received    Task received by client
+Task "a" is "running"
+2026-11-15T20:37:13Z  Started     Task started by client
+2026-11-15T20:37:12Z  Task Setup  Building Task Directory
+2026-11-15T20:37:12Z  Received    Task received by client
+r-0e9bd073-3567-38eb-4d07-610da879e68f Up 1 second ago 172.17.0.2:18333->8333/tcp, 172.17.0.2:18333->8333/udp
+a-0e9bd073-3567-38eb-4d07-610da879e68f Up Less than a second ago 172.17.0.2:18333->8333/tcp, 172.17.0.2:18333->8333/udp
+a netmode: container:3c7c18c86a87d6de05508b0cf61f61fc8904cbda38f1ec22b1bf13e8b053b745
+r id:      3c7c18c86a87d6de05508b0cf61f61fc8904cbda38f1ec22b1bf13e8b053b745
+r ports:   {"8333/tcp":[{"HostIp":"172.17.0.2","HostPort":"18333"}],"8333/udp":[{"HostIp":"172.17.0.2","HostPort":"18333"}]}
+a ports:   {}
+--- probe: podman create with --network container:r and -p (what a task:r container with ports would ask for)
+b872a92835c0b49d48f149bf4b9c96ab7730fe0fc7f5e6e5d291163e346952ef
+--- check before (state: running a=running/0 r=running/0)
+r netns: net:[4026533264]  a netns: net:[4026533264]
+a container: 840ae7a71d431c52c886108a2a40afe3a3a35ef0813c4bf55cd825b15701ba8a 2026-11-15 20:37:13.017320579 +0000 UTC
+r -> 127.0.0.1:8333 ok (1794775033%N)
+a -> 172.17.0.2:4646 (off-namespace) ok
+outside (ovc5-client) -> :18333 FAIL (wget: bad address ':18333')
+=== nomad alloc restart 0e9bd073-3567-38eb-4d07-610da879e68f a
+restart command exit=0
+after restart a: running a=running/2 r=running/0
+Task "r" (prestart sidecar) is "running"
+2026-11-15T20:37:12Z  Started     Task started by client
+2026-11-15T20:37:12Z  Task Setup  Building Task Directory
+2026-11-15T20:37:12Z  Received    Task received by client
+Task "a" is "running"
+2026-11-15T20:37:38Z  Started           Task started by client
+2026-11-15T20:37:18Z  Restarting        Task restarting in 15.502195667s
+2026-11-15T20:37:18Z  Terminated        Exit Code: 1
+2026-11-15T20:37:17Z  Started           Task started by client
+2026-11-15T20:37:17Z  Restarting        Task restarting in 0s
+2026-11-15T20:37:17Z  Terminated        Exit Code: 0
+2026-11-15T20:37:15Z  Restart Signaled  User requested task to restart
+2026-11-15T20:37:13Z  Started           Task started by client
+2026-11-15T20:37:12Z  Task Setup        Building Task Directory
+2026-11-15T20:37:12Z  Received          Task received by client
+r-0e9bd073-3567-38eb-4d07-610da879e68f Up 54 seconds ago
+a-0e9bd073-3567-38eb-4d07-610da879e68f Up 28 seconds ago
+job allocs:
+0e9bd073  8cd8e11b  g           0        run      running  54s ago  18s ago
+driver warnings/errors:
+    2026-11-15T20:37:07.042Z [ERROR] client.driver_mgr.docker: failed to list pause containers for recovery: driver=docker error="failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory"
+    2026-11-15T20:37:20.680Z [ERROR] client.driver_mgr.nomad-driver-podman: Could not stop/kill container: driver=podman containerID=840ae7a71d431c52c886108a2a40afe3a3a35ef0813c4bf55cd825b15701ba8a error="cannot stop container, status code: 500" @module=podman timestamp=2026-11-15T20:37:20.679Z
+--- check after_a (state: running a=running/2 r=running/0)
+r netns: net:[4026533264]  a netns: net:[4026533264]
+a container: 7bd3f22cc02a4538e4a80be6441ef3c55cb87cf3f68c0324dd9c70abf406a837 2026-11-15 20:37:38.13228945 +0000 UTC
+r -> 127.0.0.1:8333 ok (1794775058%N)
+a -> 172.17.0.2:4646 (off-namespace) ok
+outside (ovc5-client) -> :18333 FAIL (wget: bad address ':18333')
+=== nomad alloc restart 0e9bd073-3567-38eb-4d07-610da879e68f r
+restart command exit=0
+after restart r: failed a=dead/2 r=dead/1
+Task "r" (prestart sidecar) is "dead"
+2026-11-15T20:38:09Z  Not Restarting    Error was unrecoverable
+2026-11-15T20:38:09Z  Driver Failure    rpc error: code = FailedPrecondition desc = failed to remove dead container: cannot delete container, status code: 500
+2026-11-15T20:38:09Z  Restarting        Task restarting in 0s
+2026-11-15T20:38:09Z  Terminated        Exit Code: 0
+2026-11-15T20:38:07Z  Restart Signaled  User requested task to restart
+2026-11-15T20:37:12Z  Started           Task started by client
+2026-11-15T20:37:12Z  Task Setup        Building Task Directory
+2026-11-15T20:37:12Z  Received          Task received by client
+Task "a" is "dead"
+2026-11-15T20:38:14Z  Killed               Task successfully killed
+2026-11-15T20:38:14Z  Terminated           Exit Code: 0
+2026-11-15T20:38:09Z  Killing              Sent interrupt. Waiting 5s before force killing
+2026-11-15T20:38:09Z  Sibling Task Failed  Task's sibling "r" failed
+2026-11-15T20:37:38Z  Started              Task started by client
+2026-11-15T20:37:18Z  Restarting           Task restarting in 15.502195667s
+2026-11-15T20:37:18Z  Terminated           Exit Code: 1
+2026-11-15T20:37:17Z  Started              Task started by client
+2026-11-15T20:37:17Z  Restarting           Task restarting in 0s
+2026-11-15T20:37:17Z  Terminated           Exit Code: 0
+r-0e9bd073-3567-38eb-4d07-610da879e68f Exited (137) 15 seconds ago
+job allocs:
+0e9bd073  8cd8e11b  g           0        run      failed  1m14s ago  4s ago
+driver warnings/errors:
+    2026-11-15T20:37:07.042Z [ERROR] client.driver_mgr.docker: failed to list pause containers for recovery: driver=docker error="failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory"
+    2026-11-15T20:37:20.680Z [ERROR] client.driver_mgr.nomad-driver-podman: Could not stop/kill container: driver=podman containerID=840ae7a71d431c52c886108a2a40afe3a3a35ef0813c4bf55cd825b15701ba8a error="cannot stop container, status code: 500" @module=podman timestamp=2026-11-15T20:37:20.679Z
+    2026-11-15T20:38:09.155Z [WARN]  client.driver_mgr.nomad-driver-podman: Could not remove container: driver=podman @module=podman container=3c7c18c86a87d6de05508b0cf61f61fc8904cbda38f1ec22b1bf13e8b053b745 error="cannot delete container, status code: 500" timestamp=2026-11-15T20:38:09.155Z
+    2026-11-15T20:38:09.174Z [ERROR] client.alloc_runner.task_runner: running driver failed: alloc_id=0e9bd073-3567-38eb-4d07-610da879e68f task=r error="rpc error: code = FailedPrecondition desc = failed to remove dead container: cannot delete container, status code: 500"
+--- check after_r (state: failed a=dead/2 r=dead/1)
+r netns: Error: can only create exec sessions on running containers: container state improper  a netns: Error: no container with name or ID "a-0e9bd073-3567-38eb-4d07-610da879e68f" found: no such container
+a container: Error: error inspecting object: no such object: "a-0e9bd073-3567-38eb-4d07-610da879e68f"
+r -> 127.0.0.1:8333 FAIL (Error: can only create exec sessions on running containers: container state improper)
+a -> 172.17.0.2:4646 (off-namespace) FAIL
+outside (ovc5-client) -> :18333 FAIL (wget: bad address ':18333')
+RESULT before_ok=0 after_a_ok=0 a served '' then ''
