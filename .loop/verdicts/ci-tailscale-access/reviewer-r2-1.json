@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "Step 4's snippet did not show tailscale-client-id and tailscale-audience for a second federated identity.",
+      "anchor": "docs/how-to/authenticate-a-github-workflow-to-the-lab.md:102",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "Prerequisites had no links, which the how-to skeleton rule asks for.",
+      "anchor": "docs/how-to/authenticate-a-github-workflow-to-the-lab.md:21",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "31ce114426bf027bc41b5b2ec63555b480b7b2006ad09316f8ee50d025db811c",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T22:27:59+00:00"
+}
