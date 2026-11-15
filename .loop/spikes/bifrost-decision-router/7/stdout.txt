@@ -1,0 +1,9 @@
+clef  200 697ms  prompt="Say hi."  {"model":"clef:27b","answers":[{"type":"choice","name":"tier","choice":"SIMPLE","probabilities":[{"value":"SIMPLE","probability":0.9855},{"value":"MEDIUM","probability":0.0081},{"value":"COMPLEX","probability":0.0064}],"confidence":0.9571}],"usage":{"prompt_tokens":139,"total_tokens":139},"extra_fie
+clef  200 438ms  prompt="Summarise this paragraph in one line: th"  {"model":"clef:27b","answers":[{"type":"choice","name":"tier","choice":"SIMPLE","probabilities":[{"value":"SIMPLE","probability":0.957},{"value":"MEDIUM","probability":0.0294},{"value":"COMPLEX","probability":0.0137}],"confidence":0.8753}],"usage":{"prompt_tokens":152,"total_tokens":152},"extra_fiel
+clef  200 493ms  prompt="Design a sharded, multi-region event sto"  {"model":"clef:27b","answers":[{"type":"choice","name":"tier","choice":"COMPLEX","probabilities":[{"value":"SIMPLE","probability":0.0105},{"value":"MEDIUM","probability":0.0332},{"value":"COMPLEX","probability":0.9563}],"confidence":0.8736}],"usage":{"prompt_tokens":156,"total_tokens":156},"extra_fi
+clef  200 840ms  prompt="Write a haiku about rain."  {"model":"clef:27b","answers":[{"type":"choice","name":"tier","choice":"SIMPLE","probabilities":[{"value":"SIMPLE","probability":0.7623},{"value":"MEDIUM","probability":0.215},{"value":"COMPLEX","probability":0.0227}],"confidence":0.4418}],"usage":{"prompt_tokens":143,"total_tokens":143},"extra_fiel
+clef  200 548ms  prompt="Prove that there are infinitely many pri"  {"model":"clef:27b","answers":[{"type":"choice","name":"tier","choice":"MEDIUM","probabilities":[{"value":"SIMPLE","probability":0.0464},{"value":"MEDIUM","probability":0.5967},{"value":"COMPLEX","probability":0.357}],"confidence":0.2284}],"usage":{"prompt_tokens":151,"total_tokens":151},"extra_fiel
+clef worst: 840ms (timeout under test: 5000ms)
+chat  gpt-oss:120b -> 200 0.635721
+chat  deepseek-v4.1-flash -> 200 0.547317
+chat  mistral-large-4 -> 200 4.280633
