@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "slug": "ov-sync-consumer",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc1/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc1/spike.sh",
+      "copy": "files/spike.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc1/drive.py",
+      "copy": "files/drive.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc1/fake.py",
+      "copy": "files/fake.py"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc1/mkconf.py",
+      "copy": "files/mkconf.py"
+    }
+  ],
+  "where": "worktree",
+  "head": "b2b7cacef7515fd114bfa076999f0a060f9cda3f",
+  "fingerprint": "2bfbe7e0dd7b41029efa5492fef804caaf62216cef25c0b997309510e546902d",
+  "started_at": "2026-11-15T19:53:45+00:00",
+  "finished_at": "2026-11-15T19:54:25+00:00",
+  "duration_seconds": 40.035,
+  "timeout_seconds": 600.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

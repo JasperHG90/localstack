@@ -1,0 +1,49 @@
+== ov up
+[W write replace] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs/a/b.md","root_uri":"viking://user/jasper/resources/projects/w/docs/a","context_type":"resource","mode":"create","written_bytes":52,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+CHECK W content/write nested create + exact read: True
+[ls viking://user/jasper/resources/projects/w hidden=True] HTTP 200 ['viking://user/jasper/resources/projects/w/docs', 'viking://user/jasper/resources/projects/w/docs/a', 'viking://user/jasper/resources/projects/w/docs/a/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/a/.overview.md', 'viking://user/jasper/resources/projects/w/docs/a/b.md']
+[B batch-write] HTTP 404 {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/bw","details":{"type":"file","resource":"viking://user/jasper/resources/projects/bw"}},"telemetry":null,"profile":null}
+CHECK B batch-write nested create + exact read: False
+[ls viking://user/jasper/resources/projects/bw hidden=True] HTTP 404 None
+[rm viking://user/jasper/resources/projects/w/docs/a/b.md {'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs/a/b.md","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/w/docs/a","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat viking://user/jasper/resources/projects/w/docs/a/b.md] HTTP 404 {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/w/docs/a/b.md","details":{"type":"file","resource":"viking://user/jasper/resources/projects/w/docs/a/b.md"}},"telemetry":null,"profile":null}
+CHECK D file delete: True
+[ls viking://user/jasper/resources/projects/w/docs/a hidden=True] HTTP 200 ['viking://user/jasper/resources/projects/w/docs/a/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/a/.overview.md']
+[rm viking://user/jasper/resources/projects/w/docs/a {'wait': True}] HTTP 412 {"status":"error","result":null,"error":{"code":"FAILED_PRECONDITION","message":"Cannot remove directory without --recursive: viking://user/jasper/resources/projects/w/docs/a","details":{"resource":"viking://user/jasper/resources/projects/w/docs/a","expected_flag":"recursive"}},"telemetry":null,"profile":null}
+[rm viking://user/jasper/resources/projects/w/docs/a {'recursive': True, 'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs/a","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/w/docs","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat viking://user/jasper/resources/projects/w/docs/a] HTTP 200 {"status":"ok","result":{"name":"a","size":0,"mode":493,"modTime":"2026-11-15T19:54:08Z","isDir":true,"isLocked":false,"count":2},"error":null,"telemetry":null,"profile":null}
+CHECK D emptied folder a/ delete: False via recursive=true
+[rm viking://user/jasper/resources/projects/w/docs {'wait': True}] HTTP 412 {"status":"error","result":null,"error":{"code":"FAILED_PRECONDITION","message":"Cannot remove directory without --recursive: viking://user/jasper/resources/projects/w/docs","details":{"resource":"viking://user/jasper/resources/projects/w/docs","expected_flag":"recursive"}},"telemetry":null,"profile":null}
+[rm viking://user/jasper/resources/projects/w/docs {'recursive': True, 'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs","estimated_deleted_count":4,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/w","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+INFO docs/ delete after a/ gone: via recursive=true
+[ls viking://user/jasper/resources/projects/w hidden=True] HTTP 200 ['viking://user/jasper/resources/projects/w/.abstract.md', 'viking://user/jasper/resources/projects/w/.overview.md']
+CHECK D nothing left under viking://user/jasper/resources/projects/w/docs in ls: True
+[N write wait=false] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/nw/docs/a/b.md","root_uri":"viking://user/jasper/resources/projects/nw/docs/a","context_type":"resource","mode":"create","written_bytes":2,"content_updated":true,"semantic_status":"queued","vector_status":"queued","queue_status":null}}
+[rm viking://user/jasper/resources/projects/nw/docs/a/b.md {}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/nw/docs/a/b.md","estimated_deleted_count":0,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/nw/docs/a","semantic_status":"queued"},"error":null,"telemetry":null,"profile":null}
+[rm viking://user/jasper/resources/projects/nw/docs/a {'wait': True}] HTTP 412 {"status":"error","result":null,"error":{"code":"FAILED_PRECONDITION","message":"Cannot remove directory without --recursive: viking://user/jasper/resources/projects/nw/docs/a","details":{"resource":"viking://user/jasper/resources/projects/nw/docs/a","expected_flag":"recursive"}},"telemetry":null,"profile":null}
+[rm viking://user/jasper/resources/projects/nw/docs/a {'recursive': True, 'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/nw/docs/a","estimated_deleted_count":0,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/nw/docs","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+INFO N file rm ok=True folder via recursive=true; after 15 s:
+[ls viking://user/jasper/resources/projects/nw hidden=True] HTTP 200 ['viking://user/jasper/resources/projects/nw/docs', 'viking://user/jasper/resources/projects/nw/docs/a', 'viking://user/jasper/resources/projects/nw/docs/a/.abstract.md', 'viking://user/jasper/resources/projects/nw/docs/a/.overview.md', 'viking://user/jasper/resources/projects/nw/docs/.abstract.md', 'viking://user/jasper/resources/projects/nw/docs/.overview.md', 'viking://user/jasper/resources/projects/nw/.abstract.md', 'viking://user/jasper/resources/projects/nw/.overview.md']
+OVERALL FAIL
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    ├──nw
+                    │   ├──.abstract.md
+                    │   ├──.overview.md
+                    │   └──docs
+                    │       ├──.abstract.md
+                    │       ├──.overview.md
+                    │       └──a
+                    │           ├──.abstract.md
+                    │           └──.overview.md
+                    └──w
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            └──a
+22 directories, 31 files
+== ov log lines about parents/errors
+2026-11-15 19:54:08,890 - openviking.storage.queuefs.semantic_dag - ERROR - Failed to dispatch directory viking://user/jasper/resources/projects/nw/docs/a: lock acquire timed out after 17ms
+Traceback (most recent call last):
