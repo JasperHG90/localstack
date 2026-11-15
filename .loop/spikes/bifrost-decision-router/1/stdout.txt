@@ -1,0 +1,64 @@
+== vk=explicit prompt="hello there, what time is it" classifier_calls_upstream=1 served=gpt-oss:120b-cloud
+   extra_fields: {"request_type": "chat_completion", "routing_info": {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-mock", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}, "provider": "ollama", "original_model_requested": "gpt-oss:120b-cloud", "resolved_model_used": "gpt-oss:120b-cloud", "latency": 0, "upstream_latency": 0, "chunk_index": 0, "routing_metadata": {"calls": [{"request_type": "decisions", "provider_used": "ollama", "model_used": "clef:cloud", "input_tokens": 10, "output_tokens": 1, "count_toward_budgets": true}]}}
+== vk=explicit prompt="write a rigorous proof that sqrt 2 is irrational" classifier_calls_upstream=1 served=mistral-large-4
+   extra_fields: {"request_type": "chat_completion", "routing_info": {"provider": "ollama", "model": "mistral-large-4", "key": "ollama-mock", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}, "provider": "ollama", "original_model_requested": "mistral-large-4", "resolved_model_used": "mistral-large-4", "latency": 2, "upstream_latency": 2, "chunk_index": 0, "routing_metadata": {"calls": [{"request_type": "decisions", "provider_used": "ollama", "model_used": "clef:cloud", "input_tokens": 10, "output_tokens": 1, "count_toward_budgets": true}]}}
+== vk=explicit direct POST /v1/decisions ollama/clef:cloud: {"model":"clef:cloud","answers":[{"type":"choice","name":"q","choice":"a","confidence":0.9}],"usage":{"prompt_tokens":10,"completion_tokens":1,"total_tokens":11},"extra_fields":{"request_type":"decisions","routing_info":{"provider":"ollama","model":"clef:cloud","key":"ollama-mock","requested_provider":"ollama","requested_model":"clef:cloud"},"provider":"ollama","original_model_requested":"clef:clo
+== vk=star prompt="hello there, what time is it" classifier_calls_upstream=1 served=gpt-oss:120b-cloud
+   extra_fields: {"request_type": "chat_completion", "routing_info": {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-mock", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}, "provider": "ollama", "original_model_requested": "gpt-oss:120b-cloud", "resolved_model_used": "gpt-oss:120b-cloud", "latency": 0, "upstream_latency": 0, "chunk_index": 0, "routing_metadata": {"calls": [{"request_type": "decisions", "provider_used": "ollama", "model_used": "clef:cloud", "input_tokens": 10, "output_tokens": 1, "count_toward_budgets": true}]}}
+== vk=star prompt="write a rigorous proof that sqrt 2 is irrational" classifier_calls_upstream=1 served=mistral-large-4
+   extra_fields: {"request_type": "chat_completion", "routing_info": {"provider": "ollama", "model": "mistral-large-4", "key": "ollama-mock", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}, "provider": "ollama", "original_model_requested": "mistral-large-4", "resolved_model_used": "mistral-large-4", "latency": 0, "upstream_latency": 0, "chunk_index": 0, "routing_metadata": {"calls": [{"request_type": "decisions", "provider_used": "ollama", "model_used": "clef:cloud", "input_tokens": 10, "output_tokens": 1, "count_toward_budgets": true}]}}
+== vk=star direct POST /v1/decisions ollama/clef:cloud: {"type":"model_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Model 'clef:cloud' is not allowed for virtual key 'router-star'"},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef:cloud","resolved_model_used":"clef:cloud","request_type":"decisions","error_type":"policy_model_blocked"}}
+== mock upstream log
+172.19.0.3 - - [15/Nov/2026 19:55:03] "GET /v1/models HTTP/1.1" 200 -
+{"method": "GET", "path": "/v1/models", "auth": "Bearer mock-key", "body": ""}
+{"method": "GET", "path": "/v1/models", "auth": "Bearer mock-key", "body": ""}
+172.19.0.3 - - [15/Nov/2026 19:55:03] "GET /v1/models HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/systemone", "auth": "Bearer mock-key", "body": "{\"state\":[{\"role\":\"user\",\"content\":\"hello there, what time is it\"}],\"model\":\"clef:cloud\",\"questions\":{\"complexity_tier\":{\"type\":\"choice\",\"instructions\":{\"context_rule\":\"Classify the latest huma
+172.19.0.3 - - [15/Nov/2026 19:55:03] "POST /v1/systemone HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/chat/completions", "auth": "Bearer mock-key", "body": "{\"model\":\"gpt-oss:120b-cloud\",\"messages\":[{\"role\":\"user\",\"content\":\"hello there, what time is it\"}]}"}
+172.19.0.3 - - [15/Nov/2026 19:55:03] "POST /v1/chat/completions HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/systemone", "auth": "Bearer mock-key", "body": "{\"state\":[{\"role\":\"user\",\"content\":\"write a rigorous proof that sqrt 2 is irrational\"}],\"model\":\"clef:cloud\",\"questions\":{\"complexity_tier\":{\"type\":\"choice\",\"instructions\":{\"context_rule\":\"Clas
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/systemone HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/chat/completions", "auth": "Bearer mock-key", "body": "{\"model\":\"mistral-large-4\",\"messages\":[{\"role\":\"user\",\"content\":\"write a rigorous proof that sqrt 2 is irrational\"}]}"}
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/chat/completions HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/systemone", "auth": "Bearer mock-key", "body": "{\"state\":\"hi\",\"model\":\"clef:cloud\",\"questions\":{\"q\":{\"type\":\"choice\",\"instructions\":\"pick\",\"criteria\":{\"a\":\"a\",\"b\":\"b\"}}}}"}
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/systemone HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/systemone", "auth": "Bearer mock-key", "body": "{\"state\":[{\"role\":\"user\",\"content\":\"hello there, what time is it\"}],\"model\":\"clef:cloud\",\"questions\":{\"complexity_tier\":{\"type\":\"choice\",\"instructions\":{\"context_rule\":\"Classify the latest huma
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/systemone HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/chat/completions", "auth": "Bearer mock-key", "body": "{\"model\":\"gpt-oss:120b-cloud\",\"messages\":[{\"role\":\"user\",\"content\":\"hello there, what time is it\"}]}"}
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/chat/completions HTTP/1.1" 200 -
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/systemone HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/systemone", "auth": "Bearer mock-key", "body": "{\"state\":[{\"role\":\"user\",\"content\":\"write a rigorous proof that sqrt 2 is irrational\"}],\"model\":\"clef:cloud\",\"questions\":{\"complexity_tier\":{\"type\":\"choice\",\"instructions\":{\"context_rule\":\"Clas
+172.19.0.3 - - [15/Nov/2026 19:55:04] "POST /v1/chat/completions HTTP/1.1" 200 -
+{"method": "POST", "path": "/v1/chat/completions", "auth": "Bearer mock-key", "body": "{\"model\":\"mistral-large-4\",\"messages\":[{\"role\":\"user\",\"content\":\"write a rigorous proof that sqrt 2 is irrational\"}]}"}
+== bifrost log (filtered)
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] add_allow_all_keys_to_provider_config: processing 0 modifiedVKIDs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_empty_virtual_key_configs: processing 0 allVKs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_empty_virtual_key_configs: processing 0 allVKs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_empty_virtual_key_configs: processing 0 modifiedVKIDs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_allowed_models_wildcard: processing 0 modifiedVKIDs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_allowed_models_wildcard: processing 0 keys"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] add_chain_rule_column_to_routing_rules: processing 0 rules"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] drop_deployment_columns_and_add_aliases: processing 0 affectedKeys"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] add_model_pricing_unique_index: creating index idx_model_provider_mode on TableModelPricing"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] drop_allow_direct_keys_column: processing 0 clientConfigs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[migrator] dropping column allow_direct_keys from table config_client"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_vk_provider_config_blacklisted_models: processing 0 virtualKeys"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] migrate_provider_governance_to_model_configs: processing 0 providers"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] add_budget_model_config_id_column: processing 0 mcs"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] add_model_config_calendar_aligned_column: processing 0 rows"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] migrate_virtual_key_governance_to_model_configs: processing 0 vks"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[migrator] adding column partitioning_key to table sidekiq"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] add_virtual_mcp_tables: creating table TableVirtualKeyVirtualMCP"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"[configstore] backfill_vk_allow_all_providers_hash: processing 0 virtualKeys"}
+{"level":"info","time":"2026-11-15T19:54:53Z","message":"initializing model catalog..."}
+{"level":"info","time":"2026-11-15T19:55:00Z","message":"successfully synced 15166 model parameters records"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"[startup-timing] GetVirtualKeys loaded 2 keys across 1 pages in 2.062943ms"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"[startup-timing] loadFromDatabase GetVirtualKeys loaded 2 keys in 2.245691ms"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"listing all models and adding to model catalog"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"models added to catalog"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"background live model refresh every 1h0m0s (jittered +/-10%)"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"plugin status: routing - active"}
+{"level":"info","time":"2026-11-15T19:55:03Z","message":"plugin status: model-catalog-resolver - active"}
+{"level":"info","http.method":"POST","http.target":"/v1/decisions","http.status_code":200,"http.request_duration_ms":3,"http.remote_addr":"172.19.0.1:37650","http.user_agent":"curl/8.5.0","trace_id":"d3497f154e914417bfda6f2cd528d33a","request_id":"de633085-74a8-4261-a39f-09b1c1e3853e","time":"2026-11-15T19:55:04Z","message":"request completed"}
+{"level":"warn","http.method":"POST","http.target":"/v1/decisions","http.status_code":403,"http.request_duration_ms":1,"http.remote_addr":"172.19.0.1:37684","http.user_agent":"curl/8.5.0","trace_id":"50ee63a18b254578b94a79ee4b930378","request_id":"88ecd69b-3c7c-44f0-9cde-977238ed62b9","time":"2026-11-15T19:55:04Z","message":"request completed"}

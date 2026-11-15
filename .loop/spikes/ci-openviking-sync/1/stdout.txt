@@ -1,0 +1,25 @@
+Vault v2.0.3 (7193f9a48ff6093ca61b3b627a8671e770428ba6), built 2026-06-17T12:39:45Z
+ci-a-x token claims: {"aud": "seaweedfs", "ci_repository": "a/x", "exp": 1794773374, "iat": 1794772474, "iss": "http://sync1-vault:8200/v1/identity/oidc", "namespace": "root", "sub": "99f555ff-d2b1-43cc-d84d-2be796bedb11"}
+[PASS] 1 a/x token -> ci-a-x issues creds: creds issued
+[PASS] 2 a/x token -> ci-b-y REFUSED: An error occurred (AccessDenied) when calling the AssumeRoleWithWebIdentity operation: trust policy validation failed: trust policy denies web identity assumption
+[PASS] 3 control: b/y token -> ci-b-y issues creds (refusal in 2 is the claim condition): creds issued
+[PASS] 4 a/x token with aud=openviking -> ci-a-x REFUSED: An error occurred (InvalidParameterValue) when calling the AssumeRoleWithWebIdentity operation: failed to validate web identity token: invalid token audience: provider: invalid token audience: token audience matches none of the configured client IDs
+[PASS] 5 ci-a-x put ov-sync/a/x/docs/f.md OK: OK
+[PASS] 5 ci-a-x get ov-sync/a/x/docs/f.md OK: OK
+[PASS] 5 ci-a-x put ov-sync/a/x/.okf/index.md OK: OK
+[PASS] 5 ci-a-x get ov-sync/a/x/seed.txt OK: OK
+[PASS] 5 ci-a-x delete ov-sync/a/x/docs/f.md OK: OK
+[PASS] 6 ci-a-x put ov-sync/b/y/evil.md denied: AccessDenied
+[PASS] 6 ci-a-x delete ov-sync/b/y/seed.txt denied: AccessDenied
+[PASS] 6 ci-a-x get ov-sync/b/y/seed.txt denied: AccessDenied
+[PASS] 6 ci-a-x put ov-sync/a/xx/evil.md denied: AccessDenied
+[PASS] 6 ci-a-x put ov-sync/a/evil.md denied: AccessDenied
+[PASS] 6 ci-a-x put ov-sync/evil.md denied: AccessDenied
+[PASS] (info) 7 ci-a-x get missing a/x/_state/manifest.json (info: which error a missing manifest gives): An error occurred (NoSuchKey) when calling the GetObject operation: The specified key does not exist.
+[PASS] (info) 7 ci-a-x list bucket denied (info: policy grants no List): An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied.
+[PASS] 8 b/y seed survived ci-a-x's delete attempt (read with ci-b-y): OK
+[PASS] 8 ci-b-y put ov-sync/a/x/evil.md denied: AccessDenied
+
+== seaweedfs log tail (oidc/sts lines)
+
+required checks: 17, failed: 0

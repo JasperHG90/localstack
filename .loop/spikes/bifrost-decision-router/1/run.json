@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "bifrost-decision-router",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-bf2/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-bf2/spike.sh",
+      "copy": "files/spike.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "09cf856142e4ddf091a100193cd9424e01006b13",
+  "fingerprint": "2bfbe7e0dd7b41029efa5492fef804caaf62216cef25c0b997309510e546902d",
+  "started_at": "2026-11-15T19:54:51+00:00",
+  "finished_at": "2026-11-15T19:55:04+00:00",
+  "duration_seconds": 12.864,
+  "timeout_seconds": 240.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
