@@ -8,7 +8,7 @@ generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
   at: '2026-10-20T09:17:15+00:00'
 slug: ci-tailscale-access
-epic: null
+epic: ci-lab-access
 depends_on: []
 priority: null
 ---
@@ -19,18 +19,24 @@ Relayed from: none
 
 ## Intent
 
-Operator answers, 2026-10-20:
-- The tailnet policy is Tailscale's default allow-all: one rule, all users
-  and devices to all users and devices on all ports (seen in the admin
-  console). It is edited only in the Tailscale admin console, which stays the
-  master copy; this repo keeps a read-only copy of the rules in
+Operator answers, 2026-11-15:
+- The tailnet policy is saved in the Tailscale admin console, which stays the
+  master copy. It holds: `tagOwners` `tag:ci` owned by `autogroup:admin`; a
+  grant from `autogroup:member` to `*`; a grant from `tag:ci` to
+  `192.168.2.30` on `tcp:443`; the default `ssh` rule; and a `tests` block in
+  which `tag:ci` accepts `192.168.2.30:443` and is denied `192.168.2.30:22`,
+  `192.168.2.30:8200`, `192.168.2.50:1933` and `192.168.2.29:8333`. No other
+  tags exist. The build copies it, read-only, into
   `.okf/components/tailscale-subnet-router.md`.
-- So the build replaces the allow-all rule, in the console, with:
-  `autogroup:member` to `*:*` (every person's own devices keep exactly
-  today's access), one rule per tag already in use (listed from the admin
-  console or API before the change, so no tagged device loses access), and
-  `tag:ci` to `192.168.2.30:443` only. Tagged devices match only rules that
-  name them, so `tag:ci` gets nothing else.
+- Workload identity federation exists: one federated identity, subject
+  `repo:JasperHG90/*:environment:lab` (every operator repo, `lab` GitHub
+  Environment), scope Auth Keys write, tag `tag:ci`. Client ID
+  `T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL`, audience
+  `api.tailscale.com/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL`. Neither is secret
+  (useless without a GitHub-signed token matching the subject), so both are
+  action defaults. Per-repo control stays in Vault, `var.vault_ci_callers`.
+- The probe repo `JasperHG90/lab-auth-probe` (private, `lab` Environment)
+  exists for the cross-repo test. The operator deletes it when that passes.
 - Both actions live in this repo.
 
 CI cannot reach the cluster today, and the operator wants any of his
@@ -44,9 +50,10 @@ Why the network part is needed: every lab name resolves publicly to
 `192.168.2.30`, a private address, so it works only on the LAN or through the
 subnet route firebat advertises to the tailnet (`docs/reference/edge-routes.md`,
 `.okf/components/tailscale-subnet-router.md`). Vault
-(`vault.lab.orangecluster.nl`) and the OpenViking API
-(`openviking-api.lab.orangecluster.nl`) both sit behind HAProxy on
-`192.168.2.30:443`, so CI needs that one destination and nothing else.
+(`vault.lab.orangecluster.nl`), the OpenViking API
+(`openviking-api.lab.orangecluster.nl`) and SeaweedFS S3
+(`s3.lab.orangecluster.nl`) are all behind HAProxy on `192.168.2.30:443`, so
+CI needs that one destination and nothing else.
 
 ### Where the action lives
 
@@ -66,13 +73,15 @@ for the inputs.
 
 Inputs: `vault-role` (required), `vault-addr` (default
 `https://vault.lab.orangecluster.nl`), `vault-mount` (default `jwt-github`),
-`tags` (default `tag:ci`), and the Tailscale credential inputs (the client id
-for workload identity federation, or an OAuth client id and secret if the
-tailnet does not offer federation). Steps:
+`tags` (default `tag:ci`), `tailscale-client-id` and `tailscale-audience`
+(defaults: the client ID and audience above). No OAuth client fallback and no
+per-caller Tailscale secret. The caller sets `permissions: id-token: write`
+and `environment: lab`. Steps:
 
-1. Join the tailnet with the official `tailscale/github-action` as an
-   ephemeral node carrying `tags`, passing `--accept-routes`, because
-   `tailscale up` on Linux does not accept subnet routes by default.
+1. Join the tailnet with `tailscale/github-action@v4`, passing its
+   `oauth-client-id`, `audience` and `tags` inputs, as an ephemeral node with
+   `--accept-routes`, because `tailscale up` on Linux does not accept subnet
+   routes by default.
 2. Request the caller job's GitHub OIDC token with audience `vault.io`. A
    composite action runs as steps inside the caller's job, so the token names
    the caller's repository, ref, environment and workflow, not this
@@ -103,20 +112,16 @@ what the tailnet and Vault accept:
   runs an agent with tool use on `main` from issue text, so a role bound only
   on repository and ref would accept its token. The roles carry no policy in
   this ticket beyond Vault's default. `ci-openviking-sync` adds the one that
-  mints an OpenViking token. The MFA enforcement in
+  gets its S3 credential. The MFA enforcement in
   `deployments/infrastructure/identity.tf` names the userpass accessor only,
   so it does not reach the new mount.
-- **Tailnet policy, in the Tailscale admin console, where it lives today.**
-  The repository has no ACL file. Add `tagOwners` for `tag:ci` and one grant
-  from `tag:ci` to `192.168.2.30:443` and nothing else. Create a credential
-  that can only mint ephemeral, pre-approved `tag:ci` nodes: workload identity
-  federation bound to the same callers (subject
-  `repo:<owner>/<repo>:environment:<env>`) if the tailnet offers it, otherwise
-  an OAuth client whose secret each caller holds in its GitHub Environment,
-  never as a repository secret. The policy is the only network control. On
+- **Tailnet policy and federated identity, in the Tailscale admin console.**
+  Both are done (above). The policy is the only network control. On
   firebat, tailscaled's `ts-input` chain accepts all `tailscale0` traffic
   ahead of ufw, and ufw forwards routed traffic unfiltered
-  (`.okf/components/host-firewall.md`).
+  (`.okf/components/host-firewall.md`). The federated identity admits any
+  operator repo's `lab` job onto the tailnet, so Vault, not Tailscale,
+  decides which repo gets a token.
 
 Rejected: a self-hosted runner on the cluster. The repository is public, and
 GitHub warns against self-hosted runners on public repos because a fork's pull
@@ -131,7 +136,7 @@ those, `.github/workflows/claude-ollama.yaml` included.
   `workflow_dispatch` only, never `pull_request` or `pull_request_target`.
   Explicit `permissions`, the GitHub Environment, a timeout. It calls the
   action by local path, asserts `vault token lookup` works and the edge
-  answers, and asserts the ports outside the grant time out. It stays as a
+  and S3 edges answer, and asserts the ports outside the grant time out. It stays as a
   manual diagnostic.
 - **Guard test, `new:cli/tests/test_lab_auth_action.py`**: parses the action
   and the caller list, and fails if a caller role drops the `environment` or
@@ -156,45 +161,74 @@ Outcome: a `workflow_dispatch` run of `lab-auth-check` on `main` joins the
 tailnet as an ephemeral `tag:ci` node, which is gone from the console after
 the run, and gets a Vault token from the GitHub OIDC token alone. From the
 runner, `https://vault.lab.orangecluster.nl/v1/sys/health` and
-`https://openviking-api.lab.orangecluster.nl/health` answer over the trusted
-certificate. `192.168.2.30:8200`, `192.168.2.50:1933` and firebat's tailnet
-address on port 8200 time out. A run from a branch other than `main` is
+`https://openviking-api.lab.orangecluster.nl/health` and
+`https://s3.lab.orangecluster.nl` answer over the trusted certificate.
+`192.168.2.30:22`, `192.168.2.30:8200`, `192.168.2.50:1933`,
+`192.168.2.29:8333` and firebat's tailnet address on port 8200 time out. A run from a branch other than `main` is
 refused at the Vault login. No Tailscale or Vault credential is in a committed
 file or a repository-level secret. `just pre_commit` and
 `uv run --directory cli pytest` pass.
 
 ## Could invalidate this plan
 
-- Tailnet policy scope. Tailscale's default policy allows every source to
-  reach every destination, and tagged nodes match `*`. If the live policy
-  still carries such a rule, a `tag:ci` grant adds nothing and the runner
-  reaches every tailnet device and the whole LAN through the subnet route,
-  every port on firebat included. Fixing that rewrites access for every
-  device on the tailnet, which is a scope change the operator must own, not a
-  line added for CI. Spike question: does the live tailnet policy let a node
-  tagged `tag:ci` reach anything besides `192.168.2.30:443`? With a grant to
-  only that destination, does an ephemeral `tag:ci` node reach
-  `https://vault.lab.orangecluster.nl` through the subnet route and time out
-  on `192.168.2.30:8200` and firebat's tailnet address?
-- Tailscale credential without a stored secret. The plan assumes a caller
-  joins with workload identity federation, so no Tailscale secret exists. If
-  the tailnet does not offer it, or `tailscale/github-action` cannot use it
-  from inside a composite action, every caller must hold an OAuth client
-  secret in its own GitHub Environment, and that secret mints `tag:ci` nodes
-  from anywhere it leaks. Spike question: does this tailnet offer GitHub
-  workload identity federation that mints only ephemeral `tag:ci` nodes,
-  bound to a subject such as `repo:JasperHG90/localstack:environment:<env>`,
-  and does `tailscale/github-action`, called from a composite action in
-  another repository, join with it and refuse a job outside that subject?
-- Vault login for callers in other repositories. The plan assumes a composite
-  action referenced as `JasperHG90/localstack/.github/actions/lab-auth@<ref>`
-  receives the caller job's GitHub OIDC token, and that Vault's JWT mount,
-  which must fetch GitHub's keys from the cluster, can bind a role on its
-  `repository`, `ref`, `environment` and `workflow_ref` claims. If the token
-  names the action's repository instead, or Vault cannot reach GitHub's keys,
-  the per-caller roles cannot tell callers apart. Spike question: from a
-  second repository whose job declares an Environment and calls the action
-  cross-repo, which `repository`, `environment` and `workflow_ref` does the
-  token carry? Does a `jwt-github` role bound on those claims accept it, and
-  refuse a token from `.github/workflows/claude-ollama.yaml` on `main` and
-  from the same workflow on another branch?
+- Live tailnet reach. The saved policy's `tests` block passes in the console,
+  so the rules say what the plan needs. Not yet shown: that an ephemeral
+  `tag:ci` node, joined through the subnet route, behaves the same. If it
+  reaches more, the runner is on the LAN with ports open and the policy must
+  change first. Spike question: does an ephemeral `tag:ci` node joined with
+  `--accept-routes` reach `https://vault.lab.orangecluster.nl`,
+  `https://openviking-api.lab.orangecluster.nl` and
+  `https://s3.lab.orangecluster.nl`, and time out on `192.168.2.30:22`,
+  `192.168.2.30:8200`, `192.168.2.50:1933`, `192.168.2.29:8333` and
+  firebat's tailnet address on 8200? spike:ci-tailscale-access/4 could not
+  answer it (the join failed). Settled by spike:ci-tailscale-access/6: a
+  `lab` job in this repo, joined as `tag:ci`, reached Vault (200),
+  OpenViking (200) and S3 (403, reachable) on 443, and timed out on all five
+  closed targets, firebat's tailnet address on 8200 included.
+- Federated join from a composite action in another repo. The federated
+  identity exists, so no Tailscale secret is needed, if
+  `tailscale/github-action@v4` can use it from inside a composite action
+  called cross-repo. If it cannot, every caller needs a stored Tailscale
+  secret, which the plan rejects. Spike question: from a `lab`-Environment
+  job in `JasperHG90/lab-auth-probe` that calls a composite action in this
+  repo by `uses: JasperHG90/localstack/...@<branch>`, does the
+  `tailscale/github-action@v4` step join with `oauth-client-id`, `audience`
+  and `tags` only, and does a job without `environment: lab` fail to join?
+  Not settled: in spike:ci-tailscale-access/3 both jobs, with and without
+  the environment, got a 403 at Tailscale's token exchange. The likely
+  cause is the federated identity's subject, `repo:JasperHG90/*:environment:lab`,
+  which cannot match GitHub's immutable-ID `sub`
+  (`repo:JasperHG90@8079803/lab-auth-probe@1459171707:environment:lab`).
+  The same run showed v4 adds `--accept-routes` itself, so the action leaves
+  `args` empty. Settled for this repo by spike:ci-tailscale-access/5: from
+  a `lab` job in localstack, calling the composite action by its remote ref
+  (`JasperHG90/localstack/.github/actions/join@<branch>`), v4 joined with
+  only the client id, audience and tag, and a job without the environment
+  got 403 at the token exchange. localstack issues the legacy subject,
+  which the federated identity matches. A caller repo created after
+  mid-2026 issues the immutable subject and needs its own federated
+  identity (subject `repo:JasperHG90@8079803/*:environment:lab`) in the
+  Tailscale console; the how-to names that step, and it is outside this
+  ticket's outcome, which runs from this repo.
+- Vault login for callers in other repos. The plan assumes the composite
+  action gets the caller job's GitHub OIDC token, and that the `jwt-github`
+  mount, which fetches GitHub's keys from the cluster, can bind a role on
+  `repository`, `ref`, `environment` and `workflow_ref`. If the token names
+  this repo instead, or Vault cannot reach GitHub's keys, the per-caller
+  roles cannot tell callers apart. Spike question: from
+  `JasperHG90/lab-auth-probe` calling the action cross-repo, which
+  `repository`, `ref`, `environment` and `workflow_ref` does the token carry?
+  Does a `jwt-github` role bound on those claims accept it, and refuse a
+  token from `.github/workflows/claude-ollama.yaml` on `main` and from the
+  probe workflow on another branch? Settled by spike:ci-tailscale-access/2
+  for the claims and the binding: real tokens from five probe jobs carry the
+  caller's `repository`, `ref`, `environment` and `workflow_ref`, and a local
+  Vault 1.21.1 role bound on all four accepted only the probe workflow on
+  `main` in `lab`, refusing another workflow, another branch and both jobs
+  without the environment. Two parts are left to the build, not to a spike:
+  the action sat in the probe repo, so the build rechecks `workflow_ref`
+  when it calls the real action cross-repo, and the cluster's own reach to
+  GitHub's keys is shown by the first `lab-auth-check` login. The token's
+  `sub` uses GitHub's immutable-ID form
+  (`repo:JasperHG90@8079803/lab-auth-probe@1459171707:environment:lab`), so
+  no role binds on `sub`.
