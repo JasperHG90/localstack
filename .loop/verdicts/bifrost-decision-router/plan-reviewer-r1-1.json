@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "Step 1 sets the typesafe provider's base_url to https://api.typesafe.ai/v1/systemone, but the 2.3.1 provider appends /v1/systemone (decisions) and /v1/models (listing) to base_url itself, so every Jev call goes to .../v1/systemone/v1/systemone. A non-default base_url also turns off the pinned jev catalog and reports a failed listing instead of falling back to it, so a typesafe/ model can also be missing from the catalog. The outcome's typesafe/ decision call returning 200 cannot pass as written. Fix: leave base_url out (default https://api.typesafe.ai) or set it to the bare host.",
+      "anchor": ".loop/plans/bifrost-decision-router.md:36",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "No spike measured clef:cloud on ollama.com. All four router spikes used a mock upstream. The decision classifier's default timeout is 1500 ms; on a timeout or upstream error Bifrost publishes no complexity tier, none of the three tier rules match, and router-key chats go to the requested model with only a warning log. The router would then look deployed but never route, and the outcome's simple-to-gpt-oss / hard-to-mistral-large-4 check fails. The timeout is settable (governance.complexity_analyzer_config.decision.timeout), so the plan needs a measured value or evidence that the default holds. Spike question: with an Ollama Cloud key, how long do several POST https://ollama.com/v1/systemone calls to clef:cloud with a three-choice complexity question take (p50/max), and do gpt-oss:120b-cloud, deepseek-v4.1-flash and mistral-large-4 answer a chat call on ollama.com under those exact names? gpt-oss:120b-cloud and mistral-large-4 appear nowhere else in the repo.",
+      "anchor": "plugins/routing/decisionclassify.go:109 (upstream transports/v2.3.1)",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "db0aab3c5777df90e8451d8ee8c8124f8669f98f81cf82136c8d1cf279752ebc"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T20:54:58+00:00"
+}
