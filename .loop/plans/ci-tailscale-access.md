@@ -79,9 +79,10 @@ per-caller Tailscale secret. The caller sets `permissions: id-token: write`
 and `environment: lab`. Steps:
 
 1. Join the tailnet with `tailscale/github-action@v4`, passing its
-   `oauth-client-id`, `audience` and `tags` inputs, as an ephemeral node with
-   `--accept-routes`, because `tailscale up` on Linux does not accept subnet
-   routes by default.
+   `oauth-client-id`, `audience` and `tags` inputs, as an ephemeral node.
+   v4 passes `--accept-routes` itself, which the subnet route needs, so the
+   action leaves `args` empty; passing it again fails
+   (spike:ci-tailscale-access/3).
 2. Request the caller job's GitHub OIDC token with audience `vault.io`. A
    composite action runs as steps inside the caller's job, so the token names
    the caller's repository, ref, environment and workflow, not this
