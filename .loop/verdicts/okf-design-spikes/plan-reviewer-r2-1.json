@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "Webhook prototype now runs three labelled variants, including the seaweedfs.hcl production args (-ip=127.0.0.1) off-container (nothing delivered) and on loopback in the same namespace (delivers), and the README cites spike:ov-sync-consumer/4 and /5. That matches both spikes' recorded outcomes.",
+      "anchor": ".loop/plans/okf-design-spikes.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "decide.sh takes bare-strings, no-key and keyed cases, so each recorded outcome (400, 401, 403) has a script path that produces it, and the keyed case refuses to run without the env var.",
+      "anchor": ".loop/plans/okf-design-spikes.md",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "f0148941efc76ebdefd46bda9427c85dc8317ccad0d0583fc79898ac24ebf3bf"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T20:01:15+00:00"
+}
