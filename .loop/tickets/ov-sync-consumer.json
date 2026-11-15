@@ -1,14 +1,50 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "2e0d600131be44e094e77f80e7dc4a12e97ef6fa9d480af228f202c14ce929f6",
+    "tree": "25667584f7b43a6d524745705872e54264799644",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "blocking",
+        "judgement": null,
+        "paths": [
+          ".okf/components/ov-sync-consumer.md",
+          ".okf/log.md",
+          "applications/ov-sync-consumer/internal/consumer/consumer.go",
+          "applications/ov-sync-consumer/internal/consumer/consumer_test.go",
+          "applications/ov-sync-consumer/internal/consumer/fakes_test.go",
+          "applications/ov-sync-consumer/internal/consumer/openviking.go",
+          "applications/ov-sync-consumer/main.go"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261115T214248+0000-4199de7c",
+        "paths": [
+          ".okf/components/ov-sync-consumer.md",
+          ".okf/log.md",
+          "applications/ov-sync-consumer/internal/consumer/catchup.go",
+          "applications/ov-sync-consumer/internal/consumer/consumer_test.go",
+          "applications/ov-sync-consumer/internal/consumer/fakes_test.go",
+          "applications/ov-sync-consumer/internal/consumer/openviking.go"
+        ]
+      }
+    ],
+    "at": "2026-11-15T21:42:48+00:00"
+  },
   "ask": "j-20261115T194508+0000-42841ebf",
   "split": "j-20261115T204522+0000-7906a419",
   "split_plan_hash": "e03ad75009ea46413db08625c5c6f387bf636b110401e6254ab136bc90fc3391",
@@ -190,8 +226,14 @@
       "to": "fixing",
       "at": "2026-11-15T21:34:03+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-15T21:42:48+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T21:42:32+00:00"
+  "at": "2026-11-15T21:42:48+00:00"
 }
