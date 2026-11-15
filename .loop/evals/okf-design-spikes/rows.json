@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "nats-results.txt, written by nats.sh, holds the JetStream messages from the filer, including an ov-sync a.md create and a.md delete",
+      "fails_when": "the results file is missing, or holds no message naming a.md, or fewer than two such messages",
+      "command": "uv run --directory cli pytest tests/test_okf_prototypes.py::test_nats_results_hold_a_md_create_and_delete -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "webhook-results.txt holds three labelled variants: default args delivers ov-sync events with the bearer header; production args with an off-container listener delivers nothing and logs the dial error; production args with a same-namespace listener delivers ov-sync events with the bearer header; no variant delivers a loki event",
+      "fails_when": "a variant label is missing, the default or same-namespace variant shows no ov-sync event or no bearer header, the off-container variant shows a delivered event or no dial error, or any variant shows a loki event",
+      "command": "uv run --directory cli pytest tests/test_okf_prototypes.py::test_webhook_results_show_three_variants -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "decide.sh keyed refuses to run without its key env var, and decide.sh rejects an unknown case",
+      "fails_when": "decide.sh keyed with the env var unset exits 0 or sends a request, or an unknown case exits 0",
+      "command": "uv run --directory cli pytest tests/test_okf_prototypes.py::test_decide_sh_refuses_without_key_and_unknown_case -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "each SeaweedFS script reruns cleanly from a clean Docker host: it writes its results file with the recorded outcomes and leaves no container or network behind",
+      "fails_when": "a rerun by the reviewer fails, gives results that disagree with the README, or leaves a container or network running",
+      "judgment": true
+    },
+    {
+      "id": "r5",
+      "behavior": "the clef-via-bifrost README and results.txt record the 400 (bare-strings), 401 (no-key) and 403 model_blocked (keyed, Hermes key) outcomes, each tied to the decide.sh case that produces it",
+      "fails_when": "an outcome is missing, or is not tied to a decide.sh case",
+      "judgment": true
+    },
+    {
+      "id": "r6",
+      "behavior": "the knowledge bundle stays valid with the new prototypes section, its index, log lines and summary update or ack",
+      "fails_when": "kmctl check reports an error",
+      "command": "kmctl check"
+    }
+  ]
+}
