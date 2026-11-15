@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T20:38:29+00:00'
+  at: '2026-11-15T20:40:56+00:00'
 slug: ov-sync-consumer
 n: 10
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer/10
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer 10`.
+Harness bug, superseded by spike:ov-sync-consumer/11: the outside check read the wrong `docker inspect` field and hit `:18333` with no host, and busybox `date` has no `%N`, so the check never compared two values. The parts it did measure matched run 11: the job started, r and a shared a netns, loopback and outbound worked, `alloc restart a` kept the alloc running, and `alloc restart r` failed the alloc.
 
 ## Files
 
