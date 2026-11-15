@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T20:16:37+00:00'
+  at: '2026-11-15T20:16:51+00:00'
 slug: bifrost-decision-router
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike bifrost-decision-router/3
@@ -24,7 +24,12 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note bifrost-decision-router 3`.
+Against the cluster's Bifrost 2.3.1 at https://bifrost.lab.orangecluster.nl, `POST /v1/decisions` for `ollama/clef:cloud` with one `choice` question (stdout.txt):
+
+- Bare-string choices give 400 "Invalid request payload": each choice must be an object `{"value": ...}` (`core/schemas/decision.go:373` at upstream tag `transports/v2.3.1`).
+- Object choices with no key give 401 `virtual_key_required`, after Bifrost resolved provider `ollama`, model `clef:cloud` and request type `decisions`. So the route and the body shape work, and the key goes in the `x-bf-vk` header.
+
+Recorded by hand, not by this run, because it needs a virtual key: the operator ran the object-choice body with the Hermes key on 2026-11-15 and got 403 `model_blocked`, "Model 'clef:cloud' is not allowed for virtual key 'hermes'". A key with `allowed_models = ["*"]` admits only catalog models (`framework/modelcatalog/models.go:316`); `decide.sh keyed` with `BIFROST_VK` set reruns it. This is why the plan gives the router a key that names `clef:cloud` outright. It re-creates calls from an earlier session whose script was lost.
 
 ## Files
 
