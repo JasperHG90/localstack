@@ -1,0 +1,54 @@
+prek: prek 0.5.6
+system go: none
+== run 1: cold cache, main checkout
+go vet and go test (applications/demo)...................................Passed
+- hook id: go-gates
+- duration: 4.81s
+
+  go version go1.27.4 linux/arm64
+  ok  	example.com/demo	0.001s
+rc=0 seconds=10
+== cache contents
+cache
+config-tracking.json
+hooks
+prek.log
+README
+repos
+scratch
+tools
+4.0K	/tmp/tmp.ZExP71xzoq/prek-home/cache
+4.0K	/tmp/tmp.ZExP71xzoq/prek-home/config-tracking.json
+4.0K	/tmp/tmp.ZExP71xzoq/prek-home/hooks
+8.0K	/tmp/tmp.ZExP71xzoq/prek-home/prek.log
+4.0K	/tmp/tmp.ZExP71xzoq/prek-home/README
+0	/tmp/tmp.ZExP71xzoq/prek-home/repos
+0	/tmp/tmp.ZExP71xzoq/prek-home/scratch
+271M	/tmp/tmp.ZExP71xzoq/prek-home/tools
+/tmp/tmp.ZExP71xzoq/prek-home/tools/go/1.27.4/bin
+/tmp/tmp.ZExP71xzoq/prek-home/hooks/golang-b0ARpI5uYekE9On6fCTY/bin
+== run 2: warm cache
+go vet and go test (applications/demo)...................................Passed
+rc=0 seconds=0
+== run 3: failing test must fail the hook
+go vet and go test (applications/demo)...................................Failed
+- hook id: go-gates
+- duration: 0.25s
+- exit code: 1
+
+  go version go1.27.4 linux/arm64
+  --- FAIL: TestAdd (0.00s)
+      demo_test.go:7: bad
+  FAIL
+  FAIL	example.com/demo	0.001s
+  FAIL
+rc=1
+== run 4: fresh git worktree, shared cache
+go vet and go test (applications/demo)...................................Passed
+- hook id: go-gates
+- duration: 0.33s
+
+  go version go1.27.4 linux/arm64
+  ok  	example.com/demo	0.001s
+rc=0 seconds=0
+== result fail=0
