@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T21:28:44+00:00'
+  at: '2026-11-15T23:07:55+00:00'
 slug: bifrost-decision-router
 n: 6
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike bifrost-decision-router/6
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note bifrost-decision-router 6`.
+Run by the operator with the same key and `ollama/clef` (no tag): every decision returned 403 `model_blocked` ("Model 'clef' is not allowed"), so the bare name is not the one Bifrost knows. The tag `clef:27b` is (spike:bifrost-decision-router/7).
 
 ## Files
 
