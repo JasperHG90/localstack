@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:54:02+00:00'
+  at: '2026-11-15T19:57:02+00:00'
 slug: ov-sync-consumer
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer/2
@@ -24,7 +24,7 @@ The command exited 126:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer 2`.
+Not a result. The script lacked its executable bit, so `/bin/sh` refused it (exit 126) before any container started. spike:ov-sync-consumer/4 is the same script run properly.
 
 ## Files
 
