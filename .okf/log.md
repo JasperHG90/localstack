@@ -135,6 +135,10 @@
 - **The kept OpenViking trees carry over by a storage copy and a re-index** (`decisions/0022-openviking-carry-over-copies-storage-and-re-indexes`, `components/openviking-service`, `components/seaweedfs`, `summary`): the dispatched `ov-carry-over` job copies clips, blogs, leo and blog-scraper (into `blogs/`) from `openviking` to `openviking-v2` with a key that cannot write the old bucket, and `scripts/ov_carry_over.py` regenerates the merged blog directories, runs `vectors_only`, copies the old image rows and checks the result. Pack export was rejected because it needs the old instance running. The user docs `how-to/carry-the-kept-trees-over-to-the-new-openviking` and `reference/openviking` cover running it.
 - **Review fixes for ov-carry-over** (`decisions/0022-openviking-carry-over-copies-storage-and-re-indexes`, `components/openviking-service`, `summary`): the script regenerates only the eight blog directories that hold files from both trees, not ten, since an overview has nothing to say about an empty folder. To stay under 500 words, the summary's SeaweedFS bullet dropped two MinIO details that `components/seaweedfs` and `decisions/0018-remove-minio` still hold: which data read back intact, and that `minio_data` was deleted.
 
+## 2026-10-21
+
+- Added `handoffs/openviking-reset-aim-to-apm-migration-ci-tailnet-access` with `kmctl new handoff`.
+
 ## 2026-10-28
 
 - Added `decisions/0024-the-devcontainer-reads-the-host-openviking-login-through-a-read-only-mount` with `kmctl new decision`.

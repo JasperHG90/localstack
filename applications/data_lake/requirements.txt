@@ -1,4 +1,5 @@
 duckdb[all] < 2.0.0
+pandas
 pendulum
 httpx
 ipykernel

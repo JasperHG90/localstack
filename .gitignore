@@ -61,3 +61,6 @@ apm_modules
 
 # loopctl plugin install links this to a machine-local path.
 /.opencode/plugins/loop-harness.js
+
+ov-sync.toml
+.ov-sync.db
