@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:54:30+00:00'
+  at: '2026-11-15T19:57:03+00:00'
 slug: ov-sync-consumer
 n: 4
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer/4
@@ -24,7 +24,9 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer 4`.
+**Risk 2 is real.** SeaweedFS 4.48 started with the exact `seaweedfs.hcl` args (`-ip=127.0.0.1 -ip.bind=127.0.0.1`, S3 on 0.0.0.0, the services.tf IAM config) loads `[notification.webhook]` and applies the filter correctly: it queued events for `/buckets/ov-sync/docs/a.md` and `/buckets/ov-sync/docs` (create, update, delete), and none for the `other` bucket.
+No event reached the listener in a second container: 0 delivered. Every POST failed with `dial tcp 127.0.0.1:0->172.18.0.2:20500: connect: invalid argument` and went to dead letter. The webhook client takes 127.0.0.1 as its source address, so it cannot reach anything outside the container's loopback. Firewall rules on radxa cannot fix this.
+Limits: one local Docker run on arm64. Docker bridge, not podman.
 
 ## Files
 
