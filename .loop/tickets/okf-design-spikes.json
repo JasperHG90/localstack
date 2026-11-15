@@ -3,7 +3,7 @@
   "slug": "okf-design-spikes",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "3fb4a53dc347341b0e43ef022315f05bef836069be41f53afa37cf124599d94f",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "dcf50caf8c9777526bdc51b708fcd65d76a331b94f886109d64771a2534bd2ba",
+    "started_at": "2026-11-15T19:58:58+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "dcf50caf8c9777526bdc51b708fcd65d76a331b94f886109d64771a2534bd2ba",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T19:48:23+00:00"
+  "at": "2026-11-15T19:58:58+00:00"
 }
