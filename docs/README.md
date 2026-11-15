@@ -31,6 +31,7 @@ Each folder also has an index of its own pages:
 - [Join and leave the admin group](how-to/join-and-leave-the-admin-group.md)
 - [Add an app-user tier](how-to/add-an-app-user-tier.md)
 - [Add a service that logs people in through Vault](how-to/add-a-vault-oidc-client.md)
+- [Authenticate a GitHub workflow to the lab](how-to/authenticate-a-github-workflow-to-the-lab.md)
 
 **Revoking access**
 
@@ -119,6 +120,7 @@ Each folder also has an index of its own pages:
 - [Cluster roles](reference/cluster-roles.md)
 - [Vault login MFA](reference/vault-login-mfa.md)
 - [Bootstrap secrets](reference/bootstrap-secrets.md)
+- [GitHub Actions: the lab-auth action](reference/github-actions.md)
 
 **Edge**
 

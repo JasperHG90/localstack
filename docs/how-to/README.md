@@ -5,6 +5,7 @@
 - [How to add a service that logs people in through Vault](add-a-vault-oidc-client.md): Register a service as a client of Vault's lab OIDC provider so people sign in to it with their Vault login.
 - [How to add an app-user tier](add-an-app-user-tier.md): Give a service its own access tier as a Vault group its OIDC client can admit, and put people in it.
 - [How to apply a backup infrastructure change](apply-a-backup-infrastructure-change.md): Apply a Terraform change to the GCS backup bucket, its service account, IAM or key.
+- [How to authenticate a GitHub workflow to the lab](authenticate-a-github-workflow-to-the-lab.md): Let a workflow in one of your repositories join the tailnet and get a short-lived Vault token through the lab-auth action.
 - [How to call OpenViking from the CLI](call-openviking-from-the-cli.md): Make an authenticated call to the OpenViking API from a shell with a Vault identity token.
 - [How to carry the kept trees over to the new OpenViking](carry-the-kept-trees-over-to-the-new-openviking.md): Copy clips, blogs, blog-scraper and leo from the old OpenViking store into the new one, re-index them and check the result.
 - [How to add, remove, or reorder a dash tile](change-a-dash-tile.md): Add, remove or reorder the tiles and headings https://dash.lab.orangecluster.nl shows.

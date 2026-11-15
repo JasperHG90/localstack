@@ -18,6 +18,8 @@ sources:
     resource: justfile
   - id: vault-mfa-sh
     resource: scripts/vault_mfa.sh
+  - id: machine-roles-tf
+    resource: deployments/infrastructure/machine_roles.tf
 ---
 
 # Vault human identity
@@ -156,6 +158,34 @@ person. Its traps:
 - Two people sharing one `ov_user` would collide. A `precondition` on
   `vault_identity_entity_alias.ov_dash_consumer` refuses the plan. It is the
   only invariant in this file a tool enforces.
+
+## GitHub Actions and the jwt-github mount
+
+`jwt-github` is a machine mount, but it is described here because it is the
+other door from outside the cluster. It is in `machine_roles.tf`, not here:
+`vault_jwt_auth_backend.github` trusts
+`https://token.actions.githubusercontent.com` through OIDC discovery, and
+`vault_jwt_auth_backend_role.github_ci` makes one role per entry in
+`var.vault_ci_callers`. The `lab-auth` action logs in there with the calling
+job's GitHub OIDC token, audience `vault.io`
+([ADR 0027](/decisions/0027-ci-reaches-the-lab-through-a-public-lab-auth-action-and-per-caller-vault-roles.md)).
+
+- Each role binds `repository`, `ref`, `environment` and `workflow_ref` by
+  exact string match. Dropping `environment` or `workflow_ref` would let
+  `.github/workflows/claude-ollama.yaml`, which holds `id-token: write` and
+  runs on `main`, log in as this repository's caller.
+  `cli/tests/test_lab_auth_action.py` renders the roles with Terraform and
+  fails if one drops a claim.
+- No role binds on `sub`, because repositories created after mid-2026 put
+  immutable numeric IDs in it.
+- Tokens live 300 seconds, at most 600, and carry only Vault's `default`
+  policy. A caller that needs a path gets its own policy on its role.
+- The roles create no entity aliases in Terraform, so each first login
+  creates an entity whose alias is the `repository` claim. Every role for one
+  repository shares that entity. It sits in no group, and policies attach to
+  the role.
+- The MFA enforcement below names the userpass accessor only, so it does not
+  reach this mount.
 
 ## Login MFA
 

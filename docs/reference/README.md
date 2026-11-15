@@ -11,6 +11,7 @@
 - [DNS for the lab zone](dns.md): The public DNS records that point the lab zone at the cluster edge, and why `.consul` names do not resolve from the LAN.
 - [HAProxy Reverse Proxy](edge-routes.md): Every hostname the HAProxy edge serves, the backend and port behind it, who may reach it, and the edge's ports and certificate.
 - [Nightly GCS Backup Jobs](gcs-backups.md): What the two nightly jobs copy to Google Cloud Storage, where their credentials come from, and how the GCS bucket is set up.
+- [GitHub Actions](github-actions.md): The lab-auth action: its inputs, outputs, what it exports and what the calling job must set.
 - [Monitoring stack](monitoring.md): Who can reach Prometheus, Loki, Tempo and Grafana, where alerts go, how to send traces, and what `localstack monitor` shows.
 - [NATS and JetStream](nats.md): Connection facts, JetStream limits and subject conventions for the cluster's NATS broker.
 - [OpenViking](openviking.md): Where OpenViking runs, how its retrieval differs from stock, how callers authenticate with Vault tokens, and what its config guard asserts.

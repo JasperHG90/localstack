@@ -1,0 +1,70 @@
+name: lab-auth
+description: >-
+  Put the calling job on the lab tailnet as an ephemeral tag:ci node and log it
+  in to Vault with the job's GitHub OIDC token. The calling job needs
+  `permissions: id-token: write` and `environment: lab`.
+
+inputs:
+  vault-role:
+    description: Vault role on the jwt-github mount, a key of var.vault_ci_callers.
+    required: true
+  vault-addr:
+    description: Vault address, reached through the tailnet's subnet route.
+    default: https://vault.lab.orangecluster.nl
+  vault-mount:
+    description: Path of Vault's JWT auth mount for GitHub tokens.
+    default: jwt-github
+  tags:
+    description: Tailscale tags the runner joins with.
+    default: tag:ci
+  tailscale-client-id:
+    description: Client ID of the Tailscale federated identity. Not a secret.
+    default: T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+  tailscale-audience:
+    description: Audience the Tailscale federated identity expects.
+    default: api.tailscale.com/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+
+outputs:
+  vault-addr:
+    description: The Vault address, also exported as VAULT_ADDR.
+    value: ${{ inputs.vault-addr }}
+  vault-token:
+    description: A Vault token that expires within minutes, also exported as VAULT_TOKEN.
+    value: ${{ steps.login.outputs.vault-token }}
+
+runs:
+  using: composite
+  steps:
+    # v4 accepts subnet routes by itself, which reaching the lab needs. No
+    # `args`: repeating that flag there makes `tailscale up` fail.
+    - uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4
+      with:
+        oauth-client-id: ${{ inputs.tailscale-client-id }}
+        audience: ${{ inputs.tailscale-audience }}
+        tags: ${{ inputs.tags }}
+
+    - id: login
+      shell: bash
+      env:
+        VAULT_ADDR: ${{ inputs.vault-addr }}
+        VAULT_MOUNT: ${{ inputs.vault-mount }}
+        VAULT_ROLE: ${{ inputs.vault-role }}
+      run: |
+        set -euo pipefail
+        : "${ACTIONS_ID_TOKEN_REQUEST_URL:?the calling job needs permissions: id-token: write}"
+        jwt=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=vault.io" | jq -r .value)
+        echo "::add-mask::$jwt"
+        if ! response=$(jq -n --arg role "$VAULT_ROLE" --arg jwt "$jwt" '{role: $role, jwt: $jwt}' \
+          | curl -sS --fail-with-body --data @- "$VAULT_ADDR/v1/auth/${VAULT_MOUNT}/login"); then
+          echo "::error::Vault refused role $VAULT_ROLE: $response"
+          exit 1
+        fi
+        token=$(jq -er '.auth.client_token // empty' <<<"$response") || {
+          echo "::error::Vault login for role $VAULT_ROLE returned no token"
+          exit 1
+        }
+        echo "::add-mask::$token"
+        echo "VAULT_ADDR=$VAULT_ADDR" >> "$GITHUB_ENV"
+        echo "VAULT_TOKEN=$token" >> "$GITHUB_ENV"
+        echo "vault-token=$token" >> "$GITHUB_OUTPUT"

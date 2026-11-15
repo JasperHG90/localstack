@@ -433,3 +433,44 @@ resource "vault_jwt_auth_backend_role" "openviking_workload" {
   token_period           = 1800
   token_explicit_max_ttl = 0
 }
+
+### --- GitHub Actions callers -------------------------------------------------
+
+### The lab-auth action (.github/actions/lab-auth) logs in here with the
+### calling job's GitHub OIDC token. The action is public, so these roles are
+### the whole gate: one per `var.vault_ci_callers` entry, bound on the four
+### claims that pin a caller to one workflow file on one branch in one GitHub
+### Environment. Nothing binds on `sub`, because repositories created after
+### mid-2026 put immutable numeric IDs in it.
+resource "vault_jwt_auth_backend" "github" {
+  path               = "jwt-github"
+  type               = "jwt"
+  description        = "GitHub Actions OIDC tokens, for the lab-auth action"
+  oidc_discovery_url = "https://token.actions.githubusercontent.com"
+  bound_issuer       = "https://token.actions.githubusercontent.com"
+}
+
+### token_policies is Vault's default policy only: a caller that needs a path
+### gets its own policy attached here by the ticket that needs it.
+resource "vault_jwt_auth_backend_role" "github_ci" {
+  for_each = var.vault_ci_callers
+
+  backend   = vault_jwt_auth_backend.github.path
+  role_name = each.key
+  role_type = "jwt"
+
+  bound_audiences   = ["vault.io"]
+  bound_claims_type = "string"
+  bound_claims = {
+    repository   = each.value.repository
+    ref          = each.value.ref
+    environment  = each.value.environment
+    workflow_ref = "${each.value.repository}/.github/workflows/${each.value.workflow}@${each.value.ref}"
+  }
+
+  user_claim = "repository"
+
+  token_policies = ["default"]
+  token_ttl      = 300
+  token_max_ttl  = 600
+}

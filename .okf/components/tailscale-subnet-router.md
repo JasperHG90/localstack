@@ -1,7 +1,7 @@
 ---
 type: component
 title: The Tailscale subnet router on firebat
-description: "Only firebat joins the tailnet, and it advertises 192.168.2.0/24 so remote devices reach the whole LAN, the edge included. Workers have tailscaled stopped. The role applies routes only on first join, and on 2026-08-01 ufw on firebat was measured not filtering tailnet traffic."
+description: "Only firebat joins the tailnet as a cluster node, and it advertises 192.168.2.0/24 so remote devices reach the whole LAN, the edge included. Workers have tailscaled stopped. CI runners join as ephemeral tag:ci nodes that the tailnet policy limits to the edge on 443. The role applies routes only on first join, and on 2026-08-01 ufw on firebat was measured not filtering tailnet traffic."
 tags: [tailscale, ansible, bootstrap, subnet-route, netsec]
 status: stable
 generated:
@@ -18,6 +18,10 @@ sources:
     resource: bootstrap/justfile
   - id: configure-network
     resource: bootstrap/playbooks/configure_network.yml
+  - id: lab-auth-action
+    resource: .github/actions/lab-auth/action.yml
+  - id: lab-auth-check
+    resource: .github/workflows/lab-auth-check.yaml
 ---
 
 # The Tailscale subnet router on firebat
@@ -28,7 +32,8 @@ laptop on the tailnet then reaches every LAN address through firebat, and
 because lab names resolve publicly to `192.168.2.30`
 ([ADR 0003](/decisions/0003-lab-names-resolve-from-public-dns.md)),
 `https://*.lab.orangecluster.nl` works off-site with no extra DNS. No other
-node runs Tailscale.
+cluster node runs Tailscale. GitHub Actions runners join for the length of a
+job, as described in [CI runners on the tailnet](#ci-runners-on-the-tailnet).
 
 ## The pieces
 
@@ -52,8 +57,9 @@ The role runs `tailscale up --advertise-routes=... --accept-routes` and sets
 `net.ipv4.ip_forward=1` in `/etc/sysctl.d/99-tailscale.conf`. It supports
 userspace networking behind `tailscale_userspace_networking`, but the
 playbook does not set it, so firebat uses the kernel `tailscale0` interface.
-Route approval is manual in the Tailscale admin console. The repository has
-no ACL file and no auto-approvers.
+Route approval is manual in the Tailscale admin console. The tailnet policy
+is saved in that console, which is the master copy. The repository holds a
+read-only copy below, and no auto-approvers.
 
 ## What the tailnet reaches
 
@@ -75,7 +81,76 @@ no ACL file and no auto-approvers.
   HAProxy dials ubuntu from `.30`.
 
 The [host firewall](/components/host-firewall.md) has the rest of the rule
-picture.
+picture. Because firebat filters nothing that arrives on `tailscale0`, the
+tailnet policy is the only network control for a tailnet peer.
+
+## CI runners on the tailnet
+
+The `lab-auth` action (`.github/actions/lab-auth/action.yml`) joins a GitHub
+Actions job with `tailscale/github-action@v4` as an ephemeral `tag:ci` node.
+It holds no auth key. Tailscale exchanges the job's GitHub OIDC token through
+a federated identity in the admin console: subject
+`repo:JasperHG90/*:environment:lab`, scope Auth Keys write, tag `tag:ci`,
+client ID `T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL`. Any job in the `lab`
+Environment of an operator repository that issues the legacy subject can
+join. Which repository then gets a Vault token is
+decided in Vault ([ADR 0027](/decisions/0027-ci-reaches-the-lab-through-a-public-lab-auth-action-and-per-caller-vault-roles.md),
+[Vault's jwt-github mount](/components/vault-identity.md#github-actions-and-the-jwt-github-mount)).
+
+v4 passes `--accept-routes` itself, so the runner uses firebat's subnet route
+to reach `192.168.2.30`. Repeating that flag in the action's `args` makes
+`tailscale up` fail.
+
+A repository created after mid-2026 issues GitHub's immutable OIDC subject
+(`repo:JasperHG90@8079803/<repo>@<id>:environment:lab`), which this federated
+identity's subject cannot match, and its join fails with a 403 at the token
+exchange. It needs a second federated identity, subject
+`repo:JasperHG90@8079803/*:environment:lab`. This repository issues the
+legacy subject.
+
+### The saved policy, read-only
+
+This is the policy as the operator described it on 2026-11-15, written out as
+HuJSON. The admin console is authoritative. Change it there and then update
+this copy.
+
+```jsonc
+{
+  "tagOwners": {
+    "tag:ci": ["autogroup:admin"],
+  },
+  "grants": [
+    {"src": ["autogroup:member"], "dst": ["*"], "ip": ["*"]},
+    {"src": ["tag:ci"], "dst": ["192.168.2.30"], "ip": ["tcp:443"]},
+  ],
+  // The default rule from a new tailnet, unchanged.
+  "ssh": [
+    {
+      "action": "check",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot", "root"],
+    },
+  ],
+  "tests": [
+    {
+      "src": "tag:ci",
+      "accept": ["192.168.2.30:443"],
+      "deny": ["192.168.2.30:22", "192.168.2.30:8200", "192.168.2.50:1933", "192.168.2.29:8333"],
+    },
+  ],
+}
+```
+
+No other tag exists. `192.168.2.30:443` is HAProxy, which serves Vault, the
+OpenViking API and SeaweedFS S3 under their lab names.
+
+Measured on 2026-11-15 from a `lab` job in this repository
+(spike `ci-tailscale-access/6`, Actions run 43764572127): the runner reached
+Vault (200), OpenViking (200) and S3 (403, an unauthenticated answer) on 443,
+and timed out on `192.168.2.30:22`, `192.168.2.30:8200`, `192.168.2.50:1933`,
+`192.168.2.29:8333` and firebat's tailnet address on 8200.
+`.github/workflows/lab-auth-check.yaml` repeats those checks on demand.
 
 ## Trap: routes are applied only on first join
 
@@ -108,8 +183,9 @@ real `ansible-playbook` against a fake `tailscale` on `PATH`. None of this
 exists yet.
 
 Two more tickets stopped at the same reset. C1 (blocked) would have had CI
-join the tailnet as `tag:ci` to reach the cluster. N4 (planning) found that
-it cannot narrow tailnet access with ufw alone.
+join the tailnet as `tag:ci` to reach the cluster. The `ci-tailscale-access`
+ticket later built that differently, above. N4 (planning) found that it
+cannot narrow tailnet access with ufw alone.
 
 ## Evidence
 
@@ -118,4 +194,5 @@ Built or recorded from these, which a `sources` entry cannot point at:
 - loop ticket `tailscale-role-apply-routes-when-joined`: its plan and plan-validator verdict are `.loop/plans/` and `.loop/verdicts/` as of commit `48f52e2`, since deleted
 - loop ticket `C1-cicd-tailscale-github-actions-deploy`: `.loop/plans/` as of commit `48f52e2`, since deleted
 - `.loop/verdicts/N4-netsec-edge-only-service-access.plan-validator.md` as of commit `3ec5d1e`, since deleted
+- loop ticket `ci-tailscale-access`: `.loop/plans/ci-tailscale-access.md` and spikes 5 and 6 under `.loop/spikes/ci-tailscale-access/`
 - loop ticket `N1-netsec-restrict-prometheus-loki-to-cluster` (its plan and any verdicts are under `.loop/` at commit `48f52e2`, from before the `5b2ed1b` loop reset)

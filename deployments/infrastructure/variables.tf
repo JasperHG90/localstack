@@ -131,3 +131,21 @@ variable "vault_openviking_workloads" {
     }
   }
 }
+
+variable "vault_ci_callers" {
+  description = "GitHub Actions workflows that may log in to Vault through the lab-auth action (.github/actions/lab-auth), keyed by Vault role name. Each entry mints one `jwt-github` role (machine_roles.tf) bound to all four values, so one repository, one branch, one GitHub Environment and one workflow file. `workflow` is the file name under .github/workflows. Every value is matched exactly: a role bound only on repository and ref would also accept a token from any other workflow on that branch, such as one that runs an agent on issue text."
+  type = map(object({
+    repository  = string
+    ref         = string
+    environment = string
+    workflow    = string
+  }))
+  default = {
+    localstack-lab-auth-check = {
+      repository  = "JasperHG90/localstack"
+      ref         = "refs/heads/main"
+      environment = "lab"
+      workflow    = "lab-auth-check.yaml"
+    }
+  }
+}
