@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "When NATS is down, the receiver's failure behavior must be in the plan, because any receiver exit fails and reschedules the whole SeaweedFS alloc (spikes 9 and 11).",
+      "anchor": ".loop/plans/ov-sync-consumer.md",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "e03ad75009ea46413db08625c5c6f387bf636b110401e6254ab136bc90fc3391"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T20:47:12+00:00"
+}
