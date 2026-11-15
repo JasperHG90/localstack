@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "bifrost-decision-router",
+  "n": 5,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/loopspikes/ollama_live.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/loopspikes/ollama_live.sh",
+      "copy": "files/ollama_live.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "e59def73332ff0f0cf7126d392c4da329e464427",
+  "fingerprint": "2bfbe7e0dd7b41029efa5492fef804caaf62216cef25c0b997309510e546902d",
+  "started_at": "2026-11-15T21:26:30+00:00",
+  "finished_at": "2026-11-15T21:26:33+00:00",
+  "duration_seconds": 2.857,
+  "timeout_seconds": 1800.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
