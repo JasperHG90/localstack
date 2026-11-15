@@ -1,0 +1,65 @@
+name: lab-auth-check
+
+# Manual check of the lab-auth action. workflow_dispatch only: a pull_request
+# trigger would run a fork's code with this job's OIDC token.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: lab
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/lab-auth
+        with:
+          vault-role: localstack-lab-auth-check
+
+      # The edges must answer over 443 with any HTTP status. The closed targets
+      # must time out: a refusal means a packet reached the host, so the
+      # tailnet policy let it through.
+      - name: Check the token, the edges and the closed ports
+        shell: bash
+        run: |
+          set -u
+          fail=0
+          row() {
+            printf '%-4s | %-6s | %s\n' "$1" "$2" "$3"
+            [ "$1" = PASS ] || fail=1
+          }
+          reach() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 10 "$2")
+            if [ "$code" != 000 ]; then row PASS reach "$1 http $code"; else row FAIL reach "$1 no answer"; fi
+          }
+          closed() {
+            timeout 6 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null
+            case $? in
+              124) row PASS closed "$1:$2 timed out" ;;
+              0) row FAIL closed "$1:$2 open" ;;
+              *) row FAIL closed "$1:$2 refused, so a packet reached the host" ;;
+            esac
+          }
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "X-Vault-Token: $VAULT_TOKEN" \
+            "$VAULT_ADDR/v1/auth/token/lookup-self")
+          if [ "$code" = 200 ]; then row PASS token "lookup-self http $code"; else row FAIL token "lookup-self http $code"; fi
+
+          reach vault https://vault.lab.orangecluster.nl/v1/sys/health
+          reach openviking https://openviking-api.lab.orangecluster.nl/health
+          reach s3 https://s3.lab.orangecluster.nl
+
+          closed 192.168.2.30 22
+          closed 192.168.2.30 8200
+          closed 192.168.2.50 1933
+          closed 192.168.2.29 8333
+          firebat=$(tailscale status --json \
+            | jq -r '[.Peer[]? | select(.HostName | test("firebat"; "i")) | .TailscaleIPs[0]][0] // empty')
+          if [ -n "$firebat" ]; then closed "$firebat" 8200; else row FAIL closed "firebat is not in the netmap"; fi
+
+          [ "$fail" = 0 ] && echo "OVERALL=PASS" || { echo "OVERALL=FAIL"; exit 1; }

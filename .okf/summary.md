@@ -57,7 +57,7 @@ MFA names the userpass mount so other sign-in paths keep working
 
 The household must not depend on the cluster, so lab names resolve from
 public DNS ([ADR 0003](/decisions/0003-lab-names-resolve-from-public-dns.md)).
-The practices teach one lesson again and again: a passing validate, a catalog
+The practices teach one lesson: a passing validate, a catalog
 entry or a rule that looks applied is not proof. [Write-only credential
 chains](/practices/terraform-write-only-credentials.md), [ufw
 rules](/practices/ufw-rules-outside-user-rules.md) and [vision
@@ -67,25 +67,27 @@ measured.
 ## Where it stands
 
 The cluster runs, and Login MFA is built. All eleven of the manifesto's
-invariants have a passing test. Several gaps remain open:
+invariants have a passing test. Open gaps:
 
 - [SeaweedFS](/components/seaweedfs.md) replaced
-  [MinIO](/components/minio.md) on 2026-10-20. Every workload moved through
-  the [GCS backups](/components/gcs-backups.md), and MinIO was removed the
-  same day
+  [MinIO](/components/minio.md) on 2026-10-20, moving through the
+  [GCS backups](/components/gcs-backups.md)
   ([ADR 0018](/decisions/0018-remove-minio.md)).
 - OpenViking started over on a new bucket, schema and volume as
   `lab`/`jasper`, keeping the old store as a read-only backup
   ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)).
-  A copy and re-index, not yet run, carry the kept trees over
+  A copy and re-index, not yet run, carries the kept trees
   ([ADR 0022](/decisions/0022-openviking-carry-over-copies-storage-and-re-indexes.md)).
 - Repo docs sync from the `ov-sync` bucket into OpenViking through a
   [JetStream queue](/components/ov-sync-consumer.md)
   ([ADR 0026](/decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer.md)),
   not yet deployed.
+- CI joins the tailnet and logs in to Vault through one role per workflow
+  ([ADR 0027](/decisions/0027-ci-reaches-the-lab-through-a-public-lab-auth-action-and-per-caller-vault-roles.md)),
+  not yet applied.
 - Postgres still uses static passwords. [Dynamic
-  credentials](/proposals/postgres-dynamic-credentials.md) were proven in a
-  spike but never rolled out.
+  credentials](/proposals/postgres-dynamic-credentials.md) were proven but
+  never rolled out.
 - The manifesto's values are a draft awaiting the operator.
 
 The bundle holds only one architecture page, says little about Grafana
