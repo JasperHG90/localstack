@@ -1,0 +1,2 @@
+2026-11-15T20:16:37Z bare-strings: {"is_bifrost_error":false,"status_code":400,"error":{"message":"Invalid request payload"},"extra_fields":{"routing_info":{}}} HTTP 400
+2026-11-15T20:16:37Z no-key: {"type":"virtual_key_required","is_bifrost_error":false,"status_code":401,"error":{"message":"virtual key is required. Provide a virtual key via the x-bf-vk header."},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef:cloud","resolved_model_used":"clef:cloud","request_type":"decisions"}} HTTP 401
