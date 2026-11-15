@@ -170,6 +170,27 @@ refused at the Vault login. No Tailscale or Vault credential is in a committed
 file or a repository-level secret. `just pre_commit` and
 `uv run --directory cli pytest` pass.
 
+### Delivery: how the outcome is reached
+
+The loop lands on local `main`; the outcome runs on GitHub against the live
+Vault. After the ticket lands, in this order:
+
+1. The builder runs `terraform plan` of `deployments/infrastructure` with
+   the prod tfvars file and hands the operator the list of
+   changes, which must all be this ticket's (the `jwt-github` mount, its
+   roles and policies).
+2. The operator applies it.
+3. The operator pushes local `main` to `origin`. Local `main` is many
+   commits ahead of `origin/main`, so this publishes all of them on the
+   public repo; that is the operator's call.
+4. The builder runs `gh workflow run lab-auth-check.yaml --ref main` and
+   watches it pass, then dispatches it from a throwaway branch, sees the
+   Vault login refused, and deletes the branch.
+
+The `lab` GitHub Environment already exists on the repo with no branch
+policy, so Vault's `ref` binding is the only branch gate, as the plan
+intends (Tailscale admits, Vault decides).
+
 ## Could invalidate this plan
 
 - Live tailnet reach. The saved policy's `tests` block passes in the console,
