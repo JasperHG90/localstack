@@ -1,0 +1,8 @@
+vault Vault v1.21.1 (2453aac2638a6ae243341b4e0657fd8aea1cbf18), built 2025-11-18T13:04:32Z
+Success! Enabled jwt auth method at: jwt-github/
+Success! Data written to: auth/jwt-github/config
+MISMATCH case=accept_probe-main-lab want=accept got=refuse :: * role "probe" could not be found 
+OK case=refuse_other-main-lab want=refuse got=refuse :: * role "probe" could not be found 
+OK case=refuse_probe-branch-lab want=refuse got=refuse :: * role "probe" could not be found 
+OK case=refuse_probe-branch-noenv want=refuse got=refuse :: * role "probe" could not be found 
+OK case=refuse_probe-main-noenv want=refuse got=refuse :: * role "probe" could not be found 
