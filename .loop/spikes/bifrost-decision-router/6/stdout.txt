@@ -1,0 +1,9 @@
+clef  403 129ms  prompt="Say hi."  {"type":"model_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Model 'clef' is not allowed for virtual key 'jasper-laptop-cc'"},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef","resolved_model_used":"clef","request_type":"decisions","err
+clef  403 39ms  prompt="Summarise this paragraph in one line: th"  {"type":"model_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Model 'clef' is not allowed for virtual key 'jasper-laptop-cc'"},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef","resolved_model_used":"clef","request_type":"decisions","err
+clef  403 41ms  prompt="Design a sharded, multi-region event sto"  {"type":"model_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Model 'clef' is not allowed for virtual key 'jasper-laptop-cc'"},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef","resolved_model_used":"clef","request_type":"decisions","err
+clef  403 40ms  prompt="Write a haiku about rain."  {"type":"model_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Model 'clef' is not allowed for virtual key 'jasper-laptop-cc'"},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef","resolved_model_used":"clef","request_type":"decisions","err
+clef  403 42ms  prompt="Prove that there are infinitely many pri"  {"type":"model_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Model 'clef' is not allowed for virtual key 'jasper-laptop-cc'"},"extra_fields":{"routing_info":{},"provider":"ollama","original_model_requested":"clef","resolved_model_used":"clef","request_type":"decisions","err
+clef worst: 129ms (timeout under test: 5000ms)
+chat  gpt-oss:120b -> 200 0.854280
+chat  deepseek-v4.1-flash -> 200 0.522540
+chat  mistral-large-4 -> 200 5.858095
