@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "webhook.sh as planned runs weed with default args, so its results show the webhook delivering to a listener in another container. spike:ov-sync-consumer/4 and /5 showed that under the production job's `-ip=127.0.0.1` (seaweedfs.hcl:96) every POST to another container fails with `dial tcp 127.0.0.1:0->...: invalid argument` and only a loopback listener in the same network namespace gets events. The handoff picked the webhook over gocdk_pub_sub partly on this spike, so a prototype that records \"webhook works\" without that limit is misleading evidence for the design it backs. The plan must either run the production args too (a default-args run plus a `-ip=127.0.0.1` run, or the off-container and same-netns variants from spike 5) or have the README state the default-args limit and cite spike:ov-sync-consumer/4 and /5, and the Outcome line should say which.",
+      "anchor": ".loop/plans/okf-design-spikes.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "The clef prototype is to record three outcomes (400 for bare-string choices, 401 with no key, 403 with the Hermes key), but decide.sh as planned sends only the object-choice body and refuses to run without a key, so it can reproduce at most the 403. The other two would be numbers in the README that no script in the folder produces, which is what `prototypes-hold-their-scripts` (.claude/rules/docs-layout.md:41) forbids and what this ticket exists to fix. Either make the script cover the three cases (for example a flag for no key and one for bare-string choices) or have the README label the 400 and 401 as recorded from the lost session and not reproducible here.",
+      "anchor": ".loop/plans/okf-design-spikes.md",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "dcf50caf8c9777526bdc51b708fcd65d76a331b94f886109d64771a2534bd2ba"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T19:59:52+00:00"
+}
