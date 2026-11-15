@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The how-to's Step 2 tells a repository on the immutable subject to pass its second identity's client ID and audience in Step 4, but the Step 4 snippet does not show those inputs. A reader who copies the snippet gets a 403 at the token exchange.",
+      "anchor": "docs/how-to/authenticate-a-github-workflow-to-the-lab.md:52",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "The how-to's Prerequisites bullets carry no links. .claude/rules/how-to-skeleton.md asks for each one to link to where the reader gets it, for example the localstack login session and the Tailscale admin console.",
+      "anchor": "docs/how-to/authenticate-a-github-workflow-to-the-lab.md:20",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "`jq -r .value` prints the string null when the OIDC response has no value field. The script then masks the word null in the whole log and posts null to Vault, which hides the real cause behind a Vault refusal. `jq -er '.value // empty'` would fail at the right step.",
+      "anchor": ".github/actions/lab-auth/action.yml:53",
+      "category": "hardening",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "81dfe0a13ad615f7e75d8d759a1d57bec030a6a04ce92eb608a29eb9df79dd03",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T22:23:16+00:00"
+}
