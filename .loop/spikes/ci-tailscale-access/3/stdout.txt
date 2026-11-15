@@ -1,0 +1,15 @@
+run 43754977347 head fc0c9f813d14c57af8826bd07790b8724c8a702e
+no-env: failure; Set up job=success, Run actions/checkout@v4=success, Run ./.github/actions/join=failure, Run echo "JOINED_WITHOUT_ENV"=skipped, Post Run ./.github/actions/join=success, Post Run actions/checkout@v4=success, Complete job=success
+with-env: failure; Set up job=success, Run actions/checkout@v4=success, Run ./.github/actions/join=failure, reach checks=skipped, Post Run ./.github/actions/join=success, Post Run actions/checkout@v4=success, Complete job=success
+probe repo OIDC sub setting: {"use_default":true,"use_immutable_subject":true,"sub_claim_prefix":"repo:JasperHG90@8079803/lab-auth-probe@1459171707"}
+--- with-env join output
+▶️ tailscale up
+##[warning]Tailscale up attempt 1 failed: sudo failed with exit code 1
+failed to exchange JWT for access token: token exchange failed with status 403: {"message":"Unauthorized. Visit https://login.tailscale.com/admin/settings/trust-credentials/view/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL for details"}
+✅ Successfully logged out of Tailscale
+--- no-env join output
+▶️ tailscale up
+##[warning]Tailscale up attempt 1 failed: sudo failed with exit code 1
+failed to exchange JWT for access token: token exchange failed with status 403: {"message":"Unauthorized. Visit https://login.tailscale.com/admin/settings/trust-credentials/view/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL for details"}
+✅ Successfully logged out of Tailscale
+with-env joined: no (want yes); no-env joined: no (want no)

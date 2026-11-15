@@ -1,0 +1,24 @@
+name: join-tailnet
+description: Join the lab tailnet as an ephemeral tag:ci node via federated identity (spike for ci-tailscale-access).
+inputs:
+  oauth-client-id:
+    default: T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+  audience:
+    default: api.tailscale.com/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+  tags:
+    default: tag:ci
+  args:
+    description: Extra tailscale up flags. v4 already passes --accept-routes; repeating it fails.
+    default: ''
+runs:
+  using: composite
+  steps:
+    - uses: tailscale/github-action@v4
+      with:
+        oauth-client-id: ${{ inputs.oauth-client-id }}
+        audience: ${{ inputs.audience }}
+        tags: ${{ inputs.tags }}
+        args: ${{ inputs.args }}
+        hostname: ci-probe-${{ github.run_id }}-${{ github.job }}
+        retry: '1'
+        timeout: 1m
