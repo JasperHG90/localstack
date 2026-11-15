@@ -3,7 +3,7 @@
   "slug": "ov-sync-consumer",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "bbae0541229b16218031b5d0f7829c674d7c37a6846042ff5956c53610054dfc",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "67301cfe5de3b5c1efec815bbe7c30f895ec6e6082dcf1e4b9e116aaf7f80193",
+    "started_at": "2026-11-15T20:41:53+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "67301cfe5de3b5c1efec815bbe7c30f895ec6e6082dcf1e4b9e116aaf7f80193",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T20:41:40+00:00"
+  "at": "2026-11-15T20:41:53+00:00"
 }
