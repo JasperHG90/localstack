@@ -59,26 +59,42 @@ section and the `.okf/prototypes/` index):
     HTTP server that logs the Authorization header and body; writes to both
     a `loki` and the `ov-sync` bucket; output to
     `new:.okf/prototypes/seaweedfs-filer-notifications/webhook-results.txt`.
+    It runs three variants in one go, each labelled in the results file:
+    default args with the listener in another container (delivers);
+    the production job's args from
+    `deployments/infrastructure/services/seaweedfs.hcl`, `-ip=127.0.0.1`
+    included, with the listener in another container (delivers nothing,
+    `dial tcp 127.0.0.1:0->...: connect: invalid argument`); and the
+    production args with the listener on loopback in the SeaweedFS
+    container's network namespace (delivers). The README says the webhook
+    reaches only a listener sharing that namespace under the production
+    args, and cites spike:ov-sync-consumer/4 and spike:ov-sync-consumer/5.
   - The README also records the two findings that need no run: the standard
     `4.48` image lacks the `gocdk` build tag, and gocloud `natspubsub` v0.46
     is core NATS, not JetStream.
 - `new:.okf/prototypes/clef-via-bifrost/README.md` and
   `new:.okf/prototypes/clef-via-bifrost/decide.sh`: `POST
-  https://bifrost.lab.orangecluster.nl/v1/decisions` with `x-bf-vk` read
-  from an env var (the script refuses to run without it) and the
-  `ollama/clef:cloud` `tier` choice body. The operator runs it. The README
-  records the three operator-run outcomes as raw results: bare-string
-  choices give 400 "Invalid request payload", no key gives 401
-  `virtual_key_required` (provider ollama, request_type decisions resolved),
-  the Hermes key gives 403 `model_blocked`.
+  https://bifrost.lab.orangecluster.nl/v1/decisions` with the
+  `ollama/clef:cloud` `tier` choice body. It takes a case argument so every
+  recorded outcome has a script that produces it: `bare-strings` sends the
+  choices as bare strings (400 "Invalid request payload"), `no-key` sends
+  no `x-bf-vk` header (401 `virtual_key_required`, with provider ollama and
+  request_type decisions resolved), and `keyed` sends the object-choice body
+  with `x-bf-vk` read from an env var, refusing to run without it (403
+  `model_blocked` on the Hermes key). The operator runs it and appends each
+  response to `new:.okf/prototypes/clef-via-bifrost/results.txt`; the README
+  records the three outcomes already seen as those raw results.
 
 `.okf/summary.md` is updated or acked and `.okf/log.md` gets the lines the
 bundle rule asks for.
 
 Outcome: running each SeaweedFS script reproduces the recorded results into
 its folder (NATS: about 10 messages, `.system` paths plus `a.md` create and
-delete as gocloud envelopes around protobuf; webhook: nothing for `loki`,
-`ov-sync` create, update and delete as JSON with the bearer header), and
+delete as gocloud envelopes around protobuf; webhook: nothing for `loki`
+in any variant, `ov-sync` create, update and delete as JSON with the bearer
+header in the default and same-namespace variants, nothing delivered in the
+production-args off-container variant), `decide.sh bare-strings` and
+`decide.sh no-key` reproduce the 400 and 401 without a key, and
 `kmctl check` passes.
 
 ## Could invalidate this plan
