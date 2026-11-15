@@ -46,3 +46,4 @@
 {"at": "2026-11-15T19:45:09+00:00", "evidence": "the operator said so", "judgement": "j-20261115T194509+0000-707e0c81", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "relayed"}
 {"at": "2026-11-15T19:47:53+00:00", "judgement": "j-20261115T194509+0000-707e0c81", "kind": "judgement-link", "schema_version": "1.0", "ticket": "okf-design-spikes"}
 {"at": "2026-11-15T19:48:52+00:00", "judgement": "j-20261115T194506+0000-ba9f8466", "kind": "judgement-link", "schema_version": "1.0", "ticket": "bifrost-decision-router"}
+{"at": "2026-11-15T19:49:52+00:00", "judgement": "j-20261115T194508+0000-42841ebf", "kind": "judgement-link", "schema_version": "1.0", "ticket": "ov-sync-consumer"}
