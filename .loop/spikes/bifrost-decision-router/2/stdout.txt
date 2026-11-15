@@ -1,0 +1,32 @@
+health: {"components":{"db_pings":"ok"},"status":"ok"}
+create vk router: 200 id=b1f5059d-bedf-4192-b86e-2b86c619b2d8
+create vk other: 200 id=1c1ff497-d78a-4761-b2aa-139d85359fdf
+routing rules in store: 200 [["router-simple", "global", "virtual_key_name == \"router\" && complexity_tier == \"SIMPLE\"", [{"provider": "ollama", "model": "gpt-oss:120b-cloud", "weight": 1}]], ["router-medium", "global", "virtual_key_name == \"router\" && complexity_tier == \"MEDIUM\"", [{"provider": "ollama", "model": "deepseek-v4.1-flash", "weight": 1}]], ["router-complex", "global", "virtual_key_name == \"router\" && complexity_tier == \"COMPLEX\"", [{"provider": "ollama", "model": "mistral-large-4", "weight": 1}]]]
+[OK] key=router prompt='say hi' asked=ollama/deepseek-v4.1-flash status=200 served=gpt-oss:120b-cloud want=gpt-oss:120b-cloud
+      routing_info: {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+[OK] key=router prompt='ZZMEDIUM summarise this' asked=ollama/gpt-oss:120b-cloud status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash
+      routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "gpt-oss:120b-cloud"}
+[OK] key=router prompt='ZZCOMPLEX prove this theorem' asked=ollama/deepseek-v4.1-flash status=200 served=mistral-large-4 want=mistral-large-4
+      routing_info: {"provider": "ollama", "model": "mistral-large-4", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+[OK] key=other prompt='say hi' asked=ollama/deepseek-v4.1-flash status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash
+      routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+[OK] key=other prompt='ZZCOMPLEX prove this theorem' asked=ollama/deepseek-v4.1-flash status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash
+      routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+mock log:
+   {"method": "GET", "path": "/v1/models"}
+   {"method": "GET", "path": "/v1/models"}
+   {"method": "POST", "path": "/v1/systemone", "model": "clef:cloud", "tier": "SIMPLE", "question_keys": ["complexity_tier"], "criteria_keys": ["COMPLEX", "MEDIUM", "SIMPLE"], "state": [{"role": "user", "content": "say hi"}]}
+   {"method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss:120b-cloud"}
+   {"method": "POST", "path": "/v1/systemone", "model": "clef:cloud", "tier": "MEDIUM", "question_keys": ["complexity_tier"], "criteria_keys": ["COMPLEX", "MEDIUM", "SIMPLE"], "state": [{"role": "user", "content": "ZZMEDIUM summarise this"}]}
+   {"method": "POST", "path": "/v1/chat/completions", "model": "deepseek-v4.1-flash"}
+   {"method": "POST", "path": "/v1/systemone", "model": "clef:cloud", "tier": "COMPLEX", "question_keys": ["complexity_tier"], "criteria_keys": ["COMPLEX", "MEDIUM", "SIMPLE"], "state": [{"role": "user", "content": "ZZCOMPLEX prove this theorem"}]}
+   {"method": "POST", "path": "/v1/chat/completions", "model": "mistral-large-4"}
+   {"method": "POST", "path": "/v1/systemone", "model": "clef:cloud", "tier": "SIMPLE", "question_keys": ["complexity_tier"], "criteria_keys": ["COMPLEX", "MEDIUM", "SIMPLE"], "state": [{"role": "user", "content": "say hi"}]}
+   {"method": "POST", "path": "/v1/chat/completions", "model": "deepseek-v4.1-flash"}
+   {"method": "POST", "path": "/v1/systemone", "model": "clef:cloud", "tier": "COMPLEX", "question_keys": ["complexity_tier"], "criteria_keys": ["COMPLEX", "MEDIUM", "SIMPLE"], "state": [{"role": "user", "content": "ZZCOMPLEX prove this theorem"}]}
+   {"method": "POST", "path": "/v1/chat/completions", "model": "deepseek-v4.1-flash"}
+decision calls: 5 for 5 chat requests; models: ['clef:cloud']
+tier values Bifrost offered: ['COMPLEX', 'MEDIUM', 'SIMPLE']
+classifier calls on the 'other' key (requests 4-5): ['SIMPLE', 'COMPLEX']
+RISK DOES NOT HOLD
+=== bifrost log (complexity/routing/rule/error lines) ===
