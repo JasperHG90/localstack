@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:56:20+00:00'
+  at: '2026-11-15T19:56:45+00:00'
 slug: ov-sync-consumer
 n: 6
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer/6
@@ -24,7 +24,9 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer 6`.
+Same local setup as spike:ov-sync-consumer/3. `content/batch-write` with `root_uri` set to the existing `viking://user/jasper/resources` returned 400 "batch-write root must be inside a resource directory".
+After content/write, then DELETE of the file (wait=true), then `DELETE /api/v1/fs?uri=.../docs/a&recursive=true&wait=true` (200, 2 deleted), `ls` of `docs/` showed only its own `.abstract.md` and `.overview.md` at 0, 5 and 20 s, so `a/` stayed gone from OpenViking's listing. `fs/stat` on `a/` still returned 200 with count 0 the whole time. It also returned 200 for a removed top folder `t/`, which ls no longer listed. Run 3's tree dump shows SeaweedFS keeps empty filer directories, which is what stat sees. The exit 1 comes from this run asserting on stat, which is the wrong test.
+Not settled by this run. Run 7 re-checks on ls. Limits: one local run, stub models.
 
 ## Files
 
