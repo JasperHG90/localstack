@@ -1,4 +1,53 @@
 {
   "schema_version": "1.0",
-  "rows": []
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "every jwt-github caller role binds repository, ref, environment and workflow_ref through bound_claims, with bound_audiences [vault.io] and a token TTL of minutes",
+      "fails_when": "a caller role lacks any of the four bound claims, lacks the vault.io audience, or has a TTL of an hour or more",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_caller_roles_bind_all_four_claims -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "no workflow that uses the lab-auth action triggers on pull_request or pull_request_target, and each sets environment, explicit permissions with id-token write, and a timeout",
+      "fails_when": "such a workflow has a pull_request or pull_request_target trigger, or lacks environment, permissions or timeout-minutes",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_workflows_using_lab_auth_are_guarded -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "the lab-auth action joins with tailscale/github-action@v4 using only oauth-client-id, audience and tags (defaulting to the federated identity's client id and audience and tag:ci) with args left empty, logs in at auth/<vault-mount>/login with the job's OIDC token for audience vault.io, masks the token and exports VAULT_ADDR and VAULT_TOKEN",
+      "fails_when": "the action reads a Tailscale or Vault secret input, passes --accept-routes in args, requests a different audience, or does not mask and export the token",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_action_shape -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "the default caller list holds only this repository's lab-auth-check workflow on refs/heads/main in the lab environment",
+      "fails_when": "the default list holds another repository, ref, environment or workflow",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_default_callers -q"
+    },
+    {
+      "id": "r5",
+      "behavior": "the repo gates pass, Terraform formatted and valid",
+      "fails_when": "just pre_commit exits non-zero",
+      "command": "just pre_commit"
+    },
+    {
+      "id": "r6",
+      "behavior": "after the operator applies and pushes, a workflow_dispatch run of lab-auth-check on main joins as an ephemeral tag:ci node, gets a Vault token from the OIDC token alone, reaches vault, openviking-api and s3 on 443 and times out on 192.168.2.30:22, 192.168.2.30:8200, 192.168.2.50:1933, 192.168.2.29:8333 and firebat's tailnet address on 8200; a dispatch from a throwaway branch is refused at the Vault login",
+      "fails_when": "any of those is not shown in the run logs",
+      "judgment": true
+    },
+    {
+      "id": "r7",
+      "behavior": "no Tailscale or Vault credential is in a committed file or a repository-level secret",
+      "fails_when": "a credential appears in the diff or the action needs a stored secret",
+      "judgment": true
+    },
+    {
+      "id": "r8",
+      "behavior": "the decision record, the tailscale-subnet-router and vault-identity component pages (with a read-only copy of the saved policy), the how-to (per the how-to skeleton, naming the extra federated identity a repo with the immutable OIDC subject needs) and the GitHub Actions reference inputs table describe what was built",
+      "fails_when": "a page is missing, disagrees with the action or the policy, or the how-to leaves out the immutable-subject step",
+      "judgment": true
+    }
+  ]
 }
