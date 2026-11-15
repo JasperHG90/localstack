@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "slug": "ci-tailscale-access",
+  "n": 4,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ts12/check_run.sh 43754977347 reach",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ts12/check_run.sh",
+      "copy": "files/check_run.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ts12/join-action.yml",
+      "copy": "files/join-action.yml"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ts12/reach.yaml",
+      "copy": "files/reach.yaml"
+    }
+  ],
+  "where": "worktree",
+  "head": "0646ac4469eb3f17ef9595da0a060e55e69561ad",
+  "fingerprint": "1c9c8f4c7371b2cb3f19659091867734f3982e96a1885dfd4c79bd792e93111f",
+  "started_at": "2026-11-15T19:55:42+00:00",
+  "finished_at": "2026-11-15T19:55:45+00:00",
+  "duration_seconds": 3.772,
+  "timeout_seconds": 120.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
