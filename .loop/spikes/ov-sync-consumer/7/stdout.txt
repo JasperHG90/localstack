@@ -1,0 +1,36 @@
+== ov up
+[write viking://user/jasper/resources/projects/x/docs/a/b.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/a/b.md","root_uri":"viking://user/jasper/resources/projects/x/docs/a","context_type":"resource","mode":"create","written_bytes":21,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_stat
+CHECK 1 write under missing folders, exact read: True
+[rm viking://user/jasper/resources/projects/x/docs/a/b.md {'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/a/b.md","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/x/docs/a","semantic_status":"complete","queue_status":{"Semanti
+CHECK 2 file delete: True
+[ls viking://user/jasper/resources/projects/x/docs/a] HTTP 200 ['viking://user/jasper/resources/projects/x/docs/a/.abstract.md', 'viking://user/jasper/resources/projects/x/docs/a/.overview.md']
+[rm viking://user/jasper/resources/projects/x/docs/a {'wait': True}] HTTP 412 {"status":"error","result":null,"error":{"code":"FAILED_PRECONDITION","message":"Cannot remove directory without --recursive: viking://user/jasper/resources/projects/x/docs/a","details":{"resource":"viking://user/jasper/resources/projects/x/docs/a","expected_flag":"recursive"}},"telemetry":null,"pro
+[rm viking://user/jasper/resources/projects/x/docs/a {'recursive': True, 'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/a","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/x/docs","semantic_status":"complete","queue_status":{"Semantic":{"pr
+CHECK 3 emptied folder: non-recursive HTTP 412, recursive ok: True
+[ls viking://user/jasper/resources/projects/x/docs] HTTP 200 ['viking://user/jasper/resources/projects/x/docs/.abstract.md', 'viking://user/jasper/resources/projects/x/docs/.overview.md']
+[ls viking://user/jasper/resources/projects/x/docs] HTTP 200 ['viking://user/jasper/resources/projects/x/docs/.abstract.md', 'viking://user/jasper/resources/projects/x/docs/.overview.md']
+[ls viking://user/jasper/resources/projects/x/docs] HTTP 200 ['viking://user/jasper/resources/projects/x/docs/.abstract.md', 'viking://user/jasper/resources/projects/x/docs/.overview.md']
+CHECK 4 a/ absent from ls of docs/ at 0/5/20 s: True
+[write viking://user/jasper/resources/projects/x/docs/a/b.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/a/b.md","root_uri":"viking://user/jasper/resources/projects/x/docs/a","context_type":"resource","mode":"create","written_bytes":50,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_stat
+[ls viking://user/jasper/resources/projects/x/docs] HTTP 200 ['viking://user/jasper/resources/projects/x/docs/a', 'viking://user/jasper/resources/projects/x/docs/a/.abstract.md', 'viking://user/jasper/resources/projects/x/docs/a/.overview.md', 'viking://user/jasper/resources/projects/x/docs/a/b.md', 'viking://user/jasper/resources/projects/x/docs/.abstract.md', 'viking://user/jasper/resources/projects/x/docs/.overview.md']
+CHECK 5 rewrite same path after folder delete: True
+[6 batch-write root=x/docs] HTTP 404 {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/x/docs/n/m/k.md","details":{"type":"file","resource":"viking://user/jasper/resources/projects/x/docs/n/m/k.md"}},"telemetry":null,"profile":null}
+INFO 6 batch-write existing folder root, missing subfolders: False
+OVERALL PASS
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    └──x
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            └──a
+                                ├──.abstract.md
+                                ├──.overview.md
+                                └──b.md
+19 directories, 30 files
+== ov log lines about parents/errors
+== semantic log lines for w/docs
