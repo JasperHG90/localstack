@@ -47,3 +47,4 @@
 {"at": "2026-11-15T19:47:53+00:00", "judgement": "j-20261115T194509+0000-707e0c81", "kind": "judgement-link", "schema_version": "1.0", "ticket": "okf-design-spikes"}
 {"at": "2026-11-15T19:48:52+00:00", "judgement": "j-20261115T194506+0000-ba9f8466", "kind": "judgement-link", "schema_version": "1.0", "ticket": "bifrost-decision-router"}
 {"at": "2026-11-15T19:49:52+00:00", "judgement": "j-20261115T194508+0000-42841ebf", "kind": "judgement-link", "schema_version": "1.0", "ticket": "ov-sync-consumer"}
+{"at": "2026-11-15T21:56:06+00:00", "evidence": "3 review round(s), 0 block(s), 2962 changed line(s)", "judgement": "j-20261115T194508+0000-42841ebf", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "outcome"}
