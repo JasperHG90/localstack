@@ -1,0 +1,50 @@
+health: {"components":{"db_pings":"ok"},"status":"ok"}
+create vk router: 200 id=00766edc-daf0-496f-99be-9747718a3c1d
+create vk other: 200 id=9494b582-c5e1-4e4f-ae3b-c0488dbef578
+=== A: global rules from config.json, priority-0 passthrough for non-router keys ===
+  rules in store: 200
+    0 not-router-passthrough global None virtual_key_name != "router" [{'weight': 1}]
+    1 router-simple global None virtual_key_name == "router" && complexity_tier == "SIMPLE" [{'provider': 'ollama', 'model': 'gpt-oss:120b-cloud', 'weight': 1}]
+    2 router-medium global None virtual_key_name == "router" && complexity_tier == "MEDIUM" [{'provider': 'ollama', 'model': 'deepseek-v4.1-flash', 'weight': 1}]
+    3 router-complex global None virtual_key_name == "router" && complexity_tier == "COMPLEX" [{'provider': 'ollama', 'model': 'mistral-large-4', 'weight': 1}]
+  [OK] A key=router prompt='say hi' asked=ollama/deepseek-v4.1-flash status=200 served=gpt-oss:120b-cloud want=gpt-oss:120b-cloud classifier_calls=1
+        routing_info: {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] A key=router prompt='ZZMEDIUM summarise this' asked=ollama/gpt-oss:120b-cloud status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash classifier_calls=1
+        routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "gpt-oss:120b-cloud"}
+  [OK] A key=router prompt='ZZCOMPLEX prove this theorem' asked=ollama/deepseek-v4.1-flash status=200 served=mistral-large-4 want=mistral-large-4 classifier_calls=1
+        routing_info: {"provider": "ollama", "model": "mistral-large-4", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] A key=other prompt='say hi' asked=ollama/deepseek-v4.1-flash status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash classifier_calls=0
+        routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] A key=other prompt='ZZCOMPLEX prove this theorem' asked=ollama/deepseek-v4.1-flash status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash classifier_calls=0
+        routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] A key=other prompt='ZZMEDIUM summarise this' asked=ollama/gpt-oss:120b-cloud status=200 served=gpt-oss:120b-cloud want=gpt-oss:120b-cloud classifier_calls=0
+        routing_info: {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "gpt-oss:120b-cloud"}
+  A: classifier calls router=3/3 other=0/3 routing_ok=True -> WORKS
+=== B: virtual_key-scoped tier rules via admin API, no global rules ===
+  delete not-router-passthrough: 200 
+  delete router-simple: 200 
+  delete router-medium: 200 
+  delete router-complex: 200 
+  create router-vk-simple: 200 
+  create router-vk-medium: 200 
+  create router-vk-complex: 200 
+  rules in store: 200
+    1 router-vk-simple virtual_key 00766edc-daf0-496f-99be-9747718a3c1d complexity_tier == "SIMPLE" [{'provider': 'ollama', 'model': 'gpt-oss:120b-cloud', 'weight': 1}]
+    2 router-vk-medium virtual_key 00766edc-daf0-496f-99be-9747718a3c1d complexity_tier == "MEDIUM" [{'provider': 'ollama', 'model': 'deepseek-v4.1-flash', 'weight': 1}]
+    3 router-vk-complex virtual_key 00766edc-daf0-496f-99be-9747718a3c1d complexity_tier == "COMPLEX" [{'provider': 'ollama', 'model': 'mistral-large-4', 'weight': 1}]
+  [OK] B key=router prompt='say hi' asked=ollama/deepseek-v4.1-flash status=200 served=gpt-oss:120b-cloud want=gpt-oss:120b-cloud classifier_calls=1
+        routing_info: {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] B key=router prompt='ZZMEDIUM summarise this' asked=ollama/gpt-oss:120b-cloud status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash classifier_calls=1
+        routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "gpt-oss:120b-cloud"}
+  [OK] B key=router prompt='ZZCOMPLEX prove this theorem' asked=ollama/deepseek-v4.1-flash status=200 served=mistral-large-4 want=mistral-large-4 classifier_calls=1
+        routing_info: {"provider": "ollama", "model": "mistral-large-4", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] B key=other prompt='say hi' asked=ollama/deepseek-v4.1-flash status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash classifier_calls=0
+        routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] B key=other prompt='ZZCOMPLEX prove this theorem' asked=ollama/deepseek-v4.1-flash status=200 served=deepseek-v4.1-flash want=deepseek-v4.1-flash classifier_calls=0
+        routing_info: {"provider": "ollama", "model": "deepseek-v4.1-flash", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "deepseek-v4.1-flash"}
+  [OK] B key=other prompt='ZZMEDIUM summarise this' asked=ollama/gpt-oss:120b-cloud status=200 served=gpt-oss:120b-cloud want=gpt-oss:120b-cloud classifier_calls=0
+        routing_info: {"provider": "ollama", "model": "gpt-oss:120b-cloud", "key": "ollama-personal", "requested_provider": "ollama", "requested_model": "gpt-oss:120b-cloud"}
+  B: classifier calls router=3/3 other=0/3 routing_ok=True -> WORKS
+RESULT: A(passthrough rule)=works B(virtual_key scope)=works
+RISK DOES NOT HOLD
+=== bifrost log (complexity/routing/rule/error lines) ===
