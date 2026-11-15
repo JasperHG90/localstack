@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T21:26:33+00:00'
+  at: '2026-11-15T23:07:54+00:00'
 slug: bifrost-decision-router
 n: 5
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike bifrost-decision-router/5
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note bifrost-decision-router 5`.
+Run by the operator through the live Bifrost with their own virtual key (`jasper-laptop-cc`). Every `ollama/clef:cloud` decision returned 403 `model_blocked` ("not allowed for virtual key") in under 150 ms, so clef latency was not measured. `ollama/gpt-oss:120b-cloud` chat returned 403; `ollama/deepseek-v4.1-flash` (0.55 s) and `ollama/mistral-large-4` (1.37 s) returned 200. Cause, found next: Bifrost's ollama provider calls ollama.com directly, where model names carry no cloud suffix. Superseded by spike:bifrost-decision-router/7.
 
 ## Files
 
