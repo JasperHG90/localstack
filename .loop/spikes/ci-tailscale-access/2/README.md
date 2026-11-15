@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:53:56+00:00'
+  at: '2026-11-15T19:54:15+00:00'
 slug: ci-tailscale-access
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ci-tailscale-access/2
@@ -24,7 +24,9 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ci-tailscale-access 2`.
+Real GitHub OIDC tokens from 5 jobs in `JasperHG90/lab-auth-probe` (composite action `.github/actions/claims`, audience `spike-only-not-trusted`) carry the caller's claims: `repository=JasperHG90/lab-auth-probe`, `ref=refs/heads/<branch>`, `environment=lab` (absent with no environment), `workflow_ref`=`job_workflow_ref`=`JasperHG90/lab-auth-probe/.github/workflows/<file>@refs/heads/<branch>`. `sub` uses the immutable-ID form `repo:JasperHG90@8079803/lab-auth-probe@1459171707:environment:lab`.
+A local Vault 1.21.1 `jwt` mount (`oidc_discovery_url` set to GitHub) with a role holding string `bound_claims` on all four claims and `bound_audiences` accepted 1 of 5: probe.yaml, main, lab. It refused other.yaml (workflow_ref), spike-branch (ref) and both no-env jobs ("environment" is missing). 5/5 matched what we expected.
+This settles risk 3 for claims and binding. Limits: the composite action lived in the same repo, not in localstack called cross-repo (the token is minted per job, so the action's repo should not change it, but this run did not test that). Vault fetched GitHub's keys from the devcontainer, not from the cluster. The tokens are in the spike only as runtime input and were not kept.
 
 ## Files
 
