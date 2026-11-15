@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "The Delivery section now names the terraform plan (builder), the apply and the push of local main (operator), and the two dispatches (builder, on main then from a throwaway branch), in that order. The outcome can now be reached from the steps the plan names.",
+      "anchor": ".loop/plans/ci-tailscale-access.md (Delivery: how the outcome is reached)",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "c97686107c52bfaa9c6c69e665959d154893a2ae62784283a5494fa401de9b3b"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T21:43:00+00:00"
+}
