@@ -8,7 +8,23 @@
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "e8fdeac876c86536b11284b6c76cfeb542656fe26315790a9ab4b18f6b1fc226",
+    "tree": "39d880f88da19653e100d5249eb824d077c26a56",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "cleared-unreviewed",
+        "by": "fallback",
+        "judgement": "j-20261115T230359+0000-536fb780",
+        "paths": [
+          "cli/tests/test_openviking_sync_action.py"
+        ]
+      }
+    ],
+    "at": "2026-11-15T23:03:59+00:00"
+  },
   "ask": "j-20261020T091522+0000-27b5d0a1",
   "split": "j-20261115T201727+0000-655aa953",
   "split_plan_hash": "93005ffbf70a73cc334ab6d9d723bebed3f70fa3e05477c82c55934366e34933",
@@ -167,5 +183,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T23:03:57+00:00"
+  "at": "2026-11-15T23:03:59+00:00"
 }
