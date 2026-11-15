@@ -1,0 +1,55 @@
+name: reach-probe
+on:
+  push:
+    branches: [spike/lab-auth-reach]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  with-env:
+    runs-on: ubuntu-latest
+    environment: lab
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JasperHG90/localstack/.github/actions/join@spike/lab-auth-reach
+      - name: reach checks
+        shell: bash
+        run: |
+          set -u
+          echo "SELF:"; tailscale status --json | jq -c '.Self | {HostName, DNSName, TailscaleIPs, Tags}'
+          echo "PEERS:"; tailscale status --json | jq -c '[.Peer[]? | {HostName, TailscaleIPs, PrimaryRoutes}]'
+          FB=$(tailscale status --json | jq -r '[.Peer[]? | select(.HostName|test("firebat";"i")) | .TailscaleIPs[0]][0] // empty')
+          echo "FIREBAT_TS_IP=${FB:-not-visible}"
+          echo "PREFS:"; tailscale debug prefs 2>/dev/null | jq -c '{RouteAll, AdvertiseTags, Hostname}' || true
+          echo "SELFNODE_EPHEMERAL=$(tailscale debug netmap 2>/dev/null | jq -r '.SelfNode.Ephemeral // "unknown"' 2>/dev/null || echo unknown)"
+          rows=()
+          ok=1
+          http() { # name url want
+            code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 10 "$2"); code=${code:-000}
+            if [ "$code" != "000" ]; then r=PASS; else r=FAIL; ok=0; fi
+            rows+=("$r | reach  | $1 | http $code")
+          }
+          tcpclosed() { # name host port
+            if timeout 6 bash -c "exec 3<>/dev/tcp/$2/$3" 2>/dev/null; then r=FAIL; ok=0; got=open; else r=PASS; got=closed/timeout; fi
+            rows+=("$r | blocked | $1 $2:$3 | $got")
+          }
+          http vault       https://vault.lab.orangecluster.nl/v1/sys/health
+          http openviking  https://openviking-api.lab.orangecluster.nl/health
+          http s3          https://s3.lab.orangecluster.nl
+          tcpclosed ssh        192.168.2.30 22
+          tcpclosed vault-raw  192.168.2.30 8200
+          tcpclosed ov-raw     192.168.2.50 1933
+          tcpclosed s3-raw     192.168.2.29 8333
+          if [ -n "${FB:-}" ]; then tcpclosed firebat-ts "$FB" 8200; else rows+=("SKIP | blocked | firebat-ts :8200 | firebat not in netmap"); fi
+          echo "===== RESULT TABLE ====="
+          printf '%s\n' "${rows[@]}"
+          echo "OVERALL=$([ $ok = 1 ] && echo PASS || echo FAIL)"
+          [ $ok = 1 ]
+  no-env:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JasperHG90/localstack/.github/actions/join@spike/lab-auth-reach
+      - run: echo "JOINED_WITHOUT_ENV"
