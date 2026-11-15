@@ -15,7 +15,7 @@
   "split_hold": false,
   "commit_sha": null,
   "closed_outside": false,
-  "dropped": false,
+  "dropped": true,
   "archived": false,
   "worktree": "/home/vscode/workspace.worktrees/okf-design-spikes",
   "branch": "loop/okf-design-spikes",
@@ -122,5 +122,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T20:08:20+00:00"
+  "at": "2026-11-15T20:16:52+00:00"
 }

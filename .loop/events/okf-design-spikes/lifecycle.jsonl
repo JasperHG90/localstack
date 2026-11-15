@@ -6,3 +6,4 @@
 {"at": "2026-11-15T20:01:44+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-11-15T20:08:04+00:00", "grant": "g4", "hash": "2d9b0341e1c04cfd86cd3936f4441b48a8d15f798a712dcc9c35a2813510331a", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5", "step": "eval-sign"}
 {"at": "2026-11-15T20:08:20+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-11-15T20:16:52+00:00", "by": "delegated:jasperginn@gmail.com/claude-opus-5-5", "grant": "g4", "kind": "drop", "reason": "Operator chose to record the lost spikes as loop spikes instead: spike:ov-sync-consumer/8 (NATS notifier) and spike:bifrost-decision-router/3 (clef via Bifrost); the webhook result is spike:ov-sync-consumer/4 and /5.", "schema_version": "1.0", "step": "ticket-drop"}
