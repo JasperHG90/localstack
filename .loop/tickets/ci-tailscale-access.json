@@ -20,7 +20,8 @@
   "worktree": "/home/vscode/workspace.worktrees/ci-tailscale-access",
   "branch": "loop/ci-tailscale-access",
   "stamps": [
-    "81dfe0a13ad615f7e75d8d759a1d57bec030a6a04ce92eb608a29eb9df79dd03"
+    "81dfe0a13ad615f7e75d8d759a1d57bec030a6a04ce92eb608a29eb9df79dd03",
+    "31ce114426bf027bc41b5b2ec63555b480b7b2006ad09316f8ee50d025db811c"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
@@ -150,5 +151,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T22:23:42+00:00"
+  "at": "2026-11-15T22:25:33+00:00"
 }
