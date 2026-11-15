@@ -1,0 +1,13 @@
++ aws s3 mb s3://ov-sync
++ docker run --rm --network ovc2-net -e AWS_ACCESS_KEY_ID=AKIASPIKEADMIN0000001 -e AWS_SECRET_ACCESS_KEY=spikeSecretKey0000000000000000000000001 -e AWS_DEFAULT_REGION=us-east-1 -v /tmp/tmp.LLXl8Vc1fd:/w amazon/aws-cli:2.27.0 --endpoint-url http://ovc2-seaweed:8333 s3 mb s3://ov-sync
++ aws s3 mb s3://other
++ docker run --rm --network ovc2-net -e AWS_ACCESS_KEY_ID=AKIASPIKEADMIN0000001 -e AWS_SECRET_ACCESS_KEY=spikeSecretKey0000000000000000000000001 -e AWS_DEFAULT_REGION=us-east-1 -v /tmp/tmp.LLXl8Vc1fd:/w amazon/aws-cli:2.27.0 --endpoint-url http://ovc2-seaweed:8333 s3 mb s3://other
++ aws s3 cp /w/a.md s3://ov-sync/docs/a.md
++ docker run --rm --network ovc2-net -e AWS_ACCESS_KEY_ID=AKIASPIKEADMIN0000001 -e AWS_SECRET_ACCESS_KEY=spikeSecretKey0000000000000000000000001 -e AWS_DEFAULT_REGION=us-east-1 -v /tmp/tmp.LLXl8Vc1fd:/w amazon/aws-cli:2.27.0 --endpoint-url http://ovc2-seaweed:8333 s3 cp /w/a.md s3://ov-sync/docs/a.md
++ aws s3 cp /w/a.md s3://other/docs/b.md
++ docker run --rm --network ovc2-net -e AWS_ACCESS_KEY_ID=AKIASPIKEADMIN0000001 -e AWS_SECRET_ACCESS_KEY=spikeSecretKey0000000000000000000000001 -e AWS_DEFAULT_REGION=us-east-1 -v /tmp/tmp.LLXl8Vc1fd:/w amazon/aws-cli:2.27.0 --endpoint-url http://ovc2-seaweed:8333 s3 cp /w/a.md s3://other/docs/b.md
++ aws s3 cp /w/a.md s3://ov-sync/docs/a.md
++ docker run --rm --network ovc2-net -e AWS_ACCESS_KEY_ID=AKIASPIKEADMIN0000001 -e AWS_SECRET_ACCESS_KEY=spikeSecretKey0000000000000000000000001 -e AWS_DEFAULT_REGION=us-east-1 -v /tmp/tmp.LLXl8Vc1fd:/w amazon/aws-cli:2.27.0 --endpoint-url http://ovc2-seaweed:8333 s3 cp /w/a.md s3://ov-sync/docs/a.md
++ aws s3 rm s3://ov-sync/docs/a.md
++ docker run --rm --network ovc2-net -e AWS_ACCESS_KEY_ID=AKIASPIKEADMIN0000001 -e AWS_SECRET_ACCESS_KEY=spikeSecretKey0000000000000000000000001 -e AWS_DEFAULT_REGION=us-east-1 -v /tmp/tmp.LLXl8Vc1fd:/w amazon/aws-cli:2.27.0 --endpoint-url http://ovc2-seaweed:8333 s3 rm s3://ov-sync/docs/a.md
++ set +x

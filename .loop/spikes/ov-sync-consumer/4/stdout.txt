@@ -1,0 +1,43 @@
+== healthy after 3s
+== listening sockets in seaweed container (loopback binds check)
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       
+tcp        0      0 127.0.0.1:18080         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:9333          0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:8888          0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:19333         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:18888         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.11:37877        0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
+tcp        0      0 :::9327                 :::*                    LISTEN      
+tcp        0      0 :::18333                :::*                    LISTEN      
+tcp        0      0 :::8333                 :::*                    LISTEN      
+make_bucket: ov-sync
+make_bucket: other
+Completed 8 Bytes/8 Bytes (37 Bytes/s) with 1 file(s) remaining
+upload: ../w/a.md to s3://ov-sync/docs/a.md                    
+Completed 8 Bytes/8 Bytes (37 Bytes/s) with 1 file(s) remaining
+upload: ../w/a.md to s3://other/docs/b.md                      
+Completed 8 Bytes/8 Bytes (1.2 KiB/s) with 1 file(s) remaining
+upload: ../w/a.md to s3://ov-sync/docs/a.md                   
+delete: s3://ov-sync/docs/a.md
+== seaweed log lines mentioning notification/webhook
+[watermill] 2026/11/15 19:54:12.997320 router.go:280: 	level=INFO  msg="Adding handler" handler_name=webhook_handler topic=webhook_topic 
+I1115 19:54:12.997453 configuration.go:38 Configure notification message queue for webhook
+[watermill] 2026/11/15 19:54:12.997636 router.go:646: 	level=INFO  msg="Starting handler" subscriber_name=webhook_handler topic=webhook_topic 
+E1115 19:54:19.066918 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs/a.md: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.18.0.2:20500: connect: invalid argument
+E1115 19:54:19.066964 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.18.0.2:20500: connect: invalid argument
+E1115 19:54:19.067039 webhook_queue.go:235 received dead letter message: new_entry:{name:"a.md" chunks:{size:8 modified_ts_ns:1794772459063206581 e_tag:"W+7P7pqBxvr+bQfF1idseA==" fid:{volume_id:2 file_key:1 cookie:3555984765}} attributes:{file_size:8 mtime:1794772459 file_mode:432 uid:1000 gid:1000 crtime:1794772459 mime:"text/markdown" md5:"[\xee\xcf\xc6\xfa\xfem\x07\xc5\xd6'lx" inode:7484667733272908569 ctime:1794772459 atime:1794772459} extended:{key:"Seaweed-X-Amz-ETag" value:"5beecfee9a81c6fafe6d07c5d6276c78"} extended:{key:"Seaweed-X-Amz-Owner" value:"admin"} extended:{key:"x-seaweedfs-checksum-algorithm" value:"X-Amz-Checksum-Crc64nvme"} extended:{key:"x-seaweedfs-checksum-value" value:"3hQb/vLIGzM="}} delete_chunks:true new_parent_path:"/buckets/ov-sync/docs" signatures:331805879, key: /buckets/ov-sync/docs/a.md
+E1115 19:54:19.067089 webhook_queue.go:235 received dead letter message: new_entry:{name:"docs" is_directory:true attributes:{mtime:1794772459 file_mode:2147484153 uid:1000 gid:1000 crtime:1794772459 inode:2490854649819474561 ctime:-62135596800 mtime_ns:65657437}} new_parent_path:"/buckets/ov-sync" signatures:331805879, key: /buckets/ov-sync/docs
+E1115 19:54:21.018547 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs/a.md: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.18.0.2:20500: connect: invalid argument
+E1115 19:54:21.018912 webhook_queue.go:235 received dead letter message: old_entry:{name:"a.md" chunks:{file_id:"2,01d3f4057d" size:8 modified_ts_ns:1794772459063206581 e_tag:"W+7P7pqBxvr+bQfF1idseA==" fid:{volume_id:2 file_key:1 cookie:3555984765}} attributes:{file_size:8 mtime:1794772459 file_mode:432 uid:1000 gid:1000 crtime:1794772459 mime:"text/markdown" md5:"[\xee\xcf\xc6\xfa\xfem\x07\xc5\xd6'lx" inode:7484667733272908569 ctime:1794772459 atime:1794772459} extended:{key:"Seaweed-X-Amz-ETag" value:"5beecfee9a81c6fafe6d07c5d6276c78"} extended:{key:"Seaweed-X-Amz-Owner" value:"admin"} extended:{key:"x-seaweedfs-checksum-algorithm" value:"X-Amz-Checksum-Crc64nvme"} extended:{key:"x-seaweedfs-checksum-value" value:"3hQb/vLIGzM="}} new_entry:{name:"a.md" chunks:{size:8 modified_ts_ns:1794772461017146480 e_tag:"W+7P7pqBxvr+bQfF1idseA==" fid:{volume_id:2 file_key:3 cookie:142315463}} attributes:{file_size:8 mtime:1794772461 file_mode:432 uid:1000 gid:1000 crtime:1794772459 mime:"text/markdown" md5:"[\xee\xcf\xc6\xfa\xfem\x07\xc5\xd6'lx" inode:7484667733272908569 ctime:1794772461 atime:1794772461} extended:{key:"Seaweed-X-Amz-ETag" value:"5beecfee9a81c6fafe6d07c5d6276c78"} extended:{key:"Seaweed-X-Amz-Owner" value:"admin"} extended:{key:"x-seaweedfs-checksum-algorithm" value:"X-Amz-Checksum-Crc64nvme"} extended:{key:"x-seaweedfs-checksum-value" value:"3hQb/vLIGzM="}} delete_chunks:true new_parent_path:"/buckets/ov-sync/docs" signatures:331805879, key: /buckets/ov-sync/docs/a.md
+E1115 19:54:21.956191 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs/a.md: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.18.0.2:20500: connect: invalid argument
+E1115 19:54:21.956430 webhook_queue.go:235 received dead letter message: old_entry:{name:"a.md" chunks:{file_id:"2,03087b8fc7" size:8 modified_ts_ns:1794772461017146480 e_tag:"W+7P7pqBxvr+bQfF1idseA==" fid:{volume_id:2 file_key:3 cookie:142315463}} attributes:{file_size:8 mtime:1794772461 file_mode:432 uid:1000 gid:1000 crtime:1794772459 mime:"text/markdown" md5:"[\xee\xcf\xc6\xfa\xfem\x07\xc5\xd6'lx" inode:7484667733272908569 ctime:1794772461 atime:1794772461} extended:{key:"Seaweed-X-Amz-ETag" value:"5beecfee9a81c6fafe6d07c5d6276c78"} extended:{key:"Seaweed-X-Amz-Owner" value:"admin"} extended:{key:"x-seaweedfs-checksum-algorithm" value:"X-Amz-Checksum-Crc64nvme"} extended:{key:"x-seaweedfs-checksum-value" value:"3hQb/vLIGzM="}} delete_chunks:true signatures:331805879, key: /buckets/ov-sync/docs/a.md
+== listener received
+FAIL some events arrived
+PASS every post is JSON
+PASS every post has the bearer header
+FAIL an event names ov-sync/docs/a.md
+FAIL a delete event arrived
+PASS nothing from bucket other
+event count: 0
