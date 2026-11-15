@@ -3,7 +3,7 @@
   "slug": "ov-sync-consumer",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "67301cfe5de3b5c1efec815bbe7c30f895ec6e6082dcf1e4b9e116aaf7f80193",
-    "started_at": "2026-11-15T20:41:53+00:00",
+    "n": 2,
+    "binds": "e03ad75009ea46413db08625c5c6f387bf636b110401e6254ab136bc90fc3391",
+    "started_at": "2026-11-15T20:45:23+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "67301cfe5de3b5c1efec815bbe7c30f895ec6e6082dcf1e4b9e116aaf7f80193",
+  "plan_hash": "e03ad75009ea46413db08625c5c6f387bf636b110401e6254ab136bc90fc3391",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T20:45:22+00:00"
+  "at": "2026-11-15T20:45:23+00:00"
 }

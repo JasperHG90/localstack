@@ -39,7 +39,16 @@ subcommands:
   listens on 127.0.0.1, checks the bearer token, and publishes each event
   into a JetStream stream on NATS at `192.168.2.50:4222`
   (`docs/reference/nats.md`) with a `Msg-Id` for dedupe. It holds no
-  OpenViking or S3 credential.
+  OpenViking or S3 credential. Because it owns the SeaweedFS group's network
+  namespace, its exit fails the whole alloc and takes S3 down for every app
+  (spike:ov-sync-consumer/9 and spike:ov-sync-consumer/11), so it must never
+  exit on a fault outside it: it starts and stays up with NATS unreachable,
+  reconnects forever, answers the webhook with a non-2xx status while it
+  cannot publish (the webhook retries, and the consumer's catch-up pass
+  repairs what is dropped), runs under a memory limit with headroom, and its
+  bearer-token template uses `change_mode = "noop"` (a token rotation takes
+  effect on the next planned restart). Tests cover starting without NATS and
+  a publish failure returning non-2xx without exiting.
 - `consumer` runs on radxa and reads the stream. It treats each event as
   "look at this file now", because the webhook delivers out of order: it
   reads the object's current state from the bucket, then writes or deletes
@@ -90,7 +99,10 @@ hooks scoped to `^applications/ov-sync-consumer/`, with a pinned
   receiver stays small. The group's `restart` block allows at least three
   attempts, because an in-place SeaweedFS restart costs one failed start
   first (spike 11). The group's `network` block keeps its two static ports.
-  The seaweedfs task gains a
+  A container that joins another's namespace reports no IP to Nomad, so the
+  existing `seaweedfs` service and its `/healthz` check move to the
+  receiver task, which owns the ports and the address (the check still
+  probes SeaweedFS through the shared namespace). The seaweedfs task gains a
   `notification.toml` template with `[notification.webhook]` pointing at the
   receiver's loopback port, `path_prefixes = ["/buckets/ov-sync/"]` and the
   bearer token, on the standard chrislusf/seaweedfs 4.48 image.
