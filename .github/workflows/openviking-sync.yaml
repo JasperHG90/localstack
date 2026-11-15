@@ -1,0 +1,37 @@
+name: openviking-sync
+
+# Mirrors docs/ and .okf/ into this repository's prefix of the ov-sync bucket,
+# where ov-sync-consumer picks the changes up for OpenViking. Never on
+# pull_request: a fork's code would run with this job's OIDC token.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".okf/**"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# One run at a time: two runs racing on the manifest would lose a write. A
+# newer queued run replaces an older queued one, which is fine because each
+# run mirrors its whole checkout.
+concurrency:
+  group: openviking-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: lab
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/lab-auth
+        with:
+          vault-role: localstack-openviking-sync
+
+      - uses: ./.github/actions/openviking-sync

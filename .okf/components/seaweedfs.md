@@ -36,6 +36,8 @@ sources:
     resource: cli/tests/test_s3_cutover.py
   - id: haproxy-jobspec
     resource: deployments/infrastructure/services/haproxy.hcl
+  - id: openviking-sync-action
+    resource: .github/actions/openviking-sync/action.yml
 ---
 
 # SeaweedFS
@@ -96,8 +98,8 @@ that reads and lists the five durable buckets. The seventh, `openviking-v2`,
 came with `ov-fresh-instance`: OpenViking's key writes it, and the old
 `openviking` bucket has no writer and is kept as a backup
 ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)). The
-eighth, `ov-sync`, has no user: ov-sync-consumer reads it keylessly, and CI's
-keys are for the `ci-openviking-sync` ticket. The catalog and the action
+eighth, `ov-sync`, has no user: ov-sync-consumer reads it keylessly, and CI
+writes it keylessly too (Keyless access, below). The catalog and the action
 sets came over from MinIO, without memex and mlflow-artifacts. Readers get
 `s3:GetBucketLocation` and `s3:GetObject` but cannot list. Only the backup
 user adds `s3:ListBucket`, because rclone lists to sync, and so does the
@@ -128,6 +130,19 @@ signing key from `default/seaweedfs/sts`. Each role is bound to its job by
 and checks it. Adding a job means a restart, because the server reads the file
 once at start. The procedure is
 `docs/how-to/give-a-job-keyless-seaweedfs-access.md`.
+
+GitHub workflows get in the same way through a second provider, `vault`:
+Vault's identity issuer, `https://vault.lab.orangecluster.nl/v1/identity/oidc`,
+with audience `seaweedfs`. Each `ov_sync` entry in `var.vault_ci_callers` adds
+a role and policy `ci-<key>` (`local.seaweedfs_ci_callers`). The role's trust
+pins the token's literal `ci_repository` claim by `StringEquals`, and the
+policy allows only `GetObject`, `PutObject` and `DeleteObject` on
+`arn:aws:s3:::ov-sync/<owner>/<repo>/*`. The openviking-sync action mints the
+token from Vault and swaps it here
+([ADR 0028](/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md)).
+`spike:ci-openviking-sync/1` showed the prefix scope holds inside the shared
+bucket, and `cli/tests/test_openviking_sync_action.py` checks every CI policy
+names only its own prefix.
 
 ## Who uses it
 

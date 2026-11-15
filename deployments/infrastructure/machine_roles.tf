@@ -450,8 +450,25 @@ resource "vault_jwt_auth_backend" "github" {
   bound_issuer       = "https://token.actions.githubusercontent.com"
 }
 
-### token_policies is Vault's default policy only: a caller that needs a path
-### gets its own policy attached here by the ticket that needs it.
+### An `ov_sync` caller may mint its own identity token for SeaweedFS
+### (vault_identity_oidc_role.ci_ov_sync, oidc.tf) and nothing else. The path
+### is that caller's role, never `identity/oidc/token/*`, which would let one
+### repository mint a token claiming another's prefix.
+resource "vault_policy" "ci_ov_sync" {
+  for_each = vault_identity_oidc_role.ci_ov_sync
+
+  name = "ci-ov-sync-${each.key}"
+
+  policy = <<-EOT
+    path "identity/oidc/token/${each.value.name}" {
+      capabilities = ["read"]
+    }
+  EOT
+}
+
+### token_policies is Vault's default policy, plus the caller's ov-sync token
+### policy when it has one. A caller that needs another path gets its own
+### policy attached here by the ticket that needs it.
 resource "vault_jwt_auth_backend_role" "github_ci" {
   for_each = var.vault_ci_callers
 
@@ -470,7 +487,7 @@ resource "vault_jwt_auth_backend_role" "github_ci" {
 
   user_claim = "repository"
 
-  token_policies = ["default"]
+  token_policies = concat(["default"], each.value.ov_sync ? [vault_policy.ci_ov_sync[each.key].name] : [])
   token_ttl      = 300
   token_max_ttl  = 600
 }

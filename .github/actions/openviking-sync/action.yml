@@ -1,0 +1,66 @@
+name: openviking-sync
+description: >-
+  Mirror git-tracked folders into the calling repository's own
+  `<owner>/<repo>/` prefix of the ov-sync bucket, where ov-sync-consumer picks
+  them up for OpenViking. Run it after ./.github/actions/lab-auth, whose Vault
+  token it swaps for S3 credentials that last minutes.
+
+inputs:
+  folders:
+    description: Repo-relative folders to sync, separated by spaces or newlines.
+    default: |
+      docs
+      .okf
+  bucket:
+    description: The shared bucket.
+    default: ov-sync
+  s3-endpoint:
+    description: SeaweedFS's S3 and STS endpoint, reached through the tailnet.
+    default: https://s3.lab.orangecluster.nl
+  credential-role:
+    description: >-
+      Name of both the Vault identity-token role and the SeaweedFS role.
+      Empty means `ci-<the Vault role lab-auth logged in with>`.
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        FOLDERS: ${{ inputs.folders }}
+        BUCKET: ${{ inputs.bucket }}
+        S3_ENDPOINT: ${{ inputs.s3-endpoint }}
+        CREDENTIAL_ROLE: ${{ inputs.credential-role }}
+        SYNC: ${{ github.action_path }}/sync.py
+        AWS_DEFAULT_REGION: us-east-1
+      run: |
+        set -euo pipefail
+        : "${VAULT_ADDR:?run ./.github/actions/lab-auth first: VAULT_ADDR is not set}"
+        : "${VAULT_TOKEN:?run ./.github/actions/lab-auth first: VAULT_TOKEN is not set}"
+        role=$CREDENTIAL_ROLE
+        if [ -z "$role" ]; then
+          login_role=$(curl -sSf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/token/lookup-self" \
+            | jq -er '.data.meta.role')
+          role="ci-$login_role"
+        fi
+        if ! response=$(curl -sS --fail-with-body -H "X-Vault-Token: $VAULT_TOKEN" \
+          "$VAULT_ADDR/v1/identity/oidc/token/$role"); then
+          echo "::error::Vault refused identity token $role: $response"
+          exit 1
+        fi
+        jwt=$(jq -er '.data.token' <<<"$response")
+        echo "::add-mask::$jwt"
+        creds=$(aws --endpoint-url "$S3_ENDPOINT" sts assume-role-with-web-identity \
+          --role-arn "arn:aws:iam::role/$role" --role-session-name "gh-$GITHUB_RUN_ID" \
+          --web-identity-token "$jwt" --query Credentials --output json)
+        AWS_ACCESS_KEY_ID=$(jq -er '.AccessKeyId' <<<"$creds")
+        AWS_SECRET_ACCESS_KEY=$(jq -er '.SecretAccessKey' <<<"$creds")
+        AWS_SESSION_TOKEN=$(jq -er '.SessionToken' <<<"$creds")
+        echo "::add-mask::$AWS_ACCESS_KEY_ID"
+        echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
+        echo "::add-mask::$AWS_SESSION_TOKEN"
+        # Exported to this step's processes only, never to $GITHUB_ENV.
+        export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+        python3 "$SYNC" --bucket "$BUCKET" --prefix "$GITHUB_REPOSITORY" \
+          --endpoint "$S3_ENDPOINT" --folders "$FOLDERS"

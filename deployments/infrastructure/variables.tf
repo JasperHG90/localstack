@@ -133,12 +133,13 @@ variable "vault_openviking_workloads" {
 }
 
 variable "vault_ci_callers" {
-  description = "GitHub Actions workflows that may log in to Vault through the lab-auth action (.github/actions/lab-auth), keyed by Vault role name. Each entry mints one `jwt-github` role (machine_roles.tf) bound to all four values, so one repository, one branch, one GitHub Environment and one workflow file. `workflow` is the file name under .github/workflows. Every value is matched exactly: a role bound only on repository and ref would also accept a token from any other workflow on that branch, such as one that runs an agent on issue text."
+  description = "GitHub Actions workflows that may log in to Vault through the lab-auth action (.github/actions/lab-auth), keyed by Vault role name. Each entry mints one `jwt-github` role (machine_roles.tf) bound to all four values, so one repository, one branch, one GitHub Environment and one workflow file. `workflow` is the file name under .github/workflows. Every value is matched exactly: a role bound only on repository and ref would also accept a token from any other workflow on that branch, such as one that runs an agent on issue text. `ov_sync = true` lets the caller write the repository's own `<owner>/<repo>/` prefix of the ov-sync bucket through the openviking-sync action: it mints a Vault identity-token role `ci-<key>` (oidc.tf), a policy that reads only that role's token path (machine_roles.tf), and a SeaweedFS role and policy `ci-<key>` (local.seaweedfs_iam in services.tf)."
   type = map(object({
     repository  = string
     ref         = string
     environment = string
     workflow    = string
+    ov_sync     = optional(bool, false)
   }))
   default = {
     localstack-lab-auth-check = {
@@ -146,6 +147,13 @@ variable "vault_ci_callers" {
       ref         = "refs/heads/main"
       environment = "lab"
       workflow    = "lab-auth-check.yaml"
+    }
+    localstack-openviking-sync = {
+      repository  = "JasperHG90/localstack"
+      ref         = "refs/heads/main"
+      environment = "lab"
+      workflow    = "openviking-sync.yaml"
+      ov_sync     = true
     }
   }
 }

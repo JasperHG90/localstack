@@ -83,7 +83,7 @@ resource "vault_identity_oidc_key" "identity_tokens" {
   rotation_period  = 604800  # 7d
   verification_ttl = 2592000 # 30d; >= the longest role ttl, and 4.3x the rotation
 
-  allowed_client_ids = [local.openviking_audience]
+  allowed_client_ids = [local.openviking_audience, local.seaweedfs_audience]
 }
 
 ### The role OpenViking trusts.
@@ -159,11 +159,32 @@ resource "vault_identity_oidc_role" "openviking_workload" {
   template = jsonencode({ ov_account = each.value.account, ov_user = each.value.user })
 }
 
+### One role per `ov_sync` entry in var.vault_ci_callers, for the
+### openviking-sync action. The token's audience is SeaweedFS and its
+### `ci_repository` claim is a literal: SeaweedFS's role `ci-<key>`
+### (local.seaweedfs_iam in services.tf) trusts only that value and writes
+### only `ov-sync/<repository>/`. As with the workload roles above, the ACL is
+### the gate: one policy on one jwt-github role reads this path
+### (machine_roles.tf). The token is spent on one STS call, so minutes do.
+resource "vault_identity_oidc_role" "ci_ov_sync" {
+  for_each = { for name, caller in var.vault_ci_callers : name => caller if caller.ov_sync }
+
+  name      = "ci-${each.key}"
+  key       = vault_identity_oidc_key.identity_tokens.name
+  client_id = local.seaweedfs_audience
+  ttl       = 900
+
+  template = jsonencode({ ci_repository = each.value.repository })
+}
+
 locals {
   # The identity-token role's client_id, which is also `server.oidc.audience`
   # in ov.conf.json. One literal, asserted on both sides by
   # scripts/check_openviking_config.py.
   openviking_audience = "openviking"
+
+  # The `clientId` of SeaweedFS's `vault` provider in local.seaweedfs_iam.
+  seaweedfs_audience = "seaweedfs"
 }
 
 ### The shared claim contract. Emits the entity's Vault group names as a

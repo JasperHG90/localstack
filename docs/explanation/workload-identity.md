@@ -1,5 +1,5 @@
 ---
-description: How a Nomad task's Workload Identity JWT becomes a scoped Vault token or SeaweedFS credential, and the conventions a new consumer follows.
+description: How a Nomad task's Workload Identity JWT, or a GitHub workflow's Vault identity token, becomes a scoped Vault token or SeaweedFS credential, and the conventions a new consumer follows.
 stale_after: 2027-04-20
 sources:
   - resource: bootstrap/roles/nomad_server/templates/nomad.hcl.j2
@@ -12,6 +12,8 @@ sources:
   - resource: deployments/applications/services/memex/auth_oidc.json
   - resource: deployments/applications/services/openviking.hcl
   - resource: deployments/infrastructure/services.tf
+  - resource: deployments/infrastructure/oidc.tf
+  - resource: .github/actions/openviking-sync/action.yml
 ---
 
 # Nomad Workload Identity and the Vault JWT trust chain
@@ -285,6 +287,21 @@ in a spike, a job named `evil,tempo` was given tempo's policy. The record is
 
 SeaweedFS reads `secrets/iam.json` only at start, so adding a keyless job
 restarts it.
+
+**GitHub workflows.** A workflow has no Nomad identity, so SeaweedFS trusts a
+second issuer for it: Vault's identity issuer,
+`https://vault.lab.orangecluster.nl/v1/identity/oidc`, also with client id
+`seaweedfs`. The workflow logs in to Vault with the lab-auth action, reads a
+Vault identity token from `identity/oidc/token/ci-<caller>`, and swaps it at
+the same STS. Vault stamps the repository into the token as a literal
+`ci_repository` claim, and only that caller's Vault policy can read the path,
+so a repository cannot mint a token for another. SeaweedFS's role
+`ci-<caller>` requires that claim by `StringEquals`, and its policy reaches
+`GetObject`, `PutObject` and `DeleteObject` under `ov-sync/<owner>/<repo>/`
+only. The openviking-sync action is the one user. The record is
+`.okf/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md`,
+and the setup is
+[How to sync repository folders to the ov-sync bucket](../how-to/sync-repository-folders-to-the-ov-sync-bucket.md).
 
 Giving a job keyless access is
 [How to give a job keyless SeaweedFS access](../how-to/give-a-job-keyless-seaweedfs-access.md),
