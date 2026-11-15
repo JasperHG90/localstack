@@ -1,7 +1,7 @@
 ---
 type: component
 title: NATS and JetStream
-description: "A single unauthenticated NATS 2.10 server with JetStream on radxa, plus an exporter task, all in the infrastructure root. No job in this repository publishes to it or reads from it yet, its data has no backup, and the one design that would use it is an unbuilt proposal."
+description: "A single unauthenticated NATS 2.10 server with JetStream on radxa, plus an exporter task, all in the infrastructure root. Its one user is ov-sync-consumer, through the OV_SYNC stream, and its data has no backup."
 tags: [nats, jetstream, messaging, radxa, component]
 status: stable
 generated:
@@ -16,6 +16,8 @@ sources:
     resource: deployments/infrastructure/services/prometheus.hcl
   - id: nats-reference
     resource: docs/reference/nats.md
+  - id: ov-sync-stream
+    resource: applications/ov-sync-consumer/internal/stream/stream.go
 ---
 
 # NATS and JetStream
@@ -54,11 +56,17 @@ state.
   host volume, because the `mkdir` plugin creates volumes owned by root. See
   [Host volumes](/components/host-volumes.md).
 
-## What no one uses yet
+## Who uses it
 
-No jobspec, Terraform file or CLI module in this repository connects to NATS.
-The dash tile advertises it, and the how-to guides show how a job would. The
-one concrete consumer design, a Postgres LISTEN/NOTIFY bridge, was never
+[ov-sync-consumer](/components/ov-sync-consumer.md) is the one user. Its
+receiver, inside the seaweedfs job on orangepi4a, publishes filer events to
+`ovsync.events`, and its consumer on radxa reads them through the durable
+consumer `ov-sync-consumer` and moves failures to `ovsync.dead`. The consumer
+creates the stream `OV_SYNC` (file storage, 7 days, 64 MB, 2 min dedupe
+window) at start, from `internal/stream/stream.go`. Losing the stream loses
+only events in flight, which the consumer's catch-up pass repairs.
+
+The one other consumer design, a Postgres LISTEN/NOTIFY bridge, was never
 built: [PostgreSQL CDC to NATS bridge](/proposals/postgres-nats-cdc-bridge.md).
 [Adding Orange Pi RV2 (RISC-V) to the Cluster](/proposals/riscv-worker-node.md)
 also plans NATS on that node, unbuilt.
@@ -87,7 +95,7 @@ also plans NATS on that node, unbuilt.
   ([GCS backups](/components/gcs-backups.md)).
 - **Floating tag.** `2.10-alpine` takes any 2.10 patch on the next pull.
 - **radxa is crowded.** It also runs hermes, openviking, bifrost, redis, dash,
-  registry-ui, driftwatch and both backup jobs, among others. NATS
+  registry-ui, driftwatch, ov-sync-consumer and both backup jobs, among others. NATS
   reserves 500 MHz and 512 MB for the server and 50 MHz and 64 MB for the
   exporter.
 

@@ -1,7 +1,7 @@
 ---
 type: component
 title: SeaweedFS
-description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root, with seven buckets and per-user keys from the applications root. It is the cluster's only S3 store and carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
+description: "The single-node SeaweedFS on orangepi4a that replaced MinIO on 2026-10-20: one weed server with its S3 gateway, run by the infrastructure root, with eight buckets and per-user keys from the applications root. It is the cluster's only S3 store and carries the s3 Consul tag, the s3.lab edge route and the nightly backup. Only S3 and metrics leave the host, and the volume growth and IAM flags its spikes proved are pinned by a drift test."
 tags: [seaweedfs, s3, object-storage, terraform, component]
 status: stable
 generated:
@@ -69,6 +69,17 @@ deleted its `minio_data` volume ([MinIO](/components/minio.md)).
 `-s3.config`. The embedded IAM API shares the S3 port, 8333. Prometheus
 scrapes `/metrics` on 9327. The Consul check is `GET /healthz` on 8333.
 
+Since `ov-sync-consumer`, the group also runs the ov-sync `receiver` as a
+prestart sidecar. The receiver owns the network namespace, both static
+ports and the `seaweedfs` service and check, and the weed server joins it
+with `network_mode = "task:receiver"`. That way SeaweedFS can restart alone,
+while a receiver restart fails the alloc
+([ADR 0026](/decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer.md)).
+The group's restart block allows three attempts, because an in-place
+SeaweedFS restart costs one failed start. `notification.toml` sends filer
+events under `/buckets/ov-sync/` to the receiver on `127.0.0.1:20500`
+([ov-sync-consumer](/components/ov-sync-consumer.md)).
+
 ## Buckets and users
 
 The applications root manages them with the `hashicorp/aws` provider, whose S3
@@ -79,12 +90,14 @@ brokered `deploy` Consul token may read because
 `bootstrap/playbooks/enable_consul_secrets.yml` grants it, and logs in with
 the admin key.
 
-`storage.tf` derives everything from one catalog, `local.buckets`: seven
+`storage.tf` derives everything from one catalog, `local.buckets`: eight
 buckets, one IAM user per writer or reader listed there, and a `backup` user
 that reads and lists the five durable buckets. The seventh, `openviking-v2`,
 came with `ov-fresh-instance`: OpenViking's key writes it, and the old
 `openviking` bucket has no writer and is kept as a backup
-([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)). The catalog and the action
+([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)). The
+eighth, `ov-sync`, has no user: ov-sync-consumer reads it keylessly, and CI's
+keys are for the `ci-openviking-sync` ticket. The catalog and the action
 sets came over from MinIO, without memex and mlflow-artifacts. Readers get
 `s3:GetBucketLocation` and `s3:GetObject` but cannot list. Only the backup
 user adds `s3:ListBucket`, because rclone lists to sync, and so does the

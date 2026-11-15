@@ -51,6 +51,29 @@ resource "vault_kv_secret_v2" "seaweedfs_sts" {
   }
 }
 
+### The bearer token the filer webhook sends to the ov-sync receiver. Both
+### tasks that read it are in the seaweedfs job, so it sits under that job's
+### path alone.
+resource "random_password" "seaweedfs_webhook_token" {
+  length  = 48
+  special = false
+}
+
+resource "vault_kv_secret_v2" "seaweedfs_webhook" {
+  mount = vault_mount.kvv2.path
+  name  = "default/seaweedfs/webhook"
+  data_json = jsonencode({
+    token = random_password.seaweedfs_webhook_token.result
+  })
+  delete_all_versions = false
+  custom_metadata {
+    max_versions = 5
+    data = {
+      managed_by = "terraform"
+    }
+  }
+}
+
 ### Grafana admin password
 resource "random_password" "grafana_admin" {
   length  = 24

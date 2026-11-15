@@ -631,6 +631,37 @@ resource "nomad_job" "ov_dash" {
   depends_on = [vault_kv_secret_v2.ov_dash_config]
 }
 
+### ov-sync-consumer: applies filer events on the ov-sync bucket to
+### OpenViking. The receiver half runs inside the seaweedfs job in the
+### infrastructure root and publishes to NATS; this half reads the stream on
+### radxa beside NATS and OpenViking. It listens on no port, so it needs no
+### firewall rule.
+###
+### Its OpenViking identity (lab/jasper) is the `ov-sync-consumer` entry in
+### the infrastructure root's var.vault_openviking_workloads, and its bucket
+### role is its entry in local.seaweedfs_keyless_jobs there. Apply that root
+### first.
+resource "nomad_job" "ov_sync_consumer" {
+  jobspec = templatefile(
+    "${path.module}/services/ov-sync-consumer.hcl",
+    {
+      # applications/ov-sync-consumer/justfile builds and pushes THIS tag,
+      # and refuses when the infrastructure root's line differs.
+      ov_sync_consumer_image = "ghcr.io/jasperhg90/ov-sync-consumer:v0.1.0"
+
+      s3_host         = data.consul_service.seaweedfs.service[0].node_address
+      openviking_host = "192.168.2.50"
+      nats_url        = "nats://192.168.2.50:4222"
+
+      # Bucket prefix <owner>/<repo>/ to the OpenViking folder its files land
+      # in. A prefix not listed here is skipped.
+      prefixes = jsonencode({
+        "JasperHG90/localstack/" = "viking://user/jasper/resources/projects/localstack/"
+      })
+    }
+  )
+}
+
 ### driftwatch — the daily canary over the two retrieval models.
 ###
 ### The goldset is round-tripped through jsondecode/jsonencode line by line,

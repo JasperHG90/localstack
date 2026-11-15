@@ -79,3 +79,13 @@ repos:
         language: system
         files: '^deployments/applications/services/openviking(\.hcl|/ov\.conf\.json)$|^scripts/check_openviking_config\.py$'
         pass_filenames: false
+
+      # prek fetches this Go itself (spike:ov-sync-consumer/1), so no system
+      # `go` is needed. Pinned because prek otherwise takes the newest.
+      - id: ov-sync-consumer-go
+        name: ov-sync-consumer (go vet, go test)
+        entry: bash -c 'cd applications/ov-sync-consumer && go vet ./... && go test -count=1 ./...'
+        language: golang
+        language_version: 1.27.4
+        files: '^applications/ov-sync-consumer/'
+        pass_filenames: false

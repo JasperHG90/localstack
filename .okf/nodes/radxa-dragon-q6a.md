@@ -62,6 +62,7 @@ Pinned by `value = "radxa-dragon-q6a"`, either literal in the jobspec or a
 | `registry-ui` (two tasks) | 8002, 8003 | Next to `oauth2-proxy-registry-ui`, same loopback shape. See [registry-ui](/components/registry-ui.md). |
 | `oauth2-proxy`, `oauth2-proxy-registry-ui` (200 MHz, 128 MB each) | 4180, 4181 | firebat had about 100 MHz left when L1 placed the first one ([the edge proxy](/components/edge-proxy.md)). |
 | `driftwatch` (200 MHz, 384 MB) | 8010 | Off the Jetson, so the canary does not share the node it measures, and embark's rule already admitted `.50` (`driftwatch.hcl` header). See [driftwatch](/components/driftwatch.md). |
+| `ov-sync-consumer` (200 MHz, 128 MB) | none | Beside NATS and OpenViking, the two services it calls. See [ov-sync-consumer](/components/ov-sync-consumer.md). |
 | `redis` (500 MHz, 512 MB) | 6379 | No reason recorded. See [Redis](/components/redis.md). |
 | `nats` with its exporter | 4222, 8222, 7777 | Built here instead of on the planned RISC-V board ([proposal](/proposals/riscv-worker-node.md)). See [NATS](/components/nats.md). |
 | `backup-postgres` (02:00), `backup-s3` (03:00, named `backup-minio` until 2026-10-20) | none | Moved off CPU-full firebat on 2026-07-07, because radxa had spare CPU and memory and hosts neither service (commit `4b0af46`). See [GCS backups](/components/gcs-backups.md). |

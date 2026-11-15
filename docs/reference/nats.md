@@ -4,6 +4,7 @@ stale_after: 2027-01-19
 sources:
   - resource: deployments/infrastructure/services/nats.hcl
   - resource: deployments/infrastructure/services.tf
+  - resource: applications/ov-sync-consumer/internal/stream/stream.go
 ---
 
 # NATS and JetStream
@@ -31,6 +32,20 @@ Neither nightly backup job copies `nats_data`, so don't use this bus as the
 source of truth for anything you can't rebuild.
 
 JetStream's host volume is `nats_data` (2 to 20 GiB on radxa-dragon-q6a).
+
+## Streams
+
+| Stream | Subjects | Limits | Written by | Read by |
+|---|---|---|---|---|
+| `OV_SYNC` | `ovsync.events`, `ovsync.dead` | file storage, 7 days, 64 MB, oldest dropped first, 2 min dedupe window | the `receiver` task in the `seaweedfs` job | the `ov-sync-consumer` job, durable consumer `ov-sync-consumer` |
+
+- `ovsync.events` carries one SeaweedFS filer webhook event per message, as
+  the filer sent it, for keys under `/buckets/ov-sync/`. `Nats-Msg-Id` is the
+  SHA-256 of the event's canonical JSON, so a redelivered webhook is dropped.
+- `ovsync.dead` holds the events the consumer gave up on after 20 tries,
+  with the last error in the `Ov-Sync-Error` header. Nothing reads it.
+- The consumer creates the stream when it starts. Until then the receiver's
+  publishes fail.
 
 ## Conventions
 

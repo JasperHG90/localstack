@@ -521,9 +521,10 @@ resource "nomad_job" "postgres" {
 ### `evil,tempo` got tempo's policy. Key: job id. Value: its one bucket.
 locals {
   seaweedfs_keyless_jobs = {
-    tempo    = "tempo"
-    loki     = "loki"
-    registry = "registry"
+    tempo              = "tempo"
+    loki               = "loki"
+    registry           = "registry"
+    "ov-sync-consumer" = "ov-sync"
   }
 
   seaweedfs_iam = {
@@ -574,6 +575,13 @@ resource "nomad_job" "seaweedfs" {
       # The JSON object's members without its braces: the job wraps them
       # around the `sts` block it renders from Vault.
       iam_members = trimsuffix(trimprefix(jsonencode(local.seaweedfs_iam), "{"), "}")
+
+      # The ov-sync receiver, which owns this group's network namespace.
+      # applications/ov-sync-consumer/justfile builds the tag the
+      # applications root pins and refuses to build when this line differs.
+      ov_sync_consumer_image = "ghcr.io/jasperhg90/ov-sync-consumer:v0.1.0"
+      webhook_secret         = vault_kv_secret_v2.seaweedfs_webhook.path
+      nats_url               = "nats://192.168.2.50:4222"
     }
   )
 }
