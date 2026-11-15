@@ -30,6 +30,89 @@ job "seaweedfs" {
       }
     }
 
+    ### An in-place SeaweedFS restart costs one failed start before it comes
+    ### back, because the podman driver cannot remove the old container at
+    ### once (spike:ov-sync-consumer/11). The service default of two attempts
+    ### would leave one for the real fault.
+    restart {
+      attempts = 3
+      interval = "30m"
+      delay    = "15s"
+      mode     = "fail"
+    }
+
+    ### The ov-sync receiver. The filer webhook can only reach a loopback
+    ### listener in SeaweedFS's own network namespace, because `-ip=127.0.0.1`
+    ### pins its source address (spike:ov-sync-consumer/4 and /5).
+    ###
+    ### The receiver OWNS the namespace and SeaweedFS joins it, not the
+    ### reverse. Then SeaweedFS restarts alone and the alloc keeps running
+    ### (spike:ov-sync-consumer/11). With the receiver joining SeaweedFS,
+    ### every SeaweedFS restart failed the alloc (spike:ov-sync-consumer/9).
+    ### A receiver restart still fails the alloc and Nomad reschedules both,
+    ### so the receiver never exits on a fault outside it and stays small.
+    ###
+    ### It holds the ports and the service: a task that joins another's
+    ### namespace reports no address to Nomad. The check still reaches
+    ### SeaweedFS through the shared namespace.
+    task "receiver" {
+      driver = "podman"
+
+      lifecycle {
+        hook    = "prestart"
+        sidecar = true
+      }
+
+      vault {}
+
+      ### noop: a restart of this task fails the whole alloc. The receiver
+      ### reads the file on every request, so a rotated token still takes
+      ### effect when this re-renders.
+      template {
+        data        = <<-EOH
+        {{ with secret "${webhook_secret}" }}{{ .Data.data.token }}{{ end }}
+        EOH
+        destination = "secrets/webhook_token"
+        change_mode = "noop"
+      }
+
+      env {
+        NATS_URL            = "${nats_url}"
+        RECEIVER_ADDR       = "127.0.0.1:20500"
+        RECEIVER_TOKEN_FILE = "/secrets/webhook_token"
+        GOMEMLIMIT          = "40MiB"
+      }
+
+      service {
+        name = "seaweedfs"
+        port = "s3"
+        tags = ["http", "s3"]
+
+        check {
+          name     = "seaweedfs health check"
+          type     = "http"
+          port     = "s3"
+          path     = "/healthz"
+          method   = "GET"
+          interval = "10s"
+          timeout  = "5s"
+        }
+      }
+
+      config {
+        image = "${ov_sync_consumer_image}"
+        args  = ["receiver"]
+        ports = ["s3", "metrics"]
+      }
+
+      ### GOMEMLIMIT holds the Go heap well under this limit. The rest is
+      ### headroom, because an OOM kill here takes S3 down with it.
+      resources {
+        cpu    = 100
+        memory = 96
+      }
+    }
+
     task "seaweedfs" {
       driver = "podman"
 
@@ -63,24 +146,22 @@ job "seaweedfs" {
         destination = "secrets/iam.json"
       }
 
-      service {
-        name = "seaweedfs"
-        port = "s3"
-        tags = ["http", "s3"]
-
-        check {
-          name     = "seaweedfs health check"
-          type     = "http"
-          port     = "s3"
-          path     = "/healthz"
-          method   = "GET"
-          interval = "10s"
-          timeout  = "5s"
-        }
+      ### Filer events under the ov-sync bucket go to the receiver on
+      ### loopback. Nothing else is sent.
+      template {
+        data        = <<-EOH
+        [notification.webhook]
+        enabled = true
+        endpoint = "http://127.0.0.1:20500/events"
+        bearer_token = "{{ with secret "${webhook_secret}" }}{{ .Data.data.token }}{{ end }}"
+        path_prefixes = ["/buckets/ov-sync/"]
+        EOH
+        destination = "secrets/notification.toml"
       }
 
       config {
-        image = "docker.io/chrislusf/seaweedfs:4.48"
+        image        = "docker.io/chrislusf/seaweedfs:4.48"
+        network_mode = "task:receiver"
         args = [
           "server",
           "-dir=/data",
@@ -102,8 +183,10 @@ job "seaweedfs" {
           "-master.volumeSizeLimitMB=1024",
           "-master.volumePreallocate=false",
         ]
-        ports   = ["s3", "metrics"]
-        volumes = ["local/master.toml:/etc/seaweedfs/master.toml"]
+        volumes = [
+          "local/master.toml:/etc/seaweedfs/master.toml",
+          "secrets/notification.toml:/etc/seaweedfs/notification.toml",
+        ]
       }
 
       volume_mount {

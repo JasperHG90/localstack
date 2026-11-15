@@ -58,6 +58,13 @@ locals {
       ]
       readers = []
     }
+    # Repo docs CI uploads for ov-sync-consumer to sync into OpenViking.
+    # ov-sync-consumer reads it keylessly (local.seaweedfs_keyless_jobs in
+    # the infrastructure root). CI's keys belong to ci-openviking-sync.
+    "ov-sync" = {
+      writers = []
+      readers = []
+    }
   }
 }
 

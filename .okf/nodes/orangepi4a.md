@@ -54,7 +54,7 @@ cutover. MinIO ran here until `minio-removal` removed it the same day
 
 | Job | Ports | Why here |
 |---|---|---|
-| `seaweedfs` (1000 MHz, 512 MB) | 8333 S3, 9327 metrics | Literal `value = "orangepi4a"` in `seaweedfs.hcl`, held by the `seaweedfs_data` volume. Replaced MinIO on 2026-10-20. See [SeaweedFS](/components/seaweedfs.md). |
+| `seaweedfs` (1000 MHz, 512 MB) | 8333 S3, 9327 metrics | Literal `value = "orangepi4a"` in `seaweedfs.hcl`, held by the `seaweedfs_data` volume. Replaced MinIO on 2026-10-20. See [SeaweedFS](/components/seaweedfs.md). Its `receiver` sidecar (100 MHz, 96 MB) owns the network namespace and the ports, and listens on loopback 20500 for the filer webhook ([ov-sync-consumer](/components/ov-sync-consumer.md)). |
 | `ov-dash` (200 MHz, 512 MB, one alloc) | 4182 | `ov_dash_hostname = "orangepi4a"` in `deployments/applications/services.tf`. It would otherwise run next to OpenViking, but radxa had 598 MB free and its stateful neighbors there are pinned by volumes. ov-dash holds nothing on disk, so it moved, at the cost of a LAN hop to 1933 (`ov-dash.hcl` header, commit `30292e2`). See [ov-dash](/components/ov-dash.md). |
 
 The system jobs `node-exporter` and `alloy` run here too.

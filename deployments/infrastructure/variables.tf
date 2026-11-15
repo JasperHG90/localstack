@@ -123,5 +123,11 @@ variable "vault_openviking_workloads" {
       account = "lab"
       user    = "jasper"
     }
+    # Syncs repo docs from the ov-sync bucket into
+    # viking://user/jasper/resources/projects/<repo>/, so it writes as jasper.
+    ov-sync-consumer = {
+      account = "lab"
+      user    = "jasper"
+    }
   }
 }

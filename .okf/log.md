@@ -143,3 +143,9 @@
 
 - Added `decisions/0024-the-devcontainer-reads-the-host-openviking-login-through-a-read-only-mount` with `kmctl new decision`.
 - Added `decisions/0025-the-agent-guidelines-stay-in-agents-md` with `kmctl new decision`.
+
+## 2026-11-15
+
+- Added `decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer` with `kmctl new decision`.
+- **Repo docs sync from the ov-sync bucket into OpenViking** (`decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer`, `components/ov-sync-consumer`, `components/seaweedfs`, `components/nats`, `nodes/placement`, `nodes/orangepi4a`, `nodes/radxa-dragon-q6a`, `summary`): the `ov-sync-consumer` ticket adds a Go receiver as a prestart sidecar that owns the seaweedfs group's network namespace, the `OV_SYNC` JetStream stream, and a consumer on radxa that applies each file's current state to OpenViking. ADR 0026 records the rejected `gocdk_pub_sub` notifier, the rejected listener outside SeaweedFS's namespace, and the rejected receiver-joins-SeaweedFS layout. The SeaweedFS page gains the receiver and the eighth bucket, the NATS page its first user, the node pages the two jobs. To stay under 500 words the summary dropped its line on loop tickets dropped at the `5b2ed1b` reset.
+- **ov-sync-consumer review round 1** (`components/ov-sync-consumer`): the OpenViking client now holds one shared limit of `POOL_SIZE` per request, so catch-up no longer adds a request beyond the pool, and catch-up lists OpenViking one folder at a time, following `has_more`, instead of one recursive `fs/ls` that stops at three levels and 1000 entries.

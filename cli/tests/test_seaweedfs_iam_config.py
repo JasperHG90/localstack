@@ -21,7 +21,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 INFRA = REPO_ROOT / "deployments" / "infrastructure"
 JOBSPEC = INFRA / "services" / "seaweedfs.hcl"
 
-KEYLESS_JOBS = {"tempo": "tempo", "loki": "loki", "registry": "registry"}
+KEYLESS_JOBS = {
+    "tempo": "tempo",
+    "loki": "loki",
+    "registry": "registry",
+    "ov-sync-consumer": "ov-sync",
+}
 ISSUER = "https://nomad.lab.orangecluster.nl"
 STS_SECRET = "secret/data/default/seaweedfs/sts"
 
@@ -43,12 +48,15 @@ def iam(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     assert sts_name and f"secret/data/{sts_name.group(1)}" == STS_SECRET, (
         "the STS signing key is not written to default/seaweedfs/sts"
     )
-    # nomad_job.seaweedfs's own templatefile call, with its two resource
+    # nomad_job.seaweedfs's own templatefile call, with its three resource
     # references swapped for the paths they resolve to.
     call = (
         job.group(1)
         .replace("vault_kv_secret_v2.seaweedfs_sts.path", f'"{STS_SECRET}"')
         .replace("vault_kv_secret_v2.seaweedfs_admin.path", '"secret/data/default/seaweedfs/admin"')
+        .replace(
+            "vault_kv_secret_v2.seaweedfs_webhook.path", '"secret/data/default/seaweedfs/webhook"'
+        )
         .replace("jobspec = templatefile(", "rendered = templatefile(", 1)
     )
     if "vault_kv_secret_v2." in call:
@@ -68,7 +76,7 @@ def iam(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     ).stdout
     jobspec = json.loads(json.loads(printed))
     template = re.search(
-        r"data\s*=\s*<<-EOH\n\s*(\{\{ with secret.*?)\n\s*EOH\n"
+        r"data\s*=\s*<<-EOH\n\s*(\{\{ with secret[^\n]*)\n\s*EOH\n"
         r'\s*destination\s*=\s*"secrets/iam\.json"',
         jobspec,
         re.S,

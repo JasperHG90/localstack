@@ -23,6 +23,7 @@ SEAWEEDFS_BUCKETS = {
     "openviking-v2",
     "loki",
     "tempo",
+    "ov-sync",
 }
 DURABLE_BUCKETS = {"openviking", "openviking-v2", "registry", "models", "datalake"}
 WRITE_ACTION = re.compile(r"s3:(\*|Put|Delete|Create|Abort|Restore|Replicate)")
@@ -64,7 +65,7 @@ def _resource(storage: str, kind: str, name: str) -> str:
     return match.group(1)
 
 
-def test_seaweedfs_gets_exactly_the_seven_buckets(storage: str) -> None:
+def test_seaweedfs_gets_exactly_the_eight_buckets(storage: str) -> None:
     assert _catalog_buckets(storage) == SEAWEEDFS_BUCKETS
     assert "seaweedfs_buckets = local.buckets" in storage
 

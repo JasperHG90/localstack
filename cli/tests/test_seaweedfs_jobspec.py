@@ -86,3 +86,60 @@ def test_service_carries_the_s3_tag(jobspec: str) -> None:
         and any('"s3"' in tags for tags in re.findall(r"tags\s*=\s*\[([^\]]*)\]", spec.read_text()))
     ]
     assert others == [], f"other jobspecs carry the s3 tag, so the route has two carriers: {others}"
+
+
+def _task(jobspec: str, name: str) -> str:
+    """The body of `task "<name>" { ... }`, found by counting braces."""
+    start = jobspec.find(f'task "{name}" {{')
+    assert start != -1, f'seaweedfs.hcl has no task "{name}"'
+    depth = 0
+    for i in range(jobspec.index("{", start), len(jobspec)):
+        depth += {"{": 1, "}": -1}.get(jobspec[i], 0)
+        if depth == 0:
+            return jobspec[start : i + 1]
+    pytest.fail(f'task "{name}" never closes')
+
+
+def test_receiver_owns_the_network_namespace(jobspec: str) -> None:
+    """SeaweedFS joining the receiver restarts alone; the reverse fails the alloc.
+
+    spike:ov-sync-consumer/11 and spike:ov-sync-consumer/9.
+    """
+    receiver = _task(jobspec, "receiver")
+    seaweedfs = _task(jobspec, "seaweedfs")
+    assert re.search(r'hook\s*=\s*"prestart"', receiver) and re.search(
+        r"sidecar\s*=\s*true", receiver
+    ), "the receiver is not a prestart sidecar"
+    assert re.search(r'ports\s*=\s*\[\s*"s3",\s*"metrics"\s*\]', receiver), (
+        "the receiver does not hold the s3 and metrics ports"
+    )
+    assert re.search(r'network_mode\s*=\s*"task:receiver"', seaweedfs), (
+        "seaweedfs does not join the receiver's namespace"
+    )
+    assert not re.search(r"\bports\s*=", seaweedfs), "seaweedfs maps ports in a joined namespace"
+    assert 'name = "seaweedfs"' in receiver and "service {" not in seaweedfs, (
+        "the seaweedfs service must sit on the receiver, the task Nomad has an address for"
+    )
+
+
+def test_restart_allows_three_attempts(jobspec: str) -> None:
+    """An in-place SeaweedFS restart costs one failed start (spike:ov-sync-consumer/11)."""
+    match = re.search(r"restart\s*\{[^}]*attempts\s*=\s*(\d+)", jobspec)
+    assert match and int(match.group(1)) >= 3, "the group restart block allows fewer than three"
+
+
+def test_receiver_token_template_never_restarts_it(jobspec: str) -> None:
+    """A receiver restart fails the whole alloc and takes S3 down with it."""
+    receiver = _task(jobspec, "receiver")
+    templates = re.findall(r"template\s*\{(.*?)\n      \}", receiver, re.S)
+    assert templates and all(re.search(r'change_mode\s*=\s*"noop"', t) for t in templates), (
+        "a receiver template restarts it on change"
+    )
+
+
+def test_webhook_sends_only_ov_sync_to_the_receiver(jobspec: str) -> None:
+    seaweedfs = _task(jobspec, "seaweedfs")
+    assert re.search(r'endpoint\s*=\s*"http://127\.0\.0\.1:20500/events"', seaweedfs)
+    assert re.search(r'path_prefixes\s*=\s*\["/buckets/ov-sync/"\]', seaweedfs)
+    assert '"secrets/notification.toml:/etc/seaweedfs/notification.toml"' in seaweedfs
+    assert re.search(r'RECEIVER_ADDR\s*=\s*"127\.0\.0\.1:20500"', _task(jobspec, "receiver"))

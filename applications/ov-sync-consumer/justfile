@@ -1,0 +1,76 @@
+set shell := ["bash", "-uc"]
+
+set dotenv-filename := "../../.devcontainer/.env"
+
+alias b := build
+alias p := push
+alias r := release
+
+# The receiver deploys with the infrastructure root and the consumer with the
+# applications root, from one image. The tag is read from the applications
+# root's one `ov_sync_consumer_image` line, and `_check-tag` fails when the
+# infrastructure root pins another, so the two jobs cannot run different builds.
+_tag := ```
+    grep -E '^\s*ov_sync_consumer_image\s*=' ../../deployments/applications/services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/'
+    ```
+_infra_tag := ```
+    grep -E '^\s*ov_sync_consumer_image\s*=' ../../deployments/infrastructure/services.tf | head -1 | sed -E 's/.*"([^"]+)".*/\1/'
+    ```
+
+# Go comes from the pinned golang image, not a system install, so this runs in
+# a devcontainer with no `go`. The named volume keeps the module and build
+# caches between runs. (prek's own Go toolchain runs the commit hooks.)
+_go := "docker run --rm -u $(id -u):$(id -g) -v \"$PWD:/src\" -w /src -v ov-sync-consumer-go:/go -e GOCACHE=/go/cache -e GOMODCACHE=/go/mod -e CGO_ENABLED=0 golang:1.27-alpine go"
+
+# Show what the recipes below would act on, without building anything.
+show:
+    @echo "image : {{ _tag }}"
+    @echo "infra : {{ _infra_tag }}"
+
+_check-tag:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{ _tag }}" ]; then
+        echo "!! ov_sync_consumer_image is missing from deployments/applications/services.tf" >&2
+        exit 1
+    fi
+    if [ "{{ _tag }}" != "{{ _infra_tag }}" ]; then
+        echo "!! deployments/infrastructure/services.tf pins '{{ _infra_tag }}', the applications root '{{ _tag }}'" >&2
+        exit 1
+    fi
+
+# --platform linux/arm64 because the receiver runs on orangepi4a and the
+# consumer on radxa. The build context is this directory alone.
+build: _check-tag
+    docker build --pull --platform linux/arm64 -t "{{ _tag }}" -f Dockerfile .
+
+# Nodes already authenticate to ghcr.io for pulls
+# (bootstrap/playbooks/configure_podman.yml). This login is for the write.
+push: _check-tag
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "${GITHUB_WRITE_PAT}" | docker login ghcr.io -u "${GITHUB_USER}" --password-stdin
+    docker push "{{ _tag }}"
+
+release: build push
+
+# Run every test and vet the module.
+test:
+    {{ _go }} vet ./...
+    {{ _go }} test -count=1 ./...
+
+# Run exactly one test, and fail unless it ran and passed. `go test -run`
+# exits 0 when nothing matches, so the PASS line is what counts.
+test-one name:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    out=$({{ _go }} test -count=1 -v -run '^{{ name }}$' ./... 2>&1)
+    status=$?
+    printf '%s\n' "$out"
+    if [ $status -ne 0 ]; then
+        exit $status
+    fi
+    if ! grep -qE '^--- PASS: {{ name }} \(' <<<"$out"; then
+        echo "!! {{ name }} did not run" >&2
+        exit 1
+    fi
