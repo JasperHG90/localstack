@@ -1,4 +1,65 @@
 {
   "schema_version": "1.0",
-  "rows": []
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "sync.py uploads only git-tracked files under the folders whose sha256 differs from the manifest, to <owner>/<repo>/<path>",
+      "fails_when": "an unchanged file is uploaded, a changed or new file is not, an untracked file is uploaded, or a key lacks the <owner>/<repo>/ prefix",
+      "command": "uv run --directory cli pytest tests/test_openviking_sync_action.py::test_uploads_only_changed_tracked_files -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "sync.py deletes the bucket key of every manifest entry whose file is gone, and drops it from the new manifest",
+      "fails_when": "a removed file's key is not deleted, or stays in the written manifest, or a present file's key is deleted",
+      "command": "uv run --directory cli pytest tests/test_openviking_sync_action.py::test_deletes_removed_files -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "a run with no change uploads nothing, deletes nothing, and treats a missing manifest (NoSuchKey) as empty",
+      "fails_when": "a no-change run calls put or delete, or a missing manifest makes the run fail",
+      "command": "uv run --directory cli pytest tests/test_openviking_sync_action.py::test_no_change_run_is_a_no_op -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "when an upload or delete fails, sync.py exits non-zero and writes a manifest holding only what is true in the bucket: the old entries plus the uploads and deletes that succeeded, so a file uploaded in a failed run and deleted before the next run is still removed",
+      "fails_when": "the run exits 0, the manifest records a failed upload's new hash or drops a failed delete's entry, or a file uploaded in the failed run and then deleted stays in the bucket after the next successful run",
+      "command": "uv run --directory cli pytest tests/test_openviking_sync_action.py::test_failure_writes_only_what_happened -q"
+    },
+    {
+      "id": "r5",
+      "behavior": "the sync workflow never runs on pull_request or pull_request_target, sets environment lab, id-token write, a timeout, and a concurrency group that does not cancel in progress",
+      "fails_when": "any of those is missing or a pull_request trigger is present",
+      "command": "uv run --directory cli pytest tests/test_openviking_sync_action.py::test_workflow_guard -q"
+    },
+    {
+      "id": "r6",
+      "behavior": "every SeaweedFS CI policy in the IAM config allows only GetObject, PutObject and DeleteObject on its own arn:aws:s3:::ov-sync/<owner>/<repo>/* and every CI role's trust pins ci_repository with StringEquals",
+      "fails_when": "a CI policy names another prefix, a wildcard bucket resource, a list action, or a role trusts without the ci_repository condition",
+      "command": "uv run --directory cli pytest tests/test_openviking_sync_action.py::test_seaweedfs_ci_policies_are_prefix_scoped -q"
+    },
+    {
+      "id": "r7",
+      "behavior": "the Terraform roots stay formatted and valid",
+      "fails_when": "fmt or validate fails",
+      "command": "just pre_commit"
+    },
+    {
+      "id": "r8",
+      "behavior": "after apply, a push to main adding a docs page with a marker finishes the workflow in under 2 minutes, uploads one object to s3://ov-sync/JasperHG90/localstack/docs/..., records its hash in the manifest; a no-change rerun uploads nothing; deleting the page deletes the object and its entry; the job's credential is refused a write under another repo's prefix",
+      "fails_when": "any of those is not shown in the run logs and bucket listing, or the run takes 2 minutes or more",
+      "judgment": true
+    },
+    {
+      "id": "r9",
+      "behavior": "no S3, Vault or Tailscale credential is stored in a committed file or a GitHub repository or environment secret",
+      "fails_when": "a credential appears in the diff or the sync needs a stored secret",
+      "judgment": true
+    },
+    {
+      "id": "r10",
+      "behavior": "the decision record, component pages, explanation page, the how-to (per the how-to skeleton) and the GitHub Actions reference inputs table describe the action as built",
+      "fails_when": "a page is missing or disagrees with the action",
+      "judgment": true
+    }
+  ]
 }
