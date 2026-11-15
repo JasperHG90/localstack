@@ -1,14 +1,39 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 2,
+    "fingerprint": "d8f1501f35b6f0711e1fb7691e052f00c7896835cf49417b12a442f7f2aa0b4b",
+    "tree": "623ef302baa55f535a6c37e27d27b49c033db292",
+    "decisions": [
+      {
+        "finding": "reviewer:f4",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261115T215219+0000-327b0a44",
+        "paths": [
+          "applications/ov-sync-consumer/main.go"
+        ]
+      },
+      {
+        "finding": "reviewer:f5",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/ov-sync-consumer.md"
+        ]
+      }
+    ],
+    "at": "2026-11-15T21:52:19+00:00"
+  },
   "ask": "j-20261115T194508+0000-42841ebf",
   "split": "j-20261115T204522+0000-7906a419",
   "split_plan_hash": "e03ad75009ea46413db08625c5c6f387bf636b110401e6254ab136bc90fc3391",
@@ -204,8 +229,14 @@
       "to": "fixing",
       "at": "2026-11-15T21:48:19+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-15T21:52:19+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T21:52:17+00:00"
+  "at": "2026-11-15T21:52:19+00:00"
 }
