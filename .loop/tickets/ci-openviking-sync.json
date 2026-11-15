@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ci-openviking-sync",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
@@ -122,8 +122,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "93005ffbf70a73cc334ab6d9d723bebed3f70fa3e05477c82c55934366e34933",
   "intent": {
@@ -157,8 +157,14 @@
       "to": "verifying",
       "at": "2026-11-15T22:56:07+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-11-15T23:02:00+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T22:56:08+00:00"
+  "at": "2026-11-15T23:02:00+00:00"
 }
