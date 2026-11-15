@@ -1,0 +1,41 @@
+== ov up
+[B batch-write root=resources] HTTP 400 {"status":"error","result":null,"error":{"code":"INVALID_ARGUMENT","message":"batch-write root must be inside a resource directory","details":{}},"telemetry":null,"profile":null}
+CHECK B batch-write existing root, missing folders: False
+[write viking://user/jasper/resources/projects/w/docs/a/b.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs/a/b.md","root_uri":"viking://user/jasper/resources/projects/w/docs/a","context_type":"resource","mode":"create","written_bytes":2,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed
+[rm viking://user/jasper/resources/projects/w/docs/a/b.md {'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs/a/b.md","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/w/docs/a","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue
+[rm viking://user/jasper/resources/projects/w/docs/a {'recursive': True, 'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/w/docs/a","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/w/docs","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count"
+[stat viking://user/jasper/resources/projects/w/docs/a] HTTP 200 count=0
+[ls viking://user/jasper/resources/projects/w/docs] HTTP 200 ['viking://user/jasper/resources/projects/w/docs/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/.overview.md']
+[stat viking://user/jasper/resources/projects/w/docs/a] HTTP 200 count=0
+[ls viking://user/jasper/resources/projects/w/docs] HTTP 200 ['viking://user/jasper/resources/projects/w/docs/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/.overview.md']
+[stat viking://user/jasper/resources/projects/w/docs/a] HTTP 200 count=0
+[ls viking://user/jasper/resources/projects/w/docs] HTTP 200 ['viking://user/jasper/resources/projects/w/docs/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/.overview.md']
+CHECK A a/ removed and stays gone: False stat codes at 0/5/20 s [200, 200, 200]
+[write viking://user/jasper/resources/projects/t/docs/a/b.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/t/docs/a/b.md","root_uri":"viking://user/jasper/resources/projects/t/docs/a","context_type":"resource","mode":"create","written_bytes":2,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed
+[rm viking://user/jasper/resources/projects/t/docs/a/b.md {'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/t/docs/a/b.md","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/t/docs/a","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue
+[rm viking://user/jasper/resources/projects/t {'recursive': True, 'wait': True}] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/t","estimated_deleted_count":4,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_coun
+[stat viking://user/jasper/resources/projects/t] HTTP 200 count=1
+[ls viking://user/jasper/resources/projects] HTTP 200 ['viking://user/jasper/resources/projects/w', 'viking://user/jasper/resources/projects/w/docs', 'viking://user/jasper/resources/projects/w/docs/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/.overview.md', 'viking://user/jasper/resources/projects/w/.abstract.md', 'viking://user/jasper/resources/projects/w/.overview.md', 'viking://user/jasper/resources/projects/.abstract.md', 'viking://user/jasper/resources/projects/.overview.md']
+[stat viking://user/jasper/resources/projects/t] HTTP 200 count=1
+[ls viking://user/jasper/resources/projects] HTTP 200 ['viking://user/jasper/resources/projects/w', 'viking://user/jasper/resources/projects/w/docs', 'viking://user/jasper/resources/projects/w/docs/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/.overview.md', 'viking://user/jasper/resources/projects/w/.abstract.md', 'viking://user/jasper/resources/projects/w/.overview.md', 'viking://user/jasper/resources/projects/.abstract.md', 'viking://user/jasper/resources/projects/.overview.md']
+[stat viking://user/jasper/resources/projects/t] HTTP 200 count=1
+[ls viking://user/jasper/resources/projects] HTTP 200 ['viking://user/jasper/resources/projects/w', 'viking://user/jasper/resources/projects/w/docs', 'viking://user/jasper/resources/projects/w/docs/.abstract.md', 'viking://user/jasper/resources/projects/w/docs/.overview.md', 'viking://user/jasper/resources/projects/w/.abstract.md', 'viking://user/jasper/resources/projects/w/.overview.md', 'viking://user/jasper/resources/projects/.abstract.md', 'viking://user/jasper/resources/projects/.overview.md']
+INFO T top folder t/ removed and stays gone: False stat codes [200, 200, 200]
+OVERALL FAIL
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    ├──t
+                    │   └──docs
+                    │       └──a
+                    └──w
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            └──a
+22 directories, 27 files
+== ov log lines about parents/errors
+== semantic log lines for w/docs
