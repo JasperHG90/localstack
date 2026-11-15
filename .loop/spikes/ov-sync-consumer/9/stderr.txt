@@ -1,0 +1,9 @@
+
+
+==> View client details and metrics in the Web UI: http://127.0.0.1:4646/ui/clients/a6b9e185-adb0-aef0-ed55-5c25e5f214ec
+
+
+==> View this job in the Web UI: http://127.0.0.1:4646/ui/jobs/ns@default
+
+
+==> View allocation details in the Web UI: http://127.0.0.1:4646/ui/allocations/eb329d54-e5a0-1227-214f-731a44abfeb1

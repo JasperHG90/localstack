@@ -1,0 +1,50 @@
+podman podman 3.4.4
+Nomad v2.0.4
+driver.podman                     = 1
+driver.podman.health              = healthy
+driver.podman.version             = 3.4.4
+alloc=eb329d54-e5a0-1227-214f-731a44abfeb1 hostip=172.17.0.2
+a-eb329d54-e5a0-1227-214f-731a44abfeb1 Up 2 seconds ago
+b-eb329d54-e5a0-1227-214f-731a44abfeb1 Up 1 second ago
+--- before
+a id:      53294d9b6e805894b0023bddce1def7ea9dc7a56c56f6a661ab42e71fddd3884
+a netns:   net:[4026533127]
+b netns:   net:[4026533127]
+b netmode: container:53294d9b6e805894b0023bddce1def7ea9dc7a56c56f6a661ab42e71fddd3884
+b interfaces: lo 127.0.0.1/8 eth0 10.88.0.2/16 
+b -> 127.0.0.1:9000: ok (1794774742)
+b -> 172.17.0.2:4646 (off-namespace): ok
+=== nomad alloc restart eb329d54-e5a0-1227-214f-731a44abfeb1 a
+restart command exit=0
+task a state/restarts, task b state: dead 1 dead
+Task "a" is "dead"
+2026-11-15T20:32:27Z  Not Restarting    Error was unrecoverable
+2026-11-15T20:32:27Z  Driver Failure    rpc error: code = FailedPrecondition desc = failed to remove dead container: cannot delete container, status code: 500
+2026-11-15T20:32:27Z  Restarting        Task restarting in 0s
+2026-11-15T20:32:26Z  Terminated        Exit Code: 0
+2026-11-15T20:32:25Z  Restart Signaled  User requested task to restart
+2026-11-15T20:32:22Z  Started           Task started by client
+2026-11-15T20:32:22Z  Task Setup        Building Task Directory
+2026-11-15T20:32:22Z  Received          Task received by client
+a-eb329d54-e5a0-1227-214f-731a44abfeb1 Exited (137) About a minute ago
+a-8f696bf0-806d-f97e-ce4b-8bdd4a5b3a3a Up 30 seconds ago
+b-8f696bf0-806d-f97e-ce4b-8bdd4a5b3a3a Up 30 seconds ago
+why the old a container stays: 53294d9b6e805894b0023bddce1def7ea9dc7a56c56f6a661ab42e71fddd3884
+job allocs now:
+8f696bf0  a6b9e185  g           0        run      running  30s ago    19s ago
+eb329d54  a6b9e185  g           0        stop     failed   1m13s ago  30s ago
+--- after
+a id:      Error: error inspecting object: no such object: "a-eb329d54-e5a0-1227-214f-731a44abfeb1"
+a netns:   Error: no container with name or ID "a-eb329d54-e5a0-1227-214f-731a44abfeb1" found: no such container
+b netns:   Error: no container with name or ID "b-eb329d54-e5a0-1227-214f-731a44abfeb1" found: no such container
+b netmode: Error: error inspecting object: no such object: "b-eb329d54-e5a0-1227-214f-731a44abfeb1"
+b interfaces: no with 
+b -> 127.0.0.1:9000: fail (Error: no container with name or ID "b-eb329d54-e5a0-1227-214f-731a44abfeb1" found: no such container)
+b -> 172.17.0.2:4646 (off-namespace): fail
+=== driver warnings and errors
+    2026-11-15T20:32:27.007Z [WARN]  client.driver_mgr.nomad-driver-podman: Could not remove container: driver=podman @module=podman container=53294d9b6e805894b0023bddce1def7ea9dc7a56c56f6a661ab42e71fddd3884 error="cannot delete container, status code: 500" timestamp=2026-11-15T20:32:27.006Z
+    2026-11-15T20:32:27.027Z [ERROR] client.alloc_runner.task_runner: running driver failed: alloc_id=eb329d54-e5a0-1227-214f-731a44abfeb1 task=a error="rpc error: code = FailedPrecondition desc = failed to remove dead container: cannot delete container, status code: 500"
+    2026-11-15T20:32:29.030Z [WARN]  client.alloc_runner.task_runner.task_hook.logmon.nomad: failed to read from log fifo: alloc_id=eb329d54-e5a0-1227-214f-731a44abfeb1 task=a @module=logmon error="read /tmp/NomadClient940619848/eb329d54-e5a0-1227-214f-731a44abfeb1/alloc/logs/.a.stdout.fifo: file already closed" timestamp=2026-11-15T20:32:29.029Z
+    2026-11-15T20:32:31.030Z [WARN]  client.alloc_runner.task_runner.task_hook.logmon.nomad: timed out waiting for read-side of process output pipe to close: alloc_id=eb329d54-e5a0-1227-214f-731a44abfeb1 task=a @module=logmon timestamp=2026-11-15T20:32:31.030Z
+    2026-11-15T20:32:40.245Z [WARN]  client.alloc_runner.task_runner.task_hook.logmon.nomad: timed out waiting for read-side of process output pipe to close: alloc_id=eb329d54-e5a0-1227-214f-731a44abfeb1 task=b @module=logmon timestamp=2026-11-15T20:32:40.245Z
+RESULT before: loopback=ok outbound=ok; after: loopback=fail outbound=fail; a served '1794774742' then 'Error: no container with name or ID "b-eb329d54-e5a0-1227-214f-731a44abfeb1" found: no such container'

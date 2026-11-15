@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "ov-sync-consumer",
+  "n": 9,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc4/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc4/spike.sh",
+      "copy": "files/spike.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "945a91405aeaab5b802d2d06e366643c0b6bd990",
+  "fingerprint": "2bfbe7e0dd7b41029efa5492fef804caaf62216cef25c0b997309510e546902d",
+  "started_at": "2026-11-15T20:32:11+00:00",
+  "finished_at": "2026-11-15T20:33:38+00:00",
+  "duration_seconds": 87.104,
+  "timeout_seconds": 480.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
