@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:53:42+00:00'
+  at: '2026-11-15T19:54:14+00:00'
 slug: ci-tailscale-access
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ci-tailscale-access/1
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ci-tailscale-access 1`.
+Broken run: `docker exec` without `-i` dropped the role JSON on stdin, so role `probe` was never written and every login failed with "role could not be found". It answers nothing. spike:ci-tailscale-access/2 reran the same tokens with the fix.
 
 ## Files
 
