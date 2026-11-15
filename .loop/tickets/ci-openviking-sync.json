@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ci-openviking-sync",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
   "plan_rounds": 1,
   "review_rounds": 0,
@@ -62,8 +62,14 @@
       "to": "planning",
       "at": "2026-11-15T20:08:05+00:00",
       "by": "promote"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-11-15T20:19:25+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T20:19:24+00:00"
+  "at": "2026-11-15T20:19:25+00:00"
 }
