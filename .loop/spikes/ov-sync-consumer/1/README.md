@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:53:40+00:00'
+  at: '2026-11-15T19:53:50+00:00'
 slug: ov-sync-consumer
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer/1
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer 1`.
+With no system `go`, prek 0.5.6 ran a local `language: golang` hook (`bash -c 'cd applications/demo && go vet ./... && go test ./...'`, `pass_filenames: false`) and passed: it fetched Go 1.27.4 linux/arm64 itself on a cold `PREK_HOME` in about 10 s total, cached at `$PREK_HOME/tools/go/1.27.4` (271 MB; default home is `~/.cache/prek`). Warm reruns took under 1 s.
+A failing test made the hook fail (exit 1, `--- FAIL: TestAdd`), and a fresh `git worktree add` checkout passed in 0.33 s on the shared cache.
+This rules out the need for a devcontainer rebuild or a docker golang hook, so the docker fallback was not tried. Settles risk 3.
+Limits: throwaway repo, module with no dependencies (module downloads untested). With no `language_version`, prek picked the latest Go, so pin one to keep it reproducible.
 
 ## Files
 
