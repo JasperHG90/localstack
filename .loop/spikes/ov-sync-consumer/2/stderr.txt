@@ -1,0 +1,1 @@
+/bin/sh: 1: /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc2/webhook_job_shape.sh: Permission denied
