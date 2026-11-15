@@ -1,3 +1,4 @@
 {"at": "2026-10-20T09:18:40+00:00", "kind": "register", "schema_version": "1.0", "stage": "stub"}
 {"at": "2026-11-15T19:55:40+00:00", "kind": "spike-note", "n": 1, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-11-15T20:08:05+00:00", "by": "promote", "from": "stub", "grant": "g4", "kind": "transition", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/agent", "step": "ticket-promote", "to": "planning"}
+{"at": "2026-11-15T20:17:28+00:00", "binds": "93005ffbf70a73cc334ab6d9d723bebed3f70fa3e05477c82c55934366e34933", "kind": "round-start", "n": 1, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}

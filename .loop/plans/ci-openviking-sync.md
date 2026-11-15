@@ -1,11 +1,13 @@
 ---
 type: plan
 title: 'Plan: ci-openviking-sync'
-description: A second reusable composite GitHub Action, openviking-sync, that runs after lab-auth, mints an OpenViking token from Vault and syncs chosen folders with ovsync, and a workflow that uses both to sync docs/ and .okf/ on push to main.
+description: A second composite GitHub Action, openviking-sync, that runs after lab-auth and mirrors chosen folders into the caller's own prefix of the ov-sync bucket using a stored manifest, and a workflow that uses both to sync docs/ and .okf/ on push to main.
 slug: ci-openviking-sync
 status: draft
+epic: ci-lab-access
 depends_on:
 - ci-tailscale-access
+- ov-sync-consumer
 tags:
 - plan
 generated:
@@ -19,151 +21,137 @@ Relayed from: none
 
 ## Intent
 
-Operator answers, 2026-10-20:
-- The OpenViking user and account a caller writes as are fixed per calling
-  repo in Vault (the caller list in Terraform), not chosen by the workflow,
-  so no repo can write as another user.
-- The sync mirrors the folders with deletions on: a page removed from
-  `docs/` or `.okf/` is removed from OpenViking.
+Operator answers, 2026-11-15 (they replace the 2026-10-20 design, which ran
+`ovsync` against OpenViking from CI):
+- CI never talks to OpenViking. It writes files to a shared SeaweedFS bucket,
+  `ov-sync`, and `ov-sync-consumer` (planned in parallel) reads the bucket's
+  events from JetStream and writes OpenViking. That ticket creates the bucket
+  and the filer webhook in `deployments/infrastructure/services/seaweedfs.hcl`,
+  and holds the OpenViking credential and the path mapping.
+- The bucket is shared by repos: `s3://ov-sync/<owner>/<repo>/{docs,.okf}/...`.
+  Each caller may write only its own `<owner>/<repo>/` prefix.
+- Deletions mirror: a file removed from a synced folder is removed from the
+  bucket.
 - The action lives in this repo, next to `lab-auth`.
 
-`ci-tailscale-access` builds `lab-auth`, the action that puts a caller's job on
-the tailnet with a Vault token in `VAULT_ADDR` and `VAULT_TOKEN`. This ticket
-builds the second action, `openviking-sync`, which a job runs after it, the way
-a GCP step runs after `gcloud auth`. It syncs folders into OpenViking. This
-repository then uses both to keep `docs/` and `.okf/` in OpenViking on every
-push to `main`.
-
-### The tool: ovsync
-
-`ovsync` is the `ov-sync` package in `JasperHG90/openviking_extensions`
-(`packages/ov-sync`, tag `ov-sync-v0.2.0`, the repo this one already installs
-`ov-postgres` and `ov-ext` from in
-`deployments/applications/services/openviking/Dockerfile.openviking`). It
-installs with
-`uv tool install ov-sync --from "git+https://github.com/JasperHG90/openviking_extensions@ov-sync-v0.2.0#subdirectory=packages/ov-sync"`.
-What it does, read from its README and source:
-
-- **One way, one folder to one root.** `ovsync run <folder>` writes each file
-  to `<root_uri>/<relative path>`. The target URI is the key, so sending a file
-  again replaces it rather than adding a copy. Writes go through
-  `content/batch-write`, at most 256 files or 16 MB a batch, 8 MB a file. The
-  root must exist, and `--create-root` makes it.
-- **Auth.** It sends `Authorization: Bearer <api_key>`, plus
-  `X-OpenViking-Account` and `X-OpenViking-User` when set. `OV_SYNC_URL`,
-  `OV_SYNC_API_KEY`, `OV_SYNC_ACCOUNT` and `OV_SYNC_USER` override the `ov` CLI
-  config file. This server runs `auth_mode: oidc` and takes account and user
-  from the claims of a Vault-signed JWT sent as Bearer
-  (`docs/explanation/openviking-identity.md`), so the Vault identity token is
-  the API key and the two header variables stay unset.
-- **Settings.** `ov-sync.toml` in the folder, each key overridable by
-  `OV_SYNC_<TABLE>__<KEY>`, for example `OV_SYNC_SYNC__ROOT_URI`.
-  `include_extensions` (default `.md`, `.txt`, `.csv`, `.json`, `.yaml`,
-  `.yml`, `.toml`, `.html`, `.pdf`), exclude globs, exact folder names, and a
-  front-matter `ov: skip` that keeps a page out.
-- **Updates and deletions.** It records what it sent in `.ov-sync.db`, a
-  SQLite file in the folder root, keyed on the relative path with size, mtime
-  and a content hash. A file whose bytes match is not sent again, which
-  matters because every write re-embeds the file. A deleted file is only
-  reported, unless `--delete`, which first commits an OpenViking snapshot and
-  deletes nothing if the snapshot fails (`--no-snapshot` skips it). Deletions
-  are found only from that file. A fresh runner has none, so without it every
-  run sends everything and no run ever deletes.
+`ci-tailscale-access` builds `lab-auth`, which puts the caller's job on the
+tailnet with `VAULT_ADDR` and `VAULT_TOKEN` set. This ticket builds
+`openviking-sync`, which a job runs after it, and uses both here to sync
+`docs/` and `.okf/` on every push to `main`.
 
 ### The action
 
-`new:.github/actions/openviking-sync/action.yml`, beside the `lab-auth` action
-and for the same reason. Callers pin
-`JasperHG90/localstack/.github/actions/openviking-sync@<sha>`. A short
-`new:.github/actions/openviking-sync/README.md` holds the usage snippet.
-Inputs, all with defaults except the role:
+`new:.github/actions/openviking-sync/action.yml`, with its logic in
+`new:.github/actions/openviking-sync/sync.py` (standard library only, calling
+the `aws` CLI the GitHub runner image already has) and a usage snippet in
+`new:.github/actions/openviking-sync/README.md`. Inputs: `folders` (default
+`docs` and `.okf`), `bucket` (default `ov-sync`), `s3-endpoint` (default
+`https://s3.lab.orangecluster.nl`), and `credential-role` (default: the
+caller's Vault identity-token role, below). Steps:
 
-| Input | Default | Meaning |
-|---|---|---|
-| `identity-role` | required | the Vault identity-token role to mint from |
-| `folders` | `docs` and `.okf`, one per line | folders to sync |
-| `target` | `viking://user/jasper/resources/projects/<repository name>` | root; each folder lands at `<target>/<folder>` |
-| `openviking-url` | `https://openviking-api.lab.orangecluster.nl` | server |
-| `delete` | `true` | pass `--delete`, so the copy mirrors the folder |
-| `include-extensions`, `exclude` | ovsync's defaults | passed as `OV_SYNC_SYNC__*` |
-| `ov-sync-ref` | `ov-sync-v0.2.0` | the pinned tag |
+1. Fail early unless `VAULT_ADDR` and `VAULT_TOKEN` are set.
+2. Get short-lived S3 credentials (below) and mask them.
+3. Read the object _state/manifest.json under the caller prefix, a JSON map of
+   repo-relative path to sha256. A missing manifest is an empty map.
+4. Hash every git-tracked file under `folders`. Upload each file whose hash
+   differs to `<owner>/<repo>/<path>`. Delete each key in the old manifest
+   that is no longer present.
+5. Write the new manifest only if every upload and delete succeeded, so a
+   failed run is retried in full by the next one. Exit non-zero on any
+   failure.
 
-Steps: fail early unless `VAULT_ADDR` and `VAULT_TOKEN` are set. Install
-`ovsync` at the pinned tag. Read `identity/oidc/token/<identity-role>` with the
-Vault token and mask the result. Then, per folder: restore that folder's
-`.ov-sync.db` from `actions/cache`, keyed on repository, target and folder, so
-a run sends only what changed and sees what was deleted. Run
-`ovsync run <folder> --create-root`, with `--delete` when asked. Save the state
-file, and fail the step if a batch failed. A cache miss is safe: that run sends
-everything again and leaves deletions for the next one.
+The manifest makes listing the bucket unnecessary, so the credential needs
+only `GetObject`, `PutObject` and `DeleteObject` on its prefix.
 
-**User and account are set in Vault, not by the caller.** The `target`
-(location) is the caller's to choose. Who the job writes as is fixed by the
-identity-token role, and a caller can read only its own role. If the user were
-an input, any caller could write into any person's tree.
+### The S3 credential: Vault identity token, exchanged at SeaweedFS STS
 
-### What changes in Terraform
+The repo already does both halves. Nomad jobs swap a JWT for short-lived
+SeaweedFS credentials at its STS, one role per job
+(`docs/how-to/give-an-aws-sdk-go-service-keyless-seaweedfs-access.md`,
+`local.seaweedfs_keyless_jobs` in `deployments/infrastructure/services.tf`).
+Workloads mint Vault identity tokens with literal claims, one role each,
+readable only by that workload's policy (`vault_identity_oidc_role.openviking_workload`
+in `deployments/infrastructure/oidc.tf`). Joined: the caller reads
+`identity/oidc/token/<its role>` with its `jwt-github` Vault token, gets a JWT
+with audience `seaweedfs` and a literal `ci_repository` claim, and swaps it at
+`https://s3.lab.orangecluster.nl` (`AssumeRoleWithWebIdentity`, with
+`RoleArn` and `RoleSessionName`) for credentials that last minutes. No S3 key
+exists anywhere. What is shown so far: a role pinned to one Nomad job refuses
+another (spike:seaweedfs-workload-identity/2), and a key scoped to one bucket
+is denied on another (spike:seaweedfs-buckets/1). Rejected: a static IAM user and key per caller in Vault KV,
+which works with what SeaweedFS has already been shown to do but is a
+long-lived key per repo. Rejected: SeaweedFS STS trusting GitHub's issuer
+directly, which would put a second list of who may write outside Vault.
 
-- **`deployments/infrastructure/variables.tf`**: each entry in
-  `var.vault_ci_callers` (added by `ci-tailscale-access`) gains an optional
-  `openviking = { account, user }`. Add an entry for this repository's sync
-  workflow, `lab`/`jasper`, bound to the sync workflow below
-  on `main`.
-- **`deployments/infrastructure/oidc.tf`**: one `vault_identity_oidc_role` per
-  caller that has `openviking`, on the `identity-tokens` key, audience
-  `openviking`, with `ov_account` and `ov_user` as literals, as
-  `vault_identity_oidc_role.openviking_workload` does, because the JWT mount
-  owns the entities it creates. TTL one hour, longer than the job's timeout,
-  since `ovsync` holds one token for the whole run.
-- **`deployments/infrastructure/machine_roles.tf`**: one policy per such
-  caller that reads only its own identity-token path, following
-  `vault_policy.openviking_workload`, added to that caller's `jwt-github`
-  role.
+Terraform, all in the infrastructure root, per
+`.claude/rules/terraform-file-layout.md`:
 
-### This repository's workflow and the knowledge
+- `deployments/infrastructure/variables.tf`: each `var.vault_ci_callers` entry
+  gains an optional `ov_sync = bool`. Add an entry for this repo's sync
+  workflow on `main`, `lab` Environment.
+- `deployments/infrastructure/oidc.tf`: one `vault_identity_oidc_role` per
+  `ov_sync` caller on the `identity-tokens` key, `client_id = "seaweedfs"`,
+  `ci_repository` set as a literal, TTL 15 minutes, and `seaweedfs` added to
+  that key's `allowed_client_ids`.
+- `deployments/infrastructure/machine_roles.tf`: one policy per such caller
+  reading only its own token path, attached to its `jwt-github` role.
+- `deployments/infrastructure/services.tf`: in `local.seaweedfs_iam`, a second
+  OIDC provider for Vault's identity issuer, and per caller a role whose trust
+  policy pins `ci_repository` by `StringEquals` (not claim mode, for the comma
+  reason in that file) and a policy on `arn:aws:s3:::ov-sync/<owner>/<repo>/*`.
+  SeaweedFS reads its IAM config only at start, so the apply restarts it.
 
-- **`new:.github/workflows/openviking-sync.yaml`**: runs on push to `main`
-  under `docs/` or `.okf/`, and on `workflow_dispatch`, never on
-  `pull_request`. `permissions: id-token: write, contents: read`, the GitHub
-  Environment, a timeout, and a concurrency group that queues runs rather than
-  cancelling them. Steps: checkout, `./.github/actions/lab-auth`,
-  `./.github/actions/openviking-sync` with its defaults. Today that is 172
-  files, 2.4 MB (`docs/` 1.6 MB, `.okf/` 772 KB).
-- **Guard test**: extend the `lab-auth` guard test so it also fails when the
-  sync workflow triggers on `pull_request` or when an identity-token policy
-  grants a wildcard path.
-- **Knowledge**: a decision record for the CI identity and the "user is set in
-  Vault" choice. Updates to `.okf/components/vault-identity.md`,
-  `.okf/components/openviking-service.md`, `docs/reference/openviking.md` and
-  the "What is not configured" section of
-  `docs/explanation/openviking-identity.md`. A how-to for a repository owner,
-  `new:docs/how-to/sync-repository-folders-to-openviking.md`, per
-  `.claude/rules/how-to-skeleton.md`, and the inputs table on the GitHub
-  Actions reference page `ci-tailscale-access` adds.
+### This repo's workflow, tests and knowledge
+
+- `new:.github/workflows/openviking-sync.yaml`: on push to `main` under
+  `docs/` or `.okf/`, and `workflow_dispatch`, never `pull_request`.
+  `permissions: id-token: write, contents: read`, `environment: lab`,
+  `timeout-minutes: 5`, and a concurrency group that queues runs rather than
+  cancelling them, since two runs racing on the manifest would lose a write.
+  Steps: checkout, `./.github/actions/lab-auth`, `./.github/actions/openviking-sync`.
+- `new:cli/tests/test_openviking_sync_action.py`: runs `sync.py` against a
+  real git repo under `tmp_path` with a stub `aws` on `PATH`, and asserts
+  changed-only uploads, deletes, and no manifest write when one upload fails.
+  It also extends the `lab-auth` guard: the sync workflow must not trigger on
+  `pull_request`, and every SeaweedFS CI policy resource must end in its own
+  `<owner>/<repo>/*`.
+- Knowledge: a decision record for the bucket and manifest design and the
+  token-to-STS credential. Updates to `.okf/components/seaweedfs.md`,
+  `.okf/components/vault-identity.md` and `docs/explanation/workload-identity.md`.
+  A how-to, `new:docs/how-to/sync-repository-folders-to-the-ov-sync-bucket.md`,
+  per `.claude/rules/how-to-skeleton.md`, and the inputs table on the GitHub
+  Actions reference page that `ci-tailscale-access` adds.
 
 Outcome: a push to `main` that adds a test page under `docs/` with a unique
-marker string runs the workflow. The Vault login uses only the GitHub OIDC
-token, and no Vault or OpenViking credential is stored in GitHub. The page
-lands at `viking://user/jasper/resources/projects/localstack/docs/...`, and an OpenViking search for
-the marker as `lab`/`jasper` returns it. `.okf/` lands beside it. A second run
-with no change sends nothing. A push that deletes the test page removes it from
-OpenViking. A `workflow_dispatch` from a branch other than `main` is refused at
-the Vault login. `just pre_commit` and `uv run --directory cli pytest` pass.
+marker runs the workflow, which finishes in under 2 minutes without waiting
+on OpenViking. Its log shows one upload, the page is at
+`s3://ov-sync/JasperHG90/localstack/docs/...` with the marker, and the
+manifest holds its hash. A second run with no change uploads and deletes
+nothing. A push that deletes the page deletes the object and its manifest
+entry. The job's credential is refused a write to another repo's prefix. No
+S3, Vault or Tailscale credential is stored in GitHub. `just pre_commit` and
+`uv run --directory cli pytest` pass.
 
 ## Could invalidate this plan
 
-- ovsync against this server with a Vault token. The plan assumes `ovsync`
-  works unchanged against the deployed OpenViking when its API key is a
-  Vault identity token, with no account or user headers, and that a user
-  with role USER may create a root, batch-write, delete, and commit the
-  snapshot `--delete` takes first. If the server refuses any of these, the
-  action needs a change in `ov-sync` (another repository) or must drop
-  deletion, and the copy stops being a mirror. Spike question: against
-  `ghcr.io/jasperhg90/openviking:v0.4.17.1-9` in `auth_mode: oidc`, with a
-  Vault identity token whose claims are literal `lab`/`jasper` as the
-  `OV_SYNC_API_KEY`, does `ovsync` at `ov-sync-v0.2.0` create
-  `viking://user/jasper/resources/projects/<test>`, sync a folder of Markdown, send nothing on a
-  second run from a fresh clone with the state file restored, and with
-  `--delete` commit a snapshot and remove a deleted file? Does a search as
-  `lab`/`jasper` find a synced page, and how long does a first sync of
-  `docs/` take?
+- Per-prefix S3 credentials brokered through Vault. The plan assumes
+  SeaweedFS 4.48 STS trusts Vault's identity-token issuer as a second OIDC
+  provider beside Nomad, binds a role on a literal custom claim, and enforces
+  a policy scoped to an object prefix inside a shared bucket. Earlier spikes
+  showed only the Nomad issuer and whole-bucket scope. If prefix
+  scope is not enforced, repos can overwrite each other and the shared bucket
+  design fails. If the Vault issuer is refused, the credential falls back to
+  a static key per caller in Vault KV. Spike question: on SeaweedFS 4.48 with
+  `-s3.iam.config` holding the Nomad provider plus a provider for
+  `https://vault.lab.orangecluster.nl/v1/identity/oidc` (client `seaweedfs`),
+  does a Vault identity token with literal `ci_repository = "a/x"` get
+  credentials for role `ci-a-x` and get refused for role `ci-b-y`, and can
+  those credentials put, get and delete under `ov-sync/a/x/` while being
+  refused put and delete under `ov-sync/b/y/`? Settled by
+  spike:ci-openviking-sync/1: locally, with Vault 2.0.3 and SeaweedFS 4.48,
+  STS trusted Vault's identity issuer beside a Nomad provider and refused a
+  token with another audience. An `a/x` token got `ci-a-x` and was refused
+  `ci-b-y` by the `ci_repository` condition. Its credentials put, got and
+  deleted under `a/x/` and were denied every operation under `b/y/`,
+  `a/xx/`, `a/` and the bucket root. The issuer there was plain http on a
+  Docker network, so the first production run still shows the https issuer.
