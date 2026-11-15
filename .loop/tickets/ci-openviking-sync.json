@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ci-openviking-sync",
-  "stage": "fixing",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
@@ -29,7 +29,7 @@
   "split": "j-20261115T201727+0000-655aa953",
   "split_plan_hash": "93005ffbf70a73cc334ab6d9d723bebed3f70fa3e05477c82c55934366e34933",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "31ed642da2e10e9f13e8eb55c70432f565e0d6d0",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -180,8 +180,14 @@
       "to": "fixing",
       "at": "2026-11-15T23:02:00+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "done",
+      "at": "2026-11-15T23:04:12+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T23:03:59+00:00"
+  "at": "2026-11-15T23:04:12+00:00"
 }
