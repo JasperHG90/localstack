@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-15T19:55:46+00:00'
+  at: '2026-11-15T19:55:59+00:00'
 slug: ci-tailscale-access
 n: 4
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ci-tailscale-access/4
@@ -24,7 +24,9 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ci-tailscale-access 4`.
+Same run 43754977347: the join failed with a 403 at the token exchange (see spike 3), so the reach checks were skipped. No reach, timeout or firebat result exists, and nothing about reach is ruled in or out.
+Ephemerality was only checked from the source: v4's dist/index.js hardcodes `--client-id=...?preauthorized=true&ephemeral=true`, and its post step ran `tailscale logout`. No live node was seen joining or leaving.
+Settles risk 1: no, the spike could not answer it. Rerun the reach-probe workflow (its PASS/FAIL table is in files/reach.yaml) once the federated subject matches the immutable-ID `sub`.
 
 ## Files
 
