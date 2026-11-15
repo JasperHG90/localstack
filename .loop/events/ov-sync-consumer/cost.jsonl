@@ -2,3 +2,4 @@
 {"at": "2026-11-15T19:54:03+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc2/webhook_job_shape.sh", "exit": 126, "kind": "spike", "n": 2, "schema_version": "1.0"}
 {"at": "2026-11-15T19:54:25+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc1/spike.sh", "exit": 1, "kind": "spike", "n": 3, "schema_version": "1.0"}
 {"at": "2026-11-15T19:54:31+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc2/webhook_job_shape.sh", "exit": 1, "kind": "spike", "n": 4, "schema_version": "1.0"}
+{"at": "2026-11-15T19:56:03+00:00", "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc2/webhook_variants.sh", "exit": 1, "kind": "spike", "n": 5, "schema_version": "1.0"}

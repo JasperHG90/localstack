@@ -1,0 +1,54 @@
+===== variant A: endpoint http://127.0.0.1:20500/events, listener sidecar, bind flag '-ip.bind=127.0.0.1'
+tcp        0      0 127.0.0.11:40877        0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:19333         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:18888         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:18080         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:9333          0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:8888          0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
+tcp        0      0 0.0.0.0:20500           0.0.0.0:*               LISTEN      
+tcp        0      0 :::9327                 :::*                    LISTEN      
+tcp        0      0 :::18333                :::*                    LISTEN      
+tcp        0      0 :::8333                 :::*                    LISTEN      
+-- webhook errors in seaweed log
+-- listener received
+{"path": "/events", "auth": "Bearer spike-bearer-114175175", "ctype": "application/json", "json": {"event_type": "create", "key": "/buckets/ov-sync/docs/a.md", "message": {"new_entry": {"name": "a.md", "chunks": [{"size": 8, "modified_ts_ns": 1794772528583077677, "e_tag": "W+7P7pqBxvr+bQfF1idseA==", "fid": {"volume_id": 2, "file_key": 1, "cookie": 370337931}}], "attributes": {"file_size": 8, "mtime": 1794772528, "file_mode": 432, "uid": 1000, "gid": 1000, "crtime": 1794772528, "mime": "text/markdown", "md5": "W+7P7pqBxvr+bQfF1idseA==", "inode": 7484667733272911122, "ctime": 1794772528, "atime": 1794772528}, "extended": {"Seaweed-X-Amz-ETag": "NWJlZWNmZWU5YTgxYzZmYWZlNmQwN2M1ZDYyNzZjNzg=", "Seaweed-X-Amz-Owner": "YWRtaW4=", "x-seaweedfs-checksum-algorithm": "WC1BbXotQ2hlY2tzdW0tQ3JjNjRudm1l", "x-seaweedfs-checksum-value": "M2hRYi92TElHek09"}}, "delete_chunks": true, "new_parent_path": "/buckets/ov-sync/docs", "signatures": [-303590685]}}, "raw": null}
+{"path": "/events", "auth": "Bearer spike-bearer-114175175", "ctype": "application/json", "json": {"event_type": "create", "key": "/buckets/ov-sync/docs", "message": {"new_entry": {"name": "docs", "is_directory": true, "attributes": {"mtime": 1794772528, "file_mode": 2147484153, "uid": 1000, "gid": 1000, "crtime": 1794772528, "inode": 2490854649819477114, "ctime": -62135596800, "mtime_ns": 584682706}}, "new_parent_path": "/buckets/ov-sync", "signatures": [-303590685]}}, "raw": null}
+{"path": "/events", "auth": "Bearer spike-bearer-114175175", "ctype": "application/json", "json": {"event_type": "update", "key": "/buckets/ov-sync/docs/a.md", "message": {"old_entry": {"name": "a.md", "chunks": [{"file_id": "2,011612e88b", "size": 8, "modified_ts_ns": 1794772528583077677, "e_tag": "W+7P7pqBxvr+bQfF1idseA==", "fid": {"volume_id": 2, "file_key": 1, "cookie": 370337931}}], "attributes": {"file_size": 8, "mtime": 1794772528, "file_mode": 432, "uid": 1000, "gid": 1000, "crtime": 1794772528, "mime": "text/markdown", "md5": "W+7P7pqBxvr+bQfF1idseA==", "inode": 7484667733272911122, "ctime": 1794772528, "atime": 1794772528}, "extended": {"Seaweed-X-Amz-ETag": "NWJlZWNmZWU5YTgxYzZmYWZlNmQwN2M1ZDYyNzZjNzg=", "Seaweed-X-Amz-Owner": "YWRtaW4=", "x-seaweedfs-checksum-algorithm": "WC1BbXotQ2hlY2tzdW0tQ3JjNjRudm1l", "x-seaweedfs-checksum-value": "M2hRYi92TElHek09"}}, "new_entry": {"name": "a.md", "chunks": [{"size": 8, "modified_ts_ns": 1794772531938201337, "e_tag": "W+7P7pqBxvr+bQfF1idseA==", "fid": {"volume_id": 2, "file_key": 3, "cookie": 3649854541}}], "attributes": {"file_size": 8, "mtime": 1794772531, "file_mode": 432, "uid": 1000, "gid": 1000, "crtime": 1794772528, "mime": "text/markdown", "md5": "W+7P7pqBxvr+bQfF1idseA==", "inode": 7484667733272911122, "ctime": 1794772531, "atime": 1794772531}, "extended": {"Seaweed-X-Amz-ETag": "NWJlZWNmZWU5YTgxYzZmYWZlNmQwN2M1ZDYyNzZjNzg=", "Seaweed-X-Amz-Owner": "YWRtaW4=", "x-seaweedfs-checksum-algorithm": "WC1BbXotQ2hlY2tzdW0tQ3JjNjRudm1l", "x-seaweedfs-checksum-value": "M2hRYi92TElHek09"}}, "delete_chunks": true, "new_parent_path": "/buckets/ov-sync/docs", "signatures": [-303590685]}}, "raw": null}
+{"path": "/events", "auth": "Bearer spike-bearer-114175175", "ctype": "application/json", "json": {"event_type": "delete", "key": "/buckets/ov-sync/docs/a.md", "message": {"old_entry": {"name": "a.md", "chunks": [{"file_id": "2,03d98c5c4d", "size": 8, "modified_ts_ns": 1794772531938201337, "e_tag": "W+7P7pqBxvr+bQfF1idseA==", "fid": {"volume_id": 2, "file_key": 3, "cookie": 3649854541}}], "attributes": {"file_size": 8, "mtime": 1794772531, "file_mode": 432, "uid": 1000, "gid": 1000, "crtime": 1794772528, "mime": "text/markdown", "md5": "W+7P7pqBxvr+bQfF1idseA==", "inode": 7484667733272911122, "ctime": 1794772531, "atime": 1794772531}, "extended": {"Seaweed-X-Amz-ETag": "NWJlZWNmZWU5YTgxYzZmYWZlNmQwN2M1ZDYyNzZjNzg=", "Seaweed-X-Amz-Owner": "YWRtaW4=", "x-seaweedfs-checksum-algorithm": "WC1BbXotQ2hlY2tzdW0tQ3JjNjRudm1l", "x-seaweedfs-checksum-value": "M2hRYi92TElHek09"}}, "delete_chunks": true, "signatures": [-303590685]}}, "raw": null}
+PASS some events arrived
+PASS every post is JSON
+PASS every post has the bearer header
+PASS an event names ov-sync/docs/a.md
+PASS a delete event arrived
+PASS nothing from bucket other
+event count: 4
+keys: ['event_type', 'key', 'message']
+   {'event_type': 'create', 'key': '/buckets/ov-sync/docs/a.md'}
+   {'event_type': 'create', 'key': '/buckets/ov-sync/docs'}
+   {'event_type': 'update', 'key': '/buckets/ov-sync/docs/a.md'}
+   {'event_type': 'delete', 'key': '/buckets/ov-sync/docs/a.md'}
+===== variant B: endpoint http://ovc2-listener:20500/events, listener separate, bind flag 'none'
+tcp        0      0 127.0.0.1:18080         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:9333          0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:8888          0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.11:46241        0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:19333         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:18888         0.0.0.0:*               LISTEN      
+tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
+tcp        0      0 :::8333                 :::*                    LISTEN      
+tcp        0      0 :::18333                :::*                    LISTEN      
+tcp        0      0 :::9327                 :::*                    LISTEN      
+-- webhook errors in seaweed log
+E1115 19:55:51.143264 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.19.0.3:20500: connect: inval
+E1115 19:55:51.143358 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs/a.md: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.19.0.3:20500: connect: 
+E1115 19:55:54.126510 webhook_queue.go:195 failed to send message to webhook /buckets/ov-sync/docs/a.md: failed to send request: Post "http://ovc2-listener:20500/events": dial tcp 127.0.0.1:0->172.19.0.3:20500: connect: 
+-- listener received
+FAIL some events arrived
+PASS every post is JSON
+PASS every post has the bearer header
+FAIL an event names ov-sync/docs/a.md
+FAIL a delete event arrived
+PASS nothing from bucket other
+event count: 0
+===== A (job args, loopback sidecar) ok=1; B (no -ip.bind, other container) ok=0

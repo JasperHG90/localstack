@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "ov-sync-consumer",
+  "n": 5,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc2/webhook_variants.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-ovc2/webhook_variants.sh",
+      "copy": "files/webhook_variants.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "9ed74abb45a3bb35eed2b247532ec5f67336bec0",
+  "fingerprint": "1c9c8f4c7371b2cb3f19659091867734f3982e96a1885dfd4c79bd792e93111f",
+  "started_at": "2026-11-15T19:55:20+00:00",
+  "finished_at": "2026-11-15T19:56:03+00:00",
+  "duration_seconds": 43.693,
+  "timeout_seconds": 300.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
