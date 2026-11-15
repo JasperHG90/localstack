@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "requests in flight could reach Pool+1 because catch-up ran outside the pool",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/openviking.go:105",
+      "category": "bug",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "catch-up's single recursive ls ignored has_more and the node and level caps",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/openviking.go:151",
+      "category": "bug",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "no per-key ordering between workers, so a stale read can overwrite a newer write, and catch-up does not repair content; deferred to ticket ov-sync-consumer-reviewer-f3",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/consumer.go:186",
+      "category": "hardening",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f4",
+      "disposition": "resolved",
+      "claim": "main.go is not gofmt-clean after the MaxInFlight field was added",
+      "anchor": "applications/ov-sync-consumer/main.go:99",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f5",
+      "disposition": "resolved",
+      "claim": "the new consumer paragraph has an unwrapped 124-character prose line",
+      "anchor": ".okf/components/ov-sync-consumer.md:97",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "d8f1501f35b6f0711e1fb7691e052f00c7896835cf49417b12a442f7f2aa0b4b",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T21:55:10+00:00"
+}
