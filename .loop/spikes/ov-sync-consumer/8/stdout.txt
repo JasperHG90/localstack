@@ -1,0 +1,11 @@
+messages: 10
+#1 /buckets
+#2 /buckets/.system
+#3 /buckets/.system/owners
+#4 /buckets/.system/owners/.complete
+#5 /buckets/ov-sync
+#6 /buckets/ov-sync/JasperHG90
+#7 /buckets/ov-sync/JasperHG90/localstack
+#8 /buckets/ov-sync/JasperHG90/localstack/docs
+#9 /buckets/ov-sync/JasperHG90/localstack/docs/a.md
+#10 /buckets/ov-sync/JasperHG90/localstack/docs/a.md
