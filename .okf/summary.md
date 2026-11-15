@@ -16,8 +16,8 @@ checked:
 
 ## The project
 
-This repository builds and runs one personal homelab: five small computers on
-one LAN running Consul, Vault and Nomad, with Podman for containers. The
+This repository builds and runs one personal homelab: five small computers
+running Consul, Vault and Nomad, with Podman. The
 operator runs it for the household and their own work, and a few people with
 Vault accounts reach its web apps through Vault's single sign-on.
 [firebat](/nodes/firebat.md) carries every control-plane service, and four
@@ -39,7 +39,7 @@ chain](/components/workload-identity-chain.md), and people sign in through
 [Vault's OIDC provider](/components/vault-oidc-provider.md). One [HAProxy
 edge](/components/edge-proxy.md) on firebat terminates TLS for every lab name.
 The [localstack CLI](/components/localstack-cli.md) logs the operator in,
-brokers short-lived Nomad and Consul tokens, and only ever reads the cluster.
+brokers short-lived tokens, and only reads the cluster.
 
 ## What it has settled
 
@@ -58,7 +58,7 @@ MFA names the userpass mount so other sign-in paths keep working
 The household must not depend on the cluster, so lab names resolve from
 public DNS ([ADR 0003](/decisions/0003-lab-names-resolve-from-public-dns.md)).
 The practices teach one lesson: a passing validate, a catalog
-entry or a rule that looks applied is not proof. [Write-only credential
+entry or an applied-looking rule is not proof. [Write-only credential
 chains](/practices/terraform-write-only-credentials.md), [ufw
 rules](/practices/ufw-rules-outside-user-rules.md) and [vision
 models](/practices/openviking-vision-models.md) each failed quietly until
@@ -78,17 +78,20 @@ invariants have a passing test. Open gaps:
   ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)).
   A copy and re-index, not yet run, carries the kept trees
   ([ADR 0022](/decisions/0022-openviking-carry-over-copies-storage-and-re-indexes.md)).
-- Repo docs sync from the `ov-sync` bucket into OpenViking through a
-  [JetStream queue](/components/ov-sync-consumer.md)
+- CI writes repo docs to `ov-sync` with a Vault identity token swapped
+  at SeaweedFS STS
+  ([ADR 0028](/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md)),
+  and a [JetStream queue](/components/ov-sync-consumer.md) carries them into
+  OpenViking
   ([ADR 0026](/decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer.md)),
-  not yet deployed.
+  neither yet deployed.
 - CI joins the tailnet and logs in to Vault through one role per workflow
   ([ADR 0027](/decisions/0027-ci-reaches-the-lab-through-a-public-lab-auth-action-and-per-caller-vault-roles.md)),
   not yet applied.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven but
   never rolled out.
-- The manifesto's values are a draft awaiting the operator.
+- The manifesto's values await the operator.
 
 The bundle holds only one architecture page, says little about Grafana
 dashboards or alert coverage, and records no restore test of the Postgres

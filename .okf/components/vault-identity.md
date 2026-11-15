@@ -178,8 +178,18 @@ job's GitHub OIDC token, audience `vault.io`
   fails if one drops a claim.
 - No role binds on `sub`, because repositories created after mid-2026 put
   immutable numeric IDs in it.
-- Tokens live 300 seconds, at most 600, and carry only Vault's `default`
-  policy. A caller that needs a path gets its own policy on its role.
+- Tokens live 300 seconds, at most 600, and carry Vault's `default` policy.
+  A caller that needs a path gets its own policy on its role.
+- A caller with `ov_sync = true` also carries `ci-ov-sync-<key>`
+  (`vault_policy.ci_ov_sync`), which reads only
+  `identity/oidc/token/ci-<key>`. That identity-token role
+  (`vault_identity_oidc_role.ci_ov_sync` in `oidc.tf`) signs with the
+  `identity-tokens` key, audience `seaweedfs`, a literal `ci_repository`
+  claim and a 15-minute TTL. The openviking-sync action swaps the token at
+  SeaweedFS STS for credentials on the repository's own `ov-sync` prefix
+  ([ADR 0028](/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md)).
+  The token needs the entity below: Vault mints identity tokens only for a
+  token that has one.
 - The roles create no entity aliases in Terraform, so each first login
   creates an entity whose alias is the `repository` claim. Every role for one
   repository shares that entity. It sits in no group, and policies attach to

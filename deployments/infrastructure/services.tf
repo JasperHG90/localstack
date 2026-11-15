@@ -519,6 +519,14 @@ resource "nomad_job" "postgres" {
 ### another's role (spike:seaweedfs-workload-identity/2). Not claim
 ### mode: SeaweedFS's `policyClaim` splits the claim on commas, and a job named
 ### `evil,tempo` got tempo's policy. Key: job id. Value: its one bucket.
+###
+### GitHub workflows log in the same way with a Vault identity token (the
+### `vault` provider), one role per `ov_sync` caller in var.vault_ci_callers.
+### Its trust pins the token's literal `ci_repository` claim by StringEquals,
+### for the same comma reason, and its policy reaches only that repository's
+### `ov-sync/<owner>/<repo>/` prefix, without List: the openviking-sync action
+### keeps a manifest instead (spike:ci-openviking-sync/1). Key: role name.
+### Value: the repository.
 locals {
   seaweedfs_keyless_jobs = {
     tempo              = "tempo"
@@ -527,42 +535,83 @@ locals {
     "ov-sync-consumer" = "ov-sync"
   }
 
+  seaweedfs_ci_callers = {
+    for name, caller in var.vault_ci_callers : "ci-${name}" => caller.repository if caller.ov_sync
+  }
+
   seaweedfs_iam = {
     policy = { defaultEffect = "Deny" }
-    providers = [{
-      name    = "nomad"
-      type    = "oidc"
-      enabled = true
-      config  = { issuer = "https://nomad.lab.orangecluster.nl", clientId = "seaweedfs" }
-    }]
-    policies = [for job, bucket in local.seaweedfs_keyless_jobs : {
-      name = job
-      document = {
-        Version = "2012-10-17"
-        Statement = [{
-          Effect   = "Allow"
-          Action   = ["s3:*"]
-          Resource = ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
-        }]
-      }
-    }]
-    roles = [for job, bucket in local.seaweedfs_keyless_jobs : {
-      roleName = job
-      roleArn  = "arn:aws:iam::role/${job}"
-      trustPolicy = {
-        Version = "2012-10-17"
-        Statement = [{
-          Effect    = "Allow"
-          Principal = { Federated = "nomad" }
-          Action    = "sts:AssumeRoleWithWebIdentity"
-          Condition = {
-            StringEquals = { "oidc:nomad_job_id" = job }
-            StringLike   = { "oidc:sub" = "global:default:${job}:*" }
-          }
-        }]
-      }
-      attachedPolicies = [job]
-    }]
+    providers = [
+      {
+        name    = "nomad"
+        type    = "oidc"
+        enabled = true
+        config  = { issuer = "https://nomad.lab.orangecluster.nl", clientId = "seaweedfs" }
+      },
+      {
+        name    = "vault"
+        type    = "oidc"
+        enabled = true
+        config  = { issuer = "https://vault.lab.orangecluster.nl/v1/identity/oidc", clientId = "seaweedfs" }
+      },
+    ]
+    policies = concat(
+      [for job, bucket in local.seaweedfs_keyless_jobs : {
+        name = job
+        document = {
+          Version = "2012-10-17"
+          Statement = [{
+            Effect   = "Allow"
+            Action   = ["s3:*"]
+            Resource = ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
+          }]
+        }
+      }],
+      [for role, repository in local.seaweedfs_ci_callers : {
+        name = role
+        document = {
+          Version = "2012-10-17"
+          Statement = [{
+            Effect   = "Allow"
+            Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+            Resource = ["arn:aws:s3:::ov-sync/${repository}/*"]
+          }]
+        }
+      }],
+    )
+    roles = concat(
+      [for job, bucket in local.seaweedfs_keyless_jobs : {
+        roleName = job
+        roleArn  = "arn:aws:iam::role/${job}"
+        trustPolicy = {
+          Version = "2012-10-17"
+          Statement = [{
+            Effect    = "Allow"
+            Principal = { Federated = "nomad" }
+            Action    = "sts:AssumeRoleWithWebIdentity"
+            Condition = {
+              StringEquals = { "oidc:nomad_job_id" = job }
+              StringLike   = { "oidc:sub" = "global:default:${job}:*" }
+            }
+          }]
+        }
+        attachedPolicies = [job]
+      }],
+      [for role, repository in local.seaweedfs_ci_callers : {
+        roleName = role
+        roleArn  = "arn:aws:iam::role/${role}"
+        trustPolicy = {
+          Version = "2012-10-17"
+          Statement = [{
+            Effect    = "Allow"
+            Principal = { Federated = "vault" }
+            Action    = "sts:AssumeRoleWithWebIdentity"
+            Condition = { StringEquals = { "oidc:ci_repository" = repository } }
+          }]
+        }
+        attachedPolicies = [role]
+      }],
+    )
   }
 }
 

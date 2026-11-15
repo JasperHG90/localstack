@@ -26,6 +26,7 @@ CHECK_WORKFLOW = WORKFLOWS / "lab-auth-check.yaml"
 MOUNT = "jwt-github"
 ROLE_HEADER = 'resource "vault_jwt_auth_backend_role" "github_ci" {'
 VARIABLE_HEADER = 'variable "vault_ci_callers" {'
+OV_SYNC_POLICY_HEADER = 'resource "vault_policy" "ci_ov_sync" {'
 CLAIMS = ("repository", "ref", "environment", "workflow_ref")
 CLIENT_ID = "T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL"
 TS_AUDIENCE = f"api.tailscale.com/{CLIENT_ID}"
@@ -70,6 +71,15 @@ def rendered(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     body = re.sub(r"^\s*for_each\s*=.*$", "", body, flags=re.M)
     body = body.replace("vault_jwt_auth_backend.github.path", f'"{MOUNT}"')
     body = body.replace("each.key", "key").replace("each.value", "value")
+    # The ov-sync policy's own name expression, so the role sees the name
+    # Terraform would hand it.
+    policy = _block((INFRA / "machine_roles.tf").read_text(), OV_SYNC_POLICY_HEADER)
+    policy_name = re.search(r'^\s*name\s*=\s*("[^"\n]*")', policy, re.M)
+    if not policy_name:
+        pytest.fail("vault_policy.ci_ov_sync has no literal name")
+    body = body.replace(
+        "vault_policy.ci_ov_sync[key].name", policy_name.group(1).replace("each.key", "key")
+    )
     workdir = tmp_path_factory.mktemp("lab-auth")
     (workdir / "main.tf").write_text(
         variable
@@ -134,6 +144,8 @@ def test_caller_roles_bind_all_four_claims(rendered: dict[str, Any]) -> None:
             "environment": caller["environment"],
             "workflow_ref": workflow_ref,
         }
+        ov_sync = [f"ci-ov-sync-{name}"] if caller["ov_sync"] else []
+        assert role["token_policies"] == ["default", *ov_sync], name
         # 0 would fall back to the mount's default, which is Vault's 32 days.
         assert 0 < role["token_ttl"] < 3600, f"{name} token_ttl is not minutes"
         assert 0 < role["token_max_ttl"] < 3600, f"{name} token_max_ttl is not minutes"
@@ -211,7 +223,15 @@ def test_default_callers(rendered: dict[str, Any]) -> None:
             "ref": "refs/heads/main",
             "environment": "lab",
             "workflow": "lab-auth-check.yaml",
-        }
+            "ov_sync": False,
+        },
+        {
+            "repository": "JasperHG90/localstack",
+            "ref": "refs/heads/main",
+            "environment": "lab",
+            "workflow": "openviking-sync.yaml",
+            "ov_sync": True,
+        },
     ]
 
 
