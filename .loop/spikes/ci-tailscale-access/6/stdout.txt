@@ -1,0 +1,27 @@
+run 43764572127 head 757cde1a5585aa6241ce14180143b6073dc54490
+with-env: success; Set up job=success, Run actions/checkout@v4=success, Run JasperHG90/localstack/.github/actions/join@spike/lab-auth-reach=success, reach checks=success, Post Run JasperHG90/localstack/.github/actions/join@spike/lab-auth-reach=success, Post Run actions/checkout@v4=success, Complete job=success
+no-env: failure; Set up job=success, Run actions/checkout@v4=success, Run JasperHG90/localstack/.github/actions/join@spike/lab-auth-reach=failure, Run echo "JOINED_WITHOUT_ENV"=skipped, Post Run JasperHG90/localstack/.github/actions/join@spike/lab-auth-reach=success, Post Run actions/checkout@v4=success, Complete job=success
+localstack OIDC sub setting: {"use_default":true,"use_immutable_subject":false,"sub_claim_prefix":"repo:JasperHG90/localstack"}
+--- with-env join output
+▶️ tailscale up
+✅ Tailscale up command completed successfully on attempt 1
+✅ Successfully logged out of Tailscale
+--- no-env join output
+▶️ tailscale up
+failed to exchange JWT for access token: token exchange failed with status 403: {"message":"Unauthorized. Visit https://login.tailscale.com/admin/settings/trust-credentials/view/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL for details"}
+##[warning]Tailscale up attempt 1 failed: sudo failed with exit code 1
+✅ Successfully logged out of Tailscale
+--- reach table
+^[[36;1mecho "===== RESULT TABLE ====="^[[0m
+^[[36;1mprintf '%s\n' "${rows[@]}"^[[0m
+^[[36;1mecho "OVERALL=$([ $ok = 1 ] && echo PASS || echo FAIL)"^[[0m
+===== RESULT TABLE =====
+PASS | reach  | vault | http 200
+PASS | reach  | openviking | http 200
+PASS | reach  | s3 | http 403
+PASS | blocked | ssh 192.168.2.30:22 | closed/timeout
+PASS | blocked | vault-raw 192.168.2.30:8200 | closed/timeout
+PASS | blocked | ov-raw 192.168.2.50:1933 | closed/timeout
+PASS | blocked | s3-raw 192.168.2.29:8333 | closed/timeout
+PASS | blocked | firebat-ts 100.117.172.3:8200 | closed/timeout
+OVERALL=PASS
