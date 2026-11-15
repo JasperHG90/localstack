@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "No test covers the openviking-sync action's credential step. The lab-auth action has test_action_shape, which pins mask-before-export, no secret-named inputs and no `secrets.`. The new action.yml has no counterpart. Nothing would catch a later edit that drops an `::add-mask::`, moves a mask after first use, writes AWS_* or the JWT to $GITHUB_ENV or $GITHUB_OUTPUT, or changes the role ARN shape (`arn:aws:iam::role/<role>`) or the `ci-` default prefix that has to match oidc.tf and services.tf. Add a static shape test next to the sync.py tests.",
+      "anchor": ".github/actions/openviking-sync/action.yml:37",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "37f2d491888c2b50bfc317423d1ce07d4e5679d12f3a9c25bab6ab0e2d29b643",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-15T23:01:35+00:00"
+}
