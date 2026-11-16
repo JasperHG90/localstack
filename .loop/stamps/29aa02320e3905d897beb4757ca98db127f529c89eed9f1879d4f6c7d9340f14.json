@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "fingerprint": "29aa02320e3905d897beb4757ca98db127f529c89eed9f1879d4f6c7d9340f14",
+  "slug": "ci-tailscale-access-reviewer-f3",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 1,
+      "passed": false,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_login_fails_on_missing_oidc_value -q",
+      "exit": 1,
+      "passed": false,
+      "tests_passed": 0,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r2",
+      "kind": "eval-row",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    }
+  ],
+  "green": false,
+  "at": "2026-11-16T08:05:11+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696"
+}

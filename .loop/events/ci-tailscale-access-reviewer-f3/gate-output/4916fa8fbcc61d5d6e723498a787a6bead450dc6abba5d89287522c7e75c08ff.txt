@@ -1,0 +1,49 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_login_fails_on_missing_oidc_value ____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-160/test_login_fails_on_missing_oi0')
+
+    def test_login_fails_on_missing_oidc_value(tmp_path: Path) -> None:
+        """An OIDC response with no `value` fails at the OIDC step, not later as a
+        Vault refusal of the literal string null."""
+        action = yaml.safe_load(ACTION.read_text())
+        step = next(s for s in action["runs"]["steps"] if s.get("id") == "login")
+        script = tmp_path / "login.sh"
+        script.write_text(step["run"])
+        bin_dir = tmp_path / "bin"
+        bin_dir.mkdir()
+        vault_called = tmp_path / "vault-called"
+        _stub(
+            bin_dir,
+            "curl",
+            f'case "$*" in *"/login"*) touch {vault_called}; cat >/dev/null ;; esac\necho "{{}}"',
+        )
+    
+        result = subprocess.run(
+            ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+            capture_output=True,
+            text=True,
+            check=False,
+            env={
+                "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/local/bin",
+                "ACTIONS_ID_TOKEN_REQUEST_URL": "https://oidc.example/token?x=1",
+                "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "t",
+                "VAULT_ADDR": "https://vault.example",
+                "VAULT_MOUNT": MOUNT,
+                "VAULT_ROLE": "some-role",
+                "GITHUB_ENV": str(tmp_path / "env"),
+                "GITHUB_OUTPUT": str(tmp_path / "out"),
+            },
+        )
+    
+        assert result.returncode != 0
+>       assert not vault_called.exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-vscode/pytest-160/test_login_fails_on_missing_oi0/vault-called').exists
+
+tests/test_lab_auth_action.py:317: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_lab_auth_action.py::test_login_fails_on_missing_oidc_value
+1 failed in 0.05s

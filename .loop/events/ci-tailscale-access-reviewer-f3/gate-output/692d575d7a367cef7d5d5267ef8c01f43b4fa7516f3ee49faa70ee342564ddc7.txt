@@ -1,0 +1,127 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/vscode/workspace.worktrees/ci-tailscale-access-reviewer-f3/cli
+configfile: pyproject.toml
+testpaths: tests
+plugins: asyncio-1.4.0, textual-snapshot-1.0.0, respx-0.23.1, syrupy-5.5.3, anyio-4.14.2
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 816 items / 21 deselected / 795 selected
+
+tests/api/test_grants.py ............                                    [  1%]
+tests/api/test_haproxy.py ............                                   [  3%]
+tests/api/test_secrets.py ........                                       [  4%]
+tests/api/test_services.py ........................                      [  7%]
+tests/api/test_status.py .....                                           [  7%]
+tests/api/test_vault_reads.py .........                                  [  8%]
+tests/auth/test_broker.py ...................                            [ 11%]
+tests/auth/test_session.py ..........................                    [ 14%]
+tests/auth/test_vault.py ..............................                  [ 18%]
+tests/auth/test_vault_token_file.py ...............                      [ 20%]
+tests/commands/test_auth_commands.py ................................... [ 24%]
+........                                                                 [ 25%]
+tests/commands/test_breakglass.py .....................                  [ 28%]
+tests/commands/test_breakglass_probes.py ..........                      [ 29%]
+tests/commands/test_breakglass_runbook_facts.py ............             [ 30%]
+tests/commands/test_deps.py ..............                               [ 32%]
+tests/commands/test_monitor_command.py .....                             [ 33%]
+tests/commands/test_read_commands.py ................................... [ 37%]
+.                                                                        [ 37%]
+tests/commands/test_token_command.py ........                            [ 38%]
+tests/test_agent_tooling.py ............................................ [ 44%]
+..                                                                       [ 44%]
+tests/test_api_consul.py ..........                                      [ 45%]
+tests/test_api_nomad.py ..............                                   [ 47%]
+tests/test_api_vault.py .....                                            [ 48%]
+tests/test_backup_coverage.py ..........                                 [ 49%]
+tests/test_bifrost_version.py ...                                        [ 49%]
+tests/test_branding.py ...........                                       [ 51%]
+tests/test_config.py ......                                              [ 52%]
+tests/test_devcontainer_path.py ...                                      [ 52%]
+tests/test_devcontainer_volumes.py ........                              [ 53%]
+tests/test_docs_index.py ..                                              [ 53%]
+tests/test_health_rules.py .........................                     [ 56%]
+tests/test_hermes_openviking_tools.py ............................       [ 60%]
+tests/test_hermes_save_skill.py ............                             [ 61%]
+tests/test_hermes_version.py .......                                     [ 62%]
+tests/test_how_to_skeleton.py .......................................... [ 68%]
+.......................                                                  [ 70%]
+tests/test_install.py ...........                                        [ 72%]
+tests/test_lab_auth_action.py ......F                                    [ 73%]
+tests/test_lazy.py .......                                               [ 74%]
+tests/test_main.py ......                                                [ 74%]
+tests/test_monitor_guardrails.py .........                               [ 75%]
+tests/test_monitor_tui.py ....................                           [ 78%]
+tests/test_no_minio.py ..                                                [ 78%]
+tests/test_observability_s3_clients.py ........                          [ 79%]
+tests/test_openviking_sync_action.py ........                            [ 80%]
+tests/test_ov_carry_over.py ...............                              [ 82%]
+tests/test_ov_fresh_instance.py .....                                    [ 83%]
+tests/test_platforms.py ..........                                       [ 84%]
+tests/test_read_guardrails.py ........                                   [ 85%]
+tests/test_registry_s3.py ...                                            [ 85%]
+tests/test_restore_s3.py .........                                       [ 87%]
+tests/test_s3_cutover.py .....                                           [ 87%]
+tests/test_seaweedfs_buckets.py ..........                               [ 88%]
+tests/test_seaweedfs_iam_config.py .............                         [ 90%]
+tests/test_seaweedfs_jobspec.py .................                        [ 92%]
+tests/test_seed_worktree.py ......                                       [ 93%]
+tests/test_shims.py ....................                                 [ 95%]
+tests/test_status.py ..............                                      [ 97%]
+tests/test_versions.py ..................                                [100%]
+
+=================================== FAILURES ===================================
+____________________ test_login_fails_on_missing_oidc_value ____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-159/test_login_fails_on_missing_oi0')
+
+    def test_login_fails_on_missing_oidc_value(tmp_path: Path) -> None:
+        """An OIDC response with no `value` fails at the OIDC step, not later as a
+        Vault refusal of the literal string null."""
+        action = yaml.safe_load(ACTION.read_text())
+        step = next(s for s in action["runs"]["steps"] if s.get("id") == "login")
+        script = tmp_path / "login.sh"
+        script.write_text(step["run"])
+        bin_dir = tmp_path / "bin"
+        bin_dir.mkdir()
+        vault_called = tmp_path / "vault-called"
+        _stub(
+            bin_dir,
+            "curl",
+            f'case "$*" in *"/login"*) touch {vault_called}; cat >/dev/null ;; esac\necho "{{}}"',
+        )
+    
+        result = subprocess.run(
+            ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+            capture_output=True,
+            text=True,
+            check=False,
+            env={
+                "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/local/bin",
+                "ACTIONS_ID_TOKEN_REQUEST_URL": "https://oidc.example/token?x=1",
+                "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "t",
+                "VAULT_ADDR": "https://vault.example",
+                "VAULT_MOUNT": MOUNT,
+                "VAULT_ROLE": "some-role",
+                "GITHUB_ENV": str(tmp_path / "env"),
+                "GITHUB_OUTPUT": str(tmp_path / "out"),
+            },
+        )
+    
+        assert result.returncode != 0
+>       assert not vault_called.exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-vscode/pytest-159/test_login_fails_on_missing_oi0/vault-called').exists
+
+tests/test_lab_auth_action.py:317: AssertionError
+=============================== warnings summary ===============================
+tests/commands/test_auth_commands.py: 15 warnings
+  /home/vscode/.local/share/uv/python/cpython-3.12.15-linux-aarch64-gnu/lib/python3.12/getpass.py:62: GetPassWarning: Can not control echo on the terminal.
+    passwd = fallback_getpass(prompt, stream)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+7 snapshots passed.
+=========================== short test summary info ============================
+FAILED tests/test_lab_auth_action.py::test_login_fails_on_missing_oidc_value
+===== 1 failed, 794 passed, 21 deselected, 15 warnings in 64.91s (0:01:04) =====
