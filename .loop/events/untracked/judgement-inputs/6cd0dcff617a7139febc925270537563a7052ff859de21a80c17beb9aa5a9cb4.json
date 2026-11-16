@@ -1,0 +1,1 @@
+{"ask":"The ci workflow's lint job has failed on main since at least 2026-10-20: prek's nomad-fmt hook needs a nomad binary the GitHub runner lacks (and terraform-fmt/terraform-validate need terraform). Install pinned nomad 2.0.4 and terraform 1.16.5 in the lint job so the gates pass in CI."}
