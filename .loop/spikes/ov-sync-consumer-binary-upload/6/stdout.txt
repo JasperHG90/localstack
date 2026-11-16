@@ -1,0 +1,138 @@
+== ov up
+d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.zRBjyXK3As/a.png
+ba47cb7bfc617b7d38cce83b0aadf5a516fcbb1b6975055ce22c776cec4f8ad1  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.zRBjyXK3As/b.png
+0fa2402569a2d76a5ef955958c52eb5ed667f6bbded6ff8f85cc26f7fc84fb6d  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.zRBjyXK3As/c.png
+a.png 108281 B sha d8e0cd5c25fdf346
+== case A: D=/projects/a/docs notes=True two_step=True
+[write notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/a/docs/notes.md","root_uri":"viking://user/jasper/resources/projects/a/docs","context_type":"resource","mode":"create","written_bytes":8,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_3db5ef2312734554907ba159d8e39dd5.png"}}
+[add to=/projects/a/docs/diagram.png] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/a/docs/diagram.png","temp_uri":"viking://temp/jasper/11161120_1673a3/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"
+-- before deletes
+[ls /projects/a/docs] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+[ls /projects/a/docs output=original] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+[ls /projects/a/docs/diagram.png] HTTP 200 [('/projects/a/docs/diagram.png/.abstract.md', 'file'), ('/projects/a/docs/diagram.png/.overview.md', 'file'), ('/projects/a/docs/diagram.png/diagram.png', 'file')]
+[DELETE /projects/a/docs/diagram.png/diagram.png recursive=False] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/a/docs/diagram.png/diagram.png","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/a/docs/diagram.png","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"p
+-- after file DELETE
+[ls /projects/a/docs] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+[ls /projects/a/docs output=original] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+[DELETE /projects/a/docs/diagram.png recursive=True] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/a/docs/diagram.png","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/a/docs","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+-- immediately after dir DELETE
+[ls /projects/a/docs] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+[ls /projects/a/docs output=original] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- 5 s after dir DELETE
+[ls /projects/a/docs] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+[ls /projects/a/docs output=original] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- 30 s after dir DELETE
+[ls /projects/a/docs] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+[ls /projects/a/docs output=original] HTTP 200 [('/projects/a/docs/diagram.png', 'dir'), ('/projects/a/docs/.abstract.md', 'file'), ('/projects/a/docs/.overview.md', 'file'), ('/projects/a/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- still listed at 30 s: probing
+[stat /projects/a/docs/diagram.png/diagram.png] HTTP 404 {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/a/docs/diagram.png/diagram.png","details":{"type":"file","resource":"viking://user/jasper/resources/projects/a/docs/diagram.png/diagram.png"}},"telemetry":null,"profile":null}
+[download /projects/a/docs/diagram.png/diagram.png] HTTP 404 302 B {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/a/docs/diagram.png/diagram.png","details":{"type":"file","resource":"viki
+[ls /projects/a/docs/diagram.png] HTTP 200 []
+[ls /projects/a/docs/diagram.png output=original] HTTP 200 []
+[stat /projects/a/docs/diagram.png] HTTP 200 {"status":"ok","result":{"name":"diagram.png","size":0,"mode":493,"modTime":"2026-11-16T11:20:05Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+RESULT case A: listed {'0s': True, '5s': True, '30s': True}
+== case B: D=/projects/b/docs/img notes=False two_step=True
+[ls /projects/b/docs/img] HTTP 200 []
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_6ac90680be074c64a8661b78663d2784.png"}}
+[add to=/projects/b/docs/img/diagram.png] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/b/docs/img/diagram.png","temp_uri":"viking://temp/jasper/11161120_c298bf/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total"
+-- before deletes
+[ls /projects/b/docs/img] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+[ls /projects/b/docs/img output=original] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+[ls /projects/b/docs/img/diagram.png] HTTP 200 [('/projects/b/docs/img/diagram.png/.abstract.md', 'file'), ('/projects/b/docs/img/diagram.png/.overview.md', 'file'), ('/projects/b/docs/img/diagram.png/diagram.png', 'file')]
+[DELETE /projects/b/docs/img/diagram.png/diagram.png recursive=False] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/b/docs/img/diagram.png/diagram.png","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/b/docs/img/diagram.png","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry"
+-- after file DELETE
+[ls /projects/b/docs/img] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+[ls /projects/b/docs/img output=original] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+[DELETE /projects/b/docs/img/diagram.png recursive=True] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/b/docs/img/diagram.png","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/b/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+-- immediately after dir DELETE
+[ls /projects/b/docs/img] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+[ls /projects/b/docs/img output=original] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- 5 s after dir DELETE
+[ls /projects/b/docs/img] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+[ls /projects/b/docs/img output=original] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- 30 s after dir DELETE
+[ls /projects/b/docs/img] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+[ls /projects/b/docs/img output=original] HTTP 200 [('/projects/b/docs/img/diagram.png', 'dir'), ('/projects/b/docs/img/.abstract.md', 'file'), ('/projects/b/docs/img/.overview.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- still listed at 30 s: probing
+[stat /projects/b/docs/img/diagram.png/diagram.png] HTTP 404 {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/b/docs/img/diagram.png/diagram.png","details":{"type":"file","resource":"viking://user/jasper/resources/projects/b/docs/img/diagram.png/diagram.png"}},"telemetry":null,"profile":null}
+[download /projects/b/docs/img/diagram.png/diagram.png] HTTP 404 310 B {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/b/docs/img/diagram.png/diagram.png","details":{"type":"file","resource":"
+[ls /projects/b/docs/img/diagram.png] HTTP 200 []
+[ls /projects/b/docs/img/diagram.png output=original] HTTP 200 []
+[stat /projects/b/docs/img/diagram.png] HTTP 200 {"status":"ok","result":{"name":"diagram.png","size":0,"mode":493,"modTime":"2026-11-16T11:20:36Z","isDir":true,"isLocked":false,"count":2},"error":null,"telemetry":null,"profile":null}
+RESULT case B: listed {'0s': True, '5s': True, '30s': True}
+== case C: D=/projects/c/docs notes=True two_step=False
+[write notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/c/docs/notes.md","root_uri":"viking://user/jasper/resources/projects/c/docs","context_type":"resource","mode":"create","written_bytes":8,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_d22fbd55935448c391bd56856f935bf1.png"}}
+[add to=/projects/c/docs/diagram.png] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/c/docs/diagram.png","temp_uri":"viking://temp/jasper/11161121_9b2c9e/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"
+-- before deletes
+[ls /projects/c/docs] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+[ls /projects/c/docs output=original] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+[ls /projects/c/docs/diagram.png] HTTP 200 [('/projects/c/docs/diagram.png/.abstract.md', 'file'), ('/projects/c/docs/diagram.png/.overview.md', 'file'), ('/projects/c/docs/diagram.png/diagram.png', 'file')]
+[DELETE /projects/c/docs/diagram.png recursive=True] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/c/docs/diagram.png","estimated_deleted_count":3,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/c/docs","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+-- immediately after dir DELETE
+[ls /projects/c/docs] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+[ls /projects/c/docs output=original] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- 5 s after dir DELETE
+[ls /projects/c/docs] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+[ls /projects/c/docs output=original] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- 30 s after dir DELETE
+[ls /projects/c/docs] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+[ls /projects/c/docs output=original] HTTP 200 [('/projects/c/docs/diagram.png', 'dir'), ('/projects/c/docs/.abstract.md', 'file'), ('/projects/c/docs/.overview.md', 'file'), ('/projects/c/docs/notes.md', 'file')]
+  -> diagram.png listed (consumer params, output=original): [True, True]
+-- still listed at 30 s: probing
+[stat /projects/c/docs/diagram.png/diagram.png] HTTP 404 {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/c/docs/diagram.png/diagram.png","details":{"type":"file","resource":"viking://user/jasper/resources/projects/c/docs/diagram.png/diagram.png"}},"telemetry":null,"profile":null}
+[download /projects/c/docs/diagram.png/diagram.png] HTTP 404 302 B {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/c/docs/diagram.png/diagram.png","details":{"type":"file","resource":"viki
+[ls /projects/c/docs/diagram.png] HTTP 200 []
+[ls /projects/c/docs/diagram.png output=original] HTTP 200 []
+[stat /projects/c/docs/diagram.png] HTTP 200 {"status":"ok","result":{"name":"diagram.png","size":0,"mode":493,"modTime":"2026-11-16T11:21:08Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+RESULT case C: listed {'0s': True, '5s': True, '30s': True}
+OVERALL gone by 30 s: A False B False C False
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    ├──a
+                    │   ├──.abstract.md
+                    │   ├──.overview.md
+                    │   └──docs
+                    │       ├──.abstract.md
+                    │       ├──.overview.md
+                    │       ├──diagram.png
+                    │       └──notes.md
+                    ├──b
+                    │   ├──.abstract.md
+                    │   ├──.overview.md
+                    │   └──docs
+                    │       ├──.abstract.md
+                    │       ├──.overview.md
+                    │       └──img
+                    │           ├──.abstract.md
+                    │           ├──.overview.md
+                    │           └──diagram.png
+                    └──c
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            ├──diagram.png
+                            └──notes.md
+43 directories, 42 files
+== ov log lines about errors, images, moves
+2026-11-16 11:19:59,385 - openviking.server.auth.plugins.ldap - WARNING - LDAP library not available. LDAP authentication will not work. Install with: uv pip install python-ldap
+== fake counts
+{"embeddings embark/embedding": 63, "chat gemini/gemini-3.5-flash-lite": 31, "chat-with-image gemini/gemini-3.5-flash-lite": 3}
