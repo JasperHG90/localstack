@@ -3,7 +3,7 @@
   "slug": "ov-sync-consumer-lock-conflict",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -68,8 +68,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "ecefb45b6922be747d172cdba34507aec6a1579f65796cba790ac83c01f5143e",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "705df9decacfd0ca0135ceaf1598793d3e9c4e077e8df2952b2c236c83002d6f",
+    "started_at": "2026-11-16T08:43:25+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "705df9decacfd0ca0135ceaf1598793d3e9c4e077e8df2952b2c236c83002d6f",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -84,5 +103,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T08:43:19+00:00"
+  "at": "2026-11-16T08:43:25+00:00"
 }
