@@ -22,16 +22,16 @@
   "stamps": [],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
-    "hash": "4366625ce6f10d0b9b8b4864939d42ae33888a99f538ca4edec65c446184a158",
-    "at": "2026-11-16T11:26:08+00:00"
+    "hash": "29d1627d5a0979142f35a59263e20739ae149bf29869fc65f556a47f8e08c10e",
+    "at": "2026-11-16T11:30:29+00:00"
   },
   "delegation": null,
   "budget_base": null,
   "signed_rows": [
     {
       "id": "r1",
-      "behavior": "the ci lint job installs Terraform 1.16.5 and Nomad 2.0.4 (the Nomad zip checked against the release SHA256SUMS) in steps before the prek step",
-      "fails_when": "either tool is missing, pinned to another version, installed after the prek step, or the Nomad download is not checksum-verified",
+      "behavior": "the ci lint job installs Terraform 1.16.5 and Nomad 2.0.4 (the Nomad zip checked against the release SHA256SUMS) and creates an empty .ssh/id_rsa, all in steps before the prek step",
+      "fails_when": "either tool is missing, pinned to another version, or installed after the prek step, the Nomad download is not checksum-verified, or no step creates .ssh/id_rsa before prek",
       "command": "uv run --directory cli pytest tests/test_ci_workflow.py -q",
       "judgment": false
     },
@@ -50,7 +50,23 @@
       "judgment": true
     }
   ],
-  "resigns": [],
+  "resigns": [
+    {
+      "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
+      "reason": "plan round 1: terraform validate also needs the gitignored .ssh/id_rsa to exist, so the lint job creates an empty one",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": {
+          "r1": [
+            "behavior",
+            "fails_when"
+          ]
+        }
+      },
+      "at": "2026-11-16T11:30:29+00:00"
+    }
+  ],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
@@ -89,5 +105,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T11:30:27+00:00"
+  "at": "2026-11-16T11:30:29+00:00"
 }

@@ -3,8 +3,8 @@
   "rows": [
     {
       "id": "r1",
-      "behavior": "the ci lint job installs Terraform 1.16.5 and Nomad 2.0.4 (the Nomad zip checked against the release SHA256SUMS) in steps before the prek step",
-      "fails_when": "either tool is missing, pinned to another version, installed after the prek step, or the Nomad download is not checksum-verified",
+      "behavior": "the ci lint job installs Terraform 1.16.5 and Nomad 2.0.4 (the Nomad zip checked against the release SHA256SUMS) and creates an empty .ssh/id_rsa, all in steps before the prek step",
+      "fails_when": "either tool is missing, pinned to another version, or installed after the prek step, the Nomad download is not checksum-verified, or no step creates .ssh/id_rsa before prek",
       "command": "uv run --directory cli pytest tests/test_ci_workflow.py -q"
     },
     {
