@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer-binary-upload",
-  "stage": "stub",
+  "stage": "planning",
   "attempts": 0,
   "plan_rounds": 0,
   "review_rounds": 0,
@@ -37,7 +37,14 @@
     ],
     "priority": null
   },
-  "history": [],
+  "history": [
+    {
+      "from": "stub",
+      "to": "planning",
+      "at": "2026-11-16T09:38:55+00:00",
+      "by": "promote"
+    }
+  ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:33:12+00:00"
+  "at": "2026-11-16T09:38:55+00:00"
 }
