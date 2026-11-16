@@ -1,14 +1,42 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer-lock-conflict",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "20918807c00636c712380d22c3da0f52cf2c70c26642538e42ed54970c8297e5",
+    "tree": "5b685798a6b529cda1a85b386faa3c4fd757c764",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261116T091651+0000-88a61e7a",
+        "paths": [
+          "applications/ov-sync-consumer/internal/consumer/consumer_test.go"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261116T091651+0000-5c122dc4",
+        "paths": [
+          "applications/ov-sync-consumer/internal/consumer/catchup.go",
+          "applications/ov-sync-consumer/internal/consumer/consumer.go",
+          "applications/ov-sync-consumer/internal/consumer/consumer_test.go",
+          "applications/ov-sync-consumer/internal/consumer/openviking.go"
+        ]
+      }
+    ],
+    "at": "2026-11-16T09:16:51+00:00"
+  },
   "ask": "j-20261116T084242+0000-9e00479f",
   "split": "j-20261116T090449+0000-35a7fb90",
   "split_plan_hash": "d2a0031db3d8023db5a39e5625ed07572573e705dc09d2e9dd56a6b369a267b9",
@@ -157,8 +185,14 @@
       "to": "fixing",
       "at": "2026-11-16T09:13:42+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-16T09:16:51+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:16:44+00:00"
+  "at": "2026-11-16T09:16:51+00:00"
 }
