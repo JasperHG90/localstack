@@ -1,4 +1,23 @@
 {
   "schema_version": "1.0",
-  "rows": []
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "two events for the same key handled by two workers at once leave OpenViking holding the object's latest content",
+      "fails_when": "a test that forces worker A to read v1, worker B to read and write v2, then A to write, ends with OpenViking holding v1",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestApplySerializesPerKey"
+    },
+    {
+      "id": "r2",
+      "behavior": "per-key serialization cannot deadlock against the tree lock: a burst of mixed writes, deletes and folder removals with catch-up running finishes",
+      "fails_when": "the burst test does not finish within its timeout",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestPerKeyLockNoDeadlock"
+    },
+    {
+      "id": "r3",
+      "behavior": "the module's full test suite and vet pass, and the repo gates pass",
+      "fails_when": "just -f applications/ov-sync-consumer/justfile test or just pre_commit exits non-zero",
+      "command": "just -f applications/ov-sync-consumer/justfile test && just pre_commit"
+    }
+  ]
 }
