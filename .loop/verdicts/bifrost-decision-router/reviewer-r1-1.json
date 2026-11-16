@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The smoke check 'hermes not rerouted' cannot show that a Hermes chat makes no classifier call, though the plan's outcome, ADR 0029 and the component page all claim it. The tier rules are router-only, so a Hermes chat keeps its model even if the classifier runs for it (spike 2's exact failure mode). Bifrost reports the classifier call in extra_fields.routing_metadata.calls as a request_type 'decisions' entry (spike 1 stdout). The Hermes check should assert no such entry, and the router check should assert one is present, with a stub test for each.",
+      "anchor": "scripts/bifrost_smoke.py:264",
+      "category": "missing",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "test_router_key's cloud-suffix scan covers only the classifier, the routing-rule targets and the router key. Row r3 covers every model name in the jobspec and every virtual key in services.tf. It skips the hermes, memex and openviking keys' allowed_models and the provider keys' models lists, so adding 'gpt-oss:120b-cloud' to the Hermes key would pass. Today they are all '*', so the row holds, but the test would not catch a regression there.",
+      "anchor": "cli/tests/test_bifrost_router.py:139",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "e40a0c02f7b8c564c3ebbe26190b4428577a0e79b71d4d183249bd3ee1065e42",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T08:31:32+00:00"
+}
