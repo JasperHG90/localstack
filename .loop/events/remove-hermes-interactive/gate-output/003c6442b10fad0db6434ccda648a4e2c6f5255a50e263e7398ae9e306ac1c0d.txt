@@ -1,0 +1,57 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Failed
+- hook id: terraform-validate
+- exit code: 1
+
+  ==> terraform validate deployments/infrastructure
+
+  Error: Missing required provider
+
+  This configuration requires provider registry.terraform.io/hashicorp/google,
+  but that provider isn't available. You may be able to install it
+  automatically by running:
+    terraform init
+
+  Error: Missing required provider
+
+  This configuration requires provider registry.terraform.io/hashicorp/nomad,
+  but that provider isn't available. You may be able to install it
+  automatically by running:
+    terraform init
+
+  Error: Missing required provider
+
+  This configuration requires provider registry.terraform.io/hashicorp/null,
+  but that provider isn't available. You may be able to install it
+  automatically by running:
+    terraform init
+
+  Error: Missing required provider
+
+  This configuration requires provider registry.terraform.io/hashicorp/random,
+  but that provider isn't available. You may be able to install it
+  automatically by running:
+    terraform init
+
+  Error: Missing required provider
+
+  This configuration requires provider registry.terraform.io/hashicorp/vault,
+  but that provider isn't available. You may be able to install it
+  automatically by running:
+    terraform init
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+ov-sync-consumer (go vet, go test).......................................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
