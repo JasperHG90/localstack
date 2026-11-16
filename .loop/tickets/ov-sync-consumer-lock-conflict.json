@@ -20,7 +20,8 @@
   "worktree": "/home/vscode/workspace.worktrees/ov-sync-consumer-lock-conflict",
   "branch": "loop/ov-sync-consumer-lock-conflict",
   "stamps": [
-    "0f25cf1023b27da71caec43e1ac57643e3b1d01587c5abb65c2713043df71df6"
+    "0f25cf1023b27da71caec43e1ac57643e3b1d01587c5abb65c2713043df71df6",
+    "20918807c00636c712380d22c3da0f52cf2c70c26642538e42ed54970c8297e5"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
@@ -159,5 +160,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:13:42+00:00"
+  "at": "2026-11-16T09:16:44+00:00"
 }
