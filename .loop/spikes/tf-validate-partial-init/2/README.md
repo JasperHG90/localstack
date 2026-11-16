@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-16T14:54:02+00:00'
+  at: '2026-11-16T14:55:10+00:00'
 slug: tf-validate-partial-init
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike tf-validate-partial-init/2
@@ -24,7 +24,8 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note tf-validate-partial-init 2`.
+Not the run to cite: the healthy copy failed `terraform validate` with "no file exists at ./../../.ssh/id_rsa" (`services.tf` line 499 reads a key two directories above the root), which is an artifact of where the copy was placed. spike:tf-validate-partial-init/3 reruns this with a dummy key in place.
+The provider-missing and init results matched run 3: validate printed neither expected message, and `init -backend=false` contacted Consul and failed with a 403.
 
 ## Files
 
