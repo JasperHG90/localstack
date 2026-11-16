@@ -1,14 +1,34 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer-binary-upload",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 4,
   "review_rounds": 1,
   "extra_plan_rounds": 1,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "aa1752f3b59713572f24e1d25c65bf4dff63ed38043684204b2b984fb900d900",
+    "tree": "bb6d2e80d2768fcca48220e5aadcd1f5401cec46",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/ov-sync-consumer.md",
+          ".okf/decisions/0030-ov-sync-stores-images-in-openviking-per-file-folders.md",
+          ".okf/decisions/index.md",
+          ".okf/log.md",
+          ".okf/summary.md"
+        ]
+      }
+    ],
+    "at": "2026-11-16T11:51:33+00:00"
+  },
   "ask": null,
   "split": "j-20261116T112701+0000-7b5f1a87",
   "split_plan_hash": "2ad0f8db43f2b3765f6ae0b937d0ed1238ae6b305f89d14ad2f3b03c1844dff0",
@@ -222,8 +242,14 @@
       "to": "fixing",
       "at": "2026-11-16T11:48:57+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-16T11:51:33+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T11:51:23+00:00"
+  "at": "2026-11-16T11:51:33+00:00"
 }
