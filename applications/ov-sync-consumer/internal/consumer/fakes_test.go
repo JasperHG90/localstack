@@ -66,6 +66,12 @@ func (f *fakeS3) set(key, body string) {
 	f.objects[key] = body
 }
 
+func (f *fakeS3) del(key string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.objects, key)
+}
+
 func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -154,6 +160,9 @@ type fakeOV struct {
 	// failWrites makes the next n writes to a uri fail; -1 fails them all.
 	failWrites map[string]int
 	writeDelay time.Duration
+	// beforeWrite runs before a write lands, outside the fake's lock, so a
+	// test can hold one write back.
+	beforeWrite func(uri, content string)
 	// keepFolders answers a recursive folder delete with 200 but keeps the
 	// folder.
 	keepFolders bool
@@ -292,11 +301,14 @@ func (f *fakeOV) write(w http.ResponseWriter, req ovRequest) {
 	if n > 0 {
 		f.failWrites[uri] = n - 1
 	}
-	delay := f.writeDelay
+	delay, hook := f.writeDelay, f.beforeWrite
 	f.mu.Unlock()
 	if n != 0 {
 		ovReply(w, http.StatusInternalServerError, "write refused")
 		return
+	}
+	if hook != nil {
+		hook(uri, content)
 	}
 	time.Sleep(delay)
 	f.mu.Lock()

@@ -50,10 +50,13 @@ func (c *Consumer) catchUpPrefix(ctx context.Context, prefix, root string) error
 		if _, ok := want[uri]; ok {
 			continue
 		}
+		unlock := c.keys.lock(uri)
 		if err := c.Limit.Wait(ctx); err != nil {
+			unlock()
 			return err
 		}
 		errs = append(errs, c.remove(ctx, uri, root))
+		unlock()
 	}
 	return errors.Join(errs...)
 }

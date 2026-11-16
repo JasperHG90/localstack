@@ -51,6 +51,48 @@ type Consumer struct {
 	// A recursive folder delete takes the lock alone, so no write can land
 	// in a folder between the check that it is empty and its deletion.
 	tree sync.RWMutex
+	// keys orders work on one OpenViking file, so a worker that read the
+	// object earlier cannot write after one that read it later. A key is
+	// always taken before tree and never while holding it, and nobody holds
+	// two keys, so a folder delete cannot wait on a key held by a worker that
+	// is waiting on the folder delete.
+	keys keyLocks
+}
+
+// keyLocks is a mutex per key. An entry lives only while someone holds or
+// waits on it, so the map stays as small as the work in flight.
+type keyLocks struct {
+	mu sync.Mutex
+	m  map[string]*keyLock
+}
+
+type keyLock struct {
+	mu    sync.Mutex
+	users int
+}
+
+func (k *keyLocks) lock(key string) (unlock func()) {
+	k.mu.Lock()
+	if k.m == nil {
+		k.m = map[string]*keyLock{}
+	}
+	l := k.m[key]
+	if l == nil {
+		l = &keyLock{}
+		k.m[key] = l
+	}
+	l.users++
+	k.mu.Unlock()
+
+	l.mu.Lock()
+	return func() {
+		l.mu.Unlock()
+		k.mu.Lock()
+		if l.users--; l.users == 0 {
+			delete(k.m, key)
+		}
+		k.mu.Unlock()
+	}
 }
 
 // Backoff doubles from base per delivery, up to max.
@@ -175,12 +217,14 @@ func (c *Consumer) HandleEvent(ctx context.Context, data []byte) error {
 }
 
 // Apply makes OpenViking match the object's current state: an object that
-// exists is written, a missing one is deleted.
+// exists is written, a missing one is deleted. It holds the file's key from
+// before the read until OpenViking has the result.
 func (c *Consumer) Apply(ctx context.Context, key string) error {
 	uri, root, ok := c.Map.Resolve(key)
 	if !ok {
 		return nil
 	}
+	defer c.keys.lock(uri)()
 	if err := c.Limit.Wait(ctx); err != nil {
 		return err
 	}
