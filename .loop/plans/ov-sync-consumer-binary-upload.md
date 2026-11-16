@@ -1,7 +1,7 @@
 ---
 type: plan
 title: 'Plan: ov-sync-consumer-binary-upload'
-description: Upload binary files from ov-sync to their exact OpenViking URI intact, through temp_upload, add resource into a temp folder and fs/mv.
+description: Upload images from ov-sync to OpenViking intact in its native per-resource folder layout, and skip other binary files instead of damaging them.
 tags:
 - plan
 slug: ov-sync-consumer-binary-upload
@@ -27,45 +27,50 @@ stored the three PNGs in `docs/reference/architecture/` damaged
 (`architecture.drawio.png`: 585,583 bytes in git, 956 KB in OpenViking, and
 ov-dash cannot open it).
 
-An object that is not valid UTF-8 goes through the route
-spike:ov-sync-consumer-binary-upload/3 proved on v0.4.17.1-9, in
-`openviking.go`:
+An object that is not valid UTF-8 and whose name ends in `.png`, `.jpg`,
+`.jpeg`, `.gif` or `.webp` is uploaded the way OpenViking ingests a file,
+which is also how ov-dash stores uploads: each one in its own folder named
+after the file. For a key that maps to `D/name`, the image lands at
+`D/name/name`:
 
 1. `POST /api/v1/resources/temp_upload`, multipart field `file`, gives a
    `temp_file_id`.
-2. `POST /api/v1/resources` with `temp_file_id`, `to` set to a hidden temp
-   folder `<parent>/.ovsync-upload-<random>`, `source_name` the file's name,
-   `wait: true`.
-3. `POST /api/v1/fs/mv` from `<temp>/<name>` to the file's URI. It overwrites
-   an existing file in place with no gap.
-4. Delete the temp folder with the existing empty-folder guard
-   (`removeIfEmpty`: recursive only when ls shows nothing but the two
-   summaries).
+2. `POST /api/v1/resources` with `temp_file_id`, `to: D/name`,
+   `source_name: name`, `wait: true`. It creates missing parents, and a
+   re-add with the same `to` replaces that folder, so a changed image
+   overwrites the old one.
 
-Text keeps using `content/write`. Deletes and catch-up need no change: the
-binary sits at the same URI a text file would. A temp folder left behind by
-a crash between steps holds a file catch-up does not want, so catch-up's
-existing remove path deletes it.
+Before step 2 the consumer deletes a plain file at `D/name` if one is there
+(404 counts as done), which removes the damaged copies the first sync wrote.
+Any other object that is not valid UTF-8 is skipped with an INFO
+`binary file skipped` line naming the key, because only PNG was measured and
+OpenViking parses formats such as PDF instead of storing their bytes.
 
-`add resource` (`to` = the file URI or its folder, or `parent`) cannot do
-this alone: it stores `D/name/name`, `D/stem/name`, or replaces all of D
-(spike:ov-sync-consumer-binary-upload/1, spike:ov-sync-consumer-binary-upload/2).
+Deletes and catch-up use the image's URI `D/name/name`, which the file name
+decides, so catch-up needs no S3 read to compute it. Deleting the image
+removes `D/name/name`, then the existing empty-folder cleanup removes
+`D/name`, which holds only its summaries. Text keeps using `content/write`.
 
 The image tag stays `v0.1.1`, not yet released, so this ships with the
-per-key lock and the busy-folder change. After the operator releases and
-applies, the next push that touches the three PNGs, or a manual re-upload of
-them to the bucket, replaces the damaged copies.
+per-key lock and the busy-folder change. Image links in the repo's markdown
+point at `D/name`, which in OpenViking is a folder holding the image; the
+operator accepted that layout.
 
-Outcome: a fake OpenViking that implements the four calls receives them in
-order for a binary object and ends with the exact bytes at the file's URI,
-sibling files untouched and no temp folder left; text still goes through
-`content/write` byte for byte; a temp folder left by a failed upload is
-removed by catch-up.
+Outcome: for a PNG event a fake OpenViking receives temp_upload then add
+resource with `to = D/name`, and ends with the exact bytes at `D/name/name`
+and siblings untouched; a changed PNG replaces it; a damaged plain file at
+`D/name` is deleted first; a PDF is skipped with an INFO line and no write;
+text still goes through `content/write` byte for byte; catch-up treats
+`D/name/name` as the image's home and removes it when the bucket no longer
+holds the image.
 
 ## Could invalidate this plan
 
 - The request shapes come from a local v0.4.17.1-9 with stub models.
-  Settled by spike:ov-sync-consumer-binary-upload/3 (exact URI, siblings
-  kept, overwrite in place without a gap, temp folder removed, file
-  indexed), with spike:ov-sync-consumer-binary-upload/1 and
-  spike:ov-sync-consumer-binary-upload/2 ruling out `add resource` alone.
+  Settled by spike:ov-sync-consumer-binary-upload/1 (`to = D/name` stores
+  `D/name/name` byte for byte, and a re-add with the same `to` replaces that
+  folder) and spike:ov-sync-consumer-binary-upload/4 (add resource creates
+  missing parents). spike:ov-sync-consumer-binary-upload/3 and
+  spike:ov-sync-consumer-binary-upload/5 tried an exact-URI route through a
+  temp folder and fs/mv, which left hidden folders behind; the operator chose
+  the native layout instead.
