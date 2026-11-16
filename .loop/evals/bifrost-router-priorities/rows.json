@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "every routing rule in bifrost.hcl has a priority above 3, the passthrough rule has the lowest priority among them, and no two share one",
+      "fails_when": "a rule's priority is 3 or below, the passthrough is not first among the router rules, or two rules share a priority",
+      "command": "uv run --directory cli pytest tests/test_bifrost_router.py::test_complexity_router -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "the repo gates and the CLI test suite pass",
+      "fails_when": "just pre_commit or uv run --directory cli pytest exits non-zero",
+      "command": "just pre_commit && uv run --directory cli pytest"
+    },
+    {
+      "id": "r3",
+      "behavior": "after the operator applies, Bifrost boots and stays healthy, the Claude Code haiku/sonnet/opus/fable rules still route, and scripts/bifrost_smoke.py passes with BIFROST_ROUTER_VK set",
+      "fails_when": "Bifrost fails to boot, a Claude Code alias no longer reaches its Ollama model, or the smoke script fails",
+      "judgment": true
+    }
+  ]
+}
