@@ -27,8 +27,8 @@ stored the three PNGs in `docs/reference/architecture/` damaged
 (`architecture.drawio.png`: 585,583 bytes in git, 956 KB in OpenViking, and
 ov-dash cannot open it).
 
-An object that is not valid UTF-8 and whose name ends in `.png`, `.jpg`,
-`.jpeg`, `.gif` or `.webp` is uploaded the way OpenViking ingests a file,
+An object whose name ends in `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` is
+uploaded the way OpenViking ingests a file,
 which is also how ov-dash stores uploads: each one in its own folder named
 after the file. For a key that maps to `D/name`, the image lands at
 `D/name/name`:
@@ -42,14 +42,29 @@ after the file. For a key that maps to `D/name`, the image lands at
 
 Before step 2 the consumer deletes a plain file at `D/name` if one is there
 (404 counts as done), which removes the damaged copies the first sync wrote.
-Any other object that is not valid UTF-8 is skipped with an INFO
+The extension alone decides, in `Apply` and in catch-up alike, so the two
+always agree on where an image lives; a `.png` holding text (a git LFS
+pointer) is uploaded the same way, and the store succeeds even when the image
+description fails (spike:ov-sync-consumer-binary-upload/1). Any other
+object that is not valid UTF-8 is skipped with an INFO
 `binary file skipped` line naming the key, because only PNG was measured and
 OpenViking parses formats such as PDF instead of storing their bytes.
 
-Deletes and catch-up use the image's URI `D/name/name`, which the file name
-decides, so catch-up needs no S3 read to compute it. Deleting the image
-removes `D/name/name`, then the existing empty-folder cleanup removes
-`D/name`, which holds only its summaries. Text keeps using `content/write`.
+The per-key lock, deletes and catch-up all use the image's URI `D/name/name`,
+which the key decides, so catch-up needs no S3 read to compute it. Catch-up
+never removes a file at `U` while `U/base(U)` is wanted: that is the old
+plain copy, and the image's upload deletes it.
+
+Deleting the image removes `D/name/name`, then the folder `D/name` with
+recursive=true. OpenViking answers 200, but `ls D` keeps listing `D/name` as
+an empty folder for good (spike:ov-sync-consumer-binary-upload/6: nothing
+inside, the file 404s, SeaweedFS shows a leaf). Folders `content/write`
+created do leave the listing (spike:ov-sync-consumer/7). So for a folder an
+image upload made, the delete counts as done when `ls D/name` is empty,
+instead of checking that `ls D` no longer lists it. The empty folder stays
+visible in ov-dash; a later upload to the same URI still works
+(spike:ov-sync-consumer-binary-upload/4). Text keeps using `content/write`
+and the existing folder check.
 
 The image tag stays `v0.1.1`, not yet released, so this ships with the
 per-key lock and the busy-folder change. Image links in the repo's markdown
@@ -66,6 +81,10 @@ holds the image.
 
 ## Could invalidate this plan
 
+- A deleted image's folder stays listed as an empty folder, so the
+  existing "gone from the parent's ls" check would fail every image delete.
+  Settled by spike:ov-sync-consumer-binary-upload/6: the folder is empty
+  for good, so the check for image folders is an empty `ls D/name`.
 - The request shapes come from a local v0.4.17.1-9 with stub models.
   Settled by spike:ov-sync-consumer-binary-upload/1 (`to = D/name` stores
   `D/name/name` byte for byte, and a re-add with the same `to` replaces that
