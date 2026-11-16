@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-16T11:25:42+00:00'
+  at: '2026-11-16T11:25:58+00:00'
 slug: ov-sync-consumer-binary-upload
 n: 7
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer-binary-upload/7
@@ -24,7 +24,8 @@ timeout 600 /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer-binary-upload 7`.
+Exit 1 because of a bug in the driver, not because the risk is real: the "only diagram.png inside" check counted the `.abstract.md` and `.overview.md` that OpenViking writes into every folder. The data itself matches spike 8, which reran with that check fixed.
+Seen here: after the file DELETE and the recursive DELETE, `ls D/diagram.png` returned 200 `[]` and the download returned 404. A re-add of b.png stored its exact sha256 (ba47cb7b...) at D/diagram.png/diagram.png, and no `_1` entry appeared in D or inside D/diagram.png. A non-recursive DELETE of the live folder returned 412 FAILED_PRECONDITION and the image survived. `ls D` reported isDir=True for D/diagram.png in every state and isDir=False for plain.png. Cite spike 8, not this one.
 
 ## Files
 
