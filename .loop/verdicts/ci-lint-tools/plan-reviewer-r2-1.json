@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "terraform-validate failed on a clean checkout because both roots read the gitignored .ssh/id_rsa with file(). The revised plan adds a lint step that creates an empty .ssh/id_rsa before prek, and eval r1 checks that step exists.",
+      "anchor": "deployments/infrastructure/services.tf:499",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r1"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "a5b82879a72bf6941a9ae7ce3644003b63bf1bdc37454abb26a4eb8e11029365"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T11:31:13+00:00"
+}
