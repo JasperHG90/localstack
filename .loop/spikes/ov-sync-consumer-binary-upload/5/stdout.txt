@@ -1,0 +1,103 @@
+to=/projects/y/docs/img/.ovsync-upload-diagram.png {} in 0.0s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","temp_uri":"viking://temp/jasper/11160958_ff87c3/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"l
+[ls /projects recursive=True] HTTP 200 ['/projects/y', '/projects/y/docs', '/projects/y/docs/img']
+[mv /projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png -> /projects/y/docs/img/diagram.png in 0.00s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png","to":"viking://user/jasper/resources/projects/y/docs/img/diagram.png"},"error":null,"telemetry":null,"profile":null}
+INFO left in T after mv:
+[ls /projects/y/docs/img/.ovsync-upload-diagram.png recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png/.abstract.md', '/projects/y/docs/img/.ovsync-upload-diagram.png/.overview.md']
+[rm -r /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/y/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-diagram.png","size":0,"mode":493,"modTime":"2026-11-16T09:58:55Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img/.ovsync-upload-diagram.png recursive=False] HTTP 200 []
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+INFO 10 s after rm:
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+[rm -r /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","estimated_deleted_count":0,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/y/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-diagram.png","size":0,"mode":493,"modTime":"2026-11-16T09:59:05Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+[download /projects/y/docs/img/diagram.png] HTTP 200 108281 B sha d8e0cd5c25fdf346
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+CHECK 1 fresh D, no create_parent: add ok True, D/diagram.png exact a.png, ls D clean, T gone: False
+== round two: same T name after clean delete
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_6d630823e6df4b8892327fd3c0b37e0a.png"}}
+[add round2 to=/projects/y/docs/img/.ovsync-upload-diagram.png {} in 0.0s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","temp_uri":"viking://temp/jasper/11160959_4d13ef/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"l
+[mv /projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png -> /projects/y/docs/img/diagram.png in 0.00s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png","to":"viking://user/jasper/resources/projects/y/docs/img/diagram.png"},"error":null,"telemetry":null,"profile":null}
+[rm -r /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/y/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-diagram.png","size":0,"mode":493,"modTime":"2026-11-16T09:59:18Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img/.ovsync-upload-diagram.png recursive=False] HTTP 200 []
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+INFO 10 s after rm:
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+[rm -r /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","estimated_deleted_count":0,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/y/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-diagram.png","size":0,"mode":493,"modTime":"2026-11-16T09:59:29Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+[download /projects/y/docs/img/diagram.png] HTTP 200 415781 B sha ba47cb7bfc617b7d
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+CHECK 2 same T name again: D/diagram.png exact b.png, ls D clean, T gone: False
+== round three: T left over holding its summaries
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_212e9e4a1f384db4983a45892f000961.png"}}
+[add round3-prep to=/projects/y/docs/img/.ovsync-upload-diagram.png {} in 0.0s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","temp_uri":"viking://temp/jasper/11160959_68ed86/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"l
+[mv /projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png -> /projects/y/docs/img/diagram.png in 0.00s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png","to":"viking://user/jasper/resources/projects/y/docs/img/diagram.png"},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img/.ovsync-upload-diagram.png recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png/.abstract.md', '/projects/y/docs/img/.ovsync-upload-diagram.png/.overview.md']
+INFO leftover T before round three add: ['/projects/y/docs/img/.ovsync-upload-diagram.png/.abstract.md', '/projects/y/docs/img/.ovsync-upload-diagram.png/.overview.md']
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_bfdeeeac70ff482f8cbc44b71f9da2d5.png"}}
+[add round3 to=/projects/y/docs/img/.ovsync-upload-diagram.png {} in 0.0s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","temp_uri":"viking://temp/jasper/11160959_3ac6ef/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"l
+[ls /projects/y/docs/img/.ovsync-upload-diagram.png recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png/.abstract.md', '/projects/y/docs/img/.ovsync-upload-diagram.png/.overview.md', '/projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png']
+[mv /projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png -> /projects/y/docs/img/diagram.png in 0.00s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png/diagram.png","to":"viking://user/jasper/resources/projects/y/docs/img/diagram.png"},"error":null,"telemetry":null,"profile":null}
+[rm -r /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/y/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-diagram.png","size":0,"mode":493,"modTime":"2026-11-16T09:59:49Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img/.ovsync-upload-diagram.png recursive=False] HTTP 200 []
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+INFO 10 s after rm:
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+[rm -r /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/y/docs/img/.ovsync-upload-diagram.png","estimated_deleted_count":0,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/y/docs/img","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/y/docs/img/.ovsync-upload-diagram.png] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-diagram.png","size":0,"mode":493,"modTime":"2026-11-16T10:00:00Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+[download /projects/y/docs/img/diagram.png] HTTP 200 831943 B sha 0fa2402569a2d76a
+[ls /projects/y/docs/img recursive=False] HTTP 200 ['/projects/y/docs/img/.ovsync-upload-diagram.png', '/projects/y/docs/img/.abstract.md', '/projects/y/docs/img/.overview.md', '/projects/y/docs/img/diagram.png']
+CHECK 3 add into leftover T: D/diagram.png exact c.png, ls D clean, T gone: False
+[ls /projects recursive=True] HTTP 200 ['/projects/y', '/projects/y/docs', '/projects/y/docs/img', '/projects/y/docs/.abstract.md', '/projects/y/docs/.overview.md', '/projects/y/.abstract.md', '/projects/y/.overview.md', '/projects/.abstract.md', '/projects/.overview.md']
+== control: folder with notes.md, random temp name
+[write notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/ref/notes.md","root_uri":"viking://user/jasper/resources/projects/x/ref","context_type":"resource","mode":"create","written_bytes":8,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_ee3b9041c1ab4af88f2490c379cb96ae.png"}}
+[add control] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/ref/.ovsync-upload-3f9a1c","temp_uri":"viking://temp/jasper/11161000_a3e30e/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"llm":{"inpu
+[mv /projects/x/ref/.ovsync-upload-3f9a1c/diagram.png -> /projects/x/ref/diagram.png in 0.00s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/x/ref/.ovsync-upload-3f9a1c/diagram.png","to":"viking://user/jasper/resources/projects/x/ref/diagram.png"},"error":null,"telemetry":null,"profile":null}
+[rm -r /projects/x/ref/.ovsync-upload-3f9a1c] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/ref/.ovsync-upload-3f9a1c","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/x/ref","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/x/ref/.ovsync-upload-3f9a1c] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-3f9a1c","size":0,"mode":493,"modTime":"2026-11-16T10:00:20Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/x/ref/.ovsync-upload-3f9a1c recursive=False] HTTP 200 []
+[ls /projects/x/ref recursive=False] HTTP 200 ['/projects/x/ref/.ovsync-upload-3f9a1c', '/projects/x/ref/.abstract.md', '/projects/x/ref/.overview.md', '/projects/x/ref/diagram.png', '/projects/x/ref/notes.md']
+INFO 10 s after rm:
+[ls /projects/x/ref recursive=False] HTTP 200 ['/projects/x/ref/.ovsync-upload-3f9a1c', '/projects/x/ref/.abstract.md', '/projects/x/ref/.overview.md', '/projects/x/ref/diagram.png', '/projects/x/ref/notes.md']
+[rm -r /projects/x/ref/.ovsync-upload-3f9a1c] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/ref/.ovsync-upload-3f9a1c","estimated_deleted_count":0,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/x/ref","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[stat /projects/x/ref/.ovsync-upload-3f9a1c] HTTP 200 {"status":"ok","result":{"name":".ovsync-upload-3f9a1c","size":0,"mode":493,"modTime":"2026-11-16T10:00:30Z","isDir":true,"isLocked":false,"count":0},"error":null,"telemetry":null,"profile":null}
+[ls /projects/x/ref recursive=False] HTTP 200 ['/projects/x/ref/.ovsync-upload-3f9a1c', '/projects/x/ref/.abstract.md', '/projects/x/ref/.overview.md', '/projects/x/ref/diagram.png', '/projects/x/ref/notes.md']
+INFO control ls D2 non-recursive / recursive:
+[ls /projects/x/ref recursive=False] HTTP 200 ['/projects/x/ref/.ovsync-upload-3f9a1c', '/projects/x/ref/.abstract.md', '/projects/x/ref/.overview.md', '/projects/x/ref/diagram.png', '/projects/x/ref/notes.md']
+[ls /projects/x/ref recursive=True] HTTP 200 ['/projects/x/ref/.abstract.md', '/projects/x/ref/.overview.md', '/projects/x/ref/diagram.png', '/projects/x/ref/notes.md']
+OVERALL FAIL
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    ├──x
+                    │   ├──.abstract.md
+                    │   ├──.overview.md
+                    │   └──ref
+                    │       ├──.abstract.md
+                    │       ├──.overview.md
+                    │       ├──.ovsync-upload-3f9a1c
+                    │       ├──diagram.png
+                    │       └──notes.md
+                    └──y
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            └──img
+                                ├──.abstract.md
+                                ├──.overview.md
+                                ├──.ovsync-upload-diagram.png
+                                └──diagram.png
+48 directories, 41 files
+== ov log lines about errors, images, moves
+2026-11-16 09:58:44,236 - openviking.server.auth.plugins.ldap - WARNING - LDAP library not available. LDAP authentication will not work. Install with: uv pip install python-ldap
+== fake counts
+{"embeddings embark/embedding": 70, "chat gemini/gemini-3.5-flash-lite": 44, "chat-with-image gemini/gemini-3.5-flash-lite": 15}
