@@ -160,3 +160,4 @@
 ## 2026-11-16
 
 - Updated `handoffs/bifrost-decision-models-ci-lab-auth-and-openviking-doc-sync-design` with `kmctl new handoff --key`.
+- Added `decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev` with `kmctl new decision`.

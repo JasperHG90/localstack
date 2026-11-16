@@ -14,6 +14,13 @@ gate rather than a report:
     4. every virtual key survives
     5. embeddings reach embark
 
+Three more run when BIFROST_ROUTER_VK holds the router key's value (it is not
+in Vault, so copy it from the admin UI and `export` it first):
+
+    6. decisions answer on ollama/clef:27b and typesafe/jev-latest
+    7. router chats land on the tier model for their complexity
+    8. a Hermes chat keeps its requested model and makes no classifier call
+
 Assertion 1 sends documents in the OBJECT form on purpose. Bifrost parses the
 payload before it checks the virtual key, so a bare-string rerank returns 400
 for a malformed body and never reaches the auth code at all on a gateway that
@@ -33,6 +40,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -49,6 +57,15 @@ TIMEOUT = 30
 EXPECTED_VIRTUAL_KEYS = frozenset({"Leo", "hermes", "jasper-laptop-cc", "memex"})
 
 EMBEDDING_DIMENSION = 384
+
+DECISION_MODELS = ("ollama/clef:27b", "typesafe/jev-latest")
+# Prompts spike:bifrost-decision-router/7 saw clef grade SIMPLE and COMPLEX.
+HARD_PROMPT = (
+    "Design a sharded, multi-region event store with exactly-once delivery "
+    "and explain the trade-offs."
+)
+ROUTED_PROMPTS = (("Say hi.", "gpt-oss:120b"), (HARD_PROMPT, "mistral-large-4"))
+REQUESTED_MODEL = "ollama/deepseek-v4.1-flash"
 
 
 class SmokeFailure(Exception):
@@ -198,6 +215,68 @@ def assert_embeddings_reach_embark(base: str, vk: str) -> None:
         )
 
 
+def chat_extra(base: str, vk: str, prompt: str) -> dict[str, Any]:
+    """The chat response's extra_fields: routing_info and routing_metadata."""
+    status, raw = request(
+        f"{base}/v1/chat/completions",
+        method="POST",
+        body={
+            "model": REQUESTED_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+        },
+        headers={"x-bf-vk": vk},
+    )
+    if status != 200:
+        raise SmokeFailure(f"chat: expected 200, got {status}")
+    extra: dict[str, Any] = json.loads(raw).get("extra_fields", {})
+    return extra
+
+
+def classifier_calls(extra: dict[str, Any]) -> int:
+    calls = extra.get("routing_metadata", {}).get("calls", [])
+    return sum(1 for call in calls if call.get("request_type") == "decisions")
+
+
+def assert_decisions_answer(base: str, router_vk: str) -> None:
+    question = {
+        "name": "tier",
+        "type": "choice",
+        "instructions": "How complex is this task for a language model?",
+        "choices": [{"value": "SIMPLE"}, {"value": "MEDIUM"}, {"value": "COMPLEX"}],
+    }
+    for model in DECISION_MODELS:
+        status, _ = request(
+            f"{base}/v1/decisions",
+            method="POST",
+            body={"model": model, "input": "Say hi.", "questions": [question]},
+            headers={"x-bf-vk": router_vk},
+        )
+        if status != 200:
+            raise SmokeFailure(f"decisions: {model} expected 200, got {status}")
+
+
+def assert_router_routes_by_tier(base: str, router_vk: str) -> None:
+    for prompt, want in ROUTED_PROMPTS:
+        extra = chat_extra(base, router_vk, prompt)
+        if classifier_calls(extra) == 0:
+            raise SmokeFailure(f"router: {prompt[:30]!r} made no classifier call")
+        served = extra.get("routing_info", {}).get("model")
+        if served != want:
+            raise SmokeFailure(
+                f"router: {prompt[:30]!r} served by {served!r}, want {want!r}. A "
+                "classifier timeout or error leaves the requested model in place."
+            )
+
+
+def assert_hermes_not_rerouted(base: str, vk: str) -> None:
+    extra = chat_extra(base, vk, HARD_PROMPT)
+    served = extra.get("routing_info", {}).get("model")
+    if served != REQUESTED_MODEL.removeprefix("ollama/"):
+        raise SmokeFailure(f"hermes: rerouted to {served!r}")
+    if classifier_calls(extra):
+        raise SmokeFailure("hermes: chat made a classifier call it should skip")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://192.168.2.50:8080")
@@ -231,6 +310,16 @@ def main() -> int:
         ),
         ("embeddings reach embark", partial(assert_embeddings_reach_embark, base, vk)),
     )
+    router_vk = os.environ.get("BIFROST_ROUTER_VK")
+    if router_vk:
+        checks += (
+            ("decisions answer", partial(assert_decisions_answer, base, router_vk)),
+            (
+                "router routes by tier",
+                partial(assert_router_routes_by_tier, base, router_vk),
+            ),
+            ("hermes not rerouted", partial(assert_hermes_not_rerouted, base, vk)),
+        )
     for name, check in checks:
         try:
             check()

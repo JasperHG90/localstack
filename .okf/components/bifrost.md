@@ -82,6 +82,12 @@ key's value is set on create, sensitive, and written to a KV secret under its
 consumer's own prefix, because the `nomad-workloads` role lets a job read
 nothing else. The memex key outlives the commented-out memex job.
 
+`bifrost_virtual_key.router` is the one key the Complexity Router reroutes
+(see Providers and config.json). It names its four Ollama models,
+`clef:27b`, `deepseek-v4.1-flash`, `gpt-oss:120b` and `mistral-large-4`,
+because `"*"` admits only catalog models, and allows every Jev model on
+`typesafe`. Nothing consumes it yet, so its value is not in Vault.
+
 Two more live keys, `Leo` and `jasper-laptop-cc`, were made by hand and are not
 Terraform resources. Nothing would recreate them, and `terraform plan` cannot
 see them go missing. `scripts/bifrost_smoke.py` names them for that reason.
@@ -122,6 +128,20 @@ provider with `base_provider_type = "openai"`, pointed at
 request types are refused at the gateway rather than routed to a 404. It needs
 `allow_private_network = true`: from 1.5.9 Bifrost refuses RFC1918
 destinations, and every other provider is public.
+
+Jev is the built-in `typesafe` provider with no `base_url`: the provider
+adds `/v1/systemone` itself, and a non-default base turns off its built-in
+model list. Its key comes from `secret/default/bifrost/typesafe`
+(`TYPESAFE_API_KEY`), seeded by hand.
+
+The Complexity Router (`governance.complexity_analyzer_config`) grades a chat
+with `ollama/clef:27b`, timeout 3 s, and `governance.routing_rules` send
+SIMPLE, MEDIUM and COMPLEX to `gpt-oss:120b`, `deepseek-v4.1-flash` and
+`mistral-large-4`. Only the `router` key is rerouted: a priority-0 rule passes
+every other key through before any rule names `complexity_tier`, so they make
+no classifier call. A timeout or classifier error leaves the requested model
+in place. [ADR 0029](/decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev.md)
+has the reasons.
 
 Two gateway behaviors reach past this job:
 
