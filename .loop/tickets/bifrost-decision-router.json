@@ -3,7 +3,7 @@
   "slug": "bifrost-decision-router",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "db0aab3c5777df90e8451d8ee8c8124f8669f98f81cf82136c8d1cf279752ebc",
-    "started_at": "2026-11-15T20:52:21+00:00",
+    "n": 2,
+    "binds": "2611019a6f527bfce8de61370702d76735bbedd3864d0e88c3962c2ebadc62b1",
+    "started_at": "2026-11-16T08:00:46+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "db0aab3c5777df90e8451d8ee8c8124f8669f98f81cf82136c8d1cf279752ebc",
+  "plan_hash": "2611019a6f527bfce8de61370702d76735bbedd3864d0e88c3962c2ebadc62b1",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-15T21:31:26+00:00"
+  "at": "2026-11-16T08:00:46+00:00"
 }
