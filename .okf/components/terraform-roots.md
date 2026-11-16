@@ -202,11 +202,11 @@ behavior.
 
 - `terraform-fmt`: `terraform fmt -check -recursive` over the whole tree.
 - `terraform-validate`: `scripts/tf_validate.sh`, which validates
-  `deployments/infrastructure`, `deployments/applications` and
-  `deployments/applications/modules/bucket` offline. It runs
+  `deployments/infrastructure` and `deployments/applications` offline. It runs
   `init -backend=false` only when a root has no `.terraform/` yet, so it never
-  touches Consul. A root that is already initialized validates against
-  whatever provider schemas it holds.
+  touches Consul. If that init fails, it removes the `.terraform/` the init
+  left, so the next run inits again. A root that is already initialized
+  validates against whatever provider schemas it holds.
 
 Neither hook plans. A change that validates can still fail at plan on a
 missing grant, a missing catalog entry or a missing seeded secret.

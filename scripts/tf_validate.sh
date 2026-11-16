@@ -13,7 +13,12 @@ roots=(
 for d in "${roots[@]}"; do
   echo "==> terraform validate ${d}"
   if [ ! -d "${d}/.terraform" ]; then
-    terraform -chdir="${d}" init -backend=false -input=false -no-color >/dev/null
+    # A broken init (a provider download cut off) leaves a partial .terraform
+    # that the check above would trust on every later run.
+    if ! terraform -chdir="${d}" init -backend=false -input=false -no-color >/dev/null; then
+      rm -rf "${d}/.terraform"
+      exit 1
+    fi
   fi
   terraform -chdir="${d}" validate -no-color
 done
