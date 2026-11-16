@@ -1,31 +1,33 @@
 ---
 type: eval
 title: 'Eval: ov-sync-consumer-binary-upload'
-description: 'Definition of done for ov-sync-consumer-binary-upload: 6 row(s).'
+description: 'Definition of done for ov-sync-consumer-binary-upload: 7 row(s).'
 tags:
 - eval
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-16T09:52:30+00:00'
+  at: '2026-11-16T11:16:02+00:00'
 slug: ov-sync-consumer-binary-upload
 signoff:
   signer: delegated:jasperginn@gmail.com/claude-opus-5-5
-  hash: 4cc154f3e80ff9e0d5f9367a4f75cb51e59b7daa8f5e947c3d51120b4909246e
-  at: '2026-11-16T09:52:30+00:00'
+  hash: 1a4f7822bcef937e586d6b3fa98a64aba3bf0621ec0bb62701358d06c04d7226
+  at: '2026-11-16T11:16:02+00:00'
 verified: null
 ---
 
 Rows: rows.json; the fields each row takes: loopctl schema eval-rows.
 
-- r1: an event for an object that is not valid UTF-8 uploads it through temp_upload, add resource into a .ovsync-upload- temp folder under the file's parent, fs/mv to the file's URI and a delete of the temp folder, ending with the object's exact bytes at its URI and no temp folder
-  Fails when: the fake OpenViking receives content/write for it, the calls come in another order, the stored bytes differ, a sibling file changes, or a .ovsync-upload- folder remains
-- r2: uploading a changed binary to a URI that already holds one replaces it with the new bytes
-  Fails when: the URI still holds the old bytes or a second copy appears
-- r3: a valid UTF-8 object with multi-byte characters still goes through content/write byte for byte
+- r1: an event for a PNG that is not valid UTF-8 sends temp_upload, then add resource with to = D/name and source_name = name, and ends with the PNG's exact bytes at D/name/name and sibling files untouched
+  Fails when: the fake OpenViking receives content/write for it, the calls or their fields differ, the stored bytes differ, or a sibling changes
+- r2: a changed PNG replaces the one at D/name/name, and a plain file left at D/name by the old text write is deleted before the upload
+  Fails when: D/name/name holds the old bytes, a second copy appears, or a file remains at D/name
+- r3: a non-UTF-8 object that is not one of the image types is skipped with an INFO 'binary file skipped' line naming the key, and nothing is written
+  Fails when: OpenViking receives any write or upload for it, or no such INFO line appears
+- r4: a valid UTF-8 object with multi-byte characters still goes through content/write byte for byte, even with an image extension
   Fails when: it is uploaded as a resource, or the stored content differs from the object's bytes
-- r4: a catch-up pass removes a .ovsync-upload- temp folder a failed upload left behind
-  Fails when: the temp folder or its file is still listed after the pass
-- r5: the module tests and vet pass, and the repo gates pass
+- r5: catch-up counts D/name/name as the image's copy, uploads a missing image, and removes D/name/name and the emptied D/name folder when the bucket no longer holds the image
+  Fails when: catch-up re-uploads an image that is present, misses a missing one, or leaves the image or its folder behind after the object is gone
+- r6: the module tests and vet pass, and the repo gates pass
   Fails when: just -f applications/ov-sync-consumer/justfile test or just pre_commit exits non-zero
-- r6 (judgment): after the operator releases v0.1.1, applies, and the three PNGs are synced again, each opens in ov-dash and downloads with the same bytes as git
-  Fails when: ov-dash still reports a PNG as damaged or a download differs from git
+- r7 (judgment): after the operator releases v0.1.1 and applies, the three PNGs in docs/reference/architecture/ open in ov-dash at D/name/name and download with the same bytes as git, and no damaged plain copy remains at D/name
+  Fails when: ov-dash reports a PNG as damaged, a download differs from git, or a plain file remains at D/name
