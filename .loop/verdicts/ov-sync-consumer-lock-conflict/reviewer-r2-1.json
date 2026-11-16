@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "TestLockConflictLogsBusy did not check the NAK delay",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/consumer_test.go:474",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r1"
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "skipBusy dropped a lock 409 on removeIfEmpty's folder cleanup, which catch-up never retries",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/catchup.go:64",
+      "category": "bug",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "20918807c00636c712380d22c3da0f52cf2c70c26642538e42ed54970c8297e5",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T09:18:29+00:00"
+}
