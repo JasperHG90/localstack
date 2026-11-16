@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "the hermes-interactive workflow is gone and nothing outside .loop/ refers to it",
+      "fails_when": "git tracks .github/workflows/hermes-interactive.yaml, or git grep finds 'hermes-interactive' in any tracked file outside .loop/",
+      "command": "test -z \"$(git ls-files .github/workflows/hermes-interactive.yaml)\" && ! git grep -q hermes-interactive -- ':!.loop'"
+    },
+    {
+      "id": "r2",
+      "behavior": "the OLLAMA_API_KEY secret is still used by claude-ollama, so removing hermes leaves no orphaned secret to delete",
+      "fails_when": ".github/workflows/claude-ollama.yaml no longer references secrets.OLLAMA_API_KEY",
+      "command": "grep -q 'secrets.OLLAMA_API_KEY' .github/workflows/claude-ollama.yaml"
+    },
+    {
+      "id": "r3",
+      "behavior": "the repo gates pass",
+      "fails_when": "just pre_commit or the cli test suite exits non-zero",
+      "command": "just pre_commit && uv run --directory cli pytest -q"
+    }
+  ]
+}
