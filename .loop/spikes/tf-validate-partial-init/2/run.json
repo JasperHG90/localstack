@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "tf-validate-partial-init",
+  "n": 2,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/216b2a69-4889-47a5-b777-58ba4df6cd29/scratchpad/spike-tfv2/probe.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/216b2a69-4889-47a5-b777-58ba4df6cd29/scratchpad/spike-tfv2/probe.sh",
+      "copy": "files/probe.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "aba841b7f003ae48e1a2142651d56df8df0b1d78",
+  "fingerprint": "7340dfa18d381bc5d178ce266199a09e3048a6020956a8ffe64e1635cb5ceb37",
+  "started_at": "2026-11-16T14:53:57+00:00",
+  "finished_at": "2026-11-16T14:54:02+00:00",
+  "duration_seconds": 5.025,
+  "timeout_seconds": 500.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

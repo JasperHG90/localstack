@@ -1,0 +1,43 @@
+== validate healthy: exit=1 external_connects=0 provider_msg=no expect=pass
+   | 
+   | Warning: Deprecated Resource
+   | 
+   |   with data.vault_kv_secret_v2.bifrost_admin,
+   |   on secrets.tf line 179, in data "vault_kv_secret_v2" "bifrost_admin":
+   |  179: data "vault_kv_secret_v2" "bifrost_admin" {
+   | 
+   | Deprecated. Please use new Ephemeral KVV2 Secret resource
+== validate one_missing: exit=1 external_connects=0 provider_msg=no expect=fail
+   | 
+   | Error: registry.terraform.io/hashicorp/vault: there is no package for registry.terraform.io/hashicorp/vault 5.3.0 cached in .terraform/providers
+   | 
+== validate all_missing: exit=1 external_connects=0 provider_msg=no expect=fail
+   | 
+   | Error: missing or corrupted provider plugins:
+   |   - registry.terraform.io/hashicorp/nomad: there is no package for registry.terraform.io/hashicorp/nomad 2.5.2 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/null: there is no package for registry.terraform.io/hashicorp/null 3.2.4 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/random: there is no package for registry.terraform.io/hashicorp/random 3.8.1 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/vault: there is no package for registry.terraform.io/hashicorp/vault 5.3.0 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/google: there is no package for registry.terraform.io/hashicorp/google 7.27.0 cached in .terraform/providers
+   | 
+== init one_missing: exit=1 consul_connects=1 tfstate_before=df9691f906e7 after=df9691f906e7
+   | Error: Error refreshing state: Unexpected response code: 403 (Permission denied: token with AccessorID '4c042bbf-0d8d-24b4-5a17-98e1e36819a1' lacks permission 'key:read' on "terraform/infrastructure")
+   backend record still consul
+== validate one_missing_healed: exit=1 external_connects=0 provider_msg=no expect=pass
+   | 
+   | Error: registry.terraform.io/hashicorp/vault: there is no package for registry.terraform.io/hashicorp/vault 5.3.0 cached in .terraform/providers
+   | 
+== init all_missing: exit=1 consul_connects=1 tfstate_before=df9691f906e7 after=df9691f906e7
+   | Error: Error refreshing state: Unexpected response code: 403 (Permission denied: token with AccessorID '4c042bbf-0d8d-24b4-5a17-98e1e36819a1' lacks permission 'key:read' on "terraform/infrastructure")
+   backend record still consul
+== validate all_missing_healed: exit=1 external_connects=0 provider_msg=no expect=pass
+   | 
+   | Error: missing or corrupted provider plugins:
+   |   - registry.terraform.io/hashicorp/nomad: there is no package for registry.terraform.io/hashicorp/nomad 2.5.2 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/null: there is no package for registry.terraform.io/hashicorp/null 3.2.4 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/random: there is no package for registry.terraform.io/hashicorp/random 3.8.1 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/vault: there is no package for registry.terraform.io/hashicorp/vault 5.3.0 cached in .terraform/providers
+   |   - registry.terraform.io/hashicorp/google: there is no package for registry.terraform.io/hashicorp/google 7.27.0 cached in .terraform/providers
+   | 
+== lock file unchanged by init
+RESULT: FAIL=1
