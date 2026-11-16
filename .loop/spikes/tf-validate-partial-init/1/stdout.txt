@@ -1,0 +1,43 @@
+== healthy: exit=1 time=0.60s inet_connects=1 expect=pass
+899579 connect(4, {sa_family=AF_INET, sin_port=htons(9), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 ENETUNREACH (Network is unreachable)
+   stderr: [31m[31m╷[0m[0m
+   stderr: [31m│[0m [0m[1m[31mError: [0m[0m[1mGet "http://192.168.2.30:8500/v1/kv/terraform/infrastructure": proxyconnect tcp: dial tcp 127.0.0.1:9: connect: network is unreachable[0m
+   stderr: [31m│[0m [0m
+   stderr: [31m│[0m [0m[0m
+   stderr: [31m╵[0m[0m
+   stderr: [0m[0m
+== one_missing: exit=1 time=0.41s inet_connects=0 expect=fail
+   stderr: [31m[31m╷[0m[0m
+   stderr: [31m│[0m [0m[1m[31mError: [0m[0m[1mRequired plugins are not installed[0m
+   stderr: [31m│[0m [0m
+   stderr: [31m│[0m [0m[0mThe installed provider plugins are not consistent with the packages
+   stderr: [31m│[0m [0mselected in the dependency lock file:
+   stderr: [31m│[0m [0m  - registry.terraform.io/hashicorp/vault: there is no package for registry.terraform.io/hashicorp/vault 5.3.0 cached in .terraform/providers
+   stderr: [31m│[0m [0m
+   stderr: [31m│[0m [0mTerraform uses external plugins to integrate with a variety of different
+   stderr: [31m│[0m [0minfrastructure services. To download the plugins required for this
+   stderr: [31m│[0m [0mconfiguration, run:
+   stderr: [31m│[0m [0m  terraform init
+   stderr: [31m╵[0m[0m
+== empty_providers: exit=1 time=0.07s inet_connects=0 expect=fail
+   stderr: [31m[31m╷[0m[0m
+   stderr: [31m│[0m [0m[1m[31mError: [0m[0m[1mRequired plugins are not installed[0m
+   stderr: [31m│[0m [0m
+   stderr: [31m│[0m [0m[0mThe installed provider plugins are not consistent with the packages
+   stderr: [31m│[0m [0mselected in the dependency lock file:
+   stderr: [31m│[0m [0m  - registry.terraform.io/hashicorp/google: there is no package for registry.terraform.io/hashicorp/google 7.27.0 cached in .terraform/providers
+   stderr: [31m│[0m [0m  - registry.terraform.io/hashicorp/nomad: there is no package for registry.terraform.io/hashicorp/nomad 2.5.2 cached in .terraform/providers
+   stderr: [31m│[0m [0m  - registry.terraform.io/hashicorp/null: there is no package for registry.terraform.io/hashicorp/null 3.2.4 cached in .terraform/providers
+   stderr: [31m│[0m [0m  - registry.terraform.io/hashicorp/random: there is no package for registry.terraform.io/hashicorp/random 3.8.1 cached in .terraform/providers
+   stderr: [31m│[0m [0m  - registry.terraform.io/hashicorp/vault: there is no package for registry.terraform.io/hashicorp/vault 5.3.0 cached in .terraform/providers
+   stderr: [31m│[0m [0m
+   stderr: [31m│[0m [0mTerraform uses external plugins to integrate with a variety of different
+== truncated: exit=1 time=0.50s inet_connects=1 expect=fail
+899668 connect(4, {sa_family=AF_INET, sin_port=htons(9), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 ENETUNREACH (Network is unreachable)
+   stderr: [31m[31m╷[0m[0m
+   stderr: [31m│[0m [0m[1m[31mError: [0m[0m[1mGet "http://192.168.2.30:8500/v1/kv/terraform/infrastructure": proxyconnect tcp: dial tcp 127.0.0.1:9: connect: network is unreachable[0m
+   stderr: [31m│[0m [0m
+   stderr: [31m│[0m [0m[0m
+   stderr: [31m╵[0m[0m
+   stderr: [0m[0m
+RESULT: FAIL=1
