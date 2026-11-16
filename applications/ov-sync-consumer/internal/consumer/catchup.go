@@ -43,7 +43,7 @@ func (c *Consumer) catchUpPrefix(ctx context.Context, prefix, root string) error
 	var errs []error
 	for uri, key := range want {
 		if !have[uri] {
-			errs = append(errs, c.Apply(ctx, key))
+			errs = append(errs, c.skipBusy(c.Apply(ctx, key)))
 		}
 	}
 	for uri := range have {
@@ -55,10 +55,21 @@ func (c *Consumer) catchUpPrefix(ctx context.Context, prefix, root string) error
 			unlock()
 			return err
 		}
-		errs = append(errs, c.remove(ctx, uri, root))
+		errs = append(errs, c.skipBusy(c.remove(ctx, uri, root)))
 		unlock()
 	}
 	return errors.Join(errs...)
+}
+
+// skipBusy logs a folder lock conflict on a file and drops it, since the
+// next pass tries the file again. A conflict on folder cleanup stays an
+// error: the next pass would not see that folder.
+func (c *Consumer) skipBusy(err error) error {
+	if errors.Is(err, errLockBusy) && !errors.Is(err, errFolderLeft) {
+		c.Log.Info("folder busy, catch-up retries next pass", "err", err)
+		return nil
+	}
+	return err
 }
 
 // files picks the files out of a listing, leaving out folders and

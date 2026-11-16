@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -158,7 +159,14 @@ type fakeOV struct {
 	requests []ovRequest
 
 	// failWrites makes the next n writes to a uri fail; -1 fails them all.
-	failWrites map[string]int
+	// They fail with failStatus and failMessage, 500 "write refused" when
+	// unset.
+	failWrites  map[string]int
+	failStatus  int
+	failMessage string
+	// busyDeletes answers deletes of these uris with OpenViking's lock-timeout
+	// 409.
+	busyDeletes map[string]bool
 	writeDelay time.Duration
 	// beforeWrite runs before a write lands, outside the fake's lock, so a
 	// test can hold one write back.
@@ -175,7 +183,7 @@ type fakeOV struct {
 
 func newFakeOV(t *testing.T) (*fakeOV, *OpenViking) {
 	t.Helper()
-	f := &fakeOV{files: map[string]string{}, dirs: map[string]bool{}, failWrites: map[string]int{}}
+	f := &fakeOV{files: map[string]string{}, dirs: map[string]bool{}, failWrites: map[string]int{}, busyDeletes: map[string]bool{}}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
 	tokenFile := filepath.Join(t.TempDir(), "ov_token")
@@ -302,9 +310,13 @@ func (f *fakeOV) write(w http.ResponseWriter, req ovRequest) {
 		f.failWrites[uri] = n - 1
 	}
 	delay, hook := f.writeDelay, f.beforeWrite
+	status, message := f.failStatus, f.failMessage
 	f.mu.Unlock()
 	if n != 0 {
-		ovReply(w, http.StatusInternalServerError, "write refused")
+		if status == 0 {
+			status, message = http.StatusInternalServerError, "write refused"
+		}
+		ovReply(w, status, message)
 		return
 	}
 	if hook != nil {
@@ -320,6 +332,10 @@ func (f *fakeOV) write(w http.ResponseWriter, req ovRequest) {
 func (f *fakeOV) delete(w http.ResponseWriter, uri string, recursive bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.busyDeletes[uri] {
+		ovReply(w, http.StatusConflict, lockTimeout)
+		return
+	}
 	if _, ok := f.files[uri]; ok {
 		delete(f.files, uri)
 		ovReply(w, http.StatusOK, map[string]any{"uri": uri})
@@ -404,6 +420,40 @@ func (f *fakeOV) ls(w http.ResponseWriter, q url.Values) {
 	entries = entries[:min(limit, len(entries))]
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "result": entries, "has_more": more})
+}
+
+// lockTimeout is the message OpenViking sends with a 409 when it gives up
+// waiting for a folder lock.
+const lockTimeout = "lock acquire timed out after 172ms"
+
+// logBuffer collects log lines from goroutines that write while a test reads.
+type logBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *logBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *logBuffer) lines(substr string) []string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	var out []string
+	for _, line := range strings.Split(b.buf.String(), "\n") {
+		if strings.Contains(line, substr) {
+			out = append(out, line)
+		}
+	}
+	return out
+}
+
+func captureLog(c *Consumer) *logBuffer {
+	b := &logBuffer{}
+	c.Log = slog.New(slog.NewTextHandler(b, nil))
+	return b
 }
 
 func newConsumer(s3 *minio.Client, ov *OpenViking) *Consumer {
