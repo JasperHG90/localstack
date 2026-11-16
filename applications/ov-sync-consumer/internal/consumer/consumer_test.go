@@ -3,9 +3,12 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -325,5 +328,146 @@ func TestCatchUpListsWholeTree(t *testing.T) {
 	}
 	if n := len(ov.calls(http.MethodDelete, "/api/v1/fs")); n != 0 {
 		t.Fatalf("catch-up sent %d deletes", n)
+	}
+}
+
+func TestApplySerializesPerKey(t *testing.T) {
+	ctx := context.Background()
+	const key = "JasperHG90/localstack/docs/a.md"
+	const uri = projRoot + "/docs/a.md"
+	bucketFake, s3 := newFakeS3(t, map[string]string{key: "v1"})
+	ov, client := newFakeOV(t)
+	c := newConsumer(s3, client)
+
+	// A has read v1 and its write is held back until released.
+	held, release := make(chan struct{}), make(chan struct{})
+	ov.beforeWrite = func(_, content string) {
+		if content == "v1" {
+			close(held)
+			<-release
+		}
+	}
+	aDone := make(chan error, 1)
+	go func() { aDone <- c.Apply(ctx, key) }()
+	<-held
+
+	bucketFake.set(key, "v2")
+	bDone := make(chan error, 1)
+	go func() { bDone <- c.Apply(ctx, key) }()
+	// Without per-key ordering B reads and writes v2 now. With it, B waits
+	// for A, and the timeout lets A go.
+	var bErr error
+	bFinished := false
+	select {
+	case bErr = <-bDone:
+		bFinished = true
+	case <-time.After(300 * time.Millisecond):
+	}
+	close(release)
+	if err := <-aDone; err != nil {
+		t.Fatalf("A: %v", err)
+	}
+	if !bFinished {
+		bErr = <-bDone
+	}
+	if bErr != nil {
+		t.Fatalf("B: %v", bErr)
+	}
+	if got := ov.content(uri); got != "v2" {
+		t.Fatalf("OpenViking holds %q, want the latest content v2", got)
+	}
+}
+
+func TestPerKeyLockNoDeadlock(t *testing.T) {
+	var keys []string
+	for _, dir := range []string{"a", "a/x", "b", "c/y/z"} {
+		for i := range 3 {
+			keys = append(keys, fmt.Sprintf("JasperHG90/localstack/%s/f%d.md", dir, i))
+		}
+	}
+	objects := map[string]string{}
+	for _, k := range keys {
+		objects[k] = "seed"
+	}
+	bucketFake, s3 := newFakeS3(t, objects)
+	ov, client := newFakeOV(t)
+	ov.writeDelay = time.Millisecond
+	c := newConsumer(s3, client)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	catchUpDone := make(chan struct{})
+	go func() {
+		defer close(catchUpDone)
+		for ctx.Err() == nil {
+			_ = c.CatchUp(ctx)
+		}
+	}()
+
+	var wg sync.WaitGroup
+	for w := range 8 {
+		wg.Go(func() {
+			r := rand.New(rand.NewPCG(uint64(w), 0))
+			for i := range 40 {
+				k := keys[r.IntN(len(keys))]
+				batch := []string{k}
+				switch r.IntN(3) {
+				case 0:
+					bucketFake.set(k, fmt.Sprintf("w%d-%d", w, i))
+				case 1:
+					bucketFake.del(k)
+				case 2:
+					// Empty k's folder so its removal reaches the tree lock.
+					dir := k[:strings.LastIndex(k, "/")+1]
+					batch = nil
+					for _, other := range keys {
+						if strings.HasPrefix(other, dir) && !strings.Contains(other[len(dir):], "/") {
+							bucketFake.del(other)
+							batch = append(batch, other)
+						}
+					}
+				}
+				for _, b := range batch {
+					if err := c.Apply(ctx, b); err != nil {
+						t.Errorf("apply %s: %v", b, err)
+					}
+				}
+			}
+		})
+	}
+	burstDone := make(chan struct{})
+	go func() { wg.Wait(); close(burstDone) }()
+	select {
+	case <-burstDone:
+	case <-time.After(60 * time.Second):
+		t.Fatal("burst of writes, deletes and folder removals did not finish: deadlock")
+	}
+	cancel()
+	<-catchUpDone
+
+	for _, k := range keys {
+		if err := c.Apply(context.Background(), k); err != nil {
+			t.Fatalf("apply %s: %v", k, err)
+		}
+	}
+	for _, k := range keys {
+		uri, _, _ := c.Map.Resolve(k)
+		bucketFake.mu.Lock()
+		want, exists := bucketFake.objects[k]
+		bucketFake.mu.Unlock()
+		if exists && ov.content(uri) != want {
+			t.Errorf("%s: OpenViking holds %q, bucket %q", uri, ov.content(uri), want)
+		}
+		if !exists && ov.has(uri) {
+			t.Errorf("%s is in OpenViking but not in the bucket", uri)
+		}
+	}
+	if n := len(c.keys.m); n != 0 {
+		t.Errorf("%d key locks left after every holder finished", n)
+	}
+	ov.mu.Lock()
+	defer ov.mu.Unlock()
+	if len(ov.violations) != 0 {
+		t.Fatalf("recursive delete of a folder with other entries: %v", ov.violations)
 	}
 }

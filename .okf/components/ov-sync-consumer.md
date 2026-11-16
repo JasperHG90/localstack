@@ -94,7 +94,11 @@ On radxa, host network, no port. Each of `POOL_SIZE` (4) workers fetches one
 message at a time. The OpenViking client takes one of `POOL_SIZE` slots for
 each request, workers and catch-up alike, so at most four OpenViking requests
 are in flight. A slot is held for one request, never while waiting on the
-folder-delete lock, so the two cannot deadlock. A shared limiter starts at
+folder-delete lock, so the two cannot deadlock. Two events for one file are
+handled one after the other: a worker takes a lock on the file's OpenViking
+URI before it reads the object and keeps it until OpenViking has the result,
+so an older read never lands after a newer one. It takes that lock before the
+folder-delete lock and never while holding it. A shared limiter starts at
 most `RATE_PER_SECOND` (2) events a second, which bounds the VLM calls each
 write triggers.
 
