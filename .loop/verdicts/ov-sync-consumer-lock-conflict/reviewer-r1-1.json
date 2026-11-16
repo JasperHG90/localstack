@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "TestLockConflictLogsBusy does not assert the NAK delay; a lock-busy branch that called m.Nak() or NakWithDelay(0) would still pass, though r1's fails_when names \"NAKed with a different delay than Backoff(delivered)\"",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/consumer_test.go:475",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "skipBusy's comment and its log line say catch-up retries next pass, but when the busy 409 comes from removeIfEmpty's recursive folder delete (after the file delete succeeded) the next pass never revisits that folder, because files() leaves out folders holding only summaries; the failure that used to surface as WARN \"catch-up pass failed\" now reads as a harmless INFO",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/catchup.go:64",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "0f25cf1023b27da71caec43e1ac57643e3b1d01587c5abb65c2713043df71df6",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T09:13:17+00:00"
+}
