@@ -1,0 +1,64 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  All checks passed!
+  E501 Line too long (113 > 100)
+     --> cli/tests/test_lab_auth_action.py:263:101
+      |
+  261 |     _stub(bin_dir, "curl", "printf 200")
+  262 |     _stub(bin_dir, "timeout", "exit 124")
+  263 |     _stub(bin_dir, "tailscale", """echo '{"Peer":{"a":{"HostName":"firebat","TailscaleIPs":["100.64.0.9"]}}}'""")
+      |                                                                                                     ^^^^^^^^^^^^^
+  264 |
+  265 |     result = subprocess.run(
+      |
+
+  Found 1 error.
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  17 files already formatted
+  unformatted: File would be reformatted
+     --> cli/tests/test_lab_auth_action.py:263:11
+      |
+  262 |     _stub(bin_dir, "timeout", "exit 124")
+      -     _stub(bin_dir, "tailscale", """echo '{"Peer":{"a":{"HostName":"firebat","TailscaleIPs":["100.64.0.9"]}}}'""")
+  263 +     _stub(
+  264 +         bin_dir,
+  265 +         "tailscale",
+  266 +         """echo '{"Peer":{"a":{"HostName":"firebat","TailscaleIPs":["100.64.0.9"]}}}'""",
+  267 +     )
+  268 |
+      |
+
+  1 file would be reformatted, 16 files already formatted
+  17 files already formatted
+  17 files already formatted
+  16 files already formatted
+  16 files already formatted
+  16 files already formatted
+  16 files already formatted
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+ov-sync-consumer (go vet, go test).......................................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
