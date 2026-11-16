@@ -1,0 +1,1 @@
+{"ask":"Bifrost v12 crash-loops because the live store holds four hand-made global routing rules at priorities 0-3 (Claude Code haiku/sonnet/opus/fable aliases) and bifrost.hcl claims 0-3 for the router rules. Move our passthrough and tier rules to 10-13 so they come after the Claude Code rules and do not shadow them."}
