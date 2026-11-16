@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-decision-router",
-  "stage": "building",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 0,
@@ -122,8 +122,14 @@
       "to": "building",
       "at": "2026-11-16T08:07:12+00:00",
       "by": "advance"
+    },
+    {
+      "from": "building",
+      "to": "verifying",
+      "at": "2026-11-16T08:25:48+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T08:25:41+00:00"
+  "at": "2026-11-16T08:25:48+00:00"
 }
