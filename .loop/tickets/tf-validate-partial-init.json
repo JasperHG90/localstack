@@ -3,7 +3,7 @@
   "slug": "tf-validate-partial-init",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -61,8 +61,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "6b83851771dc9aa691cf307485ee88683b3fd025253e42249d469a02ea3fd944",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "3c5a085687168ff577ef7a06475b373600632ac4bcd357c47097a416992deff4",
+    "started_at": "2026-11-16T14:55:52+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "3c5a085687168ff577ef7a06475b373600632ac4bcd357c47097a416992deff4",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -77,5 +96,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T14:55:49+00:00"
+  "at": "2026-11-16T14:55:52+00:00"
 }
