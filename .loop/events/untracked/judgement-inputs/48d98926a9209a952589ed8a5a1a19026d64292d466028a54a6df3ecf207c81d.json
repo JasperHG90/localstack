@@ -1,0 +1,1 @@
+{"ask":"lab-auth-check's check step dies on the first closed-port probe: GitHub runs shell: bash with -e, so timeout's expected 124 exits the script. Turn -e off in that step and add a test that runs the step under bash -e -o pipefail."}
