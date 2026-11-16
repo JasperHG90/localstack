@@ -20,7 +20,8 @@
   "worktree": "/home/vscode/workspace.worktrees/bifrost-router-priorities",
   "branch": "loop/bifrost-router-priorities",
   "stamps": [
-    "f940c72a7a56f087207ee145c9d7b87b40a4bcc951b965ca33fab600d8d6caa7"
+    "f940c72a7a56f087207ee145c9d7b87b40a4bcc951b965ca33fab600d8d6caa7",
+    "59cee8a6966772ce321a4b46538f3d6a7fd8d83f43316c4523bc84b007487bdf"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
@@ -115,5 +116,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T15:13:17+00:00"
+  "at": "2026-11-16T15:16:31+00:00"
 }
