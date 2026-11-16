@@ -20,10 +20,43 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/claude",
+    "hash": "9f1d6e64f4477657c9ffec6e886b8eb03e4cd473328ecd2e4bcd199b749992f6",
+    "at": "2026-11-16T14:55:49+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "when the script's own init fails on a root that had no .terraform/, the script exits non-zero and the root has no .terraform/ afterwards",
+      "fails_when": "the script exits 0 after the failed init, or .terraform/ still exists in that root",
+      "command": "uv run --directory cli pytest tests/test_tf_validate.py::test_failed_init_removes_the_terraform_dir_it_created -q",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "a root that already has .terraform/ is validated without init and keeps its .terraform/, even when validate fails",
+      "fails_when": "the stub records an init call for that root, or its .terraform/ is gone after the run",
+      "command": "uv run --directory cli pytest tests/test_tf_validate.py::test_existing_terraform_dir_is_never_initialized_or_removed -q",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "a root with no .terraform/ whose init succeeds is initialized with -backend=false and then validated",
+      "fails_when": "the stub does not record init -backend=false followed by validate for that root, or the script exits non-zero",
+      "command": "uv run --directory cli pytest tests/test_tf_validate.py::test_fresh_root_is_initialized_without_backend_then_validated -q",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "the repo gates pass",
+      "fails_when": "just pre_commit or the cli test suite exits non-zero",
+      "command": "just pre_commit && uv run --directory cli pytest -q",
+      "judgment": false
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -44,5 +77,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T14:55:38+00:00"
+  "at": "2026-11-16T14:55:49+00:00"
 }
