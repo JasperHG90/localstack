@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "fingerprint": "b2f3ede7f366b06562d5ae3f651993c93977b1579151e2e278b914a3d1a026ad",
+  "slug": "ov-sync-consumer-reviewer-f3",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestApplySerializesPerKey",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r2",
+      "kind": "eval-row",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestPerKeyLockNoDeadlock",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    },
+    {
+      "name": "r3",
+      "kind": "eval-row",
+      "command": "just -f applications/ov-sync-consumer/justfile test && just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null
+    }
+  ],
+  "green": true,
+  "at": "2026-11-16T08:15:46+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696"
+}
