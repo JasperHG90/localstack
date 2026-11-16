@@ -1,0 +1,1 @@
+{"ask":"ov-sync-consumer treats OpenViking's HTTP 409 'lock acquire timed out' as a failed event and NAKs it, so a burst sync of a few hundred files takes 20+ minutes and fills the log with retries (some files 5 deliveries). Retry that 409 inside the event with a short jittered backoff, and release a new consumer image together with the per-key lock fix."}
