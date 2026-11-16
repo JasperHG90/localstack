@@ -1047,9 +1047,9 @@ resource "bifrost_virtual_key" "openviking" {
 
 # Router virtual key: its chats go through the Complexity Router in bifrost.hcl,
 # which asks ollama/clef:27b how hard each prompt is and reroutes it to the tier
-# model. Every other key matches the priority-0 passthrough rule first, so it
-# keeps its model and pays no classifier call. Alphabetical by `provider` -- see
-# the Hermes key's comment.
+# model. Every other key matches the passthrough rule (priority 10) before any
+# tier rule, so it keeps its model and pays no classifier call. Alphabetical by
+# `provider` -- see the Hermes key's comment.
 #
 # ollama names its four models instead of "*": the wildcard only admits catalog
 # models, and a model outside the catalog 403s as model_blocked

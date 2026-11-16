@@ -32,6 +32,7 @@ TIERS = {
     "COMPLEX": ("ollama", "mistral-large-4"),
 }
 CLOUD_SUFFIX = re.compile(r"[:-]cloud$")
+HAND_MADE_TOP_PRIORITY = 3
 
 
 def _heredocs(text: str) -> list[str]:
@@ -104,8 +105,12 @@ def test_complexity_router() -> None:
         assert analyzer["keywords"][name], f"{name} is empty"
 
     rules = sorted(governance["routing_rules"], key=lambda r: r["priority"])
+    priorities = [r["priority"] for r in rules]
+    # The live store holds hand-made global rules at 0-3 for Claude Code's model
+    # aliases. Ours must not reuse a priority, and must run after those.
+    assert len(set(priorities)) == len(priorities), priorities
+    assert min(priorities) > HAND_MADE_TOP_PRIORITY, priorities
     first, *tier_rules = rules
-    assert first["priority"] == 0
     assert first["cel_expression"] == 'virtual_key_name != "router"'
     assert first["targets"] == [{"weight": 1}]
 

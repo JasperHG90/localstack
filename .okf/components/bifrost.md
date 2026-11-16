@@ -137,10 +137,16 @@ model list. Its key comes from `secret/default/bifrost/typesafe`
 The Complexity Router (`governance.complexity_analyzer_config`) grades a chat
 with `ollama/clef:27b`, timeout 3 s, and `governance.routing_rules` send
 SIMPLE, MEDIUM and COMPLEX to `gpt-oss:120b`, `deepseek-v4.1-flash` and
-`mistral-large-4`. Only the `router` key is rerouted: a priority-0 rule passes
-every other key through before any rule names `complexity_tier`, so they make
-no classifier call. A timeout or classifier error leaves the requested model
-in place. [ADR 0029](/decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev.md)
+`mistral-large-4`. Only the `router` key is rerouted: a passthrough rule at
+priority 10 lets every other key through before any rule names
+`complexity_tier`, so they make no classifier call. The tier rules sit at 11
+to 13. The store also holds four global rules made by hand in the admin UI at
+priorities 0 to 3, which send Claude Code's `haiku-model`, `sonnet-model`,
+`opus-model` and `fable-model` to Ollama models. They run first, they are not
+in config.json or Terraform, and a config.json rule that reuses one of their
+priorities stops Bifrost at boot (`routing rule with priority 0 already
+exists for scope 'global'`, 2026-11-16). A timeout or classifier error leaves
+the requested model in place. [ADR 0029](/decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev.md)
 has the reasons.
 
 Two gateway behaviors reach past this job:

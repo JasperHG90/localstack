@@ -162,3 +162,4 @@
 - Updated `handoffs/bifrost-decision-models-ci-lab-auth-and-openviking-doc-sync-design` with `kmctl new handoff --key`.
 - Added `decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev` with `kmctl new decision`.
 - Added `decisions/0030-ov-sync-stores-images-in-openviking-per-file-folders` with `kmctl new decision`.
+- Corrected `decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev` and updated `components/bifrost`: router routing rules at priorities 10 to 13, after the hand-made Claude Code rules at 0 to 3.

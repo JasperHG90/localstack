@@ -64,3 +64,13 @@ provider keys.
   Whether the key would refuse a rule target missing from its list was not
   measured, and a direct call to that model needs the list either way.
 - The router key's value is not in Vault, since nothing consumes it yet.
+
+## Correction, 2026-11-16
+
+The passthrough and tier rules run at priorities 10 to 13, not 0 to 3. The
+store already held four global rules made by hand in the admin UI at 0 to 3,
+for Claude Code's model aliases, and the first apply at 0 to 3 stopped
+Bifrost at boot with `routing rule with priority 0 already exists for scope
+'global'`. The passthrough still comes before the tier rules, and now after
+the hand-made rules, which never name `complexity_tier`, so the choice above
+holds (`bifrost-router-priorities`).
