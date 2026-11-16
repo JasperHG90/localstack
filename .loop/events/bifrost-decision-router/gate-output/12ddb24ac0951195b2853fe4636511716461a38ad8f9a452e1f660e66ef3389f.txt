@@ -1,0 +1,90 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  All checks passed!
+  ISC004 Unparenthesized implicit string concatenation in collection
+    --> scripts/bifrost_smoke.py:66:9
+     |
+  64 |       ("Say hi.", "gpt-oss:120b"),
+  65 |       (
+  66 | /         "Design a sharded, multi-region event store with exactly-once delivery "
+  67 | |         "and explain the trade-offs.",
+     | |_____________________________________^
+  68 |           "mistral-large-4",
+  69 |       ),
+     |
+  help: Did you forget a comma?
+  help: Wrap implicitly concatenated strings in parentheses
+
+  Found 1 error.
+  No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  17 files already formatted
+  17 files already formatted
+  17 files already formatted
+  17 files already formatted
+  16 files already formatted
+  16 files already formatted
+  16 files already formatted
+  unformatted: File would be reformatted
+     --> scripts/bifrost_smoke.py:179:27
+      |
+  178 | def assert_virtual_keys_survive(base: str, user: str, password: str) -> None:
+      -     status, raw = request(f"{base}/api/governance/virtual-keys", headers=basic_auth(user, password))
+  179 +     status, raw = request(
+  180 +         f"{base}/api/governance/virtual-keys", headers=basic_auth(user, password)
+  181 +     )
+  182 |     if status != 200:
+  --------------------------------------------------------------------------------
+  224 |         method="POST",
+      -         body={"model": REQUESTED_MODEL, "messages": [{"role": "user", "content": prompt}]},
+  225 +         body={
+  226 +             "model": REQUESTED_MODEL,
+  227 +             "messages": [{"role": "user", "content": prompt}],
+  228 +         },
+  229 |         headers={"x-bf-vk": vk},
+  230 |     )
+  231 |     if status != 200:
+  232 |         raise SmokeFailure(f"chat: expected 200, got {status}")
+      -     info: dict[str, Any] = json.loads(raw).get("extra_fields", {}).get("routing_info", {})
+  233 +     info: dict[str, Any] = (
+  234 +         json.loads(raw).get("extra_fields", {}).get("routing_info", {})
+  235 +     )
+  236 |     return info
+  --------------------------------------------------------------------------------
+  309 |             ("decisions answer", partial(assert_decisions_answer, base, router_vk)),
+      -             ("router routes by tier", partial(assert_router_routes_by_tier, base, router_vk)),
+  310 +             (
+  311 +                 "router routes by tier",
+  312 +                 partial(assert_router_routes_by_tier, base, router_vk),
+  313 +             ),
+  314 |             ("hermes not rerouted", partial(assert_hermes_not_rerouted, base, vk)),
+      |
+
+  1 file would be reformatted, 15 files already formatted
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+ov-sync-consumer (go vet, go test).......................................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
