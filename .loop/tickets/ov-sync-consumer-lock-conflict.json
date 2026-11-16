@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer-lock-conflict",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
@@ -41,7 +41,7 @@
   "split": "j-20261116T090449+0000-35a7fb90",
   "split_plan_hash": "d2a0031db3d8023db5a39e5625ed07572573e705dc09d2e9dd56a6b369a267b9",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "641b8121489cefa5711b1571377d64451d005ecc",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -191,8 +191,14 @@
       "to": "verifying",
       "at": "2026-11-16T09:16:51+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-16T09:30:17+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:29:46+00:00"
+  "at": "2026-11-16T09:30:17+00:00"
 }
