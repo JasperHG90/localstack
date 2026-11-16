@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-decision-router",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
@@ -95,8 +95,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "2611019a6f527bfce8de61370702d76735bbedd3864d0e88c3962c2ebadc62b1",
   "intent": {
@@ -128,8 +128,14 @@
       "to": "verifying",
       "at": "2026-11-16T08:25:48+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-11-16T08:31:53+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T08:25:50+00:00"
+  "at": "2026-11-16T08:31:53+00:00"
 }
