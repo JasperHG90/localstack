@@ -23,3 +23,4 @@
 {"at": "2026-11-16T08:35:45+00:00", "binds": "73b23952fdd406f2c923f9af2d572a882b65529b2236cf13355301024ad2f659", "kind": "round-start", "n": 2, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "34c77a99187c58277ceb2777bafd3a4fa66187cf"}
 {"at": "2026-11-16T08:39:27+00:00", "dispatched_at": "2026-11-16T08:35:45+00:00", "kind": "round-close", "n": 2, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-11-16T08:39:13+00:00"}}
 {"at": "2026-11-16T08:39:45+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "f84702c254a098f653962f952571e72e3fd3c977"}
+{"at": "2026-11-16T08:41:37+00:00", "branch": "loop/bifrost-decision-router", "kind": "land", "schema_version": "1.0", "sha": "940739c65ac4a2b2bf58d2c0006adec791bf8e1f"}
