@@ -239,3 +239,42 @@ def test_check_workflow_logs_in_with_its_caller_role(rendered: dict[str, Any]) -
     (_, _, job), *_ = [f for f in _workflow_jobs_using_lab_auth() if f[0] == CHECK_WORKFLOW]
     step = next(s for s in job["steps"] if ".github/actions/lab-auth" in s.get("uses", ""))
     assert step["with"]["vault-role"] in rendered["callers"]
+
+
+def _stub(bin_dir: Path, name: str, body: str) -> None:
+    path = bin_dir / name
+    path.write_text(f"#!/bin/sh\n{body}\n")
+    path.chmod(0o755)
+
+
+def test_check_step_survives_errexit(tmp_path: Path) -> None:
+    """GitHub runs `shell: bash` as `bash -e -o pipefail`. A closed port's
+    expected 124 from `timeout` must reach the step's `case`, not end it."""
+    if shutil.which("jq") is None:
+        pytest.fail("jq is not on PATH; the check cannot run")
+    job = yaml.safe_load(CHECK_WORKFLOW.read_text())["jobs"]["check"]
+    step = next(s for s in job["steps"] if s.get("name", "").startswith("Check the token"))
+    script = tmp_path / "step.sh"
+    script.write_text(step["run"])
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _stub(bin_dir, "curl", "printf 200")
+    _stub(bin_dir, "timeout", "exit 124")
+    peers = {"Peer": {"a": {"HostName": "firebat", "TailscaleIPs": ["100.64.0.9"]}}}
+    _stub(bin_dir, "tailscale", f"echo '{json.dumps(peers)}'")
+
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/local/bin",
+            "VAULT_ADDR": "https://vault.example",
+            "VAULT_TOKEN": "t",
+        },
+    )
+
+    assert result.stdout.count("timed out") == 5, result.stdout + result.stderr
+    assert "OVERALL=PASS" in result.stdout
+    assert result.returncode == 0

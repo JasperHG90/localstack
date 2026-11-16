@@ -27,7 +27,9 @@ jobs:
       - name: Check the token, the edges and the closed ports
         shell: bash
         run: |
-          set -u
+          # GitHub runs shell: bash with -e, which would end the script at the
+          # first expected timeout. fail counts the failures instead.
+          set +e -u
           fail=0
           row() {
             printf '%-4s | %-6s | %s\n' "$1" "$2" "$3"
