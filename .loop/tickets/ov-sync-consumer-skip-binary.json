@@ -19,7 +19,9 @@
   "archived": false,
   "worktree": "/home/vscode/workspace.worktrees/ov-sync-consumer-skip-binary",
   "branch": "loop/ov-sync-consumer-skip-binary",
-  "stamps": [],
+  "stamps": [
+    "b665e566ba11f7e51767e29610e390a4c1d2c4a92b070bd368b32b57a95d97a7"
+  ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
     "hash": "fd09e44e2d16e3ce2b1efba513781cd483b9723c1f67e488a2bc16b2518081fb",
@@ -108,5 +110,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:34:28+00:00"
+  "at": "2026-11-16T09:37:23+00:00"
 }
