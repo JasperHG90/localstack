@@ -41,6 +41,17 @@ SHA256SUMS, before prek runs. Those are the versions in the devcontainer.
 Every provider either root needs is on the public registry, so
 `terraform init -backend=false` works on a fresh runner.
 
+Both roots also read `file("${path.root}/../../.ssh/id_rsa")` for the
+firewall `null_resource` connections
+(`deployments/infrastructure/services.tf:499`,
+`deployments/applications/services.tf:262`), and `.ssh/` is gitignored, so
+`terraform validate` stops with "no file exists". The lint job creates an
+empty `.ssh/id_rsa` before prek; validate only needs the file to exist, and
+the real key is only read at apply. Changing the Terraform instead would
+touch live config for a CI-only need. With both tools and the empty key, a
+clean clone passes every hook (`uvx prek@0.5.5 run --all-files`, checked by
+the plan reviewer on round 1).
+
 Outcome: a test asserts the lint job installs both at those versions before
 the prek step; after the operator pushes, the `ci` run on main is green.
 

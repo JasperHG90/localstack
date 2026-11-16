@@ -3,7 +3,7 @@
   "slug": "ci-lint-tools",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -72,9 +72,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "b2044c6eab8fb2a43978bfdedc67b29d47041bd0452baa35fa1d0d9f60f04e88",
-    "started_at": "2026-11-16T11:26:09+00:00",
+    "n": 2,
+    "binds": "a5b82879a72bf6941a9ae7ce3644003b63bf1bdc37454abb26a4eb8e11029365",
+    "started_at": "2026-11-16T11:30:30+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -87,10 +87,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "b2044c6eab8fb2a43978bfdedc67b29d47041bd0452baa35fa1d0d9f60f04e88",
+  "plan_hash": "a5b82879a72bf6941a9ae7ce3644003b63bf1bdc37454abb26a4eb8e11029365",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -105,5 +105,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T11:30:29+00:00"
+  "at": "2026-11-16T11:30:30+00:00"
 }
