@@ -647,7 +647,7 @@ resource "nomad_job" "ov_sync_consumer" {
     {
       # applications/ov-sync-consumer/justfile builds and pushes THIS tag,
       # and refuses when the infrastructure root's line differs.
-      ov_sync_consumer_image = "ghcr.io/jasperhg90/ov-sync-consumer:v0.1.0"
+      ov_sync_consumer_image = "ghcr.io/jasperhg90/ov-sync-consumer:v0.1.1"
 
       s3_host         = data.consul_service.seaweedfs.service[0].node_address
       openviking_host = "192.168.2.50"

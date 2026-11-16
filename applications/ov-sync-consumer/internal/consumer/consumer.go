@@ -168,7 +168,11 @@ func (c *Consumer) handle(ctx context.Context, js jetstream.JetStream, m jetstre
 		_ = m.Term()
 		return
 	}
-	c.Log.Warn("event failed, retrying", "delivered", delivered, "err", err)
+	if errors.Is(err, errLockBusy) {
+		c.Log.Info("folder busy, retrying later", "delivered", delivered, "err", err)
+	} else {
+		c.Log.Warn("event failed, retrying", "delivered", delivered, "err", err)
+	}
 	_ = m.NakWithDelay(c.Backoff(delivered))
 }
 
@@ -270,8 +274,11 @@ func (c *Consumer) remove(ctx context.Context, uri, root string) error {
 	top := strings.TrimSuffix(root, "/")
 	for dir := parent(uri); strings.HasPrefix(dir, top+"/"); dir = parent(dir) {
 		removed, err := c.removeIfEmpty(ctx, dir)
-		if err != nil || !removed {
-			return err
+		if err != nil {
+			return fmt.Errorf("%w: %w", errFolderLeft, err)
+		}
+		if !removed {
+			return nil
 		}
 	}
 	return nil

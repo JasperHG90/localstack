@@ -471,3 +471,120 @@ func TestPerKeyLockNoDeadlock(t *testing.T) {
 		t.Fatalf("recursive delete of a folder with other entries: %v", ov.violations)
 	}
 }
+
+func TestLockConflictLogsBusy(t *testing.T) {
+	const key = "JasperHG90/localstack/docs/busy.md"
+	_, s3 := newFakeS3(t, map[string]string{key: "x"})
+	ov, client := newFakeOV(t)
+	ov.failWrites[projRoot+"/docs/busy.md"] = 2
+	ov.failStatus, ov.failMessage = http.StatusConflict, lockTimeout
+	js, _ := setupStream(t)
+	c := newConsumer(s3, client)
+	c.Backoff = Backoff(200*time.Millisecond, time.Second)
+	logs := captureLog(c)
+	runConsumer(t, c, js)
+
+	start := time.Now()
+	publish(t, js, eventJSON("create", key))
+	waitFor(t, "busy.md to land", 10*time.Second, func() bool { return ov.has(projRoot + "/docs/busy.md") })
+
+	// Two busy tries wait Backoff(1) and Backoff(2), 200 and 400 ms. An
+	// immediate redelivery would land in a few milliseconds.
+	if elapsed := time.Since(start); elapsed < 550*time.Millisecond {
+		t.Fatalf("landed after %s, so the busy tries skipped the backoff", elapsed)
+	}
+	if n := ov.writesTo(projRoot + "/docs/busy.md"); n != 3 {
+		t.Fatalf("%d write attempts, want 3 (two busy, then success)", n)
+	}
+	busy := logs.lines("folder busy")
+	if len(busy) != 2 {
+		t.Fatalf("want 2 folder busy lines, got %q", busy)
+	}
+	for _, line := range busy {
+		if !strings.Contains(line, "level=INFO") || !strings.Contains(line, projRoot+"/docs/busy.md") {
+			t.Fatalf("folder busy line is not INFO with the uri: %s", line)
+		}
+	}
+	if warn := logs.lines("level=WARN"); len(warn) != 0 {
+		t.Fatalf("a lock conflict logged at WARN: %q", warn)
+	}
+}
+
+func TestOtherConflictFails(t *testing.T) {
+	t.Run("other 409 warns", func(t *testing.T) {
+		const key = "JasperHG90/localstack/docs/other.md"
+		_, s3 := newFakeS3(t, map[string]string{key: "x"})
+		ov, client := newFakeOV(t)
+		ov.failWrites[projRoot+"/docs/other.md"] = 1
+		ov.failStatus, ov.failMessage = http.StatusConflict, "resource already exists"
+		js, _ := setupStream(t)
+		c := newConsumer(s3, client)
+		logs := captureLog(c)
+		runConsumer(t, c, js)
+
+		publish(t, js, eventJSON("create", key))
+		waitFor(t, "other.md to land", 10*time.Second, func() bool { return ov.has(projRoot + "/docs/other.md") })
+		if len(logs.lines("event failed")) != 1 || len(logs.lines("folder busy")) != 0 {
+			t.Fatalf("want one event failed line and no folder busy line, got %q", logs.lines("msg="))
+		}
+	})
+	t.Run("lock 409 on the last try dead-letters", func(t *testing.T) {
+		const key = "JasperHG90/localstack/docs/stuck.md"
+		_, s3 := newFakeS3(t, map[string]string{key: "x"})
+		ov, client := newFakeOV(t)
+		ov.failWrites[projRoot+"/docs/stuck.md"] = -1
+		ov.failStatus, ov.failMessage = http.StatusConflict, lockTimeout
+		js, s := setupStream(t)
+		c := newConsumer(s3, client)
+		c.MaxTries = 3
+		runConsumer(t, c, js)
+
+		publish(t, js, eventJSON("create", key))
+		waitFor(t, "a dead letter", 10*time.Second, func() bool {
+			_, err := s.GetLastMsgForSubject(context.Background(), stream.DeadSubject)
+			return err == nil
+		})
+		if n := ov.writesTo(projRoot + "/docs/stuck.md"); n != c.MaxTries {
+			t.Fatalf("%d write attempts, want exactly %d", n, c.MaxTries)
+		}
+	})
+}
+
+func TestCatchUpLockConflictIsBusy(t *testing.T) {
+	_, s3 := newFakeS3(t, map[string]string{})
+	ov, client := newFakeOV(t)
+	gone := projRoot + "/docs/gone.md"
+	ov.seed(gone)
+	ov.busyDeletes[gone] = true
+	c := newConsumer(s3, client)
+	logs := captureLog(c)
+
+	err := c.CatchUp(context.Background())
+	if err != nil && strings.Contains(err.Error(), "lock acquire timed out") {
+		t.Fatalf("catch-up failed the pass on a lock conflict: %v", err)
+	}
+	busy := logs.lines("folder busy")
+	if len(busy) != 1 || !strings.Contains(busy[0], "level=INFO") || !strings.Contains(busy[0], gone) {
+		t.Fatalf("want one INFO folder busy line naming %s, got %q", gone, busy)
+	}
+	if !ov.has(gone) {
+		t.Fatal("the busy file was deleted anyway")
+	}
+
+	t.Run("busy folder cleanup still fails the pass", func(t *testing.T) {
+		_, s3 := newFakeS3(t, map[string]string{})
+		ov, client := newFakeOV(t)
+		lone := projRoot + "/docs/lone/gone.md"
+		ov.seed(lone)
+		ov.busyDeletes[projRoot+"/docs/lone"] = true
+		c := newConsumer(s3, client)
+
+		err := c.CatchUp(context.Background())
+		if err == nil || !strings.Contains(err.Error(), "lock acquire timed out") {
+			t.Fatalf("a busy folder cleanup was dropped, so the folder stays behind: %v", err)
+		}
+		if ov.has(lone) {
+			t.Fatal("the file itself was not deleted")
+		}
+	})
+}

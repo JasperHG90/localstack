@@ -47,6 +47,17 @@ type Entry struct {
 
 var errNotFound = errors.New("not found")
 
+// errLockBusy marks OpenViking's 409 for a folder lock it gave up waiting
+// for, after about 150 ms. The lock can stay held for minutes, probably by
+// OpenViking's own folder summary, so the caller retries later rather than
+// at once.
+var errLockBusy = errors.New("openviking folder lock busy")
+
+// errFolderLeft marks a failed cleanup of the emptied folders above a deleted
+// file. An event's redelivery retries it, but catch-up cannot: it never sees a
+// folder that holds only summaries.
+var errFolderLeft = errors.New("emptied folder left behind")
+
 type envelope struct {
 	Status  string          `json:"status"`
 	Result  json.RawMessage `json:"result"`
@@ -94,6 +105,9 @@ func (o *OpenViking) do(ctx context.Context, method, path string, query url.Valu
 		msg := strings.TrimSpace(string(raw))
 		if env.Error != nil {
 			msg = env.Error.Code + ": " + env.Error.Message
+			if status == http.StatusConflict && strings.Contains(env.Error.Message, "lock acquire timed out") {
+				return nil, fmt.Errorf("%s %s: HTTP %d: %s: %w", method, path, status, msg, errLockBusy)
+			}
 		}
 		return nil, fmt.Errorf("%s %s: HTTP %d: %s", method, path, status, msg)
 	}

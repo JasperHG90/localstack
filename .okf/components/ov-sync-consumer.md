@@ -123,6 +123,14 @@ a five-minute OpenViking outage) the event is copied to `ovsync.dead` with
 an `Ov-Sync-Error` header and terminated. A body that is not JSON goes there
 at once.
 
+OpenViking answers a write or delete with 409 `lock acquire timed out` when it
+gives up waiting for a folder lock, and that lock can stay held for minutes,
+probably by its own folder summary. The consumer retries such an event on the
+same schedule but logs it at INFO as `folder busy`, and catch-up skips the
+file until its next pass. The first 189-file sync hit it dozens of times and
+took over 20 minutes; what holds the lock is the stub
+`ov-sync-consumer-lock-scope`.
+
 The catch-up pass runs at start and every 15 minutes. For each mapped prefix
 it lists the bucket and the OpenViking folder, writes what is missing and
 deletes what has no object. It compares which files exist, not content. It
@@ -152,6 +160,7 @@ the consumer. Push the image before either, with
 | Current state wins, no batch-write | `TestConsumerAppliesCurrentState` |
 | Prefix map, `_state/` skipped | `TestConsumerMapsPrefixes` |
 | Ack after success, bounded retries, dead letter | `TestConsumerRetriesThenDeadLetters` |
+| A folder lock 409 retries as `folder busy`, not a failure | `TestLockConflictLogsBusy`, `TestOtherConflictFails`, `TestCatchUpLockConflictIsBusy` |
 | In-flight requests bounded by the pool | `TestConsumerPoolBound` |
 | Recursive delete only on an emptied folder, judged by ls | `TestConsumerFolderDeleteGuard` |
 | Catch-up repairs both directions | `TestCatchUpRepairs` |
