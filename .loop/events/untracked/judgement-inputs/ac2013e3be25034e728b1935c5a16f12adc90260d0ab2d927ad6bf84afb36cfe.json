@@ -1,0 +1,1 @@
+{"ask":"ov-sync-consumer writes binary files (PNGs) through OpenViking's text-only content/write, which mangles them. Skip objects that are not valid UTF-8 with an INFO log until a proper binary upload exists, shipping in the unreleased v0.1.1."}
