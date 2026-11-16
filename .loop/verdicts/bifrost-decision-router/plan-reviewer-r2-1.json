@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "Step 1 now adds the typesafe provider with no base_url, so the provider's own /v1/systemone and /v1/models paths and its built-in Jev model list apply.",
+      "anchor": ".loop/plans/bifrost-decision-router.md:27",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "Spike 7 measured ollama/clef:27b through the live gateway (5 of 5 at 200, worst 840 ms) and confirmed the three tier models answer under the exact names; the build sets the classifier timeout to 3000 ms.",
+      "anchor": ".loop/spikes/bifrost-decision-router/7/stdout.txt",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "2611019a6f527bfce8de61370702d76735bbedd3864d0e88c3962c2ebadc62b1"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T08:02:02+00:00"
+}
