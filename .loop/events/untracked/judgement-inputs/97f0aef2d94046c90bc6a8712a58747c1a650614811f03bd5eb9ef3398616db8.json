@@ -1,0 +1,1 @@
+{"ask":"Fix problems: CI lint on main is still red because terraform validate fails on provider \"nomad\" at deployments/infrastructure/machine_roles.tf:63 (address missing without credentials); and scripts/tf_validate.sh skips init when a failed init left a partial .terraform/, then fails with Missing required provider."}
