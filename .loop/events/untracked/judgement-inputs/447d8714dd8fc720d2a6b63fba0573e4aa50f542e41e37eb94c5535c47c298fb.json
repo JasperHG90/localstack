@@ -1,0 +1,1 @@
+{"ask":"ci lint still fails after ci-lint-tools: terraform validate needs the nomad provider's address, which comes from NOMAD_ADDR locally (run 43863164828: 'The argument address is required' on machine_roles.tf provider nomad). Set a placeholder NOMAD_ADDR on the prek step; validate never connects."}
