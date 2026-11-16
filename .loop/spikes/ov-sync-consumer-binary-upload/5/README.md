@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-16T10:00:38+00:00'
+  at: '2026-11-16T11:15:30+00:00'
 slug: ov-sync-consumer-binary-upload
 n: 5
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike ov-sync-consumer-binary-upload/5
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note ov-sync-consumer-binary-upload 5`.
+Exit 1 on local OpenViking v0.4.17.1-9 (spike 3's harness). On a fresh tree, `POST /api/v1/resources {temp_file_id, to: <missing D>/.ovsync-upload-diagram.png, source_name, wait: true}` succeeded without `create_parent` and created D and its missing parents. The mv then put the exact bytes at D/diagram.png (sha256 matched for a.png, then b.png and c.png over the same URI, reusing one fixed temp folder name, including adding into a leftover temp folder). The exit is 1 because the temp folder was still listed in D after its recursive delete in all three checks, so the move route leaves hidden folders behind. The session stopped the spike after this run; the operator then chose OpenViking's native layout (`to = D/<name>`, stored as `D/<name>/<name>`), which needs no temp folder or move. What carries over: add resource creates missing parents.
 
 ## Files
 
