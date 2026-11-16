@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-router-priorities",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 2,
@@ -48,7 +48,7 @@
   "split": "j-20261116T145804+0000-5950931b",
   "split_plan_hash": "6b31ce5ac68210287f0e127a8944621df7579c753807183b01354c46de284465",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "53860c6c3d335dd3830399e2ee9974d4d56356fd",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -154,8 +154,14 @@
       "to": "verifying",
       "at": "2026-11-16T15:16:45+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-16T15:20:30+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T15:20:16+00:00"
+  "at": "2026-11-16T15:20:30+00:00"
 }
