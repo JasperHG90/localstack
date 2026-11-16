@@ -1,14 +1,49 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-router-priorities",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "59cee8a6966772ce321a4b46538f3d6a7fd8d83f43316c4523bc84b007487bdf",
+    "tree": "b8dbed45e629730af5d31989a0394dec9c99ee29",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f2",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/log.md"
+        ]
+      },
+      {
+        "finding": "reviewer:f3",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": "j-20261116T151645+0000-1681fcd6",
+        "paths": [
+          ".okf/components/bifrost.md",
+          "deployments/applications/services.tf"
+        ]
+      }
+    ],
+    "at": "2026-11-16T15:16:45+00:00"
+  },
   "ask": "j-20261116T145748+0000-24fdcedf",
   "split": "j-20261116T145804+0000-5950931b",
   "split_plan_hash": "6b31ce5ac68210287f0e127a8944621df7579c753807183b01354c46de284465",
@@ -113,8 +148,14 @@
       "to": "fixing",
       "at": "2026-11-16T15:13:17+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-16T15:16:45+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T15:16:31+00:00"
+  "at": "2026-11-16T15:16:45+00:00"
 }
