@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "the ci lint job's prek step sets NOMAD_ADDR so terraform validate finds the nomad provider's address",
+      "fails_when": "the prek step has no NOMAD_ADDR in its env",
+      "command": "uv run --directory cli pytest tests/test_ci_workflow.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "the repo gates pass",
+      "fails_when": "just pre_commit exits non-zero",
+      "command": "just pre_commit"
+    },
+    {
+      "id": "r3",
+      "behavior": "after a push, the ci workflow run on main succeeds, lint and knowledge jobs",
+      "fails_when": "the run's lint or knowledge job fails",
+      "judgment": true
+    }
+  ]
+}
