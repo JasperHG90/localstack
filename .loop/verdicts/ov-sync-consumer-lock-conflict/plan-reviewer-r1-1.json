@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The retry budget (\"a few times\", \"hundreds of milliseconds\") rests on an unchecked premise: that OpenViking's lock is held only briefly by another in-flight write. The live evidence points the other way. With the consumer's backoff (2 s doubling, main.go), a file that needed 5 deliveries kept hitting the lock across about 30 s (2+4+8+16 s). Spike ov-sync-consumer/3 shows OpenViking's own background summary job (semantic_dag) also takes folder locks, and a summary is a VLM call that can run for seconds. If the holder is that job, or the lock covers the parent folder or its ancestors and not just the file, a retry budget of about a second fails the same events as today. Then the plan's outcome (no `event failed` line for a 409, row r5) is not met, and the fix is a different one: a much longer budget, serializing writes per parent folder, or dropping Pool/MaxInFlight. Settle it before building, with a spike or the operator logs. Find out what holds the lock (a concurrent write or the summary job), which path it covers (file, parent folder or ancestors), how long it is held, and which retry budget would have cleared the 409s seen on 2026-11-16, measured as the time from each file's first 409 to its success.",
+      "anchor": ".loop/plans/ov-sync-consumer-lock-conflict.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r5"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "705df9decacfd0ca0135ceaf1598793d3e9c4e077e8df2952b2c236c83002d6f"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T08:45:20+00:00"
+}
