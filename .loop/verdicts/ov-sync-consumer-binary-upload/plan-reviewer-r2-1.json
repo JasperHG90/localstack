@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "The temp folder is gone from the plan, so no leftover temp folder can build up.",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "No temp URI exists, so catch-up cannot reap an in-flight temp file.",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "resolved",
+      "claim": "The route is limited to image extensions, and every other non-UTF-8 object is skipped with an INFO line.",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p4",
+      "disposition": "resolved",
+      "claim": "Spikes 4 and 5 show add resource creates missing parents without create_parent.",
+      "anchor": null,
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p5",
+      "disposition": "open",
+      "claim": "Catch-up and Apply decide 'image' by different rules, and catch-up's stale have snapshot then deletes the wrong URI. Catch-up picks D/name/name from the extension alone. Apply also needs the bytes to be invalid UTF-8 (r4). Case A, a .png key holding valid UTF-8 (a git LFS pointer is exactly this): Apply writes text at D/name. Catch-up wants D/name/name, sees D/name, calls Apply (rewrite plus summary cost), then removes D/name from the have snapshot it took before the write. The next pass finds nothing and writes it again. The file flips between present and deleted on every pass, forever. Case B, the migration the plan is for (r7): have = {D/name damaged plain file}, want = {D/name/name}. The first loop's Apply deletes the plain file and adds to=D/name, so D/name is now a folder holding the fresh image. The second loop then calls remove(D/name) with recursive=false on that folder, from the stale snapshot. Either it errors on every first pass after deploy, or it deletes the new image. Before this change a key's want and have URIs were the same string, so the two loops never touched one path. The plan has to give one rule that catch-up and Apply share. For example: catch-up counts D/name or D/name/name as present for an image-extension key, and never removes a have URI U when U/base(U) is wanted. Or Apply decides by extension alone and r4 changes. The plan should also say which URI the per-key lock uses, so Apply and catch-up's remove lock the same key for one image.",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/catchup.go:44",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r5"
+    },
+    {
+      "id": "p6",
+      "disposition": "open",
+      "claim": "Deleting an image relies on the existing removeIfEmpty to drop D/name. D/name is a folder that add resource created as a resource root. In spikes 4 and 5, a folder created that way was still listed in its parent after a recursive DELETE that returned 200, three times out of three (estimated_deleted_count 2, then 0 on the retry). Spike 3 saw it go, so the result is mixed. removeIfEmpty checks the parent listing and fails with 'still listed after its delete' when the folder is still there. If spikes 4 and 5 show the normal case, every image delete returns errFolderLeft: events retry to MaxTries and go to dead-letter, catch-up cannot see the folder, and an empty D/name folder stays behind. r5 cannot pass against the real server. The plan does not list this risk. Spike question: on v0.4.17.1-9, after add resource with to=D/name (with D existing, and with D missing), DELETE D/name/name and then DELETE D/name recursive=true, wait=true. Is D/name gone from ls D right away, after a few seconds, or never? If it stays, what would remove it?",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/consumer.go:298",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r5"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "ba9673fd7fa445d44e8d05f503baf099d700b527885e8587017af0b96b9b6ef0"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T11:18:08+00:00"
+}
