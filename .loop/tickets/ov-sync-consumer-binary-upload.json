@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ov-sync-consumer-binary-upload",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 4,
   "review_rounds": 2,
@@ -33,7 +33,7 @@
   "split": "j-20261116T112701+0000-7b5f1a87",
   "split_plan_hash": "2ad0f8db43f2b3765f6ae0b937d0ed1238ae6b305f89d14ad2f3b03c1844dff0",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "170b4fa72bbb34d70adfa2ebf90f9bc8df843ec6",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -248,8 +248,14 @@
       "to": "verifying",
       "at": "2026-11-16T11:51:33+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-16T11:55:18+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T11:54:57+00:00"
+  "at": "2026-11-16T11:55:18+00:00"
 }
