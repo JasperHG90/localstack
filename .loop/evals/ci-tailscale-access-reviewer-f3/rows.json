@@ -1,4 +1,17 @@
 {
   "schema_version": "1.0",
-  "rows": []
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "when GitHub's OIDC endpoint answers without a value field, the lab-auth login step fails with an error naming the OIDC token, before it masks anything or posts to Vault",
+      "fails_when": "with a stub curl whose OIDC response is {}, the step's script exits 0, sends a request to the Vault login URL, prints ::add-mask::null, or prints no error naming the OIDC token",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_login_fails_on_missing_oidc_value -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "the repo gates pass",
+      "fails_when": "just pre_commit exits non-zero",
+      "command": "just pre_commit"
+    }
+  ]
 }
