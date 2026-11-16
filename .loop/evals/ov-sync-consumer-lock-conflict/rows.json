@@ -3,21 +3,21 @@
   "rows": [
     {
       "id": "r1",
-      "behavior": "a write that OpenViking answers with a lock-timeout 409 twice and then 200 succeeds within the same event, with no failed event logged",
-      "fails_when": "the event fails, is NAKed, or the write is sent fewer than three times",
-      "command": "just -f applications/ov-sync-consumer/justfile test-one TestWriteRetriesLockConflict"
+      "behavior": "an event whose write OpenViking answers with a lock-timeout 409 is redelivered with the usual backoff and logs an INFO 'folder busy' line naming the URI, and no WARN",
+      "fails_when": "the event is acked, dead-lettered before its last try, NAKed with a different delay than Backoff(delivered), logs at WARN, or logs no INFO line with the URI",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestLockConflictLogsBusy"
     },
     {
       "id": "r2",
-      "behavior": "a 409 that is not a lock timeout, and a lock timeout that persists past the retry limit, still fail the event",
-      "fails_when": "either case is reported as success or retried without bound",
+      "behavior": "a 409 that is not a lock timeout still logs WARN 'event failed', and a lock-timeout 409 on the last allowed try still dead-letters",
+      "fails_when": "the other 409 logs at INFO, or the last-try lock 409 is not dead-lettered",
       "command": "just -f applications/ov-sync-consumer/justfile test-one TestOtherConflictFails"
     },
     {
       "id": "r3",
-      "behavior": "a retry waiting out its backoff holds no MaxInFlight slot",
-      "fails_when": "while one request sleeps between lock-conflict retries, another request cannot take the only slot",
-      "command": "just -f applications/ov-sync-consumer/justfile test-one TestRetryReleasesSlot"
+      "behavior": "a catch-up folder delete that hits a lock-timeout 409 logs it as folder busy instead of failing the pass with that error",
+      "fails_when": "the catch-up pass error or WARN log carries the lock-timeout 409",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestCatchUpLockConflictIsBusy"
     },
     {
       "id": "r4",
@@ -27,8 +27,8 @@
     },
     {
       "id": "r5",
-      "behavior": "after the operator releases v0.1.1 and applies, a burst sync logs no 'event failed' line caused by a lock-timeout 409",
-      "fails_when": "the consumer log shows such a line during a sync",
+      "behavior": "after the operator releases v0.1.1 and applies, a burst sync logs lock 409s only as INFO 'folder busy' lines",
+      "fails_when": "the consumer log shows a WARN 'event failed' line caused by a lock-timeout 409",
       "judgment": true
     }
   ]
