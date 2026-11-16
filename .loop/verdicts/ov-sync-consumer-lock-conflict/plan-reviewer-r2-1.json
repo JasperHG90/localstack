@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "Round 1: an in-process retry of about a second cannot outlast a lock held for minutes. The revised plan drops the in-process retry and keeps JetStream redelivery (2 s doubling to 30 s, 20 tries, about eight minutes), so the plan no longer depends on how long the lock lasts. Measuring the lock moved to the stub ov-sync-consumer-lock-scope.",
+      "anchor": "applications/ov-sync-consumer/internal/consumer/consumer.go:154",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r5"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "d2a0031db3d8023db5a39e5625ed07572573e705dc09d2e9dd56a6b369a267b9"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T09:05:47+00:00"
+}
