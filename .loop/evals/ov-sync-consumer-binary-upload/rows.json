@@ -15,20 +15,20 @@
     },
     {
       "id": "r3",
-      "behavior": "a non-UTF-8 object that is not one of the image types is skipped with an INFO 'binary file skipped' line naming the key, and nothing is written",
+      "behavior": "a non-UTF-8 object without an image extension is skipped with an INFO 'binary file skipped' line naming the key, and nothing is written",
       "fails_when": "OpenViking receives any write or upload for it, or no such INFO line appears",
       "command": "just -f applications/ov-sync-consumer/justfile test-one TestOtherBinarySkipped"
     },
     {
       "id": "r4",
-      "behavior": "a valid UTF-8 object with multi-byte characters still goes through content/write byte for byte, even with an image extension",
+      "behavior": "a valid UTF-8 object without an image extension, with multi-byte characters, still goes through content/write byte for byte",
       "fails_when": "it is uploaded as a resource, or the stored content differs from the object's bytes",
       "command": "just -f applications/ov-sync-consumer/justfile test-one TestUTF8ObjectWrittenExactly"
     },
     {
       "id": "r5",
-      "behavior": "catch-up counts D/name/name as the image's copy, uploads a missing image, and removes D/name/name and the emptied D/name folder when the bucket no longer holds the image",
-      "fails_when": "catch-up re-uploads an image that is present, misses a missing one, or leaves the image or its folder behind after the object is gone",
+      "behavior": "catch-up counts D/name/name as an image key's copy, uploads a missing image, never removes the old plain file at D/name while D/name/name is wanted, and removes the image when the bucket no longer holds it, judging its folder gone when ls D/name is empty even while ls D still lists it",
+      "fails_when": "catch-up re-uploads a present image, misses a missing one, deletes the image or its folder as an unwanted D/name, leaves the image file behind after the object is gone, or fails the pass because the empty folder is still listed",
       "command": "just -f applications/ov-sync-consumer/justfile test-one TestCatchUpImages"
     },
     {
