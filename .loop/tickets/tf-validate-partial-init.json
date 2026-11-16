@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "tf-validate-partial-init",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "a9dc32d0541d092d798788c5d37e2e2119d8681e1941397006a9484f3d25dd72",
+    "tree": "edb9ca6b94ca224ba4a7cd48a576b91ed9ba2910",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/components/terraform-roots.md"
+        ]
+      }
+    ],
+    "at": "2026-11-16T15:12:56+00:00"
+  },
   "ask": "j-20261116T145012+0000-98cbe4de",
   "split": "j-20261116T145538+0000-f87f4ed4",
   "split_plan_hash": "3c5a085687168ff577ef7a06475b373600632ac4bcd357c47097a416992deff4",
@@ -120,8 +136,14 @@
       "to": "fixing",
       "at": "2026-11-16T15:09:27+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-16T15:12:56+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T15:12:52+00:00"
+  "at": "2026-11-16T15:12:56+00:00"
 }
