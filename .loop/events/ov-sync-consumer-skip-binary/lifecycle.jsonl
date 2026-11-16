@@ -1,2 +1,3 @@
 {"at": "2026-11-16T09:32:53+00:00", "kind": "register", "schema_version": "1.0", "stage": "planning"}
 {"at": "2026-11-16T09:33:15+00:00", "grant": "g4", "hash": "fd09e44e2d16e3ce2b1efba513781cd483b9723c1f67e488a2bc16b2518081fb", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5", "step": "eval-sign"}
+{"at": "2026-11-16T09:33:19+00:00", "binds": "19de30632246d9fe91fdc141ef72009a039b92e0fc23caa7cb28c64559a42b32", "kind": "round-start", "n": 1, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
