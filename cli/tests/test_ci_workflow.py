@@ -49,3 +49,11 @@ def test_lint_job_installs_hook_tools_before_prek() -> None:
     key = _index(steps, ".ssh/id_rsa")
 
     assert max(terraform, nomad, key) < prek
+
+
+def test_prek_step_sets_nomad_addr() -> None:
+    """Both roots' nomad providers take their address from NOMAD_ADDR, and
+    terraform validate requires it even though it never connects."""
+    steps = _lint_steps()
+    prek = steps[_index(steps, "prek")]
+    assert prek.get("env", {}).get("NOMAD_ADDR")
