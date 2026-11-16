@@ -35,6 +35,10 @@ jobs:
       - name: Placeholder SSH key for terraform validate
         run: mkdir -p .ssh && touch .ssh/id_rsa
       - name: Pre-commit hooks
+        env:
+          # The nomad providers read their address from here; validate needs
+          # one but never connects.
+          NOMAD_ADDR: http://127.0.0.1:4646
         run: uvx prek@0.5.5 run --all-files --show-diff-on-failure
 
   knowledge:
