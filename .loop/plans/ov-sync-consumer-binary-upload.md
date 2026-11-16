@@ -40,8 +40,12 @@ after the file. For a key that maps to `D/name`, the image lands at
    re-add with the same `to` replaces that folder, so a changed image
    overwrites the old one.
 
-Before step 2 the consumer deletes a plain file at `D/name` if one is there
-(404 counts as done), which removes the damaged copies the first sync wrote.
+Before step 2 the consumer deletes a plain file at `D/name` if `ls D` lists
+one there with `isDir` false (404 counts as done), which removes the damaged
+copies the first sync wrote. A non-recursive delete of an image's folder is
+refused with 412 and the image survives
+(spike:ov-sync-consumer-binary-upload/8), and `isDir` is true for a live and
+a leftover image folder alike, so only a plain file is ever deleted here.
 The extension alone decides, in `Apply` and in catch-up alike, so the two
 always agree on where an image lives; a `.png` holding text (a git LFS
 pointer) is uploaded the same way, and the store succeeds even when the image
@@ -83,8 +87,10 @@ holds the image.
 
 - A deleted image's folder stays listed as an empty folder, so the
   existing "gone from the parent's ls" check would fail every image delete.
-  Settled by spike:ov-sync-consumer-binary-upload/6: the folder is empty
-  for good, so the check for image folders is an empty `ls D/name`.
+  spike:ov-sync-consumer-binary-upload/6 showed the folder stays listed;
+  settled by spike:ov-sync-consumer-binary-upload/8: after the deletes,
+  `ls D/name` is `[]` and the file 404s, and a re-add to the same `to` stores
+  the new bytes with no `_1` folder.
 - The request shapes come from a local v0.4.17.1-9 with stub models.
   Settled by spike:ov-sync-consumer-binary-upload/1 (`to = D/name` stores
   `D/name/name` byte for byte, and a re-add with the same `to` replaces that

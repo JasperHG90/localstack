@@ -19,3 +19,4 @@
 {"at": "2026-11-16T11:26:37+00:00", "kind": "spike-note", "n": 8, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-11-16T11:27:05+00:00", "code": "plan-cap", "from": "planning", "kind": "block", "message": "the plan round cap (3) is reached", "notified": false, "schema_version": "1.0"}
 {"at": "2026-11-16T11:29:45+00:00", "by": "delegated:jasperginn@gmail.com/agent", "edge": "plan-cap", "grant": "g5", "kind": "override", "reason": "plan round 3 passed; the only edit since cites spike:ov-sync-consumer-binary-upload/8 and adds the isDir guard it measured", "schema_version": "1.0", "step": "ticket-override"}
+{"at": "2026-11-16T11:29:56+00:00", "binds": "2ad0f8db43f2b3765f6ae0b937d0ed1238ae6b305f89d14ad2f3b03c1844dff0", "kind": "round-start", "n": 4, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
