@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the Hermes smoke check passed even when the classifier ran for Hermes",
+      "anchor": "scripts/bifrost_smoke.py:236",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the r3 cloud-suffix scan was narrower than the row",
+      "anchor": "cli/tests/test_bifrost_router.py:120",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r3"
+    }
+  ],
+  "binds": {
+    "fingerprint": "73b23952fdd406f2c923f9af2d572a882b65529b2236cf13355301024ad2f659",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T08:39:13+00:00"
+}
