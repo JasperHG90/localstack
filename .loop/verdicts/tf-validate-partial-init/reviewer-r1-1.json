@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": ".okf/components/terraform-roots.md (sources include scripts/tf_validate.sh) says the script validates deployments/applications/modules/bucket, which no longer exists and is not in the script's roots, and it does not mention that a failed fresh init now removes the .terraform/ it left",
+      "anchor": ".okf/components/terraform-roots.md:204",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "df651e0e3226853502fc9701a57e70d5fb7387c927d371e7379da1fb436d9d82",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T15:09:12+00:00"
+}
