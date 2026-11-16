@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "an event for an object that is not valid UTF-8 writes nothing to OpenViking, logs an INFO 'binary file skipped' line naming the key, and is acked without redelivery or a dead letter",
+      "fails_when": "OpenViking receives a write for it, no such INFO line appears, or the event is redelivered or dead-lettered",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestBinaryObjectSkipped"
+    },
+    {
+      "id": "r2",
+      "behavior": "a valid UTF-8 object with multi-byte characters is still written to OpenViking byte for byte",
+      "fails_when": "the stored content differs from the object's bytes",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestUTF8ObjectWrittenExactly"
+    },
+    {
+      "id": "r3",
+      "behavior": "a catch-up pass over a bucket holding a binary object returns no error and writes nothing for it",
+      "fails_when": "the pass returns an error or OpenViking receives a write for the binary object",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestCatchUpSkipsBinary"
+    },
+    {
+      "id": "r4",
+      "behavior": "the module tests and vet pass, and the repo gates pass",
+      "fails_when": "just -f applications/ov-sync-consumer/justfile test or just pre_commit exits non-zero",
+      "command": "just -f applications/ov-sync-consumer/justfile test && just pre_commit"
+    }
+  ]
+}

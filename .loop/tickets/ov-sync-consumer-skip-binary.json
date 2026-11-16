@@ -20,10 +20,43 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
+    "hash": "fd09e44e2d16e3ce2b1efba513781cd483b9723c1f67e488a2bc16b2518081fb",
+    "at": "2026-11-16T09:33:15+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "an event for an object that is not valid UTF-8 writes nothing to OpenViking, logs an INFO 'binary file skipped' line naming the key, and is acked without redelivery or a dead letter",
+      "fails_when": "OpenViking receives a write for it, no such INFO line appears, or the event is redelivered or dead-lettered",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestBinaryObjectSkipped",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "a valid UTF-8 object with multi-byte characters is still written to OpenViking byte for byte",
+      "fails_when": "the stored content differs from the object's bytes",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestUTF8ObjectWrittenExactly",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "a catch-up pass over a bucket holding a binary object returns no error and writes nothing for it",
+      "fails_when": "the pass returns an error or OpenViking receives a write for the binary object",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestCatchUpSkipsBinary",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "the module tests and vet pass, and the repo gates pass",
+      "fails_when": "just -f applications/ov-sync-consumer/justfile test or just pre_commit exits non-zero",
+      "command": "just -f applications/ov-sync-consumer/justfile test && just pre_commit",
+      "judgment": false
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -44,5 +77,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:33:14+00:00"
+  "at": "2026-11-16T09:33:15+00:00"
 }
