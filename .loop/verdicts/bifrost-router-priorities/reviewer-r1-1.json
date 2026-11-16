@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "ADR 0029's change is a bullet appended inside Consequences, but okf-bundle.md says a record is never rewritten and a correction is an appended '## Correction, YYYY-MM-DD' section (as in ADR 0006, 0011, 0019). The Decision section still says 'A priority-0 global rule' with nothing next to it pointing at the correction.",
+      "anchor": ".okf/decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev.md:67",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "Two concepts were edited by hand (components/bifrost, decisions/0029) but no line naming them was appended to .okf/log.md, which the every-touched-concept-is-logged constraint requires.",
+      "anchor": ".okf/log.md",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "Two edited lines run past 80 columns. The bifrost.md line ending 'A timeout or classifier error leaves the requested model' and the services.tf comment line ending 'Alphabetical by `provider` -- see' were not rewrapped after the edit.",
+      "anchor": ".okf/components/bifrost.md:148",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "f940c72a7a56f087207ee145c9d7b87b40a4bcc951b965ca33fab600d8d6caa7",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-16T15:12:57+00:00"
+}
