@@ -3,7 +3,7 @@
   "slug": "lab-auth-check-errexit",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -54,8 +54,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "e31f43a0bb33a7b2b57d5d3d9f06c858cb2264a53e3fd433627ace84766c787b",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "8e7edd2d8cd17f55a787007754b5a87930d5aca3a4d39a948e85b80dde6c7fe5",
+    "started_at": "2026-11-16T06:42:22+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "8e7edd2d8cd17f55a787007754b5a87930d5aca3a4d39a948e85b80dde6c7fe5",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -70,5 +89,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T06:42:13+00:00"
+  "at": "2026-11-16T06:42:22+00:00"
 }
