@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -42,6 +43,9 @@ func LoadMapping(path string) (Mapping, error) {
 // Resolve returns the OpenViking URI for an object key and the mapped folder
 // it sits under. ok is false for an unmapped prefix, a folder marker, and
 // anything under `<owner>/<repo>/_state/`, which CI writes for itself.
+//
+// An image that maps to D/name lives at D/name/name, the folder OpenViking
+// makes for each uploaded file, so the key alone decides its URI.
 func (m Mapping) Resolve(key string) (uri, root string, ok bool) {
 	parts := strings.SplitN(key, "/", 3)
 	if len(parts) != 3 {
@@ -52,5 +56,24 @@ func (m Mapping) Resolve(key string) (uri, root string, ok bool) {
 	if !ok || rest == "" || strings.HasSuffix(rest, "/") || rest == "_state" || strings.HasPrefix(rest, "_state/") {
 		return "", "", false
 	}
-	return root + rest, root, true
+	uri = root + rest
+	if isImage(key) {
+		uri += "/" + base(uri)
+	}
+	return uri, root, true
+}
+
+// isImage says whether key is uploaded as an image, by its extension alone,
+// so Apply and catch-up always agree on where it lives.
+func isImage(key string) bool {
+	switch strings.ToLower(path.Ext(key)) {
+	case ".png", ".jpg", ".jpeg", ".gif", ".webp":
+		return true
+	}
+	return false
+}
+
+// isImageHome says whether uri is an image's D/name/name.
+func isImageHome(uri string) bool {
+	return isImage(uri) && base(parent(uri)) == base(uri)
 }

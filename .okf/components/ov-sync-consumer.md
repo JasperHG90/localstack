@@ -18,6 +18,8 @@ sources:
     resource: applications/ov-sync-consumer/internal/consumer/catchup.go
   - id: openviking-client
     resource: applications/ov-sync-consumer/internal/consumer/openviking.go
+  - id: mapping
+    resource: applications/ov-sync-consumer/internal/consumer/mapping.go
   - id: stream
     resource: applications/ov-sync-consumer/internal/stream/stream.go
   - id: justfile
@@ -109,13 +111,34 @@ because the webhook delivers out of order:
 
 - The object exists: `POST /api/v1/content/write` with `wait: true`, one
   file per call. Never `content/batch-write`, which 404s under missing
-  folders (spike:ov-sync-consumer/7).
+  folders (spike:ov-sync-consumer/7). An object that is not valid UTF-8 and
+  is not an image is skipped with an INFO `binary file skipped` line naming
+  the key, because the JSON write would turn its bytes into U+FFFD.
+- The object is an image (extension `.png`, `.jpg`, `.jpeg`, `.gif` or
+  `.webp`, any case; the extension alone decides): it is uploaded the way
+  OpenViking ingests a file, into its own folder
+  ([ADR 0030](/decisions/0030-ov-sync-stores-images-in-openviking-per-file-folders.md)).
+  A key that maps to `D/name`
+  lands at `D/name/name`: `POST /api/v1/resources/temp_upload` (multipart
+  field `file`) gives a `temp_file_id`, then `POST /api/v1/resources` with
+  `to: D/name`, `source_name: name`, `wait: true` stores it, creates missing
+  parents and replaces what that folder held
+  (spike:ov-sync-consumer-binary-upload/1, /4). Before the add, a plain file
+  at `D/name` (the damaged copy an old text write left) is deleted, but only
+  when `ls D` lists it with `isDir` false: a non-recursive delete of an image
+  folder is refused with 412 (spike:ov-sync-consumer-binary-upload/8). The
+  per-key lock, deletes and catch-up all use `D/name/name`.
 - The object is gone: `DELETE /api/v1/fs` on the file, then each folder
   above it up to the mapped root is removed with `recursive=true`, but only
   when `fs/ls` with hidden files shows nothing in it but `.abstract.md` and
   `.overview.md`. Removal is checked by listing the parent, never by
   `fs/stat`, which answers 200 for a removed folder. A recursive delete holds
-  a lock that keeps every write out until it is done.
+  a lock that keeps every write out until it is done. An image's folder
+  `D/name` is the exception: after its delete it stays listed in `ls D` for
+  good as an empty folder (spike:ov-sync-consumer-binary-upload/6), so it
+  counts as removed when `ls D/name` is empty. That ghost folder stays
+  visible in ov-dash and keeps `D` and every folder above it from being
+  removed. A later upload to the same URI still works.
 
 It acks only after OpenViking accepts. A failure is retried with a delay
 doubling from 2 s to 30 s. After 20 tries (about eight minutes, longer than
@@ -135,7 +158,9 @@ The catch-up pass runs at start and every 15 minutes. For each mapped prefix
 it lists the bucket and the OpenViking folder, writes what is missing and
 deletes what has no object. It compares which files exist, not content. It
 lists OpenViking one folder at a time and follows `has_more`, because a
-recursive `fs/ls` stops three levels down and at 1000 entries.
+recursive `fs/ls` stops three levels down and at 1000 entries. It never
+deletes a file at `U` while `U/base(U)` is wanted: that is an image's old
+plain copy, which the image's upload deletes.
 
 The OpenViking token is a Vault identity token minted from
 `identity/oidc/token/openviking-ov-sync-consumer`, as hermes mints its own,
@@ -165,6 +190,11 @@ the consumer. Push the image before either, with
 | Recursive delete only on an emptied folder, judged by ls | `TestConsumerFolderDeleteGuard` |
 | Catch-up repairs both directions | `TestCatchUpRepairs` |
 | Catch-up sees past the recursive ls caps | `TestCatchUpListsWholeTree` |
+| An image is uploaded byte for byte to `D/name/name`, siblings untouched | `TestImageUploaded` |
+| A changed image replaces the old one, and a plain copy at `D/name` goes first | `TestImageReplacesOldCopies` |
+| Another binary is skipped with an INFO line, nothing written | `TestOtherBinarySkipped` |
+| Text still goes through `content/write` byte for byte | `TestUTF8ObjectWrittenExactly` |
+| Catch-up finds images at `D/name/name`, spares the old plain copy, and accepts the ghost folder | `TestCatchUpImages` |
 | Both roots deploy the same image | the justfile's tag check |
 | The receiver owns the namespace and the service, restart attempts at least three, its template is noop | `cli/tests/test_seaweedfs_jobspec.py` |
 
