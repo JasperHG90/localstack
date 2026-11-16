@@ -3,7 +3,7 @@
   "slug": "remove-hermes-interactive",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -54,8 +54,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "5c75006ca3bd6446f9a9671e5fba3165fe77febff9dd20da63d3e56867be1a31",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "65359ccc3dc3c6ebec687f59e8597783229e0e661592159687a41ca53063c074",
+    "started_at": "2026-11-16T12:06:06+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "65359ccc3dc3c6ebec687f59e8597783229e0e661592159687a41ca53063c074",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -70,5 +89,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T12:05:54+00:00"
+  "at": "2026-11-16T12:06:06+00:00"
 }
