@@ -80,6 +80,9 @@ GEMINI_API_KEY={{ .Data.data.GOOGLE_API_KEY }}
 {{- with secret "${embark_key_secret}" }}
 EMBARK_API_KEY={{ .Data.data.API_KEY }}
 {{- end }}
+{{- with secret "${typesafe_secret}" }}
+TYPESAFE_API_KEY={{ .Data.data.TYPESAFE_API_KEY }}
+{{- end }}
 PG_HOST=${bifrost_postgres_host}
 {{- with secret "${bifrost_db_secret}" }}
 PG_USER={{ .Data.data.username }}
@@ -130,7 +133,38 @@ EOF
       "is_enabled": true,
       "admin_username": "env.BIFROST_ADMIN_USERNAME",
       "admin_password": "env.BIFROST_ADMIN_PASSWORD"
-    }
+    },
+    "complexity_analyzer_config": {
+      "classifier": "decision",
+      "keywords": {
+        "simple_keywords": ["say hi", "thank you", "what time is it"],
+        "medium_keywords": ["summarize this", "explain how", "write a function"],
+        "complex_keywords": ["design a system", "prove that", "analyze the trade-offs"]
+      },
+      "decision": { "provider": "ollama", "model": "clef:27b", "timeout": "3s" }
+    },
+    "routing_rules": [
+      {
+        "id": "not-router-passthrough", "name": "not-router-passthrough", "scope": "global", "priority": 0,
+        "cel_expression": "virtual_key_name != \"router\"",
+        "targets": [{ "weight": 1 }]
+      },
+      {
+        "id": "router-simple", "name": "router-simple", "scope": "global", "priority": 1,
+        "cel_expression": "virtual_key_name == \"router\" && complexity_tier == \"SIMPLE\"",
+        "targets": [{ "provider": "ollama", "model": "gpt-oss:120b", "weight": 1 }]
+      },
+      {
+        "id": "router-medium", "name": "router-medium", "scope": "global", "priority": 2,
+        "cel_expression": "virtual_key_name == \"router\" && complexity_tier == \"MEDIUM\"",
+        "targets": [{ "provider": "ollama", "model": "deepseek-v4.1-flash", "weight": 1 }]
+      },
+      {
+        "id": "router-complex", "name": "router-complex", "scope": "global", "priority": 3,
+        "cel_expression": "virtual_key_name == \"router\" && complexity_tier == \"COMPLEX\"",
+        "targets": [{ "provider": "ollama", "model": "mistral-large-4", "weight": 1 }]
+      }
+    ]
   },
   "providers": {
     "ollama": {
@@ -147,6 +181,11 @@ EOF
     "gemini": {
       "keys": [
         { "name": "gemini-primary", "value": "env.GEMINI_API_KEY", "models": ["*"], "weight": 1.0 }
+      ]
+    },
+    "typesafe": {
+      "keys": [
+        { "name": "typesafe-primary", "value": "env.TYPESAFE_API_KEY", "models": ["*"], "weight": 1.0 }
       ]
     },
     "embark": {

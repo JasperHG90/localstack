@@ -921,10 +921,12 @@ resource "nomad_job" "bifrost" {
       #   vault kv put secret/default/bifrost/ollama-xebia    API_KEY=...
       #   vault kv put secret/default/bifrost/gemini          GOOGLE_API_KEY=...
       #   vault kv put secret/default/bifrost/credentials username=... password=...
+      #   vault kv put secret/default/bifrost/typesafe        TYPESAFE_API_KEY=...
       ollama_personal_secret     = "${var.secret_mount}/data/default/bifrost/ollama-personal"
       ollama_xebia_secret        = "${var.secret_mount}/data/default/bifrost/ollama-xebia"
       gemini_secret              = "${var.secret_mount}/data/default/bifrost/gemini"
       bifrost_credentials_secret = "${var.secret_mount}/data/default/bifrost/credentials"
+      typesafe_secret            = "${var.secret_mount}/data/default/bifrost/typesafe"
       # config_store is Postgres (see bifrost.hcl); the bifrost role/DB are
       # provisioned in database.tf and the creds stored at default/bifrost/db.
       bifrost_postgres_host = data.consul_service.postgres.service[0].node_address
@@ -1038,6 +1040,27 @@ resource "bifrost_virtual_key" "openviking" {
     { provider = "embark", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "gemini", allowed_models = ["*"], key_ids = ["*"], weight = 1 },
     { provider = "ollama", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
+  ]
+
+  depends_on = [null_resource.bifrost_ready]
+}
+
+# Router virtual key: its chats go through the Complexity Router in bifrost.hcl,
+# which asks ollama/clef:27b how hard each prompt is and reroutes it to the tier
+# model. Every other key matches the priority-0 passthrough rule first, so it
+# keeps its model and pays no classifier call. Alphabetical by `provider` -- see
+# the Hermes key's comment.
+#
+# ollama names its four models instead of "*": the wildcard only admits catalog
+# models, and a model outside the catalog 403s as model_blocked
+# (spike:bifrost-decision-router/5). No consumer yet, so the key's value is read
+# from the admin UI and not written to Vault.
+resource "bifrost_virtual_key" "router" {
+  name = "router"
+
+  provider_configs = [
+    { provider = "ollama", allowed_models = ["clef:27b", "deepseek-v4.1-flash", "gpt-oss:120b", "mistral-large-4"], key_ids = ["*"], weight = 1 },
+    { provider = "typesafe", allowed_models = ["*"], key_ids = ["*"], weight = 1 }
   ]
 
   depends_on = [null_resource.bifrost_ready]
