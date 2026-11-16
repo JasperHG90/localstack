@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ci-lint-nomad-addr",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
   "plan_rounds": 1,
   "review_rounds": 0,
@@ -86,8 +86,14 @@
       "to": "planning",
       "at": "2026-11-16T12:06:27+00:00",
       "by": "register"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-11-16T13:42:05+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T13:41:56+00:00"
+  "at": "2026-11-16T13:42:05+00:00"
 }
