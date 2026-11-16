@@ -278,3 +278,42 @@ def test_check_step_survives_errexit(tmp_path: Path) -> None:
     assert result.stdout.count("timed out") == 5, result.stdout + result.stderr
     assert "OVERALL=PASS" in result.stdout
     assert result.returncode == 0
+
+
+def test_login_fails_on_missing_oidc_value(tmp_path: Path) -> None:
+    """An OIDC response with no `value` fails at the OIDC step, not later as a
+    Vault refusal of the literal string null."""
+    action = yaml.safe_load(ACTION.read_text())
+    step = next(s for s in action["runs"]["steps"] if s.get("id") == "login")
+    script = tmp_path / "login.sh"
+    script.write_text(step["run"])
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    vault_called = tmp_path / "vault-called"
+    _stub(
+        bin_dir,
+        "curl",
+        f'case "$*" in *"/login"*) touch {vault_called}; cat >/dev/null ;; esac\necho "{{}}"',
+    )
+
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/local/bin",
+            "ACTIONS_ID_TOKEN_REQUEST_URL": "https://oidc.example/token?x=1",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "t",
+            "VAULT_ADDR": "https://vault.example",
+            "VAULT_MOUNT": MOUNT,
+            "VAULT_ROLE": "some-role",
+            "GITHUB_ENV": str(tmp_path / "env"),
+            "GITHUB_OUTPUT": str(tmp_path / "out"),
+        },
+    )
+
+    assert result.returncode != 0
+    assert not vault_called.exists()
+    assert "::add-mask::null" not in result.stdout
+    assert re.search(r"::error::.*OIDC token", result.stdout), result.stdout + result.stderr

@@ -53,7 +53,10 @@ runs:
         set -euo pipefail
         : "${ACTIONS_ID_TOKEN_REQUEST_URL:?the calling job needs permissions: id-token: write}"
         jwt=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=vault.io" | jq -r .value)
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=vault.io" | jq -er '.value // empty') || {
+          echo "::error::GitHub returned no OIDC token for audience vault.io"
+          exit 1
+        }
         echo "::add-mask::$jwt"
         if ! response=$(jq -n --arg role "$VAULT_ROLE" --arg jwt "$jwt" '{role: $role, jwt: $jwt}' \
           | curl -sS --fail-with-body --data @- "$VAULT_ADDR/v1/auth/${VAULT_MOUNT}/login"); then
