@@ -20,10 +20,57 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
+    "hash": "4cc154f3e80ff9e0d5f9367a4f75cb51e59b7daa8f5e947c3d51120b4909246e",
+    "at": "2026-11-16T09:52:30+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "an event for an object that is not valid UTF-8 uploads it through temp_upload, add resource into a .ovsync-upload- temp folder under the file's parent, fs/mv to the file's URI and a delete of the temp folder, ending with the object's exact bytes at its URI and no temp folder",
+      "fails_when": "the fake OpenViking receives content/write for it, the calls come in another order, the stored bytes differ, a sibling file changes, or a .ovsync-upload- folder remains",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestBinaryObjectUploaded",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "uploading a changed binary to a URI that already holds one replaces it with the new bytes",
+      "fails_when": "the URI still holds the old bytes or a second copy appears",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestBinaryObjectReplaced",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "a valid UTF-8 object with multi-byte characters still goes through content/write byte for byte",
+      "fails_when": "it is uploaded as a resource, or the stored content differs from the object's bytes",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestUTF8ObjectWrittenExactly",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "a catch-up pass removes a .ovsync-upload- temp folder a failed upload left behind",
+      "fails_when": "the temp folder or its file is still listed after the pass",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestCatchUpRemovesUploadLeftover",
+      "judgment": false
+    },
+    {
+      "id": "r5",
+      "behavior": "the module tests and vet pass, and the repo gates pass",
+      "fails_when": "just -f applications/ov-sync-consumer/justfile test or just pre_commit exits non-zero",
+      "command": "just -f applications/ov-sync-consumer/justfile test && just pre_commit",
+      "judgment": false
+    },
+    {
+      "id": "r6",
+      "behavior": "after the operator releases v0.1.1, applies, and the three PNGs are synced again, each opens in ov-dash and downloads with the same bytes as git",
+      "fails_when": "ov-dash still reports a PNG as damaged or a download differs from git",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -46,5 +93,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T09:52:29+00:00"
+  "at": "2026-11-16T09:52:30+00:00"
 }
