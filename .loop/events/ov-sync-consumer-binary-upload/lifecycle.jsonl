@@ -17,3 +17,4 @@
 {"at": "2026-11-16T11:24:20+00:00", "dispatched_at": "2026-11-16T11:22:49+00:00", "kind": "round-close", "n": 3, "outcome": "pass", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-11-16T11:24:05+00:00"}}
 {"at": "2026-11-16T11:25:58+00:00", "kind": "spike-note", "n": 7, "replaced": false, "schema_version": "1.0"}
 {"at": "2026-11-16T11:26:37+00:00", "kind": "spike-note", "n": 8, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-11-16T11:27:05+00:00", "code": "plan-cap", "from": "planning", "kind": "block", "message": "the plan round cap (3) is reached", "notified": false, "schema_version": "1.0"}
