@@ -1,7 +1,7 @@
 ---
 type: plan
 title: 'Plan: bifrost-decision-router'
-description: Add TypeSafe's Jev as a Bifrost provider and turn on the 2.3.1 Complexity Router with ollama/clef:cloud as classifier, behind a dedicated virtual key.
+description: Add TypeSafe's Jev as a Bifrost provider and turn on the 2.3.1 Complexity Router with ollama/clef:27b as classifier, behind a dedicated virtual key.
 tags:
 - plan
 generated:
@@ -32,16 +32,21 @@ Two changes to the Bifrost gateway (2.3.1), both in the files that already
 hold Bifrost; no new `.tf` file.
 
 1. **Jev provider.** Add the built-in `typesafe` provider to the config.json
-   providers in `deployments/applications/services/bifrost.hcl`, with
-   `base_url` `https://api.typesafe.ai/v1/systemone`, and render
+   providers in `deployments/applications/services/bifrost.hcl` with no
+   `base_url`. The operator gave the endpoint
+   `https://api.typesafe.ai/v1/systemone`, but in 2.3.1 the provider appends
+   `/v1/systemone` and `/v1/models` to its base itself (default
+   `https://api.typesafe.ai`), and any non-default base also turns off its
+   built-in Jev model list (upstream core/providers/typesafe/utils.go:12-20,
+   typesafe.go:52-58 at tag transports/v2.3.1). Render
    `TYPESAFE_API_KEY` into the env template from
    `secret/default/bifrost/typesafe` (field `TYPESAFE_API_KEY`), passed from
    `nomad_job.bifrost` in `deployments/applications/services.tf` like the
    other hand-seeded keys (the operator writes the secret; add it to the
    seeding comment there).
 2. **Complexity Router.** Set `governance.complexity_analyzer_config` with
-   classifier `ollama/clef:cloud`, and add `governance.routing_rules` that map
-   `complexity_tier` to `ollama/gpt-oss:120b-cloud` (simple),
+   classifier `ollama/clef:27b`, and add `governance.routing_rules` that map
+   `complexity_tier` to `ollama/gpt-oss:120b` (simple),
    `ollama/deepseek-v4.1-flash` (medium) and `ollama/mistral-large-4`
    (hard/complex), scoped so only the new key's traffic is rerouted. Hermes,
    Memex and OpenViking keep their current routing and pay no classifier
@@ -52,7 +57,7 @@ hold Bifrost; no new `.tf` file.
    (spike:bifrost-decision-router/4). The analyzer block carries non-empty
    `keywords` lists, and each virtual key `key_ids: ["*"]`.
 3. **Router key.** A new `bifrost_virtual_key` in `services.tf` whose
-   `ollama` entry names `clef:cloud` and the three tier models explicitly,
+   `ollama` entry names `clef:27b` and the three tier models explicitly,
    plus a `typesafe` entry; `provider_configs` alphabetical (see the comment
    above `bifrost_virtual_key.hermes`). The `"*"` wildcard does not work here:
    it only admits catalog models, and `clef:cloud` is not one (measured: 403
@@ -66,8 +71,8 @@ hold Bifrost; no new `.tf` file.
    call and a routed chat call) to match.
 
 Outcome: with the router key in `x-bf-vk`, `POST /v1/decisions` to
-`ollama/clef:cloud` and to a `typesafe/` Jev model both return 200 with a
-decision; one simple and one hard chat prompt land on `gpt-oss:120b-cloud` and
+`ollama/clef:27b` and to a `typesafe/` Jev model both return 200 with a
+decision; one simple and one hard chat prompt land on `gpt-oss:120b` and
 `mistral-large-4` respectively (Bifrost log or routing_info); a Hermes-key
 chat request is not rerouted and makes no clef call; a second `terraform plan` of
 `deployments/applications` shows no change; `just pre_commit` and
@@ -109,3 +114,26 @@ chat request is not rerouted and makes no clef call; a second `terraform plan` o
   needs `key_ids: ["*"]`. Against the live gateway, the decisions route
   resolves `ollama/clef:cloud` and wants object choices and an `x-bf-vk`
   key (spike:bifrost-decision-router/3).
+- The real classifier may be too slow, or a tier model name may not exist,
+  so the router looks deployed but never routes. Every spike used a mock
+  upstream. On a classifier timeout (default 1500 ms) or upstream error,
+  Bifrost sets no tier, no tier rule matches, and router chats silently stay
+  on the requested model (upstream plugins/routing/decisionclassify.go:56-111).
+  The build sets `governance.complexity_analyzer_config.decision.timeout`
+  from a measurement. Spike question: with an Ollama Cloud key, how long do
+  `POST https://ollama.com/v1/systemone` calls to `clef:27b` with a
+  three-choice complexity question take, typical and worst, and do
+  `gpt-oss:120b`, `deepseek-v4.1-flash` and `mistral-large-4` answer a
+  chat call on ollama.com under those exact names?
+  Settled by spike:bifrost-decision-router/7, run by the operator through
+  the live Bifrost with their own virtual key: five `ollama/clef:27b`
+  decisions all returned 200, typical 0.5 s and worst 840 ms, with sensible
+  tiers (short chat and a haiku SIMPLE, a proof MEDIUM, a distributed design
+  COMPLEX), and `gpt-oss:120b`, `deepseek-v4.1-flash` and `mistral-large-4`
+  each answered a chat call (`mistral-large-4` took 4.3 s). The names carry
+  no cloud suffix: spike:bifrost-decision-router/5 (`clef:cloud`,
+  `gpt-oss:120b-cloud`) and spike:bifrost-decision-router/6 (`clef`) got 403
+  `model_blocked`. The build sets the classifier timeout to 3000 ms, over
+  three times the worst call seen. That key passed `clef:27b`, so the build
+  checks whether `clef:27b` is in Bifrost's catalog; if so the router key
+  may use `"*"` for `ollama`, otherwise it keeps the explicit list.

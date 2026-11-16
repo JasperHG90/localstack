@@ -83,7 +83,7 @@ doc_writer = false
 # its fallback and is still recorded. A judgement acts only when its own table
 # says so, e.g. [judgements.review.again] mode = "act".
 [judgements]
-url = "https://jevtypesafeai.com/api/v1/decide"
+url = "https://api.typesafe.ai/v1/systemone"
 api_key_env = "TYPESAFE_API_KEY"
 timeout_seconds = 5.0
 

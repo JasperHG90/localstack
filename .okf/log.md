@@ -154,3 +154,9 @@
 - Added `decisions/0028-ci-syncs-repo-folders-to-a-shared-ov-sync-bucket-with-a-manifest-and-a-vault-identity-token-swapped-at-seaweedfs-sts` with `kmctl new decision`.
 - Moved `decisions/0028-ci-syncs-repo-folders-to-a-shared-ov-sync-bucket-with-a-manifest-and-a-vault-identity-token-swapped-at-seaweedfs-sts` to `decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token` with `kmctl mv`, rewriting links to it in `decisions/index`.
 - **CI syncs repo folders to ov-sync** (`decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token`, `components/seaweedfs`, `components/vault-identity`, `architecture/deployment-layers`, `summary`): the `ci-openviking-sync` ticket adds the `openviking-sync` action and workflow, an optional `ov_sync` flag on `var.vault_ci_callers`, one Vault identity-token role and token policy per such caller, and SeaweedFS's `vault` OIDC provider with one prefix-scoped role and policy per caller. ADR 0028 records the manifest, the token-to-STS credential and the rejected static key per caller, SeaweedFS trusting GitHub directly, and cache or artifact state. The SeaweedFS page gains the CI roles, the Vault identity page the token policy, the deployment layers page the per-caller policy, and the summary's ov-sync line names the CI half; to stay under 500 words the summary shortened its project, CLI, practices and status lines.
+- Added `handoffs/bifrost-decision-models-ci-lab-auth-and-openviking-doc-sync-design` with `kmctl new handoff`.
+- Updated `handoffs/bifrost-decision-models-ci-lab-auth-and-openviking-doc-sync-design` with `kmctl new handoff --key`.
+
+## 2026-11-16
+
+- Updated `handoffs/bifrost-decision-models-ci-lab-auth-and-openviking-doc-sync-design` with `kmctl new handoff --key`.
