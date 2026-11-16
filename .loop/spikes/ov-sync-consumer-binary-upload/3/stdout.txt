@@ -1,0 +1,75 @@
+== ov up
+d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.Uwp5IWsPyN/a.png
+ba47cb7bfc617b7d38cce83b0aadf5a516fcbb1b6975055ce22c776cec4f8ad1  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.Uwp5IWsPyN/b.png
+a.png 108281 B sha d8e0cd5c25fdf346; b.png 415781 B sha ba47cb7bfc617b7d
+[write notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/ref/notes.md","root_uri":"viking://user/jasper/resources/projects/x/docs/ref","context_type":"resource","mode":"create","written_bytes":28,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_f6709e56d0cf4139bdee56059be756ed.png"}}
+[add round1 to=/ref/.ovsync-upload-2696b97713df in 0.7s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-2696b97713df","temp_uri":"viking://temp/jasper/11160950_c16408/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"
+[ls /ref/.ovsync-upload-2696b97713df] HTTP 200 ['/ref/.ovsync-upload-2696b97713df/.abstract.md', '/ref/.ovsync-upload-2696b97713df/.overview.md', '/ref/.ovsync-upload-2696b97713df/diagram.png']
+  [/ref/.ovsync-upload-2696b97713df/.abstract.md] '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-2696b97713df/\nsource:\n  kind: local\n  uri: /app/.openviking/workspace/temp/upload/upload_f6709e56d0cf4139bdee56059be756ed.png\ngenerated_by:\n  component: SemanticProcessor\n  trigger: resource_ingest\nfreshness:\n
+  [/ref/.ovsync-upload-2696b97713df/.overview.md] '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-2696b97713df/\nsource:\n  kind: local\n  uri: /app/.openviking/workspace/temp/upload/upload_f6709e56d0cf4139bdee56059be756ed.png\ngenerated_by:\n  component: SemanticProcessor\n  trigger: resource_ingest\nfreshness:\n
+[download /ref/.ovsync-upload-2696b97713df/diagram.png] HTTP 200 108281 B sha d8e0cd5c25fdf346
+[mv /ref/.ovsync-upload-2696b97713df/diagram.png -> /ref/diagram.png in 0.09s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-2696b97713df/diagram.png","to":"viking://user/jasper/resources/projects/x/docs/ref/diagram.png"},"error":null,"telemetry":null,"profile":null}
+INFO image VLM calls across mv round1: 1 -> 1
+INFO left in T1 after mv:
+[ls /ref/.ovsync-upload-2696b97713df] HTTP 200 ['/ref/.ovsync-upload-2696b97713df/.abstract.md', '/ref/.ovsync-upload-2696b97713df/.overview.md']
+[rm /ref/.ovsync-upload-2696b97713df recursive=True in 0.47s] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-2696b97713df","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/x/docs/ref","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"p
+[ls /ref] HTTP 200 ['/ref/.abstract.md', '/ref/.overview.md', '/ref/diagram.png', '/ref/notes.md']
+[download /ref/diagram.png] HTTP 200 108281 B sha d8e0cd5c25fdf346
+CHECK 1 round one: D/diagram.png exact, notes.md kept, T1 gone: True
+[pgvector tables ['ov_collections', 'ov_indexes', 'ov_memory_deltas', 'ov_context']] rows mentioning /ref/:
+  ov_context {'uri': '/ref/notes.md'}
+  ov_context {'id': '89836956295ceeae1edbab3bca508e0a', 'uri': '/ref/diagram.png', 'type': '', 'context_type': 'resource', 'name': '', 'description': '', 'tags': '', 'abstract': 'Summary of the content. imgtagkiebkibijj summary semantic indexing nContext additional context nGenerate comprehensive description that includes What image main subjects objects What happening what image depicts text visible image visual elements their relationships nKeep description', 'content': 'Summary of the content. imgtagkiebkibijj summary semantic indexing nContext additional context nGenerate comprehensive description that includes What image main subjects objects What happening what image depicts text visible image visual elements their relationships nKeep description', 'account_id': 'lab', 'owner_user_id': 'jasper'}
+  ov_context {'uri': '/ref', 'content': '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\n---\n\nSummary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Markdown link entry using placeholder display title viking input sample file summaries subdirectory summaries provided'}
+  ov_context {'uri': '/ref', 'content': '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\n---\n\nSummary of the content.'}
+  [find hit diagram.png] score 0.5 abstract 'Summary of the content. imgtagkiebkibijj summary semantic indexing nContext additional context nGenerate comprehensive description that includes What image main subjects objects What happening what i
+[find target=/ref] HTTP 200 ['/ref/.abstract.md', '/ref/notes.md', '/ref/diagram.png']
+INFO D/.abstract.md '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\ngenerated_by:\n  component: SemanticProcessor\n  trigger: content_delete\nfreshness:\n  total_entries: 2\n  sampled_entries: 2\n  unsampled_entries: 0\n  pending_child_changes: 0\n---\n\nSummary of the content.\n'
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_329296361ebb4e7ba01b6d75afe2953d.png"}}
+[add round2 to=/ref/.ovsync-upload-59cdc6c07471 in 0.9s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-59cdc6c07471","temp_uri":"viking://temp/jasper/11160951_d6f6ec/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"
+[ls /ref/.ovsync-upload-59cdc6c07471] HTTP 200 ['/ref/.ovsync-upload-59cdc6c07471/.abstract.md', '/ref/.ovsync-upload-59cdc6c07471/.overview.md', '/ref/.ovsync-upload-59cdc6c07471/diagram.png']
+  [/ref/.ovsync-upload-59cdc6c07471/.abstract.md] '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-59cdc6c07471/\nsource:\n  kind: local\n  uri: /app/.openviking/workspace/temp/upload/upload_329296361ebb4e7ba01b6d75afe2953d.png\ngenerated_by:\n  component: SemanticProcessor\n  trigger: resource_ingest\nfreshness:\n
+  [/ref/.ovsync-upload-59cdc6c07471/.overview.md] '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-59cdc6c07471/\nsource:\n  kind: local\n  uri: /app/.openviking/workspace/temp/upload/upload_329296361ebb4e7ba01b6d75afe2953d.png\ngenerated_by:\n  component: SemanticProcessor\n  trigger: resource_ingest\nfreshness:\n
+[mv /ref/.ovsync-upload-59cdc6c07471/diagram.png -> /ref/diagram.png in 0.09s] HTTP 200 {"status":"ok","result":{"from":"viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-59cdc6c07471/diagram.png","to":"viking://user/jasper/resources/projects/x/docs/ref/diagram.png"},"error":null,"telemetry":null,"profile":null}
+INFO route that worked: mv over existing; poller saw 111 downloads, sequence aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; not a/b: [] x0
+INFO image VLM calls across mv round2: 4 -> 4
+INFO left in T2 after mv:
+[ls /ref/.ovsync-upload-59cdc6c07471] HTTP 200 ['/ref/.ovsync-upload-59cdc6c07471/.abstract.md', '/ref/.ovsync-upload-59cdc6c07471/.overview.md']
+[rm /ref/.ovsync-upload-59cdc6c07471 recursive=True in 0.36s] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/ref/.ovsync-upload-59cdc6c07471","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/x/docs/ref","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"p
+[ls /ref] HTTP 200 ['/ref/.abstract.md', '/ref/.overview.md', '/ref/diagram.png', '/ref/notes.md']
+[download /ref/diagram.png] HTTP 200 415781 B sha ba47cb7bfc617b7d
+CHECK 2 round two: D/diagram.png now exact b.png, notes.md kept, T2 gone: True
+[pgvector tables ['ov_collections', 'ov_indexes', 'ov_memory_deltas', 'ov_context']] rows mentioning /ref/:
+  ov_context {'uri': '/ref/notes.md'}
+  ov_context {'id': '89836956295ceeae1edbab3bca508e0a', 'uri': '/ref/diagram.png', 'type': '', 'context_type': 'resource', 'name': '', 'description': '', 'tags': '', 'abstract': 'Summary of the content. imgtagncfaccegpe summary semantic indexing nContext additional context nGenerate comprehensive description that includes What image main subjects objects What happening what image depicts text visible image visual elements their relationships nKeep description', 'content': 'Summary of the content. imgtagncfaccegpe summary semantic indexing nContext additional context nGenerate comprehensive description that includes What image main subjects objects What happening what image depicts text visible image visual elements their relationships nKeep description', 'account_id': 'lab', 'owner_user_id': 'jasper'}
+  ov_context {'uri': '/ref', 'content': '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\n---\n\nSummary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Markdown link entry using placeholder display title viking input sample file summaries subdirectory summaries provided'}
+  ov_context {'uri': '/ref', 'content': '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\n---\n\nSummary of the content.'}
+  [find hit diagram.png] score 0.5 abstract 'Summary of the content. imgtagncfaccegpe summary semantic indexing nContext additional context nGenerate comprehensive description that includes What image main subjects objects What happening what i
+[find target=/ref] HTTP 200 ['/ref/.abstract.md', '/ref/notes.md', '/ref/diagram.png']
+INFO file row abstract tag round1 ['imgtagkiebkibijj'] round2 ['imgtagncfaccegpe']
+CHECK 3 index: D/diagram.png indexed once, no temp uris, find returns it, its row describes the new image: True
+INFO D/.abstract.md '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\ngenerated_by:\n  component: SemanticProcessor\n  trigger: content_delete\nfreshness:\n  total_entries: 2\n  sampled_entries: 2\n  unsampled_entries: 0\n  pending_child_changes: 0\n---\n\nSummary of the content.\n'
+INFO D/.overview.md '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\ngenerated_by:\n  component: SemanticProcessor\n  trigger: content_delete\nfreshness:\n  total_entries: 2\n  sampled_entries: 2\n  unsampled_entries: 0\n  pending_child_changes: 0\n---\n\nSummary of the content. ting that following subsections cover only sampled entries full directory subsection each file subdirectory heading Mar
+OVERALL PASS
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    └──x
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            └──ref
+                                ├──.abstract.md
+                                ├──.overview.md
+                                ├──.ovsync-upload-2696b97713df
+                                ├──.ovsync-upload-59cdc6c07471
+                                ├──diagram.png
+                                └──notes.md
+34 directories, 33 files
+== ov log lines about errors, images, moves
+2026-11-16 09:50:46,863 - openviking.server.auth.plugins.ldap - WARNING - LDAP library not available. LDAP authentication will not work. Install with: uv pip install python-ldap
+== fake counts
+{"embeddings embark/embedding": 43, "chat gemini/gemini-3.5-flash-lite": 22, "chat-with-image gemini/gemini-3.5-flash-lite": 5, "rerank embark/reranker": 6}
