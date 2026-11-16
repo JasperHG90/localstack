@@ -1,0 +1,84 @@
+== ov up
+d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.VCqvgjZOO1/a.png
+ba47cb7bfc617b7d38cce83b0aadf5a516fcbb1b6975055ce22c776cec4f8ad1  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.VCqvgjZOO1/b.png
+0fa2402569a2d76a5ef955958c52eb5ed667f6bbded6ff8f85cc26f7fc84fb6d  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.VCqvgjZOO1/c.png
+a.png 108281 B sha d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab
+b.png 415781 B sha ba47cb7bfc617b7d38cce83b0aadf5a516fcbb1b6975055ce22c776cec4f8ad1
+== main: D=/projects/m/docs
+[write /projects/m/docs/notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/m/docs/notes.md","root_uri":"viking://user/jasper/resources/projects/m/docs","context_type":"resource","mode":"create","written_bytes":8,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[write /projects/m/docs/plain.png] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/m/docs/plain.png","root_uri":"viking://user/jasper/resources/projects/m/docs","context_type":"resource","mode":"create","written_bytes":17,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_9c25d7559a4d4f6d9818b4d08882a19a.png"}}
+[add to=/projects/m/docs/diagram.png] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/m/docs/diagram.png","temp_uri":"viking://temp/jasper/11161125_a1b360/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"llm":{"input":1,"out
+[ls /projects/m/docs] HTTP 200 [('/projects/m/docs/diagram.png', {'isDir': True, 'size': 0}), ('/projects/m/docs/.abstract.md', {'isDir': False, 'size': 264}), ('/projects/m/docs/.overview.md', {'isDir': False, 'size': 499}), ('/projects/m/docs/notes.md', {'isDir': False, 'size': 8}), ('/projects/m/docs/plain.png', {'isDir': False, 'size': 17})]
+  FACT4 [live image folder] /projects/m/docs/diagram.png: isDir=True
+  FACT4 [live image folder] /projects/m/docs/plain.png: isDir=False
+[ls /projects/m/docs/diagram.png] HTTP 200 [('/projects/m/docs/diagram.png/.abstract.md', {'isDir': False, 'size': 389}), ('/projects/m/docs/diagram.png/.overview.md', {'isDir': False, 'size': 624}), ('/projects/m/docs/diagram.png/diagram.png', {'isDir': False, 'size': 108281})]
+[download /projects/m/docs/diagram.png/diagram.png] HTTP 200 108281 B sha d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab
+[DELETE /projects/m/docs/diagram.png/diagram.png recursive=False] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/m/docs/diagram.png/diagram.png","estimated_deleted_count":1,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/m/docs/diagram.png","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+[DELETE /projects/m/docs/diagram.png recursive=True] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/m/docs/diagram.png","estimated_deleted_count":2,"memory_cleanup":{"status":"no_references","memory_uris":[]},"semantic_root_uri":"viking://user/jasper/resources/projects/m/docs","semantic_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}},"error":null,"telemetry":null,"profile":null}
+-- after deletes
+[ls /projects/m/docs] HTTP 200 [('/projects/m/docs/diagram.png', {'isDir': True, 'size': 0}), ('/projects/m/docs/.abstract.md', {'isDir': False, 'size': 264}), ('/projects/m/docs/.overview.md', {'isDir': False, 'size': 499}), ('/projects/m/docs/notes.md', {'isDir': False, 'size': 8}), ('/projects/m/docs/plain.png', {'isDir': False, 'size': 17})]
+  FACT4 [ghost empty folder] /projects/m/docs/diagram.png: isDir=True
+  FACT4 [ghost empty folder] /projects/m/docs/plain.png: isDir=False
+[ls /projects/m/docs/diagram.png] HTTP 200 []
+[download /projects/m/docs/diagram.png/diagram.png] HTTP 404 302 B {"status":"error","result":null,"error":{"code":"NOT_FOUND","message":"File not found: viking://user/jasper/resources/projects/m/docs/diagram.png/diagram.png","details":{"type":"file","resource":"viki
+CHECK1 ls D/diagram.png empty (200, []) and download 404 (404): True
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_4aea8a27554042ee93e112e5053cfa72.png"}}
+[add to=/projects/m/docs/diagram.png] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/m/docs/diagram.png","temp_uri":"viking://temp/jasper/11161125_305e92/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"llm":{"input":1,"out
+-- after re-add
+[ls /projects/m/docs] HTTP 200 [('/projects/m/docs/diagram.png', {'isDir': True, 'size': 0}), ('/projects/m/docs/.abstract.md', {'isDir': False, 'size': 264}), ('/projects/m/docs/.overview.md', {'isDir': False, 'size': 499}), ('/projects/m/docs/notes.md', {'isDir': False, 'size': 8}), ('/projects/m/docs/plain.png', {'isDir': False, 'size': 17})]
+[ls /projects/m/docs/diagram.png] HTTP 200 [('/projects/m/docs/diagram.png/.abstract.md', {'isDir': False, 'size': 389}), ('/projects/m/docs/diagram.png/.overview.md', {'isDir': False, 'size': 624}), ('/projects/m/docs/diagram.png/diagram.png', {'isDir': False, 'size': 415781})]
+[download /projects/m/docs/diagram.png/diagram.png] HTTP 200 415781 B sha ba47cb7bfc617b7d38cce83b0aadf5a516fcbb1b6975055ce22c776cec4f8ad1
+CHECK2 bytes match b.png: True; ls D names ['diagram.png', '.abstract.md', '.overview.md', 'notes.md', 'plain.png']; ls D/diagram.png names ['.abstract.md', '.overview.md', 'diagram.png']; no _1 and only diagram.png inside: False
+[ls /projects/m/docs] HTTP 200 [('/projects/m/docs/diagram.png', {'isDir': True, 'size': 0}), ('/projects/m/docs/.abstract.md', {'isDir': False, 'size': 264}), ('/projects/m/docs/.overview.md', {'isDir': False, 'size': 499}), ('/projects/m/docs/notes.md', {'isDir': False, 'size': 8}), ('/projects/m/docs/plain.png', {'isDir': False, 'size': 17})]
+  FACT4 [live image folder after re-add] /projects/m/docs/diagram.png: isDir=True
+  FACT4 [live image folder after re-add] /projects/m/docs/plain.png: isDir=False
+== fact 3: non-recursive DELETE of folder holding live image, D3=/projects/n/docs
+[write /projects/n/docs/notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/n/docs/notes.md","root_uri":"viking://user/jasper/resources/projects/n/docs","context_type":"resource","mode":"create","written_bytes":8,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":0,"requeue_count":0,"error_count":0,"errors":[]}}}}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_6891f17af332454295dfbbe945013780.png"}}
+[add to=/projects/n/docs/diagram.png] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/n/docs/diagram.png","temp_uri":"viking://temp/jasper/11161125_f6d26e/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue_count":0,"error_count":0,"errors":[]}},"context_count":3,"usage":{"tokens":{"total":7,"llm":{"input":2,"output":2,"total":4},"embedding":{"total":3},"stages":{"vlm":{"llm":{"input":1,"out
+[ls /projects/n/docs] HTTP 200 [('/projects/n/docs/diagram.png', {'isDir': True, 'size': 0}), ('/projects/n/docs/.abstract.md', {'isDir': False, 'size': 264}), ('/projects/n/docs/.overview.md', {'isDir': False, 'size': 499}), ('/projects/n/docs/notes.md', {'isDir': False, 'size': 8})]
+[ls /projects/n/docs/diagram.png] HTTP 200 [('/projects/n/docs/diagram.png/.abstract.md', {'isDir': False, 'size': 389}), ('/projects/n/docs/diagram.png/.overview.md', {'isDir': False, 'size': 624}), ('/projects/n/docs/diagram.png/diagram.png', {'isDir': False, 'size': 108281})]
+[DELETE /projects/n/docs/diagram.png recursive=False] HTTP 412 {"status":"error","result":null,"error":{"code":"FAILED_PRECONDITION","message":"Cannot remove directory without --recursive: viking://user/jasper/resources/projects/n/docs/diagram.png","details":{"resource":"viking://user/jasper/resources/projects/n/docs/diagram.png","expected_flag":"recursive"}},"telemetry":null,"profile":null}
+-- after non-recursive DELETE
+[ls /projects/n/docs] HTTP 200 [('/projects/n/docs/diagram.png', {'isDir': True, 'size': 0}), ('/projects/n/docs/.abstract.md', {'isDir': False, 'size': 264}), ('/projects/n/docs/.overview.md', {'isDir': False, 'size': 499}), ('/projects/n/docs/notes.md', {'isDir': False, 'size': 8})]
+[ls /projects/n/docs/diagram.png] HTTP 200 [('/projects/n/docs/diagram.png/.abstract.md', {'isDir': False, 'size': 389}), ('/projects/n/docs/diagram.png/.overview.md', {'isDir': False, 'size': 624}), ('/projects/n/docs/diagram.png/diagram.png', {'isDir': False, 'size': 108281})]
+[download /projects/n/docs/diagram.png/diagram.png] HTTP 200 108281 B sha d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab
+  FACT3 image survives: True
+OVERALL check1 True check2 False
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    ├──m
+                    │   ├──.abstract.md
+                    │   ├──.overview.md
+                    │   └──docs
+                    │       ├──.abstract.md
+                    │       ├──.overview.md
+                    │       ├──diagram.png
+                    │       │   ├──.abstract.md
+                    │       │   ├──.overview.md
+                    │       │   └──diagram.png
+                    │       ├──notes.md
+                    │       └──plain.png
+                    └──n
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            ├──diagram.png
+                            │   ├──.abstract.md
+                            │   ├──.overview.md
+                            │   └──diagram.png
+                            └──notes.md
+39 directories, 43 files
+== ov log lines about errors, images, moves
+2026-11-16 11:25:33,697 - openviking.server.auth.plugins.ldap - WARNING - LDAP library not available. LDAP authentication will not work. Install with: uv pip install python-ldap
+2026-11-16 11:25:37,330 - openviking.models.vlm.backends.openai_vlm - WARNING - [OpenAIVLM] Unknown image format, magic bytes: 6e6f74207265616c
+2026-11-16 11:25:38,108 - openviking.models.vlm.backends.openai_vlm - WARNING - [OpenAIVLM] Unknown image format, magic bytes: 6e6f74207265616c
+2026-11-16 11:25:38,717 - openviking.models.vlm.backends.openai_vlm - WARNING - [OpenAIVLM] Unknown image format, magic bytes: 6e6f74207265616c
+2026-11-16 11:25:39,565 - openviking.models.vlm.backends.openai_vlm - WARNING - [OpenAIVLM] Unknown image format, magic bytes: 6e6f74207265616c
+== fake counts
+{"embeddings embark/embedding": 54, "chat gemini/gemini-3.5-flash-lite": 31, "chat-with-image gemini/gemini-3.5-flash-lite": 7}
