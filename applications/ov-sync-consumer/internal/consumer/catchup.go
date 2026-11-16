@@ -13,7 +13,9 @@ import (
 // what lost events left behind: it writes a bucket file missing from
 // OpenViking and deletes an OpenViking file whose object is gone. It only
 // compares which files exist; a lost update to a file both sides hold waits
-// for the next event on that file.
+// for the next event on that file. A file at U while U/base(U) is wanted is
+// an image's old plain copy, which the image's upload deletes, so the pass
+// leaves it alone.
 func (c *Consumer) CatchUp(ctx context.Context) error {
 	var errs []error
 	for prefix, root := range c.Map {
@@ -48,6 +50,9 @@ func (c *Consumer) catchUpPrefix(ctx context.Context, prefix, root string) error
 	}
 	for uri := range have {
 		if _, ok := want[uri]; ok {
+			continue
+		}
+		if _, ok := want[uri+"/"+base(uri)]; ok {
 			continue
 		}
 		unlock := c.keys.lock(uri)

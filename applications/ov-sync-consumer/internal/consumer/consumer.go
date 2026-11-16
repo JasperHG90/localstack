@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/nats-io/nats.go"
@@ -222,7 +223,9 @@ func (c *Consumer) HandleEvent(ctx context.Context, data []byte) error {
 
 // Apply makes OpenViking match the object's current state: an object that
 // exists is written, a missing one is deleted. It holds the file's key from
-// before the read until OpenViking has the result.
+// before the read until OpenViking has the result. An image is uploaded, and
+// any other object that is not valid UTF-8 is skipped, since a JSON write
+// would damage it.
 func (c *Consumer) Apply(ctx context.Context, key string) error {
 	uri, root, ok := c.Map.Resolve(key)
 	if !ok {
@@ -239,10 +242,40 @@ func (c *Consumer) Apply(ctx context.Context, key string) error {
 	if err != nil {
 		return fmt.Errorf("read %s: %w", key, err)
 	}
+	if !isImage(key) && !utf8.Valid(body) {
+		c.Log.Info("binary file skipped", "key", key)
+		return nil
+	}
 	c.tree.RLock()
 	defer c.tree.RUnlock()
+	if isImage(key) {
+		return c.upload(ctx, uri, body)
+	}
 	if err := c.OV.Write(ctx, uri, string(body)); err != nil {
 		return fmt.Errorf("write %s: %w", uri, err)
+	}
+	return nil
+}
+
+// upload stores an image at uri, D/name/name, by adding it as a resource
+// into D/name. A plain file at D/name, the damaged copy an earlier text write
+// left, goes first. Only a plain file: a non-recursive delete of an image
+// folder is refused with 412 (spike:ov-sync-consumer-binary-upload/8).
+func (c *Consumer) upload(ctx context.Context, uri string, body []byte) error {
+	folder := parent(uri)
+	siblings, _, err := c.OV.List(ctx, parent(folder))
+	if err != nil {
+		return err
+	}
+	for _, e := range siblings {
+		if e.URI == folder && !e.IsDir {
+			if err := c.OV.Delete(ctx, folder, false); err != nil {
+				return fmt.Errorf("delete old copy %s: %w", folder, err)
+			}
+		}
+	}
+	if err := c.OV.Upload(ctx, folder, base(uri), body); err != nil {
+		return fmt.Errorf("upload %s: %w", uri, err)
 	}
 	return nil
 }
@@ -273,7 +306,7 @@ func (c *Consumer) remove(ctx context.Context, uri, root string) error {
 	defer c.tree.Unlock()
 	top := strings.TrimSuffix(root, "/")
 	for dir := parent(uri); strings.HasPrefix(dir, top+"/"); dir = parent(dir) {
-		removed, err := c.removeIfEmpty(ctx, dir)
+		removed, err := c.removeIfEmpty(ctx, dir, dir == parent(uri) && isImageHome(uri))
 		if err != nil {
 			return fmt.Errorf("%w: %w", errFolderLeft, err)
 		}
@@ -290,6 +323,10 @@ func parent(uri string) string {
 	return uri[:max(strings.LastIndex(uri, "/"), 0)]
 }
 
+func base(uri string) string {
+	return uri[strings.LastIndex(uri, "/")+1:]
+}
+
 func isSummary(dir, uri string) bool {
 	return uri == dir+"/.abstract.md" || uri == dir+"/.overview.md"
 }
@@ -297,7 +334,11 @@ func isSummary(dir, uri string) bool {
 // removeIfEmpty deletes dir with recursive=true only when ls shows nothing in
 // it but `.abstract.md` and `.overview.md`, and checks the result by listing
 // the parent. removed is true when dir is gone.
-func (c *Consumer) removeIfEmpty(ctx context.Context, dir string) (removed bool, err error) {
+//
+// An image's folder stays listed in its parent for good once deleted, as an
+// empty folder (spike:ov-sync-consumer-binary-upload/6), so for image it
+// counts as gone when its own ls is empty.
+func (c *Consumer) removeIfEmpty(ctx context.Context, dir string, image bool) (removed bool, err error) {
 	entries, found, err := c.OV.List(ctx, dir)
 	if err != nil || !found {
 		return !found, err
@@ -309,6 +350,16 @@ func (c *Consumer) removeIfEmpty(ctx context.Context, dir string) (removed bool,
 	}
 	if err := c.OV.Delete(ctx, dir, true); err != nil {
 		return false, fmt.Errorf("delete folder %s: %w", dir, err)
+	}
+	if image {
+		left, _, err := c.OV.List(ctx, dir)
+		if err != nil {
+			return false, err
+		}
+		if len(left) > 0 {
+			return false, fmt.Errorf("image folder %s not empty after its delete", dir)
+		}
+		return true, nil
 	}
 	siblings, _, err := c.OV.List(ctx, parent(dir))
 	if err != nil {

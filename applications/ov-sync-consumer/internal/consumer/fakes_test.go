@@ -8,10 +8,13 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -147,16 +150,30 @@ type ovRequest struct {
 	Path   string
 	Query  url.Values
 	Body   map[string]any
+	// File and FileName are the multipart `file` field of a temp_upload.
+	File     []byte
+	FileName string
 }
 
 // fakeOV keeps a tree the way OpenViking does: every folder holds its own
 // `.abstract.md` and `.overview.md`, a folder delete without recursive=true
 // is refused with 412, and fs/stat answers 200 even for a removed folder.
+//
+// Add resource follows spike:ov-sync-consumer-binary-upload/1 and /4: `to`
+// is the resource's own folder, so `to=D/name` stores D/name/name, a re-add
+// replaces that folder, and missing parents are created. A recursive delete
+// of such a folder empties it but leaves it listed for good, as spike 6 and
+// 8 showed.
 type fakeOV struct {
 	mu       sync.Mutex
 	files    map[string]string
 	dirs     map[string]bool
 	requests []ovRequest
+	// temps holds temp_upload bodies by temp_file_id until a resource add
+	// takes them.
+	temps map[string][]byte
+	// imageDirs are folders a resource add made.
+	imageDirs map[string]bool
 
 	// failWrites makes the next n writes to a uri fail; -1 fails them all.
 	// They fail with failStatus and failMessage, 500 "write refused" when
@@ -167,7 +184,7 @@ type fakeOV struct {
 	// busyDeletes answers deletes of these uris with OpenViking's lock-timeout
 	// 409.
 	busyDeletes map[string]bool
-	writeDelay time.Duration
+	writeDelay  time.Duration
 	// beforeWrite runs before a write lands, outside the fake's lock, so a
 	// test can hold one write back.
 	beforeWrite func(uri, content string)
@@ -183,7 +200,10 @@ type fakeOV struct {
 
 func newFakeOV(t *testing.T) (*fakeOV, *OpenViking) {
 	t.Helper()
-	f := &fakeOV{files: map[string]string{}, dirs: map[string]bool{}, failWrites: map[string]int{}, busyDeletes: map[string]bool{}}
+	f := &fakeOV{
+		files: map[string]string{}, dirs: map[string]bool{}, temps: map[string][]byte{}, imageDirs: map[string]bool{},
+		failWrites: map[string]int{}, busyDeletes: map[string]bool{},
+	}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
 	tokenFile := filepath.Join(t.TempDir(), "ov_token")
@@ -212,11 +232,46 @@ func (f *fakeOV) seed(uris ...string) {
 	}
 }
 
+// seedImage stores an image the way a resource add does: uri is
+// D/name/name and its folder D/name is an image folder.
+func (f *fakeOV) seedImage(uri, content string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.put(uri, content)
+	f.imageDirs[parent(uri)] = true
+}
+
 func (f *fakeOV) has(uri string) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	_, file := f.files[uri]
 	return file || f.dirs[uri]
+}
+
+func (f *fakeOV) isFile(uri string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	_, ok := f.files[uri]
+	return ok
+}
+
+// under lists every file and folder below dir, at any depth.
+func (f *fakeOV) under(dir string) []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []string
+	for k := range f.files {
+		if strings.HasPrefix(k, dir+"/") {
+			out = append(out, k)
+		}
+	}
+	for k := range f.dirs {
+		if strings.HasPrefix(k, dir+"/") {
+			out = append(out, k+"/")
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 func (f *fakeOV) content(uri string) string {
@@ -275,8 +330,11 @@ func (f *fakeOV) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	req := ovRequest{Method: r.Method, Path: r.URL.Path, Query: r.URL.Query()}
-	if r.Body != nil {
-		_ = json.NewDecoder(r.Body).Decode(&req.Body)
+	raw, _ := io.ReadAll(r.Body)
+	if mt, params, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err == nil && strings.HasPrefix(mt, "multipart/") {
+		req.File, req.FileName = filePart(raw, params["boundary"])
+	} else if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &req.Body)
 	}
 	f.mu.Lock()
 	f.requests = append(f.requests, req)
@@ -290,6 +348,10 @@ func (f *fakeOV) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/content/write":
 		f.write(w, req)
+	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/resources/temp_upload":
+		f.tempUpload(w, req)
+	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/resources":
+		f.addResource(w, req)
 	case r.Method == http.MethodDelete && r.URL.Path == "/api/v1/fs":
 		f.delete(w, q.Get("uri"), q.Get("recursive") == "true")
 	case r.Method == http.MethodGet && r.URL.Path == "/api/v1/fs/ls":
@@ -329,6 +391,64 @@ func (f *fakeOV) write(w http.ResponseWriter, req ovRequest) {
 	ovReply(w, http.StatusOK, map[string]any{"uri": uri})
 }
 
+func filePart(raw []byte, boundary string) (data []byte, name string) {
+	mr := multipart.NewReader(bytes.NewReader(raw), boundary)
+	for {
+		p, err := mr.NextPart()
+		if err != nil {
+			return nil, ""
+		}
+		if p.FormName() == "file" {
+			data, _ = io.ReadAll(p)
+			return data, p.FileName()
+		}
+	}
+}
+
+func (f *fakeOV) tempUpload(w http.ResponseWriter, req ovRequest) {
+	if req.File == nil {
+		ovReply(w, http.StatusBadRequest, "no file field")
+		return
+	}
+	f.mu.Lock()
+	id := fmt.Sprintf("upload_%d%s", len(f.requests), path.Ext(req.FileName))
+	f.temps[id] = req.File
+	f.mu.Unlock()
+	ovReply(w, http.StatusOK, map[string]any{"temp_file_id": id})
+}
+
+// addResource stores the temp file at to/source_name, replacing whatever the
+// folder `to` held. A plain file at `to` itself is left alone.
+func (f *fakeOV) addResource(w http.ResponseWriter, req ovRequest) {
+	id, _ := req.Body["temp_file_id"].(string)
+	to, _ := req.Body["to"].(string)
+	name, _ := req.Body["source_name"].(string)
+	uri := to + "/" + name
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	data, ok := f.temps[id]
+	if !ok || to == "" || name == "" {
+		ovReply(w, http.StatusBadRequest, "bad resource add")
+		return
+	}
+	if n := f.failWrites[uri]; n != 0 {
+		if n > 0 {
+			f.failWrites[uri] = n - 1
+		}
+		ovReply(w, f.failStatus, f.failMessage)
+		return
+	}
+	delete(f.temps, id)
+	for k := range f.files {
+		if strings.HasPrefix(k, to+"/") {
+			delete(f.files, k)
+		}
+	}
+	f.put(uri, string(data))
+	f.imageDirs[to] = true
+	ovReply(w, http.StatusOK, map[string]any{"status": "success", "root_uri": to})
+}
+
 func (f *fakeOV) delete(w http.ResponseWriter, uri string, recursive bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -358,7 +478,9 @@ func (f *fakeOV) delete(w http.ResponseWriter, uri string, recursive bool) {
 		ovReply(w, http.StatusOK, map[string]any{"uri": uri})
 		return
 	}
-	delete(f.dirs, uri)
+	if !f.imageDirs[uri] {
+		delete(f.dirs, uri)
+	}
 	for k := range f.files {
 		if strings.HasPrefix(k, uri+"/") {
 			delete(f.files, k)

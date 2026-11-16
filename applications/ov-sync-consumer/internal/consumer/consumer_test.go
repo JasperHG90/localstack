@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand/v2"
 	"net/http"
@@ -587,4 +588,243 @@ func TestCatchUpLockConflictIsBusy(t *testing.T) {
 			t.Fatal("the file itself was not deleted")
 		}
 	})
+}
+
+// A PNG header is not valid UTF-8, which is what a JSON content/write damages.
+const (
+	pngV1 = "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x01\x00\xff\xd8v1"
+	pngV2 = "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x02\x00\xfe\xc0v2"
+)
+
+// requestOrder names each request by its path, in the order they arrived.
+func requestOrder(ov *fakeOV) []string {
+	ov.mu.Lock()
+	defer ov.mu.Unlock()
+	var out []string
+	for _, r := range ov.requests {
+		out = append(out, r.Method+" "+r.Path)
+	}
+	return out
+}
+
+func TestImageUploaded(t *testing.T) {
+	ctx := context.Background()
+	const key = "JasperHG90/localstack/docs/ref/diagram.png"
+	d := projRoot + "/docs/ref"
+	_, s3 := newFakeS3(t, map[string]string{key: pngV1, "JasperHG90/localstack/docs/ref/Photo.JPG": pngV2})
+	ov, client := newFakeOV(t)
+	ov.seed(d + "/notes.md")
+	ov.seedImage(d+"/other.png/other.png", pngV2)
+	before := map[string]string{}
+	for _, u := range ov.under(d) {
+		before[u] = ov.content(u)
+	}
+	c := newConsumer(s3, client)
+
+	if err := c.HandleEvent(ctx, eventJSON("create", key)); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(ov.calls(http.MethodPost, "/api/v1/content/write")); n != 0 {
+		t.Fatalf("an image went through content/write %d times", n)
+	}
+	uploads := ov.calls(http.MethodPost, "/api/v1/resources/temp_upload")
+	adds := ov.calls(http.MethodPost, "/api/v1/resources")
+	if len(uploads) != 1 || string(uploads[0].File) != pngV1 || uploads[0].FileName != "diagram.png" {
+		t.Fatalf("want one temp_upload of the exact bytes as diagram.png, got %+v", uploads)
+	}
+	if len(adds) != 1 || adds[0].Body["to"] != d+"/diagram.png" || adds[0].Body["source_name"] != "diagram.png" ||
+		adds[0].Body["wait"] != true || adds[0].Body["temp_file_id"] == nil {
+		t.Fatalf("want one add resource with to=D/diagram.png, source_name=diagram.png, wait=true, got %+v", adds)
+	}
+	order := requestOrder(ov)
+	if order[len(order)-2] != "POST /api/v1/resources/temp_upload" || order[len(order)-1] != "POST /api/v1/resources" {
+		t.Fatalf("want temp_upload then add resource last, got %v", order)
+	}
+	if got := ov.content(d + "/diagram.png/diagram.png"); got != pngV1 {
+		t.Fatalf("D/diagram.png/diagram.png holds %q, want the PNG's exact bytes", got)
+	}
+	for u, v := range before {
+		if strings.HasSuffix(u, "/.abstract.md") || strings.HasSuffix(u, "/.overview.md") {
+			continue
+		}
+		if !ov.has(strings.TrimSuffix(u, "/")) || ov.content(u) != v {
+			t.Errorf("sibling %s changed", u)
+		}
+	}
+
+	t.Run("extension is case-insensitive", func(t *testing.T) {
+		if err := c.HandleEvent(ctx, eventJSON("create", "JasperHG90/localstack/docs/ref/Photo.JPG")); err != nil {
+			t.Fatal(err)
+		}
+		if got := ov.content(d + "/Photo.JPG/Photo.JPG"); got != pngV2 {
+			t.Fatalf("Photo.JPG was not uploaded as an image: %q", got)
+		}
+	})
+
+	t.Run("lock 409 on the add is busy", func(t *testing.T) {
+		ov.failWrites[d+"/diagram.png/diagram.png"] = 1
+		ov.failStatus, ov.failMessage = http.StatusConflict, lockTimeout
+		if err := c.Apply(ctx, key); !errors.Is(err, errLockBusy) {
+			t.Fatalf("want errLockBusy, got %v", err)
+		}
+	})
+}
+
+func TestImageReplacesOldCopies(t *testing.T) {
+	ctx := context.Background()
+	const key = "JasperHG90/localstack/docs/ref/diagram.png"
+	d := projRoot + "/docs/ref"
+	bucketFake, s3 := newFakeS3(t, map[string]string{key: pngV1})
+	ov, client := newFakeOV(t)
+	// The damaged copy the old text write left, a plain file at D/name.
+	ov.seed(d+"/diagram.png", d+"/notes.md")
+	c := newConsumer(s3, client)
+
+	if err := c.Apply(ctx, key); err != nil {
+		t.Fatal(err)
+	}
+	if ov.isFile(d + "/diagram.png") {
+		t.Fatal("the plain file at D/diagram.png is still there")
+	}
+	dels := ov.calls(http.MethodDelete, "/api/v1/fs")
+	if len(dels) != 1 || dels[0].Query.Get("uri") != d+"/diagram.png" || dels[0].Query.Get("recursive") == "true" {
+		t.Fatalf("want one non-recursive delete of D/diagram.png, got %+v", dels)
+	}
+	if got := ov.content(d + "/diagram.png/diagram.png"); got != pngV1 {
+		t.Fatalf("D/diagram.png/diagram.png holds %q", got)
+	}
+
+	bucketFake.set(key, pngV2)
+	if err := c.Apply(ctx, key); err != nil {
+		t.Fatal(err)
+	}
+	if got := ov.content(d + "/diagram.png/diagram.png"); got != pngV2 {
+		t.Fatalf("D/diagram.png/diagram.png holds %q, want the changed PNG", got)
+	}
+	if n := len(ov.calls(http.MethodDelete, "/api/v1/fs")); n != 1 {
+		t.Fatalf("the re-upload sent %d more deletes; the image folder must not be deleted", n-1)
+	}
+	want := []string{d + "/diagram.png/", d + "/diagram.png/.abstract.md", d + "/diagram.png/.overview.md", d + "/diagram.png/diagram.png"}
+	var got []string
+	for _, u := range ov.under(d) {
+		if strings.HasPrefix(u, d+"/diagram.png") {
+			got = append(got, u)
+		}
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("D holds %v for diagram.png, want %v", got, want)
+	}
+}
+
+func TestOtherBinarySkipped(t *testing.T) {
+	ctx := context.Background()
+	const key = "JasperHG90/localstack/docs/manual.pdf"
+	_, s3 := newFakeS3(t, map[string]string{key: "%PDF-1.7\n\xff\xfe\x00\x01 binary"})
+	ov, client := newFakeOV(t)
+	c := newConsumer(s3, client)
+	logs := captureLog(c)
+
+	if err := c.HandleEvent(ctx, eventJSON("create", key)); err != nil {
+		t.Fatal(err)
+	}
+	if reqs := requestOrder(ov); len(reqs) != 0 {
+		t.Fatalf("a skipped binary reached OpenViking: %v", reqs)
+	}
+	lines := logs.lines("binary file skipped")
+	if len(lines) != 1 || !strings.Contains(lines[0], "level=INFO") || !strings.Contains(lines[0], key) {
+		t.Fatalf("want one INFO binary file skipped line naming %s, got %q", key, lines)
+	}
+}
+
+func TestUTF8ObjectWrittenExactly(t *testing.T) {
+	ctx := context.Background()
+	const key = "JasperHG90/localstack/docs/naïve.md"
+	const body = "# Café — 日本語 🚀\n\tß ∑ €\n"
+	_, s3 := newFakeS3(t, map[string]string{key: body})
+	ov, client := newFakeOV(t)
+	c := newConsumer(s3, client)
+
+	if err := c.HandleEvent(ctx, eventJSON("create", key)); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(ov.calls(http.MethodPost, "/api/v1/resources/temp_upload")) + len(ov.calls(http.MethodPost, "/api/v1/resources")); n != 0 {
+		t.Fatalf("a text file was uploaded as a resource %d times", n)
+	}
+	writes := ov.calls(http.MethodPost, "/api/v1/content/write")
+	if len(writes) != 1 || writes[0].Body["content"] != body {
+		t.Fatalf("want one content/write of the exact text, got %+v", writes)
+	}
+	if got := ov.content(projRoot + "/docs/naïve.md"); got != body {
+		t.Fatalf("OpenViking holds %q, want %q", got, body)
+	}
+}
+
+func TestCatchUpImages(t *testing.T) {
+	ctx := context.Background()
+	img := "JasperHG90/localstack/docs/img/"
+	d := projRoot + "/docs/img"
+	_, s3 := newFakeS3(t, map[string]string{
+		img + "present.png": pngV1,
+		img + "missing.png": pngV2,
+		img + "migrate.png": pngV1,
+		img + "keep.md":     "keep",
+	})
+	ov, client := newFakeOV(t)
+	ov.seed(d + "/keep.md")
+	ov.seedImage(d+"/present.png/present.png", pngV1)
+	ov.seedImage(d+"/gone.png/gone.png", pngV2)
+	// The old plain copy, while its image is wanted but not uploaded yet.
+	ov.seed(d + "/migrate.png")
+	c := newConsumer(s3, client)
+
+	if err := c.CatchUp(ctx); err != nil {
+		t.Fatalf("catch-up failed: %v", err)
+	}
+	for _, a := range ov.calls(http.MethodPost, "/api/v1/resources") {
+		if a.Body["to"] == d+"/present.png" {
+			t.Fatal("catch-up re-uploaded an image OpenViking already holds")
+		}
+	}
+	if got := ov.content(d + "/missing.png/missing.png"); got != pngV2 {
+		t.Fatalf("the missing image was not uploaded: %q", got)
+	}
+	if got := ov.content(d + "/migrate.png/migrate.png"); got != pngV1 {
+		t.Fatalf("migrate.png's image was removed or never uploaded: %q", got)
+	}
+	if ov.isFile(d + "/migrate.png") {
+		t.Fatal("the old plain copy of migrate.png is still there")
+	}
+	for _, del := range ov.calls(http.MethodDelete, "/api/v1/fs") {
+		if u := del.Query.Get("uri"); strings.HasPrefix(u, d+"/migrate.png") && del.Query.Get("recursive") == "true" ||
+			strings.HasPrefix(u, d+"/present.png") || strings.HasPrefix(u, d+"/missing.png") {
+			t.Errorf("catch-up deleted %s (recursive=%s)", u, del.Query.Get("recursive"))
+		}
+	}
+	if ov.has(d + "/gone.png/gone.png") {
+		t.Fatal("the image whose object is gone is still there")
+	}
+	// The emptied folder stays listed in D, as on the real server, so D
+	// stays too. Neither fails the pass.
+	if !ov.has(d) || !ov.has(d+"/keep.md") {
+		t.Fatal("D or keep.md was removed")
+	}
+	if len(ov.violations) != 0 {
+		t.Fatalf("recursive delete of a folder with other entries: %v", ov.violations)
+	}
+
+	writes := len(ov.calls(http.MethodPost, "/api/v1/content/write"))
+	adds := len(ov.calls(http.MethodPost, "/api/v1/resources"))
+	dels := len(ov.calls(http.MethodDelete, "/api/v1/fs"))
+	if err := c.CatchUp(ctx); err != nil {
+		t.Fatalf("second pass failed: %v", err)
+	}
+	if n := len(ov.calls(http.MethodPost, "/api/v1/content/write")) - writes; n != 0 {
+		t.Errorf("second pass wrote %d files", n)
+	}
+	if n := len(ov.calls(http.MethodPost, "/api/v1/resources")) - adds; n != 0 {
+		t.Errorf("second pass uploaded %d images", n)
+	}
+	if n := len(ov.calls(http.MethodDelete, "/api/v1/fs")) - dels; n != 0 {
+		t.Errorf("second pass sent %d deletes", n)
+	}
 }

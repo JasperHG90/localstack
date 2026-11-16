@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -69,29 +70,35 @@ type envelope struct {
 }
 
 func (o *OpenViking) do(ctx context.Context, method, path string, query url.Values, body any) (*envelope, error) {
-	token, err := os.ReadFile(o.TokenFile)
-	if err != nil {
-		return nil, fmt.Errorf("openviking token: %w", err)
-	}
 	var reader io.Reader
+	contentType := ""
 	if body != nil {
 		raw, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
 		reader = bytes.NewReader(raw)
+		contentType = "application/json"
+	}
+	return o.call(ctx, method, path, query, contentType, reader)
+}
+
+func (o *OpenViking) call(ctx context.Context, method, path string, query url.Values, contentType string, body io.Reader) (*envelope, error) {
+	token, err := os.ReadFile(o.TokenFile)
+	if err != nil {
+		return nil, fmt.Errorf("openviking token: %w", err)
 	}
 	u := strings.TrimSuffix(o.URL, "/") + path
 	if query != nil {
 		u += "?" + query.Encode()
 	}
-	req, err := http.NewRequestWithContext(ctx, method, u, reader)
+	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(string(token)))
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	status, raw, err := o.send(req)
 	if err != nil {
@@ -142,6 +149,44 @@ func (o *OpenViking) Write(ctx context.Context, uri, content string) error {
 		"content": content,
 		"wait":    true,
 		"timeout": 120,
+	})
+	return err
+}
+
+// Upload stores body byte for byte at folder/name, the way OpenViking ingests
+// a file (spike:ov-sync-consumer-binary-upload/1): temp_upload, then add
+// resource with `to` set to the resource's own folder. The add creates
+// missing parents and replaces whatever that folder held, and it stores the
+// bytes even when the image description fails.
+func (o *OpenViking) Upload(ctx context.Context, folder, name string, body []byte) error {
+	var form bytes.Buffer
+	mw := multipart.NewWriter(&form)
+	part, err := mw.CreateFormFile("file", name)
+	if err != nil {
+		return err
+	}
+	if _, err := part.Write(body); err != nil {
+		return err
+	}
+	if err := mw.Close(); err != nil {
+		return err
+	}
+	env, err := o.call(ctx, http.MethodPost, "/api/v1/resources/temp_upload", nil, mw.FormDataContentType(), &form)
+	if err != nil {
+		return err
+	}
+	var temp struct {
+		ID string `json:"temp_file_id"`
+	}
+	if err := json.Unmarshal(env.Result, &temp); err != nil || temp.ID == "" {
+		return fmt.Errorf("temp_upload: no temp_file_id in %s", env.Result)
+	}
+	_, err = o.do(ctx, http.MethodPost, "/api/v1/resources", nil, map[string]any{
+		"temp_file_id": temp.ID,
+		"to":           folder,
+		"source_name":  name,
+		"wait":         true,
+		"timeout":      120,
 	})
 	return err
 }
