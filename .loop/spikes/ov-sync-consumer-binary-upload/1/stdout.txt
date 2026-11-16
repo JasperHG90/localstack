@@ -1,0 +1,81 @@
+== ov up
+d8e0cd5c25fdf3462887effd55ac4d9dae08884e34e5f54a142f683fa7ce04ab  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.GmDUEmG24U/a.png
+ba47cb7bfc617b7d38cce83b0aadf5a516fcbb1b6975055ce22c776cec4f8ad1  /tmp/claude-1000/-home-vscode-workspace/39954680-d360-4c77-9baf-bede6c6eafa0/scratchpad/spike-upload/tmp.GmDUEmG24U/b.png
+a.png 108281 B sha d8e0cd5c25fdf346; b.png 415781 B sha ba47cb7bfc617b7d
+[write notes.md] HTTP 200 {"status":"ok","result":{"uri":"viking://user/jasper/resources/projects/x/docs/ref/notes.md","root_uri":"viking://user/jasper/resources/projects/x/docs/ref","context_type":"resource","mode":"create","written_bytes":28,"content_updated":true,"semantic_status":"complete","vector_status":"complete","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_4737abc5094743e4b66b604b051f2c3c.png"}}
+CHECK A temp_upload returns temp_file_id: True (upload_4737abc5094743e4b66b604b051f2c3c.png)
+[add B {'to': 'viking://user/jasper/resources/projects/x/docs/ref', 'source_name': 'diagram.png', 'wait': True, 'timeout': 120} in 0.7s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/ref","temp_uri":"viking://temp/jasper/11160942_8364cb/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"req
+[download viking://user/jasper/resources/projects/x/docs/ref/diagram.png] HTTP 200 application/octet-stream 108281 B sha d8e0cd5c25fdf346
+[ls viking://user/jasper/resources/projects/x/docs/ref] HTTP 200 [('/ref/.abstract.md', False, 381), ('/ref/.overview.md', False, 616), ('/ref/diagram.png', False, 108281)]
+CHECK B to=folder + source_name, wait=true, D/diagram.png exact right after return: True
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_6f0998e8e887422ea659c264fe15bb09.png"}}
+[add C {'to': 'viking://user/jasper/resources/projects/x/docs/ref', 'source_name': 'other.png', 'wait': True, 'timeout': 120} in 0.8s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"other.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/ref","temp_uri":"viking://temp/jasper/11160942_abc1da/other_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"requeue
+[download viking://user/jasper/resources/projects/x/docs/ref/other.png] HTTP 200 application/octet-stream 415781 B sha ba47cb7bfc617b7d
+[download viking://user/jasper/resources/projects/x/docs/ref/diagram.png] HTTP 404 application/json 286 B sha d07a8159ab732847
+[ls viking://user/jasper/resources/projects/x/docs/ref] HTTP 200 [('/ref/.abstract.md', False, 381), ('/ref/.overview.md', False, 616), ('/ref/other.png', False, 415781)]
+CHECK C sibling added, diagram.png and notes.md unchanged: False
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_6cedc262e499448e8cf753a37a70c300.png"}}
+[add D {'to': 'viking://user/jasper/resources/projects/x/docs/ref', 'source_name': 'diagram.png', 'wait': True, 'timeout': 120} in 1.0s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/ref","temp_uri":"viking://temp/jasper/11160942_51aaf2/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"req
+[download viking://user/jasper/resources/projects/x/docs/ref/diagram.png] HTTP 200 application/octet-stream 415781 B sha ba47cb7bfc617b7d
+[download viking://user/jasper/resources/projects/x/docs/ref/other.png] HTTP 404 application/json 282 B sha 8175a3211441b0dc
+[ls viking://user/jasper/resources/projects/x/docs/ref] HTTP 200 [('/ref/.abstract.md', False, 381), ('/ref/.overview.md', False, 616), ('/ref/diagram.png', False, 415781)]
+CHECK D overwrite diagram.png in place, siblings unchanged: False
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_42a76c0d9cba47698ec5eb4310261cdc.png"}}
+[add to=exact file URI {'to': 'viking://user/jasper/resources/projects/x/docs/exact/diagram.png', 'wait': True, 'timeout': 120} in 0.6s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"diagram.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/exact/diagram.png","temp_uri":"viking://temp/jasper/11160942_38fdaa/diagram_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"pro
+[ls viking://user/jasper/resources/projects/x/docs/exact] HTTP 200 [('/exact/diagram.png', True, 0), ('/exact/diagram.png/.abstract.md', False, 395), ('/exact/diagram.png/.overview.md', False, 630), ('/exact/diagram.png/diagram.png', False, 108281)]
+[download viking://user/jasper/resources/projects/x/docs/exact/diagram.png] HTTP 400 application/json 337 B sha 420c78ad8c348e6b
+[download viking://user/jasper/resources/projects/x/docs/exact/diagram.png/diagram.png] HTTP 200 application/octet-stream 108281 B sha d8e0cd5c25fdf346
+INFO to=exact URI: download viking://user/jasper/resources/projects/x/docs/exact/diagram.png exact: False; viking://user/jasper/resources/projects/x/docs/exact/diagram.png/diagram.png exact: True
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_91ffadea856244b39af6e011a1396218.png"}}
+[add nowait {'to': 'viking://user/jasper/resources/projects/x/docs/ref', 'source_name': 'nowait.png', 'wait': False} in 0.1s] HTTP 200 {"status":"ok","result":{"status":"success","task_id":"bb91b847-3119-42df-9935-bb59bb311337","root_uri":"viking://user/jasper/resources/projects/x/docs/ref"}}
+[download viking://user/jasper/resources/projects/x/docs/ref/nowait.png] HTTP 404 application/json 284 B sha 5e7c3af9b92b5179
+INFO wait=false download right after return exact: False
+[download viking://user/jasper/resources/projects/x/docs/ref/nowait.png] HTTP 200 application/octet-stream 108281 B sha d8e0cd5c25fdf346
+INFO wait=false download after 5 s exact: True
+{"fail_images": true}
+[temp_upload] HTTP 200 {"status":"ok","result":{"temp_file_id":"upload_efae8ffaea93440cbcfe8d91892a1e40.png"}}
+[add vlm-fail {'to': 'viking://user/jasper/resources/projects/x/docs/ref', 'source_name': 'vlmfail.png', 'wait': True, 'timeout': 120} in 4.7s] HTTP 200 {"status":"ok","result":{"status":"success","errors":[],"source_path":"vlmfail.png","meta":{"content_type":"image","format":"png","is_large_image":false},"root_uri":"viking://user/jasper/resources/projects/x/docs/ref","temp_uri":"viking://temp/jasper/11160942_3723a3/vlmfail_png","queue_status":{"Semantic":{"processed":1,"requeue_count":0,"error_count":0,"errors":[]},"Embedding":{"processed":3,"req
+[download viking://user/jasper/resources/projects/x/docs/ref/vlmfail.png] HTTP 200 application/octet-stream 108281 B sha d8e0cd5c25fdf346
+INFO add while VLM answers 500 on images: HTTP 200, download exact: True
+[abstract of vlmfail.png folder entry] '---\ndirectory: viking://user/jasper/resources/projects/x/docs/ref/\nsource:\n  kind: local\n  uri: /app/.openviking/workspace/temp/upload/upload_efae8ffaea93440cbcfe8d91892a1e40.png\ngenerated_by:\n  component: SemanticProcessor\n  trigger: resource_ingest\nfreshness:\n  total_entries: 1\n  sample
+[ls viking://user/jasper/resources/projects/x/docs/ref] HTTP 200 [('/ref/.abstract.md', False, 381), ('/ref/.overview.md', False, 616), ('/ref/vlmfail.png', False, 108281)]
+OVERALL FAIL
+== S3 keys under projects/ after the run
+                └──projects
+                    ├──.abstract.md
+                    ├──.overview.md
+                    └──x
+                        ├──.abstract.md
+                        ├──.overview.md
+                        └──docs
+                            ├──.abstract.md
+                            ├──.overview.md
+                            ├──exact
+                            │   ├──.abstract.md
+                            │   ├──.overview.md
+                            │   └──diagram.png
+                            │       ├──.abstract.md
+                            │       ├──.overview.md
+                            │       └──diagram.png
+                            └──ref
+                                ├──.abstract.md
+                                ├──.overview.md
+                                └──vlmfail.png
+50 directories, 41 files
+== ov log lines about errors/images
+2026-11-16 09:42:47,658 - openviking.models.vlm.backends.openai_vlm - WARNING - OpenAI VLM async vision completion failed with retryable error (retry 1/3): Error code: 500 - {'error': {'message': 'spike: image description refused'}}; retrying in 0.60s
+2026-11-16 09:42:48,268 - openviking.models.vlm.backends.openai_vlm - WARNING - OpenAI VLM async vision completion failed with retryable error (retry 2/3): Error code: 500 - {'error': {'message': 'spike: image description refused'}}; retrying in 1.04s
+2026-11-16 09:42:49,326 - openviking.models.vlm.backends.openai_vlm - WARNING - OpenAI VLM async vision completion failed with retryable error (retry 3/3): Error code: 500 - {'error': {'message': 'spike: image description refused'}}; retrying in 2.25s
+2026-11-16 09:42:51,591 - openviking.parse.parsers.media.utils - ERROR - [MediaUtils.generate_image_summary] Failed to generate image summary: Error code: 500 - {'error': {'message': 'spike: image description refused'}}
+Traceback (most recent call last):
+  File "/app/.venv/lib/python3.13/site-packages/openviking/parse/parsers/media/utils.py", line 298, in generate_image_summary
+    response = await vlm.get_vision_completion_async(
+  File "/app/.venv/lib/python3.13/site-packages/openviking_cli/utils/config/vlm_config.py", line 823, in get_vision_completion_async
+    return await self.get_vlm_instance().get_vision_completion_async(
+  File "/app/.venv/lib/python3.13/site-packages/openviking/models/vlm/backends/openai_vlm.py", line 467, in get_vision_completion_async
+  File "/app/.venv/lib/python3.13/site-packages/openviking/models/vlm/backends/openai_vlm.py", line 460, in _call
+    raise self._make_status_error_from_response(err.response) from None
+openai.InternalServerError: Error code: 500 - {'error': {'message': 'spike: image description refused'}}
+== fake counts
+{"embeddings embark/embedding": 49, "chat gemini/gemini-3.5-flash-lite": 24, "chat-with-image gemini/gemini-3.5-flash-lite": 9}
