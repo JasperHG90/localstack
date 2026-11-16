@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "remove-hermes-interactive",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
@@ -13,7 +13,7 @@
   "split": "j-20261116T120502+0000-fb961ca3",
   "split_plan_hash": "65359ccc3dc3c6ebec687f59e8597783229e0e661592159687a41ca53063c074",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "9910bfd8008848d5612f735816be1744021043ab",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -106,8 +106,14 @@
       "to": "verifying",
       "at": "2026-11-16T13:41:06+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-16T13:46:09+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T13:45:53+00:00"
+  "at": "2026-11-16T13:46:10+00:00"
 }
