@@ -145,22 +145,22 @@ EOF
     },
     "routing_rules": [
       {
-        "id": "not-router-passthrough", "name": "not-router-passthrough", "scope": "global", "priority": 0,
+        "id": "not-router-passthrough", "name": "not-router-passthrough", "scope": "global", "priority": 10,
         "cel_expression": "virtual_key_name != \"router\"",
         "targets": [{ "weight": 1 }]
       },
       {
-        "id": "router-simple", "name": "router-simple", "scope": "global", "priority": 1,
+        "id": "router-simple", "name": "router-simple", "scope": "global", "priority": 11,
         "cel_expression": "virtual_key_name == \"router\" && complexity_tier == \"SIMPLE\"",
         "targets": [{ "provider": "ollama", "model": "gpt-oss:120b", "weight": 1 }]
       },
       {
-        "id": "router-medium", "name": "router-medium", "scope": "global", "priority": 2,
+        "id": "router-medium", "name": "router-medium", "scope": "global", "priority": 12,
         "cel_expression": "virtual_key_name == \"router\" && complexity_tier == \"MEDIUM\"",
         "targets": [{ "provider": "ollama", "model": "deepseek-v4.1-flash", "weight": 1 }]
       },
       {
-        "id": "router-complex", "name": "router-complex", "scope": "global", "priority": 3,
+        "id": "router-complex", "name": "router-complex", "scope": "global", "priority": 13,
         "cel_expression": "virtual_key_name == \"router\" && complexity_tier == \"COMPLEX\"",
         "targets": [{ "provider": "ollama", "model": "mistral-large-4", "weight": 1 }]
       }

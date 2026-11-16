@@ -7,9 +7,9 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-11-16T11:49:22Z
+  at: 2026-11-16T15:01:53Z
   against:
-    - decisions/0030-ov-sync-stores-images-in-openviking-per-file-folders
+    - decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev
 ---
 
 # Summary
