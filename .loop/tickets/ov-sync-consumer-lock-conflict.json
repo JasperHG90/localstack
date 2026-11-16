@@ -20,10 +20,50 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/claude-opus-5-5",
+    "hash": "9a3f5e213c85eeeead8be53c3eb9cb08d474f48973accf93b0b55f4bf040b304",
+    "at": "2026-11-16T08:43:19+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "a write that OpenViking answers with a lock-timeout 409 twice and then 200 succeeds within the same event, with no failed event logged",
+      "fails_when": "the event fails, is NAKed, or the write is sent fewer than three times",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestWriteRetriesLockConflict",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "a 409 that is not a lock timeout, and a lock timeout that persists past the retry limit, still fail the event",
+      "fails_when": "either case is reported as success or retried without bound",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestOtherConflictFails",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "a retry waiting out its backoff holds no MaxInFlight slot",
+      "fails_when": "while one request sleeps between lock-conflict retries, another request cannot take the only slot",
+      "command": "just -f applications/ov-sync-consumer/justfile test-one TestRetryReleasesSlot",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "both roots pin ghcr.io/jasperhg90/ov-sync-consumer:v0.1.1, the module tests and vet pass, and the repo gates pass",
+      "fails_when": "either ov_sync_consumer_image line names another tag, or the module tests, vet or just pre_commit fail",
+      "command": "grep -q 'ov_sync_consumer_image *= \"ghcr.io/jasperhg90/ov-sync-consumer:v0.1.1\"' deployments/applications/services.tf && grep -q 'ov_sync_consumer_image *= \"ghcr.io/jasperhg90/ov-sync-consumer:v0.1.1\"' deployments/infrastructure/services.tf && just -f applications/ov-sync-consumer/justfile test && just pre_commit",
+      "judgment": false
+    },
+    {
+      "id": "r5",
+      "behavior": "after the operator releases v0.1.1 and applies, a burst sync logs no 'event failed' line caused by a lock-timeout 409",
+      "fails_when": "the consumer log shows such a line during a sync",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -44,5 +84,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-16T08:43:18+00:00"
+  "at": "2026-11-16T08:43:19+00:00"
 }
