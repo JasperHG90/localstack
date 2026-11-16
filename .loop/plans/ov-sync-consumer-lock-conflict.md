@@ -1,7 +1,7 @@
 ---
 type: plan
 title: 'Plan: ov-sync-consumer-lock-conflict'
-description: Retry OpenViking's lock-timeout 409 inside the event, and ship it with the per-key lock as consumer v0.1.1.
+description: Treat OpenViking's lock-timeout 409 as an expected busy folder, quiet it, and ship it with the per-key lock as consumer v0.1.1.
 tags:
 - plan
 generated:
@@ -28,29 +28,37 @@ Relayed from: none
 
 The first live sync (2026-11-16, run 43818142026, 189 files) logged dozens of
 `HTTP 409: CONFLICT: lock acquire timed out after ~150ms` from
-`/api/v1/content/write` and `DELETE /api/v1/fs`. OpenViking holds a lock on
-the tree it writes into and gives up after about 150 ms when another write
-holds it. The consumer turns any non-2xx into a failed event, so JetStream
-redelivers it after a backoff measured in seconds to minutes: one file took 5
-deliveries and the burst took over 20 minutes. Catch-up's folder deletes fail
-the same way.
+`/api/v1/content/write` and `DELETE /api/v1/fs`, each as a WARN
+`event failed, retrying`. Every file got through: the consumer allows
+`MAX_TRIES` 20 deliveries with backoff from 2 s doubling to 30 s
+(`applications/ov-sync-consumer/main.go`). The lock is not brief. One file
+hit it five times over about 3.5 minutes (`set-up-the-nats-cli.md`, 07:01:13
+to 07:04:47), and failures came in bursts by folder (three `docs/how-to/`
+files within 130 ms at 07:01:13, three `docs/reference/` files at 07:06:54).
+Spike `ov-sync-consumer/3` showed OpenViking's own folder-summary job
+(`semantic_dag`) failing on the same lock, so a folder lock held by that job
+is the likely cause. What holds the lock and for how long is not measured;
+the operator chose to quiet the symptom now and measure later.
 
-`applications/ov-sync-consumer/internal/consumer/openviking.go` retries a
-409 whose body says the lock acquire timed out, inside the same request
-slot's caller, a few times with short jittered backoff (hundreds of
-milliseconds), before it returns an error. Any other 409, and every other
-status, behaves as today. The request slot (`MaxInFlight`) is released
-while it waits, so a retry never holds a slot during its sleep.
+`applications/ov-sync-consumer/internal/consumer/openviking.go` returns a
+distinct error for a 409 whose message says the lock acquire timed out. The
+consumer's failure path in `consumer.go` keeps JetStream's redelivery
+unchanged for it (same backoff, same `MAX_TRIES`, still dead-lettered on the
+last try), but logs it at INFO as `folder busy, retrying later` with the URI
+and delivery count instead of WARN `event failed`. Catch-up does the same for
+a folder delete that hits it. Any other 409, and every other status, behaves
+as today. Delivery is unchanged, so this cannot make it worse.
 
 Then the image goes to `v0.1.1` in both roots' `ov_sync_consumer_image`
 lines (`deployments/applications/services.tf` and
 `deployments/infrastructure/services.tf`), carrying this and the per-key lock
 from `ov-sync-consumer-reviewer-f3`.
 
-Outcome: a test with a fake OpenViking that answers lock-timeout 409 twice
-then 200 sees one successful write and no failed event; a non-lock 409 still
-fails the event; both roots name `v0.1.1`. After the operator releases and
-applies, a burst sync logs no `event failed` line for a 409.
+Outcome: a fake OpenViking answering a lock-timeout 409 makes the event
+redeliver with the usual backoff and log an INFO `folder busy` line and no
+WARN; a non-lock 409 still logs WARN `event failed`; the last allowed try of a
+lock 409 still dead-letters; both roots name `v0.1.1`. Speeding up bursts is
+the stub `ov-sync-consumer-lock-scope`.
 
 ## Could invalidate this plan
 
