@@ -1,14 +1,30 @@
 {
   "schema_version": "1.0",
   "slug": "lab-auth-immutable-subject",
-  "stage": "fixing",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
   "blocker": null,
-  "fix": null,
+  "fix": {
+    "round": 1,
+    "fingerprint": "1393c11268f4e6490744a4d83093ab63ee726bfc9efc6f5a792f48e97c1ace0b",
+    "tree": "b37db3e911b08953bc2b8f6da63a65ec7fa06896",
+    "decisions": [
+      {
+        "finding": "reviewer:f1",
+        "outcome": "sent-back",
+        "by": "fallback",
+        "judgement": null,
+        "paths": [
+          ".okf/summary.md"
+        ]
+      }
+    ],
+    "at": "2026-11-18T13:33:00+00:00"
+  },
   "ask": "j-20261118T130512+0000-916259f0",
   "split": "j-20261118T131104+0000-e42c55d7",
   "split_plan_hash": "a7f98b7d2f2378dafa9aa805774961fcc2534ad66fd1f83e9e3e00b505ae4442",
@@ -134,8 +150,14 @@
       "to": "fixing",
       "at": "2026-11-18T13:30:45+00:00",
       "by": "review close"
+    },
+    {
+      "from": "fixing",
+      "to": "verifying",
+      "at": "2026-11-18T13:33:01+00:00",
+      "by": "review fixed"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T13:32:59+00:00"
+  "at": "2026-11-18T13:33:01+00:00"
 }
