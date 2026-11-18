@@ -1,0 +1,1 @@
+{"ask":"Fix it now: make the openviking-sync action upload in one aws process, save progress so a killed run keeps it, and flush output"}
