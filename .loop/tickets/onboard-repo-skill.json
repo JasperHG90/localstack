@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "onboard-repo-skill",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 3,
@@ -47,7 +47,7 @@
   "split": "j-20261118T144632+0000-86359719",
   "split_plan_hash": "b224d5f0e49ecdf6ebbac304b7c5a24fd1ffd65713bbfa7ac0f2f8fa5cb201fb",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "4619abc1264f2e1f414ceddc5584176f16cb5b67",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -168,8 +168,14 @@
       "to": "verifying",
       "at": "2026-11-18T14:56:48+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-18T15:03:03+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T15:02:53+00:00"
+  "at": "2026-11-18T15:03:03+00:00"
 }
