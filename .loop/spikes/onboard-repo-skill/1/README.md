@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-18T14:41:46+00:00'
+  at: '2026-11-18T14:43:54+00:00'
 slug: onboard-repo-skill
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike onboard-repo-skill/1
@@ -24,7 +24,7 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note onboard-repo-skill 1`.
+Not the citing run: superseded by spike 3. The sentinel survived `apm install`, the `apm install --frozen` that followed it, and `apm prune`. But `--frozen` failed with exit 1 before deploying anything ("Found multiple package directories for one dependency: apm_modules/JasperHG90, apm_modules/jasperhg90"), so the frozen path was never exercised, and the script did not fail on that.
 
 ## Files
 
