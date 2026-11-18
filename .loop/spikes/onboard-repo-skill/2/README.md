@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-18T14:42:25+00:00'
+  at: '2026-11-18T14:44:00+00:00'
 slug: onboard-repo-skill
 n: 2
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike onboard-repo-skill/2
@@ -24,7 +24,7 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note onboard-repo-skill 2`.
+Not the citing run: superseded by spike 3. On a fresh tree (`apm_modules/` removed), `apm install --frozen` installed 23 dependencies and left the sentinel intact. The `apm install` that followed in the same tree failed with exit 1 on the `apm_modules/JasperHG90` vs `jasperhg90` case-duplicate error, so the script exited 1. That failure is APM tripping on its own second install in one tree, not the risk. The sentinel stayed intact through every step, `apm prune` included.
 
 ## Files
 
