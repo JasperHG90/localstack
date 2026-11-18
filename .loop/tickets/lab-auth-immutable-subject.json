@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "lab-auth-immutable-subject",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
@@ -94,8 +94,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "a7f98b7d2f2378dafa9aa805774961fcc2534ad66fd1f83e9e3e00b505ae4442",
   "intent": {
@@ -127,8 +127,14 @@
       "to": "verifying",
       "at": "2026-11-18T13:26:10+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-11-18T13:30:45+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T13:26:24+00:00"
+  "at": "2026-11-18T13:30:46+00:00"
 }
