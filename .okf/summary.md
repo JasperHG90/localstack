@@ -85,9 +85,6 @@ invariants have a passing test. Open gaps:
   OpenViking
   ([ADR 0026](/decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer.md)),
   neither yet deployed.
-- CI joins the tailnet and logs in to Vault through one role per workflow
-  ([ADR 0027](/decisions/0027-ci-reaches-the-lab-through-a-public-lab-auth-action-and-per-caller-vault-roles.md)),
-  not yet applied.
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven but
   never rolled out.

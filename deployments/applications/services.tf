@@ -656,7 +656,8 @@ resource "nomad_job" "ov_sync_consumer" {
       # Bucket prefix <owner>/<repo>/ to the OpenViking folder its files land
       # in. A prefix not listed here is skipped.
       prefixes = jsonencode({
-        "JasperHG90/localstack/" = "viking://user/jasper/resources/projects/localstack/"
+        "JasperHG90/localstack/"               = "viking://user/jasper/resources/projects/localstack/"
+        "JasperHG90/loop-engineering-harness/" = "viking://user/jasper/resources/projects/loop-engineering-harness/"
       })
     }
   )

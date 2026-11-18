@@ -101,12 +101,14 @@ v4 passes `--accept-routes` itself, so the runner uses firebat's subnet route
 to reach `192.168.2.30`. Repeating that flag in the action's `args` makes
 `tailscale up` fail.
 
-A repository created after mid-2026 issues GitHub's immutable OIDC subject
+A repository created after 2026-07-15 issues GitHub's immutable OIDC subject
 (`repo:JasperHG90@8079803/<repo>@<id>:environment:lab`), which this federated
-identity's subject cannot match, and its join fails with a 403 at the token
-exchange. It needs a second federated identity, subject
-`repo:JasperHG90@8079803/*:environment:lab`. This repository issues the
-legacy subject.
+identity's subject cannot match. A second federated identity, made on
+2026-11-18, covers those: subject `repo:JasperHG90@8079803/*:environment:lab`,
+same scope and tag, client ID `T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL`. The
+lab-auth action picks between the two from the job's subject
+([ADR 0031](/decisions/0031-the-lab-auth-action-picks-the-tailscale-identity-from-the-oidc-subject-format.md)).
+This repository issues the legacy subject.
 
 ### The saved policy, read-only
 

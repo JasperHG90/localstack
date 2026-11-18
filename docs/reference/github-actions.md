@@ -39,11 +39,21 @@ How to set a repository up for it is
 | `vault-addr` | no | `https://vault.lab.orangecluster.nl` | Vault address the login goes to, exported as `VAULT_ADDR` |
 | `vault-mount` | no | `jwt-github` | Path of Vault's JWT auth mount for GitHub tokens |
 | `tags` | no | `tag:ci` | Tailscale tags the runner joins with |
-| `tailscale-client-id` | no | `T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL` | Client ID of the Tailscale federated identity |
-| `tailscale-audience` | no | `api.tailscale.com/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL` | Audience that federated identity expects |
+| `tailscale-client-id` | no | empty: picked from the job's OIDC subject | Client ID of a Tailscale federated identity |
+| `tailscale-audience` | no | empty: `api.tailscale.com/<client ID>` | Audience that federated identity expects |
 
-The client ID and audience are not secrets. Tailscale accepts them only with a
-GitHub-signed token whose subject matches the federated identity.
+### Tailscale identities
+
+With `tailscale-client-id` empty, the action reads the `sub` of the job's
+GitHub OIDC token and picks one of two federated identities:
+
+| Subject starts with | Repositories | Client ID |
+| --- | --- | --- |
+| `repo:JasperHG90@8079803/` | created after 2026-07-15 | `T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL` |
+| anything else, such as `repo:JasperHG90/` | created before 2026-07-15 | `T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL` |
+
+The client IDs and audiences are not secrets. Tailscale accepts them only with
+a GitHub-signed token whose subject matches the identity.
 
 ### Outputs and environment
 
