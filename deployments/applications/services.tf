@@ -606,7 +606,7 @@ resource "nomad_job" "ov_dash" {
       # Built and released from JasperHG90/openviking_extensions: Actions ->
       # release, package ov-dash. Pinned rather than `latest`, which that
       # workflow moves on every release. arm64 confirmed in the manifest list.
-      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.5.0"
+      ov_dash_image = "ghcr.io/jasperhg90/ov-dash:0.7.0"
 
       ov_dash_public_origin  = "https://openviking.lab.orangecluster.nl"
       ov_dash_session_secret = vault_kv_secret_v2.ov_dash_config.path

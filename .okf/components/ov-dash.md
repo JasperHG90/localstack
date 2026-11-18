@@ -33,7 +33,7 @@ browser surface of its own
 is not in this repository. The image is built and released from
 `JasperHG90/openviking_extensions` and pinned as `ov_dash_image` in
 `nomad_job.ov_dash` (`deployments/applications/services.tf`), today
-`ghcr.io/jasperhg90/ov-dash:0.5.0`.
+`ghcr.io/jasperhg90/ov-dash:0.7.0`.
 
 ## Stopped once, for memory
 
