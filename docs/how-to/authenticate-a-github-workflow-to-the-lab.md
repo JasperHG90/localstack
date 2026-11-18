@@ -98,6 +98,8 @@ details. A run from another branch or workflow file fails at the login with
 
 ## Additional resources
 
+- [The `onboard-repo` skill](../../.claude/skills/onboard-repo/SKILL.md):
+  ask an agent to "onboard <repo>" and it runs these steps for you.
 - [GitHub Actions reference](../reference/github-actions.md): inputs,
   outputs and the Vault role.
 - [ADR 0027](../../.okf/decisions/0027-ci-reaches-the-lab-through-a-public-lab-auth-action-and-per-caller-vault-roles.md):

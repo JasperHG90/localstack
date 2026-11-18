@@ -33,6 +33,9 @@ tmp
 !/.claude/rules/how-to-skeleton.md
 !/.claude/rules/terraform-file-layout.md
 !/.claude/rules/slop-scan-for-docs.md
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/onboard-repo/
 
 # APM dependencies
 apm_modules/
