@@ -62,5 +62,5 @@ runs:
         echo "::add-mask::$AWS_SESSION_TOKEN"
         # Exported to this step's processes only, never to $GITHUB_ENV.
         export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
-        python3 "$SYNC" --bucket "$BUCKET" --prefix "$GITHUB_REPOSITORY" \
+        python3 -u "$SYNC" --bucket "$BUCKET" --prefix "$GITHUB_REPOSITORY" \
           --endpoint "$S3_ENDPOINT" --folders "$FOLDERS"

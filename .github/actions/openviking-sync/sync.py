@@ -5,7 +5,8 @@ path to its sha256. A run uploads files whose hash differs from it and deletes
 keys it lists whose file is gone, so the credential never needs to list the
 bucket. After any change it writes the manifest as the bucket now stands: a
 failed upload keeps its old entry and a failed delete keeps its entry, so the
-next run retries exactly those. Any failure exits non-zero.
+next run retries exactly those. It also writes it every CHECKPOINT uploads,
+so a run killed partway keeps its progress. Any failure exits non-zero.
 
 Standard library only; S3 calls go through the `aws` CLI on the runner.
 """
@@ -20,8 +21,12 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 MANIFEST = "_state/manifest.json"
-# The first sync of a repo uploads every file, one aws process each.
-WORKERS = 8
+# The first sync of a repo uploads every file, one aws process each, at about
+# two seconds a call over the tailnet.
+WORKERS = 32
+# Uploads between manifest writes, so a run the job timeout kills keeps what
+# it uploaded and the next run starts from there.
+CHECKPOINT = 50
 
 
 class S3:
@@ -75,6 +80,15 @@ def read_manifest(s3: S3, key: str, scratch: Path) -> dict[str, str]:
     sys.exit(f"reading {key} failed: {result.stderr.strip()}")
 
 
+def write_manifest(s3: S3, key: str, state: dict[str, str], scratch: Path) -> bool:
+    body = scratch / "new-manifest.json"
+    body.write_text(json.dumps(state, indent=1, sort_keys=True) + "\n")
+    result = s3.call("put-object", key, "--body", str(body))
+    if result.returncode != 0:
+        print(f"::error::writing the manifest failed: {result.stderr.strip()}")
+    return result.returncode == 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--bucket", required=True)
@@ -102,13 +116,15 @@ def main() -> int:
         state = dict(old)
         failed = 0
         with ThreadPoolExecutor(WORKERS) as pool:
-            for path, result in pool.map(upload, uploads):
+            for done, (path, result) in enumerate(pool.map(upload, uploads), 1):
                 if result.returncode == 0:
                     state[path] = new[path]
                     print(f"uploaded {prefix}{path}")
                 else:
                     failed += 1
                     print(f"::error::upload of {path} failed: {result.stderr.strip()}")
+                if done % CHECKPOINT == 0:
+                    write_manifest(s3, prefix + MANIFEST, state, Path(tmp))
             for path, result in pool.map(delete, deletes):
                 if result.returncode == 0:
                     del state[path]
@@ -118,13 +134,8 @@ def main() -> int:
                     print(f"::error::delete of {path} failed: {result.stderr.strip()}")
 
         print(f"{len(uploads)} to upload, {len(deletes)} to delete, {failed} failed")
-        if state != old:
-            body = Path(tmp) / "new-manifest.json"
-            body.write_text(json.dumps(state, indent=1, sort_keys=True) + "\n")
-            result = s3.call("put-object", prefix + MANIFEST, "--body", str(body))
-            if result.returncode != 0:
-                print(f"::error::writing the manifest failed: {result.stderr.strip()}")
-                failed += 1
+        if state != old and not write_manifest(s3, prefix + MANIFEST, state, Path(tmp)):
+            failed += 1
     return 1 if failed else 0
 
 

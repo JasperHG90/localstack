@@ -7,6 +7,7 @@ and the SeaweedFS IAM config are read the way GitHub and SeaweedFS read them.
 """
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -28,7 +29,9 @@ MANIFEST = PREFIX + "_state/manifest.json"
 
 # A stand-in for the three `aws s3api` calls sync.py makes. It appends one
 # JSON line per call to $AWS_STUB_LOG, keeps objects under $AWS_STUB_ROOT, and
-# fails any call listed in $AWS_STUB_FAIL as "<op> <key>" lines.
+# fails any call listed in $AWS_STUB_FAIL as "<op> <key>" lines. Writing the
+# key in $AWS_STUB_KILL_ON kills its whole process group, as a job timeout
+# kills the run.
 STUB = """#!{python}
 import json, os, shutil, sys
 from pathlib import Path
@@ -52,6 +55,8 @@ if op == "get-object":
 elif op == "put-object":
     obj.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(opt["--body"], obj)
+    if os.environ.get("AWS_STUB_KILL_ON") == key:
+        os.killpg(0, 9)
 elif op == "delete-object":
     obj.unlink(missing_ok=True)
 print("{{}}")
@@ -100,7 +105,9 @@ class Lab:
             self.git("add", *new)
         self.git("commit", "-q", "-m", "change")
 
-    def sync(self, fail: tuple[str, ...] = ()) -> subprocess.CompletedProcess[str]:
+    def sync(
+        self, fail: tuple[str, ...] = (), kill_on: str = ""
+    ) -> subprocess.CompletedProcess[str]:
         self.log.unlink(missing_ok=True)
         self.log.touch()
         return subprocess.run(
@@ -117,9 +124,12 @@ class Lab:
                 "docs .okf",
             ],
             cwd=self.repo,
-            env={**self.env, "AWS_STUB_FAIL": "\n".join(fail)},
+            env={**self.env, "AWS_STUB_FAIL": "\n".join(fail), "AWS_STUB_KILL_ON": kill_on},
             capture_output=True,
             text=True,
+            # Its own process group, so a stub kill stops the run and every
+            # upload still in flight, and nothing else.
+            start_new_session=True,
         )
 
     def calls(self, op: str) -> list[str]:
@@ -225,6 +235,32 @@ def test_failure_writes_only_what_happened(lab: Lab) -> None:
         lab.objects()
     )
     assert lab.manifest() == {p: lab.sha(p) for p in ("docs/a.md", ".okf/index.md")}
+
+
+def test_killed_run_keeps_its_progress(lab: Lab) -> None:
+    spec = importlib.util.spec_from_file_location("sync", SYNC)
+    assert spec and spec.loader
+    sync = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sync)
+    extra = [f"docs/bulk/{n:03}.md" for n in range(sync.CHECKPOINT + 10)]
+    for path in extra:
+        lab.write(path, f"{path}\n")
+    lab.commit("docs/bulk")
+    everything = ["docs/a.md", "docs/b.md", ".okf/index.md", *extra]
+
+    killed = lab.sync(kill_on=MANIFEST)
+    assert killed.returncode != 0
+    saved = lab.manifest()
+    assert len(saved) >= sync.CHECKPOINT, "no progress was saved before the kill"
+    assert len(saved) < len(everything), "the run finished; the kill came too late"
+    assert all(saved[p] == lab.sha(p) for p in saved)
+
+    retry = lab.sync()
+    assert retry.returncode == 0, retry.stderr
+    assert lab.calls("put-object") == sorted(
+        [PREFIX + p for p in everything if p not in saved] + [MANIFEST]
+    )
+    assert lab.manifest() == {p: lab.sha(p) for p in everything}
 
 
 def test_workflow_guard() -> None:
