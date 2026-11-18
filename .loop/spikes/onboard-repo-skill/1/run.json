@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "onboard-repo-skill",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/2e7fce49-b865-4028-af55-9a588a2debef/scratchpad/spike-apm/spike.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/2e7fce49-b865-4028-af55-9a588a2debef/scratchpad/spike-apm/spike.sh",
+      "copy": "files/spike.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "09c48a0a74f1c20ad23e7219fa4b6ff8d3dbe972",
+  "fingerprint": "cef0ba2876271075586d3a67fb370c1ba42bed4269709d06c61349fdc6bae370",
+  "started_at": "2026-11-18T14:41:37+00:00",
+  "finished_at": "2026-11-18T14:41:46+00:00",
+  "duration_seconds": 9.381,
+  "timeout_seconds": 400.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}

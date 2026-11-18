@@ -1,0 +1,54 @@
+=== apm install
+  [!] [jasperhg90/kmctl/apm/antigravity] Package targets [antigravity] do not 
+overlap authorized active targets; skipping
+  [!] [okf] OpenCode agent 'okf/bundle-weaver.md' has tools as str; OpenCode 
+requires a mapping of tool-name to boolean. OpenCode will reject this agent at 
+load time. Fix: rewrite the frontmatter as 'tools: {Read: true, Grep: true}'.
+  [!] [okf] OpenCode agent 'okf/bundle-weaver.md' has color='green'; OpenCode 
+requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 'info', 
+'primary', 'secondary', 'success', 'warning']. OpenCode will reject this agent 
+at load time. Fix: replace the color with a '#rgb' or '#rrggbb' hex literal or 
+one of the listed theme names.
+  [!] [okf] OpenCode agent 'okf/event-analyzer.md' has tools as str; OpenCode 
+requires a mapping of tool-name to boolean. OpenCode will reject this agent at 
+load time. Fix: rewrite the frontmatter as 'tools: {Read: true, Grep: true}'.
+  [!] [okf] OpenCode agent 'okf/event-analyzer.md' has color='blue'; OpenCode 
+requires a hex value (e.g. '#aabbcc') or one of ['accent', 'error', 'info', 
+'primary', 'secondary', 'success', 'warning']. OpenCode will reject this agent 
+at load time. Fix: replace the color with a '#rgb' or '#rrggbb' hex literal or 
+one of the listed theme names.
+  [!] Transitive package 'okf' declares self-defined MCP server 'bundle' 
+(registry: false). Re-declare it in your apm.yml or use --trust-transitive-mcp.
+  [i] Skipped inactive experimental resolver for target 'copilot-cowork' during 
+lockfile reconciliation.
+  [i] Skipped inactive experimental resolver for target 'copilot-app' during 
+lockfile reconciliation.
+[*] Installed 23 APM dependencies and 1 MCP server in 6.3s.
+apm install exit: 0
+AFTER apm install: .claude/skills/onboard-repo/SKILL.md intact
+AFTER apm install: .agents/skills/onboard-repo/SKILL.md intact
+AFTER apm install: skills in .claude/skills: 24
+=== apm install --frozen
+[>] Installing dependencies from apm.yml...
+[i] Trusting direct dependency MCP 'bundle' from 'kmctl'
+[!] Transitive package 'okf' declares self-defined MCP server 'bundle' 
+(registry: false). Re-declare it in your apm.yml or use --trust-transitive-mcp.
+[x] Failed to install APM dependencies: Found multiple package directories for 
+one dependency: /tmp/tmp.u0WWhkpqVs/apm_modules/JasperHG90, 
+/tmp/tmp.u0WWhkpqVs/apm_modules/jasperhg90. Inspect the duplicates under 
+apm_modules/, keep the intended package, and run 'apm install' again.
+[i] Run with --verbose for detailed diagnostics
+[x] Install failed after 0.5s.
+apm install --frozen exit: 1
+AFTER apm install --frozen: .claude/skills/onboard-repo/SKILL.md intact
+AFTER apm install --frozen: .agents/skills/onboard-repo/SKILL.md intact
+AFTER apm install --frozen: skills in .claude/skills: 24
+=== apm prune
+[>] Analyzing installed packages vs apm.yml...
+[+] No orphaned packages found. apm_modules/ is clean.
+apm prune exit: 0
+AFTER apm prune: .claude/skills/onboard-repo/SKILL.md intact
+AFTER apm prune: .agents/skills/onboard-repo/SKILL.md intact
+AFTER apm prune: skills in .claude/skills: 24
+--- git status of .claude/skills and .agents/skills after all steps
+?? .agents/skills/onboard-repo/
