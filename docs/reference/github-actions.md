@@ -144,8 +144,8 @@ credentials exist only inside its own step.
 | Manifest | Reads `<owner>/<repo>/_state/manifest.json`, a JSON map of repo-relative path to sha256. A missing one (`NoSuchKey`) is empty |
 | Upload | Every git-tracked file under `folders` whose sha256 differs, to `<owner>/<repo>/<path>` |
 | Delete | Every manifest path no longer tracked |
-| Write | The manifest as the bucket now stands, only when something changed. A failed upload keeps its old entry, a failed delete keeps its entry |
-| Exit | Non-zero if any upload, delete or manifest write failed |
+| Write | The manifest as the bucket now stands: every 50 uploads, so a run the job timeout kills resumes where it stopped, and at the end when something changed. A failed upload keeps its old entry, a failed delete keeps its entry |
+| Exit | Non-zero if any upload, delete or the final manifest write failed. A failed write every 50 uploads is reported and does not fail the run |
 
 ### What an ov_sync caller gets
 

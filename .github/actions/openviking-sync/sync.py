@@ -6,7 +6,8 @@ keys it lists whose file is gone, so the credential never needs to list the
 bucket. After any change it writes the manifest as the bucket now stands: a
 failed upload keeps its old entry and a failed delete keeps its entry, so the
 next run retries exactly those. It also writes it every CHECKPOINT uploads,
-so a run killed partway keeps its progress. Any failure exits non-zero.
+so a run killed partway keeps its progress. A failed checkpoint write is
+reported but does not fail the run. Any other failure exits non-zero.
 
 Standard library only; S3 calls go through the `aws` CLI on the runner.
 """
@@ -17,12 +18,11 @@ import json
 import subprocess
 import sys
 import tempfile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 MANIFEST = "_state/manifest.json"
-# The first sync of a repo uploads every file, one aws process each, at about
-# two seconds a call over the tailnet.
+# The first sync of a repo uploads every file, one aws process each.
 WORKERS = 32
 # Uploads between manifest writes, so a run the job timeout kills keeps what
 # it uploaded and the next run starts from there.
@@ -116,7 +116,11 @@ def main() -> int:
         state = dict(old)
         failed = 0
         with ThreadPoolExecutor(WORKERS) as pool:
-            for done, (path, result) in enumerate(pool.map(upload, uploads), 1):
+            # In completion order, so one slow upload does not hold back the
+            # checkpoints for the uploads that finished after it.
+            running = [pool.submit(upload, path) for path in uploads]
+            for done, future in enumerate(as_completed(running), 1):
+                path, result = future.result()
                 if result.returncode == 0:
                     state[path] = new[path]
                     print(f"uploaded {prefix}{path}")

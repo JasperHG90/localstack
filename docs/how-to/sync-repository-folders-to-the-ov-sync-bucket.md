@@ -115,7 +115,9 @@ gh run watch --repo JasperHG90/my-repo
 
 The sync step prints one `uploaded JasperHG90/my-repo/<path>` line per file
 and ends with `N to upload, 0 to delete, 0 failed`. A second run with no
-change prints `0 to upload, 0 to delete, 0 failed`. If the step fails with
+change prints `0 to upload, 0 to delete, 0 failed`. A large first sync that
+the job's `timeout-minutes` stops keeps what it uploaded, so run it again and
+it continues. If the step fails with
 `Vault refused identity token`, the caller has no `ov_sync = true` or Step 1
 was not applied.
 

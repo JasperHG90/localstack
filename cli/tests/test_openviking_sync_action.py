@@ -31,7 +31,7 @@ MANIFEST = PREFIX + "_state/manifest.json"
 # JSON line per call to $AWS_STUB_LOG, keeps objects under $AWS_STUB_ROOT, and
 # fails any call listed in $AWS_STUB_FAIL as "<op> <key>" lines. Writing the
 # key in $AWS_STUB_KILL_ON kills its whole process group, as a job timeout
-# kills the run.
+# kills the run. A key in $AWS_STUB_FAIL_ONCE fails its first put only.
 STUB = """#!{python}
 import json, os, shutil, sys
 from pathlib import Path
@@ -42,7 +42,14 @@ opt = {{argv[i]: argv[i + 1] for i in range(len(argv) - 1) if argv[i].startswith
 key = opt["--key"]
 with open(os.environ["AWS_STUB_LOG"], "a") as log:
     log.write(json.dumps({{"op": op, "key": key, "endpoint": opt.get("--endpoint-url")}}) + "\\n")
-if f"{{op}} {{key}}" in os.environ.get("AWS_STUB_FAIL", "").splitlines():
+marker = Path(os.environ["AWS_STUB_ROOT"]) / "failed-once"
+fail_once = op == "put-object" and key == os.environ.get("AWS_STUB_FAIL_ONCE")
+if f"{{op}} {{key}}" in os.environ.get("AWS_STUB_FAIL", "").splitlines() or (
+    fail_once and not marker.exists()
+):
+    if fail_once:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch()
     print(f"An error occurred (InternalError) when calling {{op}}", file=sys.stderr)
     sys.exit(254)
 obj = Path(os.environ["AWS_STUB_ROOT"]) / opt["--bucket"] / key
@@ -106,7 +113,7 @@ class Lab:
         self.git("commit", "-q", "-m", "change")
 
     def sync(
-        self, fail: tuple[str, ...] = (), kill_on: str = ""
+        self, fail: tuple[str, ...] = (), kill_on: str = "", fail_once: str = ""
     ) -> subprocess.CompletedProcess[str]:
         self.log.unlink(missing_ok=True)
         self.log.touch()
@@ -124,7 +131,12 @@ class Lab:
                 "docs .okf",
             ],
             cwd=self.repo,
-            env={**self.env, "AWS_STUB_FAIL": "\n".join(fail), "AWS_STUB_KILL_ON": kill_on},
+            env={
+                **self.env,
+                "AWS_STUB_FAIL": "\n".join(fail),
+                "AWS_STUB_KILL_ON": kill_on,
+                "AWS_STUB_FAIL_ONCE": fail_once,
+            },
             capture_output=True,
             text=True,
             # Its own process group, so a stub kill stops the run and every
@@ -237,7 +249,8 @@ def test_failure_writes_only_what_happened(lab: Lab) -> None:
     assert lab.manifest() == {p: lab.sha(p) for p in ("docs/a.md", ".okf/index.md")}
 
 
-def test_killed_run_keeps_its_progress(lab: Lab) -> None:
+def _bulk(lab: Lab) -> tuple[int, list[str]]:
+    """Commit more files than one checkpoint holds; return CHECKPOINT and every path."""
     spec = importlib.util.spec_from_file_location("sync", SYNC)
     assert spec and spec.loader
     sync = importlib.util.module_from_spec(spec)
@@ -246,12 +259,16 @@ def test_killed_run_keeps_its_progress(lab: Lab) -> None:
     for path in extra:
         lab.write(path, f"{path}\n")
     lab.commit("docs/bulk")
-    everything = ["docs/a.md", "docs/b.md", ".okf/index.md", *extra]
+    return sync.CHECKPOINT, ["docs/a.md", "docs/b.md", ".okf/index.md", *extra]
+
+
+def test_killed_run_keeps_its_progress(lab: Lab) -> None:
+    checkpoint, everything = _bulk(lab)
 
     killed = lab.sync(kill_on=MANIFEST)
     assert killed.returncode != 0
     saved = lab.manifest()
-    assert len(saved) >= sync.CHECKPOINT, "no progress was saved before the kill"
+    assert len(saved) >= checkpoint, "no progress was saved before the kill"
     assert len(saved) < len(everything), "the run finished; the kill came too late"
     assert all(saved[p] == lab.sha(p) for p in saved)
 
@@ -260,6 +277,14 @@ def test_killed_run_keeps_its_progress(lab: Lab) -> None:
     assert lab.calls("put-object") == sorted(
         [PREFIX + p for p in everything if p not in saved] + [MANIFEST]
     )
+    assert lab.manifest() == {p: lab.sha(p) for p in everything}
+
+
+def test_failed_checkpoint_does_not_fail_the_run(lab: Lab) -> None:
+    _, everything = _bulk(lab)
+    run = lab.sync(fail_once=MANIFEST)
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert "::error::writing the manifest failed" in run.stdout
     assert lab.manifest() == {p: lab.sha(p) for p in everything}
 
 
