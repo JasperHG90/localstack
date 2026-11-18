@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-18T14:43:20+00:00'
+  at: '2026-11-18T14:43:44+00:00'
 slug: onboard-repo-skill
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike onboard-repo-skill/3
@@ -24,7 +24,8 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note onboard-repo-skill 3`.
+APM 0.33.0 (`uvx --from apm-cli==0.33.0 apm`, as the justfile's `kmctl-install` and `kmctl-install-frozen` recipes call it) left an unlisted `.claude/skills/onboard-repo/SKILL.md` and its `.agents/skills/` copy byte-identical (sha256) after `apm install`, `apm install --frozen` and `apm prune`. Each install ran in its own fresh copy of the committed tree with no `apm_modules/`, and installed 23 dependencies with exit 0. `apm prune` reported "No orphaned packages found": it prunes `apm_modules/` only, not deployed skill folders. `.claude/skills` went from 23 to 24 entries, and no tracked skill file changed.
+APM only writes and removes the paths listed under `deployed_files` in `apm.lock.yaml`, so a folder it never deployed is left alone. This settles risk 1. Not covered: a skill named the same as an APM package's skill, which APM would overwrite. The repo has no `just install` recipe. The `apm.yml` header comment names one, but the real recipes are `kmctl-install` and `kmctl-install-frozen`. Their `kmctl plugin patch`, `cp` and `rm` steps were not run, and none of them touches `.claude/skills/`.
 
 ## Files
 
