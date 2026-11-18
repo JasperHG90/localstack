@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "The plan-then-apply step had no way to apply the plan it checked, because both apply recipes re-plan and prompt, and always_run makes every second plan differ.",
+      "anchor": "deployments/infrastructure/justfile:22",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "b224d5f0e49ecdf6ebbac304b7c5a24fd1ffd65713bbfa7ac0f2f8fa5cb201fb"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-18T14:47:33+00:00"
+}
