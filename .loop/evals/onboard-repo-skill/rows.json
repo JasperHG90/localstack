@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "the onboard-repo skill is tracked by git: .gitignore does not ignore .claude/skills/onboard-repo/SKILL.md, and its front matter has name onboard-repo and a description",
+      "fails_when": "git check-ignore matches the file, the file is missing, or the name or description is absent or different",
+      "command": "uv run --directory cli pytest tests/test_onboard_repo_skill.py::test_skill_is_tracked_and_named -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "every repository path the skill cites in backticks exists in the repository",
+      "fails_when": "a cited path does not exist",
+      "command": "uv run --directory cli pytest tests/test_onboard_repo_skill.py::test_cited_paths_exist -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "the caller workflow the skill prints uses only inputs the lab-auth action declares, passes no tailscale-client-id or tailscale-audience, sets environment lab and id-token write, and has no pull_request trigger",
+      "fails_when": "the workflow names an undeclared input, a Tailscale input, misses environment lab or id-token write, or triggers on pull_request or pull_request_target",
+      "command": "uv run --directory cli pytest tests/test_onboard_repo_skill.py::test_caller_workflow_template -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "the skill applies only a saved plan it checked: it calls terraform plan -out and terraform apply on that file, never just apply or a bare terraform apply, and stops for the operator on any change outside the expected list",
+      "fails_when": "the skill runs just apply, a terraform apply without a plan file, pipes yes, or applies without the stop-on-unexpected check",
+      "judgment": true
+    },
+    {
+      "id": "r5",
+      "behavior": "the skill covers every onboarding step: lab environment, vault_ci_callers entry, prefix map when syncing docs, the exact-list tests, both applies with a vault read check, commit through the loop, asking before push, and the pinned caller workflow; the how-to links to it",
+      "fails_when": "a step is missing or wrong, it pushes without asking, or the how-to does not link the skill",
+      "judgment": true
+    }
+  ]
+}
