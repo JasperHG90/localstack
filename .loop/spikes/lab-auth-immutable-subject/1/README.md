@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.2.2.dev1+gd84319696
-  at: '2026-11-18T13:10:15+00:00'
+  at: '2026-11-18T13:10:37+00:00'
 slug: lab-auth-immutable-subject
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike lab-auth-immutable-subject/1
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note lab-auth-immutable-subject 1`.
+Run 44310680589 in `JasperHG90/lab-auth-probe` (commit bacd152) passed both checks. In the `environment: lab` job, a composite bash step read `sub` from its OIDC token (`repo:JasperHG90@8079803/lab-auth-probe@1459171707:environment:lab`), printed `SUB_FORMAT=immutable`, and passed client `T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL` and its audience to `tailscale/github-action@v4` as step outputs. `tailscale up` worked on attempt 1, and the reach table was `OVERALL=PASS` (vault and openviking 200, s3 403, all five raw ports closed).
+The job with no environment (`sub` ending `:ref:refs/heads/main`) picked the same new credential and got a 403 at the token exchange, so the new credential admits only `:environment:lab`.
+This rules out both halves of the risk: the new credential admits an immutable-subject repo's lab job, and a composite step can read `sub` and choose the credential. Settles risk 1: yes.
+Limits: one repo and one run. The legacy-subject branch (old credential) did not run here, because this repo issues only immutable subjects.
 
 ## Files
 
