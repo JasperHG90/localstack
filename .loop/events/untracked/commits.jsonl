@@ -15,3 +15,5 @@
 {"at": "2026-10-20T17:08:28+00:00", "branch": "loop/ov-carry-over", "kind": "commit", "schema_version": "1.0", "sha": "7a6c72ce053a594ef3ae3fe09bc43bc2073a1678", "subject": "Merge branch 'main' into loop/ov-carry-over"}
 {"at": "2026-11-15T10:35:09+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "06d1e5f52e14c0403971e2f8ac089a1a3f9beb1b", "subject": "operator: manual commit"}
 {"at": "2026-11-16T07:53:12+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "e91580059937045b32a52baafe500d15947f24a0", "subject": "operator: manual commits"}
+{"ask": "j-20261118T180239+0000-ee999530", "at": "2026-11-18T18:44:43+00:00", "branch": "inline/ov-sync-checkpoint", "kind": "commit", "schema_version": "1.0", "sha": "9dc10193b9e311f32ec23e32f7bc65d171826a2b", "subject": "Save ov-sync progress during a run and upload 32 at a time"}
+{"ask": "j-20261118T180239+0000-ee999530", "at": "2026-11-18T18:45:17+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "7906fbeddd78f0ffc0ecca181be6d19a130b8f31", "subject": "Save ov-sync progress during a run and upload 32 at a time"}
