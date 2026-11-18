@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The caller workflow template passes `folders: docs` and filters on `docs/**` only. That overrides the openviking-sync action's default (`docs` and `.okf`) and differs from this repo's own `.github/workflows/openviking-sync.yaml`, and the skill never asks which folders to sync. A repository with a `.okf/` bundle, such as one using kmctl, gets it silently left out of OpenViking. Ask the operator which folders to sync. Drop `folders:` when the answer is the action's default, and build the `paths` filter from the same list.",
+      "anchor": ".claude/skills/onboard-repo/SKILL.md:146",
+      "category": "design",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "Step 5 says the push must come first because 'the action change must be on GitHub first'. Onboarding changes no action: the lab-auth and openviking-sync actions are already on origin/main. The real reasons to push first are that the pinned SHA must exist on GitHub and main should match what was applied. Reword the sentence.",
+      "anchor": ".claude/skills/onboard-repo/SKILL.md:133",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "test_default_callers compares a list in Terraform's map order, which sorts by key. The skill says 'add the new caller' without saying that the entry goes in key order, so a repo whose name sorts before `loop-engineering-harness` fails the test when appended. The step 3.4 test run catches it, so this costs a retry and nothing more. Say 'in key order'.",
+      "anchor": ".claude/skills/onboard-repo/SKILL.md:68",
+      "category": "nit",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "eabd7f93732a338b9a8a05e4953c5f9251f05e44373f195a03e6a4399f5a2020",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-18T14:54:32+00:00"
+}
