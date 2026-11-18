@@ -3,7 +3,7 @@
   "slug": "onboard-repo-skill",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "ff57a54408a41ce5e45f7b6f817547120bec53adf1dc0a48c2b6101a5b9a82cd",
-    "started_at": "2026-11-18T14:44:34+00:00",
+    "n": 2,
+    "binds": "b224d5f0e49ecdf6ebbac304b7c5a24fd1ffd65713bbfa7ac0f2f8fa5cb201fb",
+    "started_at": "2026-11-18T14:46:33+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "ff57a54408a41ce5e45f7b6f817547120bec53adf1dc0a48c2b6101a5b9a82cd",
+  "plan_hash": "b224d5f0e49ecdf6ebbac304b7c5a24fd1ffd65713bbfa7ac0f2f8fa5cb201fb",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T14:46:32+00:00"
+  "at": "2026-11-18T14:46:33+00:00"
 }

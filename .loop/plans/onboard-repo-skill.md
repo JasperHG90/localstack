@@ -34,10 +34,18 @@ runs with a repository name and does the whole job:
    `ov_sync` on when the repository syncs docs), and when it syncs docs the
    `prefixes` line in `deployments/applications/services.tf`. It updates the
    exact lists in `cli/tests/test_lab_auth_action.py` to match.
-3. Plans both roots, names what each plan should hold (three Vault resources,
-   the `nomad_job.seaweedfs` IAM change, the `null_resource.firewall`
-   `always_run` replacements, the consumer's prefix map), stops on anything
-   else, applies, and checks the role with `vault read`.
+3. For each root, infrastructure first, saves a plan with
+   `terraform plan -var-file=./vars/prod.tfvars -out <scratch file>` after
+   `eval "$(uv run localstack env)"`, calling terraform directly because the
+   `just apply` recipes in `deployments/infrastructure/justfile` and
+   `deployments/applications/justfile` re-plan and wait for `yes`. It names
+   what each plan should hold (three Vault resources, the
+   `nomad_job.seaweedfs` IAM change, the `null_resource.firewall`
+   `always_run` replacements, the consumer's prefix map), stops and asks the
+   operator on anything else, then runs `terraform apply <that file>`, so
+   what it applies is exactly what it checked. It checks the role with
+   `vault read`, and waits for SeaweedFS's S3 port before the applications
+   plan, since the infrastructure apply restarts that job.
 4. Commits through the loop, asks the operator before pushing, and prints the
    caller workflow, pinned to the pushed commit, with no Tailscale inputs
    (ADR 0031).
