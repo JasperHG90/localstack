@@ -1,0 +1,48 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Failed
+- hook id: ruff
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  E501 Line too long (106 > 100)
+    --> cli/tests/test_openviking_sync_action.py:55:101
+     |
+  53 |             log.write(json.dumps({{"op": "put-object", "key": key}}) + "\\n")
+  54 |         if f"put-object {{key}}" in failing:
+  55 |             print(f"upload failed: {{file}} to s3://{{bucket}}/{{key}} An error occurred (InternalError)",
+     |                                                                                                     ^^^^^^
+  56 |                   file=sys.stderr)
+  57 |             status = 1
+     |
+
+  Found 1 error.
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  All checks passed!
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Passed
+OpenViking config (settings that fail silently)..........................Passed
+ov-sync-consumer (go vet, go test).......................................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
