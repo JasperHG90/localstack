@@ -19,8 +19,8 @@
       "name": "cli_tests",
       "kind": "gate",
       "command": "uv run --directory cli pytest",
-      "exit": 1,
-      "passed": false,
+      "exit": 0,
+      "passed": true,
       "tests_passed": null,
       "note": null,
       "input_fingerprint": null,
@@ -28,8 +28,8 @@
       "cached_from": null
     }
   ],
-  "green": false,
-  "at": "2026-11-18T18:05:23+00:00",
+  "green": true,
+  "at": "2026-11-18T18:44:34+00:00",
   "commit": null,
   "by": "process:loopctl/2.2.2.dev1+gd84319696"
 }
