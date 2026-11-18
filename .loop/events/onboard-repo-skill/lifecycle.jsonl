@@ -22,3 +22,4 @@
 {"at": "2026-11-18T15:00:47+00:00", "binds": "a47e7399f88fea61b34f3a17e2aed463b063ddfb2ab908c3d164656a40803e50", "kind": "round-start", "n": 3, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "5dcad266522f5f74730281cc2359accc2010abd4"}
 {"at": "2026-11-18T15:02:53+00:00", "dispatched_at": "2026-11-18T15:00:47+00:00", "kind": "round-close", "n": 3, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-11-18T15:02:43+00:00"}}
 {"at": "2026-11-18T15:03:03+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "4619abc1264f2e1f414ceddc5584176f16cb5b67"}
+{"at": "2026-11-18T15:05:04+00:00", "branch": "loop/onboard-repo-skill", "kind": "land", "schema_version": "1.0", "sha": "a877706f7698e7bd01ef4db2e56594fa8652bbb6"}
