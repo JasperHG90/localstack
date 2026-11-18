@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "Step 3 says the skill plans both roots, checks each plan against a known list, stops on anything else, then applies. The repo's recipes cannot carry that check through to the apply. `deployments/applications/justfile` has no `plan` recipe. Both `apply` recipes run a bare `terraform apply`, which plans again and waits for a `yes` on stdin. An agent's shell has no terminal, so the apply either cancels or the agent pipes `yes` and approves a new plan nobody checked. `null_resource.firewall` has `always_run = timestamp()`, so the two plans never match exactly. The plan must say how the checked plan becomes the applied one: save it with `terraform plan -out` and apply that file (calling terraform with the recipe's `localstack env` and `-var-file=./vars/prod.tfvars`, since the recipes take no `-out`), or have the operator run the apply. Earlier tickets (ci-tailscale-access, bifrost-router-priorities) left applies to the operator. As written, \"does the whole job\" depends on an apply step that does not work.",
+      "anchor": ".loop/plans/onboard-repo-skill.md (Intent, step 3); deployments/infrastructure/justfile:20; deployments/applications/justfile:13",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "ff57a54408a41ce5e45f7b6f817547120bec53adf1dc0a48c2b6101a5b9a82cd"
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-18T14:46:07+00:00"
+}
