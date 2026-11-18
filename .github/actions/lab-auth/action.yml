@@ -18,11 +18,14 @@ inputs:
     description: Tailscale tags the runner joins with.
     default: tag:ci
   tailscale-client-id:
-    description: Client ID of the Tailscale federated identity. Not a secret.
-    default: T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+    description: >-
+      Client ID of a Tailscale federated identity. Not a secret. Leave empty to
+      pick the identity that matches the job's OIDC subject format.
+    default: ''
   tailscale-audience:
-    description: Audience the Tailscale federated identity expects.
-    default: api.tailscale.com/T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+    description: >-
+      Audience that identity expects. Leave empty for api.tailscale.com/<client ID>.
+    default: ''
 
 outputs:
   vault-addr:
@@ -35,12 +38,44 @@ outputs:
 runs:
   using: composite
   steps:
+    # Repositories created after 2026-07-15 get GitHub's immutable OIDC
+    # subject (repo:JasperHG90@8079803/...), which the older identity's
+    # subject (repo:JasperHG90/*:environment:lab) cannot match, so each
+    # format has its own identity. See ADR 0031.
+    - id: tailscale-identity
+      shell: bash
+      env:
+        CLIENT_ID: ${{ inputs.tailscale-client-id }}
+        AUDIENCE: ${{ inputs.tailscale-audience }}
+      run: |
+        set -euo pipefail
+        if [ -z "$CLIENT_ID" ]; then
+          : "${ACTIONS_ID_TOKEN_REQUEST_URL:?the calling job needs permissions: id-token: write}"
+          # An audience nothing trusts: this token is only read, never sent.
+          jwt=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=lab-auth-subject-only" | jq -er '.value // empty') || {
+            echo "::error::GitHub returned no OIDC token to read the subject from"
+            exit 1
+          }
+          echo "::add-mask::$jwt"
+          payload=$(cut -d. -f2 <<<"$jwt" | tr '_-' '/+')
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+          sub=$(base64 -d <<<"$payload" | jq -er '.sub')
+          if [[ "$sub" == repo:JasperHG90@8079803/* ]]; then
+            CLIENT_ID=T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL
+          else
+            CLIENT_ID=T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+          fi
+        fi
+        echo "client-id=$CLIENT_ID" >> "$GITHUB_OUTPUT"
+        echo "audience=${AUDIENCE:-api.tailscale.com/$CLIENT_ID}" >> "$GITHUB_OUTPUT"
+
     # v4 accepts subnet routes by itself, which reaching the lab needs. No
     # `args`: repeating that flag there makes `tailscale up` fail.
     - uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4
       with:
-        oauth-client-id: ${{ inputs.tailscale-client-id }}
-        audience: ${{ inputs.tailscale-audience }}
+        oauth-client-id: ${{ steps.tailscale-identity.outputs.client-id }}
+        audience: ${{ steps.tailscale-identity.outputs.audience }}
         tags: ${{ inputs.tags }}
 
     - id: login

@@ -155,5 +155,12 @@ variable "vault_ci_callers" {
       workflow    = "openviking-sync.yaml"
       ov_sync     = true
     }
+    loop-engineering-harness-openviking-sync = {
+      repository  = "JasperHG90/loop-engineering-harness"
+      ref         = "refs/heads/main"
+      environment = "lab"
+      workflow    = "openviking-sync.yaml"
+      ov_sync     = true
+    }
   }
 }

@@ -6,6 +6,7 @@ entry in `var.vault_ci_callers`. Terraform renders those roles offline here, so
 the assertions read the claims Vault would be handed, not the source text.
 """
 
+import base64
 import json
 import re
 import shutil
@@ -28,8 +29,9 @@ ROLE_HEADER = 'resource "vault_jwt_auth_backend_role" "github_ci" {'
 VARIABLE_HEADER = 'variable "vault_ci_callers" {'
 OV_SYNC_POLICY_HEADER = 'resource "vault_policy" "ci_ov_sync" {'
 CLAIMS = ("repository", "ref", "environment", "workflow_ref")
-CLIENT_ID = "T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL"
-TS_AUDIENCE = f"api.tailscale.com/{CLIENT_ID}"
+LEGACY_CLIENT_ID = "T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL"
+IMMUTABLE_CLIENT_ID = "T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL"
+APPLICATIONS = REPO_ROOT / "deployments" / "applications"
 
 
 def _block(text: str, header: str) -> str:
@@ -173,8 +175,8 @@ def test_action_shape() -> None:
     assert not [n for n in inputs if re.search(r"secret|key|token|password", n)], inputs
     assert "--accept-routes" not in text
     assert inputs["vault-role"]["required"] is True
-    assert inputs["tailscale-client-id"]["default"] == CLIENT_ID
-    assert inputs["tailscale-audience"]["default"] == TS_AUDIENCE
+    assert inputs["tailscale-client-id"]["default"] == ""
+    assert inputs["tailscale-audience"]["default"] == ""
     assert inputs["tags"]["default"] == "tag:ci"
 
     steps = action["runs"]["steps"]
@@ -187,14 +189,13 @@ def test_action_shape() -> None:
     with_ = join[0]["with"]
     assert with_.get("args", "") == ""
     assert {k: v for k, v in with_.items() if k != "args"} == {
-        "oauth-client-id": "${{ inputs.tailscale-client-id }}",
-        "audience": "${{ inputs.tailscale-audience }}",
+        "oauth-client-id": "${{ steps.tailscale-identity.outputs.client-id }}",
+        "audience": "${{ steps.tailscale-identity.outputs.audience }}",
         "tags": "${{ inputs.tags }}",
     }
 
-    logins = [s for s in steps if "ACTIONS_ID_TOKEN_REQUEST_URL" in s.get("run", "")]
-    assert len(logins) == 1
-    login = logins[0]
+    assert steps.index(_identity_step()) < steps.index(join[0])
+    login = next(s for s in steps if s.get("id") == "login")
     script = login["run"]
     assert re.findall(r"audience=([^\"'&\s]+)", script) == ["vault.io"]
     assert login["env"]["VAULT_MOUNT"] == "${{ inputs.vault-mount }}"
@@ -227,6 +228,13 @@ def test_default_callers(rendered: dict[str, Any]) -> None:
         },
         {
             "repository": "JasperHG90/localstack",
+            "ref": "refs/heads/main",
+            "environment": "lab",
+            "workflow": "openviking-sync.yaml",
+            "ov_sync": True,
+        },
+        {
+            "repository": "JasperHG90/loop-engineering-harness",
             "ref": "refs/heads/main",
             "environment": "lab",
             "workflow": "openviking-sync.yaml",
@@ -317,3 +325,110 @@ def test_login_fails_on_missing_oidc_value(tmp_path: Path) -> None:
     assert not vault_called.exists()
     assert "::add-mask::null" not in result.stdout
     assert re.search(r"::error::.*OIDC token", result.stdout), result.stdout + result.stderr
+
+
+def _identity_step() -> dict[str, Any]:
+    action = yaml.safe_load(ACTION.read_text())
+    return next(s for s in action["runs"]["steps"] if s.get("id") == "tailscale-identity")
+
+
+def _jwt(sub: str) -> str:
+    def part(claims: dict[str, str]) -> str:
+        raw = base64.urlsafe_b64encode(json.dumps(claims).encode()).decode()
+        return raw.rstrip("=")
+
+    return f"{part({'alg': 'RS256'})}.{part({'sub': sub})}.sig"
+
+
+def _run_identity_step(
+    tmp_path: Path, sub: str, client_id: str = "", audience: str = ""
+) -> tuple[subprocess.CompletedProcess[str], dict[str, str], bool]:
+    script = tmp_path / "identity.sh"
+    script.write_text(_identity_step()["run"])
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    called = tmp_path / "curl-called"
+    _stub(bin_dir, "curl", f"touch {called}\necho '{json.dumps({'value': _jwt(sub)})}'")
+    output = tmp_path / "out"
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/local/bin",
+            "ACTIONS_ID_TOKEN_REQUEST_URL": "https://oidc.example/token?x=1",
+            "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "t",
+            "CLIENT_ID": client_id,
+            "AUDIENCE": audience,
+            "GITHUB_OUTPUT": str(output),
+        },
+    )
+    outputs = dict(
+        line.split("=", 1) for line in (output.read_text().splitlines() if output.exists() else [])
+    )
+    return result, outputs, called.exists()
+
+
+@pytest.mark.parametrize(
+    ("sub", "client_id"),
+    [
+        (
+            "repo:JasperHG90@8079803/loop-engineering-harness@1405517573:environment:lab",
+            IMMUTABLE_CLIENT_ID,
+        ),
+        ("repo:JasperHG90/localstack:environment:lab", LEGACY_CLIENT_ID),
+    ],
+)
+def test_action_picks_credential_by_subject(tmp_path: Path, sub: str, client_id: str) -> None:
+    if shutil.which("jq") is None:
+        pytest.fail("jq is not on PATH; the check cannot run")
+    result, outputs, _ = _run_identity_step(tmp_path, sub)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert outputs == {"client-id": client_id, "audience": f"api.tailscale.com/{client_id}"}
+    assert "audience=vault.io" not in _identity_step()["run"]
+
+
+@pytest.mark.parametrize(
+    "sub",
+    [
+        "repo:JasperHG90@8079803/loop-engineering-harness@1405517573:environment:lab",
+        "repo:JasperHG90/localstack:environment:lab",
+    ],
+)
+def test_explicit_tailscale_inputs_override(tmp_path: Path, sub: str) -> None:
+    result, outputs, called = _run_identity_step(
+        tmp_path, sub, client_id="explicit-client", audience="explicit-audience"
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert outputs == {"client-id": "explicit-client", "audience": "explicit-audience"}
+    assert not called, "the step fetched a token although both inputs were given"
+
+
+def test_loop_engineering_harness_caller(rendered: dict[str, Any]) -> None:
+    name = "loop-engineering-harness-openviking-sync"
+    assert rendered["callers"][name]["ov_sync"] is True
+    assert rendered["roles"][name]["bound_claims"] == {
+        "repository": "JasperHG90/loop-engineering-harness",
+        "ref": "refs/heads/main",
+        "environment": "lab",
+        "workflow_ref": (
+            "JasperHG90/loop-engineering-harness/.github/workflows/"
+            "openviking-sync.yaml@refs/heads/main"
+        ),
+    }
+
+
+def test_ov_sync_prefix_map() -> None:
+    text = (APPLICATIONS / "services.tf").read_text()
+    block = re.search(r"prefixes\s*=\s*jsonencode\(\{(.*?)\}\)", text, re.S)
+    assert block, "no prefixes map in deployments/applications/services.tf"
+    pairs = dict(re.findall(r'"([^"]+)"\s*=\s*"([^"]+)"', block.group(1)))
+    assert pairs == {
+        "JasperHG90/localstack/": "viking://user/jasper/resources/projects/localstack/",
+        "JasperHG90/loop-engineering-harness/": (
+            "viking://user/jasper/resources/projects/loop-engineering-harness/"
+        ),
+    }

@@ -163,3 +163,7 @@
 - Added `decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev` with `kmctl new decision`.
 - Added `decisions/0030-ov-sync-stores-images-in-openviking-per-file-folders` with `kmctl new decision`.
 - Corrected `decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev` and updated `components/bifrost`: router routing rules at priorities 10 to 13, after the hand-made Claude Code rules at 0 to 3.
+
+## 2026-11-18
+
+- Added `decisions/0031-the-lab-auth-action-picks-the-tailscale-identity-from-the-oidc-subject-format` with `kmctl new decision`.
