@@ -1,0 +1,40 @@
+name: join-tailnet
+description: Join the lab tailnet as an ephemeral tag:ci node via federated identity, picking the credential by OIDC sub format (spike for lab-auth-immutable-subject).
+inputs:
+  tags:
+    default: tag:ci
+  args:
+    description: Extra tailscale up flags. v4 already passes --accept-routes; repeating it fails.
+    default: ''
+runs:
+  using: composite
+  steps:
+    - id: cred
+      shell: bash
+      run: |
+        set -euo pipefail
+        token=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=probe-sub-only" | jq -r .value)
+        payload=$(cut -d. -f2 <<<"$token" | tr '_-' '/+')
+        while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+        sub=$(base64 -d <<<"$payload" | jq -r .sub)
+        echo "SUB=$sub"
+        if [[ "$sub" == repo:JasperHG90@8079803/* ]]; then
+          echo "SUB_FORMAT=immutable"
+          client=T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL
+        else
+          echo "SUB_FORMAT=legacy"
+          client=T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL
+        fi
+        echo "CLIENT=$client"
+        echo "client-id=$client" >> "$GITHUB_OUTPUT"
+        echo "audience=api.tailscale.com/$client" >> "$GITHUB_OUTPUT"
+    - uses: tailscale/github-action@v4
+      with:
+        oauth-client-id: ${{ steps.cred.outputs.client-id }}
+        audience: ${{ steps.cred.outputs.audience }}
+        tags: ${{ inputs.tags }}
+        args: ${{ inputs.args }}
+        hostname: ci-probe-${{ github.run_id }}-${{ github.job }}
+        retry: '1'
+        timeout: 1m

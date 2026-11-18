@@ -1,0 +1,30 @@
+run 44310680589 head bacd152576513cd6f992480c7b116e5a53b6cabc
+with-env: success; Set up job=success, Run actions/checkout@v4=success, Run ./.github/actions/join=success, reach checks=success, Post Run ./.github/actions/join=success, Post Run actions/checkout@v4=success, Complete job=success
+no-env: failure; Set up job=success, Run actions/checkout@v4=success, Run ./.github/actions/join=failure, Run echo "JOINED_WITHOUT_ENV"=skipped, Post Run ./.github/actions/join=success, Post Run actions/checkout@v4=success, Complete job=success
+--- with-env credential pick and join output
+SUB=repo:JasperHG90@8079803/lab-auth-probe@1459171707:environment:lab
+SUB_FORMAT=immutable
+CLIENT=T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL
+▶️ tailscale up
+✅ Tailscale up command completed successfully on attempt 1
+✅ Successfully logged out of Tailscale
+--- no-env credential pick and join output
+SUB=repo:JasperHG90@8079803/lab-auth-probe@1459171707:ref:refs/heads/main
+SUB_FORMAT=immutable
+CLIENT=T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL
+▶️ tailscale up
+failed to exchange JWT for access token: token exchange failed with status 403: {"message":"Unauthorized. Visit https://login.tailscale.com/admin/settings/trust-credentials/view/T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL for details"}
+##[warning]Tailscale up attempt 1 failed: sudo failed with exit code 1
+✅ Successfully logged out of Tailscale
+with-env sub format: immutable (want immutable); with-env joined: yes (want yes); no-env joined: no (want no)
+--- reach table (informational)
+===== RESULT TABLE =====
+PASS | reach  | vault | http 200
+PASS | reach  | openviking | http 200
+PASS | reach  | s3 | http 403
+PASS | blocked | ssh 192.168.2.30:22 | closed/timeout
+PASS | blocked | vault-raw 192.168.2.30:8200 | closed/timeout
+PASS | blocked | ov-raw 192.168.2.50:1933 | closed/timeout
+PASS | blocked | s3-raw 192.168.2.29:8333 | closed/timeout
+PASS | blocked | firebat-ts 100.117.172.3:8200 | closed/timeout
+OVERALL=PASS

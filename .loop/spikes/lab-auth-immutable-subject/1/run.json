@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "slug": "lab-auth-immutable-subject",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/2e7fce49-b865-4028-af55-9a588a2debef/scratchpad/spike-lais/check_run.sh 44310680589",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/2e7fce49-b865-4028-af55-9a588a2debef/scratchpad/spike-lais/check_run.sh",
+      "copy": "files/check_run.sh"
+    },
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/2e7fce49-b865-4028-af55-9a588a2debef/scratchpad/spike-lais/probe/.github/actions/join/action.yml",
+      "copy": "files/action.yml"
+    }
+  ],
+  "where": "worktree",
+  "head": "07097478b2a2d9500b710e2c53b453d7a3a8d135",
+  "fingerprint": "4b5578b6c536e43d6b378285ad7a1c98deff590c6c914621f9e8593e49ef7966",
+  "started_at": "2026-11-18T13:10:06+00:00",
+  "finished_at": "2026-11-18T13:10:14+00:00",
+  "duration_seconds": 8.009,
+  "timeout_seconds": 120.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "moved_from": null
+}
