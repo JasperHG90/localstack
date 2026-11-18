@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "slug": "onboard-repo-skill",
-  "stage": "ready",
-  "attempts": 0,
+  "stage": "building",
+  "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
@@ -17,8 +17,8 @@
   "closed_outside": false,
   "dropped": false,
   "archived": false,
-  "worktree": null,
-  "branch": null,
+  "worktree": "/home/vscode/workspace.worktrees/onboard-repo-skill",
+  "branch": "loop/onboard-repo-skill",
   "stamps": [],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/planner",
@@ -106,8 +106,14 @@
       "to": "ready",
       "at": "2026-11-18T14:47:55+00:00",
       "by": "advance"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-11-18T14:47:58+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T14:47:56+00:00"
+  "at": "2026-11-18T14:47:58+00:00"
 }
