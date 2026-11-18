@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "the lab-auth action reads the job's OIDC sub and hands tailscale/github-action the new credential (client T4Y1pq366F11CNTRL-kysCUqvnvH11CNTRL) for a repo:JasperHG90@8079803/ subject and the old one (client T4Y1pq366F11CNTRL-kcbC29ubym11CNTRL) for a repo:JasperHG90/ subject",
+      "fails_when": "either subject format gets the other format's client ID or audience, or the step exits nonzero for a valid token",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_action_picks_credential_by_subject -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "a caller that passes tailscale-client-id and tailscale-audience gets exactly those values, whatever its subject format",
+      "fails_when": "an explicit input is replaced by the picked credential",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_explicit_tailscale_inputs_override -q"
+    },
+    {
+      "id": "r3",
+      "behavior": "vault_ci_callers holds loop-engineering-harness-openviking-sync, and its rendered jwt-github role binds repository JasperHG90/loop-engineering-harness, ref refs/heads/main, environment lab and workflow_ref JasperHG90/loop-engineering-harness/.github/workflows/openviking-sync.yaml@refs/heads/main, with ov_sync on",
+      "fails_when": "the entry is missing, any bound claim differs, or ov_sync is off",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_loop_engineering_harness_caller -q"
+    },
+    {
+      "id": "r4",
+      "behavior": "the ov-sync consumer's prefix map sends JasperHG90/loop-engineering-harness/ to viking://user/jasper/resources/projects/loop-engineering-harness/ and keeps the localstack entry",
+      "fails_when": "the harness prefix is missing or maps elsewhere, or the localstack entry changed",
+      "command": "uv run --directory cli pytest tests/test_lab_auth_action.py::test_ov_sync_prefix_map -q"
+    },
+    {
+      "id": "r5",
+      "behavior": "the how-to no longer tells the reader to create a second Tailscale identity or pass Tailscale inputs, the reference names how the action picks the credential, and a new decision record amends ADR 0027's second-identity consequence without editing ADR 0027",
+      "fails_when": "a doc still instructs creating the identity or passing the inputs, the reference omits the picking rule, or ADR 0027's text changed",
+      "judgment": true
+    },
+    {
+      "id": "r6",
+      "behavior": "both Terraform roots are applied, and vault read auth/jwt-github/role/loop-engineering-harness-openviking-sync shows all four bound claims",
+      "fails_when": "either apply was not run or failed, or the role is absent from Vault",
+      "judgment": true
+    }
+  ]
+}
