@@ -3,7 +3,7 @@
   "slug": "lab-auth-immutable-subject",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "c2faff66473d80f500a7b081fcad153b5f7a8d40c32cb5d204cfd74ff41dc921",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "a7f98b7d2f2378dafa9aa805774961fcc2534ad66fd1f83e9e3e00b505ae4442",
+    "started_at": "2026-11-18T13:11:16+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "a7f98b7d2f2378dafa9aa805774961fcc2534ad66fd1f83e9e3e00b505ae4442",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T13:11:04+00:00"
+  "at": "2026-11-18T13:11:16+00:00"
 }
