@@ -1,0 +1,1 @@
+{"ask":"Make the lab-auth action pick the right Tailscale credential (old or immutable OIDC subject) automatically, and create the Vault role and ov-sync prefix mapping for JasperHG90/loop-engineering-harness, then apply. Operator: 'Yeah do it.'"}
