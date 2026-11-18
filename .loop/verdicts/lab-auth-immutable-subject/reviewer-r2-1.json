@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the CI bullet in .okf/summary.md sat under Open gaps after its only gap was removed",
+      "anchor": ".okf/summary.md:88",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "1393c11268f4e6490744a4d83093ab63ee726bfc9efc6f5a792f48e97c1ace0b",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-18T13:33:29+00:00"
+}
