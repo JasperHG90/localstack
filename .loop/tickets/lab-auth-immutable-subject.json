@@ -20,7 +20,8 @@
   "worktree": "/home/vscode/workspace.worktrees/lab-auth-immutable-subject",
   "branch": "loop/lab-auth-immutable-subject",
   "stamps": [
-    "8492c94ac04c925f19feee05e7e9863e4219c46e8386d1c33f0c401b9743368b"
+    "8492c94ac04c925f19feee05e7e9863e4219c46e8386d1c33f0c401b9743368b",
+    "1393c11268f4e6490744a4d83093ab63ee726bfc9efc6f5a792f48e97c1ace0b"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/planner",
@@ -136,5 +137,5 @@
     }
   ],
   "by": "process:loopctl/2.2.2.dev1+gd84319696",
-  "at": "2026-11-18T13:30:46+00:00"
+  "at": "2026-11-18T13:32:59+00:00"
 }
