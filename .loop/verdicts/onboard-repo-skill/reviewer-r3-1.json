@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "the caller template hard-coded folders docs and a docs/**-only paths filter, dropping .okf",
+      "anchor": ".claude/skills/onboard-repo/SKILL.md:17",
+      "category": "design",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the skill gave a false reason for pushing before handing over the workflow",
+      "anchor": ".claude/skills/onboard-repo/SKILL.md:141",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "resolved",
+      "claim": "the order of the exact caller list in test_default_callers was not stated",
+      "anchor": ".claude/skills/onboard-repo/SKILL.md:70",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "a47e7399f88fea61b34f3a17e2aed463b063ddfb2ab908c3d164656a40803e50",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.2.2.dev1+gd84319696",
+  "at": "2026-11-18T15:02:43+00:00"
+}
