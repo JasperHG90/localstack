@@ -27,8 +27,10 @@ BUCKET = "ov-sync"
 PREFIX = "JasperHG90/localstack/"
 MANIFEST = PREFIX + "_state/manifest.json"
 
-# A stand-in for the three `aws s3api` calls sync.py makes. It appends one
-# JSON line per call to $AWS_STUB_LOG, keeps objects under $AWS_STUB_ROOT, and
+# A stand-in for the `aws s3api` calls and the `aws s3 cp --recursive` upload
+# sync.py makes. It appends one JSON line per object call to $AWS_STUB_LOG
+# (a `cp` line per upload process, then a put-object line per file), keeps
+# objects under $AWS_STUB_ROOT, and
 # fails any call listed in $AWS_STUB_FAIL as "<op> <key>" lines. Writing the
 # key in $AWS_STUB_KILL_ON kills its whole process group, as a job timeout
 # kills the run. A key in $AWS_STUB_FAIL_ONCE fails its first put only.
@@ -37,6 +39,31 @@ import json, os, shutil, sys
 from pathlib import Path
 
 argv = sys.argv[1:]
+log_path = os.environ["AWS_STUB_LOG"]
+if "cp" in argv:
+    src, dst = argv[argv.index("cp") + 1], argv[argv.index("cp") + 2]
+    bucket, _, prefix = dst.removeprefix("s3://").partition("/")
+    with open(log_path, "a") as log:
+        config = Path(os.environ["AWS_CONFIG_FILE"]).read_text()
+        endpoint = argv[argv.index("--endpoint-url") + 1]
+        row = {{"op": "cp", "key": prefix, "endpoint": endpoint, "config": config}}
+        log.write(json.dumps(row) + "\\n")
+    failing = os.environ.get("AWS_STUB_FAIL", "").splitlines()
+    status = 0
+    for file in sorted(p for p in Path(src).rglob("*") if p.is_file()):
+        key = prefix + file.relative_to(src).as_posix()
+        with open(log_path, "a") as log:
+            log.write(json.dumps({{"op": "put-object", "key": key}}) + "\\n")
+        if f"put-object {{key}}" in failing:
+            print(f"upload failed: {{file}} to s3://{{bucket}}/{{key}} "
+                  "An error occurred (InternalError)", file=sys.stderr)
+            status = 1
+            continue
+        obj = Path(os.environ["AWS_STUB_ROOT"]) / bucket / key
+        obj.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(file, obj)
+        print(f"upload: {{file}} to s3://{{bucket}}/{{key}}")
+    sys.exit(status)
 op = argv[argv.index("s3api") + 1]
 opt = {{argv[i]: argv[i + 1] for i in range(len(argv) - 1) if argv[i].startswith("--")}}
 key = opt["--key"]
@@ -285,6 +312,20 @@ def test_failed_checkpoint_does_not_fail_the_run(lab: Lab) -> None:
     run = lab.sync(fail_once=MANIFEST)
     assert run.returncode == 0, run.stdout + run.stderr
     assert "::error::writing the manifest failed" in run.stdout
+    assert lab.manifest() == {p: lab.sha(p) for p in everything}
+
+
+def test_one_upload_process_per_checkpoint(lab: Lab) -> None:
+    checkpoint, everything = _bulk(lab)
+    run = lab.sync()
+    assert run.returncode == 0, run.stderr
+    rows = [json.loads(line) for line in lab.log.read_text().splitlines()]
+    processes = [r for r in rows if r["op"] == "cp"]
+    assert len(processes) == -(-len(everything) // checkpoint), "uploads are not batched"
+    for process in processes:
+        assert process["endpoint"] == "https://s3.example.test"
+        # One PUT per file: the CI policy names no multipart upload calls.
+        assert re.search(r"multipart_threshold\s*=\s*5GB", process["config"])
     assert lab.manifest() == {p: lab.sha(p) for p in everything}
 
 
