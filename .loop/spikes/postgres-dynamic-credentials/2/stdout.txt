@@ -1,0 +1,11 @@
+== vault database mounts
+redis/ database
+== kv secret/default/postgres/vault-dbengine-admin
+LEFTOVER: kv entry exists
+versions {'1': ('live', False), '2': ('2026-08-09T08:08:51.027793633Z', False)}
+== postgres role vault-dbengine-admin and v-* minted roles
+none
+== applications state addresses (read-only state list)
+state list rc=0, 134 addresses
+no s2/database-secrets addresses
+found=1

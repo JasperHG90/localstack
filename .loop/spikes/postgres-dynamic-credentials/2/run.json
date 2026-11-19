@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "postgres-dynamic-credentials",
+  "n": 2,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/5b5de334-808c-4b22-977c-aa8f1886ca6d/scratchpad/spike-r3/leftovers.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/5b5de334-808c-4b22-977c-aa8f1886ca6d/scratchpad/spike-r3/leftovers.sh",
+      "copy": "files/leftovers.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "07ddbd8afe87bb8f770b91c561004b985814b6d8",
+  "fingerprint": "2a2f7e8cea5606ffd34a060dd7fb72d4ad6874d6c60078fd9799209e6dcbd848",
+  "started_at": "2026-11-19T06:06:54+00:00",
+  "finished_at": "2026-11-19T06:06:56+00:00",
+  "duration_seconds": 1.823,
+  "timeout_seconds": 180.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.4.0",
+  "moved_from": null
+}
