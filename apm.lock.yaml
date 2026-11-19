@@ -35,10 +35,10 @@ dependencies:
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl
   host: github.com
-  resolved_commit: f67245be60714998468cfa72f3ab7f9314573386
-  resolved_ref: v0.12.1
-  version: 0.12.1
-  virtual_path: apm
+  resolved_commit: 57a241dcb37314f68a247ea3c7fdaf6903a53ba5
+  resolved_ref: v0.14.0
+  version: 0.14.0
+  virtual_path: packages/kmctl/apm
   is_virtual: true
   package_type: apm_package
   deployed_files:
@@ -53,6 +53,30 @@ dependencies:
   - .agents/skills/continue/SKILL.md
   - .agents/skills/continue/evals/evals.json
   - .agents/skills/continue/evals/results.md
+  - .agents/skills/decision-gaps
+  - .agents/skills/decision-gaps/SKILL.md
+  - .agents/skills/decision-gaps/evals/default-range-recent/case.yaml
+  - .agents/skills/decision-gaps/evals/default-range-recent/graders/01-the-agent-ran-kmctl-decision.md
+  - .agents/skills/decision-gaps/evals/default-range-recent/graders/02-the-report-treats-the-change.md
+  - .agents/skills/decision-gaps/evals/default-range-recent/graders/03-the-report-gives-a-count.md
+  - .agents/skills/decision-gaps/evals/default-range-recent/graders/04-no-file-under-okf-was.md
+  - .agents/skills/decision-gaps/evals/default-range-recent/prompt.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/case.yaml
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/01-the-report-lists-choosing-the.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/02-the-report-lists-pinning-the.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/03-the-report-lists-keeping-mains.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/04-the-report-does-not-list.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/05-the-report-does-not-list.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/06-no-file-under-okf-was.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/07-the-report-says-nothing-was.md
+  - .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/prompt.md
+  - .agents/skills/decision-gaps/evals/results.md
+  - .agents/skills/decision-gaps/evals/trigger-queries.json
+  - .agents/skills/decision-gaps/evals/write-named-record-no-scan/case.yaml
+  - .agents/skills/decision-gaps/evals/write-named-record-no-scan/graders/01-the-agent-did-not-run.md
+  - .agents/skills/decision-gaps/evals/write-named-record-no-scan/graders/02-a-new-decision-record-about.md
+  - .agents/skills/decision-gaps/evals/write-named-record-no-scan/prompt.md
+  - .agents/skills/decision-gaps/references/judging.md
   - .agents/skills/decision-log-review
   - .agents/skills/decision-log-review/SKILL.md
   - .agents/skills/handoff
@@ -82,6 +106,30 @@ dependencies:
   - .claude/skills/continue/SKILL.md
   - .claude/skills/continue/evals/evals.json
   - .claude/skills/continue/evals/results.md
+  - .claude/skills/decision-gaps
+  - .claude/skills/decision-gaps/SKILL.md
+  - .claude/skills/decision-gaps/evals/default-range-recent/case.yaml
+  - .claude/skills/decision-gaps/evals/default-range-recent/graders/01-the-agent-ran-kmctl-decision.md
+  - .claude/skills/decision-gaps/evals/default-range-recent/graders/02-the-report-treats-the-change.md
+  - .claude/skills/decision-gaps/evals/default-range-recent/graders/03-the-report-gives-a-count.md
+  - .claude/skills/decision-gaps/evals/default-range-recent/graders/04-no-file-under-okf-was.md
+  - .claude/skills/decision-gaps/evals/default-range-recent/prompt.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/case.yaml
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/01-the-report-lists-choosing-the.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/02-the-report-lists-pinning-the.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/03-the-report-lists-keeping-mains.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/04-the-report-does-not-list.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/05-the-report-does-not-list.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/06-no-file-under-okf-was.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/07-the-report-says-nothing-was.md
+  - .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/prompt.md
+  - .claude/skills/decision-gaps/evals/results.md
+  - .claude/skills/decision-gaps/evals/trigger-queries.json
+  - .claude/skills/decision-gaps/evals/write-named-record-no-scan/case.yaml
+  - .claude/skills/decision-gaps/evals/write-named-record-no-scan/graders/01-the-agent-did-not-run.md
+  - .claude/skills/decision-gaps/evals/write-named-record-no-scan/graders/02-a-new-decision-record-about.md
+  - .claude/skills/decision-gaps/evals/write-named-record-no-scan/prompt.md
+  - .claude/skills/decision-gaps/references/judging.md
   - .claude/skills/decision-log-review
   - .claude/skills/decision-log-review/SKILL.md
   - .claude/skills/handoff
@@ -101,7 +149,7 @@ dependencies:
   - .claude/skills/write-docs/references/tutorial.md
   - .opencode/agents/kmctl-auditor.md
   deployed_file_hashes:
-    .agents/skills/architecture-review/SKILL.md: sha256:f09c146ac6d6efab855139c427de2bde1ad282bb319d77929b36211ab35d784d
+    .agents/skills/architecture-review/SKILL.md: sha256:1be1cd4eda5332c9c564cf975b2effb7df72f9d3e35b5fca826c97152a875f0e
     .agents/skills/audit/SKILL.md: sha256:14e32453c4d8b4ef1cb80665205a7b4cc7c46ce7279e7de691ff64396657aef9
     .agents/skills/audit/evals/evals.json: sha256:009ef54cbe2d7ca9748dfda690995f591867202d2a569e2b4014e70e26835747
     .agents/skills/audit/evals/results.md: sha256:fe417e4939ab18d2ccdec1d56e0bd2526139a237221c352ff207694ed7762f0d
@@ -109,11 +157,34 @@ dependencies:
     .agents/skills/continue/SKILL.md: sha256:4288732e935a4f896f111e1c6c5095d2a7e25fc9bbbea1f1260c592c8fcaee28
     .agents/skills/continue/evals/evals.json: sha256:da44ddfbdea5ae8f46da34d0e5b93be51d88f153ccebba91aac7a52b8c2645a7
     .agents/skills/continue/evals/results.md: sha256:bc65cd91a41d9d45df17def1ef0cb60805f333ad4ff7fe132d249a4725cd996f
-    .agents/skills/decision-log-review/SKILL.md: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
+    .agents/skills/decision-gaps/SKILL.md: sha256:5f6ef1480f39394ac75e8b3e675d64e68b0bcd8074b8dcb137d5a2dd834bbb6f
+    .agents/skills/decision-gaps/evals/default-range-recent/case.yaml: sha256:ba0ade7652a818458a4dd2810cdfdffb7ca1331401d6dbf8e0c7656871532438
+    .agents/skills/decision-gaps/evals/default-range-recent/graders/01-the-agent-ran-kmctl-decision.md: sha256:d7aac4e0a0d31fe210af953fb11c317b1f103ba010a6faa251ae1a0c19c9efce
+    .agents/skills/decision-gaps/evals/default-range-recent/graders/02-the-report-treats-the-change.md: sha256:4e1d2762e99fc5de1e17e0081219da67e87c1e61c5d054d410bd0aad2758b530
+    .agents/skills/decision-gaps/evals/default-range-recent/graders/03-the-report-gives-a-count.md: sha256:e310f0a98ff4353d6895164cbd25f4bb630eb3f1867d31d7b8157af06c0d945b
+    .agents/skills/decision-gaps/evals/default-range-recent/graders/04-no-file-under-okf-was.md: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+    .agents/skills/decision-gaps/evals/default-range-recent/prompt.md: sha256:7691df26c7bba36ba275b88bfa4e2030b4d1c15eff33b684e94aaa11ea30f054
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/case.yaml: sha256:8849d6cce61728806086705fb6ec25b8665e4a9b90161cf4cdbfa174f805fc41
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/01-the-report-lists-choosing-the.md: sha256:544998084136ea1ac81dfee327ae3a7a746575c6b261015da38999317e48b2b7
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/02-the-report-lists-pinning-the.md: sha256:40ff0d08c18b8741e33a91985f9691d1a6137796dc6f819c174aab3a5ad15b38
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/03-the-report-lists-keeping-mains.md: sha256:da47d0714d768d379fb34210002c69cec5a21703f5f25bddaa9c07aec7c4b246
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/04-the-report-does-not-list.md: sha256:c073053c2d063a268439b2c20a1152bfbf60989a0a55f200fccce65b92dc38b5
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/05-the-report-does-not-list.md: sha256:da6b5d41472ed75f204de99aac410bcecacb5f932fd908a2d29e6807123bd38c
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/06-no-file-under-okf-was.md: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/07-the-report-says-nothing-was.md: sha256:0f6983d1bbed2b28604de203a47d273d3a70184a9b75e68957113e2fb33227e2
+    .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/prompt.md: sha256:e477c2dde0a94ba8552e2faa66e537c7ee7f68e507b2dda76ed205ce6dfbdc2e
+    .agents/skills/decision-gaps/evals/results.md: sha256:c186c34ad25dcf64720911ba52576110bb509351122fe3bcb01e2af2108be0dd
+    .agents/skills/decision-gaps/evals/trigger-queries.json: sha256:7624a833744ee240b5092aecddfe5f4a9b3b550b6c93f2f818f8d06ecb26095f
+    .agents/skills/decision-gaps/evals/write-named-record-no-scan/case.yaml: sha256:f87bb8e8bb9b9071c7dfd126f304b9406c54e3904891cf0ee4551702950c3c75
+    .agents/skills/decision-gaps/evals/write-named-record-no-scan/graders/01-the-agent-did-not-run.md: sha256:ca5ee2d049be23b0bba547c7862ffa363eff477e3934e6a67f1ebbdc7ed3a5ed
+    .agents/skills/decision-gaps/evals/write-named-record-no-scan/graders/02-a-new-decision-record-about.md: sha256:d52ad9dca200ba746092662bf0a223d19b25233884c447e6bdfc75b843ea5007
+    .agents/skills/decision-gaps/evals/write-named-record-no-scan/prompt.md: sha256:06a8d391167ccd99d76e5b97f958eba3be23d41e2017a594ecd595c85ba50243
+    .agents/skills/decision-gaps/references/judging.md: sha256:07348408b7211aeabe7f22a8b26fd87df91af228b57a5a55782aa1dd3d429201
+    .agents/skills/decision-log-review/SKILL.md: sha256:6dc2940b976b994885101a5394cdabd681186a1c1b056278db7cdbcdc4257c72
     .agents/skills/handoff/SKILL.md: sha256:eda5c0c866a3c64573a53fc09bf0085497fa7821fc7290554f124365d3c79355
     .agents/skills/handoff/evals/evals.json: sha256:6605a45113967a0405cbe702174382b361a4037362d17298b263be3faecc7992
     .agents/skills/handoff/evals/results.md: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
-    .agents/skills/practices-review/SKILL.md: sha256:4e1b9fedf0dd7a2f8a9ca4e9c9a342d7edf014e6617d2bc62d6b1e8d75dcee72
+    .agents/skills/practices-review/SKILL.md: sha256:0062630ff549dceda3aa7d7c99da1f1f72fb9d9beb5b5f453caec56ac4120825
     .agents/skills/write-docs/SKILL.md: sha256:6ca5d3414b3627c17a5f581fbd75b68e026d617d947b2c759de87eed373bfaf1
     .agents/skills/write-docs/evals/evals.json: sha256:0bcad5edbb511faa32773513bf3cc7b8b89fa51d0da0bed92da4f0d8b8c8081c
     .agents/skills/write-docs/evals/grade.py: sha256:5f2fd6a560ad3df2761854729150567189f6068b8c164780c3682e7c6204b6e8
@@ -123,7 +194,7 @@ dependencies:
     .agents/skills/write-docs/references/reference.md: sha256:f58b9d594333d5782b081ac3e236a062b7b6239ab197c486806e0a5b65e1596f
     .agents/skills/write-docs/references/tutorial.md: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
     .claude/agents/kmctl-auditor.md: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
-    .claude/skills/architecture-review/SKILL.md: sha256:f09c146ac6d6efab855139c427de2bde1ad282bb319d77929b36211ab35d784d
+    .claude/skills/architecture-review/SKILL.md: sha256:1be1cd4eda5332c9c564cf975b2effb7df72f9d3e35b5fca826c97152a875f0e
     .claude/skills/audit/SKILL.md: sha256:14e32453c4d8b4ef1cb80665205a7b4cc7c46ce7279e7de691ff64396657aef9
     .claude/skills/audit/evals/evals.json: sha256:009ef54cbe2d7ca9748dfda690995f591867202d2a569e2b4014e70e26835747
     .claude/skills/audit/evals/results.md: sha256:fe417e4939ab18d2ccdec1d56e0bd2526139a237221c352ff207694ed7762f0d
@@ -131,11 +202,34 @@ dependencies:
     .claude/skills/continue/SKILL.md: sha256:4288732e935a4f896f111e1c6c5095d2a7e25fc9bbbea1f1260c592c8fcaee28
     .claude/skills/continue/evals/evals.json: sha256:da44ddfbdea5ae8f46da34d0e5b93be51d88f153ccebba91aac7a52b8c2645a7
     .claude/skills/continue/evals/results.md: sha256:bc65cd91a41d9d45df17def1ef0cb60805f333ad4ff7fe132d249a4725cd996f
-    .claude/skills/decision-log-review/SKILL.md: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
+    .claude/skills/decision-gaps/SKILL.md: sha256:5f6ef1480f39394ac75e8b3e675d64e68b0bcd8074b8dcb137d5a2dd834bbb6f
+    .claude/skills/decision-gaps/evals/default-range-recent/case.yaml: sha256:ba0ade7652a818458a4dd2810cdfdffb7ca1331401d6dbf8e0c7656871532438
+    .claude/skills/decision-gaps/evals/default-range-recent/graders/01-the-agent-ran-kmctl-decision.md: sha256:d7aac4e0a0d31fe210af953fb11c317b1f103ba010a6faa251ae1a0c19c9efce
+    .claude/skills/decision-gaps/evals/default-range-recent/graders/02-the-report-treats-the-change.md: sha256:4e1d2762e99fc5de1e17e0081219da67e87c1e61c5d054d410bd0aad2758b530
+    .claude/skills/decision-gaps/evals/default-range-recent/graders/03-the-report-gives-a-count.md: sha256:e310f0a98ff4353d6895164cbd25f4bb630eb3f1867d31d7b8157af06c0d945b
+    .claude/skills/decision-gaps/evals/default-range-recent/graders/04-no-file-under-okf-was.md: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+    .claude/skills/decision-gaps/evals/default-range-recent/prompt.md: sha256:7691df26c7bba36ba275b88bfa4e2030b4d1c15eff33b684e94aaa11ea30f054
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/case.yaml: sha256:8849d6cce61728806086705fb6ec25b8665e4a9b90161cf4cdbfa174f805fc41
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/01-the-report-lists-choosing-the.md: sha256:544998084136ea1ac81dfee327ae3a7a746575c6b261015da38999317e48b2b7
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/02-the-report-lists-pinning-the.md: sha256:40ff0d08c18b8741e33a91985f9691d1a6137796dc6f819c174aab3a5ad15b38
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/03-the-report-lists-keeping-mains.md: sha256:da47d0714d768d379fb34210002c69cec5a21703f5f25bddaa9c07aec7c4b246
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/04-the-report-does-not-list.md: sha256:c073053c2d063a268439b2c20a1152bfbf60989a0a55f200fccce65b92dc38b5
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/05-the-report-does-not-list.md: sha256:da6b5d41472ed75f204de99aac410bcecacb5f932fd908a2d29e6807123bd38c
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/06-no-file-under-okf-was.md: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/07-the-report-says-nothing-was.md: sha256:0f6983d1bbed2b28604de203a47d273d3a70184a9b75e68957113e2fb33227e2
+    .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/prompt.md: sha256:e477c2dde0a94ba8552e2faa66e537c7ee7f68e507b2dda76ed205ce6dfbdc2e
+    .claude/skills/decision-gaps/evals/results.md: sha256:c186c34ad25dcf64720911ba52576110bb509351122fe3bcb01e2af2108be0dd
+    .claude/skills/decision-gaps/evals/trigger-queries.json: sha256:7624a833744ee240b5092aecddfe5f4a9b3b550b6c93f2f818f8d06ecb26095f
+    .claude/skills/decision-gaps/evals/write-named-record-no-scan/case.yaml: sha256:f87bb8e8bb9b9071c7dfd126f304b9406c54e3904891cf0ee4551702950c3c75
+    .claude/skills/decision-gaps/evals/write-named-record-no-scan/graders/01-the-agent-did-not-run.md: sha256:ca5ee2d049be23b0bba547c7862ffa363eff477e3934e6a67f1ebbdc7ed3a5ed
+    .claude/skills/decision-gaps/evals/write-named-record-no-scan/graders/02-a-new-decision-record-about.md: sha256:d52ad9dca200ba746092662bf0a223d19b25233884c447e6bdfc75b843ea5007
+    .claude/skills/decision-gaps/evals/write-named-record-no-scan/prompt.md: sha256:06a8d391167ccd99d76e5b97f958eba3be23d41e2017a594ecd595c85ba50243
+    .claude/skills/decision-gaps/references/judging.md: sha256:07348408b7211aeabe7f22a8b26fd87df91af228b57a5a55782aa1dd3d429201
+    .claude/skills/decision-log-review/SKILL.md: sha256:6dc2940b976b994885101a5394cdabd681186a1c1b056278db7cdbcdc4257c72
     .claude/skills/handoff/SKILL.md: sha256:eda5c0c866a3c64573a53fc09bf0085497fa7821fc7290554f124365d3c79355
     .claude/skills/handoff/evals/evals.json: sha256:6605a45113967a0405cbe702174382b361a4037362d17298b263be3faecc7992
     .claude/skills/handoff/evals/results.md: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
-    .claude/skills/practices-review/SKILL.md: sha256:4e1b9fedf0dd7a2f8a9ca4e9c9a342d7edf014e6617d2bc62d6b1e8d75dcee72
+    .claude/skills/practices-review/SKILL.md: sha256:0062630ff549dceda3aa7d7c99da1f1f72fb9d9beb5b5f453caec56ac4120825
     .claude/skills/write-docs/SKILL.md: sha256:6ca5d3414b3627c17a5f581fbd75b68e026d617d947b2c759de87eed373bfaf1
     .claude/skills/write-docs/evals/evals.json: sha256:0bcad5edbb511faa32773513bf3cc7b8b89fa51d0da0bed92da4f0d8b8c8081c
     .claude/skills/write-docs/evals/grade.py: sha256:5f2fd6a560ad3df2761854729150567189f6068b8c164780c3682e7c6204b6e8
@@ -145,7 +239,7 @@ dependencies:
     .claude/skills/write-docs/references/reference.md: sha256:f58b9d594333d5782b081ac3e236a062b7b6239ab197c486806e0a5b65e1596f
     .claude/skills/write-docs/references/tutorial.md: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
     .opencode/agents/kmctl-auditor.md: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
-  content_hash: sha256:c3b0c85c3a085ff93dcd8ed21cbfcfb2a82d2de2db68a48b3d25e8848e2d6331
+  content_hash: sha256:7880ba51e426f5d2cbf4f5410b6004487186f8723f2a04ec78443fda045bcf6e
 - repo_url: jasperhg90/skills
   name: skills-adversarial-reviewer
   host: github.com
@@ -576,23 +670,23 @@ dependencies:
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl-antigravity
   host: github.com
-  resolved_commit: f67245be60714998468cfa72f3ab7f9314573386
-  resolved_ref: v0.12.1
-  version: 0.12.1
-  virtual_path: apm/antigravity
+  resolved_commit: 57a241dcb37314f68a247ea3c7fdaf6903a53ba5
+  resolved_ref: v0.14.0
+  version: 0.14.0
+  virtual_path: packages/kmctl/apm/antigravity
   is_virtual: true
   depth: 2
   resolved_by: JasperHG90/kmctl
   package_type: apm_package
-  content_hash: sha256:4b6e641210ae195b06a1bdd270f8774c8d5eeff3136990e4feabf7da3240c5f8
+  content_hash: sha256:24670e0ce88ff83b658d712d691bbc930ed3f2af3aed6baf0c59ab665e2b1076
 - repo_url: jasperhg90/kmctl
   materialization_repo_url: JasperHG90/kmctl
   name: kmctl-claude
   host: github.com
-  resolved_commit: f67245be60714998468cfa72f3ab7f9314573386
-  resolved_ref: v0.12.1
-  version: 0.12.1
-  virtual_path: apm/claude
+  resolved_commit: 57a241dcb37314f68a247ea3c7fdaf6903a53ba5
+  resolved_ref: v0.14.0
+  version: 0.14.0
+  virtual_path: packages/kmctl/apm/claude
   is_virtual: true
   depth: 2
   resolved_by: JasperHG90/kmctl
@@ -607,7 +701,7 @@ dependencies:
     .claude/rules/docs-layout.md: sha256:f85e07b4529cfd2fed47adee3b5404ca8b72d7734de002d0d02e27fd5114ce9f
     .claude/rules/manifesto-invariants.md: sha256:65e1937175cea3039037906e5eb70e81c030f4f8c2394394c572ad474b2ac69b
     .claude/rules/okf-bundle.md: sha256:1c0bd241e2d334ab0467148898f185d1120ba45f249e5236c9a8f8257c54b7ec
-  content_hash: sha256:abb821e8a1d7cab3e84d52a045b842586ff6b182757e4ecce530d1267faf8e73
+  content_hash: sha256:eea79141cea325a580e54c0240dcc2dd6cfdae3801d6015bdd3b583ac801faca
 - repo_url: scaccogatto/okf-skills
   name: okf
   host: github.com
@@ -738,8 +832,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
 - kind: project-relative
   target: claude
@@ -765,8 +859,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm/claude
-  active_owner: jasperhg90/kmctl/apm/claude
+  - jasperhg90/kmctl/packages/kmctl/apm/claude
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm/claude
   content_hash: sha256:dbb76cd547e7d80115296ba4fd780a38aa3ff001d2c7220e204e24da07ab5073
 - kind: project-relative
   target: claude
@@ -774,8 +868,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm/claude
-  active_owner: jasperhg90/kmctl/apm/claude
+  - jasperhg90/kmctl/packages/kmctl/apm/claude
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm/claude
   content_hash: sha256:f85e07b4529cfd2fed47adee3b5404ca8b72d7734de002d0d02e27fd5114ce9f
 - kind: project-relative
   target: claude
@@ -783,8 +877,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm/claude
-  active_owner: jasperhg90/kmctl/apm/claude
+  - jasperhg90/kmctl/packages/kmctl/apm/claude
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm/claude
   content_hash: sha256:65e1937175cea3039037906e5eb70e81c030f4f8c2394394c572ad474b2ac69b
 - kind: project-relative
   target: claude
@@ -792,8 +886,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm/claude
-  active_owner: jasperhg90/kmctl/apm/claude
+  - jasperhg90/kmctl/packages/kmctl/apm/claude
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm/claude
   content_hash: sha256:1c0bd241e2d334ab0467148898f185d1120ba45f249e5236c9a8f8257c54b7ec
 - kind: project-relative
   target: claude
@@ -918,8 +1012,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -927,17 +1021,17 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:f09c146ac6d6efab855139c427de2bde1ad282bb319d77929b36211ab35d784d
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:1be1cd4eda5332c9c564cf975b2effb7df72f9d3e35b5fca826c97152a875f0e
 - kind: project-relative
   target: claude
   value: .claude/skills/audit
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -945,8 +1039,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:14e32453c4d8b4ef1cb80665205a7b4cc7c46ce7279e7de691ff64396657aef9
 - kind: project-relative
   target: claude
@@ -954,8 +1048,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:009ef54cbe2d7ca9748dfda690995f591867202d2a569e2b4014e70e26835747
 - kind: project-relative
   target: claude
@@ -963,8 +1057,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:fe417e4939ab18d2ccdec1d56e0bd2526139a237221c352ff207694ed7762f0d
 - kind: project-relative
   target: claude
@@ -972,8 +1066,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:0c09ca8ecf2986bb7c2b39034d5d0dbba5053aa908bba551d4b1c4159de532de
 - kind: project-relative
   target: claude
@@ -1053,8 +1147,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -1062,8 +1156,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:4288732e935a4f896f111e1c6c5095d2a7e25fc9bbbea1f1260c592c8fcaee28
 - kind: project-relative
   target: claude
@@ -1071,8 +1165,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:da44ddfbdea5ae8f46da34d0e5b93be51d88f153ccebba91aac7a52b8c2645a7
 - kind: project-relative
   target: claude
@@ -1080,17 +1174,233 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:bc65cd91a41d9d45df17def1ef0cb60805f333ad4ff7fe132d249a4725cd996f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:5f6ef1480f39394ac75e8b3e675d64e68b0bcd8074b8dcb137d5a2dd834bbb6f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/default-range-recent/case.yaml
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:ba0ade7652a818458a4dd2810cdfdffb7ca1331401d6dbf8e0c7656871532438
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/default-range-recent/graders/01-the-agent-ran-kmctl-decision.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:d7aac4e0a0d31fe210af953fb11c317b1f103ba010a6faa251ae1a0c19c9efce
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/default-range-recent/graders/02-the-report-treats-the-change.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:4e1d2762e99fc5de1e17e0081219da67e87c1e61c5d054d410bd0aad2758b530
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/default-range-recent/graders/03-the-report-gives-a-count.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e310f0a98ff4353d6895164cbd25f4bb630eb3f1867d31d7b8157af06c0d945b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/default-range-recent/graders/04-no-file-under-okf-was.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/default-range-recent/prompt.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:7691df26c7bba36ba275b88bfa4e2030b4d1c15eff33b684e94aaa11ea30f054
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/case.yaml
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:8849d6cce61728806086705fb6ec25b8665e4a9b90161cf4cdbfa174f805fc41
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/01-the-report-lists-choosing-the.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:544998084136ea1ac81dfee327ae3a7a746575c6b261015da38999317e48b2b7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/02-the-report-lists-pinning-the.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:40ff0d08c18b8741e33a91985f9691d1a6137796dc6f819c174aab3a5ad15b38
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/03-the-report-lists-keeping-mains.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:da47d0714d768d379fb34210002c69cec5a21703f5f25bddaa9c07aec7c4b246
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/04-the-report-does-not-list.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:c073053c2d063a268439b2c20a1152bfbf60989a0a55f200fccce65b92dc38b5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/05-the-report-does-not-list.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:da6b5d41472ed75f204de99aac410bcecacb5f932fd908a2d29e6807123bd38c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/06-no-file-under-okf-was.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/07-the-report-says-nothing-was.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:0f6983d1bbed2b28604de203a47d273d3a70184a9b75e68957113e2fb33227e2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/known-range-finds-labelled-gaps/prompt.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e477c2dde0a94ba8552e2faa66e537c7ee7f68e507b2dda76ed205ce6dfbdc2e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/results.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:c186c34ad25dcf64720911ba52576110bb509351122fe3bcb01e2af2108be0dd
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/trigger-queries.json
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:7624a833744ee240b5092aecddfe5f4a9b3b550b6c93f2f818f8d06ecb26095f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/write-named-record-no-scan/case.yaml
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:f87bb8e8bb9b9071c7dfd126f304b9406c54e3904891cf0ee4551702950c3c75
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/write-named-record-no-scan/graders/01-the-agent-did-not-run.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:ca5ee2d049be23b0bba547c7862ffa363eff477e3934e6a67f1ebbdc7ed3a5ed
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/write-named-record-no-scan/graders/02-a-new-decision-record-about.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:d52ad9dca200ba746092662bf0a223d19b25233884c447e6bdfc75b843ea5007
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/evals/write-named-record-no-scan/prompt.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:06a8d391167ccd99d76e5b97f958eba3be23d41e2017a594ecd595c85ba50243
+- kind: project-relative
+  target: claude
+  value: .claude/skills/decision-gaps/references/judging.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:07348408b7211aeabe7f22a8b26fd87df91af228b57a5a55782aa1dd3d429201
 - kind: project-relative
   target: claude
   value: .claude/skills/decision-log-review
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -1098,9 +1408,9 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:6dc2940b976b994885101a5394cdabd681186a1c1b056278db7cdbcdc4257c72
 - kind: project-relative
   target: claude
   value: .claude/skills/deep-explain
@@ -1188,8 +1498,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -1197,8 +1507,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:eda5c0c866a3c64573a53fc09bf0085497fa7821fc7290554f124365d3c79355
 - kind: project-relative
   target: claude
@@ -1206,8 +1516,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:6605a45113967a0405cbe702174382b361a4037362d17298b263be3faecc7992
 - kind: project-relative
   target: claude
@@ -1215,8 +1525,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
 - kind: project-relative
   target: claude
@@ -1377,8 +1687,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -1386,9 +1696,9 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:4e1b9fedf0dd7a2f8a9ca4e9c9a342d7edf014e6617d2bc62d6b1e8d75dcee72
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:0062630ff549dceda3aa7d7c99da1f1f72fb9d9beb5b5f453caec56ac4120825
 - kind: project-relative
   target: claude
   value: .claude/skills/python-review
@@ -1674,8 +1984,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: claude
@@ -1683,8 +1993,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:6ca5d3414b3627c17a5f581fbd75b68e026d617d947b2c759de87eed373bfaf1
 - kind: project-relative
   target: claude
@@ -1692,8 +2002,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:0bcad5edbb511faa32773513bf3cc7b8b89fa51d0da0bed92da4f0d8b8c8081c
 - kind: project-relative
   target: claude
@@ -1701,8 +2011,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:5f2fd6a560ad3df2761854729150567189f6068b8c164780c3682e7c6204b6e8
 - kind: project-relative
   target: claude
@@ -1710,8 +2020,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:b031f7ff5e8c79df57e59ec25d1b879bb748291359dd21f7175ea6b03e662657
 - kind: project-relative
   target: claude
@@ -1719,8 +2029,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:527dbf013240c8931892724388cb0325f6fed530063b0b36603d60946258f8ef
 - kind: project-relative
   target: claude
@@ -1728,8 +2038,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:abd80091df06213d1df0836e993743ef23602b9ce5f8c9da6dad0db21c42889e
 - kind: project-relative
   target: claude
@@ -1737,8 +2047,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:f58b9d594333d5782b081ac3e236a062b7b6239ab197c486806e0a5b65e1596f
 - kind: project-relative
   target: claude
@@ -1746,8 +2056,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
 - kind: uri
   target: mcp
@@ -1845,8 +2155,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -1854,17 +2164,17 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:f09c146ac6d6efab855139c427de2bde1ad282bb319d77929b36211ab35d784d
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:1be1cd4eda5332c9c564cf975b2effb7df72f9d3e35b5fca826c97152a875f0e
 - kind: project-relative
   target: opencode
   value: .agents/skills/audit
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -1872,8 +2182,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:14e32453c4d8b4ef1cb80665205a7b4cc7c46ce7279e7de691ff64396657aef9
 - kind: project-relative
   target: opencode
@@ -1881,8 +2191,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:009ef54cbe2d7ca9748dfda690995f591867202d2a569e2b4014e70e26835747
 - kind: project-relative
   target: opencode
@@ -1890,8 +2200,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:fe417e4939ab18d2ccdec1d56e0bd2526139a237221c352ff207694ed7762f0d
 - kind: project-relative
   target: opencode
@@ -1899,8 +2209,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:0c09ca8ecf2986bb7c2b39034d5d0dbba5053aa908bba551d4b1c4159de532de
 - kind: project-relative
   target: opencode
@@ -1980,8 +2290,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -1989,8 +2299,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:4288732e935a4f896f111e1c6c5095d2a7e25fc9bbbea1f1260c592c8fcaee28
 - kind: project-relative
   target: opencode
@@ -1998,8 +2308,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:da44ddfbdea5ae8f46da34d0e5b93be51d88f153ccebba91aac7a52b8c2645a7
 - kind: project-relative
   target: opencode
@@ -2007,17 +2317,233 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:bc65cd91a41d9d45df17def1ef0cb60805f333ad4ff7fe132d249a4725cd996f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: null
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:5f6ef1480f39394ac75e8b3e675d64e68b0bcd8074b8dcb137d5a2dd834bbb6f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/default-range-recent/case.yaml
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:ba0ade7652a818458a4dd2810cdfdffb7ca1331401d6dbf8e0c7656871532438
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/default-range-recent/graders/01-the-agent-ran-kmctl-decision.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:d7aac4e0a0d31fe210af953fb11c317b1f103ba010a6faa251ae1a0c19c9efce
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/default-range-recent/graders/02-the-report-treats-the-change.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:4e1d2762e99fc5de1e17e0081219da67e87c1e61c5d054d410bd0aad2758b530
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/default-range-recent/graders/03-the-report-gives-a-count.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e310f0a98ff4353d6895164cbd25f4bb630eb3f1867d31d7b8157af06c0d945b
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/default-range-recent/graders/04-no-file-under-okf-was.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/default-range-recent/prompt.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:7691df26c7bba36ba275b88bfa4e2030b4d1c15eff33b684e94aaa11ea30f054
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/case.yaml
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:8849d6cce61728806086705fb6ec25b8665e4a9b90161cf4cdbfa174f805fc41
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/01-the-report-lists-choosing-the.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:544998084136ea1ac81dfee327ae3a7a746575c6b261015da38999317e48b2b7
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/02-the-report-lists-pinning-the.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:40ff0d08c18b8741e33a91985f9691d1a6137796dc6f819c174aab3a5ad15b38
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/03-the-report-lists-keeping-mains.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:da47d0714d768d379fb34210002c69cec5a21703f5f25bddaa9c07aec7c4b246
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/04-the-report-does-not-list.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:c073053c2d063a268439b2c20a1152bfbf60989a0a55f200fccce65b92dc38b5
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/05-the-report-does-not-list.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:da6b5d41472ed75f204de99aac410bcecacb5f932fd908a2d29e6807123bd38c
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/06-no-file-under-okf-was.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e8d308824e8c11131505b29eb70cf874760d887fe48a58b9ea34a006e9a12c5f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/graders/07-the-report-says-nothing-was.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:0f6983d1bbed2b28604de203a47d273d3a70184a9b75e68957113e2fb33227e2
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/known-range-finds-labelled-gaps/prompt.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:e477c2dde0a94ba8552e2faa66e537c7ee7f68e507b2dda76ed205ce6dfbdc2e
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/results.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:c186c34ad25dcf64720911ba52576110bb509351122fe3bcb01e2af2108be0dd
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/trigger-queries.json
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:7624a833744ee240b5092aecddfe5f4a9b3b550b6c93f2f818f8d06ecb26095f
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/write-named-record-no-scan/case.yaml
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:f87bb8e8bb9b9071c7dfd126f304b9406c54e3904891cf0ee4551702950c3c75
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/write-named-record-no-scan/graders/01-the-agent-did-not-run.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:ca5ee2d049be23b0bba547c7862ffa363eff477e3934e6a67f1ebbdc7ed3a5ed
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/write-named-record-no-scan/graders/02-a-new-decision-record-about.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:d52ad9dca200ba746092662bf0a223d19b25233884c447e6bdfc75b843ea5007
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/evals/write-named-record-no-scan/prompt.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:06a8d391167ccd99d76e5b97f958eba3be23d41e2017a594ecd595c85ba50243
+- kind: project-relative
+  target: opencode
+  value: .agents/skills/decision-gaps/references/judging.md
+  runtime: null
+  scope: project
+  owners:
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:07348408b7211aeabe7f22a8b26fd87df91af228b57a5a55782aa1dd3d429201
 - kind: project-relative
   target: opencode
   value: .agents/skills/decision-log-review
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -2025,9 +2551,9 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:b958fdae573b9679aa5e14ea62b2708a7548f6d192cd246288b19fd0614758af
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:6dc2940b976b994885101a5394cdabd681186a1c1b056278db7cdbcdc4257c72
 - kind: project-relative
   target: opencode
   value: .agents/skills/deep-explain
@@ -2115,8 +2641,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -2124,8 +2650,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:eda5c0c866a3c64573a53fc09bf0085497fa7821fc7290554f124365d3c79355
 - kind: project-relative
   target: opencode
@@ -2133,8 +2659,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:6605a45113967a0405cbe702174382b361a4037362d17298b263be3faecc7992
 - kind: project-relative
   target: opencode
@@ -2142,8 +2668,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:e3c3bd370664372ab6f57ab9ca4c9d5658606693a90c660433933f9d7dcfa410
 - kind: project-relative
   target: opencode
@@ -2304,8 +2830,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -2313,9 +2839,9 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
-  content_hash: sha256:4e1b9fedf0dd7a2f8a9ca4e9c9a342d7edf014e6617d2bc62d6b1e8d75dcee72
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
+  content_hash: sha256:0062630ff549dceda3aa7d7c99da1f1f72fb9d9beb5b5f453caec56ac4120825
 - kind: project-relative
   target: opencode
   value: .agents/skills/python-review
@@ -2601,8 +3127,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: null
 - kind: project-relative
   target: opencode
@@ -2610,8 +3136,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:6ca5d3414b3627c17a5f581fbd75b68e026d617d947b2c759de87eed373bfaf1
 - kind: project-relative
   target: opencode
@@ -2619,8 +3145,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:0bcad5edbb511faa32773513bf3cc7b8b89fa51d0da0bed92da4f0d8b8c8081c
 - kind: project-relative
   target: opencode
@@ -2628,8 +3154,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:5f2fd6a560ad3df2761854729150567189f6068b8c164780c3682e7c6204b6e8
 - kind: project-relative
   target: opencode
@@ -2637,8 +3163,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:b031f7ff5e8c79df57e59ec25d1b879bb748291359dd21f7175ea6b03e662657
 - kind: project-relative
   target: opencode
@@ -2646,8 +3172,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:527dbf013240c8931892724388cb0325f6fed530063b0b36603d60946258f8ef
 - kind: project-relative
   target: opencode
@@ -2655,8 +3181,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:abd80091df06213d1df0836e993743ef23602b9ce5f8c9da6dad0db21c42889e
 - kind: project-relative
   target: opencode
@@ -2664,8 +3190,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:f58b9d594333d5782b081ac3e236a062b7b6239ab197c486806e0a5b65e1596f
 - kind: project-relative
   target: opencode
@@ -2673,8 +3199,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:3d252e1372d60a7822d8af4ad35e14df02bff1da4853f0927c21bf222c3883f9
 - kind: project-relative
   target: opencode
@@ -2718,8 +3244,8 @@ deployments:
   runtime: null
   scope: project
   owners:
-  - jasperhg90/kmctl/apm
-  active_owner: jasperhg90/kmctl/apm
+  - jasperhg90/kmctl/packages/kmctl/apm
+  active_owner: jasperhg90/kmctl/packages/kmctl/apm
   content_hash: sha256:0535bfc2dd74ee376aa206691a2378084aed55859c6b0450dd3aa7f9dc139b7e
 mcp_servers:
 - bundle

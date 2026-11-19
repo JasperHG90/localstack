@@ -6,8 +6,8 @@ alias p := pre_commit
 alias u := unseal_vault
 alias w := worktree_setup
 apm := "uvx --from apm-cli==0.33.0 apm"
-kmctl_ref := "v0.12.1"
-kmctl_src := "git+https://github.com/JasperHG90/kmctl@" + kmctl_ref
+kmctl_ref := "v0.14.0"
+kmctl_src := "git+https://github.com/JasperHG90/kmctl@" + kmctl_ref + "#subdirectory=packages/kmctl"
 # kmctl at the pinned release, without touching the kmctl on your PATH.
 kmctl := "uvx --from " + kmctl_src + " kmctl"
 
