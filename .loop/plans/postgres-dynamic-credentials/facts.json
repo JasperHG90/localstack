@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "slug": "postgres-dynamic-credentials",
+  "plan_hash": "ac07d2d2fa85ca55f8c9e0cbaa2178dee381413b0c3c81a0c1b85e25cd078aef",
+  "problems": [
+    {
+      "id": "P1",
+      "text": "Bifrost logs in to Postgres with a static Terraform-generated password that never expires, so a leaked copy works until someone changes it by hand"
+    },
+    {
+      "id": "P2",
+      "text": "No Vault database secrets engine for Postgres exists, so no job can get a short-lived Postgres user"
+    }
+  ],
+  "goals": [
+    {
+      "id": "G1",
+      "text": "Bifrost's Postgres credential dies with its lease, and a revoked lease's user can no longer connect"
+    },
+    {
+      "id": "G2",
+      "text": "Converting the next Postgres consumer is one entry in a list plus its jobspec change"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1",
+      "change": "The `developer` policy grants the `postgres` mount and its config and roles paths",
+      "kind": "support",
+      "goal": "G2",
+      "goal_index": 1,
+      "fixes": "P2",
+      "fixes_index": 1,
+      "needs": [],
+      "needs_index": [],
+      "touches": [
+        "deployments/infrastructure/identity.tf"
+      ],
+      "checked_by": "an infrastructure apply, then `vault token capabilities sys/mounts/postgres` on a `localstack login` session reads create, read, update, delete",
+      "seen_by": "operator"
+    },
+    {
+      "id": "O2",
+      "change": "A `postgres` database engine mints users as `vault-dbengine-admin`, one role per entry in `local.postgres_dynamic_consumers`",
+      "kind": "support",
+      "goal": "G2",
+      "goal_index": 1,
+      "fixes": "P2",
+      "fixes_index": 1,
+      "needs": [
+        "O1"
+      ],
+      "needs_index": [
+        0
+      ],
+      "touches": [
+        "deployments/applications/database.tf",
+        "deployments/applications/secrets.tf"
+      ],
+      "checked_by": "`vault read postgres/config/postgres` shows username `vault-dbengine-admin`; `terraform state pull` holds zero copies of the admin password; `vault read postgres/creds/bifrost` mints a user whose `current_user` is `bifrost`",
+      "seen_by": "operator"
+    },
+    {
+      "id": "O3",
+      "change": "Each converted job gets its own Vault policy and JWT role reading only its `postgres/creds/<job>` path",
+      "kind": "support",
+      "goal": "G2",
+      "goal_index": 1,
+      "fixes": "P2",
+      "fixes_index": 1,
+      "needs": [
+        "O2"
+      ],
+      "needs_index": [
+        1
+      ],
+      "touches": [
+        "new:deployments/applications/machine_roles.tf"
+      ],
+      "checked_by": "`vault read auth/jwt-nomad/role/postgres-bifrost` shows `bound_claims` on `nomad_job_id = bifrost` and both `nomad-workloads` and the creds-read policy",
+      "seen_by": "operator"
+    },
+    {
+      "id": "O4",
+      "change": "Bifrost reads a minted Postgres user and its static password is gone",
+      "kind": "behaviour",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [
+        "O2",
+        "O3"
+      ],
+      "needs_index": [
+        1,
+        2
+      ],
+      "touches": [
+        "deployments/applications/services.tf",
+        "deployments/applications/services/bifrost.hcl",
+        "deployments/applications/secrets.tf",
+        "deployments/applications/database.tf"
+      ],
+      "checked_by": "on the live cluster, Bifrost's alloc is healthy and its virtual keys list; `vault lease revoke` on its lease leaves 0 rows in `pg_roles` for the user and a fresh login refused; the old `bifrost` password is refused; `vault kv get secret/default/bifrost/db` is not found; `select count(*) from pg_class c join pg_roles r on r.oid = c.relowner where r.rolname like 'v-%'` in the bifrost database is 0",
+      "seen_by": "operator"
+    },
+    {
+      "id": "O5",
+      "change": "The knowledge bundle and docs say the engine is built and where it lives",
+      "kind": "support",
+      "goal": "G2",
+      "goal_index": 1,
+      "fixes": "P2",
+      "fixes_index": 1,
+      "needs": [
+        "O4"
+      ],
+      "needs_index": [
+        3
+      ],
+      "touches": [
+        ".okf/components/postgres.md",
+        ".okf/components/vault-secrets-engines.md",
+        ".okf/proposals/postgres-dynamic-credentials.md",
+        ".okf/architecture/deployment-layers.md",
+        ".okf/components/terraform-roots.md",
+        "docs/explanation/workload-identity.md",
+        ".okf/summary.md"
+      ],
+      "checked_by": "`kmctl check` passes and `deployment-layers.md` names the applications-root engine as a known exception in its owns table and Depicts section",
+      "seen_by": "nobody"
+    }
+  ]
+}
