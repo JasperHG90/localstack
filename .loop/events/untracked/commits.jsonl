@@ -23,3 +23,4 @@
 {"ask": "j-20261118T203143+0000-29e9629c", "at": "2026-11-18T20:39:27+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "4e5c2c6d9ed2dd94c6e3693b0cbb15ec31bb319b", "subject": "Upload ov-sync files in batches of 100, one aws process each"}
 {"ask": "j-20261118T215809+0000-1c05f123", "at": "2026-11-18T22:00:21+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "a55e040a3e8ac5b0a857b9d98570102831223732", "subject": "Deploy ov-dash 0.7.0: folded front matter and a Files tree loaded per folder"}
 {"at": "2026-11-18T22:13:13+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "070afa71dff42cf4f1d4c73eee8c4351dd56e4f0", "subject": "loop: add the ov-sync-consumer-lock-scope stub"}
+{"at": "2026-11-19T05:47:41+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "d365a23ef7745fe40258c6b99e41c8821c2c51eb", "subject": "operator: bump kmctl to v0.14.0"}
