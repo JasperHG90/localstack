@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.4.0
-  at: '2026-11-19T06:06:29+00:00'
+  at: '2026-11-19T06:07:19+00:00'
 slug: postgres-dynamic-credentials
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike postgres-dynamic-credentials/1
@@ -24,7 +24,7 @@ The command exited 126:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note postgres-dynamic-credentials 1`.
+Discarded run: the leftovers script was not executable (exit 126, `Permission denied`) because the `chmod` had been refused along with an earlier command. Nothing was checked. Rerun as spike 2.
 
 ## Files
 
