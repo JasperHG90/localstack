@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "postgres-dynamic-credentials",
-  "plan_hash": "ac07d2d2fa85ca55f8c9e0cbaa2178dee381413b0c3c81a0c1b85e25cd078aef",
+  "plan_hash": "3d5805fdf0f4cbd92201a938fde45759464e5bca1ece6d7b1f52a7fff98d6da0",
   "problems": [
     {
       "id": "P1",
@@ -126,7 +126,8 @@
         ".okf/architecture/deployment-layers.md",
         ".okf/components/terraform-roots.md",
         "docs/explanation/workload-identity.md",
-        ".okf/summary.md"
+        ".okf/summary.md",
+        "new:.okf/decisions/0032-the-postgres-database-engine-lives-in-the-applications-root.md"
       ],
       "checked_by": "`kmctl check` passes and `deployment-layers.md` names the applications-root engine as a known exception in its owns table and Depicts section",
       "seen_by": "nobody"
