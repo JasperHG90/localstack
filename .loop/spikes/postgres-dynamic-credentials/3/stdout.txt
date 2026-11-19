@@ -1,0 +1,52 @@
+== init
+- Installing hashicorp/vault v5.3.0...
+- Installed hashicorp/vault v5.3.0 (signed by HashiCorp)
+- Installing cyrilgdn/postgresql v1.26.0...
+- Installed cyrilgdn/postgresql v1.26.0 (self-signed, key ID 418F268A88A6D481)
+- Installing hashicorp/random v3.9.0...
+- Installed hashicorp/random v3.9.0 (signed by HashiCorp)
+- Installing hashicorp/consul v2.22.1...
+- Installed hashicorp/consul v2.22.1 (signed by HashiCorp)
+== validate
+Success! The configuration is valid.
+
+== apply (one apply, no targets)
+vault_mount.db: Creation complete after 0s [id=spike_r3_database]
+postgresql_role.admin: Creation complete after 1s [id=spike_r3_admin]
+vault_kv_secret_v2.admin: Creation complete after 0s [id=secret/data/spike_r3/admin]
+vault_database_secret_backend_connection.pg: Creation complete after 0s [id=spike_r3_database/config/spike_r3]
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+== password from KV (written by data_json_wo)
+kv password length 32
+== role accepts the KV password (password_wo reached Postgres)
+login ok as spike_r3_admin
+== vault connection (verify_connection passed at apply)
+username spike_r3_admin verify True
+== state: copies of the password
+occurrences of password in terraform.tfstate: 0 (bytes: 10075)
+occurrences in apply.log: 0
+== state: password/data attribute values
+consul_service.postgres.datacenter = 'localstack'
+postgresql_role.admin.encrypted_password = True
+postgresql_role.admin.password = None
+postgresql_role.admin.password_wo = None
+postgresql_role.admin.password_wo_version = '1'
+vault_database_secret_backend_connection.pg.data = None
+vault_database_secret_backend_connection.pg.postgresql[0].password = ''
+vault_database_secret_backend_connection.pg.postgresql[0].password_authentication = 'password'
+vault_database_secret_backend_connection.pg.postgresql[0].password_wo = None
+vault_database_secret_backend_connection.pg.postgresql[0].password_wo_version = 1
+vault_kv_secret_v2.admin.data = None
+vault_kv_secret_v2.admin.data_json = None
+vault_kv_secret_v2.admin.data_json_wo = None
+vault_kv_secret_v2.admin.data_json_wo_version = 1
+== second plan (unchanged versions must be a no-op)
+No changes. Your infrastructure matches the configuration.
+plan rc=0
+== destroy
+Destroy complete! Resources: 4 destroyed.
+== gone?
+mount spike_r3_database/: gone
+kv secret/spike_r3/admin: gone
+pg role spike_r3_admin: gone
+fail=0

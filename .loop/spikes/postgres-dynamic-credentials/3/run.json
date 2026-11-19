@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "postgres-dynamic-credentials",
+  "n": 3,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/5b5de334-808c-4b22-977c-aa8f1886ca6d/scratchpad/spike-r3/chain.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/5b5de334-808c-4b22-977c-aa8f1886ca6d/scratchpad/spike-r3/chain.sh",
+      "copy": "files/chain.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "1262800a935846ff1dfca67de2e6ec11bf9561b8",
+  "fingerprint": "2a2f7e8cea5606ffd34a060dd7fb72d4ad6874d6c60078fd9799209e6dcbd848",
+  "started_at": "2026-11-19T06:08:04+00:00",
+  "finished_at": "2026-11-19T06:08:12+00:00",
+  "duration_seconds": 7.706,
+  "timeout_seconds": 420.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.4.0",
+  "moved_from": null
+}
