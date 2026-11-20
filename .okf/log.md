@@ -168,3 +168,7 @@
 
 - Added `decisions/0031-the-lab-auth-action-picks-the-tailscale-identity-from-the-oidc-subject-format` with `kmctl new decision`.
 - Updated `components/ov-dash`: the pinned image is now 0.7.0, which folds front matter away and loads the Files tree one folder at a time (openviking_extensions PR #22).
+
+## 2026-11-19
+
+- Added `handoffs/passwordless-postgres-ticket-planning` with `kmctl new handoff`.
