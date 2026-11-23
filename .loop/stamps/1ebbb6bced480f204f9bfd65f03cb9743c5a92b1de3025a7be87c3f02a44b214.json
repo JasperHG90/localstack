@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.1",
+  "fingerprint": "1ebbb6bced480f204f9bfd65f03cb9743c5a92b1de3025a7be87c3f02a44b214",
+  "slug": "dns-fallback",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 1,
+      "passed": false,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "cd bootstrap && ansible-playbook --syntax-check playbooks/configure_network.yml",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r2",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_bootstrap_dns_fallback.py -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 3,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r3",
+      "kind": "eval-row",
+      "command": "kmctl check",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    }
+  ],
+  "green": false,
+  "at": "2026-11-23T22:19:21+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.4.0"
+}

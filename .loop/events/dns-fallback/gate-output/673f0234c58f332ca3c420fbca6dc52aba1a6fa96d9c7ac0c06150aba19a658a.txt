@@ -1,0 +1,25 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Passed
+Mypy (strict, cli/)......................................................Failed
+- hook id: mypy
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  cli/tests/test_bootstrap_dns_fallback.py:19: error: Missing type arguments for generic type "dict"  [type-arg]
+  cli/tests/test_bootstrap_dns_fallback.py:30: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+  Found 2 errors in 1 file (checked 137 source files)
+OpenViking config (settings that fail silently)..........................Passed
+ov-sync-consumer (go vet, go test).......................................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
