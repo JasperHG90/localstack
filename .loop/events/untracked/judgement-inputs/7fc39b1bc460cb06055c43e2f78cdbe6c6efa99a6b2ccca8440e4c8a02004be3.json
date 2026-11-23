@@ -1,0 +1,1 @@
+{"ask":"Ok write it up (the Ansible task: NetworkManager on radxa and orange_pi_4a uses the router plus 1.1.1.1 and 9.9.9.9 with timeout:1 attempts:2, so a dropped DNS query to 192.168.2.254 no longer fails Bifrost lookups). Check your assumptions."}
