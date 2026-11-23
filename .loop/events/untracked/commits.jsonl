@@ -25,3 +25,4 @@
 {"at": "2026-11-18T22:13:13+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "070afa71dff42cf4f1d4c73eee8c4351dd56e4f0", "subject": "loop: add the ov-sync-consumer-lock-scope stub"}
 {"at": "2026-11-19T05:47:41+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "d365a23ef7745fe40258c6b99e41c8821c2c51eb", "subject": "operator: bump kmctl to v0.14.0"}
 {"at": "2026-11-20T09:51:55+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "a81219ba31913bc1c0ce7dbd89ebecfb5a174b70", "subject": "operator: commit plans"}
+{"at": "2026-11-23T21:53:38+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "48adb7efda37fa0da0a949c6b49662bcd66c7064", "subject": "operator: manual commits"}
