@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "dns-fallback",
-  "plan_hash": "ffddf42b60b7c248416c5191d175d7728a7391197b04507ffdcba38075e1bb2d",
+  "plan_hash": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5",
   "problems": [
     {
       "id": "P1",
@@ -26,9 +26,10 @@
       "needs": [],
       "needs_index": [],
       "touches": [
-        "bootstrap/playbooks/configure_network.yml"
+        "bootstrap/playbooks/configure_network.yml",
+        "new:cli/tests/test_bootstrap_dns_fallback.py"
       ],
-      "checked_by": "`ansible-playbook --syntax-check` and a `--check --diff` run against the two hosts, then /etc/resolv.conf on both after the real run",
+      "checked_by": "`ansible-playbook --syntax-check`, a test that reads the play's hosts and file content, then /etc/resolv.conf on both nodes after the operator runs it",
       "seen_by": "operator"
     },
     {
