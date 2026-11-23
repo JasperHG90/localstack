@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "dns-fallback",
-  "plan_hash": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5",
+  "plan_hash": "a3f06509b0077c0176d17ae135e0e25c434b7381e120de33996c24b92349d5d6",
   "problems": [
     {
       "id": "P1",
@@ -17,7 +17,7 @@
   "outcomes": [
     {
       "id": "O1",
-      "change": "The network playbook gives radxa and orange_pi_4a three resolvers with a short timeout",
+      "change": "The network playbook gives radxa and orange_pi_4a three resolvers with a short timeout and keeps search home",
       "kind": "behaviour",
       "goal": "G1",
       "goal_index": 0,
