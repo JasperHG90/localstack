@@ -18,3 +18,4 @@
 {"at": "2026-11-23T22:26:35+00:00", "binds": "e25e4356ccfff95fe5fd5241460d594581f41b877410d37321da6af40cc83d2d", "kind": "round-start", "n": 2, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "65b2e7727c147a02ee41bd7f0e0c290beb1b1510"}
 {"at": "2026-11-23T22:28:35+00:00", "dispatched_at": "2026-11-23T22:26:35+00:00", "kind": "round-close", "n": 2, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-11-23T22:28:22+00:00"}}
 {"at": "2026-11-23T22:28:53+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "4ae98ed7579e214310366763cb87ceaf8642d70c"}
+{"at": "2026-11-23T22:30:49+00:00", "branch": "loop/dns-fallback", "kind": "land", "schema_version": "1.0", "sha": "43dfcea74f2eaf168cab4b24fe79117fb2f3ed6a"}
