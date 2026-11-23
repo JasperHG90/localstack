@@ -3,7 +3,7 @@
   "slug": "dns-fallback",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "e8337f8460975efce34f1dd93e1179dd328e42d901716559080763b79b0aa59c",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5",
+    "started_at": "2026-11-23T22:12:48+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-23T22:12:37+00:00"
+  "at": "2026-11-23T22:12:48+00:00"
 }
