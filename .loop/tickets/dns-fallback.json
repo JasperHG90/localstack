@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "dns-fallback",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
@@ -29,7 +29,7 @@
   "split": "j-20261123T221438+0000-0ebd7937",
   "split_plan_hash": "a3f06509b0077c0176d17ae135e0e25c434b7381e120de33996c24b92349d5d6",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "4ae98ed7579e214310366763cb87ceaf8642d70c",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -143,8 +143,14 @@
       "to": "verifying",
       "at": "2026-11-23T22:26:30+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-23T22:28:53+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-23T22:28:35+00:00"
+  "at": "2026-11-23T22:28:53+00:00"
 }
