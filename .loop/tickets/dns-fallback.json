@@ -3,7 +3,7 @@
   "slug": "dns-fallback",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5",
-    "started_at": "2026-11-23T22:12:48+00:00",
+    "n": 2,
+    "binds": "a3f06509b0077c0176d17ae135e0e25c434b7381e120de33996c24b92349d5d6",
+    "started_at": "2026-11-23T22:14:43+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5",
+  "plan_hash": "a3f06509b0077c0176d17ae135e0e25c434b7381e120de33996c24b92349d5d6",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-23T22:14:38+00:00"
+  "at": "2026-11-23T22:14:43+00:00"
 }

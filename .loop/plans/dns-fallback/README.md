@@ -32,12 +32,15 @@ through a local stub at `127.0.0.53` and are out of scope.
 A new play in `bootstrap/playbooks/configure_network.yml` drops a
 NetworkManager config file on radxa and orange_pi_4a with a `[global-dns]`
 section: the router first, then `1.1.1.1` and `9.9.9.9`, with
-`options timeout:1 attempts:2`. A config file is used instead of
+`options timeout:1 attempts:2` and `searches=home`. The search domain is
+needed because global DNS replaces the connection's domains as well as its
+servers, and short names such as `firebat` resolve on these nodes only
+through `search home` today. A config file is used instead of
 `nmcli connection modify` because the wired profile on both nodes is an
 in-memory default NetworkManager generated (under /run/NetworkManager).
 
-It worked when /etc/resolv.conf on both nodes lists the three servers and
-the options, and Bifrost's container, once restarted, shows the same.
+It worked when /etc/resolv.conf on both nodes lists the three servers, the
+options and `search home`, and Bifrost's container, once restarted, shows the same.
 
 ## Problems
 
@@ -49,7 +52,7 @@ the options, and Bifrost's container, once restarted, shows the same.
 
 ## Outcomes
 
-### O1: The network playbook gives radxa and orange_pi_4a three resolvers with a short timeout
+### O1: The network playbook gives radxa and orange_pi_4a three resolvers with a short timeout and keeps search home
 - kind: behaviour
 - goal: G1
 - fixes: P1
