@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "dns-fallback",
+  "n": 1,
+  "command": "/tmp/claude-1000/-home-vscode-workspace/db4d3754-e336-4dc3-9c87-72f6ad3fd0c2/scratchpad/spike-dns/check.sh",
+  "scripts": [
+    {
+      "source": "/tmp/claude-1000/-home-vscode-workspace/db4d3754-e336-4dc3-9c87-72f6ad3fd0c2/scratchpad/spike-dns/check.sh",
+      "copy": "files/check.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "16ad7b6c617315717fdfe8d04ca911cc64bf6ee7",
+  "fingerprint": "3a70a747f80bc5715546896cee0e30863edb95158c3a74c765737109362a5bdd",
+  "started_at": "2026-11-23T22:11:27+00:00",
+  "finished_at": "2026-11-23T22:11:28+00:00",
+  "duration_seconds": 1.792,
+  "timeout_seconds": 90.0,
+  "exit": 1,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.4.0",
+  "moved_from": null
+}
