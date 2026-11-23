@@ -15,3 +15,4 @@
 {"at": "2026-11-19T05:51:07+00:00", "by": "human:jasperginn@gmail.com", "epic": null, "id": "g7", "kind": "grant", "schema_version": "1.0", "steps": ["eval-sign", "plan-keep-whole", "ticket-promote", "ticket-drop", "ticket-done-outside", "ticket-override", "state-resume", "drive-install", "drive-uninstall", "judgements-label"], "tickets": [], "until": "2026-11-20T05:51:07+00:00"}
 {"at": "2026-11-20T09:51:46+00:00", "by": "human:jasperginn@gmail.com", "kind": "halt", "reason": "operator: manual commits", "schema_version": "1.0"}
 {"at": "2026-11-23T21:33:56+00:00", "kind": "resume", "schema_version": "1.0"}
+{"at": "2026-11-23T21:53:23+00:00", "by": "human:jasperginn@gmail.com", "kind": "halt", "reason": "operator: manual commits", "schema_version": "1.0"}
