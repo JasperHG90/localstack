@@ -44,3 +44,38 @@
           - { port: 4648, proto: tcp, from_ip: "192.168.0.0/16" }
           # Nomad dynamic ports
           - { port: "20000:32000", proto: tcp, from_ip: "192.168.0.0/16" }
+
+# radxa and orange_pi_4a let NetworkManager write /etc/resolv.conf as a plain
+# file holding only the router, which drops a query now and then. Host-network
+# jobs such as Bifrost then fail the lookup outright. The other nodes resolve
+# through a 127.0.0.53 stub and are left alone.
+#
+# Global DNS replaces the connection's search domains as well as its servers,
+# so `searches=home` keeps short names such as `firebat` resolving.
+#
+# A Podman container copies resolv.conf when it is created: restart Bifrost
+# after this play runs so its container picks up the new file.
+- name: DNS fallback — NetworkManager nodes
+  hosts: radxa:orange_pi_4a
+  become: true
+
+  tasks:
+    - name: Add public fallback resolvers after the router
+      ansible.builtin.copy:
+        dest: /etc/NetworkManager/conf.d/90-dns-fallback.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [global-dns]
+          searches=home
+          options=timeout:1,attempts:2
+
+          [global-dns-domain-*]
+          servers=192.168.2.254,1.1.1.1,9.9.9.9
+      notify: Reload NetworkManager DNS
+
+  handlers:
+    - name: Reload NetworkManager DNS
+      ansible.builtin.command: nmcli general reload conf,dns-rc
+      changed_when: true

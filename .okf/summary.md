@@ -7,11 +7,9 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-11-23T21:40:16Z
+  at: 2026-11-23T22:17:27Z
   against:
-    - decisions/0032-summarize-openviking-content-with-inkling-2-small
-    - practices/openviking-vision-models
-    - prototypes/openviking-summary-model
+    - decisions/0033-networkmanager-nodes-get-public-fallback-resolvers
 ---
 
 # Summary
