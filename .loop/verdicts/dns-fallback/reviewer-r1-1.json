@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The bootstrap component page still describes configure_network.yml as only the firewall role on all hosts; it now also writes the DNS fallback drop-in on radxa and orange_pi_4a.",
+      "anchor": ".okf/components/bootstrap.md:68",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "b462c4ab4b88e0c0c59463b4326f2ae4702455e54ca573981bfef30659d3678d",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-23T22:24:37+00:00",
+  "checklist": null
+}
