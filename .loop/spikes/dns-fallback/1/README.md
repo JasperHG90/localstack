@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.4.0
-  at: '2026-11-23T22:11:28+00:00'
+  at: '2026-11-23T22:12:12+00:00'
 slug: dns-fallback
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike dns-fallback/1
@@ -24,7 +24,10 @@ The command exited 1:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note dns-fallback 1`.
+Superseded by spike 2. The evidence was the same, but one check was wrong. On radxa (NM 1.46.0) the
+"global DNS overrides connection DNS" grep looked for the 1.36 wording only. The 1.46 man page says
+"the name servers and domains defined globally override the ones from active connections". The
+other 13 checks passed on both nodes. This run shows nothing against the mechanism.
 
 ## Files
 
