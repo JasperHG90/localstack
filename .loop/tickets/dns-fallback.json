@@ -21,7 +21,8 @@
   "branch": "loop/dns-fallback",
   "stamps": [
     "1ebbb6bced480f204f9bfd65f03cb9743c5a92b1de3025a7be87c3f02a44b214",
-    "b462c4ab4b88e0c0c59463b4326f2ae4702455e54ca573981bfef30659d3678d"
+    "b462c4ab4b88e0c0c59463b4326f2ae4702455e54ca573981bfef30659d3678d",
+    "e25e4356ccfff95fe5fd5241460d594581f41b877410d37321da6af40cc83d2d"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/orchestrator",
@@ -123,5 +124,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-23T22:24:56+00:00"
+  "at": "2026-11-23T22:26:23+00:00"
 }
