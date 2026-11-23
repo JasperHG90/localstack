@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "Once [global-dns-domain-*] is valid, NetworkManager replaces the connection's servers AND search domains with the global ones (both man pages say 'the name servers and domains defined globally override the ones from active connections'). The planned drop-in sets no `searches`, so `search home`, which DHCP puts in /etc/resolv.conf on both nodes today, disappears. Short names such as `firebat` stop resolving on radxa and orange_pi_4a. Checked live: `getent hosts firebat` resolves there now only through `search home`. The plan, its outcome O1 and eval rows r2 and r4 all leave this out. The fix is `searches=home` in [global-dns], plus a check for it in r2 and r4.",
+      "anchor": ".loop/plans/dns-fallback/README.md:31",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r2"
+    },
+    {
+      "id": "p2",
+      "disposition": "open",
+      "claim": "Eval row r4 fails when 'NetworkManager had to be restarted', but R1 accepts a restart as an equal way to apply the file ('a NetworkManager restart applies the same file'). The plan and its contract disagree on whether a restart counts as success. Pick one: if a reload is required, say so in the prose and in the play. If a restart is fine, drop that fail condition from r4.",
+      "anchor": ".loop/evals/dns-fallback/rows.json",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "092f3304f687d3dca2e3773901a00237d9b498fd2c02169c806083ccb6b96ec5"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-23T22:14:10+00:00",
+  "checklist": null
+}
