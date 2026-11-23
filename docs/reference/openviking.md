@@ -17,8 +17,8 @@ sources:
 
 A context store for agents, on radxa beside Bifrost. Vectors go to Postgres,
 blobs to SeaweedFS, embeddings and rerank through Bifrost to embark, image
-summaries through Bifrost to Gemini. There is no browser surface: callers
-authenticate to the API with a Vault identity token.
+and text summaries through Bifrost to Ollama Cloud. There is no browser
+surface: callers authenticate to the API with a Vault identity token.
 
 ## What runs where
 
@@ -31,7 +31,7 @@ authenticate to the API with a Vault identity token.
 | Workspace | host volume `openviking_data_v2`, mounted at `/app/.openviking` |
 | Old store, read-only backup | bucket `openviking`, schema `openviking`, volume `openviking_data`, unused since 2026-10-20. The `openviking` key has no access to the bucket. The `ov-carry-over` key reads it |
 | Models | Bifrost, as `embark/embedding` and `embark/reranker` |
-| Image summaries | Bifrost, as `gemini/gemini-3.5-flash-lite` |
+| Image and text summaries | Bifrost, as `ollama/inkling-2-small`, thinking off |
 | Query planning | Bifrost, as `ollama/gemma4:31b` |
 
 The image is derived, and building it is an operator step. See
@@ -160,11 +160,18 @@ identity-token path mints a NEW token, so rendering one into Hermes's env
 restarted the task on every consul-template poll. The sidecar reads the token
 from disk per request instead, and Hermes holds a constant endpoint.
 
-## Image summaries and query planning
+## Summaries and query planning
 
-Image summaries go to `gemini/gemini-3.5-flash-lite` through Bifrost, the same
-route as embedding and rerank. The virtual key carries `gemini` and `ollama`
-alongside `embark`.
+The `vlm` block writes every summary: image descriptions, the per-file
+summaries and each directory's `.overview.md` and `.abstract.md`. It points at
+`ollama/inkling-2-small` through Bifrost, the same route as embedding and
+rerank. The virtual key carries `gemini` and `ollama` alongside `embark`.
+
+Thinking is off through `extra_request_body: {"reasoning_effort": "none"}`.
+OpenViking sends its own `reasoning_effort` only to OpenAI model names, and
+Bifrost drops `think: false`, so this key is the one that reaches the model.
+With thinking on, the model ran about five times slower and once spent its
+whole token budget without answering.
 
 Retrieval planning runs on `ollama/gemma4:31b` through the same gateway.
 `query_planner` is optional and falls back to the `vlm` block when unset, so

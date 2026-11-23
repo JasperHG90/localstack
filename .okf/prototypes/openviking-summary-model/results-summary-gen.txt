@@ -1,0 +1,15 @@
+# gen.py, inkling-2-small with reasoning_effort none
+  coordinated-vulnerability-disclosure-timelines     files=1 L1_words=521 L0_words=114
+  5-non-transformer-architectures-that-beat-transfor files=3 L1_words=716 L0_words=120
+  Slates_Approach_Thread_Weaving_and_Episodes        files=2 L1_words=686 L0_words=104
+  dlx                                                files=1 L1_words=656 L0_words=119
+  jasperginn                                         files=1 L1_words=532 L0_words=102
+inkling: 13 calls, 64.1s, 12242 out tokens
+
+# gen.py, gemma4:31b (transcribed from session output)
+  coordinated-vulnerability-disclosure-timelines     files=1 L1_words=285 L0_words=77
+  5-non-transformer-architectures-that-beat-transfor files=3 L1_words=479 L0_words=102
+  Slates_Approach_Thread_Weaving_and_Episodes        files=2 L1_words=418 L0_words=105
+  dlx                                                files=1 L1_words=283 L0_words=99
+  jasperginn                                         files=1 L1_words=291 L0_words=95
+gemma: 13 calls, 17.8s, 4419 out tokens

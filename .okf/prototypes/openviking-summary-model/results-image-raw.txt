@@ -1,0 +1,32 @@
+=== gemma: ollama/gemma4:31b {}
+  1-architecture.png                           3.5s 200 in=317 out=813 chars=3550
+  2-openviking_oidc.drawio.png                 1.6s 200 in=331 out=378 chars=1535
+  3-main.png                                   1.6s 200 in=338 out=367 chars=1411
+  4-architecture.drawio.png                    2.7s 200 in=335 out=665 chars=2714
+  5-infra.png                                  3.4s 200 in=331 out=650 chars=2060
+  6-mock.excalidraw.png                        1.8s 200 in=341 out=382 chars=1498
+  7-ghactions-run-workflow-pypi-upload.png     2.1s 200 in=329 out=386 chars=1551
+  8-gcp_logs.png                               2.5s 200 in=329 out=562 chars=1790
+  load 50 calls @ 8 parallel: wall 22.4s, 134 img/min, p50 3.0s, p95 4.9s, max 5.7s, codes {200: 50}
+=== inkling-nothink: ollama/inkling-2-small {'reasoning_effort': 'none'}
+  1-architecture.png                           3.6s 200 in=1449 out=988 chars=4307
+  2-openviking_oidc.drawio.png                 4.8s 200 in=495 out=757 chars=2859
+  3-main.png                                   2.7s 200 in=975 out=404 chars=1456
+  4-architecture.drawio.png                    5.5s 200 in=813 out=720 chars=2842
+  5-infra.png                                 69.7s 200 in=3279 out=2764 chars=9586
+  6-mock.excalidraw.png                        4.4s 200 in=559 out=1442 chars=5643
+  7-ghactions-run-workflow-pypi-upload.png     3.5s 200 in=1144 out=776 chars=2987
+  8-gcp_logs.png                               4.3s 200 in=1119 out=2399 chars=3585
+  load 50 calls @ 8 parallel: wall 64.7s, 46 img/min, p50 8.5s, p95 19.1s, max 20.2s, codes {200: 50}
+=== inkling-think: ollama/inkling-2-small {}
+  1-architecture.png                          13.0s 200 in=1451 out=4000 chars=0
+  2-openviking_oidc.drawio.png                 6.0s 200 in=497 out=2658 chars=2471
+  3-main.png                                   5.3s 200 in=977 out=2037 chars=2109
+  4-architecture.drawio.png                   11.8s 200 in=815 out=4000 chars=2651
+  5-infra.png                                 12.8s 200 in=3281 out=4000 chars=1948
+  6-mock.excalidraw.png                        4.9s 200 in=561 out=2085 chars=2265
+  7-ghactions-run-workflow-pypi-upload.png     3.7s 200 in=1146 out=913 chars=1525
+  8-gcp_logs.png                               4.8s 200 in=1121 out=2964 chars=3612
+  load 50 calls @ 8 parallel: wall 138.8s, 22 img/min, p50 19.6s, p95 34.2s, max 41.4s, codes {200: 50}
+
+[exited with code 0]

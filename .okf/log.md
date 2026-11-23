@@ -172,3 +172,9 @@
 ## 2026-11-19
 
 - Added `handoffs/passwordless-postgres-ticket-planning` with `kmctl new handoff`.
+
+## 2026-11-23
+
+- Added `decisions/0032-summarize-openviking-content-with-inkling-2-small` with `kmctl new decision`.
+- Added `prototypes/openviking-summary-model` with `kmctl new prototype`.
+- Updated `practices/openviking-vision-models`: the vlm block now names `ollama/inkling-2-small`, measured 2026-11-23, and accepting an image is not reading it (gemma4:31b misread identifiers). Wrote `decisions/0032-summarize-openviking-content-with-inkling-2-small` and `prototypes/openviking-summary-model` with the evidence.

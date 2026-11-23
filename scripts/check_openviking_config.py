@@ -25,6 +25,7 @@ a healthy-looking service would hide:
                      ACL on the identity-token role is what prevents that, not
                      this check.
     vlm model        one that cannot see embeds an error string per image
+    vlm reasoning    a thinking model left thinking makes ingest ~5x slower
     vlm api_base     past Bifrost loses gateway governance, as rerank does
     metrics          off, /metrics 404s and the Prometheus job scrapes nothing
     traces           off or unpointed, and Tempo receives nothing, silently
@@ -144,8 +145,18 @@ VISION_MODELS = frozenset(
         # /v1/chat/completions answered "Red". ov.conf.json picked it in
         # 66bed3c and this set was not updated with it, so the check was red.
         "gemini/gemini-3.5-flash-lite",
+        # Measured 2026-11-23: the red PNG answered "A solid, saturated bright
+        # red square", and 8 real diagrams and screenshots came back as valid
+        # JSON for OpenViking's image prompt with identifiers read exactly.
+        "ollama/inkling-2-small",
     }
 )
+
+# Models that think by default. OpenViking sends its own reasoning_effort only
+# to OpenAI model names and Bifrost drops `think: false`, so the vlm block must
+# carry extra_request_body.reasoning_effort = "none" for these
+# (.okf/prototypes/openviking-summary-model/).
+THINKING_MODELS = frozenset({"ollama/inkling-2-small"})
 
 # Every field PgVectorParams declares at the pinned tag, plus `schema`, which
 # is `db_schema`'s alias. Read off the model rather than from prose: a key this
@@ -355,6 +366,15 @@ def failures(config: dict[str, Any]) -> list[str]:
             "model measured to accept an image belongs here: one that cannot "
             "makes every image ingest as the string 'Image summary generation "
             "failed' with no error reported."
+        )
+
+    reasoning = (vlm.get("extra_request_body") or {}).get("reasoning_effort")
+    if vlm_model in THINKING_MODELS and reasoning != "none":
+        found.append(
+            f"vlm.extra_request_body.reasoning_effort is {reasoning!r}, but "
+            f"{vlm_model} thinks unless it is 'none'. Thinking made ingest about "
+            "five times slower and once spent the whole token budget without "
+            "answering."
         )
 
     vlm_base = vlm.get("api_base", "")
@@ -646,6 +666,10 @@ def _self_test() -> int:
         "vlm_model": (
             _mutate(("vlm", "model"), "ollama/deepseek-v4-flash:0731"),
             "vlm.model",
+        ),
+        "vlm_thinking_on": (
+            _mutate(("vlm", "model"), "ollama/inkling-2-small"),
+            "reasoning_effort",
         ),
         "vlm_api_base": (
             _mutate(("vlm", "api_base"), "http://192.168.2.46:8000/v1"),

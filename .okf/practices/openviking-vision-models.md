@@ -19,8 +19,9 @@ sources:
 
 Image summaries route through Bifrost. The `vlm` block in
 `deployments/applications/services/openviking/ov.conf.json` names
-`gemini/gemini-3.5-flash-lite`, picked in commit `66bed3c` (2026-09-11).
-Before that it was `ollama/glm-5.3-flash`.
+`ollama/inkling-2-small`, picked on 2026-11-23. Before that it was
+`gemini/gemini-3.5-flash-lite` (commit `66bed3c`, 2026-09-11), and before
+that `ollama/glm-5.3-flash`.
 
 Being in Bifrost's catalog is not enough. Of the ollama models tried, only
 `glm-5.3-flash` of the GLM line accepted an image. Plain `glm-5.3`,
@@ -28,7 +29,17 @@ Being in Bifrost's catalog is not enough. Of the ollama models tried, only
 text, but refuse an image with `this model does not support image input`.
 `gemma4:31b`, `kimi-k3`, `minimax-m3` and `qwen3.5:397b` also work.
 `gemini/gemini-3.5-flash-lite` was measured on 2026-09-12: a 64x64 red PNG
-sent to `/v1/chat/completions` came back as "Red".
+sent to `/v1/chat/completions` came back as "Red". `ollama/inkling-2-small`
+was measured on 2026-11-23 the same way. `inkling-2-mini` is in Ollama's
+library but Ollama Cloud does not serve it: a direct `/api/chat` call returns
+404.
+
+Accepting an image is not the same as reading it. On the same eight diagrams
+and screenshots, `gemma4:31b` wrote a GCP project as `neurips-lm-eff` instead
+of `neurips-llm-eff` and garbled an MLflow run ID, while `inkling-2-small`
+read both exactly. Gemma reported about 330 input tokens per image whatever
+its size, inkling 400 to 3300, which fits a model that sees a smaller copy.
+A search for an identifier misses an image whose summary misspells it.
 
 Picking a blind model is not a loud failure, which is why
 `scripts/check_openviking_config.py` pins the list as `VISION_MODELS` and fails

@@ -7,9 +7,11 @@ generated:
   at: 2026-10-20
 tags: [summary]
 checked:
-  at: 2026-11-16T15:01:53Z
+  at: 2026-11-23T21:40:16Z
   against:
-    - decisions/0029-bifrost-routes-by-complexity-for-one-virtual-key-and-adds-jev
+    - decisions/0032-summarize-openviking-content-with-inkling-2-small
+    - practices/openviking-vision-models
+    - prototypes/openviking-summary-model
 ---
 
 # Summary

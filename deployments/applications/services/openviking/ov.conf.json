@@ -53,11 +53,14 @@
   },
   "vlm": {
     "provider": "openai",
-    "model": "gemini/gemini-3.5-flash-lite",
+    "model": "ollama/inkling-2-small",
     "api_base": "http://192.168.2.50:8080/v1",
     "api_key": "{{ $bifrost.Data.data.API_KEY }}",
     "timeout": 120,
-    "max_concurrent": 4
+    "max_concurrent": 4,
+    "extra_request_body": {
+      "reasoning_effort": "none"
+    }
   },
   "query_planner": {
     "provider": "openai",

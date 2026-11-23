@@ -85,6 +85,9 @@ doc_writer = false
 [judgements]
 url = "https://api.typesafe.ai/v1/systemone"
 api_key_env = "TYPESAFE_API_KEY"
+# TypeSafe began refusing requests without a model around 2026-11-18 (422,
+# body.model "Field required"); before that it picked jev itself.
+model = "jev-latest"
 timeout_seconds = 5.0
 
 [judgements.review.again]
