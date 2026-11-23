@@ -65,7 +65,7 @@ The operator steps for SSH keys and passwordless sudo are in
 | 6 | `configure_podman.yml` | all | ghcr.io `auth.json` for the user and for root |
 | 7 | `configure_nvidia_ctk.yml` | `jetson_nano` | nvidia runtime as root Podman's default |
 | 8 | `configure_tailscale.yml` | all | manager is a subnet router for 192.168.2.0/24, workers stop tailscaled |
-| 9 | `configure_network.yml` | all | role `firewall`: ufw default deny and the HashiStack ports |
+| 9 | `configure_network.yml` | all | role `firewall`: ufw default deny and the HashiStack ports; on `radxa` and `orange_pi_4a`, a NetworkManager global-DNS file adding public fallback resolvers ([ADR 0033](/decisions/0033-networkmanager-nodes-get-public-fallback-resolvers.md)) |
 
 ## The server roles depend on each other
 
