@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "[global-dns] without searches=home dropped the DHCP search domain, so short names like firebat would stop resolving. The plan now sets searches=home and says why; r2 and r4 check it, and r4 checks getent hosts firebat.",
+      "anchor": ".loop/plans/dns-fallback/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "r4 counted a NetworkManager restart as failure while R1 called it acceptable. r4 no longer mentions a restart, so the two agree.",
+      "anchor": ".loop/evals/dns-fallback/rows.json",
+      "category": "test-mismatch",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r4"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "a3f06509b0077c0176d17ae135e0e25c434b7381e120de33996c24b92349d5d6"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-23T22:15:35+00:00",
+  "checklist": null
+}
