@@ -3,7 +3,7 @@
   "slug": "dns-playbook-split",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -28,8 +28,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "f8a82333aa34dae1ba3f9b4a3a0e308fa10d656b04f36f97d998cd3a2a9a680c",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "9c65c066f30d0008405b4237c0d03b4c5a9ada6e6ad8cdcb57699467125d29e6",
+    "started_at": "2026-11-24T07:01:26+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "9c65c066f30d0008405b4237c0d03b4c5a9ada6e6ad8cdcb57699467125d29e6",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -44,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-24T07:00:03+00:00"
+  "at": "2026-11-24T07:01:26+00:00"
 }
