@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "dns-playbook-split",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 2,
@@ -30,7 +30,7 @@
   "split": "j-20261124T070258+0000-33bccc23",
   "split_plan_hash": "84ef4ddfbad40bb4e333fcf210a9887436a2d6d654ab5333f37bc38fb17abd9a",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "9313c2eb96784d2599f996a6d0158b1e4b1ab7f8",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -158,8 +158,14 @@
       "to": "verifying",
       "at": "2026-11-24T07:12:15+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-24T07:14:29+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-24T07:14:18+00:00"
+  "at": "2026-11-24T07:14:29+00:00"
 }
