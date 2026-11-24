@@ -3,3 +3,4 @@
 {"at": "2026-11-24T07:02:51+00:00", "dispatched_at": "2026-11-24T07:01:26+00:00", "kind": "round-close", "n": 1, "outcome": "fail", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-11-24T07:02:35+00:00"}}
 {"at": "2026-11-24T07:03:00+00:00", "binds": "84ef4ddfbad40bb4e333fcf210a9887436a2d6d654ab5333f37bc38fb17abd9a", "kind": "round-start", "n": 2, "passes": ["plan-reviewer"], "round_kind": "plan", "schema_version": "1.0", "tree": null}
 {"at": "2026-11-24T07:03:48+00:00", "dispatched_at": "2026-11-24T07:03:00+00:00", "kind": "round-close", "n": 2, "outcome": "pass", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-11-24T07:03:35+00:00"}}
+{"at": "2026-11-24T07:03:49+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
