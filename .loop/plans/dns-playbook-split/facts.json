@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "dns-playbook-split",
-  "plan_hash": "9c65c066f30d0008405b4237c0d03b4c5a9ada6e6ad8cdcb57699467125d29e6",
+  "plan_hash": "84ef4ddfbad40bb4e333fcf210a9887436a2d6d654ab5333f37bc38fb17abd9a",
   "problems": [
     {
       "id": "P1",
@@ -54,7 +54,7 @@
         ".okf/nodes/orangepi4a.md",
         ".okf/components/bootstrap.md"
       ],
-      "checked_by": "`kmctl check`",
+      "checked_by": "`kmctl check`, and ADR 0033's body above the new Correction section unchanged",
       "seen_by": "nobody"
     }
   ]
