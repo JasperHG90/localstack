@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "dns-playbook-split",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
@@ -94,8 +94,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "84ef4ddfbad40bb4e333fcf210a9887436a2d6d654ab5333f37bc38fb17abd9a",
   "intent": {
@@ -127,8 +127,14 @@
       "to": "verifying",
       "at": "2026-11-24T07:06:36+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-11-24T07:09:25+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-24T07:06:37+00:00"
+  "at": "2026-11-24T07:09:25+00:00"
 }
