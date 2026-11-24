@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "host-firewall.md still says configure_network.yml is the last step of just bootstrap; configure_dns.yml now runs after it",
+      "anchor": ".okf/components/host-firewall.md:35",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "10112637a4a72980727af9aea8bea2deab4b0a047f125721d208359456bd70ca",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-24T07:09:09+00:00",
+  "checklist": null
+}
