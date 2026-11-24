@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan rewrites ADR 0033's Decision text in place, but ADR 0033 is status stable and .claude/rules/okf-bundle.md (Decisions, lines 98-101) says a stable record is never rewritten: a correction is an appended \"## Correction, YYYY-MM-DD\" section, and only a reversal needs a new record. The path fix is a correction, not a reversal, so no new record is needed, but O2 should say: append a Correction section naming configure_dns.yml, and repoint the sources front matter so kmctl review due tracks the new file. The repo already uses this form (ADR 0005, 0006, 0019).",
+      "anchor": ".okf/decisions/0033-networkmanager-nodes-get-public-fallback-resolvers.md:29",
+      "category": "design",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "9c65c066f30d0008405b4237c0d03b4c5a9ada6e6ad8cdcb57699467125d29e6"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-24T07:02:35+00:00",
+  "checklist": null
+}
