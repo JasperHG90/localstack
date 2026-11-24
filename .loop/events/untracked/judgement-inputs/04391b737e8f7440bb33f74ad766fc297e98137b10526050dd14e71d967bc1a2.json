@@ -1,0 +1,1 @@
+{"ask":"Yes make that change (move the DNS play out of configure_network.yml into its own bootstrap/playbooks/configure_dns.yml, add it to just bootstrap, point the test, ADR 0033 and the bootstrap page at it). No more fuckups please."}
