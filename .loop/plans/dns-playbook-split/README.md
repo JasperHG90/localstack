@@ -25,8 +25,10 @@ which holds the ufw firewall plays. Running that playbook to apply DNS also
 runs the firewall role on the same hosts. The play moves, byte for byte, to
 `new:bootstrap/playbooks/configure_dns.yml`, and `configure_network.yml` goes
 back to its firewall plays only. `bootstrap/justfile` runs the new playbook in
-`bootstrap`. The test, ADR 0033, the two node pages and the bootstrap
-component page name the new file.
+`bootstrap`. The test, the two node pages and the bootstrap component page
+name the new file. ADR 0033 is `stable`, so it is not rewritten: it gets an
+appended `## Correction, 2026-11-24` section naming the new file, and its
+`sources` entry points at it (`.claude/rules/okf-bundle.md`).
 
 It worked when `ansible-playbook playbooks/configure_dns.yml --list-tasks`
 lists only the DNS task, `configure_network.yml` matches its state before
@@ -57,7 +59,7 @@ lists only the DNS task, `configure_network.yml` matches its state before
 - fixes: P1
 - needs: O1
 - touches: `.okf/decisions/0033-networkmanager-nodes-get-public-fallback-resolvers.md`, `.okf/nodes/radxa-dragon-q6a.md`, `.okf/nodes/orangepi4a.md`, `.okf/components/bootstrap.md`
-- checked by: `kmctl check`
+- checked by: `kmctl check`, and ADR 0033's body above the new Correction section unchanged
 - seen by: nobody
 
 ## Could invalidate this plan
