@@ -1,4 +1,4 @@
-"""The network playbook gives the NetworkManager nodes fallback resolvers.
+"""The DNS playbook gives the NetworkManager nodes fallback resolvers.
 
 radxa and orange_pi_4a write /etc/resolv.conf from NetworkManager with only the
 router in it, so one dropped query fails a lookup. The play drops a
@@ -13,7 +13,7 @@ import yaml
 
 # cli/tests/<this file> -> repo root is two up.
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PLAYBOOK = REPO_ROOT / "bootstrap" / "playbooks" / "configure_network.yml"
+PLAYBOOK = REPO_ROOT / "bootstrap" / "playbooks" / "configure_dns.yml"
 DROP_IN = "/etc/NetworkManager/conf.d/90-dns-fallback.conf"
 
 

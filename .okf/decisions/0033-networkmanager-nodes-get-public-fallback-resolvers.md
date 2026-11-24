@@ -8,7 +8,7 @@ generated:
   at: 2026-11-23T22:17:00Z
 status: stable
 sources:
-  - resource: "bootstrap/playbooks/configure_network.yml"
+  - resource: "bootstrap/playbooks/configure_dns.yml"
 ---
 
 # ADR 0033: NetworkManager nodes get public fallback resolvers
@@ -54,3 +54,11 @@ does not manage it.
 - spike:dns-fallback/2 checked, read-only, that both NetworkManager versions
   (1.36 and 1.46) parse the drop-in. It did not check that a reload rewrites
   the live file: that is checked after the playbook runs.
+
+## Correction, 2026-11-24
+
+The play now lives in its own playbook,
+`bootstrap/playbooks/configure_dns.yml`, which `just bootstrap` runs after
+`configure_network.yml`. It first landed at the end of `configure_network.yml`,
+the ufw firewall playbook, so applying DNS also ran the firewall role. The
+play's content is unchanged.

@@ -179,3 +179,4 @@
 - Added `prototypes/openviking-summary-model` with `kmctl new prototype`.
 - Updated `practices/openviking-vision-models`: the vlm block now names `ollama/inkling-2-small`, measured 2026-11-23, and accepting an image is not reading it (gemma4:31b misread identifiers). Wrote `decisions/0032-summarize-openviking-content-with-inkling-2-small` and `prototypes/openviking-summary-model` with the evidence.
 - Added `decisions/0033-networkmanager-nodes-get-public-fallback-resolvers` with `kmctl new decision`.
+- Corrected `decisions/0033-networkmanager-nodes-get-public-fallback-resolvers`: the DNS play moved to `bootstrap/playbooks/configure_dns.yml`. Updated `nodes/radxa-dragon-q6a`, `nodes/orangepi4a`, `components/bootstrap` and `components/host-firewall` to match.

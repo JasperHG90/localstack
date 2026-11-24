@@ -47,6 +47,7 @@ bootstrap: ssh_add setup
     ansible-playbook playbooks/configure_nvidia_ctk.yml
     ansible-playbook playbooks/configure_tailscale.yml
     ansible-playbook playbooks/configure_network.yml
+    ansible-playbook playbooks/configure_dns.yml
 
 shutdown:
     ansible all -i inventory/cluster.ini -m community.general.shutdown -a "delay=0" --become
