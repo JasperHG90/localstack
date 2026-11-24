@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "slug": "dns-playbook-split",
-  "stage": "ready",
-  "attempts": 0,
+  "stage": "building",
+  "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
@@ -17,8 +17,8 @@
   "closed_outside": false,
   "dropped": false,
   "archived": false,
-  "worktree": null,
-  "branch": null,
+  "worktree": "/home/vscode/workspace.worktrees/dns-playbook-split",
+  "branch": "loop/dns-playbook-split",
   "stamps": [],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/orchestrator",
@@ -113,8 +113,14 @@
       "to": "ready",
       "at": "2026-11-24T07:03:49+00:00",
       "by": "advance"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-11-24T07:03:52+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-24T07:03:50+00:00"
+  "at": "2026-11-24T07:03:52+00:00"
 }

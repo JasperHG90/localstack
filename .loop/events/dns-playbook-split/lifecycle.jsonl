@@ -5,3 +5,4 @@
 {"at": "2026-11-24T07:03:48+00:00", "dispatched_at": "2026-11-24T07:03:00+00:00", "kind": "round-close", "n": 2, "outcome": "pass", "round_kind": "plan", "schema_version": "1.0", "verdicts_at": {"plan-reviewer": "2026-11-24T07:03:35+00:00"}}
 {"at": "2026-11-24T07:03:49+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-11-24T07:03:50+00:00", "grant": "g8", "hash": "c1bffa10d6d9963797f2ca371f623ccdc77f15a94f5ba7068e35459a7e237fee", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/orchestrator", "step": "eval-sign"}
+{"at": "2026-11-24T07:03:52+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
