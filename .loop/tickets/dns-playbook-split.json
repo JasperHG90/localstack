@@ -20,10 +20,57 @@
   "worktree": null,
   "branch": null,
   "stamps": [],
-  "signoff": null,
+  "signoff": {
+    "signer": "delegated:jasperginn@gmail.com/orchestrator",
+    "hash": "c1bffa10d6d9963797f2ca371f623ccdc77f15a94f5ba7068e35459a7e237fee",
+    "at": "2026-11-24T07:03:50+00:00"
+  },
   "delegation": null,
   "budget_base": null,
-  "signed_rows": [],
+  "signed_rows": [
+    {
+      "id": "r1",
+      "behavior": "the DNS test reads the play from configure_dns.yml and still pins hosts, server order, options and searches=home",
+      "fails_when": "the test does not read bootstrap/playbooks/configure_dns.yml, or any of its assertions fail",
+      "command": "uv run --directory cli pytest tests/test_bootstrap_dns_fallback.py -q",
+      "judgment": false
+    },
+    {
+      "id": "r2",
+      "behavior": "configure_network.yml is byte for byte its state before dns-fallback, so it holds only the firewall plays",
+      "fails_when": "git diff between 4ae98ed7^1 and the working tree shows any change to bootstrap/playbooks/configure_network.yml",
+      "command": "git diff --exit-code 4ae98ed7^1 -- bootstrap/playbooks/configure_network.yml",
+      "judgment": false
+    },
+    {
+      "id": "r3",
+      "behavior": "both playbooks parse, and configure_dns.yml holds exactly one task, the DNS drop-in",
+      "fails_when": "either syntax check exits nonzero, or --list-tasks on configure_dns.yml shows any task other than 'Add public fallback resolvers after the router'",
+      "command": "cd bootstrap && ansible-playbook --syntax-check playbooks/configure_network.yml playbooks/configure_dns.yml && test \"$(ansible-playbook playbooks/configure_dns.yml --list-tasks | grep -E '^      [^ ]' | sed 's/\\t.*//; s/^ *//')\" = 'Add public fallback resolvers after the router'",
+      "judgment": false
+    },
+    {
+      "id": "r4",
+      "behavior": "just bootstrap runs configure_dns.yml",
+      "fails_when": "the bootstrap recipe in bootstrap/justfile does not run playbooks/configure_dns.yml",
+      "command": "cd bootstrap && just --dry-run bootstrap 2>&1 | grep -q 'ansible-playbook playbooks/configure_dns.yml'",
+      "judgment": false
+    },
+    {
+      "id": "r5",
+      "behavior": "the knowledge bundle passes its checks with ADR 0033 corrected by an appended section and the pages naming the new playbook",
+      "fails_when": "kmctl check exits nonzero",
+      "command": "kmctl check",
+      "judgment": false
+    },
+    {
+      "id": "r6",
+      "behavior": "ADR 0033's body above the new Correction section is unchanged; only its sources entry and the appended section differ",
+      "fails_when": "the diff of ADR 0033 against main touches any line other than the sources resource line and lines after the last existing line",
+      "command": null,
+      "judgment": true
+    }
+  ],
   "resigns": [],
   "accepted_risks": [],
   "waivers": [],
@@ -69,5 +116,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-24T07:03:49+00:00"
+  "at": "2026-11-24T07:03:50+00:00"
 }
