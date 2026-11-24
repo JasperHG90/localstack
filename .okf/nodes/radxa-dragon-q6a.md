@@ -10,8 +10,8 @@ generated:
 sources:
   - id: inventory
     resource: bootstrap/inventory/cluster.ini
-  - id: network-playbook
-    resource: bootstrap/playbooks/configure_network.yml
+  - id: dns-playbook
+    resource: bootstrap/playbooks/configure_dns.yml
   - id: infra-services
     resource: deployments/infrastructure/services.tf
   - id: apps-services
@@ -121,7 +121,7 @@ embark's `redis_host`. The NATS exporter. Vault's Redis connection. ov-dash's
   memory, so any restart of the Redis task (a node reboot included) leaves
   consumers such as embark serving uncached until they are restarted by hand.
 - **DNS falls back past the router.** NetworkManager writes
-  `/etc/resolv.conf` here, not a `127.0.0.53` stub. The network playbook adds
+  `/etc/resolv.conf` here, not a `127.0.0.53` stub. `configure_dns.yml` adds
   `1.1.1.1` and `9.9.9.9` after the router and keeps `search home`
   ([ADR 0033](/decisions/0033-networkmanager-nodes-get-public-fallback-resolvers.md)).
   A container keeps the copy made when it was created, so restart

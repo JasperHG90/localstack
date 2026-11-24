@@ -32,7 +32,7 @@ on the live hosts, are [ufw rules outside user.rules](/practices/ufw-rules-outsi
 
 | Writer | File | Owns | Runs |
 | --- | --- | --- | --- |
-| Ansible `firewall` role | `bootstrap/roles/firewall/tasks/main.yml`, ports in `bootstrap/playbooks/configure_network.yml` | SSH, Consul, Vault, Nomad, the Nomad dynamic range `20000:32000` | `configure_network.yml`, the last step of `just bootstrap` |
+| Ansible `firewall` role | `bootstrap/roles/firewall/tasks/main.yml`, ports in `bootstrap/playbooks/configure_network.yml` | SSH, Consul, Vault, Nomad, the Nomad dynamic range `20000:32000` | `configure_network.yml`, step 9 of `just bootstrap` |
 | `null_resource.firewall`, infrastructure root | `local.firewall_rules` in `deployments/infrastructure/services.tf` | Postgres, postgres_exporter, SeaweedFS, HAProxy, Prometheus, Grafana, node-exporter, Redis, NATS, oauth2-proxy, and 8080 on ubuntu open to the LAN and tailnet (`nomad_pack_applications_ubuntu`) | every `terraform apply` |
 | `null_resource.firewall`, applications root | `local.firewall_rules` in `deployments/applications/services.tf` | ov-dash, Hermes, Loki, Tempo, embark, registry, Bifrost, dash, OpenViking, driftwatch | only when an entry's `rules` or `host` change |
 
