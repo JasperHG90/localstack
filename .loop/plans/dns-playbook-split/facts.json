@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "slug": "dns-playbook-split",
+  "plan_hash": "9c65c066f30d0008405b4237c0d03b4c5a9ada6e6ad8cdcb57699467125d29e6",
+  "problems": [
+    {
+      "id": "P1",
+      "text": "Applying the DNS fallback means running the firewall playbook, which also runs the ufw role on radxa and orange_pi_4a."
+    }
+  ],
+  "goals": [
+    {
+      "id": "G1",
+      "text": "The DNS fallback can be applied without touching the firewall."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1",
+      "change": "The DNS play lives in its own playbook and the firewall playbook is back to firewall only",
+      "kind": "behaviour",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [],
+      "needs_index": [],
+      "touches": [
+        "new:bootstrap/playbooks/configure_dns.yml",
+        "bootstrap/playbooks/configure_network.yml",
+        "bootstrap/justfile",
+        "cli/tests/test_bootstrap_dns_fallback.py"
+      ],
+      "checked_by": "the test reading the new playbook, `--syntax-check` on both playbooks, and a diff of `configure_network.yml` against its state before `dns-fallback`",
+      "seen_by": "operator"
+    },
+    {
+      "id": "O2",
+      "change": "The knowledge bundle names the new playbook",
+      "kind": "support",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [
+        "O1"
+      ],
+      "needs_index": [
+        0
+      ],
+      "touches": [
+        ".okf/decisions/0033-networkmanager-nodes-get-public-fallback-resolvers.md",
+        ".okf/nodes/radxa-dragon-q6a.md",
+        ".okf/nodes/orangepi4a.md",
+        ".okf/components/bootstrap.md"
+      ],
+      "checked_by": "`kmctl check`",
+      "seen_by": "nobody"
+    }
+  ]
+}
