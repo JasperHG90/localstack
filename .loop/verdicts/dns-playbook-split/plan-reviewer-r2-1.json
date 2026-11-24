@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "ADR 0033 is stable and the plan rewrote its body in place; the revision appends a Correction section instead.",
+      "anchor": ".loop/plans/dns-playbook-split/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "84ef4ddfbad40bb4e333fcf210a9887436a2d6d654ab5333f37bc38fb17abd9a"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-24T07:03:35+00:00",
+  "checklist": null
+}
