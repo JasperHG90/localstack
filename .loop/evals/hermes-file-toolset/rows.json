@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "Every entry in both platform_toolsets lists (email, telegram) in the config.yaml that deployments/applications/services/hermes.hcl renders is a toolset name hermes-agent defines, so the file toolset is named `file`.",
+      "fails_when": "any platform_toolsets entry, including `files`, is not in the test's list of upstream toolset names, or `file` is missing from either list",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "After the apply, the hermes gateway log has no 'references unknown toolset' warning, and a Telegram request to read a file on the data volume is answered using a file tool.",
+      "fails_when": "the warning still appears, the request gets no file tool, or the evidence is not recorded in the review",
+      "judgment": true
+    }
+  ]
+}

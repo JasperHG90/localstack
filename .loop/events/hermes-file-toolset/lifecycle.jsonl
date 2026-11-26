@@ -1,1 +1,2 @@
 {"at": "2026-11-26T13:32:17+00:00", "kind": "register", "schema_version": "1.0", "stage": "planning"}
+{"at": "2026-11-26T13:49:10+00:00", "grant": "g9", "hash": "5c4ed5656889833e57c8695e0c85f9ad6c319bfa01093423d981ce0238779b16", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/claude", "step": "eval-sign"}
