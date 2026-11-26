@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "hermes-update-0-23",
+  "n": 1,
+  "command": "/home/vscode/spike-scratch/hermes-2/bifrost.sh",
+  "scripts": [
+    {
+      "source": "/home/vscode/spike-scratch/hermes-2/bifrost.sh",
+      "copy": "files/bifrost.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "47130ff486448fe30d5839d37b40860c8a46998c",
+  "fingerprint": "232460e46ddd06d1de11c5182043c2a1aa946179ec7cc156817d87f4344413dc",
+  "started_at": "2026-11-26T13:33:39+00:00",
+  "finished_at": "2026-11-26T13:33:56+00:00",
+  "duration_seconds": 16.887,
+  "timeout_seconds": 300.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.4.0",
+  "moved_from": null
+}
