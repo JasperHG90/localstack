@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "slug": "bifrost-update-2-6",
+  "n": 2,
+  "command": "/home/vscode/spike-scratch/bifrost-1/vk_upgrade.sh 0.1.1 v2.3.1 v2.6.0",
+  "scripts": [
+    {
+      "source": "/home/vscode/spike-scratch/bifrost-1/vk_upgrade.sh",
+      "copy": "files/vk_upgrade.sh"
+    },
+    {
+      "source": "/home/vscode/spike-scratch/bifrost-1/stub.py",
+      "copy": "files/stub.py"
+    }
+  ],
+  "where": "worktree",
+  "head": "0325d4e03477665b6636bd413cfa3e9128f9edf7",
+  "fingerprint": "232460e46ddd06d1de11c5182043c2a1aa946179ec7cc156817d87f4344413dc",
+  "started_at": "2026-11-26T13:34:06+00:00",
+  "finished_at": "2026-11-26T13:34:39+00:00",
+  "duration_seconds": 32.06,
+  "timeout_seconds": 400.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.4.0",
+  "moved_from": null
+}

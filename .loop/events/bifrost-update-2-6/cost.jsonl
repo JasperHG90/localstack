@@ -1,1 +1,2 @@
 {"at": "2026-11-26T13:34:08+00:00", "command": "/home/vscode/spike-scratch/bifrost-2/run.sh", "exit": 0, "kind": "spike", "n": 1, "schema_version": "1.0"}
+{"at": "2026-11-26T13:34:39+00:00", "command": "/home/vscode/spike-scratch/bifrost-1/vk_upgrade.sh 0.1.1 v2.3.1 v2.6.0", "exit": 0, "kind": "spike", "n": 2, "schema_version": "1.0"}

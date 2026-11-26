@@ -1,0 +1,269 @@
+provider=0.1.1 from=v2.3.1 to=v2.6.0 work=/home/vscode/spike-scratch/bifrost-1/run.HTLJ
+health on v2.3.1: {"components":{"db_pings":"ok"},"status":"ok"}
+Terraform v1.16.5
+== apply (create) on v2.3.1
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # bifrost_virtual_key.hermes will be created
+  + resource "bifrost_virtual_key" "hermes" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "hermes"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "embark"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "gemini"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+  # bifrost_virtual_key.memex will be created
+  + resource "bifrost_virtual_key" "memex" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "memex"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "embark"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "gemini"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+  # bifrost_virtual_key.openviking will be created
+  + resource "bifrost_virtual_key" "openviking" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "openviking"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "embark"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "gemini"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+  # bifrost_virtual_key.router will be created
+  + resource "bifrost_virtual_key" "router" {
+      + description      = (known after apply)
+      + id               = (known after apply)
+      + is_active        = true
+      + name             = "router"
+      + provider_configs = [
+          + {
+              + allowed_models = [
+                  + "clef:27b",
+                  + "deepseek-v4.1-flash",
+                  + "gpt-oss:120b",
+                  + "mistral-large-4",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "ollama"
+              + weight         = 1
+            },
+          + {
+              + allowed_models = [
+                  + "*",
+                ]
+              + key_ids        = [
+                  + "*",
+                ]
+              + provider       = "typesafe"
+              + weight         = 1
+            },
+        ]
+      + value            = (sensitive value)
+    }
+
+Plan: 4 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + values = (sensitive value)
+bifrost_virtual_key.openviking: Creating...
+bifrost_virtual_key.router: Creating...
+bifrost_virtual_key.memex: Creating...
+bifrost_virtual_key.hermes: Creating...
+bifrost_virtual_key.openviking: Creation complete after 0s [id=3fac13d1-8792-40b9-8170-57b32f32bc54]
+bifrost_virtual_key.router: Creation complete after 0s [id=5b52dddc-d684-4467-b41b-d3c45e233dcc]
+bifrost_virtual_key.hermes: Creation complete after 0s [id=dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2]
+bifrost_virtual_key.memex: Creation complete after 0s [id=4ff6f426-29a7-4e02-b545-944e86a29d71]
+
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+values = <sensitive>
+plan on v2.3.1 after create exit=0
+v2.3.1 inference hermes: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.3.1 inference memex: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.3.1 inference openviking: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.3.1 inference bogus key: HTTP 401 {"type":"access_not_found","is_bifrost_error":false,"status_code":401,"error":{"message":"access not found. The provided credential does not exist or has been revoked."},"extra_fields":{"routing_info"
+v2.3.1 inference router (no embark, expect governance refusal, not auth failure): HTTP 403 {"type":"provider_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Provider 'embark' is not allowed for virtual key 'router'"},"extra_fields":{"routing_info":{},"provider":"emba
+== API view on v2.3.1
+{"count":4,"limit":4,"offset":0,"total_count":4,"virtual_keys":[{"id":"5b52dddc-d684-4467-b41b-d3c45e233dcc","name":"router","is_active":true,"provider_configs":[{"id":2,"virtual_key_id":"5b52dddc-d684-4467-b41b-d3c45e233dcc","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["clef:27b","deepseek-v4.1-flash","gpt-oss:120b","mistral-large-4"],"blacklisted_models":[]},{"id":7,"virtual_key_id":"5b52dddc-d684-4467-b41b-d3c45e233dcc","provider":"typesafe","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-11-26T13:34:27.004939Z","updated_at":"2026-11-26T13:34:27.004939Z","value":"sk-bf-2d95fd58-7d48-4b55-8ed1-213d012c5829"},{"id":"3fac13d1-8792-40b9-8170-57b32f32bc54","name":"openviking","is_active":true,"provider_configs":[{"id":1,"virtual_key_id":"3fac13d1-8792-40b9-8170-57b32f32bc54","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":8,"virtual_key_id":"3fac13d1-8792-40b9-8170-57b32f32bc54","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":10,"virtual_key_id":"3fac13d1-8792-40b9-8170-57b32f32bc54","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_gran
+ids+values on v2.3.1: 4 0be1f6f268153e84
+hermes ['embark', 'gemini', 'ollama']
+memex ['embark', 'gemini', 'ollama']
+openviking ['embark', 'gemini', 'ollama']
+router ['ollama', 'typesafe']
+== upgrade: stop v2.3.1, start v2.6.0 on the same Postgres
+health on v2.6.0: {"components":{"db_pings":"ok"},"status":"ok"}
+== API view on v2.6.0
+{"count":4,"limit":4,"offset":0,"total_count":4,"virtual_keys":[{"id":"5b52dddc-d684-4467-b41b-d3c45e233dcc","name":"router","is_active":true,"provider_configs":[{"id":2,"virtual_key_id":"5b52dddc-d684-4467-b41b-d3c45e233dcc","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["clef:27b","deepseek-v4.1-flash","gpt-oss:120b","mistral-large-4"],"blacklisted_models":[]},{"id":7,"virtual_key_id":"5b52dddc-d684-4467-b41b-d3c45e233dcc","provider":"typesafe","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_configs":[],"agent_grants":[],"relay_grants":[],"calendar_aligned":false,"allow_all_providers":false,"assigned_user":null,"config_hash":"","created_at":"2026-11-26T13:34:27.004939Z","updated_at":"2026-11-26T13:34:27.004939Z","value":"sk-bf-2d95fd58-7d48-4b55-8ed1-213d012c5829"},{"id":"3fac13d1-8792-40b9-8170-57b32f32bc54","name":"openviking","is_active":true,"provider_configs":[{"id":1,"virtual_key_id":"3fac13d1-8792-40b9-8170-57b32f32bc54","provider":"embark","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":8,"virtual_key_id":"3fac13d1-8792-40b9-8170-57b32f32bc54","provider":"gemini","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]},{"id":10,"virtual_key_id":"3fac13d1-8792-40b9-8170-57b32f32bc54","provider":"ollama","weight":1,"allow_all_keys":true,"keys":[],"allowed_models":["*"],"blacklisted_models":[]}],"mcp_confi
+ids+values on v2.6.0: 4 0be1f6f268153e84
+hermes ['embark', 'gemini', 'ollama']
+memex ['embark', 'gemini', 'ollama']
+openviking ['embark', 'gemini', 'ollama']
+router ['ollama', 'typesafe']
+== plan on v2.6.0 (refresh of v2.3.1 state)
+bifrost_virtual_key.hermes: Refreshing state... [id=dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2]
+bifrost_virtual_key.openviking: Refreshing state... [id=3fac13d1-8792-40b9-8170-57b32f32bc54]
+bifrost_virtual_key.memex: Refreshing state... [id=4ff6f426-29a7-4e02-b545-944e86a29d71]
+bifrost_virtual_key.router: Refreshing state... [id=5b52dddc-d684-4467-b41b-d3c45e233dcc]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+plan after upgrade exit=0
+v2.6.0 inference hermes: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.6.0 inference memex: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.6.0 inference openviking: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.6.0 inference bogus key: HTTP 401 {"type":"access_not_found","is_bifrost_error":false,"status_code":401,"error":{"message":"access not found. The provided credential does not exist or has been revoked."},"extra_fields":{"routing_info"
+v2.6.0 inference router (no embark, expect governance refusal, not auth failure): HTTP 403 {"type":"provider_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Provider 'embark' is not allowed for virtual key 'router'"},"extra_fields":{"routing_info":{},"provider":"emba
+== in-place update on v2.6.0: hermes gemini weight 1 -> 2
+bifrost_virtual_key.openviking: Refreshing state... [id=3fac13d1-8792-40b9-8170-57b32f32bc54]
+bifrost_virtual_key.hermes: Refreshing state... [id=dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2]
+bifrost_virtual_key.router: Refreshing state... [id=5b52dddc-d684-4467-b41b-d3c45e233dcc]
+bifrost_virtual_key.memex: Refreshing state... [id=4ff6f426-29a7-4e02-b545-944e86a29d71]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # bifrost_virtual_key.hermes will be updated in-place
+  ~ resource "bifrost_virtual_key" "hermes" {
+        id               = "dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2"
+        name             = "hermes"
+      ~ provider_configs = [
+          ~ {
+              ~ weight         = 1 -> 2
+                # (3 unchanged attributes hidden)
+            },
+            # (2 unchanged elements hidden)
+        ]
+        # (3 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+bifrost_virtual_key.hermes: Modifying... [id=dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2]
+bifrost_virtual_key.hermes: Modifications complete after 0s [id=dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+values = <sensitive>
+update-apply exit=0 plan-after-update exit=0
+v2.6.0 after update inference hermes: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.6.0 after update inference memex: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.6.0 after update inference openviking: HTTP 200 {"data":[{"index":0,"object":"embedding","embedding":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]}],"model":"embedding","object":"list","usage":{"prompt_tokens":1,"total_tokens":1},"extra_fields":{"request_type"
+v2.6.0 after update inference bogus key: HTTP 401 {"type":"access_not_found","is_bifrost_error":false,"status_code":401,"error":{"message":"access not found. The provided credential does not exist or has been revoked."},"extra_fields":{"routing_info"
+v2.6.0 after update inference router (no embark, expect governance refusal, not auth failure): HTTP 403 {"type":"provider_blocked","is_bifrost_error":false,"status_code":403,"error":{"message":"Provider 'embark' is not allowed for virtual key 'router'"},"extra_fields":{"routing_info":{},"provider":"emba
+== API view of hermes after update
+[{"id": 12, "virtual_key_id": "dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2", "provider": "embark", "weight": 1, "allow_all_keys": true, "keys": [], "allowed_models": ["*"], "blacklisted_models": []}, {"id": 13, "virtual_key_id": "dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2", "provider": "gemini", "weight": 2, "allow_all_keys": true, "keys": [], "allowed_models": ["*"], "blacklisted_models": []}, {"id": 14, "virtual_key_id": "dfe4c62b-2aae-45a5-aae9-b75be3c1f4b2", "provider": "ollama", "weight": 1, "allow_all_keys": true, "keys": [], "allowed_models": ["*"], "blacklisted_models": []}]
+SUMMARY ids_same=1 pre_fails=0 plan0=0 plan_after_upgrade=0 infer_fails_after_upgrade=0 update_apply=0 plan_after_update=0 infer_fails_after_update=0
+RESULT: clean
