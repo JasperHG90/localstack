@@ -8,7 +8,7 @@ dependencies:
     # MCP server. Keep the ref the same as the kmctl CLI (`just kmctl`).
     - git: https://github.com/JasperHG90/kmctl.git
       path: packages/kmctl/apm
-      ref: v0.14.0
+      ref: v0.15.0
     # Skills, each at the commit aim installed it from, so their content does
     # not change in the move from aim.
     - jasperhg90/skills/skills/architecture/manifesto#7e0ee1b4260c1bbe9b4c917ccc6a6aa5e169609c

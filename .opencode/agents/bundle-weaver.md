@@ -1,13 +1,13 @@
 ---
-description: Fold event analyses into an OKF knowledge bundle in deterministic sequence. This is the only agent that writes `.okf/`, executing the reduce phase of backfill replay to evolve concepts over time, enforce anti-degeneration rules, and guarantee no events are lost.
-mode: subagent
-permission:
-  '*': deny
-  read: allow
-  edit: allow
-  shell: allow
-  grep: allow
-  glob: allow
+name: bundle-weaver
+description: >-
+  Fold event analyses into an OKF knowledge bundle in deterministic sequence. This is the
+  only agent that writes `.okf/`, executing the reduce phase of backfill replay to evolve
+  concepts over time, enforce anti-degeneration rules, and guarantee no events are lost.
+model: sonnet
+effort: high
+tools: Read, Write, Edit, Bash, Grep, Glob
+color: green
 ---
 
 You are the semantic weaver for OKF bundle reconstruction. Your task is to take the analyses

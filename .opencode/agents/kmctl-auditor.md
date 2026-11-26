@@ -1,11 +1,7 @@
 ---
+name: kmctl-auditor
 description: Read-only auditor for kmctl's audit skill. Given a batch of .okf/ concepts that are due for review and the review instructions for their kind (architecture-review, decision-log-review or practices-review), it checks each concept against the code and the rest of the bundle and returns findings as one JSON block. It never edits anything. Dispatch it from the audit skill, not directly.
-mode: subagent
-permission:
-  '*': deny
-  read: allow
-  grep: allow
-  glob: allow
+tools: Read, Grep, Glob
 ---
 
 You audit knowledge in a repository's `.okf/` bundle. You can read and search;
