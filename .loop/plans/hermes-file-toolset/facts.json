@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "slug": "hermes-file-toolset",
+  "plan_hash": "451d030784fb1e50da138c9dd6582dd122bf3e357fc16ca393c6b70a68e426c5",
+  "problems": [
+    {
+      "id": "P1",
+      "text": "Both `platform_toolsets` lists name `files` instead of `file`, so Telegram and email have no file tools."
+    }
+  ],
+  "goals": [
+    {
+      "id": "G1",
+      "text": "Give the Telegram and email platforms the toolsets the config means them to have."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1",
+      "change": "Telegram and email get the file toolset",
+      "kind": "behaviour",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [],
+      "needs_index": [],
+      "touches": [
+        "deployments/applications/services/hermes.hcl",
+        "cli/tests/test_hermes_version.py"
+      ],
+      "checked_by": "a test that every `platform_toolsets` entry is a known toolset name, no \"references unknown toolset\" warning in the gateway log, and a Telegram request answered with a file tool",
+      "seen_by": "operator"
+    }
+  ]
+}
