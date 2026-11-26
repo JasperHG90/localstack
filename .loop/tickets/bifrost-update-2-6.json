@@ -3,7 +3,7 @@
   "slug": "bifrost-update-2-6",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -61,8 +61,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "3e9a6222d27cd5d3bbcf9cd7791f59ee6bd0d6ffea9bceb24d19b7e563121f30",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "10f27a8d925fe6da91c5496de8c26616f959ed48fb01cef6e13044da284abf58",
+    "started_at": "2026-11-26T13:52:57+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "10f27a8d925fe6da91c5496de8c26616f959ed48fb01cef6e13044da284abf58",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -77,5 +96,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-26T13:49:07+00:00"
+  "at": "2026-11-26T13:52:57+00:00"
 }
