@@ -1,0 +1,59 @@
+== spike Dockerfile
+FROM nousresearch/hermes-agent:v0.23.4
+USER root
+ARG OPENVIKING_PLUGIN_SHA=9f150ece247ad683494ab172d738023bd6dc6170
+RUN mkdir -p /opt/hermes/plugins/memory/openviking \
+    && curl -fsSL "https://codeload.github.com/volcengine/OpenViking/tar.gz/${OPENVIKING_PLUGIN_SHA}" \
+      | tar xz -C /opt/hermes/plugins/memory/openviking --strip-components=3 \
+        "OpenViking-${OPENVIKING_PLUGIN_SHA}/examples/hermes-plugin" \
+    && rm -rf /opt/hermes/plugins/memory/openviking/tests \
+    && grep -q 'version: 2.1.1' /opt/hermes/plugins/memory/openviking/plugin.yaml
+
+COPY openviking_tools /opt/hermes/plugins/memory/openviking_tools
+sha256:356ef41f9c9e52c199b73a922d5db2235c979adcd89972dee5f1da8d80c3d444
+== render the config task output from hermes.hcl
+render: wrote .env, config.yaml, plugins/model-providers/bifrost/__init__.py, plugins/model-providers/bifrost/plugin.yaml
+38:  provider: "openviking_tools"
+== gateway on a network with no route off the host
+gateway hspk58689-h answered /health with 200
+reply: {"id": "chatcmpl-2cc7010c6f1441a38cb2fa83b1316", "object": "chat.completion", "created": 1795700310, "model": "hermes-agent", "choices": [{"index": 0, "message": {"role": "assistant", "content": "SPIKE-DONE"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}}
+-- hermes memory status
+dotenv /opt/data/.env: ignoring launch-only key HERMES_HOME — only the launch environment may set it
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+Memory status
+────────────────────────────────────────
+  Built-in (MEMORY.md / USER.md):
+    Memory injection:   enabled ✓
+    User profile:       enabled ✓
+    Memory tool:        enabled ✓
+  Provider:  openviking_tools
+
+  Plugin:    installed ✓
+  Status:    available ✓
+
+  Installed plugins:
+    • byterover  (API key / local)
+    • openviking  (API key / local)
+    • openviking_tools  (API key / local) ← active
+    • retaindb  (API key / local)
+
+PASS: memory status shows openviking_tools active
+PASS: reply came back after a viking_search result
+1 search request(s) with the placeholder key
+PASS: viking_search reached the stub at OPENVIKING_ENDPOINT with the placeholder key
+PASS: logs show no error loading the memory provider
+PASS: no runtime plugin install under /opt/data/plugins
+-- stub requests
+1934 GET /health x-api-key=-
+8080 POST /v1/chat/completions x-api-key=-
+8080 POST /v1/chat/completions x-api-key=-
+8080 GET /v1/models x-api-key=-
+8080 GET /v1/models x-api-key=-
+1934 POST /api/v1/search/find x-api-key=unused-the-sidecar-supplies-the-token
+8080 POST /v1/chat/completions x-api-key=-
+-- log lines about the provider
+2026-11-26 13:38:32,353 INFO agent.memory_manager: Memory provider 'openviking_tools' registered (7 tools)
+2026-11-26 13:38:32,361 INFO run_agent: Memory provider 'openviking_tools' activated
+2026-11-26 13:38:32,533 INFO [api-955e7b9050e9ca8b] agent.turn_context: conversation turn: session=api-955e7b9050e9ca8b model=ollama/deepseek-v4.1-flash provider=bifrost platform=api_server history=0 msg='Search OpenViking for the spike probe.'
+== result: FAIL=0
