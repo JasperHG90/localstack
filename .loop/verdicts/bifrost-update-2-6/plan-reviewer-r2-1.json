@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "The Go 1.27.3 x509 risk is now risk 2 and settled by spike:bifrost-update-2-6/3, which reached all three upstreams through TLS on 2.6.0 and 2.3.1 with a working negative control.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "O1 now needs O2 and O3.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "resolved",
+      "claim": "P3 names the one-way migrations and O2 fixes P3.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "a1ef1c8a613658797ef645ca6aa3c1adadff78be1394f2fb30af7a1949ac9595"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-26T14:01:49+00:00",
+  "checklist": null
+}
