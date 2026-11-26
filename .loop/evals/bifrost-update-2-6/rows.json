@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "Bifrost is pinned to exactly 2.6.0 in deployments/applications/services.tf, the AirHelp-OSP/bifrost provider stays at ~>0.1.0, and scripts/bifrost_smoke.py still treats `access_not_found` as the unknown-key refusal.",
+      "fails_when": "the pin is any other version or a floating tag, the provider constraint moves, or the smoke script stops expecting `access_not_found`",
+      "command": "uv run --directory cli pytest tests/test_bifrost_version.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "Before the apply, a dump of the bifrost config-store database is taken and copied to a name no job overwrites, and that path is recorded in .okf/components/bifrost.md, because 2.6.0 runs non-reversible store migrations.",
+      "fails_when": "no dump is taken before the apply, it sits only at a path backup-postgres overwrites, or its path is not recorded",
+      "judgment": true
+    },
+    {
+      "id": "r3",
+      "behavior": "After the apply, job bifrost runs healthy on v2.6.0; scripts/bifrost_smoke.py passes against it (inference auth, metrics auth, the four named virtual keys, an embedding routed to embark); a bare-string rerank through the OpenViking virtual key returns 200; one chat call to Gemini returns 200; and a second terraform plan of deployments/applications changes no bifrost_virtual_key.",
+      "fails_when": "any of those fails, or its evidence is not recorded in the review",
+      "judgment": true
+    },
+    {
+      "id": "r4",
+      "behavior": ".okf/components/bifrost.md and any other page naming the current Bifrost version say 2.6.0, and the component page notes that the 2.3.1 to 2.6.0 store migrations are one-way and that bifrost_upstream_latency_seconds no longer counts queue wait.",
+      "fails_when": "a page still names 2.3.1 as current, or either note is missing",
+      "judgment": true
+    }
+  ]
+}
