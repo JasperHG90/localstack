@@ -436,15 +436,20 @@ locals {
       ssh_user = "firebat"
       rules    = ["allow from 192.168.2.47 to any port 9187 proto tcp"]
     }
-    # Redis cache on radxa-dragon-q6a. Narrowed from LAN-wide now that a
-    # caller exists: embark is registered in redis_cache_consumers
-    # (database.tf) and runs on jetson-orin-nano. Add a node here
-    # when its job joins that list, or it fails to reach the cache.
+    # Redis cache on radxa-dragon-q6a. ufw does NOT enforce these rules: the
+    # job publishes 6379 through Podman's bridge, netavark DNATs it before
+    # ufw-user-input, and FORWARD accepts it, so any LAN host can connect.
+    # The per-consumer ACL users Vault mints are the real gate
+    # (.okf/components/redis.md). The list stays right for the day the job
+    # moves to host networking: .46 is embark (redis_cache_consumers in
+    # database.tf), .30 is Vault, whose redis engine dials 192.168.2.50:6379
+    # to create and revoke each consumer's user.
     redis = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
       rules = [
         "allow from 192.168.2.46 to any port 6379 proto tcp",
+        "allow from 192.168.2.30 to any port 6379 proto tcp",
       ]
     }
     # NATS+JetStream on radxa-dragon-q6a (LAN-only; no auth in v1)
@@ -462,13 +467,6 @@ locals {
     # is that traffic goes through HAProxy first.
     # Two proxies, two ports: 4180 gates dash, 4181 registry-ui. Both admit
     # HAProxy's node alone, which is why the edge is the only route in.
-    #
-    # 4182 gated OpenViking until its proxy was deleted. These rules are
-    # ONE-WAY -- `null_resource.firewall` below runs `ufw allow` on every apply
-    # and never revokes -- so that grant outlives this edit and has to be
-    # deleted on the node:
-    #   ssh radxa@192.168.2.50 \
-    #     'sudo ufw delete allow from 192.168.2.30 to any port 4182 proto tcp'
     oauth2_proxy = {
       host     = "192.168.2.50"
       ssh_user = "radxa"
