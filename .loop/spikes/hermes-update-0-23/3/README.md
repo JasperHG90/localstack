@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.4.0
-  at: '2026-11-26T13:38:38+00:00'
+  at: '2026-11-26T13:38:55+00:00'
 slug: hermes-update-0-23
 n: 3
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike hermes-update-0-23/3
@@ -24,7 +24,9 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note hermes-update-0-23 3`.
+An image built `FROM nousresearch/hermes-agent:v0.23.4` with the Dockerfile's own catalog-plugin `RUN` (pin `9f150ece`, version 2.1.1) and `COPY openviking_tools`, run as the unattended `hermes gateway run` with config.yaml rendered from `hermes.hcl` (`memory.provider: "openviking_tools"`), logged `Memory provider 'openviking_tools' registered (7 tools)` and `activated`, with no error, traceback or compat warning about the provider. `hermes memory status` shows `openviking_tools ← active`.
+One API-server turn made the model call `viking_search`, which sent 1 `POST /api/v1/search/find` with the placeholder key to the stub at `OPENVIKING_ENDPOINT` (127.0.0.1:1934), and the reply came back after the result. The container had no route off the host and nothing was installed under /opt/data/plugins.
+This rules out a plugin bump or wrapper rewrite for the load path and settles risk 2. Limits: stubs stood in for the sidecar and Bifrost, the apt and faster-whisper layers were left out of the image, and only viking_search of the seven tools was called.
 
 ## Files
 
