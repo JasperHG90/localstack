@@ -6,7 +6,7 @@ alias p := pre_commit
 alias u := unseal_vault
 alias w := worktree_setup
 apm := "uvx --from apm-cli==0.33.0 apm"
-kmctl_ref := "v0.14.0"
+kmctl_ref := "v0.18.0"
 kmctl_src := "git+https://github.com/JasperHG90/kmctl@" + kmctl_ref + "#subdirectory=packages/kmctl"
 # kmctl at the pinned release, without touching the kmctl on your PATH.
 kmctl := "uvx --from " + kmctl_src + " kmctl"
@@ -161,9 +161,16 @@ mfa_test:
 # Set up a fresh clone: the kmctl CLI, the APM dependencies, the knowledge folders.
 bootstrap: kmctl kmctl-install kmctl-init
 
+# Refuse while git holds unmerged files, such as the conflicts a copier update leaves.
+# kmctl, kmctl-install and kmctl-install-frozen depend on it. The `just kmctl-install`
+# that kmctl-upgrade runs reads the rewritten justfile, so it stops here even when an
+# old justfile, which has no such check, started the upgrade.
+_merged:
+    @conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null); if [ -n "$conflicts" ]; then printf '%s\n' "$conflicts" "git holds the unmerged files above, such as the conflicts a copier update leaves: keep your changes and the new kmctl ref, with your own content below the comment that follows each pin, git add the files, then run just kmctl kmctl-install" >&2; exit 1; fi
+
 # Install the kmctl CLI on your PATH unless one as new as the pin is there, then fetch the pin.
 # The kmctl on PATH runs each project's pinned release, so one install serves every project.
-kmctl:
+kmctl: _merged
     #!/usr/bin/env bash
     set -euo pipefail
     have=$(KMCTL_PINNED=1 kmctl --version 2>/dev/null | awk '{print $2}') || have=""
@@ -174,14 +181,14 @@ kmctl:
 
 # Install the APM dependencies in apm.yml for its targets, then what APM cannot install yet.
 # APM writes no OpenCode rules, and OpenCode rejects the two subagents' front matter.
-kmctl-install:
+kmctl-install: _merged
     {{apm}} install
     {{kmctl}} plugin patch
     mkdir -p .opencode/rules && cp .claude/rules/adversarial-reviews.md .claude/rules/pre-existing-issues.md .claude/rules/prek-code-quality.md .claude/rules/python-testing.md .claude/rules/uv-installer.md .claude/rules/plain-language.md .claude/rules/slop-scan-for-docs.md .opencode/rules/
     rm -f .opencode/agents/adversarial-reviewer.md .opencode/agents/feature-planner.md
 
 # Install exactly what apm.lock.yaml records (for a clean clone or CI).
-kmctl-install-frozen:
+kmctl-install-frozen: _merged
     {{apm}} install --frozen
     {{kmctl}} plugin patch
     mkdir -p .opencode/rules && cp .claude/rules/adversarial-reviews.md .claude/rules/pre-existing-issues.md .claude/rules/prek-code-quality.md .claude/rules/python-testing.md .claude/rules/uv-installer.md .claude/rules/plain-language.md .claude/rules/slop-scan-for-docs.md .opencode/rules/
