@@ -74,6 +74,7 @@ shows no change to any `bifrost_virtual_key`. `just pre_commit` and
 ## Problems
 
 - P1: Bifrost runs 2.3.1, three minor releases behind upstream 2.6.0.
+- P3: The 2.3.1 to 2.6.0 store migrations are one-way, so a failed upgrade has no way back without a dump.
 - P2: The pin test and the component page name 2.3.1, so a moved pin fails the gate and leaves the docs wrong.
 
 ## Goals
@@ -87,7 +88,7 @@ shows no change to any `bifrost_virtual_key`. `just pre_commit` and
 - kind: behaviour
 - goal: G1
 - fixes: P1
-- needs: O2
+- needs: O2, O3
 - touches: `deployments/applications/services.tf`
 - checked by: `scripts/bifrost_smoke.py` against the new gateway, a bare-string rerank through the OpenViking key, a Gemini chat call, and a second `terraform plan` with no `bifrost_virtual_key` change
 - seen by: operator
@@ -95,7 +96,7 @@ shows no change to any `bifrost_virtual_key`. `just pre_commit` and
 ### O2: A dump of the bifrost store, taken before the apply, sits at a name no job overwrites
 - kind: support
 - goal: G2
-- fixes: P1
+- fixes: P3
 - needs: none
 - touches: `.okf/components/bifrost.md`
 - checked by: the dump's object listed in the backup bucket and its path recorded in the component page
@@ -126,6 +127,20 @@ shows no change to any `bifrost_virtual_key`. `just pre_commit` and
   came back in alphabetical order, and `terraform plan -detailed-exitcode`
   exited 0. The keys authenticated, and an in-place update applied and
   planned clean. The provider stays at `~>0.1.0`.
+- TLS to the upstreams. 2.3.2 builds with Go 1.27.3, whose `crypto/x509`
+  no longer accepts chains through some intermediates, for every TLS
+  connection Bifrost makes to a provider. If ollama.com, Gemini or typesafe
+  serves such a chain, calls to it fail with an x509 error. The smoke test
+  would only show that after the apply has run the one-way store migrations,
+  so 2.6.0 would be the wrong target and the way back would be a dump
+  restore.
+  Settled by `spike:bifrost-update-2-6/3`: on 2.6.0 and 2.3.1 alike, with
+  the `bifrost.hcl` provider blocks and bogus keys, Gemini, typesafe and
+  ollama.com each answered with an HTTP auth error after the handshake. No
+  response or log line held an x509 error. A control pointed at an untrusted
+  root returned `provider_connection_failed` with the x509 text, so a chain
+  rejection would have shown. It ran from the devcontainer, not the cluster
+  nodes.
 - Rerank and embeddings through embark. OpenViking needs bare-string rerank
   documents accepted at the gateway and forwarded to the `openai`-based
   custom provider `embark` in a shape embark takes. The rerank code has zero
