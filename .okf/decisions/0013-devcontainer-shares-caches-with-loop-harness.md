@@ -7,8 +7,6 @@ generated:
   at: 2026-10-19
 tags: [adr, decision, devcontainer, uv, prek]
 status: stable
-decision_status: Accepted
-decided_on: 2026-10-19
 sources:
   - id: devcontainer
     resource: .devcontainer/devcontainer.json
@@ -64,3 +62,12 @@ be no hook cache to share.
   uv 0.11.16, `wheels-v7` for 0.13.0), so a pinned uv on one side would write
   beside the other's cache instead of into it. The sharing holds only while
   both images are rebuilt from base images with the same uv.
+
+## Correction, 2026-11-24
+
+[ADR 0015](/decisions/0015-loopctl-owns-the-pre-commit-hook-and-chains-prek-behind-it.md)
+changed the `just setup` consequence. Setup still runs
+`prek install --overwrite`, but it then moves prek's hook to
+`pre-commit.local` and runs `loopctl init --yes`, so loopctl's commit gate
+owns `.git/hooks/pre-commit` and runs prek's hook after it (`justfile`,
+recipe `setup`).

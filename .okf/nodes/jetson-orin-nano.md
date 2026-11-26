@@ -92,7 +92,7 @@ job is off).
 | Worker base ports from `192.168.0.0/16` | `bootstrap/playbooks/configure_network.yml` |
 | `node_exporter_jetson` 9100 from `.47` | `deployments/infrastructure/services.tf` |
 | `embark` 8000 from `.50` (Bifrost, driftwatch), `.46` (its own Consul check) and `.47` (Prometheus) | `deployments/applications/services.tf` |
-| Possibly live, no longer declared: memex's LAN-wide 8000 rule, which covers every narrow rule above | comment above `embark` and above `null_resource.firewall` in `deployments/applications/services.tf` |
+| Still live, no longer declared, checked on the node 2026-11-24: 6006 and 4317 from the LAN, 8100 from `.47`. Nothing listens on them. memex's LAN-wide 8000 rule is gone | `ufw status` on the node |
 
 As a caller, `192.168.2.46` is admitted by Redis (6379) on radxa for
 embark's cache, by Loki and Tempo on ubuntu, and by hermes 8642 on radxa, a

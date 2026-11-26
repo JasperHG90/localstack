@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, openviking, minio, workload-identity]
 status: stable
-decision_status: Accepted
-decided_on: 2026-09-05
 sources:
   - id: openviking-job
     resource: deployments/applications/services/openviking.hcl
@@ -54,3 +52,16 @@ reaches it.
 This is a step back from the direction the rest of the cluster is moving in,
 forced rather than chosen. If upstream ever makes those two fields optional and
 threads a session token, the route back is one config block.
+
+## Correction, 2026-11-24
+
+MinIO is gone. [ADR 0016](/decisions/0016-seaweedfs-replaces-minio.md) moved
+object storage to SeaweedFS, and
+[ADR 0018](/decisions/0018-remove-minio.md) removed MinIO, its keys and its
+`minio_iam_policy` resources. The choice this record made carried over:
+OpenViking still reads a static key, now its SeaweedFS key at
+`default/openviking/seaweedfs` (`vault_kv_secret_v2.seaweedfs_credentials` in
+`deployments/applications/secrets.tf`). The header of
+`deployments/applications/services/openviking.hcl` gives the same reasons,
+and `openviking` has no SeaweedFS role: it is not in
+`local.seaweedfs_keyless_jobs` in `deployments/infrastructure/services.tf`.

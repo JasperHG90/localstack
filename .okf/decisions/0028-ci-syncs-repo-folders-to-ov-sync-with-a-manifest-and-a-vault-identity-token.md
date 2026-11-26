@@ -78,3 +78,12 @@ Rejected:
   it.
 - A new repository needs an `ov_sync` caller entry and a prefix mapping in the
   consumer's `prefixes`, or its files land in the bucket and go nowhere.
+
+## Correction, 2026-11-24
+
+`.github/actions/openviking-sync/sync.py` now uploads in batches of 100
+files (`CHECKPOINT`), one `aws s3 cp --recursive` process per batch, and
+writes the manifest after each batch but the last, so a run killed partway
+keeps its progress. A failed write of one of those checkpoint manifests is
+reported and does not fail the run. Deletes run after the uploads, and the
+final manifest write, after the deletes, still fails the run when it fails.

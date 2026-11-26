@@ -53,3 +53,11 @@ Rejected:
 - `gemma4:31b` stays in `VISION_MODELS` as the measured fallback.
 - Existing summaries keep the flash-lite text until their directories are
   reindexed.
+
+## Correction, 2026-11-24
+
+`scripts/check_openviking_config.py` now asserts the key. `THINKING_MODELS`
+lists `ollama/inkling-2-small`, and `failures()` reports a `vlm` block whose
+model is in that set and whose `extra_request_body.reasoning_effort` is not
+`"none"`. Dropping the key is now caught by that check, not found by a slow
+ingest.

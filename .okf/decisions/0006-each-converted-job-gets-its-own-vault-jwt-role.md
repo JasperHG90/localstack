@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, vault, workload-identity, postgres, redis]
 status: stable
-decision_status: Accepted
-decided_on: 2026-08-03
 sources:
   - id: postgres-vault-dynamic-creds-spike
     resource: .okf/proposals/postgres-dynamic-credentials.md
@@ -72,3 +70,14 @@ The Redis cache's per-consumer JWT roles are
 `deployments/infrastructure/machine_roles.tf`, one per entry in
 `local.redis_cache_consumers`. `deployments/infrastructure/database.tf` holds
 that list and the comment that cites this record.
+
+## Correction, 2026-11-24
+
+mlflow's bucket no longer outlives its job. It was a MinIO bucket, and
+`deployments/applications/storage.tf` dropped it with every other `minio_*`
+resource when MinIO was removed
+([ADR 0018](/decisions/0018-remove-minio.md)). Its data went with the
+`minio_data` volume. Nothing under `deployments/` names mlflow except two
+comments in the oauth2-proxy jobspecs. The phoenix role and its KV entry
+still outlive their job (`deployments/applications/secrets.tf`,
+`deployments/applications/database.tf`).

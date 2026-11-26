@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, dns, consul, nats]
 status: stable
-decision_status: Accepted
-decided_on: 2026-07-26
 sources:
   - id: dns-records
     resource: docs/reference/dns.md
@@ -47,3 +45,12 @@ NXDOMAIN with an answer that connects to nothing and times out.
 `.consul` names stay unusable from the LAN. Correcting the NATS documents, or
 making Consul advertise routable addresses, belongs to whoever owns NATS.
 The user-facing note is in `docs/reference/dns.md`.
+
+## Correction, 2026-11-24
+
+`docs/reference/nats.md` no longer advertises
+`nats.service.localstack.consul`: it now says the name does not resolve,
+because the `.consul` zone is not forwarded. So do `docs/reference/dns.md`
+and the NATS how-tos. Only
+[the CDC bridge proposal](/proposals/postgres-nats-cdc-bridge.md) still gives
+`nats://nats.service.localstack.consul:4222` as a client URL.

@@ -67,3 +67,16 @@ commit, and the wrapper's few overrides are the whole difference.
   against a stand-in for upstream.
 - Removing the Claude Code plugin is a step each user runs on their own
   machine. The repository cannot check it.
+
+## Correction, 2026-11-24
+
+The six upstream tools and the wrapper's few overrides are no longer the
+whole difference. In the change
+[ADR 0023](/decisions/0023-hermes-saves-from-a-skill-owned-map-of-roots.md)
+records (commit `f19d5ef`), the wrapper in
+`deployments/applications/services/hermes/openviking_tools/__init__.py`
+gained two additions. A seventh tool, `viking_write`, writes text to an exact
+URI, which the six cannot. And `_add_create_parent` patches the plugin's
+client so that a `viking_add_resource` that names a parent sends
+`create_parent: true`, which plugin 2.1.1 never sends. Upstream's six tools
+and their handlers are still upstream's.

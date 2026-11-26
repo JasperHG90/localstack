@@ -16,6 +16,8 @@ sources:
     resource: bootstrap/roles/nomad_server/tasks/main.yml
   - id: configure-network
     resource: bootstrap/playbooks/configure_network.yml
+  - id: configure-dns
+    resource: bootstrap/playbooks/configure_dns.yml
   - id: infra-services
     resource: deployments/infrastructure/services.tf
   - id: infra-identity
@@ -85,20 +87,21 @@ split is `.claude/rules/terraform-file-layout.md`.
 
 | Layer | Owns | Does not own |
 |---|---|---|
-| Ansible | packages and HashiStack versions (`bootstrap/inventory/group_vars/all.yml`), every Consul, Vault and Nomad config file, Consul ACL bootstrap, Vault init and unseal, Nomad ACL bootstrap, the Consul ACL policies and tokens Vault and Nomad use to reach Consul, the Nomad `developer` ACL policy, the `jwt-nomad` auth mount with its default role and the shared `nomad-workloads` policy, the `nomad/` and `consul/` engine mounts and their `config/access`, the Consul `deploy` ACL policy, the `bootstrap/` KV mount and its two secrets, Podman, the NVIDIA runtime, Tailscale, and ufw's default policy plus the HashiStack ports | any Nomad job, any Vault policy other than `nomad-workloads` |
-| Infrastructure root | the `secret` KV mount, human auth (`userpass`, `jwt-lab`), identity, groups and human policies (`identity.tf`), the OIDC provider, every client and the Nomad OIDC auth method (`oidc.tf`), the Nomad and Consul engine roles, the Nomad `deploy` and `dash_read` ACL policies, the per-job JWT roles and their policies and the `jwt-github` mount with one role per GitHub Actions caller and, per `ov_sync` caller, a policy reading its own identity-token role in `oidc.tf` (`machine_roles.tf`), the `redis/` database engine (`database.tf`), all fourteen host volumes, the shared jobs (postgres, seaweedfs, haproxy, acme, prometheus, grafana, alloy, node-exporter, the two oauth2-proxy jobs, nats, redis, two backup jobs and `restore-s3`), their KV secrets and firewall rules, and the GCS backup bucket | S3 buckets, Postgres roles and databases, application jobs |
-| Applications root | the application jobs (hermes, loki, tempo, registry, embark, openviking, ov-dash, driftwatch, dash, registry-ui, bifrost), their SeaweedFS buckets, IAM users and access keys (`storage.tf`), Postgres roles, databases and grants (`database.tf`), their KV secrets (`secrets.tf`), the Bifrost virtual keys, and their firewall rules | any Vault mount, auth method, policy or role, any host volume |
+| Ansible | packages and HashiStack versions (`bootstrap/inventory/group_vars/all.yml`), every Consul, Vault and Nomad config file, Consul ACL bootstrap, Vault init and unseal, Nomad ACL bootstrap, the Consul ACL policies and tokens Vault and Nomad use to reach Consul, the Nomad `developer` ACL policy, the `jwt-nomad` auth mount with its default role and the shared `nomad-workloads` policy, the `nomad/` and `consul/` engine mounts and their `config/access`, the Consul `deploy` ACL policy, the `bootstrap/` KV mount and its two secrets, Podman, the NVIDIA runtime, Tailscale, ufw's default policy plus the HashiStack ports, and the NetworkManager DNS fallback on radxa and orange_pi_4a (`configure_dns.yml`) | any Nomad job, any Vault policy other than `nomad-workloads` |
+| Infrastructure root | the `secret` KV mount, human auth (`userpass`, `jwt-lab`), identity, groups and human policies (`identity.tf`), the OIDC provider, every client and the Nomad OIDC auth method (`oidc.tf`), the Nomad and Consul engine roles, the Nomad `deploy` and `dash_read` ACL policies, the per-job JWT roles and their policies and the `jwt-github` mount with one role per GitHub Actions caller and, per `ov_sync` caller, a policy reading its own identity-token role in `oidc.tf` (`machine_roles.tf`), the `redis/` database engine (`database.tf`), all fifteen host volumes, the shared jobs (postgres, seaweedfs, haproxy, acme, prometheus, grafana, alloy, node-exporter, the two oauth2-proxy jobs, nats, redis, two backup jobs and `restore-s3`), their KV secrets and firewall rules, and the GCS backup bucket | S3 buckets, Postgres roles and databases, application jobs |
+| Applications root | the application jobs (hermes, loki, tempo, registry, embark, openviking, ov-carry-over, ov-dash, ov-sync-consumer, driftwatch, dash, registry-ui, bifrost), their SeaweedFS buckets, IAM users and access keys (`storage.tf`), Postgres roles, databases and grants (`database.tf`), their KV secrets (`secrets.tf`), the Bifrost virtual keys, and their firewall rules | any Vault mount, auth method, policy or role, any host volume |
 
 Four placements surprise a first reader:
 
-- **Host volumes are all in infrastructure**, including eight reserved
-  for application jobs, seven of them mounted today (memex's job is commented
-  out). [Host volumes](/components/host-volumes.md) has the
+- **Host volumes are all in infrastructure**, including nine reserved
+  for application jobs, seven of them mounted today. memex's job is commented
+  out, and no job mounts `openviking_data`, which is kept as the backup of
+  OpenViking's old store. [Host volumes](/components/host-volumes.md) has the
   table and the node-pinning trap.
 - **Observability is split across the two roots.** Prometheus, Grafana, Alloy
   and node-exporter are infrastructure jobs. Loki and Tempo are application
   jobs, because their buckets are applications' (the comment above
-  `nomad_job.alloy`, `deployments/infrastructure/services.tf:573-576`).
+  `nomad_job.alloy` in `deployments/infrastructure/services.tf`).
   Grafana and Alloy then reach Loki and Tempo by literal address
   (`deployments/infrastructure/services/grafana.hcl:139,171`,
   `deployments/infrastructure/services/alloy.hcl:75`).
@@ -163,7 +166,7 @@ Consul catalog and an admin credential in KV, and `bifrost` from its own job
 (`deployments/applications/providers.tf`). The `aws` and `postgresql`
 providers are fed by data-source and ephemeral reads that
 run at plan time with no dependency edge
-(`deployments/applications/services.tf:1-29`), so their services must
+(`deployments/applications/services.tf:1-19`), so their services must
 already be running when the plan starts. So:
 
 - a service that applications' providers log into belongs in infrastructure
@@ -190,14 +193,14 @@ Ansible's output. Every handoff is a name.
 |---|---|---|
 | Nomad and Consul deploy tokens | Ansible engine mounts plus infrastructure `machine_roles.tf` roles, both roots | `nomad/creds/deploy`, `consul/creds/deploy`, exported by `localstack env` |
 | Nomad management token | Ansible engine, infrastructure | `nomad/creds/manage` through the `nomad.manage` alias |
-| Nomad `developer` ACL policy | Ansible, infrastructure | referenced by name in `nomad_acl_binding_rule.developer` (`deployments/infrastructure/oidc.tf:423-435`) |
+| Nomad `developer` ACL policy | Ansible, infrastructure | referenced by name in `nomad_acl_binding_rule.developer` (`deployments/infrastructure/oidc.tf`) |
 | Consul `deploy` ACL policy | Ansible, infrastructure | `consul_policies = ["deploy"]` in `machine_roles.tf` |
 | `nomad-workloads` role and policy | Ansible, both roots' jobs | every per-job JWT role repeats both policy names and the claim mappings |
 | SeaweedFS and Postgres addresses | infrastructure jobs, applications | `data "consul_service"` for `seaweedfs` and `postgres-db`, which the Consul `deploy` policy allows by name (`bootstrap/playbooks/enable_consul_secrets.yml`) |
 | SeaweedFS and Postgres admin credentials | infrastructure `secrets.tf`, applications | `ephemeral "vault_kv_secret_v2"` at `default/seaweedfs/admin` and `default/postgres/localstack` |
-| OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:44-56`) |
+| OIDC client ids | infrastructure `oidc.tf`, applications | `data "vault_identity_oidc_client_creds"` for `memex` and `hermes-dashboard` (`deployments/applications/services.tf:38-46`) |
 | Host volumes and JWT roles | infrastructure, applications jobs | the name in the jobspec |
-| SeaweedFS access by workload identity (loki, tempo, registry) | infrastructure `local.seaweedfs_iam` in `services.tf`, applications jobs | each job asks for the role `arn:aws:iam::role/<job id>`, whose trust policy requires that job's `nomad_job_id` and `sub`. The job's `identity` block must carry `aud = ["seaweedfs"]`, the provider `clientId` in `local.seaweedfs_iam` |
+| SeaweedFS access by workload identity (loki, tempo, registry, ov-sync-consumer) | infrastructure `local.seaweedfs_iam` in `services.tf`, applications jobs | each job asks for the role `arn:aws:iam::role/<job id>`, whose trust policy requires that job's `nomad_job_id` and `sub`. The job's `identity` block must carry `aud = ["seaweedfs"]`, the provider `clientId` in `local.seaweedfs_iam` |
 | Loki, Tempo, dash, registry-ui, every edge backend | applications, infrastructure jobs | literal addresses in infrastructure jobspecs |
 
 The literals kept equal by hand, each guarded only by a comment beside it, are
@@ -208,8 +211,8 @@ so a rename on one side is found at login or placement time on the other.
 
 ## Apply order
 
-Ansible, then infrastructure, then applications. `just bootstrap` runs the nine
-playbooks in the order `bootstrap/justfile:40-49` lists them, and `README.md`
+Ansible, then infrastructure, then applications. `just bootstrap` runs the ten
+playbooks in the order `bootstrap/justfile:41-50` lists them, and `README.md`
 gives the three layers in that order. What goes wrong out of order:
 
 | Broken order | Symptom |
@@ -225,7 +228,7 @@ gives the three layers in that order. What goes wrong out of order:
 **Day 0.** The first infrastructure apply cannot run on a `localstack login`
 session, because that session needs the `userpass` mount, the `developer`
 policy and group (`deployments/infrastructure/identity.tf:21,346,510`) and the
-`deploy` and `manage` broker roles (`machine_roles.tf:18,125,152`), all created
+`deploy` and `manage` broker roles (`machine_roles.tf:18,128,155`), all created
 by that same apply. After Ansible the engines are mounted but mint nothing. So
 the first run uses the Vault root token and the Nomad and Consul bootstrap
 tokens from the manager (`/opt/vault/init.json`, `/opt/nomad/init.json`,
@@ -235,7 +238,8 @@ An empty cluster also needs hand-seeded KV that no layer writes:
 `default/bifrost/credentials` and the other Bifrost and Hermes secrets listed
 in [the two Terraform roots](/components/terraform-roots.md#apply-order).
 Infrastructure reads `default/bifrost/credentials` with a data source
-(`deployments/infrastructure/secrets.tf:133-136`) from the `secret` mount the
+(`data.vault_kv_secret_v2.bifrost_admin` in
+`deployments/infrastructure/secrets.tf`) from the `secret` mount the
 same root creates, so the first plan cannot succeed in one pass. No runbook
 writes the workaround down.
 
@@ -248,7 +252,8 @@ writes the workaround down.
   must be rendered again by Ansible before any workload can read.
 - Rotating the Bifrost admin password needs an infrastructure apply, which
   copies it into Prometheus's prefix
-  (`deployments/infrastructure/secrets.tf:124-129`).
+  (`vault_kv_secret_v2.prometheus_bifrost_admin` in
+  `deployments/infrastructure/secrets.tf`).
 
 ## Credentials each layer runs with
 
@@ -289,10 +294,12 @@ credentials](/components/deployer-credentials.md).
 ## Known exceptions and drift
 
 - **Three applications recipes lose the session.** `init`, `destroy` and
-  `state_rm` (`deployments/applications/justfile:9-31`) run without the
-  `localstack env` exports. The detail is in [Terraform deployer
+  `state_rm` (`deployments/applications/justfile:9-31`) each run
+  `eval "$(localstack env)"`, but they have no shebang, so `just` runs each
+  line in a new shell and the exports are gone before `terraform` starts. The
+  detail is in [Terraform deployer
   credentials](/components/deployer-credentials.md#what-a-run-authenticates-with).
-- **`README.md:51-59` runs `just init` in applications**, which is one of the
+- **`README.md:56-59` runs `just init` in applications**, which is one of the
   recipes above.
 - **`developer` names no path under `jwt-lab`.** The infrastructure root
   manages `vault_jwt_auth_backend.lab` and its `ov_dash` role
@@ -350,4 +357,4 @@ Manifesto invariants (from `.okf/manifesto.md`):
 - I8: `docs/README.md` indexes every docs page and every link resolves
 - I9: every `docs/how-to/` page follows the how-to skeleton
 - I10: the nightly backup syncs only buckets the applications root declares in `storage.tf`
-- I11: every durable bucket is backed up nightly to GCS (planned)
+- I11: every durable bucket is backed up nightly to GCS

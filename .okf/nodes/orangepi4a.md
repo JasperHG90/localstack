@@ -77,7 +77,6 @@ History: the `phoenix` tracing job ran here until `74fc590` retired it on
 | Worker base ports (SSH, Consul, Nomad, `20000:32000`) from `192.168.0.0/16` | `bootstrap/playbooks/configure_network.yml` |
 | `seaweedfs` 8333 and 9327 from the LAN, `node_exporter_orangepi4a` 9100 from `.47` | `deployments/infrastructure/services.tf` |
 | `ov_dash` 4182 from `.30` only | `deployments/applications/services.tf` |
-| Still live, no longer declared: phoenix's 6006 and 4317 from the LAN | comment above `ov_dash` in `deployments/applications/services.tf`, with the `ufw delete` lines owed |
 
 As a caller, `192.168.2.29` is admitted by Loki (3100) and Tempo (4317, 4318)
 on ubuntu, for this node's Alloy, and by OpenViking (1933) on radxa, for

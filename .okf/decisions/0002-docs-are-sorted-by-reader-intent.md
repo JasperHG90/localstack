@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, documentation, diataxis]
 status: stable
-decision_status: Accepted
-decided_on: 2026-09-26
 sources:
   - id: docs-index
     resource: docs/README.md

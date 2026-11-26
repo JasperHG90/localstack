@@ -62,3 +62,14 @@ The play now lives in its own playbook,
 `configure_network.yml`. It first landed at the end of `configure_network.yml`,
 the ufw firewall playbook, so applying DNS also ran the firewall role. The
 play's content is unchanged.
+
+## Correction, 2026-11-24
+
+The last Consequences bullet says nobody checked that a reload rewrites the
+live file. The playbook ran on both nodes on 2026-11-24, and the reload did
+it. On radxa (1.46.0) and orange_pi_4a (1.36.6), `/etc/resolv.conf` changed
+about two seconds after the drop-in was written, while NetworkManager had been
+running since 2026-09-26, so no restart was involved. Both files now list
+`192.168.2.254`, `1.1.1.1` and `9.9.9.9`, with `search home` and
+`options timeout:1 attempts:2`, and `firebat` and `ollama.com` resolve on both
+nodes.

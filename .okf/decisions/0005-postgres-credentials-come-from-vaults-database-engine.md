@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, postgres, vault, workload-identity]
 status: stable
-decision_status: Accepted, not yet rolled out
-decided_on: 2026-08-03
 sources:
   - id: postgres-vault-dynamic-creds-spike
     resource: .okf/proposals/postgres-dynamic-credentials.md
@@ -159,3 +157,12 @@ hold the Redis admin password. The other two citations still match.
 `deployments/applications/database.tf` gets a `random_password`, and no
 Postgres `vault_database_secret_backend_role` exists. The only database
 secrets engine is the Redis one in `deployments/infrastructure/database.tf`.
+
+## Correction, 2026-11-24
+
+The line numbers in the 2026-10-19 Correction have moved again. The admin
+role's static password is `random_password.postgres_root` and
+`vault_kv_secret_v2.postgres_root_credentials` in
+`deployments/infrastructure/secrets.tf`, and the Redis admin password is
+`random_password.redis_admin` and `vault_kv_secret_v2.redis_admin_credentials`
+after them in the same file.

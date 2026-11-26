@@ -18,8 +18,9 @@ service from `deployments/infrastructure/services/nats.hcl`.
   too. `nats.service.localstack.consul` does not resolve, because the `.consul`
   zone is not forwarded to Consul, and the address Consul holds for it is a
   container bridge address nothing else can reach. See [DNS records](dns.md).
-- **Auth:** none. LAN-only via UFW (`192.168.0.0/16`). Treat the bus as trusted,
-  and don't put it on the public internet.
+- **Auth:** none. Reachable from the whole LAN. The UFW rule for
+  `192.168.0.0/16` does not filter it, because Podman publishes the port
+  past UFW. Treat the bus as trusted, and don't put it on the public internet.
 - **JetStream is on:** durable streams up to 10 GB on disk, 256 MB in memory, store at `/data/jetstream` on radxa-dragon-q6a.
 - **Monitoring:** `http://192.168.2.50:8222/`, with `/varz`, `/jsz`, `/connz`,
   and `/healthz` for liveness.

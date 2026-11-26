@@ -136,12 +136,13 @@ Traps:
   model load. It is 720h now, and the cost is the slow recovery above.
 - **`+@connection` is required.** Without it clients fail on `PING`,
   `SELECT` and the connect handshake.
-- **The firewall rule names the consumer's node.**
-  `deployments/infrastructure/services.tf` allows 6379
-  only from the embark node. A new consumer on another node cannot connect
-  until its address is added there. Vault's own node, firebat, is not on the
-  list either. The connection works today only through an older LAN-wide
-  rule left on the node, as [the Redis cache](/components/redis.md) explains.
+- **The firewall rule names the consumer's node, and ufw ignores it.**
+  `deployments/infrastructure/services.tf` allows 6379 from the embark node
+  and from firebat, where Vault runs. Podman publishes the port through DNAT,
+  which skips ufw, so any LAN host can open a connection and the ACL users
+  are the real gate, as [the Redis cache](/components/redis.md) explains.
+  Add a new consumer's node to the entry anyway, so the rule is right if the
+  job ever moves to host networking.
 
 ## What was proven but not built
 

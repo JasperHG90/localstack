@@ -26,7 +26,7 @@ sources:
 
 A stateful job on this cluster keeps its data in a `nomad_dynamic_host_volume`
 with `plugin_id = "mkdir"`, `single-node-writer` and `file-system` attachment.
-All fourteen are in the `### Dynamic Host Volumes` part of
+All fifteen are in the `### Dynamic Host Volumes` part of
 `deployments/infrastructure/services.tf`, whichever root runs the job that
 mounts them.
 

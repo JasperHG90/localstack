@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, vault, mfa, dash]
 status: stable
-decision_status: Accepted
-decided_on: 2026-09-12
 sources:
   - id: dash-oidc-client
     resource: deployments/infrastructure/oidc.tf

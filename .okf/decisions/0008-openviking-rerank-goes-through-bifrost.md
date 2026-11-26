@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, openviking, bifrost, embark, rerank]
 status: stable
-decision_status: Accepted
-decided_on: 2026-09-05
 sources:
   - id: openviking-config
     resource: deployments/applications/services/openviking/ov.conf.json

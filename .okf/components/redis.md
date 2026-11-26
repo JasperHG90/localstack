@@ -1,7 +1,7 @@
 ---
 type: component
 title: Redis cache
-description: "A memory-only Redis on radxa whose callers get a per-job ACL user minted by Vault, scoped to that job's own key prefix. This page covers the job, its sizing and its network path. The Vault engine behind it is in the secrets-engines concept. Vault reaches Redis today only through a firewall rule the code no longer declares."
+description: "A memory-only Redis on radxa whose callers get a per-job ACL user minted by Vault, scoped to that job's own key prefix. This page covers the job, its sizing and its network path. The Vault engine behind it is in the secrets-engines concept. ufw does not filter its port, because Podman publishes it through DNAT."
 tags: [redis, cache, vault, firewall, component]
 status: stable
 generated:
@@ -36,7 +36,7 @@ How embark uses the cache is in [embark](/components/embark.md).
 | --- | --- |
 | Job `redis`, `redis:7-alpine`, port 6379, pinned to radxa-dragon-q6a | `deployments/infrastructure/services/redis.hcl` |
 | `nomad_job.redis` with `detach = false` | `deployments/infrastructure/services.tf` |
-| Firewall: 6379 from jetson-orin-nano (.46) | `local.firewall_rules["redis"]`, same file |
+| Firewall: 6379 from jetson-orin-nano (.46) and firebat (.30), which ufw does not enforce (below) | `local.firewall_rules["redis"]`, same file |
 | Admin password (the `default` user) | `random_password.redis_admin`, KV `default/redis/admin`, `deployments/infrastructure/secrets.tf` |
 | Consumers, engine connection and roles | `local.redis_cache_consumers` and the rest of `deployments/infrastructure/database.tf` |
 
@@ -52,14 +52,17 @@ The caller's node, and Vault's. Vault runs on firebat (`192.168.2.30`, per
 `vault_database_secret_backend_connection.redis` dials `192.168.2.50:6379` at
 apply time and on every mint and revoke.
 
-The declared rule admits only `.46`. The rule started as `192.168.0.0/16`
-(fab7e53) and was narrowed to `.46` in da5e3d5, and `null_resource.firewall`
-only ever runs `ufw allow`, so the LAN-wide rule is very likely still on
-radxa. That leftover is what lets Vault in today. This is inferred from the
-code and git history, not checked with `ufw status` on the node. Deleting the
-old rule by hand, the usual cleanup after a narrowing (see
-[ufw rules outside user.rules](/practices/ufw-rules-outside-user-rules.md)),
-would break every credential mint until `.30` is added.
+The `redis` firewall entry admits `.46` and `.30`. The rule started as
+`192.168.0.0/16` (fab7e53) and was narrowed to `.46` in da5e3d5. The
+LAN-wide rule stayed on radxa until 2026-11-24, when `.30` was added and the
+LAN-wide rule was deleted by hand.
+
+None of these rules filter anything. The job publishes 6379 through Podman's
+bridge, and netavark DNATs it to the container before ufw sees it, so the
+packet takes FORWARD, which ufw accepts. On 2026-11-24, with the LAN-wide
+rule gone, ubuntu (`.47`) still opened a TCP connection to
+`192.168.2.50:6379`. The per-caller ACL users below are what keep the LAN
+out. See [Host firewall](/components/host-firewall.md).
 
 ## Each caller gets its own key prefix
 

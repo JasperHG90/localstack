@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, knowledge, okf, documentation]
 status: stable
-decision_status: Accepted
-decided_on: 2026-09-26
 ---
 
 # ADR 0001: Durable knowledge is kept in a validated OKF bundle, not in docs/ or AGENTS.md
@@ -81,3 +79,11 @@ The rule that governs the bundle is `.claude/rules/okf-bundle.md`, and
 Both are loaded every session, which is the overhead this decision accepts.
 
 Supersedes [ADR 0014](0014-keep-project-knowledge-in-an-okf-bundle.md).
+
+## Correction, 2026-11-24
+
+The `decided_on` field, and the `decision_status` field beside it, were
+removed from records 0001 to 0013 on 2026-11-24, because the OKF spec
+(`.agents/skills/okf/reference/SPEC.md`) defines neither. Records 0003 to 0012
+keep the numbers `decided_on` gave them, and each still states its date in its
+own `- Date:` line.

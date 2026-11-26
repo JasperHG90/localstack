@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, openviking, web-studio, oauth2-proxy, ov-dash]
 status: stable
-decision_status: Accepted
-decided_on: 2026-09-08
 sources:
   - id: openviking-job
     resource: deployments/applications/services/openviking.hcl

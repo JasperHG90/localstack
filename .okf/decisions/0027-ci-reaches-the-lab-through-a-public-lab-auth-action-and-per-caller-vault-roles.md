@@ -82,3 +82,24 @@ Rejected:
 - `.github/workflows/lab-auth-check.yaml` is a manual diagnostic, and
   `cli/tests/test_lab_auth_action.py` fails if a role drops a claim or a
   workflow that uses the action gains a `pull_request` trigger.
+
+## Correction, 2026-11-24
+
+Two consequences have changed.
+
+[ADR 0031](/decisions/0031-the-lab-auth-action-picks-the-tailscale-identity-from-the-oidc-subject-format.md)
+changed the Tailscale defaults. `tailscale-client-id` and `tailscale-audience`
+in `.github/actions/lab-auth/action.yml` now default to empty. The action
+reads the job's OIDC subject and picks one of two federated identities: the
+original for name-only subjects, and one shared second identity, made once,
+for every repository with GitHub's immutable subject. A new repository needs
+no identity of its own, and
+`docs/how-to/authenticate-a-github-workflow-to-the-lab.md` no longer has a
+step for one.
+
+[ADR 0028](/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md)
+narrowed "Vault's `default` policy only". A caller with `ov_sync = true` also
+gets `vault_policy.ci_ov_sync`, which reads its own identity-token role
+(`token_policies` on `vault_jwt_auth_backend_role.github_ci` in
+`deployments/infrastructure/machine_roles.tf`). The other callers still get
+`default` only.

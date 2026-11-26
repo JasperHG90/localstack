@@ -7,8 +7,6 @@ generated:
   at: 2026-09-26
 tags: [adr, decision, dns, edge]
 status: stable
-decision_status: Accepted
-decided_on: 2026-07-26
 sources:
   - id: dns
     resource: docs/explanation/public-lab-dns.md

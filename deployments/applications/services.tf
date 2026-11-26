@@ -56,15 +56,6 @@ locals {
     #
     # No rule is needed in the other direction. ov-dash dials OpenViking on
     # 192.168.2.50:1933, and the openviking entry below now admits .29.
-    #
-    # These rules ADD only, so phoenix's two LAN-wide grants outlived the entry
-    # that made them and are still live on this host. Nothing binds 6006 or
-    # 4317 there today, which is exactly why they are easy to forget -- and
-    # re-registering phoenix would put a service back on both. Delete them:
-    #   ssh orangepi@192.168.2.29 \
-    #     'sudo ufw delete allow from 192.168.0.0/16 to any port 6006 proto tcp'
-    #   ssh orangepi@192.168.2.29 \
-    #     'sudo ufw delete allow from 192.168.0.0/16 to any port 4317 proto tcp'
     ov_dash = {
       host     = "192.168.2.29"
       ssh_user = "orangepi"
@@ -135,9 +126,8 @@ locals {
     # (EMBARK_AUTH__GUARD_METRICS in services/embark.hcl), so this list is
     # what stands in front of it -- but these rules only ADD, and a wider rule
     # for port 8000 would outrank every one of them. memex left such a rule on
-    # this host and port once (see the comment above null_resource.firewall).
-    # Confirm none survives before trusting this list:
-    #   ssh localstack@192.168.2.46 sudo ufw status numbered
+    # this host and port once (see the comment above null_resource.firewall);
+    # it was gone when checked on 2026-11-24.
     embark = {
       host     = "192.168.2.46"
       ssh_user = "localstack"
@@ -201,13 +191,6 @@ locals {
     # now enabled. That is why .47 is on this list and why narrowing it
     # mattered: those callers can read the metrics, the LAN cannot. The Studio
     # bundle was on that list until OPENVIKING_WEB_STUDIO_DIR unmounted it.
-    #
-    # These rules are ONE-WAY. An apply ADDS them and removes nothing, so the
-    # earlier 192.168.0.0/16 rule outlives this edit and has to be deleted on
-    # the node:
-    #   ssh radxa@192.168.2.50 \
-    #     'sudo ufw delete allow from 192.168.0.0/16 to any port 1933 proto tcp'
-    # Until that runs, the host is still open LAN-wide whatever this says.
     openviking = {
       host     = "192.168.2.50"
       ssh_user = "radxa"

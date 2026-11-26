@@ -80,9 +80,7 @@ when it was written and is not now.
   the host, and delete by rule spec, not by number, because
   `ufw status numbered` renumbers after each delete. The comment above
   `null_resource.firewall` in the applications root says to delete by number,
-  highest first, which is also safe if followed exactly. Several comments in
-  both
-  maps carry the exact `ufw delete` line owed for a past edit.
+  highest first, which is also safe if followed exactly.
 - **A broad rule outranks every narrow one.** A rule for
   `192.168.0.0/16` on a port admits everything the single-caller rules beside
   it were meant to keep out. memex left one on port 8000 on the Jetson that
@@ -91,6 +89,17 @@ when it was written and is not now.
   rebuilds the `ufw-user-input` chain from the file. N1 found live rules on
   ubuntu that were in the chain and not in the file, Grafana's among them.
   Compare `iptables -S ufw-user-input` with `user.rules` before a change.
+- **A port a bridge-mode Podman job publishes skips ufw.** Netavark DNATs
+  the host port to the container's `10.88.0.0/16` address in PREROUTING, so
+  the packet goes through FORWARD, where `DEFAULT_FORWARD_POLICY="ACCEPT"`
+  lets it through, and never reaches `ufw-user-input`. Checked 2026-11-24:
+  with the LAN-wide 6379 rule deleted, ubuntu (`.47`) still opened a TCP
+  connection to Redis at `192.168.2.50:6379`. The ports this applies to are
+  the ones in `iptables -t nat -S NETAVARK-HOSTPORT-DNAT`: Postgres 5432 on
+  firebat, NATS 4222 and 8222 and Redis 6379 on radxa. Postgres and NATS are
+  open to the LAN by rule anyway. The `redis` entry's single-caller rules
+  filter nothing, and Redis's own per-user credentials are what keeps the LAN
+  out. Host-network jobs bind the host address directly and are filtered.
 - **Loopback skips the user chain.** ufw accepts `-i lo` in
   `ufw-before-input`, so a host reaching itself on its own LAN address never
   meets these rules. Several entries admit their own host anyway, as a guard

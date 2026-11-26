@@ -53,7 +53,7 @@ were transcribed from the session output into the results files.
   errors from either. Gemma misread a GCP project (`neurips-lm-eff`) and an
   MLflow run ID; inkling read both exactly. Gemma reports about 330 input
   tokens per image whatever its size, inkling 400 to 3300.
-- Text (`results-summary-gen.txt`, `results-blind-grading.md`): inkling won
+- Text (`results-summary-gen.txt`, `results-blind-grading.txt`): inkling won
   all five directories, gemma came second in all five, flash-lite last.
   Gemma's L1 fell under the prompt's 400-word floor four times out of five.
   Every stored flash-lite L0 was 15 to 35 words of hedging. Inkling took

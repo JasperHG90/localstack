@@ -6,10 +6,6 @@ generated:
   by: claude-opus/5.5
   at: 2026-10-20
 tags: [summary]
-checked:
-  at: 2026-11-24T07:04:39Z
-  against:
-    - decisions/0033-networkmanager-nodes-get-public-fallback-resolvers
 ---
 
 # Summary

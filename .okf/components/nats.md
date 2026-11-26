@@ -74,7 +74,10 @@ also plans NATS on that node, unbuilt.
 ## Invariants and what enforces them
 
 - **No auth.** Anyone on `192.168.0.0/16` can publish, subscribe and create
-  streams. The firewall is the only control. R2, a NATS auth-callout that
+  streams. ufw does not filter 4222 or 8222: the job publishes them through
+  Podman's bridge, which DNATs them past `ufw-user-input` (see
+  [Host firewall](/components/host-firewall.md)). Only being on the LAN
+  gates it. R2, a NATS auth-callout that
   would accept Vault OIDC or Nomad JWTs, was blocked when `5b2ed1b`
   reset the loop and is not in the current loop.
 - **JetStream limits sit below the volume.** `max_file_store: 10GB` against a

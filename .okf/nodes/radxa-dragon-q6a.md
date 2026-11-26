@@ -82,17 +82,15 @@ Host volumes: `hermes_data` (1 to 5 GiB), `openviking_data_v2` and the unused
 | Rule | Where |
 |---|---|
 | Worker base ports from `192.168.0.0/16` | `bootstrap/playbooks/configure_network.yml` |
-| `node_exporter_radxa` 9100 from `.47`, `redis` 6379 from `.46`, `nats` 4222 and 8222 from the LAN and 7777 from `.47`, `oauth2_proxy` 4180 and 4181 from `.30` | `deployments/infrastructure/services.tf` |
+| `node_exporter_radxa` 9100 from `.47`, `redis` 6379 from `.46` and `.30` (not enforced: Podman DNAT, see [Redis](/components/redis.md)), `nats` 4222 and 8222 from the LAN and 7777 from `.47`, `oauth2_proxy` 4180 and 4181 from `.30` | `deployments/infrastructure/services.tf` |
 | `hermes` 8642 from `.30` and `.46`, 9119 from `.30`, `bifrost` 8080 from the LAN, `dash` 8000 from `.50`, `openviking` 1933 from `.50`, `.30`, `.47` and `.29`, `driftwatch` 8010 from `.50` and `.47` | `deployments/applications/services.tf` |
-| Still live, no longer declared: 4182 from `.30` (the deleted OpenViking proxy) and 1933 from the LAN | comments above `oauth2_proxy` and `openviking`, each with the `ufw delete` line owed |
-| Very likely still live, inferred from git and not checked on the node: 6379 from the LAN, the rule `redis` started with. Vault reaches Redis through it today, so do not delete it before adding `.30` | [Redis](/components/redis.md) |
 
 As a caller, `192.168.2.50` is admitted by embark (8000) on the Jetson, for
 Bifrost and driftwatch, and by Loki and Tempo on ubuntu.
 
 Vault on firebat also has to reach Redis here, at `192.168.2.50:6379` from
-`deployments/infrastructure/database.tf`. No declared rule admits `.30` on
-that port, which is why the leftover LAN-wide rule above matters.
+`deployments/infrastructure/database.tf`. The `redis` entry lists `.30` for
+that, but ufw does not filter 6379, so nothing blocks it either way.
 
 ## What dials it by literal address
 

@@ -62,3 +62,23 @@ change that cannot be undone, and MinIO's `loki`, `tempo`, `memex` and
 - ov-dash, stopped to give SeaweedFS room, runs again.
 - memex, still staged, needs a SeaweedFS bucket and key before its job is
   uncommented ([memex](/components/memex.md)).
+
+## Correction, 2026-11-24
+
+`nomad_dynamic_host_volume.minio_data` is gone too. The
+`minio-volume-destroy` ticket removed it from
+`deployments/infrastructure/services.tf` on 2026-10-20 (commit `08a30d7`),
+which deleted the volume and its data on orangepi4a, and purged the old MinIO
+keys from Vault. This record still says why that was a separate step.
+
+The MinIO names left in the code, each allowed by
+`cli/tests/test_no_minio.py`, are:
+
+- the GCS prefix `minio/`, which `backup-s3.hcl` writes and `restore-s3.hcl`
+  reads
+- the uid `alert-minio-degraded` under `deleteRules` in
+  `deployments/infrastructure/services/grafana/alert-rules.yaml`, which is
+  how Grafana deletes a provisioned rule that left the file
+- `minio-go`, the S3 client library Tempo is built on, named in `tempo.hcl`
+- `minio/mc`, the S3 client the devcontainer's `Dockerfile` installs, which
+  works against SeaweedFS

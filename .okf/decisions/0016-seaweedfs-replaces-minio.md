@@ -57,3 +57,10 @@ Rejected:
   so a drift test pins them ([SeaweedFS](/components/seaweedfs.md)).
 - Data moves through the GCS backup, not store to store, so the backup job
   covers every durable bucket first.
+
+## Correction, 2026-11-24
+
+The `sources` entry `deployments/infrastructure/services/minio.hcl` no longer
+resolves. ADR 0018 deleted the MinIO job as this record planned, so
+`kmctl review due` reports it as a notice. The entry stays because it is the
+file this record was derived from.
