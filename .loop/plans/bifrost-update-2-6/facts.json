@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update-2-6",
-  "plan_hash": "26d40d1887b5b1a5c059237d381fa3d33576a04b59876cdb6a80bad2bcc9a2cd",
+  "plan_hash": "10f27a8d925fe6da91c5496de8c26616f959ed48fb01cef6e13044da284abf58",
   "problems": [
     {
       "id": "P1",
