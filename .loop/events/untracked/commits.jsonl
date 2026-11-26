@@ -26,3 +26,8 @@
 {"at": "2026-11-19T05:47:41+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "d365a23ef7745fe40258c6b99e41c8821c2c51eb", "subject": "operator: bump kmctl to v0.14.0"}
 {"at": "2026-11-20T09:51:55+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "a81219ba31913bc1c0ce7dbd89ebecfb5a174b70", "subject": "operator: commit plans"}
 {"at": "2026-11-23T21:53:38+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "48adb7efda37fa0da0a949c6b49662bcd66c7064", "subject": "operator: manual commits"}
+{"at": "2026-11-26T17:05:27+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "6309db01c46f35b0b241daf8bb7eea51cc15e06a", "subject": "chore(kmctl): finish the move to v0.15.0"}
+{"at": "2026-11-26T17:05:42+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "91b30a77f9757dcb4c109f4629e851d93e1182a8", "subject": "fix(infrastructure): let Vault reach the Redis cache, and record that ufw does not gate it"}
+{"at": "2026-11-26T17:05:47+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "1aae4a4950d1260eae2fc7ea23aba404bc34cc9e", "subject": "docs: correct the knowledge bundle after the 2026-11-24 audit"}
+{"ask": "j-20261126T135224+0000-575fae12", "at": "2026-11-26T17:05:53+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "b80154ac5d54ff64f8de3455e862e63f0692fbbf", "subject": "loop: plan openviking-update-0-5 (stub, blocked on openviking_extensions#23)"}
+{"at": "2026-11-26T17:11:59+00:00", "branch": "main", "kind": "commit", "schema_version": "1.0", "sha": "baaf40353364133d8dfb6c35809a1e074f6d0208", "subject": "chore(kmctl): upgrade to v0.18.0"}
