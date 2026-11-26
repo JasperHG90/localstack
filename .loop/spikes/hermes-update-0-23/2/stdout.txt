@@ -1,0 +1,78 @@
+== make voice.ogg (espeak-ng -> ffmpeg libopus, as Telegram sends)
+-rw-r--r-- 1 root root 20901 Nov 26 14:35 /home/vscode/spike-scratch/hermes-1/run.9C33/voice.ogg
+== build: FROM v0.23.4 + the repo's RUN line with uv-0.13.5, --no-cache
+FROM nousresearch/hermes-agent:v0.23.4
+USER root
+RUN cd /opt/hermes && /opt/hermes/tools/uv-0.13.5-linux-arm64/uv export --frozen --no-hashes --extra stt-whisper --no-emit-project -q -o /tmp/stt.txt && /opt/hermes/tools/uv-0.13.5-linux-arm64/uv pip install --no-cache --python /opt/hermes/.venv/bin/python -c /tmp/stt.txt faster-whisper==1.2.1 && rm /tmp/stt.txt
+#5 0.686 Downloading tokenizers (3.4MiB)
+#5 0.686 Downloading av (32.1MiB)
+#5 0.733 Downloading numpy (15.0MiB)
+#5 0.991  Downloaded faster-whisper
+#5 1.597  Downloaded tokenizers
+#5 1.723  Downloaded hf-xet
+#5 3.106  Downloaded numpy
+#5 3.336  Downloaded ctranslate2
+#5 3.574  Downloaded onnxruntime
+#5 3.800  Downloaded av
+#5 3.800 Prepared 12 packages in 3.13s
+#5 4.478 Installed 12 packages in 677ms
+#5 4.478  + av==18.1.0
+#5 4.478  + ctranslate2==4.8.3
+#5 4.478  + faster-whisper==1.2.1
+#5 4.478  + filelock==4.2.6
+#5 4.478  + flatbuffers==25.12.19
+#5 4.478  + fsspec==2026.9.0
+#5 4.478  + hf-xet==1.7.0
+#5 4.478  + huggingface-hub==1.33.0
+#5 4.478  + numpy==2.5.4
+#5 4.478  + onnxruntime==1.31.0
+#5 4.478  + pyyaml==6.0.3
+#5 4.478  + tokenizers==0.23.3
+#5 4.478 warning: `av==18.1.0` is yanked (reason: "Memory corruption (double free) when decoding audio with custom channel layouts. Upgrade to 18.1.1")
+#5 DONE 6.9s
+
+#6 exporting to image
+#6 exporting layers
+#6 exporting layers 4.1s done
+#6 exporting manifest sha256:00cff02b5ec97197fbe3e4f2d17294b1deae309b1aded7dfefc084c73562f1e1
+#6 exporting manifest sha256:00cff02b5ec97197fbe3e4f2d17294b1deae309b1aded7dfefc084c73562f1e1 0.0s done
+#6 exporting config sha256:c7f7218d80a4c2260ca4493ba1815eb1e2cb0e4f9d11c81a42bf7f4520a3ebc2 0.0s done
+#6 exporting attestation manifest sha256:348d73e702eae149379096ddb6867ffdb1bfe4f1bdeab3bde7c1c4b8e28f026c 0.0s done
+#6 exporting manifest list sha256:d852d201f59d9dd56e797e4f56dcf8ec0f20928f2a32be4c1bb02a283fbba9bf
+#6 exporting manifest list sha256:d852d201f59d9dd56e797e4f56dcf8ec0f20928f2a32be4c1bb02a283fbba9bf 0.0s done
+#6 naming to docker.io/library/h023-fw-47946:spike done
+#6 unpacking to docker.io/library/h023-fw-47946:spike
+#6 unpacking to docker.io/library/h023-fw-47946:spike 1.1s done
+#6 DONE 5.3s
+== import as uid 10000, require av 18.1.0
+python 3.14.9 faster_whisper 1.2.1 ctranslate2 4.8.3 av 18.1.0
+image grew by 398 MB
+== gateway voice path, default STT config, fresh /opt/data, 2048 MB cap
+stt config: {'enabled': True, 'echo_transcripts': True, 'language': 'en', 'streaming': False, 'cloud_trim_silence': True, 'cloud_trim_threshold_db': -40, 'cloud_trim_keep_ms': 300, 'local': {'model': 'base', 'language': '', 'initial_prompt': '', 'vad': True, 'vad_min_silence_ms': 500, 'no_speech_prob_threshold': 0.6, 'logprob_threshold': -1.0, 'unload_after_idle_seconds': 0}, 'groq': {'model': 'whisper-large-v3-turbo', 'language': ''}, 'openai': {'model': 'whisper-1', 'streaming_model': 'gpt-live-transcribe', 'language': '', 'timeout': 60, 'max_retries': 1}, 'mistral': {'model': 'voxtral-mini-latest', 'language': ''}, 'xai': {'model': '', 'language': ''}, 'elevenlabs': {'model_id': 'scribe_v2', 'language_code': '', 'tag_audio_events': False, 'diarize': False}, 'deepinfra': {'model': ''}} -> provider: local
+LOG gateway.run INFO Transcribing user voice: /w/voice.ogg
+LOG tools.transcription_tools INFO Loading faster-whisper model 'base' (first load downloads the model)...
+LOG tools.transcription_tools INFO faster-whisper model 'base' is not cached; downloading it from the Hugging Face Hub
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/tree/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66?recursive=true&expand=false "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/Systran/faster-whisper-base/resolve/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json "HTTP/1.1 307 Temporary Redirect"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+LOG huggingface_hub.utils._http WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json?%2FSystran%2Ffaster-whisper-base%2Fresolve%2Febe41f70d5b6dfa9166e2c581c45c9c0cfc57b66%2Fconfig.json=&etag=%22867cf1a0fece1394e01d55e287ba2f09a577c046%22 "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json?%2FSystran%2Ffaster-whisper-base%2Fresolve%2Febe41f70d5b6dfa9166e2c581c45c9c0cfc57b66%2Fconfig.json=&etag=%22867cf1a0fece1394e01d55e287ba2f09a577c046%22 "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/Systran/faster-whisper-base/resolve/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json "HTTP/1.1 307 Temporary Redirect"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/Systran/faster-whisper-base/resolve/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt "HTTP/1.1 307 Temporary Redirect"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/xet-read-token/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66 "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json?%2FSystran%2Ffaster-whisper-base%2Fresolve%2Febe41f70d5b6dfa9166e2c581c45c9c0cfc57b66%2Ftokenizer.json=&etag=%227818adb6de9fa3064d3ff81226fdd675be1f6344%22 "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt?%2FSystran%2Ffaster-whisper-base%2Fresolve%2Febe41f70d5b6dfa9166e2c581c45c9c0cfc57b66%2Fvocabulary.txt=&etag=%22c9074644d9d1205686f16d411564729461324b75%22 "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt?%2FSystran%2Ffaster-whisper-base%2Fresolve%2Febe41f70d5b6dfa9166e2c581c45c9c0cfc57b66%2Fvocabulary.txt=&etag=%22c9074644d9d1205686f16d411564729461324b75%22 "HTTP/1.1 200 OK"
+LOG httpx INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/models/Systran/faster-whisper-base/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json?%2FSystran%2Ffaster-whisper-base%2Fresolve%2Febe41f70d5b6dfa9166e2c581c45c9c0cfc57b66%2Ftokenizer.json=&etag=%227818adb6de9fa3064d3ff81226fdd675be1f6344%22 "HTTP/1.1 200 OK"
+LOG faster_whisper INFO Processing audio with duration 00:05.356
+LOG faster_whisper INFO VAD filter removed 00:00.000 of audio
+LOG tools.transcription_tools INFO Transcribed voice.ogg via local whisper (base, lang=en, 5.4s audio)
+{"faster_whisper": true, "seconds": 9.9, "cgroup_mb_before": 54, "cgroup_peak_mb": 574, "cgroup_anon_mb_after": 362, "cgroup_max": "2147483648", "transcripts": ["The quick brown fox dumps over the lazy dog. Please save this link."]}
+drive exit 0
+4.0K	/opt/data/.cache/huggingface/hub/CACHEDIR.TAG
+139M	/opt/data/.cache/huggingface/hub/blobs
+2.6M	/opt/data/.cache/huggingface/hub/models--Systran--faster-whisper-base
+container exit 0, OOMKilled=false
