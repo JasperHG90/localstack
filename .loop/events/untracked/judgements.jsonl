@@ -107,3 +107,4 @@
 {"at": "2026-11-26T13:30:20+00:00", "evidence": "the operator said so", "judgement": "j-20261126T133020+0000-ea4fe60b", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "relayed"}
 {"at": "2026-11-26T13:30:29+00:00", "judgement": "j-20261126T133017+0000-ffd28fa3", "kind": "judgement-link", "schema_version": "1.0", "ticket": "bifrost-update-2-6"}
 {"at": "2026-11-26T13:30:30+00:00", "judgement": "j-20261126T133020+0000-ea4fe60b", "kind": "judgement-link", "schema_version": "1.0", "ticket": "hermes-update-0-23"}
+{"at": "2026-11-26T13:32:17+00:00", "judgement": "j-20261126T133020+0000-ea4fe60b", "kind": "judgement-link", "schema_version": "1.0", "ticket": "hermes-file-toolset"}
