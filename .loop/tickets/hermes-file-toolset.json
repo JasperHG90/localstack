@@ -3,7 +3,7 @@
   "slug": "hermes-file-toolset",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 0,
+  "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -47,8 +47,27 @@
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
-  "round": null,
-  "plan_hash": "6a3d30063337f2028030476973928571208f350a632e33efc70163c6cc2e0690",
+  "round": {
+    "kind": "plan",
+    "n": 1,
+    "binds": "451d030784fb1e50da138c9dd6582dd122bf3e357fc16ca393c6b70a68e426c5",
+    "started_at": "2026-11-26T13:53:00+00:00",
+    "passes": [
+      "plan-reviewer"
+    ],
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
+    "scope": "full",
+    "sent_back": [],
+    "since": null,
+    "returned": {},
+    "chosen": {},
+    "skipped": [],
+    "closed": false,
+    "outcome": null
+  },
+  "plan_hash": "451d030784fb1e50da138c9dd6582dd122bf3e357fc16ca393c6b70a68e426c5",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +82,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-26T13:49:10+00:00"
+  "at": "2026-11-26T13:53:00+00:00"
 }
