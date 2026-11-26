@@ -1,11 +1,15 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update-2-6",
-  "plan_hash": "10f27a8d925fe6da91c5496de8c26616f959ed48fb01cef6e13044da284abf58",
+  "plan_hash": "d0da493705b5a75d6d658dd786abf26aca85184c23d30bfcbb77a0762faaa30d",
   "problems": [
     {
       "id": "P1",
       "text": "Bifrost runs 2.3.1, three minor releases behind upstream 2.6.0."
+    },
+    {
+      "id": "P3",
+      "text": "The 2.3.1 to 2.6.0 store migrations are one-way, so a failed upgrade has no way back without a dump."
     },
     {
       "id": "P2",
@@ -32,10 +36,12 @@
       "fixes": "P1",
       "fixes_index": 0,
       "needs": [
-        "O2"
+        "O2",
+        "O3"
       ],
       "needs_index": [
-        1
+        1,
+        2
       ],
       "touches": [
         "deployments/applications/services.tf"
@@ -49,8 +55,8 @@
       "kind": "support",
       "goal": "G2",
       "goal_index": 1,
-      "fixes": "P1",
-      "fixes_index": 0,
+      "fixes": "P3",
+      "fixes_index": 1,
       "needs": [],
       "needs_index": [],
       "touches": [
@@ -66,7 +72,7 @@
       "goal": "G1",
       "goal_index": 0,
       "fixes": "P2",
-      "fixes_index": 1,
+      "fixes_index": 2,
       "needs": [],
       "needs_index": [],
       "touches": [
