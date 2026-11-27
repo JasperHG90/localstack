@@ -57,7 +57,7 @@ radxa itself.
 `deployments/applications/services/hermes/Dockerfile`: the
 `nousresearch/hermes-agent:v0.23.4` base plus `jq`, faster-whisper for voice
 notes (installed with the base's own uv 0.13.5), the OpenViking memory-provider plugin and the
-`openviking_tools` wrapper around it. The tag (`0.23.4-1`) is set once, in `nomad_job.hermes` in
+`openviking_tools` wrapper around it. The tag (`0.23.4-2`) is set once, in `nomad_job.hermes` in
 `deployments/applications/services.tf`, and `just rebuild_hermes` in
 `deployments/applications/justfile` reads it from there. Build and push
 before applying a tag change. `force_pull = true` re-pulls on every alloc.

@@ -50,7 +50,7 @@ def test_openviking_tools_wrapper_is_copied_beside_the_plugin() -> None:
 
 def test_hermes_version_matches_the_base() -> None:
     pins = re.findall(r'hermes_version\s*=\s*"([^"]+)"', (APPS / "services.tf").read_text())
-    assert pins == ["0.23.4-1"]
+    assert pins == ["0.23.4-2"]
 
 
 def test_config_selects_openviking_tools_and_keeps_sessions() -> None:
