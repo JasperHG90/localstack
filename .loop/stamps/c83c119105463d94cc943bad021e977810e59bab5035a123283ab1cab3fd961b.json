@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.1",
+  "fingerprint": "c83c119105463d94cc943bad021e977810e59bab5035a123283ab1cab3fd961b",
+  "slug": "hermes-update-0-23",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 11,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r2",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q -k browser",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 1,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    }
+  ],
+  "green": true,
+  "at": "2026-11-27T10:45:26+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.4.0"
+}
