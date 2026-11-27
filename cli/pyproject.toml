@@ -1,6 +1,6 @@
 [project]
 name = "localstack-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cockpit for the localstack home-lab cluster"
 requires-python = ">=3.12"
 dependencies = [
