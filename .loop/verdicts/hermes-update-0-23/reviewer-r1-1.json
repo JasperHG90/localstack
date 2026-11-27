@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "Row r4 has evidence only for the healthy deployment on 0.23.4-1 and the gateway's 302. None of the other six checks is recorded yet - openviking_tools in the gateway log, a viking_search returning lab memories, a transcribed voice note, a medium-reader run through browser_exec, /cron list, a completed dashboard OIDC sign-in - and r4 fails when its evidence is not recorded.",
+      "anchor": ".loop/evals/hermes-update-0-23/rows.json",
+      "category": "contract",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "test_apt_installs_jq_but_not_chromium only reads the continuation lines after `apt-get install`, so chromium put back on the install line itself (`--no-install-recommends chromium \\`) passes the test. r1 fails_when says chromium is still installed.",
+      "anchor": "cli/tests/test_hermes_version.py:126",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "e8dfc2e32df422cd64f4f4f2cd43e9271470db3e744d947d161f44b276a00d82",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T10:41:27+00:00",
+  "checklist": null
+}
