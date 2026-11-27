@@ -20,7 +20,8 @@
   "worktree": "/home/vscode/workspace.worktrees/bifrost-ready-detach",
   "branch": "loop/bifrost-ready-detach",
   "stamps": [
-    "bb408f2c2a7b424ffbaa9e2d7fea3e1e8df7730fb31acb7866ddf0d78888a1e5"
+    "bb408f2c2a7b424ffbaa9e2d7fea3e1e8df7730fb31acb7866ddf0d78888a1e5",
+    "4324f7d13978ba59319e47add6b51c9d309341eda87968eec5324e5d0f8b7334"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude",
@@ -123,5 +124,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T13:33:21+00:00"
+  "at": "2026-11-27T13:34:50+00:00"
 }
