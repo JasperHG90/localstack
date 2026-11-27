@@ -1,15 +1,15 @@
 {
   "schema_version": "1.0",
   "slug": "openviking-update-0-5",
-  "plan_hash": "7f0ffc5e7f52abeadf1b5e4c26243f176776db1aabd5a3e58977457c4248d949",
+  "plan_hash": "546d8bd70c862134b24f3a132cc058c1984874aa09ef93365f2b0a46dd3e219a",
   "problems": [
     {
       "id": "P1",
-      "text": "OpenViking runs v0.4.17.1, behind upstream v0.5.6, and the extension pins it relies on break on 0.5.x."
+      "text": "OpenViking runs v0.4.17.1, behind upstream v0.5.6, on extension pins that break on 0.5.x."
     },
     {
       "id": "P2",
-      "text": "`openviking.hcl` sets rerank knobs (`OV_RETRIEVAL_RERANK_MAX_CALLS`, `OV_RETRIEVAL_RERANK_FINAL`) that 0.5.x makes meaningless or harmful."
+      "text": "`openviking.hcl` sets `OV_RETRIEVAL_RERANK_MAX_CALLS` and `OV_RETRIEVAL_RERANK_FINAL`, which ov-ext 0.8.0 refuses at startup."
     },
     {
       "id": "P3",
@@ -29,40 +29,40 @@
   "outcomes": [
     {
       "id": "O1",
-      "change": "Job openviking runs on v0.5.6 with the new extension tags",
+      "change": "Job openviking runs on v0.5.6 with ov-postgres v0.7.0 and ov-ext v0.8.0",
       "kind": "behaviour",
       "goal": "G1",
       "goal_index": 0,
       "fixes": "P1",
       "fixes_index": 0,
-      "needs": [],
-      "needs_index": [],
+      "needs": [
+        "O2"
+      ],
+      "needs_index": [
+        1
+      ],
       "touches": [
         "deployments/applications/services.tf",
-        "deployments/applications/services/openviking/Dockerfile.openviking",
-        "scripts/check_openviking_config.py"
+        "deployments/applications/services/openviking/Dockerfile.openviking"
       ],
-      "checked_by": "`just verify` beside the Dockerfile, a reranked `find` and `search` returning results with keyword and MMR spans, one reflection sweep, and `uv run --directory cli pytest`",
+      "checked_by": "`just verify` beside the Dockerfile, a healthy deployment, `/health` version, a reranked `find` and `search`, and a Hermes `viking_search`",
       "seen_by": "operator"
     },
     {
       "id": "O2",
-      "change": "openviking.hcl sets only the ov-ext settings the new release reads",
+      "change": "openviking.hcl sets only the ov-ext settings 0.8.0 reads",
       "kind": "support",
       "goal": "G1",
       "goal_index": 0,
       "fixes": "P2",
       "fixes_index": 1,
-      "needs": [
-        "O1"
-      ],
-      "needs_index": [
-        0
-      ],
+      "needs": [],
+      "needs_index": [],
       "touches": [
-        "deployments/applications/services/openviking.hcl"
+        "deployments/applications/services/openviking.hcl",
+        "scripts/check_openviking_config.py"
       ],
-      "checked_by": "`scripts/check_openviking_config.py` and a test that no removed `OV_RETRIEVAL_RERANK_*` key is set",
+      "checked_by": "`scripts/check_openviking_config.py` failing on a removed `OV_RETRIEVAL_RERANK_*` key, and its test",
       "seen_by": "nobody"
     },
     {
