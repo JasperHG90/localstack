@@ -17,7 +17,7 @@ Scheduled daily (midnight UTC). Also invoke manually when asked to produce "toda
 - Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
 - Idempotency ("did I already reflect today?") needs an EXACT-KEY read, which
   OpenViking cannot do -- it is a semantic store. Keep it in
-  `$HERMES_HOME/state/daily-reflect.json` via the `files` toolset.
+  `$HERMES_HOME/state/daily-reflect.json` via the `file` toolset.
 - Open every reflection body with the line `Daily Reflection — $TODAY
   (hermes-reflect)`, so it is recognisable in search results and you can tell
   your own output apart from what you are reflecting on.

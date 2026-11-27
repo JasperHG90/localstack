@@ -78,3 +78,46 @@ def test_config_transcribes_locally_with_the_base_model() -> None:
     local = re.search(r"^  local:\n((?:    .*\n)+)", stt.group(1), re.M)
     assert local
     assert re.findall(r"^    model: (.+)$", local.group(1), re.M) == ['"base"']
+
+
+# Toolset names hermes-agent defines in toolsets.py at v0.22.2. Hermes skips an
+# unknown name with only a log warning, so a typo here silently strips a
+# platform of its tools.
+KNOWN_TOOLSETS = frozenset(
+    {
+        "browser",
+        "clarify",
+        "code_execution",
+        "cronjob",
+        "delegation",
+        "file",
+        "image_gen",
+        "memory",
+        "search",
+        "session_search",
+        "skills",
+        "terminal",
+        "todo",
+        "tts",
+        "vision",
+        "web",
+    }
+)
+
+
+def test_platform_toolsets_name_only_known_toolsets() -> None:
+    hcl = (APPS / "services" / "hermes.hcl").read_text()
+    block = re.search(r"^platform_toolsets:\n((?:  .*\n)+)", hcl, re.M)
+    assert block
+    platforms = re.findall(r"^  (\w+):\n((?:    - .*\n)+)", block.group(1), re.M)
+    assert {name for name, _ in platforms} == {"email", "telegram"}
+    for name, entries in platforms:
+        toolsets = re.findall(r"^    - (\S+)$", entries, re.M)
+        assert set(toolsets) <= KNOWN_TOOLSETS, (name, set(toolsets) - KNOWN_TOOLSETS)
+        assert "file" in toolsets, name
+
+
+def test_skills_name_the_file_toolset_correctly() -> None:
+    skills = APPS / "services" / "hermes" / "skills"
+    wrong = [str(p) for p in skills.rglob("SKILL.md") if "`files` toolset" in p.read_text()]
+    assert wrong == []

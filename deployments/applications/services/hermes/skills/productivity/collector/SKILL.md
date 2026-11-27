@@ -23,7 +23,7 @@ Activate on a schedule to track targets (companies, sectors, instruments, people
 - Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
 - The known-state snapshot and run timestamps need EXACT-KEY reads, which
   OpenViking cannot do -- it is a semantic store. Keep them in
-  `$HERMES_HOME/state/collector.json` via the `files` toolset. Reports go to
+  `$HERMES_HOME/state/collector.json` via the `file` toolset. Reports go to
   OpenViking.
 
 ## Procedure
