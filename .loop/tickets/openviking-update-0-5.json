@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "openviking-update-0-5",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 3,
@@ -38,7 +38,7 @@
   "split": "j-20261127T124758+0000-f8929dab",
   "split_plan_hash": "583680f2457d1c7fd7cd03ad0c4c2183e29fac4394e608ae1476c06594423dbe",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "c62f9a181da67d828239e569b5ca598df5d74013",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -153,8 +153,14 @@
       "to": "verifying",
       "at": "2026-11-27T15:05:04+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-27T15:11:38+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T15:11:20+00:00"
+  "at": "2026-11-27T15:11:38+00:00"
 }
