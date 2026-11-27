@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "hermes-update-0-23",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 2,
@@ -38,7 +38,7 @@
   "split": "j-20261126T133918+0000-fe78281f",
   "split_plan_hash": "aa2e950c1ef80313e296de896c9473cc547a6e2778c9e803e6a9563d2e3dbaa2",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "d13d68a8389676543b2752d74259c27ee8b4ea36",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -175,8 +175,14 @@
       "to": "verifying",
       "at": "2026-11-27T15:25:27+00:00",
       "by": "review fixed"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-27T15:27:58+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T15:27:45+00:00"
+  "at": "2026-11-27T15:27:58+00:00"
 }
