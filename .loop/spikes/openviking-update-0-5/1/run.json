@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "slug": "openviking-update-0-5",
+  "n": 1,
+  "command": "bash -c cp /home/vscode/spike-scratch/ov-boot/seed_old.py /home/vscode/spike-scratch/ov-boot/boot_new.py \"$TMPDIR\" 2>/dev/null; ROWS=50000 /home/vscode/spike-scratch/ov-boot/run.sh",
+  "scripts": [
+    {
+      "source": "/home/vscode/spike-scratch/ov-boot/run.sh",
+      "copy": "files/run.sh"
+    }
+  ],
+  "where": "worktree",
+  "head": "251c1adc02b38def893ec9b81cd5ddd54e06aba3",
+  "fingerprint": "a3b2f78327c11c801f757285afd458869a775f105b715cc9f0e608a5a5632877",
+  "started_at": "2026-11-27T12:53:20+00:00",
+  "finished_at": "2026-11-27T12:56:50+00:00",
+  "duration_seconds": 209.865,
+  "timeout_seconds": 1500.0,
+  "exit": 0,
+  "timed_out": false,
+  "stdout": "stdout.txt",
+  "stderr": "stderr.txt",
+  "truncated": false,
+  "by": "process:loopctl/2.4.0",
+  "moved_from": null
+}

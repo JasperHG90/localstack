@@ -1,0 +1,13 @@
+postgres cpus: 1000000000 nano
+seed: {"seeded": 50000, "dirs": 10000, "seed_s": 15.5}
+table size before: 119 MB
+2026-11-27T12:53:43.214Z INFO openviking.pyagfs pid=400478 request_id=- trace_id=- message="Loaded RAGFS Rust binding"
+2026-11-27T12:53:46.165Z INFO openviking.pyagfs pid=400478 request_id=- trace_id=- message="Loaded RAGFS Rust binding"
+REPORT {"files_written_s": 7.5, "reconcile_s": 0.43, "created": false, "backfill_pending_after_reconcile": true, "rows": 50000, "batch_size": 200, "backfill_filled": 50000, "backfill_s": 158.6, "query_base": {"n": 60, "p50": 0.0448, "p95": 0.0914, "max": 0.165}, "loop_lag_base": {"p99": 0.0057, "max": 0.0126}, "query_during": {"n": 680, "p50": 0.034, "p95": 0.0513, "max": 0.1134}, "loop_lag_during": {"p99": 0.0034, "max": 0.0297}, "batches": 250, "s_per_batch": 0.634, "backfill_pending_after": false}
+md5 filled: 50000 of 50000
+acl indexes: ov_context__acl_mode_idx, ov_context__acl_mode_c_idx, ov_context__acl_direct_grants_idx, ov_context__acl_inherited_grants_idx
+table size after: 135 MB
+PASS reconcile under 360s
+PASS backfill filled every row
+PASS loop lag max under 1s during backfill
+PASS query p95 under 1s during backfill
