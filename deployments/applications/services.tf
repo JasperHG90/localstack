@@ -894,6 +894,11 @@ output "memex_auth_oidc_shape_check" {
 
 ### Bifrost — LLM gateway: load-balances two Ollama Cloud keys, falls back to Gemini (ADR-001)
 resource "nomad_job" "bifrost" {
+  # Registration is not readiness: the default (detach = true) returns as
+  # soon as Nomad accepts the job, so null_resource.bifrost_ready could poll
+  # the old allocation before it stopped.
+  detach = false
+
   jobspec = templatefile(
     "${path.module}/services/bifrost.hcl",
     {
