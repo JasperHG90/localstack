@@ -30,8 +30,8 @@
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude",
-    "hash": "89f6a8663b4a9e3c3cad7c454989e16f9189c95825089177990f562f8d0609a1",
-    "at": "2026-11-27T12:27:56+00:00"
+    "hash": "68668c8caacaa19659e9fc4600b08619be26a02e435c30f6bddeeeafbb9dae6e",
+    "at": "2026-11-27T12:41:45+00:00"
   },
   "delegation": null,
   "budget_base": null,
@@ -45,8 +45,8 @@
     },
     {
       "id": "r2",
-      "behavior": ".okf/components/bifrost.md records that the operator chose no pre-apply dump (2026-11-27), that the 2.3.1 to 2.6.0 store migrations already ran and are partly one-way, so there is no restore point to 2.3.1, and that 2.6.0 to 2.7.0 adds two reversible migrations.",
-      "fails_when": "the page claims a dump or rollback path that does not exist, or omits that there is no way back to 2.3.1",
+      "behavior": ".okf/components/bifrost.md records that the operator chose no pre-apply dump (2026-11-27); that the 2.3.1 to 2.6.0 store migrations already ran and are partly one-way, so there is no restore point to 2.3.1; and that 2.6.0 to 2.7.0 adds eight migrations, two of them one-way (widen_batch_jobs_provider_status_and_endpoint, relay_logs_add_job_debug_widen_job_status), so there is no way back to 2.6.0 without a dump of the 2.6.0 store.",
+      "fails_when": "the page claims a dump or rollback path that does not exist, omits that there is no way back to 2.3.1, or misstates which 2.6.0 to 2.7.0 migrations are one-way",
       "command": null,
       "judgment": true
     },
@@ -90,6 +90,21 @@
         }
       },
       "at": "2026-11-27T12:27:56+00:00"
+    },
+    {
+      "signer": "delegated:jasperginn@gmail.com/claude",
+      "reason": "r2 corrected: 2.6.0 to 2.7.0 has eight migrations, two one-way; the operator, told so, again chose no dump (2026-11-27).",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": {
+          "r2": [
+            "behavior",
+            "fails_when"
+          ]
+        }
+      },
+      "at": "2026-11-27T12:41:45+00:00"
     }
   ],
   "accepted_risks": [],
@@ -154,5 +169,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:41:42+00:00"
+  "at": "2026-11-27T12:41:45+00:00"
 }

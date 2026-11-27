@@ -9,8 +9,8 @@
     },
     {
       "id": "r2",
-      "behavior": ".okf/components/bifrost.md records that the operator chose no pre-apply dump (2026-11-27), that the 2.3.1 to 2.6.0 store migrations already ran and are partly one-way, so there is no restore point to 2.3.1, and that 2.6.0 to 2.7.0 adds two reversible migrations.",
-      "fails_when": "the page claims a dump or rollback path that does not exist, or omits that there is no way back to 2.3.1",
+      "behavior": ".okf/components/bifrost.md records that the operator chose no pre-apply dump (2026-11-27); that the 2.3.1 to 2.6.0 store migrations already ran and are partly one-way, so there is no restore point to 2.3.1; and that 2.6.0 to 2.7.0 adds eight migrations, two of them one-way (widen_batch_jobs_provider_status_and_endpoint, relay_logs_add_job_debug_widen_job_status), so there is no way back to 2.6.0 without a dump of the 2.6.0 store.",
+      "fails_when": "the page claims a dump or rollback path that does not exist, omits that there is no way back to 2.3.1, or misstates which 2.6.0 to 2.7.0 migrations are one-way",
       "judgment": true
     },
     {
