@@ -36,7 +36,7 @@ You run inside Hermes Agent which already has rich built-in toolsets. Before wri
 | Search past conversations | `session_search` toolset | grep through logs |
 | Run shell command | `terminal` toolset | n/a |
 | Run Python | `code_execution` toolset | n/a |
-| Browse the web | `browser` toolset (Playwright built-in) | shelling to chromium |
+| Browse the web | `browser_exec` (`browser` toolset) | shelling to chromium |
 | Read/write files | `file` toolset | low-level shell |
 | Save/recall persistent fact | `memory` tool (built-in) OR `viking_*` tools | filesystem hacks, curl against OpenViking |
 
