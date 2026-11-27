@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "Row r4 lacked the Hermes viking_search evidence.",
+      "anchor": ".loop/evals/openviking-update-0-5/rows.json#r4",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "Comments and a proposal page named the old versions.",
+      "anchor": "deployments/applications/services.tf:468",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "3bd0f6e787f3890f6a6bd225d4320d1420ec400a2a1feca48501e26b5eb488a9",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T15:11:05+00:00",
+  "checklist": null
+}
