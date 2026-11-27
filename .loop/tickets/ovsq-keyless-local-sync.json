@@ -21,7 +21,8 @@
   "branch": "loop/ovsq-keyless-local-sync",
   "stamps": [
     "d57ca44fec5c85877ece1b7dd1fd83c458466718e5b3f4ecbe9f2d5816cffe6e",
-    "b6705519a8ac4704bc1a5cb31c9fa0b53982a437d5c847e1e8716db490662905"
+    "b6705519a8ac4704bc1a5cb31c9fa0b53982a437d5c847e1e8716db490662905",
+    "e16cfaf348d92179e53a2c4a280db85830e3b19b28ce63801d62f2d05f777b85"
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/implementer",
@@ -164,5 +165,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T20:32:34+00:00"
+  "at": "2026-11-27T20:35:36+00:00"
 }
