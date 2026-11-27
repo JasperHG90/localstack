@@ -1,0 +1,1 @@
+{"ask":"I need a key for a service that does ov sync locally. It syncs to seaweedfs like the CI action, which is then picked up by the sync to ov jetstream route. This will be a sync for repositories for which I cannot do a CI sync"}
