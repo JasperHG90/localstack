@@ -33,6 +33,7 @@ Each folder also has an index of its own pages:
 - [Add a service that logs people in through Vault](how-to/add-a-vault-oidc-client.md)
 - [Authenticate a GitHub workflow to the lab](how-to/authenticate-a-github-workflow-to-the-lab.md)
 - [Sync repository folders to the ov-sync bucket](how-to/sync-repository-folders-to-the-ov-sync-bucket.md)
+- [Sync a local folder to OpenViking with ovsq](how-to/sync-a-local-folder-to-openviking-with-ovsq.md)
 
 **Revoking access**
 

@@ -6,6 +6,7 @@ sources:
   - resource: cli/src/localstack_cli/commands/logout.py
   - resource: cli/src/localstack_cli/commands/env.py
   - resource: cli/src/localstack_cli/commands/token.py
+  - resource: cli/src/localstack_cli/auth/sts.py
   - resource: cli/src/localstack_cli/commands/whoami.py
   - resource: cli/src/localstack_cli/commands/config.py
   - resource: cli/src/localstack_cli/auth/vault.py
@@ -141,6 +142,19 @@ failure it exits non-zero with **empty** stdout. That contract is what makes
 the PATH shims safe: they fall through to the unmodified binary when this
 command fails, and a failure that printed an error message on stdout would
 be exported as the token.
+
+```sh
+eval "$(localstack token s3 local-ov-sync)"
+```
+
+`s3 ROLE` is the one service the shims never call. It reads
+`identity/oidc/token/ROLE` with the session's Vault token, swaps it at
+SeaweedFS's STS for `arn:aws:iam::role/ROLE`, and prints three `export` lines:
+`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN`. The
+credentials last 15 minutes, and stderr says when they expire. Vault's ACL
+decides which roles your login may mint. `--endpoint` overrides the STS
+address, `https://s3.lab.orangecluster.nl` by default. A failure, or no role,
+exits non-zero with empty stdout, as for the other services.
 
 ## `logout` revokes, it does not just forget
 

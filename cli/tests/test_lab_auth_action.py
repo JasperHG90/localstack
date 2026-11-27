@@ -431,4 +431,5 @@ def test_ov_sync_prefix_map() -> None:
         "JasperHG90/loop-engineering-harness/": (
             "viking://user/jasper/resources/projects/loop-engineering-harness/"
         ),
+        "JasperHG90/local/": "viking://user/jasper/resources/local/",
     }

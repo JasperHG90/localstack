@@ -640,6 +640,9 @@ resource "nomad_job" "ov_sync_consumer" {
       prefixes = jsonencode({
         "JasperHG90/localstack/"               = "viking://user/jasper/resources/projects/localstack/"
         "JasperHG90/loop-engineering-harness/" = "viking://user/jasper/resources/projects/loop-engineering-harness/"
+        # The operator's local ovsq folders, each under its own subdir. Never
+        # map a folder that holds another: catch-up deletes what it lacks.
+        "JasperHG90/local/" = "viking://user/jasper/resources/local/"
       })
     }
   )

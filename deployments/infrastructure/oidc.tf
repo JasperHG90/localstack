@@ -177,6 +177,21 @@ resource "vault_identity_oidc_role" "ci_ov_sync" {
   template = jsonencode({ ci_repository = each.value.repository })
 }
 
+### The operator's own token for SeaweedFS, minted on a laptop by
+### `localstack token s3 local-ov-sync` for an ovsq run. Only the operator
+### entity may read it (vault_policy.local_ov_sync, identity.tf), and
+### SeaweedFS's role `local-ov-sync` pins both this claim and that entity's
+### `sub`. The ttl bounds only the token: the STS request's DurationSeconds
+### sets how long the S3 credentials last.
+resource "vault_identity_oidc_role" "local_ov_sync" {
+  name      = "local-ov-sync"
+  key       = vault_identity_oidc_key.identity_tokens.name
+  client_id = local.seaweedfs_audience
+  ttl       = 900
+
+  template = jsonencode({ local_ov_sync = local.local_ov_sync_prefix })
+}
+
 locals {
   # The identity-token role's client_id, which is also `server.oidc.audience`
   # in ov.conf.json. One literal, asserted on both sides by

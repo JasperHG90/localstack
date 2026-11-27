@@ -114,7 +114,9 @@ What `deps` installs and how the shims behave is
 
 That last rule is why `cli/src/localstack_cli/commands/token.py` has its own
 module with no shared output helper: stdout is the token and one newline, and a
-failure exits non-zero with empty stdout.
+failure exits non-zero with empty stdout. `token s3 ROLE`, which no shim calls,
+prints three `export` lines instead (S3 credentials from
+`cli/src/localstack_cli/auth/sts.py`) and keeps the empty-stdout failure rule.
 
 ## Tests
 
