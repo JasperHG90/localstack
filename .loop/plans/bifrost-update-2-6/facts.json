@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update-2-6",
-  "plan_hash": "a1ef1c8a613658797ef645ca6aa3c1adadff78be1394f2fb30af7a1949ac9595",
+  "plan_hash": "68d360d6a4ef478560e321e78e6c64c286675b81a91107bf2da858b0dd609edd",
   "problems": [
     {
       "id": "P1",
-      "text": "Bifrost runs 2.3.1, three minor releases behind upstream 2.6.0."
-    },
-    {
-      "id": "P3",
-      "text": "The 2.3.1 to 2.6.0 store migrations are one-way, so a failed upgrade has no way back without a dump."
+      "text": "Bifrost ran 2.3.1, four minor releases behind upstream 2.7.0."
     },
     {
       "id": "P2",
-      "text": "The pin test and the component page name 2.3.1, so a moved pin fails the gate and leaves the docs wrong."
+      "text": "The pin test and the component page named 2.3.1, so a moved pin fails the gate and leaves the docs wrong."
+    },
+    {
+      "id": "P3",
+      "text": "The 2.3.1 to 2.6.0 store migrations are one-way, and the operator chose no dump, so the component page must say there is no way back to 2.3.1."
     }
   ],
   "goals": [
@@ -23,24 +23,22 @@
     },
     {
       "id": "G2",
-      "text": "Keep a way back if the one-way store migrations go wrong."
+      "text": "Leave an honest record of what cannot be undone."
     }
   ],
   "outcomes": [
     {
       "id": "O1",
-      "change": "Job bifrost runs on v2.6.0 and every caller still works",
+      "change": "Job bifrost runs on v2.7.0 and every caller still works",
       "kind": "behaviour",
       "goal": "G1",
       "goal_index": 0,
       "fixes": "P1",
       "fixes_index": 0,
       "needs": [
-        "O2",
         "O3"
       ],
       "needs_index": [
-        1,
         2
       ],
       "touches": [
@@ -51,28 +49,28 @@
     },
     {
       "id": "O2",
-      "change": "A dump of the bifrost store, taken before the apply, sits at a name no job overwrites",
+      "change": "The component page says the move has no restore point to 2.3.1",
       "kind": "support",
       "goal": "G2",
       "goal_index": 1,
       "fixes": "P3",
-      "fixes_index": 1,
+      "fixes_index": 2,
       "needs": [],
       "needs_index": [],
       "touches": [
         ".okf/components/bifrost.md"
       ],
-      "checked_by": "the dump's object listed in the backup bucket and its path recorded in the component page",
+      "checked_by": "reading the page",
       "seen_by": "operator"
     },
     {
       "id": "O3",
-      "change": "The pin test and the component page name 2.6.0",
+      "change": "The pin test and the component page name 2.7.0",
       "kind": "support",
       "goal": "G1",
       "goal_index": 0,
       "fixes": "P2",
-      "fixes_index": 2,
+      "fixes_index": 1,
       "needs": [],
       "needs_index": [],
       "touches": [
