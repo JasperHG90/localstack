@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "cli-login.md and localstack-cli.md said `localstack token` prints only a token, and no reference page covered `token s3 ROLE` or `--endpoint`.",
+      "anchor": "docs/reference/cli-login.md",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "the prefix test did not fail when a mapped folder was the hermes root or above it.",
+      "anchor": "cli/tests/test_local_ov_sync.py:66",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "523907948ed351f1e04f640fd7fe524b144f0bacefa9e392438f52cfb060e19f",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T20:58:24+00:00",
+  "checklist": null
+}
