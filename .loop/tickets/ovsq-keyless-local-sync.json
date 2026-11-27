@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ovsq-keyless-local-sync",
-  "stage": "verifying",
+  "stage": "fixing",
   "attempts": 1,
   "plan_rounds": 2,
   "review_rounds": 1,
@@ -135,8 +135,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "fail"
   },
   "plan_hash": "775fa820fae92f913e8aa425fd4eb9a8576782e8fb31592ead48b3515ff2a248",
   "intent": {
@@ -168,8 +168,14 @@
       "to": "verifying",
       "at": "2026-11-27T20:47:40+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "fixing",
+      "at": "2026-11-27T20:51:47+00:00",
+      "by": "review close"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T20:47:43+00:00"
+  "at": "2026-11-27T20:51:47+00:00"
 }
