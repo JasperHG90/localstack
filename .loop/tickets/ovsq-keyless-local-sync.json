@@ -19,7 +19,9 @@
   "archived": false,
   "worktree": "/home/vscode/workspace.worktrees/ovsq-keyless-local-sync",
   "branch": "loop/ovsq-keyless-local-sync",
-  "stamps": [],
+  "stamps": [
+    "d57ca44fec5c85877ece1b7dd1fd83c458466718e5b3f4ecbe9f2d5816cffe6e"
+  ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/implementer",
     "hash": "dcf51eef591d1ef8b39109fc94615f47f858ed01b32d0633b5aa0ec4a70e9681",
@@ -136,5 +138,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T19:13:55+00:00"
+  "at": "2026-11-27T19:19:04+00:00"
 }

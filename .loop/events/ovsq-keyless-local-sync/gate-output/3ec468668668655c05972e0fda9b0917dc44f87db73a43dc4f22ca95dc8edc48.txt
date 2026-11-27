@@ -1,0 +1,63 @@
+bash scripts/seed_worktree.sh
+prek run --all-files
+check json...............................................................Passed
+check python ast.........................................................Passed
+check for merge conflicts................................................Passed
+check yaml...............................................................Passed
+debug statements (python)................................................Passed
+detect private key.......................................................Passed
+fix end of files.........................................................Passed
+Nomad Format (fmt -recursive)............................................Passed
+Terraform Format (fmt -check -recursive).................................Passed
+Terraform Validate (per root)............................................Passed
+Ruff (lint)..............................................................Passed
+Ruff (format)............................................................Failed
+- hook id: ruff-format
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  18 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  unformatted: File would be reformatted
+    --> cli/tests/fixtures/seaweedfs_iam.py:76:38
+     |
+  75 |     shutil.copy(JOBSPEC, workdir / "services" / "seaweedfs.hcl")
+     -     (workdir / "main.tf").write_text(
+     -         callers + "\n" + locals_text + "\nlocals {\n" + call + "}\n"
+     -     )
+  76 +     (workdir / "main.tf").write_text(callers + "\n" + locals_text + "\nlocals {\n" + call + "}\n")
+  77 |     # jsonencode makes the console print one JSON string literal.
+     |
+
+  1 file would be reformatted, 17 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  17 files already formatted
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  17 files already formatted
+Mypy (strict, cli/)......................................................Failed
+- hook id: mypy
+- exit code: 1
+
+  warning: `VIRTUAL_ENV=/home/vscode/workspace/cli/.venv` does not match the project environment path `cli/.venv` and will be ignored; use `--active` to target the active environment instead
+  cli/tests/commands/test_ov_sync_env_command.py:67: error: "object" has no attribute "exit_code"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:67: error: "object" has no attribute "stderr"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:68: error: "object" has no attribute "stdout"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:73: error: "object" has no attribute "stderr"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:95: error: "object" has no attribute "exit_code"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:96: error: "object" has no attribute "stdout"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:97: error: "object" has no attribute "stderr"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:106: error: "object" has no attribute "exit_code"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:107: error: "object" has no attribute "stdout"  [attr-defined]
+  cli/tests/commands/test_ov_sync_env_command.py:108: error: "object" has no attribute "stderr"  [attr-defined]
+  Found 10 errors in 1 file (checked 142 source files)
+OpenViking config (settings that fail silently)..........................Passed
+ov-sync-consumer (go vet, go test).......................................Passed
+error: recipe `pre_commit` failed on line 36 with exit code 1
