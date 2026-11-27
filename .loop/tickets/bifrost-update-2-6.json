@@ -127,8 +127,8 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": false,
-    "outcome": null
+    "closed": true,
+    "outcome": "blocked"
   },
   "plan_hash": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62",
   "intent": {
@@ -169,5 +169,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:41:45+00:00"
+  "at": "2026-11-27T12:41:50+00:00"
 }
