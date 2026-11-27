@@ -15,8 +15,8 @@
     },
     {
       "id": "r3",
-      "behavior": "Before the apply, state.db is copied off the hermes_data volume on radxa, and the copy's location is recorded in the review, because v0.23.3 moves its schema from 31 to 33.",
-      "fails_when": "no copy is taken before the apply, or its location is not recorded",
+      "behavior": ".okf/components/hermes.md records that the operator chose no state.db copy before the apply (2026-11-27), and that v0.23.3 moved state.db from schema 31 to 33, so a rollback to 0.22.2-3 has no restore point.",
+      "fails_when": "the page claims a state.db copy or rollback path that does not exist, or omits that there is none",
       "judgment": true
     },
     {

@@ -25,8 +25,8 @@
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude",
-    "hash": "3b284e2342b9c57038b84aaf512c4da7590beee7cff9b6d3e1993b0fe5915558",
-    "at": "2026-11-26T13:49:09+00:00"
+    "hash": "a4b778ee87117e0182d5ea8aa334a779a7cd9ce1deae0d366d0f4da83a3f314d",
+    "at": "2026-11-27T12:28:28+00:00"
   },
   "delegation": null,
   "budget_base": null,
@@ -47,8 +47,8 @@
     },
     {
       "id": "r3",
-      "behavior": "Before the apply, state.db is copied off the hermes_data volume on radxa, and the copy's location is recorded in the review, because v0.23.3 moves its schema from 31 to 33.",
-      "fails_when": "no copy is taken before the apply, or its location is not recorded",
+      "behavior": ".okf/components/hermes.md records that the operator chose no state.db copy before the apply (2026-11-27), and that v0.23.3 moved state.db from schema 31 to 33, so a rollback to 0.22.2-3 has no restore point.",
+      "fails_when": "the page claims a state.db copy or rollback path that does not exist, or omits that there is none",
       "command": null,
       "judgment": true
     },
@@ -67,7 +67,23 @@
       "judgment": true
     }
   ],
-  "resigns": [],
+  "resigns": [
+    {
+      "signer": "delegated:jasperginn@gmail.com/claude",
+      "reason": "Operator told the implementer to skip the pre-apply state.db copy (2026-11-27); r3 now records that there is no restore point to 0.22.2-3.",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": {
+          "r3": [
+            "behavior",
+            "fails_when"
+          ]
+        }
+      },
+      "at": "2026-11-27T12:28:28+00:00"
+    }
+  ],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
@@ -130,5 +146,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T10:45:26+00:00"
+  "at": "2026-11-27T12:28:28+00:00"
 }
