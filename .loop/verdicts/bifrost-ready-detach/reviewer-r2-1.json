@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "The plan's Intent and row r2's behavior said the change does not re-register the job, but Nomad recorded version 19.",
+      "anchor": ".loop/plans/bifrost-ready-detach/README.md:29",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "4324f7d13978ba59319e47add6b51c9d309341eda87968eec5324e5d0f8b7334",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T13:35:30+00:00",
+  "checklist": null
+}
