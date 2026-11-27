@@ -3,7 +3,7 @@
   "slug": "ovsq-keyless-local-sync",
   "stage": "planning",
   "attempts": 0,
-  "plan_rounds": 1,
+  "plan_rounds": 2,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -30,9 +30,9 @@
   "overrides": [],
   "round": {
     "kind": "plan",
-    "n": 1,
-    "binds": "469683241bed8b12063296f4d47174e34430749b68d654e135fcd32b66dae3b8",
-    "started_at": "2026-11-27T19:05:23+00:00",
+    "n": 2,
+    "binds": "775fa820fae92f913e8aa425fd4eb9a8576782e8fb31592ead48b3515ff2a248",
+    "started_at": "2026-11-27T19:08:25+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -45,10 +45,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "fail"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "469683241bed8b12063296f4d47174e34430749b68d654e135fcd32b66dae3b8",
+  "plan_hash": "775fa820fae92f913e8aa425fd4eb9a8576782e8fb31592ead48b3515ff2a248",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -63,5 +63,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T19:08:21+00:00"
+  "at": "2026-11-27T19:08:25+00:00"
 }

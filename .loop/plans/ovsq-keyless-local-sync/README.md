@@ -1,7 +1,7 @@
 ---
 type: plan
 title: 'Plan: ovsq-keyless-local-sync'
-description: Give local ovsq runs 15-minute SeaweedFS STS credentials minted from the operator's Vault session, writing one ov-sync prefix the consumer maps once.
+description: Give local ovsq runs 15-minute SeaweedFS STS sessions minted from the operator's Vault session, writing one ov-sync prefix the consumer maps once.
 tags:
 - plan
 generated:
@@ -54,20 +54,26 @@ minted by the operator instead of a workflow:
   a dedicated folder, `viking://user/jasper/resources/local/`. Each folder
   picks its path under that folder with ovsq's `subdir` and keeps its own
   `source`, so a new folder needs no Terraform change. Why the root is not
-  `viking://user/jasper/resources/` itself is the first risk below.
+  `viking://user/jasper/resources/` itself is under Could invalidate this plan.
 - A `localstack ov-sync-env` command
   (`new:cli/src/localstack_cli/commands/ov_sync_env.py`, registered in
   `LAZY_SUBCOMMANDS` in `cli/src/localstack_cli/main.py`). It reads the
   token with the session's Vault token (`vault.read_creds` in
   `cli/src/localstack_cli/auth/vault.py`) and posts it to SeaweedFS's STS
-  `AssumeRoleWithWebIdentity` at `https://s3.lab.orangecluster.nl`. It prints
+  `AssumeRoleWithWebIdentity` at `https://s3.lab.orangecluster.nl` with
+  `DurationSeconds=900`. The identity token's ttl does not set the session
+  length: SeaweedFS 4.48 takes the request's `DurationSeconds`, else the
+  `tokenDuration` of `"1h"` in `deployments/infrastructure/services/seaweedfs.hcl`,
+  and ignores the token's `exp`. 900 is SeaweedFS's minimum. It prints
   `export AWS_ACCESS_KEY_ID=...`, `AWS_SECRET_ACCESS_KEY` and
   `AWS_SESSION_TOKEN`, so `eval "$(localstack ov-sync-env)"` precedes an ovsq
   run. It follows `localstack env` (`cli/src/localstack_cli/commands/env.py`):
   exports on stdout, diagnostics on stderr, and empty stdout with a non-zero
   exit on failure. A command beats a shell recipe here: the CLI already holds
   the Vault session, the recipe would need `aws` and `jq` on the laptop, and
-  pytest can cover a command.
+  pytest can cover a command. A first sync that outlives the 15 minutes
+  stops partway, keeps the progress its manifest recorded, and continues
+  after a fresh `eval` and rerun; the how-to says so.
 - A how-to, `new:docs/how-to/sync-a-local-folder-to-openviking-with-ovsq.md`,
   that follows `.claude/rules/how-to-skeleton.md`. Also a decision record
   made with `kmctl new decision` under `.okf/decisions/` that names the static
@@ -137,13 +143,13 @@ get AccessDenied on a put under `ov-sync/JasperHG90/localstack/`.
 - checked by: `new:cli/tests/test_local_ov_sync.py` asserts the `prefixes` entry, and that no mapped folder is an ancestor of another mapped folder or of the hermes save root `viking://user/jasper/resources/`
 - seen by: nobody
 
-### O4: `localstack ov-sync-env` prints export lines for 15-minute ov-sync credentials
+### O4: `localstack ov-sync-env` prints export lines for ov-sync credentials that last 15 minutes
 - kind: behaviour
 - goal: G1
 - fixes: P3
 - needs: O1, O2, O3
 - touches: `new:cli/src/localstack_cli/commands/ov_sync_env.py`, `cli/src/localstack_cli/main.py`, `localstack ov-sync-env`
-- checked by: `new:cli/tests/commands/test_ov_sync_env_command.py`, with Vault and STS faked: three export lines on success, and empty stdout with a non-zero exit on a Vault 403 and on an STS refusal; then a live ovsq run lands under `viking://user/jasper/resources/local/` and the same credentials get AccessDenied under `ov-sync/JasperHG90/localstack/`
+- checked by: `new:cli/tests/commands/test_ov_sync_env_command.py`, with Vault and STS faked: it posts `DurationSeconds=900` to STS, three export lines on success, and empty stdout with a non-zero exit on a Vault 403 and on an STS refusal; then a live ovsq run lands under `viking://user/jasper/resources/local/` and the same credentials get AccessDenied under `ov-sync/JasperHG90/localstack/` and the returned `Expiration` is about 15 minutes out
 - seen by: operator
 
 ### O5: A how-to, a decision record and the architecture pages describe the local route
