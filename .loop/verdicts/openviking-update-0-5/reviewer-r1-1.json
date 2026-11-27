@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "Row r4 requires a Hermes viking_search that returns memories, and its evidence is not recorded. The briefing lists it under Not observed. The row's fails_when counts missing evidence as a failure. The Hermes job running now (0.22.2, upstream plugin) already calls this OpenViking, so the check can be made without the unlanded hermes ticket.",
+      "anchor": ".loop/evals/openviking-update-0-5/rows.json#r4",
+      "category": "missing",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "Comments and a proposal page still name the old versions. services.tf:468 says `:latest` and v0.4.17.1 resolve to one digest today. .okf/proposals/openviking-dashboard.md:47-49 says that at HEAD the Dockerfile pins ov-postgres-v0.6.0 and ov-ext-v0.7.1 and the base is still 0.4.17.1. The justfile verify recipe still echoes \"checking the ov-retrieval entry point\". Inside the jobspec, openviking.hcl:90-92 quotes a /health measured on v0.4.17.1-9 and says \"Re-measure when the image moves\", and the comment above OV_RETRIEVAL_RERANK_POOLING still says \"Cap the number of calls\", which described the MAX_CALLS setting this change removed.",
+      "anchor": "deployments/applications/services.tf:468",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "3002309b2f52563ed1726ff340443cbe8ad409fbbf8fb22e1718fe741f2306cb",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T13:21:27+00:00",
+  "checklist": null
+}
