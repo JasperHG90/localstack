@@ -1,0 +1,43 @@
+=== bifrost 2.6.0 image maximhq/bifrost@sha256:5968d007ba4f74ee01bc4ceb071decb9927a0b7bb43dbb9072208f75e2d522e3 built with go1.27.4
+=== bifrost 2.7.0 image maximhq/bifrost@sha256:5d36913face05d0c55119846fd4bba12f1f7f973b8db40a9df8ff606aad01bfc built with go1.27.4
+=== bifrost 2.6.0 ===
+--- ollama: gateway HTTP 502
+{"type":"upstream_credentials_exhausted","is_bifrost_error":false,"status_code":502,"error":{"type":"upstream_credentials_exhausted","message":"all configured keys returned permanent per-key errors: provider ollama"},"extra_fields":{"routing_info":{"provider":"ollama","model":"gpt-oss:120b","key":"ollama-xebia","requested_provider":"ollama","requested_model":"gpt-oss:120b"},"provider":"ollama","original_model_requested":"gpt-oss:120b","resolved_model_used":"gpt-oss:120b","request_type":"chat_completion","error_type":"provider_credentials_exhausted"}}
+
+--- gemini: gateway HTTP 400
+{"is_bifrost_error":false,"status_code":400,"error":{"type":"INVALID_ARGUMENT","code":"400","message":"API key not valid. Please pass a valid API key."},"extra_fields":{"routing_info":{"provider":"gemini","model":"gemini-2.5-flash","key":"gemini-primary","requested_provider":"gemini","requested_model":"gemini-2.5-flash"},"provider":"gemini","original_model_requested":"gemini-2.5-flash","resolved_model_used":"gemini-2.5-flash","request_type":"chat_completion","latency":25}}
+
+--- typesafe: gateway HTTP 401
+{"is_bifrost_error":false,"status_code":401,"error":{"type":"authentication_error","message":"Cannot authenticate with the server. Please check your API key and try again."},"extra_fields":{"routing_info":{"provider":"typesafe","model":"jev-latest","key":"typesafe-primary","requested_provider":"typesafe","requested_model":"jev-latest"},"provider":"typesafe","original_model_requested":"jev-latest","resolved_model_used":"jev-latest","request_type":"decisions","latency":110}}
+
+--- 2.6.0 container log lines mentioning tls/x509/certificate:
+{"level":"info","time":"2026-11-27T10:47:09Z","message":"[configstore] starting migration add_mcp_client_tls_config_json_column"}
+{"level":"info","time":"2026-11-27T10:47:09Z","message":"[configstore] finished migration add_mcp_client_tls_config_json_column"}
+=== bifrost 2.6.0 negative control (ollama -> untrusted-root.badssl.com): gateway HTTP 502
+{"is_bifrost_error":false,"status_code":502,"error":{"error":"tls: failed to verify certificate: x509: certificate signed by unknown authority","type":"provider_connection_failed","message":"failed to execute HTTP request to provider API"},"extra_fields":{"routing_info":{"provider":"ollama","model":"gpt-oss:120b","key":"ollama-personal","requested_provider":"ollama","requested_model":"gpt-oss:120b"},"provider":"ollama","original_model_requested":"gpt-oss:120b","resolved_model_used":"gpt-oss:120b","request_type":"chat_completion","latency":384}}
+
+=== bifrost 2.7.0 ===
+--- ollama: gateway HTTP 502
+{"type":"upstream_credentials_exhausted","is_bifrost_error":false,"status_code":502,"error":{"type":"upstream_credentials_exhausted","message":"all configured keys returned permanent per-key errors: provider ollama"},"extra_fields":{"routing_info":{"provider":"ollama","model":"gpt-oss:120b","key":"ollama-xebia","requested_provider":"ollama","requested_model":"gpt-oss:120b"},"provider":"ollama","original_model_requested":"gpt-oss:120b","resolved_model_used":"gpt-oss:120b","request_type":"chat_completion","error_type":"provider_credentials_exhausted"}}
+
+--- gemini: gateway HTTP 400
+{"is_bifrost_error":false,"status_code":400,"error":{"type":"INVALID_ARGUMENT","code":"400","message":"API key not valid. Please pass a valid API key."},"extra_fields":{"routing_info":{"provider":"gemini","model":"gemini-2.5-flash","key":"gemini-primary","requested_provider":"gemini","requested_model":"gemini-2.5-flash"},"provider":"gemini","original_model_requested":"gemini-2.5-flash","resolved_model_used":"gemini-2.5-flash","request_type":"chat_completion","latency":20}}
+
+--- typesafe: gateway HTTP 401
+{"is_bifrost_error":false,"status_code":401,"error":{"type":"authentication_error","message":"Cannot authenticate with the server. Please check your API key and try again."},"extra_fields":{"routing_info":{"provider":"typesafe","model":"jev-latest","key":"typesafe-primary","requested_provider":"typesafe","requested_model":"jev-latest"},"provider":"typesafe","original_model_requested":"jev-latest","resolved_model_used":"jev-latest","request_type":"decisions","latency":106}}
+
+--- 2.7.0 container log lines mentioning tls/x509/certificate:
+{"level":"info","time":"2026-11-27T10:47:44Z","message":"[configstore] starting migration add_mcp_client_tls_config_json_column"}
+{"level":"info","time":"2026-11-27T10:47:44Z","message":"[configstore] finished migration add_mcp_client_tls_config_json_column"}
+=== bifrost 2.7.0 negative control (ollama -> untrusted-root.badssl.com): gateway HTTP 502
+{"is_bifrost_error":false,"status_code":502,"error":{"error":"tls: failed to verify certificate: x509: certificate signed by unknown authority","type":"provider_connection_failed","message":"failed to execute HTTP request to provider API"},"extra_fields":{"routing_info":{"provider":"ollama","model":"gpt-oss:120b","key":"ollama-xebia","requested_provider":"ollama","requested_model":"gpt-oss:120b"},"provider":"ollama","original_model_requested":"gpt-oss:120b","resolved_model_used":"gpt-oss:120b","request_type":"chat_completion","latency":384}}
+
+2.6.0 control: x509 error visible
+2.6.0 ollama: TLS ok (HTTP 502, upstream_credentials_exhausted)
+2.6.0 gemini: TLS ok (HTTP 400, INVALID_ARGUMENT)
+2.6.0 typesafe: TLS ok (HTTP 401, authentication_error)
+2.7.0 control: x509 error visible
+2.7.0 ollama: TLS ok (HTTP 502, upstream_credentials_exhausted)
+2.7.0 gemini: TLS ok (HTTP 400, INVALID_ARGUMENT)
+2.7.0 typesafe: TLS ok (HTTP 401, authentication_error)
+risk does not hold on 2.7.0
