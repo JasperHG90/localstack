@@ -3,7 +3,7 @@
   "slug": "bifrost-update-2-6",
   "stage": "blocked",
   "attempts": 1,
-  "plan_rounds": 2,
+  "plan_rounds": 3,
   "review_rounds": 1,
   "extra_plan_rounds": 0,
   "extra_review_rounds": 0,
@@ -96,26 +96,26 @@
   "waivers": [],
   "overrides": [],
   "round": {
-    "kind": "review",
-    "n": 1,
-    "binds": "6c5a81d787b9614df9dbaeb256eba1798bc49a258bb4e1a7a54c35d7da69aa4c",
-    "started_at": "2026-11-27T10:36:49+00:00",
+    "kind": "plan",
+    "n": 3,
+    "binds": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62",
+    "started_at": "2026-11-27T12:28:09+00:00",
     "passes": [
-      "reviewer"
+      "plan-reviewer"
     ],
-    "tree": "13c1ffc1edcb962986d0cb65cecd889b3ebef6e6",
-    "plan_hash": "a1ef1c8a613658797ef645ca6aa3c1adadff78be1394f2fb30af7a1949ac9595",
-    "eval_hash": "823bb1f1dbf0a086226948c0bf30c5845c0775c597616dc70e336bb573bf18c4",
+    "tree": null,
+    "plan_hash": null,
+    "eval_hash": null,
     "scope": "full",
     "sent_back": [],
     "since": null,
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "blocked"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "a1ef1c8a613658797ef645ca6aa3c1adadff78be1394f2fb30af7a1949ac9595",
+  "plan_hash": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -154,5 +154,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:27:56+00:00"
+  "at": "2026-11-27T12:28:09+00:00"
 }
