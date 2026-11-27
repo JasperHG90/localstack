@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "rows": [
+    {
+      "id": "r1",
+      "behavior": "nomad_job.bifrost in deployments/applications/services.tf sets detach = false, so terraform apply waits for the Bifrost deployment before null_resource.bifrost_ready polls the gateway.",
+      "fails_when": "nomad_job.bifrost does not set detach = false",
+      "command": "uv run --directory cli pytest tests/test_bifrost_version.py -q"
+    },
+    {
+      "id": "r2",
+      "behavior": "A terraform plan of deployments/applications after the change does not re-register or replace the running bifrost job.",
+      "fails_when": "the plan shows the bifrost jobspec changing or the job being replaced, or the evidence is not recorded in the review",
+      "judgment": true
+    }
+  ]
+}
