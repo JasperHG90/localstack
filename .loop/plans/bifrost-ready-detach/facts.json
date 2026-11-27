@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "slug": "bifrost-ready-detach",
+  "plan_hash": "5c140ceb05c90e22e0df3273870c4fbaf6199f79144f2b6e41d0026c71c746dc",
+  "problems": [
+    {
+      "id": "P1",
+      "text": "`null_resource.bifrost_ready` can pass against the old Bifrost allocation during an upgrade."
+    }
+  ],
+  "goals": [
+    {
+      "id": "G1",
+      "text": "Touch virtual keys only once the new gateway serves."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1",
+      "change": "nomad_job.bifrost waits for its deployment",
+      "kind": "behaviour",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [],
+      "needs_index": [],
+      "touches": [
+        "deployments/applications/services.tf",
+        "cli/tests/test_bifrost_version.py"
+      ],
+      "checked_by": "a test that `nomad_job.bifrost` sets `detach = false`",
+      "seen_by": "operator"
+    }
+  ]
+}
