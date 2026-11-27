@@ -112,3 +112,4 @@
 {"at": "2026-11-26T13:52:24+00:00", "evidence": "the operator said so", "judgement": "j-20261126T135224+0000-575fae12", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "relayed"}
 {"at": "2026-11-26T13:52:44+00:00", "judgement": "j-20261126T135224+0000-575fae12", "kind": "judgement-link", "schema_version": "1.0", "ticket": "openviking-update-0-5"}
 {"at": "2026-11-27T09:49:57+00:00", "evidence": "1 review round(s), 0 block(s), 61 changed line(s)", "judgement": "j-20261126T133020+0000-ea4fe60b", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "outcome"}
+{"at": "2026-11-27T12:49:42+00:00", "evidence": "2 review round(s), 1 block(s), 37 changed line(s)", "judgement": "j-20261126T133017+0000-ffd28fa3", "kind": "judgement-label", "label": "loop", "schema_version": "1.0", "source": "outcome"}

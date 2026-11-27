@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update-2-6",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 2,
   "plan_rounds": 4,
   "review_rounds": 2,
@@ -13,7 +13,7 @@
   "split": "j-20261127T124142+0000-b46866b4",
   "split_plan_hash": "cc59eb95342a69a5efb4b77626a60eb2887cfc5ab47101fadf9c1e5c66734a1d",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "cfeb56f35efd9bdeef58cac2c569a6f344e596b8",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -186,8 +186,14 @@
       "to": "verifying",
       "at": "2026-11-27T12:46:23+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-27T12:49:42+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:49:24+00:00"
+  "at": "2026-11-27T12:49:42+00:00"
 }
