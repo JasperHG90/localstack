@@ -21,15 +21,15 @@
     },
     {
       "id": "r4",
-      "behavior": "localstack ov-sync-env mints the local-ov-sync token with the session's Vault token, posts it to SeaweedFS STS with DurationSeconds=900 and RoleArn arn:aws:iam::role/local-ov-sync, and prints exactly three export lines for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN on stdout",
-      "fails_when": "the STS request lacks DurationSeconds=900 or names another role, or stdout holds anything but the three export lines",
-      "command": "uv run --directory cli pytest tests/commands/test_ov_sync_env_command.py -q -k success"
+      "behavior": "localstack token s3 ROLE mints identity/oidc/token/ROLE with the session's Vault token, posts it to SeaweedFS STS with DurationSeconds=900 and RoleArn arn:aws:iam::role/ROLE for any role name given, and prints exactly three export lines for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN on stdout",
+      "fails_when": "the STS request lacks DurationSeconds=900 or names a role other than the one given, or stdout holds anything but the three export lines",
+      "command": "uv run --directory cli pytest tests/commands/test_token_s3_command.py -q -k success"
     },
     {
       "id": "r5",
-      "behavior": "localstack ov-sync-env prints nothing on stdout and exits non-zero when Vault refuses the token read or STS refuses the swap, with the reason on stderr",
-      "fails_when": "stdout is non-empty or the exit code is 0 on a Vault 403 or an STS error",
-      "command": "uv run --directory cli pytest tests/commands/test_ov_sync_env_command.py -q -k refus"
+      "behavior": "localstack token s3 ROLE prints nothing on stdout and exits non-zero when Vault refuses the token read or STS refuses the swap, with the reason on stderr",
+      "fails_when": "stdout is non-empty or the exit code is 0 on a Vault 403 or an STS error, or when no role is given",
+      "command": "uv run --directory cli pytest tests/commands/test_token_s3_command.py -q -k refus"
     },
     {
       "id": "r6",
@@ -39,7 +39,7 @@
     },
     {
       "id": "r7",
-      "behavior": "after both roots are applied, eval \"$(localstack ov-sync-env)\" then an ovsq run with prefix JasperHG90/local and subdir projects/notes lands its files under viking://user/jasper/resources/local/projects/notes/, the credentials expire about 15 minutes after minting, and the same credentials get AccessDenied on a put under ov-sync/JasperHG90/localstack/",
+      "behavior": "after both roots are applied, eval \"$(localstack token s3 local-ov-sync)\" then an ovsq run with prefix JasperHG90/local and subdir projects/notes lands its files under viking://user/jasper/resources/local/projects/notes/, the credentials expire about 15 minutes after minting, and the same credentials get AccessDenied on a put under ov-sync/JasperHG90/localstack/",
       "fails_when": "the files do not appear, the Expiration is not about 15 minutes out, or the put outside the prefix succeeds",
       "judgment": true
     },

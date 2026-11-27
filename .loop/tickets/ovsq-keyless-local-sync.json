@@ -25,8 +25,8 @@
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/implementer",
-    "hash": "dcf51eef591d1ef8b39109fc94615f47f858ed01b32d0633b5aa0ec4a70e9681",
-    "at": "2026-11-27T19:10:05+00:00"
+    "hash": "1b108c9d26ff5a07d3e9f0f8ecf03e43ef3cb9f1e376a68cfbfdc8a8d12a89ef",
+    "at": "2026-11-27T20:32:34+00:00"
   },
   "delegation": null,
   "budget_base": null,
@@ -54,16 +54,16 @@
     },
     {
       "id": "r4",
-      "behavior": "localstack ov-sync-env mints the local-ov-sync token with the session's Vault token, posts it to SeaweedFS STS with DurationSeconds=900 and RoleArn arn:aws:iam::role/local-ov-sync, and prints exactly three export lines for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN on stdout",
-      "fails_when": "the STS request lacks DurationSeconds=900 or names another role, or stdout holds anything but the three export lines",
-      "command": "uv run --directory cli pytest tests/commands/test_ov_sync_env_command.py -q -k success",
+      "behavior": "localstack token s3 ROLE mints identity/oidc/token/ROLE with the session's Vault token, posts it to SeaweedFS STS with DurationSeconds=900 and RoleArn arn:aws:iam::role/ROLE for any role name given, and prints exactly three export lines for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN on stdout",
+      "fails_when": "the STS request lacks DurationSeconds=900 or names a role other than the one given, or stdout holds anything but the three export lines",
+      "command": "uv run --directory cli pytest tests/commands/test_token_s3_command.py -q -k success",
       "judgment": false
     },
     {
       "id": "r5",
-      "behavior": "localstack ov-sync-env prints nothing on stdout and exits non-zero when Vault refuses the token read or STS refuses the swap, with the reason on stderr",
-      "fails_when": "stdout is non-empty or the exit code is 0 on a Vault 403 or an STS error",
-      "command": "uv run --directory cli pytest tests/commands/test_ov_sync_env_command.py -q -k refus",
+      "behavior": "localstack token s3 ROLE prints nothing on stdout and exits non-zero when Vault refuses the token read or STS refuses the swap, with the reason on stderr",
+      "fails_when": "stdout is non-empty or the exit code is 0 on a Vault 403 or an STS error, or when no role is given",
+      "command": "uv run --directory cli pytest tests/commands/test_token_s3_command.py -q -k refus",
       "judgment": false
     },
     {
@@ -75,7 +75,7 @@
     },
     {
       "id": "r7",
-      "behavior": "after both roots are applied, eval \"$(localstack ov-sync-env)\" then an ovsq run with prefix JasperHG90/local and subdir projects/notes lands its files under viking://user/jasper/resources/local/projects/notes/, the credentials expire about 15 minutes after minting, and the same credentials get AccessDenied on a put under ov-sync/JasperHG90/localstack/",
+      "behavior": "after both roots are applied, eval \"$(localstack token s3 local-ov-sync)\" then an ovsq run with prefix JasperHG90/local and subdir projects/notes lands its files under viking://user/jasper/resources/local/projects/notes/, the credentials expire about 15 minutes after minting, and the same credentials get AccessDenied on a put under ov-sync/JasperHG90/localstack/",
       "fails_when": "the files do not appear, the Expiration is not about 15 minutes out, or the put outside the prefix succeeds",
       "command": null,
       "judgment": true
@@ -88,7 +88,32 @@
       "judgment": false
     }
   ],
-  "resigns": [],
+  "resigns": [
+    {
+      "signer": "delegated:jasperginn@gmail.com/implementer",
+      "reason": "operator replaced the dedicated ov-sync-env command with a generic localstack token s3 ROLE, so rows r4, r5 and r7 name the new command and test file",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": {
+          "r4": [
+            "behavior",
+            "fails_when",
+            "command"
+          ],
+          "r5": [
+            "behavior",
+            "fails_when",
+            "command"
+          ],
+          "r7": [
+            "behavior"
+          ]
+        }
+      },
+      "at": "2026-11-27T20:32:34+00:00"
+    }
+  ],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
@@ -139,5 +164,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T19:22:37+00:00"
+  "at": "2026-11-27T20:32:34+00:00"
 }

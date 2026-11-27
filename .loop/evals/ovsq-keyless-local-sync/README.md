@@ -6,12 +6,12 @@ tags:
 - eval
 generated:
   by: process:loopctl/2.4.0
-  at: '2026-11-27T19:10:05+00:00'
+  at: '2026-11-27T20:32:34+00:00'
 slug: ovsq-keyless-local-sync
 signoff:
   signer: delegated:jasperginn@gmail.com/implementer
-  hash: dcf51eef591d1ef8b39109fc94615f47f858ed01b32d0633b5aa0ec4a70e9681
-  at: '2026-11-27T19:10:05+00:00'
+  hash: 1b108c9d26ff5a07d3e9f0f8ecf03e43ef3cb9f1e376a68cfbfdc8a8d12a89ef
+  at: '2026-11-27T20:32:34+00:00'
 verified: null
 ---
 
@@ -23,13 +23,13 @@ Rows: rows.json; the fields each row takes: loopctl schema eval-rows.
   Fails when: either condition is missing or not StringEquals, the policy allows another action or resource, or a ci-* role trusts local_ov_sync
 - r3: the ov-sync consumer maps JasperHG90/local/ to viking://user/jasper/resources/local/, and no mapped folder is viking://user/jasper/resources/ itself or an ancestor of another mapped folder
   Fails when: the entry is missing or points elsewhere, or any mapped folder equals or contains resources/ or another mapped folder
-- r4: localstack ov-sync-env mints the local-ov-sync token with the session's Vault token, posts it to SeaweedFS STS with DurationSeconds=900 and RoleArn arn:aws:iam::role/local-ov-sync, and prints exactly three export lines for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN on stdout
-  Fails when: the STS request lacks DurationSeconds=900 or names another role, or stdout holds anything but the three export lines
-- r5: localstack ov-sync-env prints nothing on stdout and exits non-zero when Vault refuses the token read or STS refuses the swap, with the reason on stderr
-  Fails when: stdout is non-empty or the exit code is 0 on a Vault 403 or an STS error
+- r4: localstack token s3 ROLE mints identity/oidc/token/ROLE with the session's Vault token, posts it to SeaweedFS STS with DurationSeconds=900 and RoleArn arn:aws:iam::role/ROLE for any role name given, and prints exactly three export lines for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN on stdout
+  Fails when: the STS request lacks DurationSeconds=900 or names a role other than the one given, or stdout holds anything but the three export lines
+- r5: localstack token s3 ROLE prints nothing on stdout and exits non-zero when Vault refuses the token read or STS refuses the swap, with the reason on stderr
+  Fails when: stdout is non-empty or the exit code is 0 on a Vault 403 or an STS error, or when no role is given
 - r6: a how-to for syncing a local folder with ovsq exists and passes the how-to skeleton check, and the knowledge bundle is consistent
   Fails when: the page is missing, fails test_how_to_skeleton, or kmctl check fails
-- r7 (judgment): after both roots are applied, eval "$(localstack ov-sync-env)" then an ovsq run with prefix JasperHG90/local and subdir projects/notes lands its files under viking://user/jasper/resources/local/projects/notes/, the credentials expire about 15 minutes after minting, and the same credentials get AccessDenied on a put under ov-sync/JasperHG90/localstack/
+- r7 (judgment): after both roots are applied, eval "$(localstack token s3 local-ov-sync)" then an ovsq run with prefix JasperHG90/local and subdir projects/notes lands its files under viking://user/jasper/resources/local/projects/notes/, the credentials expire about 15 minutes after minting, and the same credentials get AccessDenied on a put under ov-sync/JasperHG90/localstack/
   Fails when: the files do not appear, the Expiration is not about 15 minutes out, or the put outside the prefix succeeds
 - r8: the repo gates pass
   Fails when: just pre_commit or the cli test suite exits non-zero
