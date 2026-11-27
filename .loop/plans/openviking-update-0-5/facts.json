@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "openviking-update-0-5",
-  "plan_hash": "546d8bd70c862134b24f3a132cc058c1984874aa09ef93365f2b0a46dd3e219a",
+  "plan_hash": "a98a1aeef4da53d7e303148a9e09f160d07656487ecf104a37fa38d1e9d4d89e",
   "problems": [
     {
       "id": "P1",
@@ -43,7 +43,8 @@
       ],
       "touches": [
         "deployments/applications/services.tf",
-        "deployments/applications/services/openviking/Dockerfile.openviking"
+        "deployments/applications/services/openviking/Dockerfile.openviking",
+        "new:cli/tests/test_openviking_version.py"
       ],
       "checked_by": "`just verify` beside the Dockerfile, a healthy deployment, `/health` version, a reranked `find` and `search`, and a Hermes `viking_search`",
       "seen_by": "operator"
@@ -60,7 +61,8 @@
       "needs_index": [],
       "touches": [
         "deployments/applications/services/openviking.hcl",
-        "scripts/check_openviking_config.py"
+        "scripts/check_openviking_config.py",
+        "new:cli/tests/test_check_openviking_config.py"
       ],
       "checked_by": "`scripts/check_openviking_config.py` failing on a removed `OV_RETRIEVAL_RERANK_*` key, and its test",
       "seen_by": "nobody"
