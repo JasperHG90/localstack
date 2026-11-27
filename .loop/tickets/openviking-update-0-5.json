@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "openviking-update-0-5",
-  "stage": "building",
+  "stage": "verifying",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 0,
@@ -108,8 +108,14 @@
       "to": "building",
       "at": "2026-11-27T13:05:19+00:00",
       "by": "advance"
+    },
+    {
+      "from": "building",
+      "to": "verifying",
+      "at": "2026-11-27T13:18:13+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T13:11:55+00:00"
+  "at": "2026-11-27T13:18:13+00:00"
 }
