@@ -19,3 +19,4 @@
 {"at": "2026-11-27T20:54:59+00:00", "binds": "523907948ed351f1e04f640fd7fe524b144f0bacefa9e392438f52cfb060e19f", "kind": "round-start", "n": 2, "passes": ["reviewer"], "round_kind": "review", "schema_version": "1.0", "tree": "e440ef538becf61f46bd81918c939272d741f94d"}
 {"at": "2026-11-27T20:58:35+00:00", "dispatched_at": "2026-11-27T20:54:59+00:00", "kind": "round-close", "n": 2, "outcome": "pass", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-11-27T20:58:24+00:00"}}
 {"at": "2026-11-27T20:58:54+00:00", "kind": "done", "notified": false, "schema_version": "1.0", "sha": "e2c7b24034e6354a60e4d061057638a80fecb467"}
+{"at": "2026-11-27T21:00:40+00:00", "branch": "loop/ovsq-keyless-local-sync", "kind": "land", "schema_version": "1.0", "sha": "825cbdf71546d882a9dcca4ee0797be9c064aabd"}
