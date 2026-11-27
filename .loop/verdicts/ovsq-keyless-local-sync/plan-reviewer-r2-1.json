@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "STS credential lifetime. The revised plan has `localstack ov-sync-env` post DurationSeconds=900, O4's faked-STS test asserts it is sent, and the live check asserts Expiration about 15 minutes out. SeaweedFS 4.48 accepts 900: the handler bounds are inclusive [900, MaxSessionLength=12h], and no per-role MaxSessionDuration is set, so nothing lowers or refuses it.",
+      "anchor": "deployments/infrastructure/services/seaweedfs.hcl:144",
+      "category": "premise",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "775fa820fae92f913e8aa425fd4eb9a8576782e8fb31592ead48b3515ff2a248"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T19:09:27+00:00",
+  "checklist": null
+}
