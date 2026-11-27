@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "reject",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "Eval row r2 is unmet and can no longer be met: no dump of the bifrost store was taken before the apply, and the apply has already run the one-way 2.3.1 to 2.6.0 migrations. The skip rests on an operator instruction relayed by the implementer. The plan (step 3, O2, G2) and row r2 were never amended, so the signed contract still requires the dump. Only the operator can accept the loss of the rollback and amend or waive r2. Another implementer round cannot fix this.",
+      "anchor": ".okf/components/bifrost.md:196",
+      "category": "contract",
+      "blocking": true,
+      "invalidates_plan": true,
+      "repeats": null,
+      "eval_row": "r2"
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "The new version-history paragraph says Go 1.27.3's x509 checks accept the chains of ollama.com, Gemini and typesafe, citing spike /3. That spike ran from the devcontainer, not the cluster nodes, and the only live upstream call after the apply went to Gemini. The page drops that caveat. The paragraph also uses two semicolon splices, which the docs slop rule flags.",
+      "anchor": ".okf/components/bifrost.md:202",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "6c5a81d787b9614df9dbaeb256eba1798bc49a258bb4e1a7a54c35d7da69aa4c",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T10:39:41+00:00",
+  "checklist": null
+}
