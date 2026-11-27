@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The plan's Intent (\"the change does not re-register the job\") and row r2's behavior text (\"does not re-register\") are false. Changing detach made the provider call Register again. Nomad recorded job version 19 with an empty diff against 18, opened a new deployment, and updated allocation 3e1235b1 in place without a restart. r2's fails_when (jobspec changes or job replaced) still holds, so the code needs nothing. Only the wording needs fixing, to \"re-registers an identical spec; the running allocation is updated in place, not restarted\".",
+      "anchor": ".loop/plans/bifrost-ready-detach/README.md:29",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "bb408f2c2a7b424ffbaa9e2d7fea3e1e8df7730fb31acb7866ddf0d78888a1e5",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T13:32:48+00:00",
+  "checklist": null
+}
