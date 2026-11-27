@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.4.0
-  at: '2026-11-27T12:56:50+00:00'
+  at: '2026-11-27T13:00:48+00:00'
 slug: openviking-update-0-5
 n: 1
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike openviking-update-0-5/1
@@ -24,7 +24,8 @@ bash -c cp /home/vscode/spike-scratch/ov-boot/seed_old.py /home/vscode/spike-scr
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note openviking-update-0-5 1`.
+Same check as spike:openviking-update-0-5/2, with the same result: on 50,000 rows the reconcile took 0.43 s, and the md5 backfill filled every row in 158.6 s (0.63 s per 200-row batch). A concurrent query held p95 51 ms and event-loop lag peaked at 30 ms.
+Superseded by run 2 only because this run kept just run.sh as evidence, not the seed_old.py and boot_new.py it calls. Cite spike:openviking-update-0-5/2.
 
 ## Files
 

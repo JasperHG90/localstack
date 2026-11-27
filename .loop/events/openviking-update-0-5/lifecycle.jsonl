@@ -2,3 +2,4 @@
 {"at": "2026-11-27T12:47:14+00:00", "by": "promote", "from": "stub", "grant": "g10", "kind": "transition", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/agent", "step": "ticket-promote", "to": "planning"}
 {"at": "2026-11-27T12:48:50+00:00", "grant": "g10", "hash": "deebe786efff8a1bb85341728a3e5b3b07705ca5f95e18e93f59936f26ee6d16", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/claude", "step": "eval-sign"}
 {"at": "2026-11-27T13:00:47+00:00", "kind": "spike-note", "n": 2, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-11-27T13:00:48+00:00", "kind": "spike-note", "n": 1, "replaced": false, "schema_version": "1.0"}
