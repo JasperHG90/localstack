@@ -89,10 +89,24 @@ The upstream image cannot run this config. `storage.vectordb.backend` names
 `ov_postgres.adapter.PgVectorCollectionAdapter`, which OpenViking imports by
 dotted path at startup, and upstream ships neither that package nor psycopg.
 `Dockerfile.openviking` installs, with `--no-deps` into the venv's
-site-packages, `ov-postgres` at `ov-postgres-v0.6.0` and `ov-ext` at
-`ov-ext-v0.7.1` from `JasperHG90/openviking_extensions`, plus
+site-packages, `ov-postgres` at `ov-postgres-v0.7.0` and `ov-ext` at
+`ov-ext-v0.8.0` from `JasperHG90/openviking_extensions`, plus
 `psycopg[binary,pool]==3.2.3`. `--no-deps` stops pip reinstalling OpenViking
-and about 160 packages over the base image's locked venv.
+and about 160 packages over the base image's locked venv. Both packages
+refuse an OpenViking outside `>=0.5.6,<0.6` at startup, which is the check
+`--no-deps` would otherwise skip.
+
+`openviking-update-0-5` moved the base to OpenViking v0.5.6 on 2026-11-27.
+On the first boot ov-postgres reconciles the context table: in one
+transaction it adds the md5 and ACL columns and their indexes and installs a
+guard trigger, and a failed reconcile stops the server from starting.
+ov-ext's maintenance task then fills md5 for existing rows through VikingFS,
+one process at a time, every 5 minutes. On 50,000 rows the reconcile took
+0.62 s and the backfill 150 s (`spike:openviking-update-0-5/2`). ov-ext 0.8.0
+dropped `OV_RETRIEVAL_RERANK_MAX_CALLS` and `OV_RETRIEVAL_RERANK_FINAL`,
+because OpenViking 0.4.23+ does one recall and one rerank, and refuses to
+start while either is set; `scripts/check_openviking_config.py` fails on
+them.
 
 Both tags are pinned in `services.tf` (`openviking_base_image`,
 `openviking_image`), and the `justfile` reads both lines, so the image built and

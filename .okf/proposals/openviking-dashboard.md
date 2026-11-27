@@ -44,9 +44,9 @@ sources:
 > The `file:line` anchors below (`services.tf:144`, `haproxy.hcl:110`,
 > `database.tf:11`, `storage.tf:5`) were right when this was written and have
 > since moved. The Provenance versions have too: at HEAD
-> `Dockerfile.openviking` pins `ov-postgres-v0.6.0` and installs the hybrid
-> retrieval wrapper from `ov-ext-v0.7.1`. The OpenViking base image is still
-> 0.4.17.1.
+> `Dockerfile.openviking` pins `ov-postgres-v0.7.0` and installs the hybrid
+> retrieval wrapper from `ov-ext-v0.8.0`. The OpenViking base image is
+> 0.5.6.
 > "Dependency on OV2" is out of date too: OV2 closed as `done`
 > (`git show 48f52e2:.loop/ledger.json`), and its plan is at
 > `.loop/plans/OV2-openviking-user-scoped-resources.md` in that commit.

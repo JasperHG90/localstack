@@ -405,3 +405,10 @@ def test_add_resource_sends_create_parent_after_a_client_rebuild(
     assert provider._client.payloads == [
         ("/api/v1/resources", {"parent": args["parent"], "path": PAGE, "create_parent": True})
     ]
+
+
+def test_viking_write_says_create_overwrites(wrapper: types.ModuleType) -> None:
+    # OpenViking 0.5.1 made mode=create overwrite an existing file.
+    description = wrapper.WRITE_SCHEMA["description"]
+    assert "must not exist" not in description
+    assert "overwrite" in description

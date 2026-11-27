@@ -29,8 +29,9 @@ _WRITE_MODES = ["create", "replace", "append"]
 WRITE_SCHEMA = {
     "name": "viking_write",
     "description": (
-        "Write text to one exact viking:// file URI. mode is create (the file "
-        "must not exist), replace or append. Use it only where a skill says to; "
+        "Write text to one exact viking:// file URI. mode is create, replace or "
+        "append; create overwrites a file that already exists. Use it only where "
+        "a skill says to; "
         "viking_add_resource is the way to save documents and pages."
     ),
     "parameters": {

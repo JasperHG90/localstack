@@ -465,8 +465,7 @@ locals {
 ### OpenViking resolves at startup, so against the upstream image the backend
 ### does not exist. Both tags are pinned HERE and read by
 ### services/openviking/justfile, so what is built and what is deployed cannot
-### drift. `:latest` is not a pin: it and v0.4.17.1 resolve to one index digest
-### today and need not tomorrow.
+### drift. `:latest` is not a pin: it moves with every upstream release.
 ###
 ### Built and pushed by hand; see services/openviking/README.md.
 resource "nomad_job" "openviking" {
@@ -481,8 +480,8 @@ resource "nomad_job" "openviking" {
       openviking_hostname = "radxa-dragon-q6a"
       openviking_host     = "192.168.2.50"
 
-      openviking_base_image = "ghcr.io/volcengine/openviking:v0.4.17.1"
-      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.4.17.1-9"
+      openviking_base_image = "ghcr.io/volcengine/openviking:v0.5.6"
+      openviking_image      = "ghcr.io/jasperhg90/openviking:v0.5.6-1"
 
       # The config document, already parsed, substituted and re-encoded. Every
       # host and endpoint it needs is baked in above, so the jobspec takes none

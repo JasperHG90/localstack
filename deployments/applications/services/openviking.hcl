@@ -267,9 +267,7 @@ job "openviking" {
         # to speed up search. These settings reduce the overhead on the
         # reranker model
         OV_RETRIEVAL_RERANK_POOLING       = "true"
-        OV_RETRIEVAL_RERANK_MAX_CALLS     = "4"
         OV_RETRIEVAL_RERANK_MAX_DOCUMENTS = "20"
-        OV_RETRIEVAL_RERANK_FINAL         = "true"
         # These settings enable reflection
         OV_REFLECT_MODEL            = "ollama/deepseek-v4.1-flash"
         OV_REFLECT_DELTAS_SCHEMA    = "openviking_v2"
