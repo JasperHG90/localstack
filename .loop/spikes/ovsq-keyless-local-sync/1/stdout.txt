@@ -1,0 +1,25 @@
+Vault v2.0.3 (7193f9a48ff6093ca61b3b627a8671e770428ba6), built 2026-06-17T12:39:45Z
+('operator', 'ci') claims: {"aud": "seaweedfs", "ci_repository": "a/x", "exp": 1795805357, "iat": 1795804457, "iss": "http://ovsq-vault:8200/v1/identity/oidc", "namespace": "root", "sub": "ac4dd947-41b9-a10f-fff7-f16b4cebfdda"}
+('operator', 'local') claims: {"aud": "seaweedfs", "exp": 1795805357, "iat": 1795804457, "iss": "http://ovsq-vault:8200/v1/identity/oidc", "local_ov_sync": "JasperHG90/local", "namespace": "root", "sub": "ac4dd947-41b9-a10f-fff7-f16b4cebfdda"}
+('operator', 'none') claims: {"aud": "seaweedfs", "exp": 1795805357, "iat": 1795804457, "iss": "http://ovsq-vault:8200/v1/identity/oidc", "namespace": "root", "sub": "ac4dd947-41b9-a10f-fff7-f16b4cebfdda", "unrelated": "x"}
+('other', 'local') claims: {"aud": "seaweedfs", "exp": 1795805358, "iat": 1795804458, "iss": "http://ovsq-vault:8200/v1/identity/oidc", "local_ov_sync": "JasperHG90/local", "namespace": "root", "sub": "7469e0a3-cfb7-aba7-9254-b57cc5da373c"}
+[PASS] 1 control: ci token -> ci-a-x issues creds: creds issued
+[PASS] 2 control: operator local token -> local-ov-sync issues creds: creds issued
+[PASS] 3 local token (no ci_repository claim) -> ci-a-x REFUSED: An error occurred (AccessDenied) when calling the AssumeRoleWithWebIdentity operation: trust policy validation failed: trust policy denies web identity assumption
+[PASS] 4 ci token (no local_ov_sync claim, right sub) -> local-ov-sync REFUSED: An error occurred (AccessDenied) when calling the AssumeRoleWithWebIdentity operation: trust policy validation failed: trust policy denies web identity assumption
+[PASS] 5 token with neither claim -> ci-a-x REFUSED: An error occurred (AccessDenied) when calling the AssumeRoleWithWebIdentity operation: trust policy validation failed: trust policy denies web identity assumption
+[PASS] 5 token with neither claim (right sub) -> local-ov-sync REFUSED: An error occurred (AccessDenied) when calling the AssumeRoleWithWebIdentity operation: trust policy validation failed: trust policy denies web identity assumption
+[PASS] 6 local token, other entity's sub -> local-ov-sync REFUSED: An error occurred (AccessDenied) when calling the AssumeRoleWithWebIdentity operation: trust policy validation failed: trust policy denies web identity assumption
+[PASS] 7 local-ov-sync put ov-sync/JasperHG90/local/notes/f.md OK: OK
+[PASS] 7 local-ov-sync get ov-sync/JasperHG90/local/notes/f.md OK: OK
+[PASS] 7 local-ov-sync get ov-sync/JasperHG90/local/seed.txt OK: OK
+[PASS] 7 local-ov-sync delete ov-sync/JasperHG90/local/notes/f.md OK: OK
+[PASS] 8 local-ov-sync put ov-sync/JasperHG90/localx/evil.md denied: AccessDenied
+[PASS] 8 local-ov-sync put ov-sync/JasperHG90/evil.md denied: AccessDenied
+[PASS] 8 local-ov-sync put ov-sync/a/x/evil.md denied: AccessDenied
+[PASS] 8 local-ov-sync delete ov-sync/a/x/seed.txt denied: AccessDenied
+[PASS] 8 local-ov-sync put ov-sync/evil.md denied: AccessDenied
+
+== seaweedfs log tail (oidc/sts/trust lines)
+
+required checks: 16, failed: 0
