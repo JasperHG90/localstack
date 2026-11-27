@@ -34,9 +34,14 @@ chose to go on to 2.7.0 in this ticket (2026-11-27).
 3. No dump. The operator told the implementer to skip the pre-apply dump
    ("Forget the backup. Just do it.", 2026-11-27), and the 2.6.0 apply has
    already run the 2.3.1 to 2.6.0 store migrations, 12 of them one-way. A dump
-   taken now holds 2.6.0's schema, not 2.3.1's. 2.6.0 to 2.7.0 adds two
-   migrations, both reversible. Record in `.okf/components/bifrost.md` that
-   this move has no restore point to 2.3.1.
+   taken now holds 2.6.0's schema, not 2.3.1's. 2.6.0 to 2.7.0 adds eight
+   migrations, and two of them are one-way:
+   `widen_batch_jobs_provider_status_and_endpoint` and
+   `relay_logs_add_job_debug_widen_job_status`. Record in
+   `.okf/components/bifrost.md` that this move has no restore point to 2.3.1,
+   and none to 2.6.0 once 2.7.0 applies unless a dump of the 2.6.0 store is
+   taken first. Told that 2.6.0 to 2.7.0 is also one-way, the operator
+   chose again to apply without a dump (2026-11-27).
 4. Update the version facts in `.okf/components/bifrost.md`.
 
 Changes from 2.3.1 to 2.6.0 were checked against this config by reading the
@@ -48,9 +53,12 @@ queue wait (`bifrost_provider_queue_wait_seconds` does).
 
 2.6.0 to 2.7.0, from its release notes: MCP client-credentials and AWS SigV4
 auth, relay async jobs, OpenAI access programs, a fix for an MCP
-refresh-token race and for usage lost on a config refresh, and two
-reversible migrations that add MCP client columns. This config uses no MCP
-clients and no relays.
+refresh-token race and for usage lost on a config refresh, and eight
+migrations: six reversible (a key `service_tier` column, MCP client and
+OAuth-flow columns, notification columns and an index) and two one-way
+(widening `batch_jobs.provider_status`/`endpoint` and
+`relay_logs.job_status`, and adding `relay_logs.job_debug`). This config uses
+no MCP clients, no relays and no batch jobs.
 
 Outcome: job `bifrost` runs healthy on image tag v2.7.0.
 `scripts/bifrost_smoke.py` passes against it: inference auth, metrics auth,
@@ -64,7 +72,7 @@ shows no change to any `bifrost_virtual_key`. `just pre_commit` and
 
 - P1: Bifrost ran 2.3.1, four minor releases behind upstream 2.7.0.
 - P2: The pin test and the component page named 2.3.1, so a moved pin fails the gate and leaves the docs wrong.
-- P3: The 2.3.1 to 2.6.0 store migrations are one-way, and the operator chose no dump, so the component page must say there is no way back to 2.3.1.
+- P3: The 2.3.1 to 2.6.0 and 2.6.0 to 2.7.0 store migrations include one-way steps, and the operator chose no dump, so the component page must say there is no way back to 2.3.1, or to 2.6.0 without a dump.
 
 ## Goals
 
@@ -82,7 +90,7 @@ shows no change to any `bifrost_virtual_key`. `just pre_commit` and
 - checked by: `scripts/bifrost_smoke.py` against the new gateway, a bare-string rerank through the OpenViking key, a Gemini chat call, and a second `terraform plan` with no `bifrost_virtual_key` change
 - seen by: operator
 
-### O2: The component page says the move has no restore point to 2.3.1
+### O2: The component page says the move has no restore point to 2.3.1 or, without a dump, to 2.6.0
 - kind: support
 - goal: G2
 - fixes: P3

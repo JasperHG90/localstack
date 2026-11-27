@@ -3,7 +3,7 @@
   "slug": "bifrost-update-2-6",
   "stage": "blocked",
   "attempts": 1,
-  "plan_rounds": 3,
+  "plan_rounds": 4,
   "review_rounds": 1,
   "extra_plan_rounds": 1,
   "extra_review_rounds": 0,
@@ -119,9 +119,9 @@
   ],
   "round": {
     "kind": "plan",
-    "n": 3,
-    "binds": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62",
-    "started_at": "2026-11-27T12:28:09+00:00",
+    "n": 4,
+    "binds": "cc59eb95342a69a5efb4b77626a60eb2887cfc5ab47101fadf9c1e5c66734a1d",
+    "started_at": "2026-11-27T12:42:14+00:00",
     "passes": [
       "plan-reviewer"
     ],
@@ -134,10 +134,10 @@
     "returned": {},
     "chosen": {},
     "skipped": [],
-    "closed": true,
-    "outcome": "blocked"
+    "closed": false,
+    "outcome": null
   },
-  "plan_hash": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62",
+  "plan_hash": "cc59eb95342a69a5efb4b77626a60eb2887cfc5ab47101fadf9c1e5c66734a1d",
   "intent": {
     "epic": null,
     "depends_on": [],
@@ -176,5 +176,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:42:08+00:00"
+  "at": "2026-11-27T12:42:14+00:00"
 }
