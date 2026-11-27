@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "open",
+      "claim": "The plan rests on the identity token's ttl of 900 making the S3 credentials last 15 minutes, but SeaweedFS 4.48 sets the STS session length from the request's DurationSeconds, else the configured tokenDuration, which is \"1h\" in services/seaweedfs.hcl. The token's exp plays no part (CalculateSessionDuration in weed/iam/sts/sts_service.go: \"The source token's exp deliberately plays no part\"). As written, `localstack ov-sync-env` prints credentials that last an hour, which breaks the operator's 15-minute decision and O4's stated outcome. The O4 test fakes STS, so it cannot catch this. The plan must say the command posts DurationSeconds=900 (SeaweedFS's minimum, so it is accepted), and the faked-STS test must assert that it does. The how-to and decision record should then describe the session length, not the token ttl.",
+      "anchor": "deployments/infrastructure/services/seaweedfs.hcl:144",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "469683241bed8b12063296f4d47174e34430749b68d654e135fcd32b66dae3b8"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T19:07:47+00:00",
+  "checklist": null
+}
