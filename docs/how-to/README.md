@@ -50,6 +50,7 @@
 - [How to sign in to Grafana](sign-in-to-grafana.md): Sign in to Grafana with Vault SSO, and what to check when the sign-in fails.
 - [How to sign in to Nomad with Vault](sign-in-to-nomad-with-vault.md): Sign in to the Nomad UI or CLI with your Vault login instead of a Nomad token.
 - [How to sync a folder to OpenViking from the devcontainer](sync-a-folder-to-openviking-from-the-devcontainer.md): Give the devcontainer your host OpenViking login, read-only, so ovsync can sync a folder without logging in again.
+- [How to sync a local folder to OpenViking with ovsq](sync-a-local-folder-to-openviking-with-ovsq.md): Mint 15-minute S3 credentials from your Vault session and sync a local folder into viking://user/jasper/resources/local/ with ovsq.
 - [How to sync repository folders to the ov-sync bucket](sync-repository-folders-to-the-ov-sync-bucket.md): Mirror a repository's docs/ and .okf/ into its own prefix of the ov-sync bucket on every push to main, so ov-sync-consumer writes them to OpenViking.
 - [How to test ACME job changes on staging](test-acme-job-changes-on-staging.md): Test a change to the acme job against Let's Encrypt staging, prove it does not re-issue, and switch back to production.
 - [How to turn off Vault login MFA](turn-off-vault-login-mfa.md): Stop Vault asking for a TOTP code by deleting the login enforcement, even when you cannot log in.

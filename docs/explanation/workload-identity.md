@@ -303,6 +303,17 @@ only. The openviking-sync action is the one user. The record is
 and the setup is
 [How to sync repository folders to the ov-sync bucket](../how-to/sync-repository-folders-to-the-ov-sync-bucket.md).
 
+**The operator's laptop.** `ovsq` syncs local folders the same way, with
+role `local-ov-sync` in both Vault and SeaweedFS. Its token carries the
+literal claim `local_ov_sync = "JasperHG90/local"`, and only the operator
+entity can mint it. SeaweedFS requires that claim and the operator's `sub`,
+and allows writes under `ov-sync/JasperHG90/local/` only.
+`localstack token s3 local-ov-sync` asks STS for a 900-second session, because SeaweedFS
+sets the session length from the request, not from the token. The record is
+`.okf/decisions/0034-local-ovsq-syncs-use-a-keyless-operator-sts-role-not-a-static-key.md`,
+and the setup is
+[How to sync a local folder to OpenViking with ovsq](../how-to/sync-a-local-folder-to-openviking-with-ovsq.md).
+
 Giving a job keyless access is
 [How to give a job keyless SeaweedFS access](../how-to/give-a-job-keyless-seaweedfs-access.md),
 or, for a service built on aws-sdk-go v1,

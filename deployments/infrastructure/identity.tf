@@ -218,6 +218,27 @@ resource "vault_identity_group" "openviking_user" {
   ]
 }
 
+### The operator's local ov-sync token (oidc.tf). A group of one, not a grant
+### on the admin group: SeaweedFS's role pins the operator's `sub` anyway, and
+### a separate policy keeps the grant readable on its own.
+resource "vault_policy" "local_ov_sync" {
+  name = "local-ov-sync"
+
+  policy = <<-EOT
+    path "identity/oidc/token/${vault_identity_oidc_role.local_ov_sync.name}" {
+      capabilities = ["read"]
+    }
+  EOT
+}
+
+resource "vault_identity_group" "local_ov_sync" {
+  name     = "local-ov-sync"
+  type     = "internal"
+  policies = [vault_policy.local_ov_sync.name]
+
+  member_entity_ids = [vault_identity_entity.operator.id]
+}
+
 ### --- jwt-lab: ID tokens from the lab provider ----------------------------
 
 ### A second human auth mount that holds no credential of its own. ov-dash

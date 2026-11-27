@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from tests.fixtures.seaweedfs_iam import JOBSPEC, SIGNING_KEY, render_iam
+from tests.fixtures.seaweedfs_iam import JOBSPEC, OPERATOR_ENTITY_ID, SIGNING_KEY, render_iam
 
 KEYLESS_JOBS = {
     "tempo": "tempo",
@@ -84,3 +84,38 @@ def test_policy_reaches_only_its_bucket(iam: dict[str, Any], job: str) -> None:
     resources = [r for s in policy["document"]["Statement"] for r in s["Resource"]]
     bucket = KEYLESS_JOBS[job]
     assert sorted(resources) == [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"]
+
+
+def test_local_ov_sync_role_trusts_only_the_operator_with_the_local_claim(
+    iam: dict[str, Any],
+) -> None:
+    role = next(r for r in iam["roles"] if r["roleName"] == "local-ov-sync")
+    assert role["roleArn"] == "arn:aws:iam::role/local-ov-sync"
+    assert role["attachedPolicies"] == ["local-ov-sync"]
+    [statement] = role["trustPolicy"]["Statement"]
+    assert statement["Principal"] == {"Federated": "vault"}
+    assert statement["Action"] == "sts:AssumeRoleWithWebIdentity"
+    assert statement["Condition"] == {
+        "StringEquals": {
+            "oidc:local_ov_sync": "JasperHG90/local",
+            "oidc:sub": OPERATOR_ENTITY_ID,
+        }
+    }
+
+
+def test_local_ov_sync_policy_reaches_only_the_local_prefix(iam: dict[str, Any]) -> None:
+    policy = next(p for p in iam["policies"] if p["name"] == "local-ov-sync")
+    assert policy["document"]["Statement"] == [
+        {
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+            "Resource": ["arn:aws:s3:::ov-sync/JasperHG90/local/*"],
+        }
+    ]
+
+
+def test_no_ci_role_trusts_the_local_ov_sync_claim(iam: dict[str, Any]) -> None:
+    ci_roles = [r for r in iam["roles"] if r["roleName"].startswith("ci-")]
+    assert ci_roles, "no ci-* role rendered; the check proves nothing"
+    for role in ci_roles:
+        assert "local_ov_sync" not in json.dumps(role["trustPolicy"]), role["roleName"]

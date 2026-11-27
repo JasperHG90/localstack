@@ -525,6 +525,15 @@ resource "nomad_job" "postgres" {
 ### `ov-sync/<owner>/<repo>/` prefix, without List: the openviking-sync action
 ### keeps a manifest instead (spike:ci-openviking-sync/1). Key: role name.
 ### Value: the repository.
+###
+### The operator's laptop logs in the same way through role `local-ov-sync`,
+### minted from their own Vault session by
+### `localstack token s3 local-ov-sync`. Its trust pins the `local_ov_sync`
+### claim AND the operator entity's `sub`, so neither a `ci-*` token nor a
+### seaweedfs-audience token another admin mints fits it, and a local token
+### fits no `ci-*` role (spike:ovsq-keyless-local-sync/1).
+### It writes only `ov-sync/<local_ov_sync_prefix>/`, which the consumer maps
+### to a folder of its own (applications root).
 locals {
   seaweedfs_keyless_jobs = {
     tempo              = "tempo"
@@ -536,6 +545,8 @@ locals {
   seaweedfs_ci_callers = {
     for name, caller in var.vault_ci_callers : "ci-${name}" => caller.repository if caller.ov_sync
   }
+
+  local_ov_sync_prefix = "JasperHG90/local"
 
   seaweedfs_iam = {
     policy = { defaultEffect = "Deny" }
@@ -576,6 +587,17 @@ locals {
           }]
         }
       }],
+      [{
+        name = "local-ov-sync"
+        document = {
+          Version = "2012-10-17"
+          Statement = [{
+            Effect   = "Allow"
+            Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+            Resource = ["arn:aws:s3:::ov-sync/${local.local_ov_sync_prefix}/*"]
+          }]
+        }
+      }],
     )
     roles = concat(
       [for job, bucket in local.seaweedfs_keyless_jobs : {
@@ -608,6 +630,25 @@ locals {
           }]
         }
         attachedPolicies = [role]
+      }],
+      [{
+        roleName = "local-ov-sync"
+        roleArn  = "arn:aws:iam::role/local-ov-sync"
+        trustPolicy = {
+          Version = "2012-10-17"
+          Statement = [{
+            Effect    = "Allow"
+            Principal = { Federated = "vault" }
+            Action    = "sts:AssumeRoleWithWebIdentity"
+            Condition = {
+              StringEquals = {
+                "oidc:local_ov_sync" = local.local_ov_sync_prefix
+                "oidc:sub"           = vault_identity_entity.operator.id
+              }
+            }
+          }]
+        }
+        attachedPolicies = ["local-ov-sync"]
       }],
     )
   }

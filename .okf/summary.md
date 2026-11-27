@@ -74,13 +74,13 @@ invariants have a passing test. Open gaps:
   ([ADR 0021](/decisions/0021-openviking-starts-over-on-a-v2-store.md)).
   A copy and re-index, not yet run, carries the kept trees
   ([ADR 0022](/decisions/0022-openviking-carry-over-copies-storage-and-re-indexes.md)).
-- CI writes repo docs to `ov-sync` with a Vault identity token swapped
-  at SeaweedFS STS
-  ([ADR 0028](/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md)),
-  and a [JetStream queue](/components/ov-sync-consumer.md) carries them into
+- CI and the operator's laptop write `ov-sync` with Vault identity tokens
+  swapped at SeaweedFS STS, never a static key
+  ([ADR 0028](/decisions/0028-ci-syncs-repo-folders-to-ov-sync-with-a-manifest-and-a-vault-identity-token.md),
+  [ADR 0034](/decisions/0034-local-ovsq-syncs-use-a-keyless-operator-sts-role-not-a-static-key.md)).
+  A [JetStream queue](/components/ov-sync-consumer.md) carries files into
   OpenViking
-  ([ADR 0026](/decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer.md)),
-  neither yet deployed.
+  ([ADR 0026](/decisions/0026-repo-docs-reach-openviking-through-a-webhook-receiver-a-jetstream-queue-and-a-consumer.md)).
 - Postgres still uses static passwords. [Dynamic
   credentials](/proposals/postgres-dynamic-credentials.md) were proven but
   never rolled out.

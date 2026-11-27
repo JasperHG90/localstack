@@ -205,3 +205,7 @@
 - Updated `nodes/jetson-orin-nano`: memex's LAN-wide 8000 rule is gone; 6006 and 4317 from the LAN and 8100 from `.47` are still live and undeclared, checked 2026-11-24.
 - Updated `components/host-volumes`: fifteen host volumes, not fourteen.
 - Corrected `decisions/0016-seaweedfs-replaces-minio`: its `minio.hcl` source no longer resolves, because ADR 0018 deleted the job.
+
+## 2026-11-27
+
+- Added `decisions/0034-local-ovsq-syncs-use-a-keyless-operator-sts-role-not-a-static-key` with `kmctl new decision`.

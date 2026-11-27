@@ -21,6 +21,7 @@ JOBSPEC = INFRA / "services" / "seaweedfs.hcl"
 STS_SECRET = "secret/data/default/seaweedfs/sts"
 SIGNING_KEY = "c3RhbmQtaW4="
 CALLERS_HEADER = 'variable "vault_ci_callers" {'
+OPERATOR_ENTITY_ID = "operator-entity-id"
 
 
 def block(text: str, header: str) -> str:
@@ -66,11 +67,13 @@ def render_iam(workdir: Path) -> dict[str, Any]:
     if "vault_kv_secret_v2." in call:
         pytest.fail("nomad_job.seaweedfs passes a resource reference this test does not resolve")
     callers = block((INFRA / "variables.tf").read_text(), CALLERS_HEADER)
+    # The operator entity's id exists only after apply.
+    locals_text = locals_block.group(0).replace(
+        "vault_identity_entity.operator.id", f'"{OPERATOR_ENTITY_ID}"'
+    )
     (workdir / "services").mkdir()
     shutil.copy(JOBSPEC, workdir / "services" / "seaweedfs.hcl")
-    (workdir / "main.tf").write_text(
-        callers + "\n" + locals_block.group(0) + "\nlocals {\n" + call + "}\n"
-    )
+    (workdir / "main.tf").write_text(callers + "\n" + locals_text + "\nlocals {\n" + call + "}\n")
     # jsonencode makes the console print one JSON string literal.
     printed = subprocess.run(
         [terraform, "console"],

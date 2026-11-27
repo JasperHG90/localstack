@@ -354,11 +354,7 @@ def test_workflow_guard() -> None:
 def test_seaweedfs_ci_policies_are_prefix_scoped(tmp_path: Path) -> None:
     iam = render_iam(tmp_path)
     policies: dict[str, Any] = {p["name"]: p["document"] for p in iam["policies"]}
-    ci_roles = [
-        r
-        for r in iam["roles"]
-        if r["trustPolicy"]["Statement"][0]["Principal"] != {"Federated": "nomad"}
-    ]
+    ci_roles = [r for r in iam["roles"] if r["roleName"].startswith("ci-")]
     assert ci_roles, "no CI role rendered"
     for role in ci_roles:
         [statement] = role["trustPolicy"]["Statement"]
