@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "Row r4 lacked evidence for six of its checks.",
+      "anchor": ".loop/evals/hermes-update-0-23/rows.json",
+      "category": "contract",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "The apt test missed chromium on the install line itself.",
+      "anchor": "cli/tests/test_hermes_version.py:126",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "827004e9262ea2c532d0105c7ba7f06d3bfaae616dfec3d6acff8a517fe4b301",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T15:27:27+00:00",
+  "checklist": null
+}
