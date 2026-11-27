@@ -6,10 +6,10 @@ tags:
 - spike
 generated:
   by: process:loopctl/2.4.0
-  at: '2026-11-27T10:47:07+00:00'
+  at: '2026-11-27T10:47:15+00:00'
 slug: bifrost-update-2-6
 n: 4
-outcome_written: false
+outcome_written: true
 ---
 
 # Spike bifrost-update-2-6/4
@@ -24,7 +24,10 @@ The command exited 0:
 
 ## Outcome
 
-Not written yet: `loopctl plan spike-note bifrost-update-2-6 4`.
+On Bifrost 2.7.0 and 2.6.0 (control), both in local docker with the `embark` provider block from `bifrost.hcl` and sqlite in place of Postgres, a rerank with bare-string `documents` through a virtual key scoped to embark returned 200. Embeddings returned 200 with `extra_fields.routing_info` = provider `embark`, key `embark-cluster`, on both.
+Both versions forward rerank to `/v1/rerank` as `{"model","query","documents":[{"text":...}]}`, and the bodies were identical across the two versions. A stub on the deployed embark-jetson v0.2.4 image checked every forwarded body against embark's own `RerankRequest` and `EmbeddingRequest` models and accepted all of them (status 200).
+This rules out the 2.6.0 to 2.7.0 changes breaking either call for an `openai`-based custom provider. It settles risk 3: 2.7.0 is a valid target for both calls.
+Limits: stub upstream, not the real models on the Jetson. Two documents, one embedding input. Config store was sqlite, not Postgres, and the virtual key was made fresh on each version, not migrated. Scripts are spike:bifrost-update-2-6/1's with only the versions changed.
 
 ## Files
 
