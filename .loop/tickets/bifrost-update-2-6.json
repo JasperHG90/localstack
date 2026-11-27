@@ -5,7 +5,7 @@
   "attempts": 1,
   "plan_rounds": 3,
   "review_rounds": 1,
-  "extra_plan_rounds": 0,
+  "extra_plan_rounds": 1,
   "extra_review_rounds": 0,
   "blocker": {
     "code": "plan-invalidated",
@@ -109,7 +109,14 @@
   ],
   "accepted_risks": [],
   "waivers": [],
-  "overrides": [],
+  "overrides": [
+    {
+      "edge": "plan-cap",
+      "reason": "Plan round 3 findings both resolved: p4 migration facts corrected from the transports/v2.7.0 release notes (eight migrations, two one-way) in plan, P3, O2, eval r2 and the component page; p5 the operator, told 2.6.0 to 2.7.0 is one-way, chose no dump (2026-11-27), recorded in the plan and the re-signed eval.",
+      "by": "delegated:jasperginn@gmail.com/agent",
+      "at": "2026-11-27T12:42:08+00:00"
+    }
+  ],
   "round": {
     "kind": "plan",
     "n": 3,
@@ -169,5 +176,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:41:50+00:00"
+  "at": "2026-11-27T12:42:08+00:00"
 }
