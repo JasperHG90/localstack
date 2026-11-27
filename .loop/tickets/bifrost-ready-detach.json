@@ -24,8 +24,8 @@
   ],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude",
-    "hash": "60facb9f9c166258dd6cb6e571a330fbabab8b2904f441a5e3fe4392f78f9693",
-    "at": "2026-11-27T13:24:10+00:00"
+    "hash": "42d304f8db02f5278a3b2bc45478b084f509ecc15da55c21b827f81014c2dfb0",
+    "at": "2026-11-27T13:33:21+00:00"
   },
   "delegation": null,
   "budget_base": null,
@@ -39,13 +39,28 @@
     },
     {
       "id": "r2",
-      "behavior": "A terraform plan of deployments/applications after the change does not re-register or replace the running bifrost job.",
+      "behavior": "A terraform plan of deployments/applications after the change shows no jobspec change for the bifrost job; the apply re-registers an identical spec, and the running allocation is updated in place, not restarted or replaced.",
       "fails_when": "the plan shows the bifrost jobspec changing or the job being replaced, or the evidence is not recorded in the review",
       "command": null,
       "judgment": true
     }
   ],
-  "resigns": [],
+  "resigns": [
+    {
+      "signer": "delegated:jasperginn@gmail.com/claude",
+      "reason": "Reviewer f1: the provider re-registers an identical spec on any update, so r2 now says the job is re-registered with an unchanged spec and its allocation updated in place, instead of not re-registered.",
+      "diff": {
+        "added": [],
+        "removed": [],
+        "changed": {
+          "r2": [
+            "behavior"
+          ]
+        }
+      },
+      "at": "2026-11-27T13:33:21+00:00"
+    }
+  ],
   "accepted_risks": [],
   "waivers": [],
   "overrides": [],
@@ -108,5 +123,5 @@
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T13:33:09+00:00"
+  "at": "2026-11-27T13:33:21+00:00"
 }
