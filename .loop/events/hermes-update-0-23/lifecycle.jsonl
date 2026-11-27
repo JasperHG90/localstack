@@ -15,3 +15,4 @@
 {"at": "2026-11-27T10:45:26+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "fixing"}
 {"at": "2026-11-27T12:28:28+00:00", "diff": {"added": [], "changed": {"r3": ["behavior", "fails_when"]}, "removed": []}, "grant": "g10", "hash": "a4b778ee87117e0182d5ea8aa334a779a7cd9ce1deae0d366d0f4da83a3f314d", "kind": "signoff", "reason": "Operator told the implementer to skip the pre-apply state.db copy (2026-11-27); r3 now records that there is no restore point to 0.22.2-3.", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/claude", "step": "eval-sign"}
 {"at": "2026-11-27T12:30:06+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "fixing"}
+{"at": "2026-11-27T15:25:27+00:00", "by": "review fixed", "from": "fixing", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
