@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "ovsq-keyless-local-sync",
-  "plan_hash": "469683241bed8b12063296f4d47174e34430749b68d654e135fcd32b66dae3b8",
+  "plan_hash": "775fa820fae92f913e8aa425fd4eb9a8576782e8fb31592ead48b3515ff2a248",
   "problems": [
     {
       "id": "P1",
@@ -91,7 +91,7 @@
     },
     {
       "id": "O4",
-      "change": "`localstack ov-sync-env` prints export lines for 15-minute ov-sync credentials",
+      "change": "`localstack ov-sync-env` prints export lines for ov-sync credentials that last 15 minutes",
       "kind": "behaviour",
       "goal": "G1",
       "goal_index": 0,
@@ -112,7 +112,7 @@
         "cli/src/localstack_cli/main.py",
         "localstack ov-sync-env"
       ],
-      "checked_by": "`new:cli/tests/commands/test_ov_sync_env_command.py`, with Vault and STS faked: three export lines on success, and empty stdout with a non-zero exit on a Vault 403 and on an STS refusal; then a live ovsq run lands under `viking://user/jasper/resources/local/` and the same credentials get AccessDenied under `ov-sync/JasperHG90/localstack/`",
+      "checked_by": "`new:cli/tests/commands/test_ov_sync_env_command.py`, with Vault and STS faked: it posts `DurationSeconds=900` to STS, three export lines on success, and empty stdout with a non-zero exit on a Vault 403 and on an STS refusal; then a live ovsq run lands under `viking://user/jasper/resources/local/` and the same credentials get AccessDenied under `ov-sync/JasperHG90/localstack/` and the returned `Expiration` is about 15 minutes out",
       "seen_by": "operator"
     },
     {
