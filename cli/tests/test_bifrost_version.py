@@ -28,3 +28,13 @@ def test_smoke_expects_the_renamed_refusal() -> None:
     smoke = (REPO_ROOT / "scripts" / "bifrost_smoke.py").read_text()
     assert '("access_not_found", {"x-bf-vk":' in smoke
     assert '("virtual_key_not_found",' not in smoke
+
+
+def test_bifrost_job_waits_for_its_deployment() -> None:
+    # With the provider default detach = true, the apply moves on once Nomad
+    # accepts the job, and null_resource.bifrost_ready can poll the old
+    # allocation before it stops.
+    text = (APPS / "services.tf").read_text()
+    block = re.search(r'resource "nomad_job" "bifrost" \{(.*?)\n\}', text, re.S)
+    assert block, "services.tf has no nomad_job.bifrost"
+    assert re.search(r"^\s*detach\s*=\s*false\s*$", block.group(1), re.M)
