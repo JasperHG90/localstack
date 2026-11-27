@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update-2-6",
-  "plan_hash": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62",
+  "plan_hash": "40b8da4f0623913f07ec9bf0dadd1ddb05caf153c69d532990abc3b18033b7ee",
   "problems": [
     {
       "id": "P1",
@@ -13,7 +13,7 @@
     },
     {
       "id": "P3",
-      "text": "The 2.3.1 to 2.6.0 store migrations are one-way, and the operator chose no dump, so the component page must say there is no way back to 2.3.1."
+      "text": "The 2.3.1 to 2.6.0 and 2.6.0 to 2.7.0 store migrations include one-way steps, and the operator chose no dump, so the component page must say there is no way back to 2.3.1, or to 2.6.0 without a dump."
     }
   ],
   "goals": [
@@ -49,7 +49,7 @@
     },
     {
       "id": "O2",
-      "change": "The component page says the move has no restore point to 2.3.1",
+      "change": "The component page says the move has no restore point to 2.3.1 or, without a dump, to 2.6.0",
       "kind": "support",
       "goal": "G2",
       "goal_index": 1,
