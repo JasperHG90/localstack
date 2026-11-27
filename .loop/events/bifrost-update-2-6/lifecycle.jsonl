@@ -15,3 +15,4 @@
 {"at": "2026-11-27T10:43:40+00:00", "code": "plan-invalidated", "from": "verifying", "kind": "block", "message": "finding reviewer:f1 invalidates the plan; eval row r2 was wrong, so the eval needs a re-sign", "notified": false, "schema_version": "1.0"}
 {"at": "2026-11-27T10:43:40+00:00", "dispatched_at": "2026-11-27T10:36:49+00:00", "kind": "round-close", "n": 1, "outcome": "blocked", "round_kind": "review", "schema_version": "1.0", "verdicts_at": {"reviewer": "2026-11-27T10:39:41+00:00"}}
 {"at": "2026-11-27T10:47:15+00:00", "kind": "spike-note", "n": 4, "replaced": false, "schema_version": "1.0"}
+{"at": "2026-11-27T10:47:42+00:00", "kind": "spike-note", "n": 5, "replaced": false, "schema_version": "1.0"}
