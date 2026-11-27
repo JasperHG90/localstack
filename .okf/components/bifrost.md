@@ -29,7 +29,7 @@ sources:
 Bifrost is the one OpenAI-compatible endpoint the cluster's agents call for
 chat, embeddings and rerank. It runs as job `bifrost` on `radxa-dragon-q6a`
 (192.168.2.50), port 8080, host networking, image
-`docker.io/maximhq/bifrost:v2.3.1`. It routes to Ollama Cloud, Gemini and
+`docker.io/maximhq/bifrost:v2.7.0`. It routes to Ollama Cloud, Gemini and
 [embark](/components/embark.md). Hermes and OpenViking run on the same node
 and call it at the node address or over loopback. Port 8080 is open to the
 whole LAN, and Prometheus dials it directly. The edge serves it as
@@ -192,6 +192,29 @@ model catalog. 2.0.0 passed an unlisted name through to Ollama, which still
 served the retired `deepseek-v4-flash:0731`; 2.3.1 refuses it with a 403
 ("not allowed for virtual key") for every key. A model name must appear in
 `GET /v1/models` before a client may use it.
+
+`bifrost-update-2-6` moved the pin from 2.3.1 to 2.6.0 and then to 2.7.0 on
+2026-11-27. 2.3.1 to 2.6.0 adds 39 config-store migrations, 12 of them
+one-way. They only add columns, tables and indexes, and 2.3.1's migrator
+ignores migrations it does not know, so a 2.3.1 binary should still start on
+the migrated store. Nobody has run that. The operator chose to apply without a
+dump, so there is no restore point to 2.3.1. 2.6.0 to 2.7.0 adds eight
+migrations. Six can be undone. Two cannot:
+`widen_batch_jobs_provider_status_and_endpoint` widens two `batch_jobs`
+columns, and `relay_logs_add_job_debug_widen_job_status` adds `job_debug` to
+`relay_logs` and widens `job_status`. Without a dump of the 2.6.0 store taken
+first, there is no way back to 2.6.0 either.
+
+The spikes under `.loop/spikes/bifrost-update-2-6/` show three things. Keys
+made on 2.3.1 plan clean after the store migrates. Bare-string rerank and
+embeddings still reach embark. Go's stricter x509 checks accept the chains of
+ollama.com, Gemini and typesafe, as seen from the devcontainer rather than the
+cluster nodes; after the apply Gemini answered a live call.
+
+From 2.6.0, `bifrost_upstream_latency_seconds` no longer counts the time a
+request waits in Bifrost's provider queue. That wait is
+`bifrost_provider_queue_wait_seconds`, so the latency panels in the Grafana
+dashboard read lower than before.
 
 ## Invariants and what enforces them
 

@@ -1,8 +1,8 @@
 """Drift tests: Bifrost's pin, its provider and the smoke script move together.
 
-The 2.1.0 to 2.3.1 store migrations cannot be undone, and 2.1.0 renamed the
-unknown-key refusal, so a pin that moved without the smoke script would fail
-its own check (spike:bifrost-update/1, /3, /4).
+The 2.3.1 to 2.6.0 store migrations cannot be undone, and the smoke script
+must keep expecting the unknown-key refusal 2.1.0 renamed, so a pin that moved
+without its checks would fail them (spikes under .loop/spikes/bifrost-update-2-6/).
 """
 
 import re
@@ -13,9 +13,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 APPS = REPO_ROOT / "deployments" / "applications"
 
 
-def test_bifrost_is_pinned_to_2_3_1() -> None:
+def test_bifrost_is_pinned_to_2_7_0() -> None:
     pins = re.findall(r'bifrost_version\s*=\s*"([^"]+)"', (APPS / "services.tf").read_text())
-    assert pins == ["2.3.1"]
+    assert pins == ["2.7.0"]
 
 
 def test_provider_stays_on_0_1() -> None:
