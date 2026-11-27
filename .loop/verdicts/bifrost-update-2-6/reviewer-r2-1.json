@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "resolved",
+      "claim": "Eval row r2 required a pre-apply dump that was never taken.",
+      "anchor": ".okf/components/bifrost.md:196",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "resolved",
+      "claim": "The page dropped the devcontainer caveat on the x509 spike, and the paragraph had semicolon splices.",
+      "anchor": ".okf/components/bifrost.md:210",
+      "category": null,
+      "blocking": null,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f3",
+      "disposition": "open",
+      "claim": "null_resource.bifrost_ready can pass against the old allocation. nomad_job.bifrost keeps the provider default detach = true, so the apply goes on as soon as Nomad accepts the job, and the /health poll can reach the 2.6.0 gateway before it stops. The 2.7.0 apply showed this: the gate passed, then the gateway refused connections for about a minute. The comment on the gate says virtual keys are only touched after the gateway is back up, which is not true. This change did not cause it, and this round changed no key. nomad_job.openviking already uses detach = false for the same reason.",
+      "anchor": "deployments/applications/services.tf:941",
+      "category": "hardening",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "9bba4978b031c123e4b6123ee54190f475ed65c046c364479614ad87c67e197c",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T12:49:01+00:00",
+  "checklist": null
+}
