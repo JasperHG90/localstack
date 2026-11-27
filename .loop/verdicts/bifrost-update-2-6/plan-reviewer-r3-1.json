@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "p1",
+      "disposition": "resolved",
+      "claim": "The TLS risk is still listed and is re-settled for 2.7.0 by spike:bifrost-update-2-6/6, which got upstream HTTP errors from all three hosts on 2.7.0 and 2.6.0 and a working untrusted-root control.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p2",
+      "disposition": "resolved",
+      "claim": "O1 needs O3, so the pin and the pin test move together.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p3",
+      "disposition": "resolved",
+      "claim": "P3 names the one-way migrations and O2 fixes P3.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "p4",
+      "disposition": "open",
+      "claim": "The plan says 2.6.0 to 2.7.0 \"adds two migrations, both reversible\" that \"add MCP client columns\" (Intent step 3 and the 2.7.0 paragraph), and eval row r2 requires the component page to say so. The transports/v2.7.0 release notes list eight migrations, two of them non-reversible: `widen_batch_jobs_provider_status_and_endpoint` and `relay_logs_add_job_debug_widen_job_status` (the latter also carries an upstream warning about locks on `relay_logs`). Spike 5 shows `add_key_service_tier_column`, a non-MCP migration, running on 2.7.0. So the record O2 and r2 ask for would be false, and P3/O2 are incomplete: once 2.7.0 applies there is no way back to 2.6.0 either, not only to 2.3.1. Fix the migration facts in the prose, P3, O2 and r2 (no restore point to 2.3.1 or to 2.6.0).",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r2"
+    },
+    {
+      "id": "p5",
+      "disposition": "open",
+      "claim": "The plan treats skipping the dump as costless because \"a dump taken now holds 2.6.0's schema\" and 2.7.0's migrations are reversible. With two one-way 2.7.0 migrations, a dump taken now is the only restore point to the 2.6.0 that is live and working, so the reason the plan gives for skipping it no longer holds. The operator's \"Forget the backup. Just do it.\" was given about the earlier dump; the plan should record that the operator waives a dump knowing 2.6.0 to 2.7.0 is also one-way, or take a dump of the 2.6.0 store before the apply. The scope (dump or no dump) is the operator's call, not the plan's.",
+      "anchor": ".loop/plans/bifrost-update-2-6/README.md",
+      "category": "premise",
+      "blocking": true,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": "r2"
+    }
+  ],
+  "binds": {
+    "fingerprint": null,
+    "plan_hash": "5aa3f0e2a6080906aa12f1cfeadb6492bcade9edf8b6ef9c452c642fc3c75d62"
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T12:29:23+00:00",
+  "checklist": null
+}
