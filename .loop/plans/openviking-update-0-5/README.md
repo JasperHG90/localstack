@@ -5,7 +5,6 @@ description: Move OpenViking from v0.4.17.1 to v0.5.6 once ov-postgres and ov-ex
 tags:
 - plan
 slug: openviking-update-0-5
-status: draft
 epic: null
 depends_on: []
 priority: null
@@ -21,47 +20,50 @@ Relayed from: none
 
 ## Intent
 
-Blocked on JasperHG90/openviking_extensions issue #23 (the 0.5.6 port of
-ov-postgres and ov-ext, building on #13 to #20). Promote this stub once new
-`ov-postgres-v*` and `ov-ext-v*` tags exist on one commit and both suites
-pass on `openviking==0.5.6`.
+Move OpenViking from v0.4.17.1 to v0.5.6, on ov-postgres v0.7.0 and ov-ext
+v0.8.0. Both were released on 2026-11-27 from one commit (10ffca50,
+JasperHG90/openviking_extensions#24, closing #23 and #13 to #19).
 
 OpenViking runs v0.4.17.1: `openviking_base_image` and `openviking_image` in
 `deployments/applications/services.tf`, built by
 `deployments/applications/services/openviking/Dockerfile.openviking`, which
-pins ov-postgres v0.6.0 and ov-ext v0.7.1. Both packages cap
-`openviking<0.5`, and the Dockerfile's `--no-deps` install skips that cap. On
-0.5.6 as-is, every reranked `find` and `search` fails, because v0.5.3 changed
-what `_rerank_scores` returns.
+pins ov-postgres v0.6.0 and ov-ext v0.7.1.
 
-Once the tags exist:
-
-1. Bump `openviking_base_image` to v0.5.6, `openviking_image` to a new
-   derived tag, and both git pins in `Dockerfile.openviking` to the new tags.
-   The v0.5.6 image still ships python 3.13 at `/app/.venv`, so the
-   `--target` path holds. Build, verify and push with the justfile beside it.
+1. Set `openviking_base_image` to ghcr.io/volcengine/openviking:v0.5.6 and
+   `openviking_image` to ghcr.io/jasperhg90/openviking:v0.5.6-1. Move both
+   git pins in `Dockerfile.openviking` to ov-postgres-v0.7.0 and
+   ov-ext-v0.8.0. The v0.5.6 base still ships python 3.13 at `/app/.venv`,
+   so the `--target` install path holds. Build, verify and push with the
+   justfile beside the Dockerfile (just build, just verify, just push).
 2. Remove `OV_RETRIEVAL_RERANK_MAX_CALLS` and `OV_RETRIEVAL_RERANK_FINAL` from
-   `deployments/applications/services/openviking.hcl`, plus whatever else the
-   new ov-ext release drops. v0.4.23 does one global recall and one rerank,
-   so the call ceiling has nothing to cap, and a second final rerank would
-   undo the keyword fusion. Re-derive `ALLOWED_CUSTOM_PARAMS` in
-   `scripts/check_openviking_config.py` from the new `PgVectorParams`.
+   `deployments/applications/services/openviking.hcl`. ov-ext 0.8.0 refuses
+   to start while either is set, because 0.4.23+ does one recall and one
+   rerank. Keep `OV_RETRIEVAL_RERANK_MAX_DOCUMENTS`: in 0.8.0 documents past
+   the cap rank below every surviving rerank score.
+   `ALLOWED_CUSTOM_PARAMS` in `scripts/check_openviking_config.py` already
+   matches `PgVectorParams` at v0.7.0; extend the script to fail on the two
+   removed variables.
 3. Fix the `viking_write` description in
-   `deployments/applications/services/hermes/openviking_tools/__init__.py`:
-   since 0.5.1, `mode=create` overwrites an existing file.
-4. Before the apply, back up Postgres schema `openviking_v2` and bucket
-   `openviking-v2`. No re-embedding is needed: the embedding metadata and
-   record ids are unchanged.
+   `deployments/applications/services/hermes/openviking_tools/__init__.py`.
+   Since OpenViking 0.5.1, `mode=create` overwrites an existing file.
+4. On first boot ov-postgres reconciles the openviking_v2 table. In one
+   transaction holding ACCESS EXCLUSIVE, it adds the md5 and ACL columns and
+   their indexes, and installs a guard trigger. A failed reconcile stops the
+   server from starting. ov-ext's maintenance task then fills md5 for
+   existing rows through VikingFS, one process at a time, every 5 minutes.
+   OpenViking connects as the static `openviking` role
+   (`deployments/applications/secrets.tf`), which owns the database and the
+   tables it created, so it may run that DDL.
 
-Outcome: job `openviking` runs healthy on the new derived image. `find` and
-`search` with rerank on return results, and their traces show the keyword
-leg and MMR ran. One reflection sweep completes. Hermes `viking_search`
-works. `just pre_commit` and `uv run --directory cli pytest` pass.
+Outcome: job `openviking` runs healthy on v0.5.6-1, and `/health` reports
+version v0.5.6. A reranked `find` and a reranked `search` return results. A
+Hermes `viking_search` works. ov-sync-consumer and ov-dash still work against
+it. `just pre_commit` and `uv run --directory cli pytest` pass.
 
 ## Problems
 
-- P1: OpenViking runs v0.4.17.1, behind upstream v0.5.6, and the extension pins it relies on break on 0.5.x.
-- P2: `openviking.hcl` sets rerank knobs (`OV_RETRIEVAL_RERANK_MAX_CALLS`, `OV_RETRIEVAL_RERANK_FINAL`) that 0.5.x makes meaningless or harmful.
+- P1: OpenViking runs v0.4.17.1, behind upstream v0.5.6, on extension pins that break on 0.5.x.
+- P2: `openviking.hcl` sets `OV_RETRIEVAL_RERANK_MAX_CALLS` and `OV_RETRIEVAL_RERANK_FINAL`, which ov-ext 0.8.0 refuses at startup.
 - P3: The Hermes `viking_write` tool tells the model `mode=create` refuses an existing file, which stopped being true in 0.5.1.
 
 ## Goals
@@ -71,22 +73,22 @@ works. `just pre_commit` and `uv run --directory cli pytest` pass.
 
 ## Outcomes
 
-### O1: Job openviking runs on v0.5.6 with the new extension tags
+### O1: Job openviking runs on v0.5.6 with ov-postgres v0.7.0 and ov-ext v0.8.0
 - kind: behaviour
 - goal: G1
 - fixes: P1
-- needs: none
-- touches: `deployments/applications/services.tf`, `deployments/applications/services/openviking/Dockerfile.openviking`, `scripts/check_openviking_config.py`
-- checked by: `just verify` beside the Dockerfile, a reranked `find` and `search` returning results with keyword and MMR spans, one reflection sweep, and `uv run --directory cli pytest`
+- needs: O2
+- touches: `deployments/applications/services.tf`, `deployments/applications/services/openviking/Dockerfile.openviking`, `new:cli/tests/test_openviking_version.py`
+- checked by: `just verify` beside the Dockerfile, a healthy deployment, `/health` version, a reranked `find` and `search`, and a Hermes `viking_search`
 - seen by: operator
 
-### O2: openviking.hcl sets only the ov-ext settings the new release reads
+### O2: openviking.hcl sets only the ov-ext settings 0.8.0 reads
 - kind: support
 - goal: G1
 - fixes: P2
-- needs: O1
-- touches: `deployments/applications/services/openviking.hcl`
-- checked by: `scripts/check_openviking_config.py` and a test that no removed `OV_RETRIEVAL_RERANK_*` key is set
+- needs: none
+- touches: `deployments/applications/services/openviking.hcl`, `scripts/check_openviking_config.py`, `new:cli/tests/test_check_openviking_config.py`
+- checked by: `scripts/check_openviking_config.py` failing on a removed `OV_RETRIEVAL_RERANK_*` key, and its test
 - seen by: nobody
 
 ### O3: viking_write describes create as overwriting
@@ -100,7 +102,17 @@ works. `just pre_commit` and `uv run --directory cli pytest` pass.
 
 ## Could invalidate this plan
 
-- The extension port changes shape. If the 0.5.6 ports of ov-postgres or
-  ov-ext need a schema migration of `openviking_v2`, a re-index, or new
-  config that `ov.conf.json` cannot express, this plan grows a data
-  migration step. Re-read issue #23's outcome before promoting.
+- The first boot on the live table. The reconcile holds ACCESS EXCLUSIVE on
+  openviking_v2's context table while it adds columns and builds three
+  indexes, and a failure stops the server from starting. The md5 backfill
+  then reads every existing file through VikingFS on a 1-CPU task. If either
+  takes long enough on a table of the live size to fail Nomad's healthy
+  deadline, or the backfill starves request handling, the plan needs a
+  maintenance window or a throttle.
+  Settled by `spike:openviking-update-0-5/2`: on a 50,000-row table seeded by
+  ov-postgres v0.6.0 on OpenViking 0.4.17.1, with Postgres on 1 CPU, the
+  v0.7.0 reconcile took 0.62 s against a 60m healthy deadline, and the md5
+  backfill filled every row in 150 s (0.6 s per 200-row batch) while a
+  concurrent query kept p95 at 48 ms and event-loop lag stayed under 80 ms.
+  The live row count was not measured; 45,686 objects in the old bucket puts
+  50k in range, and both costs scale about linearly.
