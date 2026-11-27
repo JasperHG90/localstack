@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "placeholder": false,
+  "verdict": "fix",
+  "findings": [
+    {
+      "id": "f1",
+      "disposition": "open",
+      "claim": "The CLI docs still say `localstack token` prints only a token and one newline. The new `token s3 ROLE` prints three export lines and a line on stderr, and no reference page mentions it.",
+      "anchor": ".okf/components/localstack-cli.md:116",
+      "category": "docs",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    },
+    {
+      "id": "f2",
+      "disposition": "open",
+      "claim": "The prefix test catches a mapped folder equal to viking://user/jasper/resources/, but not one above it, such as viking://user/jasper/. Row r3's fails_when also covers \"contains resources/\".",
+      "anchor": "cli/tests/test_local_ov_sync.py:68",
+      "category": "test-strength",
+      "blocking": false,
+      "invalidates_plan": false,
+      "repeats": null,
+      "eval_row": null
+    }
+  ],
+  "binds": {
+    "fingerprint": "e16cfaf348d92179e53a2c4a280db85830e3b19b28ce63801d62f2d05f777b85",
+    "plan_hash": null
+  },
+  "by": "process:loopctl/2.4.0",
+  "at": "2026-11-27T20:51:26+00:00",
+  "checklist": null
+}
