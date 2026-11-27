@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.1",
+  "fingerprint": "b76b4b5db7642ffc200e9a2385176d98175f8f7c43c9c948a4023935e3176ddf",
+  "slug": "hermes-file-toolset",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_hermes_version.py -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 9,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    }
+  ],
+  "green": true,
+  "at": "2026-11-27T09:46:36+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.4.0"
+}
