@@ -10,3 +10,4 @@
 {"at": "2026-11-27T19:22:37+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
 {"at": "2026-11-27T20:32:34+00:00", "diff": {"added": [], "changed": {"r4": ["behavior", "fails_when", "command"], "r5": ["behavior", "fails_when", "command"], "r7": ["behavior"]}, "removed": []}, "grant": "g10", "hash": "1b108c9d26ff5a07d3e9f0f8ecf03e43ef3cb9f1e376a68cfbfdc8a8d12a89ef", "kind": "signoff", "reason": "operator replaced the dedicated ov-sync-env command with a generic localstack token s3 ROLE, so rows r4, r5 and r7 name the new command and test file", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/implementer", "step": "eval-sign"}
 {"at": "2026-11-27T20:35:36+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
+{"at": "2026-11-27T20:47:40+00:00", "by": "advance", "from": "building", "kind": "transition", "schema_version": "1.0", "to": "verifying"}
