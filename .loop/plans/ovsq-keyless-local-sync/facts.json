@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "slug": "ovsq-keyless-local-sync",
+  "plan_hash": "6fb3eb25c28f11837ae19c31d2b213ef2ac4c5de7edbab27258d7b22f1bbdd9d",
+  "problems": [
+    {
+      "id": "P1",
+      "text": "No SeaweedFS role lets a local process write the ov-sync bucket without a static key: only Nomad jobs and `ov_sync` CI callers have STS roles"
+    },
+    {
+      "id": "P2",
+      "text": "`nomad_job.ov_sync_consumer` maps no prefix for local folders, so whatever ovsq writes is skipped"
+    },
+    {
+      "id": "P3",
+      "text": "The operator has no way to turn their Vault session into the three `AWS_*` variables ovsq reads"
+    },
+    {
+      "id": "P4",
+      "text": "Nothing in the repository documents the keyless local route, and ovsq's upstream how-to prescribes the static key the operator rejected"
+    }
+  ],
+  "goals": [
+    {
+      "id": "G1",
+      "text": "The operator syncs a folder that no CI can reach into OpenViking, with credentials that expire in minutes and are stored nowhere"
+    },
+    {
+      "id": "G2",
+      "text": "Local credentials cannot write a CI prefix, and a CI token cannot assume the local role"
+    },
+    {
+      "id": "G3",
+      "text": "The next reader finds the local route, and why it carries no static key, in the docs and the knowledge bundle"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1",
+      "change": "Vault mints a 15-minute `local-ov-sync` identity token for the operator entity only",
+      "kind": "support",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [],
+      "needs_index": [],
+      "touches": [
+        "deployments/infrastructure/oidc.tf",
+        "deployments/infrastructure/identity.tf"
+      ],
+      "checked_by": "`new:cli/tests/test_local_ov_sync.py` asserts the role's client id `seaweedfs`, ttl 900 and literal `local_ov_sync` template, a policy reading only that token path, and a group whose sole member is the operator entity; `scripts/tf_validate.sh`",
+      "seen_by": "nobody"
+    },
+    {
+      "id": "O2",
+      "change": "SeaweedFS role `local-ov-sync` trusts only the local claim and the operator's `sub`, and writes only `ov-sync/JasperHG90/local/*`",
+      "kind": "support",
+      "goal": "G2",
+      "goal_index": 1,
+      "fixes": "P1",
+      "fixes_index": 0,
+      "needs": [
+        "O1"
+      ],
+      "needs_index": [
+        0
+      ],
+      "touches": [
+        "deployments/infrastructure/services.tf",
+        "cli/tests/fixtures/seaweedfs_iam.py"
+      ],
+      "checked_by": "`cli/tests/test_seaweedfs_iam_config.py` renders the IAM config and asserts the role's two `StringEquals` conditions, its Get/Put/Delete-only policy on the one prefix, and that no `ci-*` role names `local_ov_sync`",
+      "seen_by": "nobody"
+    },
+    {
+      "id": "O3",
+      "change": "The consumer maps `JasperHG90/local/` to `viking://user/jasper/resources/local/`",
+      "kind": "support",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P2",
+      "fixes_index": 1,
+      "needs": [],
+      "needs_index": [],
+      "touches": [
+        "deployments/applications/services.tf"
+      ],
+      "checked_by": "`new:cli/tests/test_local_ov_sync.py` asserts the `prefixes` entry, and that no mapped folder is an ancestor of another mapped folder or of the hermes save root `viking://user/jasper/resources/`",
+      "seen_by": "nobody"
+    },
+    {
+      "id": "O4",
+      "change": "`localstack ov-sync-env` prints export lines for 15-minute ov-sync credentials",
+      "kind": "behaviour",
+      "goal": "G1",
+      "goal_index": 0,
+      "fixes": "P3",
+      "fixes_index": 2,
+      "needs": [
+        "O1",
+        "O2",
+        "O3"
+      ],
+      "needs_index": [
+        0,
+        1,
+        2
+      ],
+      "touches": [
+        "new:cli/src/localstack_cli/commands/ov_sync_env.py",
+        "cli/src/localstack_cli/main.py",
+        "localstack ov-sync-env"
+      ],
+      "checked_by": "`new:cli/tests/commands/test_ov_sync_env_command.py`, with Vault and STS faked: three export lines on success, and empty stdout with a non-zero exit on a Vault 403 and on an STS refusal; then a live ovsq run lands under `viking://user/jasper/resources/local/` and the same credentials get AccessDenied under `ov-sync/JasperHG90/localstack/`",
+      "seen_by": "operator"
+    },
+    {
+      "id": "O5",
+      "change": "A how-to, a decision record and the architecture pages describe the local route",
+      "kind": "support",
+      "goal": "G3",
+      "goal_index": 2,
+      "fixes": "P4",
+      "fixes_index": 3,
+      "needs": [
+        "O4"
+      ],
+      "needs_index": [
+        3
+      ],
+      "touches": [
+        "new:docs/how-to/sync-a-local-folder-to-openviking-with-ovsq.md",
+        "docs/explanation/workload-identity.md",
+        ".okf/architecture/deployment-layers.md",
+        ".okf/summary.md"
+      ],
+      "checked_by": "`cli/tests/test_how_to_skeleton.py`, `kmctl check`, `just pre_commit`",
+      "seen_by": "operator"
+    }
+  ]
+}
