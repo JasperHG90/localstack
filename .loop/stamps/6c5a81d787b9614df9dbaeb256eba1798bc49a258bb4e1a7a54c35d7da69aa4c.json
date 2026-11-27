@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.1",
+  "fingerprint": "6c5a81d787b9614df9dbaeb256eba1798bc49a258bb4e1a7a54c35d7da69aa4c",
+  "slug": "bifrost-update-2-6",
+  "results": [
+    {
+      "name": "pre_commit",
+      "kind": "gate",
+      "command": "just pre_commit",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "cli_tests",
+      "kind": "gate",
+      "command": "uv run --directory cli pytest",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": null,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    },
+    {
+      "name": "r1",
+      "kind": "eval-row",
+      "command": "uv run --directory cli pytest tests/test_bifrost_version.py -q",
+      "exit": 0,
+      "passed": true,
+      "tests_passed": 3,
+      "note": null,
+      "input_fingerprint": null,
+      "cached": false,
+      "cached_from": null,
+      "observe": false
+    }
+  ],
+  "green": true,
+  "at": "2026-11-27T10:34:39+00:00",
+  "commit": null,
+  "by": "process:loopctl/2.4.0"
+}
