@@ -334,7 +334,7 @@ platform_toolsets:
     - browser
     - memory
     - skills
-    - files
+    - file
     - cronjob
   telegram:
     - terminal
@@ -342,7 +342,7 @@ platform_toolsets:
     - browser
     - memory
     - skills
-    - files
+    - file
     - cronjob
 
 mcp_servers:

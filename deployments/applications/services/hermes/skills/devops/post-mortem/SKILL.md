@@ -17,7 +17,7 @@ Activate when another skill or agent reports an error, failure, or operational i
 - Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
 - Recurrence tracking needs EXACT-KEY reads, which OpenViking cannot do -- it
   is a semantic store, not a key-value one. Keep the tracker in
-  `$HERMES_HOME/state/post-mortem.json` via the `files` toolset, and keep the
+  `$HERMES_HOME/state/post-mortem.json` via the `file` toolset, and keep the
   written-up post-mortem itself in OpenViking.
 
 ## Procedure

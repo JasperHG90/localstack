@@ -17,7 +17,7 @@ Activate when you receive a Medium digest email containing article links and sum
 - Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
 - "Have I already captured this article?" needs an EXACT-KEY read, which
   OpenViking cannot do -- it is a semantic store. Keep seen-article markers in
-  `$HERMES_HOME/state/medium-reader.json` via the `files` toolset. The article
+  `$HERMES_HOME/state/medium-reader.json` via the `file` toolset. The article
   itself goes to OpenViking.
 
 ## Procedure

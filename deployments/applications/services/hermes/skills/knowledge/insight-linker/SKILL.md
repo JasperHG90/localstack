@@ -20,7 +20,7 @@ Activate on a schedule to scan recent OpenViking notes (blog posts, articles, re
   them. (GitHub API access still uses `gh`/curl.)
 - Repo context caching and processed markers need EXACT-KEY reads, which
   OpenViking cannot do -- it is a semantic store. Keep them in
-  `$HERMES_HOME/state/insight-linker.json` via the `files` toolset.
+  `$HERMES_HOME/state/insight-linker.json` via the `file` toolset.
 
 ## Procedure
 

@@ -16,7 +16,7 @@ When running scheduled daily blog scrapes, or when asked to check engineering bl
 - Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
 - "Which URLs have I already scraped?" needs EXACT-KEY reads, which OpenViking
   cannot do -- it is a semantic store. Keep the per-site URL lists in
-  `$HERMES_HOME/state/blog-scraper.json` via the `files` toolset. Articles go
+  `$HERMES_HOME/state/blog-scraper.json` via the `file` toolset. Articles go
   to OpenViking.
 
 ## Critical Rules

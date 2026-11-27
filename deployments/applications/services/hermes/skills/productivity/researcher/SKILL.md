@@ -22,7 +22,7 @@ Activate when asked to investigate a topic, answer a complex question, or produc
 - Use the native OpenViking tools (`viking_*`). Do not shell out to curl.
 - Counters and run state need EXACT-KEY reads, which OpenViking cannot do --
   it is a semantic store. Keep them in `$HERMES_HOME/state/researcher.json`
-  via the `files` toolset.
+  via the `file` toolset.
 
 ## Procedure
 
