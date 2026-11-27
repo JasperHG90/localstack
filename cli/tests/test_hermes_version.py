@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 APPS = REPO_ROOT / "deployments" / "applications"
 DOCKERFILE = APPS / "services" / "hermes" / "Dockerfile"
 PLUGIN_SHA = "9f150ece247ad683494ab172d738023bd6dc6170"
-UV = "/opt/hermes/tools/uv-0.12.3-linux-arm64/uv"
+UV = "/opt/hermes/tools/uv-0.13.5-linux-arm64/uv"
 WHISPER_RUN = (
     f"RUN cd /opt/hermes && {UV} export --frozen --no-hashes --extra stt-whisper"
     " --no-emit-project -q -o /tmp/stt.txt"
@@ -24,9 +24,9 @@ WHISPER_RUN = (
 )
 
 
-def test_base_is_v0_22_2() -> None:
+def test_base_is_v0_23_4() -> None:
     assert re.findall(r"^FROM (\S+)", DOCKERFILE.read_text(), re.M) == [
-        "nousresearch/hermes-agent:v0.22.2"
+        "nousresearch/hermes-agent:v0.23.4"
     ]
 
 
@@ -50,7 +50,7 @@ def test_openviking_tools_wrapper_is_copied_beside_the_plugin() -> None:
 
 def test_hermes_version_matches_the_base() -> None:
     pins = re.findall(r'hermes_version\s*=\s*"([^"]+)"', (APPS / "services.tf").read_text())
-    assert pins == ["0.22.2-3"]
+    assert pins == ["0.23.4-1"]
 
 
 def test_config_selects_openviking_tools_and_keeps_sessions() -> None:
@@ -80,7 +80,7 @@ def test_config_transcribes_locally_with_the_base_model() -> None:
     assert re.findall(r"^    model: (.+)$", local.group(1), re.M) == ['"base"']
 
 
-# Toolset names hermes-agent defines in toolsets.py at v0.22.2. Hermes skips an
+# Toolset names hermes-agent defines in toolsets.py at v0.22.2 and v0.23.4. Hermes skips an
 # unknown name with only a log warning, so a typo here silently strips a
 # platform of its tools.
 KNOWN_TOOLSETS = frozenset(
@@ -121,3 +121,42 @@ def test_skills_name_the_file_toolset_correctly() -> None:
     skills = APPS / "services" / "hermes" / "skills"
     wrong = [str(p) for p in skills.rglob("SKILL.md") if "`files` toolset" in p.read_text()]
     assert wrong == []
+
+
+def test_apt_installs_jq_but_not_chromium() -> None:
+    # v0.23.0 removed agent-browser, the reason chromium was installed; the
+    # base ships its own chromium. jq is still missing from the base.
+    text = DOCKERFILE.read_text().replace("\\\n", " ")
+    installs = re.findall(r"apt-get install ([^&\n]*)", text)
+    assert installs
+    packages = {word for line in installs for word in line.split() if not word.startswith("-")}
+    assert "jq" in packages
+    assert "chromium" not in packages
+
+
+# Browser tools v0.23.0 removed in favour of browser_exec.
+REMOVED_BROWSER_TOOLS = (
+    "browser_navigate",
+    "browser_snapshot",
+    "browser_click",
+    "browser_type",
+    "browser_scroll",
+    "browser_back",
+    "browser_press",
+    "browser_get_images",
+    "browser_vision",
+    "browser_console",
+)
+
+
+def test_browser_skills_use_browser_exec() -> None:
+    hermes = APPS / "services" / "hermes"
+    texts = {p: p.read_text() for p in [*hermes.rglob("SKILL.md"), hermes / "SOUL.md"]}
+    stale = {
+        str(p.relative_to(hermes)): [t for t in REMOVED_BROWSER_TOOLS if t in text]
+        for p, text in texts.items()
+        if any(t in text for t in REMOVED_BROWSER_TOOLS)
+    }
+    assert stale == {}
+    medium = hermes / "skills" / "productivity" / "medium-reader" / "SKILL.md"
+    assert "browser_exec" in texts[medium]

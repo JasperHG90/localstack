@@ -87,7 +87,8 @@ For each new worthy article, attempt sources in this order. If one fails (bot wa
 
 For whichever source succeeds:
 
-1. Use `browser_navigate` to load the URL, then `browser_snapshot` to read rendered content.
+1. Use `browser_exec` to load the URL and read the rendered page: `new_tab(url)`,
+   then `wait_for_load()`, then `js(...)` to pull the article text out of the DOM.
 2. Extract from the page:
    - **Title**: from `<h1>`, `<title>`, or `og:title`. Never invent titles.
    - **Author**: from byline or article metadata if available.

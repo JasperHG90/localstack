@@ -50,7 +50,7 @@ Site keys: `anthropic`, `openai`, `spotify`, `deepmind`, `uber`, `mistral`, `oll
 ### Phase 2: Scrape Each Blog
 
 For each blog:
-1. Use browser tools to visit the listing page and extract article links:
+1. Use `browser_exec` to visit the listing page and extract article links:
    - Navigate to the blog URL
    - Extract all article titles and URLs from the page
 2. Compare against stored list. Only process NEW articles.
@@ -127,7 +127,7 @@ $HERMES_HOME/state/blog-scraper.json
 
 ## Pitfalls
 
-- Use browser tools for JavaScript-rendered pages
+- Use `browser_exec` for JavaScript-rendered pages
 - Content gate prevents saving bot-wall pages
 - Note keys ensure no duplicate saves across runs
 - 3-day TTL on scraped URL lists prevents unbounded growth

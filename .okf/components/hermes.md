@@ -55,9 +55,9 @@ radxa itself.
 
 **The image** is `ghcr.io/jasperhg90/hermes:<hermes_version>`, built from
 `deployments/applications/services/hermes/Dockerfile`: the
-`nousresearch/hermes-agent:v0.22.2` base plus `jq`, `chromium`, faster-whisper
-for voice notes, the OpenViking memory-provider plugin and the
-`openviking_tools` wrapper around it. The tag (`0.22.2-3`) is set once, in `nomad_job.hermes` in
+`nousresearch/hermes-agent:v0.23.4` base plus `jq`, faster-whisper for voice
+notes (installed with the base's own uv 0.13.5), the OpenViking memory-provider plugin and the
+`openviking_tools` wrapper around it. The tag (`0.23.4-1`) is set once, in `nomad_job.hermes` in
 `deployments/applications/services.tf`, and `just rebuild_hermes` in
 `deployments/applications/justfile` reads it from there. Build and push
 before applying a tag change. `force_pull = true` re-pulls on every alloc.
@@ -190,9 +190,13 @@ faster-whisper 1.2.1 against the base's `uv.lock`, and `config.yaml` sets
 2048 MB cap (spike:ov-save-skill/10). An unpinned install pulls PyAV 19.0.1
 and breaks every transcription (spike:ov-save-skill/8).
 
-**Sessions are kept.** v0.22 prunes ended sessions idle for 90 days at
-startup by default. `config.yaml` sets `sessions.auto_prune: false` to keep
-the 0.21 behaviour.
+**Sessions are kept.** v0.22 pruned ended sessions idle for 90 days at
+startup by default. v0.23 turned that default off again; `config.yaml` still
+sets `sessions.auto_prune: false` so the choice does not depend on it.
+
+**Browsing goes through `browser_exec`.** v0.23.0 removed agent-browser and
+the ten `browser_*` tools. Skills name `browser_exec`, which drives the
+chromium the base image ships, so the image installs no system chromium.
 
 **Cron jobs follow the main model.** Under 0.21 every job pinned the main
 model of the day it was created (`ollama/deepseek-v4-flash:0731`). When
@@ -262,7 +266,13 @@ OIDC client. `hermes-update` moved to hermes-agent v0.22.2 on 2026-10-20,
 with the OpenViking plugin built into the image. `ov-no-auto-capture` (also
 2026-10-20) turned off automatic recall and capture, leaving the tools.
 `ov-save-skill` (also 2026-10-20) added the save skill, `viking_write` and
-local voice transcription in `0.22.2-3`.
+local voice transcription in `0.22.2-3`. `hermes-file-toolset` (2026-11-27)
+renamed the platforms' `files` toolset to `file`, which had left Telegram and
+email without file tools. `hermes-update-0-23` moved to hermes-agent v0.23.4
+in `0.23.4-1`: uv 0.13.5, no system chromium, and skills on `browser_exec`. The
+operator chose to apply it without copying `state.db` first. v0.23.3 moved
+`state.db` from schema 31 to 33, so there is no restore point for a rollback to
+`0.22.2-3`.
 
 ## Related concepts
 

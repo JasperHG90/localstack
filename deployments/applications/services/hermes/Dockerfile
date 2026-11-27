@@ -6,16 +6,14 @@
 # the earlier "rootless can't grant CAP_SETGID" concern no longer applies.
 # The image therefore stays root (no trailing USER hermes); do NOT pin the
 # Nomad task to a non-root UID — the wrapper rejects arbitrary UIDs.
-FROM nousresearch/hermes-agent:v0.22.2
+FROM nousresearch/hermes-agent:v0.23.4
 
-# jq and chromium only: the base already ships curl, but not these two.
-# chromium is what lets the agent-browser fallback chain find a system Chrome
-# for browser_vision / screenshot workflows (see issue #8). Checked against
-# v0.22.2 -- if a later base starts shipping both, this whole custom image
-# stops earning its keep and the job can point at the base directly.
+# jq only: the base ships curl and its own chromium, which browser_exec
+# resolves before any system one (v0.23.0 removed agent-browser, the reason a
+# system chromium was installed). Checked against v0.23.4.
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      jq chromium \
+      jq \
     && rm -rf /var/lib/apt/lists/*
 
 # OpenViking's memory provider left the base image in v0.22.0. Hermes would
@@ -36,7 +34,7 @@ RUN mkdir -p /opt/hermes/plugins/memory/openviking \
 # export pins faster-whisper's audio libraries to the base's own versions: an
 # unpinned install pulls PyAV 19.0.1, which breaks every transcription
 # (spike:ov-save-skill/8). The model downloads on first use to the data volume.
-RUN cd /opt/hermes && /opt/hermes/tools/uv-0.12.3-linux-arm64/uv export --frozen --no-hashes --extra stt-whisper --no-emit-project -q -o /tmp/stt.txt && /opt/hermes/tools/uv-0.12.3-linux-arm64/uv pip install --no-cache --python /opt/hermes/.venv/bin/python -c /tmp/stt.txt faster-whisper==1.2.1 && rm /tmp/stt.txt
+RUN cd /opt/hermes && /opt/hermes/tools/uv-0.13.5-linux-arm64/uv export --frozen --no-hashes --extra stt-whisper --no-emit-project -q -o /tmp/stt.txt && /opt/hermes/tools/uv-0.13.5-linux-arm64/uv pip install --no-cache --python /opt/hermes/.venv/bin/python -c /tmp/stt.txt faster-whisper==1.2.1 && rm /tmp/stt.txt
 
 # `memory.provider: openviking_tools` selects this wrapper around the plugin
 # above: its viking_* tools, with recall and capture off.
