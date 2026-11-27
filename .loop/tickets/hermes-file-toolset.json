@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "hermes-file-toolset",
-  "stage": "verifying",
+  "stage": "done",
   "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 1,
@@ -13,7 +13,7 @@
   "split": "j-20261126T133232+0000-6c02becb",
   "split_plan_hash": "451d030784fb1e50da138c9dd6582dd122bf3e357fc16ca393c6b70a68e426c5",
   "split_hold": false,
-  "commit_sha": null,
+  "commit_sha": "cdc1323b9379c412ff690ebb3a5c8dd4bcaada07",
   "closed_outside": false,
   "dropped": false,
   "archived": false,
@@ -100,8 +100,14 @@
       "to": "verifying",
       "at": "2026-11-27T09:46:45+00:00",
       "by": "advance"
+    },
+    {
+      "from": "verifying",
+      "to": "done",
+      "at": "2026-11-27T09:49:57+00:00",
+      "by": "done"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T09:49:42+00:00"
+  "at": "2026-11-27T09:49:57+00:00"
 }
