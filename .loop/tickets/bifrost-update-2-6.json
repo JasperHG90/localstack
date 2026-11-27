@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "slug": "bifrost-update-2-6",
-  "stage": "ready",
-  "attempts": 1,
+  "stage": "building",
+  "attempts": 2,
   "plan_rounds": 4,
   "review_rounds": 1,
   "extra_plan_rounds": 1,
@@ -173,8 +173,14 @@
       "to": "ready",
       "at": "2026-11-27T12:43:00+00:00",
       "by": "unblock"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-11-27T12:43:07+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T12:43:00+00:00"
+  "at": "2026-11-27T12:43:07+00:00"
 }
