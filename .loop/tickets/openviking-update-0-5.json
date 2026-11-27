@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "slug": "openviking-update-0-5",
-  "stage": "planning",
+  "stage": "ready",
   "attempts": 0,
   "plan_rounds": 1,
   "review_rounds": 0,
@@ -93,8 +93,14 @@
       "to": "planning",
       "at": "2026-11-27T12:47:14+00:00",
       "by": "promote"
+    },
+    {
+      "from": "planning",
+      "to": "ready",
+      "at": "2026-11-27T13:05:16+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-27T13:05:14+00:00"
+  "at": "2026-11-27T13:05:16+00:00"
 }
