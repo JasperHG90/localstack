@@ -7,3 +7,4 @@
 {"at": "2026-11-27T19:09:44+00:00", "by": "advance", "from": "planning", "kind": "transition", "schema_version": "1.0", "to": "ready"}
 {"at": "2026-11-27T19:10:05+00:00", "grant": "g10", "hash": "dcf51eef591d1ef8b39109fc94615f47f858ed01b32d0633b5aa0ec4a70e9681", "kind": "signoff", "schema_version": "1.0", "signer": "delegated:jasperginn@gmail.com/implementer", "step": "eval-sign"}
 {"at": "2026-11-27T19:13:55+00:00", "by": "advance", "from": "ready", "kind": "transition", "schema_version": "1.0", "to": "building"}
+{"at": "2026-11-27T19:22:37+00:00", "by": "stamp", "kind": "state-write", "schema_version": "1.0", "stage": "building"}
