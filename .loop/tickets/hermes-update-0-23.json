@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "slug": "hermes-update-0-23",
-  "stage": "ready",
-  "attempts": 0,
+  "stage": "building",
+  "attempts": 1,
   "plan_rounds": 1,
   "review_rounds": 0,
   "extra_plan_rounds": 0,
@@ -17,8 +17,8 @@
   "closed_outside": false,
   "dropped": false,
   "archived": false,
-  "worktree": null,
-  "branch": null,
+  "worktree": "/home/vscode/workspace.worktrees/hermes-update-0-23",
+  "branch": "loop/hermes-update-0-23",
   "stamps": [],
   "signoff": {
     "signer": "delegated:jasperginn@gmail.com/claude",
@@ -106,8 +106,14 @@
       "to": "ready",
       "at": "2026-11-26T13:54:48+00:00",
       "by": "advance"
+    },
+    {
+      "from": "ready",
+      "to": "building",
+      "at": "2026-11-27T09:52:06+00:00",
+      "by": "advance"
     }
   ],
   "by": "process:loopctl/2.4.0",
-  "at": "2026-11-26T13:54:48+00:00"
+  "at": "2026-11-27T09:52:06+00:00"
 }
