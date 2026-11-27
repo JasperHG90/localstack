@@ -15,7 +15,7 @@
 # BASE_IMAGE is passed by the justfile from the `openviking_base_image` line
 # in services.tf, so what Terraform deploys and what this builds cannot drift.
 
-ARG BASE_IMAGE=ghcr.io/volcengine/openviking:v0.4.17.1
+ARG BASE_IMAGE=ghcr.io/volcengine/openviking:v0.5.6
 FROM ${BASE_IMAGE}
 
 # The venv at /app/.venv ships no pip and the image has no uv, so the system
@@ -25,7 +25,7 @@ FROM ${BASE_IMAGE}
 # Neither package is on PyPI; both install only from a git URL. The tags are
 # pinned: `main` would make the image non-reproducible.
 #
-# ov-postgres-v0.4.0 and ov-retrieval-v0.2.0 are the same commit (3780884), and
+# ov-postgres-v0.7.0 and ov-ext-v0.8.0 are the same commit (10ffca50), and
 # that is load-bearing rather than tidy. ov-retrieval's diversity pass reaches
 # `pairwise_similarity` on the adapter through `getattr` and swallows its
 # absence, so an older ov-postgres yields a server that starts clean and
@@ -53,7 +53,7 @@ FROM ${BASE_IMAGE}
 # imports ConnectionPool at startup.
 RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
     --target /app/.venv/lib/python3.13/site-packages \
-    "ov-postgres @ git+https://github.com/JasperHG90/openviking_extensions@ov-postgres-v0.6.0#subdirectory=packages/ov-postgres"
+    "ov-postgres @ git+https://github.com/JasperHG90/openviking_extensions@ov-postgres-v0.7.0#subdirectory=packages/ov-postgres"
 
 # Hybrid retrieval: an RRF keyword leg and an MMR diversity pass and reflection loop installed by
 # the wrapper the jobspec starts instead of `openviking-server`.
@@ -64,7 +64,7 @@ RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
 # ships the bot. Verified in the published image, not assumed.
 RUN /usr/local/bin/python3.13 -m pip install --no-deps --upgrade \
     --target /app/.venv/lib/python3.13/site-packages \
-    "ov-ext @ git+https://github.com/JasperHG90/openviking_extensions@ov-ext-v0.7.1#subdirectory=packages/ov-ext"
+    "ov-ext @ git+https://github.com/JasperHG90/openviking_extensions@ov-ext-v0.8.0#subdirectory=packages/ov-ext"
 
 # psycopg's binary wheel, so no libpq or compiler is needed at runtime, and
 # the pool the adapter opens per collection.

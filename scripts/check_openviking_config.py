@@ -39,7 +39,7 @@ index.html and offers no config switch, so naming a path that does not exist is
 the only way to turn it off. Studio answers without a token, so dropping that
 line republishes the UI and every other gate stays green.
 
-`command` and `args`: the job starts `python -m ov_retrieval`, a wrapper that
+`command` and `args`: the job starts `python -m ov_ext`, a wrapper that
 adds a keyword leg and a diversity pass before handing over to the ordinary
 server. Drop either line and the image entrypoint runs the stock server, which
 comes up healthy and answers every search without them.
@@ -96,6 +96,15 @@ _STUDIO_ASSIGNMENT = re.compile(rf'^\s*{STUDIO_ENV}\s*=\s*"([^"]*)"')
 # which is what a guard nothing runs buys.
 RETRIEVAL_COMMAND = "/app/.venv/bin/python"
 RETRIEVAL_MODULE = "ov_ext"
+
+# ov-ext 0.8.0 stops startup when either is set (REMOVED_SETTINGS in
+# ov_ext/retrieval/config.py): OpenViking 0.4.23+ does one recall and one
+# rerank, so a per-directory call ceiling and a second final rerank no longer
+# mean anything.
+REMOVED_RETRIEVAL_SETTINGS = (
+    "OV_RETRIEVAL_RERANK_MAX_CALLS",
+    "OV_RETRIEVAL_RERANK_FINAL",
+)
 
 _COMMAND_ASSIGNMENT = re.compile(r'^\s*command\s*=\s*"([^"]*)"')
 _ARGS_ASSIGNMENT = re.compile(r"^\s*args\s*=\s*\[(.*)\]")
@@ -213,6 +222,15 @@ EXPECTED_KEYWORD_FIELDS = [
 ]
 
 
+def _removed_setting_failures(text: str) -> list[str]:
+    return [
+        f"{name} is set, and ov-ext 0.8.0 refuses to start while it is."
+        for name in REMOVED_RETRIEVAL_SETTINGS
+        for line in text.splitlines()
+        if not line.lstrip().startswith("#") and re.match(rf"\s*{name}\s*=", line)
+    ]
+
+
 def jobspec_failures(text: str) -> list[str]:
     """Assert the two things the jobspec carries that fail silently.
 
@@ -260,7 +278,7 @@ def jobspec_failures(text: str) -> list[str]:
             if value != STUDIO_DIR_OFF
         ]
 
-    return found + _retrieval_failures(text)
+    return found + _retrieval_failures(text) + _removed_setting_failures(text)
 
 
 def _retrieval_failures(text: str) -> list[str]:

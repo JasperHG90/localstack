@@ -74,7 +74,7 @@ release: build push
 # the base image breaks the dotted-path backend at OpenViking's startup, not
 # at build time, so this is the check that catches it before deploy.
 #
-# The second run covers the entry point the jobspec starts. `-m ov_retrieval`
+# The second run covers the entry point the jobspec starts. `-m ov_ext`
 # exercises the import, `install()`'s patch of HierarchicalRetriever and the
 # argument parsing in one command, and it fails the same way a bad --target
 # would: at startup, on the node, with the job already scheduled.
@@ -85,7 +85,7 @@ verify:
     echo ">> inspecting ${image}"
     docker run --rm --platform linux/arm64 --entrypoint /app/.venv/bin/python "${image}" -c \
         "from ov_postgres.adapter import PgVectorCollectionAdapter as A; import psycopg; print('adapter', A.__name__); print('psycopg', psycopg.__version__)"
-    echo ">> checking the ov-retrieval entry point"
+    echo ">> checking the ov_ext entry point"
     docker run --rm --platform linux/arm64 --entrypoint /app/.venv/bin/python "${image}" \
-        -m ov_retrieval --help > /dev/null
-    echo "ov_retrieval entry point ok"
+        -m ov_ext --help > /dev/null
+    echo "ov_ext entry point ok"
